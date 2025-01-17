@@ -7,14 +7,14 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/public" className="text-2xl font-bold">
+            <Link href="/" className="text-2xl font-bold">
               Rentahan
             </Link>
           </div>
 
           {/* Links */}
           <div className="hidden md:flex space-x-6">
-            <Link href="/public" className="hover:text-gray-300">
+            <Link href="/" className="hover:text-gray-300">
               Home
             </Link>
             <Link href="#" className="hover:text-gray-300">

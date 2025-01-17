@@ -1,7 +1,7 @@
 "use client";
 /*
 TODO:
- 1. Backend- add protected page using middlware.
+ 1. Backend- add protected page using middlware. - DONE Aidan
 
  */
 import GoogleLogo from "../../../../components/google-logo";
@@ -9,8 +9,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import {signIn} from "next-auth/react"; // for google signin
-
+import { signIn } from "next-auth/react"; // for google signin
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -57,14 +56,14 @@ export default function Login() {
     }
   };
 
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       // Validate the entire form
       loginSchema.parse(formData);
       console.log("Login Data:", formData);
-    // validation logic for login backend api if the credentials are correct
+      // validation logic for login backend api if the credentials are correct
       const response = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,11 +78,9 @@ export default function Login() {
       const token = data.token; // JWT token
       sessionStorage.setItem("token", token); // this will save the jwt token  in session storage
 
-
-      const decodedToken = JSON.parse(atob(token.split('.')[1]));
+      const decodedToken = JSON.parse(atob(token.split(".")[1]));
       const userType = decodedToken.userType; // this is for the user to be redirected to proper page
       redirectBasedOnUserType(userType);
-
     } catch (error) {
       setErrors(error);
     }
@@ -138,7 +135,7 @@ export default function Login() {
           <p className="text-center">
             <Link
               href="./forgot-password"
-              className="text-blue-600 hover:text-blue-900 hover:cursor-pointer"
+              className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
             >
               Forgot Password?
             </Link>
