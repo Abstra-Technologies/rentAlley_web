@@ -59,12 +59,13 @@ export default async function handler(req, res) {
       console.log("Inserting user into database...");
       const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
       const [result] = await db.query(
-        `INSERT INTO User (userID,firstName, lastName, email, password, birthDate, phoneNumber, userType, verificationToken, tokenExpiresAt, createdAt, updatedAt)
-                VALUES (uuid(),?, ?, ?, ?, ?, ?, ?, ?,?, NOW(), NOW())`,
+        `INSERT INTO User (userID,firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, verificationToken, tokenExpiresAt, createdAt, updatedAt)
+                VALUES (uuid(),?, ?, ?, ?, ?, ?, ?, ?, ?,?, NOW(), NOW())`,
         [
           fnameEncrypted,
           lnameEncrypted,
           emailEncrypted,
+          emailHash,
           hashedPassword,
           birthDate,
           phoneEncrypted,
