@@ -26,10 +26,8 @@ export default async function handler(req, res) {
                 return res.status(409).json({ error: "Username already exists." });
             }
 
-            // Hash the password
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            // Insert into database
             await db.execute(
                 "INSERT INTO Admin (Admin.adminID, username, password, role) VALUES (uuid(),?, ?, ?)",
                 [username, hashedPassword, role]
