@@ -28,7 +28,7 @@ export default function Login() {
       if (res.ok) {
         setMessage("Login successful!");
         // Redirect to dashboard
-        router.push("/dashboard");
+        router.push("./dashboard");
       } else {
         setMessage(data.error || "Invalid login credentials.");
       }
