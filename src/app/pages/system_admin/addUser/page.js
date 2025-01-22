@@ -2,6 +2,11 @@
 TODO:
 
 1. Design this addUser page.
+2. Add restrictions on password length. (i.e. minimum length 12 char)
+3. If the Admin User forgot their password they need to contact super admin.
+4. Superadmin will only be the one to have the capabilty of changing the password.
+
+
 
  */
 'use client'
