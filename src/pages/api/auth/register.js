@@ -75,8 +75,35 @@ export default async function handler(req, res) {
         ]
       );
 
-      const userId = result.insertId;
+      // Retrieve the generated `userID`
+      const [user] = await db.execute(
+          `SELECT userID FROM User WHERE emailHashed = ?`,
+          [emailHash]
+      );
 
+      if (!user || user.length === 0) {
+        throw new Error("Failed to retrieve userID after User creation");
+      }
+
+      const userId = user[0].userID;
+      console.log("Generated userID:", userId);
+
+      if (role === "tenant") {
+        console.log("Inserting into Tenant table...");
+        await db.execute(
+            `INSERT INTO tenants (userID) VALUES (?)`,
+            [userId]
+        );
+      } else if (role === "landlord") {
+        console.log("Inserting into Landlord table...");
+        await db.execute(
+            `INSERT INTO landlords (userID) VALUES (?)`,
+            [userId]
+        );
+      }
+
+
+  // EMAIL VERIFICATION
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
