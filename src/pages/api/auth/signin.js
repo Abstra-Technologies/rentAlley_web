@@ -15,18 +15,15 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Fetch all users from the database
         const [users] = await db.query("SELECT * FROM User");
 
         // Decrypt and compare email to find a match
         const user = users.find((c) => decryptEmail(c.email) === email);
 
-        // If no user matches the decrypted email, return an error
         if (!user) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        // Compare the provided password with the stored hashed password
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
@@ -43,6 +40,16 @@ export default async function handler(req, res) {
             },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
+        );
+
+        res.setHeader("Set-Cookie", `token=${token}; HttpOnly; Path=/; Secure; SameSite=Strict`);
+        //Activity Log
+        const action = "User logged in";
+        const timestamp = new Date().toISOString();
+        const userID = users[0].userID;
+        await db.query(
+            "INSERT INTO ActivityLog (userID, action, timestamp) VALUES (?, ?, ?)",
+            [userID, action, timestamp]
         );
 
         // Respond with token and user info
