@@ -102,6 +102,13 @@ export default async function handler(req, res) {
         );
       }
 
+      console.log("Logging registration activity...");
+      await db.execute(
+          `INSERT INTO ActivityLog (userID, action, timestamp)
+         VALUES (?, ?, NOW())`,
+          [userId, "User registered"]
+      );
+
 
   // EMAIL VERIFICATION
       const transporter = nodemailer.createTransport({
