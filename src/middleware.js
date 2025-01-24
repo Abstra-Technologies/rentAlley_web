@@ -16,9 +16,9 @@ export function middleware(req) {
     const pathname = req.nextUrl.pathname;
 
     if (
-      (pathname.startsWith("/pages/tenant") && userType !== "tenant") ||
-      (pathname.startsWith("/pages/landlord") && userType !== "landlord") ||
-      (pathname.startsWith("/pages/system_admin") && userType !== "admin")
+      (pathname.startsWith("/tenant") && userType !== "tenant") ||
+      (pathname.startsWith("/landlord") && userType !== "landlord") ||
+      (pathname.startsWith("/system_admin") && userType !== "admin")
     ) {
       return NextResponse.redirect(new URL("/pages/auth/login", req.url)); // Redirect if user type doesn't match
     }
@@ -32,8 +32,8 @@ export function middleware(req) {
 
 export const config = {
   matcher: [
-    "/pages/tenant/:path*", // Protect all routes under /tenant
-    "/pages/landlord/:path*", // Protect all routes under /landlord
-    "/pages/system_admin/:path*", // Protect all routes under /system_admin
+    "/tenant/:path*", // Protect all routes under /tenant
+    "/landlord/:path*", // Protect all routes under /landlord
+    "/system_admin/:path*", // Protect all routes under /system_admin
   ],
 };
