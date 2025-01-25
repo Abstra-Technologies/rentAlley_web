@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { SignJWT } from "jose";
 import {db} from "../../lib/db"
 import {decryptEmail} from "../../crypto/encrypt";
 
@@ -30,19 +30,27 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        // Generate JWT token
-        const token = jwt.sign(
-            {
-                userID: user.userID,
-                userType: user.userType,
-                firstName: user.firstName, // Add firstName to the JWT payload
-                lastName: user.lastName,  // Add lastName to the JWT payload
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const token = await new SignJWT({
+            userID: user.userID,
+            userType: user.userType,
+            firstName: user.firstName,
+            lastName: user.lastName,
+        })
+            .setProtectedHeader({ alg: "HS256" })
+            .setExpirationTime("1h")
+            .setIssuedAt()
+            .setSubject(user.userID.toString())
+            .sign(secret);
+
+        // Set the token as a cookie
+        const isDev = process.env.NODE_ENV === "development";
+        res.setHeader(
+            "Set-Cookie",
+            `token=${token}; HttpOnly; Path=/; ${isDev ? "" : "Secure;"} SameSite=Strict`
         );
 
-        res.setHeader("Set-Cookie", `token=${token}; HttpOnly; Path=/; Secure; SameSite=Strict`);
+
         //Activity Log
         const action = "User logged in";
         const timestamp = new Date().toISOString();
