@@ -1,29 +1,40 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { jwtVerify } from "jose";
 
-export function middleware(req) {
-  const token = req.cookies.get("token"); // Check cookies for the token
+async function verifyToken(token) {
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET); // Use TextEncoder for Edge Runtime compatibility
+    const { payload } = await jwtVerify(token, secret); // Verify and decode the token
+    return payload; // Return the decoded payload
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    return null; // Return null if verification fails
+  }
+}
+
+
+export async function middleware(req) {
+  const token = req.cookies.get("token")?.value;
+
 
   if (!token) {
-    return NextResponse.redirect(new URL("/pages/auth/login", req.url)); // Redirect to login if no token
+    return NextResponse.redirect(new URL("/pages/auth/login", req.url));
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify token using your secret key
-
-    // Optionally, verify user type based on the route
-    const { userType } = decoded; // Assuming token contains userType
+    const decoded = await verifyToken(token);
+    const { userType } = decoded;
     const pathname = req.nextUrl.pathname;
 
     if (
-      (pathname.startsWith("/tenant") && userType !== "tenant") ||
+      (pathname.startsWith("/pages/tenant") && userType !== "tenant") ||
       (pathname.startsWith("/landlord") && userType !== "landlord") ||
       (pathname.startsWith("/system_admin") && userType !== "admin")
     ) {
       return NextResponse.redirect(new URL("/pages/auth/login", req.url)); // Redirect if user type doesn't match
     }
 
-    return NextResponse.next(); // Proceed to the next middleware or route
+    return NextResponse.next();
   } catch (error) {
     console.error("Token verification failed:", error);
     return NextResponse.redirect(new URL("/pages/auth/login", req.url)); // Redirect if token is invalid
@@ -32,8 +43,8 @@ export function middleware(req) {
 
 export const config = {
   matcher: [
-    "/tenant/:path*", // Protect all routes under /tenant
-    "/landlord/:path*", // Protect all routes under /landlord
+    "/pages/tenant/:path*", // Protect all routes under /tenant
+    "/pages/landlord/:path*", // Protect all routes under /landlord
     "/system_admin/:path*", // Protect all routes under /system_admin
   ],
 };
