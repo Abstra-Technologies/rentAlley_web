@@ -10,7 +10,7 @@ import useAuth from "../../../../../hooks/useSession";
  *
  */
 
-export default function TenantDashboard() {
+export default function LandlordDashboard() {
   const { user, loading, error, signOut } = useAuth();
 
   if (loading) {
