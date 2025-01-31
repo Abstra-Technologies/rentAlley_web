@@ -22,6 +22,7 @@ export default function Login() {
   });
   const router = useRouter();
   const [message, setMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [errors, setErrors] = useState({
     email: "",
@@ -74,10 +75,12 @@ export default function Login() {
       });
       const data = await response.json();
       if (!response.ok) {
+        setErrorMessage("Login failed");
         new Error(data.error || "Login failed");
+      } else {
+        setMessage("Login successful!");
       }
 
-      setMessage("Login successful!");
       const token = data.token; // JWT token
 
       // sessionStorage.setItem("token", token);
@@ -94,6 +97,19 @@ export default function Login() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-6">Rentahan Logo</h1>
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+            {errorMessage}
+          </div>
+        )}
+        {/* Success Message */}
+        {message && (
+          <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
+            {message}
+          </div>
+        )}
 
         {/* Login Form */}
         <form className="space-y-4" onSubmit={handleSubmit}>

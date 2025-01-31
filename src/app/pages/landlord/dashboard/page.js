@@ -10,23 +10,16 @@ import useAuth from "../../../../../hooks/useSession";
  *
  */
 
-export default function TenantDashboard() {
+export default function LandlordDashboard() {
   const { user, loading, error, signOut } = useAuth();
 
   if (loading) {
     return <p>Loading...</p>;
   }
 
-<<<<<<< HEAD
-    return (
-        <div>
-            <h1>Welcome, {user.firstName || user.given_name} {user.lastName}!</h1>
-            <p>Your user type is: {user.userType}</p>
-=======
   if (error) {
     return <p>{error}</p>;
   }
->>>>>>> d3d91f39cc879c7932950b6021d0a360922f9cff
 
   if (!user) {
     return <p>You need to log in to access the dashboard.</p>;
