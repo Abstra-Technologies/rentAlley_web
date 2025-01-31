@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import useAuth from "../../../../../hooks/useSession";
+import ChatComponent from "../../../../components/modules/chat";
 
 /**
  * TODO
@@ -28,7 +29,7 @@ export default function TenantDashboard() {
       <h1>
         Welcome, {user.firstName} {user.lastName}!
       </h1>
-      <p>Your user type is: {user.userType}</p>
+      <p>Your user type is: {user.userType}  | ID: {user.userID}</p>
 
       {/* View Profile Button */}
       <Link href={`/pages/${user.userType}/profile/${user.userID}`}>
@@ -36,6 +37,7 @@ export default function TenantDashboard() {
           View Profile
         </button>
       </Link>
+        <ChatComponent user={user} />
       {/* Sign Out Button */}
       <button
         onClick={signOut}
