@@ -24,8 +24,7 @@ export default function TenantDashboard() {
 
     return (
         <div>
-            {/*This is base on session*/}
-            <h1>Welcome, {user.firstName} {user.lastName}!</h1>
+            <h1>Welcome, {user.firstName || user.given_name} {user.lastName}!</h1>
             <p>Your user type is: {user.userType}</p>
 
             {/* Sign Out Button */}

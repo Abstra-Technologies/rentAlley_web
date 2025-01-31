@@ -16,9 +16,10 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Ensure JWT_SECRET is defined
         if (!process.env.JWT_SECRET) {
             console.error("[DEBUG] Missing JWT_SECRET in environment variables.");
-            new Error("Missing JWT_SECRET in environment variables.");
+            throw new Error("Missing JWT_SECRET in environment variables.");
         }
 
         console.log("[DEBUG] Fetching admin details from the database...");
@@ -38,7 +39,6 @@ export default async function handler(req, res) {
 
         // Compare password
         console.log("[DEBUG] Comparing provided password with stored hash...");
-
         const isMatch = await bcrypt.compare(password, adminRecord.password);
         console.log("[DEBUG] Password comparison result:", isMatch);
 
@@ -53,13 +53,12 @@ export default async function handler(req, res) {
             {
                 adminID: adminRecord.adminID,
                 username: adminRecord.username,
-                role: adminRecord.role,
             },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
 
-        console.log("[DEBUG] JWT token generated:", token);
+        console.log("[DEBUG] JWT token generated.");
 
         // Set cookie with secure options
         const cookieOptions = [
@@ -67,21 +66,39 @@ export default async function handler(req, res) {
             "HttpOnly",
             "Path=/",
             "Max-Age=3600",
-            process.env.NODE_ENV === "development" ? "Secure" : "",
+            process.env.NODE_ENV !== "development" ? "Secure" : "",
             "SameSite=Strict",
         ].filter(Boolean).join("; ");
 
         console.log("[DEBUG] Setting cookie with options:", cookieOptions);
         res.setHeader("Set-Cookie", cookieOptions);
 
+        // Log admin activity in ActivityLog
+        console.log("[DEBUG] Logging admin activity...");
+        const action = "Admin logged in";
+        const timestamp = new Date().toISOString();
+        const adminID = admins[0].adminID;
+
+        try {
+            await db.query(
+                "INSERT INTO ActivityLog (adminID, action, timestamp) VALUES (?, ?, ?)",
+                [adminID, action, timestamp]
+            );
+            console.log("[DEBUG] Activity logged successfully.");
+        } catch (activityLogError) {
+            console.error(
+                "[DEBUG] Error inserting activity log:",
+                activityLogError.message
+            );
+            // Continue to return success even if activity logging fails
+        }
+
         // Respond with success
-        console.log("[DEBUG] Login successful for username:", username);
         res.status(200).json({
             message: "Login successful.",
             admin: {
                 adminID: adminRecord.adminID,
                 username: adminRecord.username,
-                role: adminRecord.role,
             },
         });
     } catch (error) {

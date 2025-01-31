@@ -9,7 +9,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react"; // for google signin
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -56,6 +55,10 @@ export default function Login() {
     }
   };
 
+  const handleGoogleSignin = () => {
+    router.push(`/api/auth/google/signin`);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -76,10 +79,11 @@ export default function Login() {
 
       setMessage("Login successful!");
       const token = data.token; // JWT token
-      sessionStorage.setItem("token", token); // this will save the jwt token  in session storage
 
+      // sessionStorage.setItem("token", token);
       const decodedToken = JSON.parse(atob(token.split(".")[1]));
       const userType = decodedToken.userType; // this is for the user to be redirected to proper page
+
       redirectBasedOnUserType(userType);
     } catch (error) {
       setErrors(error);
@@ -158,6 +162,7 @@ export default function Login() {
         {/* Login with Google */}
         <button
           type="button"
+          onClick={handleGoogleSignin}
           className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
         >
           <GoogleLogo />

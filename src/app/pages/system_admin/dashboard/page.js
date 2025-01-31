@@ -41,7 +41,7 @@ export default function AdminDashboard() {
 
             if (res.ok) {
                 alert("Successfully signed out.");
-                router.push("/pages/system_admin/login"); // Redirect to login page
+                router.push("/pages/system_admin/login");
             } else {
                 alert("Failed to sign out.");
             }

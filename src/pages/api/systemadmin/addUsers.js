@@ -33,6 +33,8 @@ export default async function handler(req, res) {
                 [username, hashedPassword, role]
             );
 
+
+
             return res.status(201).json({ message: "Admin registered successfully." });
         } catch (error) {
             console.error("Error registering admin:", error);
