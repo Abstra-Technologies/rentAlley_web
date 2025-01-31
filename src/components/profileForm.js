@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { z } from "zod";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 // Define the Zod schema for validation
 const profileSchema = z.object({
@@ -26,11 +27,14 @@ const ProfileForm = ({ userId, isLandlord = false }) => {
     birthDate: "",
     password: "",
     profilePicture: null,
+    landlordId: null,
+    verificationStatus: "not verified",
   });
   const [file, setFile] = useState(null); // For storing the selected file
   const [errors, setErrors] = useState({});
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     // Fetch current profile data
@@ -47,6 +51,8 @@ const ProfileForm = ({ userId, isLandlord = false }) => {
             birthDate: new Date(data.birthDate).toISOString().split("T")[0],
             password: "", // Reset password field
             profilePicture: data.profilePicture,
+            landlordId: data.landlordId,
+            verificationStatus: data.verificationStatus,
           });
           console.log("Data: ", data);
         })
@@ -168,6 +174,49 @@ const ProfileForm = ({ userId, isLandlord = false }) => {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {isLandlord && profile.landlordId && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Landlord ID
+                </label>
+                <input
+                    type="text"
+                    value={profile.landlordId}
+                    disabled
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+                />
+              </div>
+          )}
+          {isLandlord && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Verification Status
+                </label>
+                <div
+                    className={`mt-1 p-2 border rounded-md 
+                ${
+                        profile.verificationStatus === "approved"
+                            ? "bg-green-100 border-green-500 text-green-600"
+                            : profile.verificationStatus === "not verified"
+                                ? "bg-yellow-100 border-yellow-500 text-yellow-600"
+                                : "bg-red-100 border-red-500 text-red-600"
+                    }`}
+                >
+                  {profile.verificationStatus.toUpperCase()}
+                </div>
+              </div>
+          )}
+          {isLandlord && profile.verificationStatus !== "approved" && (
+              <div className="mb-4">
+                <button
+                    onClick={() => router.push("/pages/landlord/verification")} // Redirect to verification page
+                    className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors"
+                >
+                  Verify Now
+                </button>
+              </div>
+          )}
+
           <div className="mb-4">
             <label
               htmlFor="firstName"

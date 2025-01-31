@@ -61,17 +61,29 @@ export default async function handler(req, res) {
       const user = rows[0];
       const userType = user.userType; // Get the user type (landlord or tenant)
       let profilePicturePath = null;
-
+      let landlordId = null;
+      let verificationStatus = "not verified";
       // Depending on the user type, query the respective table for the profile picture
       if (userType === "landlord") {
+
         // Get the profile picture from the landlords table
         const [landlordRows] = await db.execute(
-          "SELECT profilePicture FROM landlords WHERE userID = ?",
+          "SELECT landlord_id, profilePicture, verified FROM landlords WHERE userID = ?",
           [id]
         );
 
         if (landlordRows.length) {
           profilePicturePath = landlordRows[0].profilePicture;
+          landlordId = landlordRows[0].landlord_id;
+          verificationStatus = landlordRows[0].verified ? "approved" : "not verified";
+
+          const [verificationRows] = await db.execute(
+              "SELECT status FROM landlord_verification WHERE landlord_id = ? ORDER BY created_at DESC LIMIT 1",
+              [landlordId]
+          );
+          if (verificationRows.length) {
+            verificationStatus = verificationRows[0].status;
+          }
         }
       } else if (userType === "tenant") {
         // Get the profile picture from the tenants table
@@ -93,6 +105,8 @@ export default async function handler(req, res) {
         phoneNumber: decryptData(user.phoneNumber),
         birthDate: user.birthDate,
         profilePicture: profilePicturePath || null, // Include the profile picture or null if not found
+        landlordId: landlordId || null,
+        verificationStatus: verificationStatus,
       });
     } catch (error) {
       console.error(error); // Log the error for better debugging

@@ -2,16 +2,23 @@
 
 import Link from "next/link";
 import useAuth from "../../../../../hooks/useSession";
-
-/**
- * TODO
- *  1. Design this dahsboard pn what need to be displayed.
- *  2.  Decrypt Data Here.
- *
- */
+import {useEffect, useState} from "react";
 
 export default function LandlordDashboard() {
   const { user, loading, error, signOut } = useAuth();
+  const [landlordId, setLandlordId] = useState(null);
+
+    useEffect(() => {
+        if (user?.userType === "landlord") {
+            fetch(`/api/landlord/${user.userID}`)
+                .then((res) => res.json())
+                .then((data) => {
+                    setLandlordId(data.landlord_id);
+                })
+                .catch((err) => console.error("Error fetching landlord data:", err));
+        }
+    }, [user]);
+
 
   if (loading) {
     return <p>Loading...</p>;
@@ -36,6 +43,9 @@ export default function LandlordDashboard() {
 
       {/* View Profile Button */}
       <Link href={`/pages/${user.userType}/profile/${user.userID}`}>
+          {/*// this is the landlord id not the user id*/}
+
+          {landlordId && <p>Your Landlord ID: {landlordId}</p>}
         <button className="bg-blue-500 text-white px-4 py-2 rounded-md">
           View Profile
         </button>
