@@ -17,10 +17,6 @@ export default function TenantDashboard() {
     return <p>Loading...</p>;
   }
 
-  if (error) {
-    return <p>{error}</p>;
-  }
-
   if (!user) {
     return <p>You need to log in to access the dashboard.</p>;
   }

@@ -2,6 +2,7 @@ import { serialize } from 'cookie';
 import jwt from "jsonwebtoken";
 import { db } from "../../lib/db";
 import axios from 'axios';
+import {decryptEmail} from "../../crypto/encrypt";
 
 export default async function returningUserCallback(req, res) {
     const { code } = req.query;
@@ -46,8 +47,9 @@ export default async function returningUserCallback(req, res) {
 
         // Check if user exists in the database
         const [rows] = await db.query("SELECT * FROM User WHERE email = ?", [email]);
+        // const user = rows.find((c) => decryptEmail(c.email) === email);
 
-        if (rows.length === 0) {
+        if (!rows) {
             return res.status(404).json({ error: "Account not found. Please register first." });
         }
 
@@ -67,7 +69,7 @@ export default async function returningUserCallback(req, res) {
         // Set JWT as an HTTP-only cookie
         const cookie = serialize("auth_token", token, {
             httpOnly: true,
-            secure: NODE_ENV !== "development",
+            secure: process.env.NODE_ENV !== "development",
             sameSite: "strict",
             path: "/",
         });

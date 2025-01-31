@@ -19,7 +19,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import useRoleStore from "../../../../pages/zustand/store";
-import { useRouter } from "next/navigation";
+import {router, useRouter} from "next/navigation";
 
 // Define the schema for user registration validation
 const registerSchema = z
@@ -61,6 +61,8 @@ const registerSchema = z
     path: ["confirmPassword"], // This error will be shown under the 'confirmPassword' field
   });
 
+
+
 export default function Register() {
   const role = useRoleStore((state) => state.role);
   const [errors, setErrors] = useState({});
@@ -78,6 +80,10 @@ export default function Register() {
     confirmPassword: "",
     role: role,
   });
+
+  const handleGoogleSignup = () => {
+    router.push(`/api/auth/google?role=${role}`);
+  };
 
   useEffect(() => {
     // Ensure the role is correctly set in formData even if reloaded will not return to null/"" n the db.
@@ -326,6 +332,7 @@ export default function Register() {
         {/* Sign up with Google */}
         <button
           type="button"
+          onClick={handleGoogleSignup}
           className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
         >
           <GoogleLogo />

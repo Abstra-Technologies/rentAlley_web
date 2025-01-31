@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="@rentahanDB" uuid="8aafa23c-28dd-435b-b143-736b4c152789">
+    <data-source source="LOCAL" name="@rentahan-db.ctmeauk6wkzd.ap-southeast-1.rds.amazonaws.com" uuid="f2dc2e74-d1ed-426d-b83c-ec45d045d866">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>

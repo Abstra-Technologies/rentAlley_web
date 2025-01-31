@@ -1,61 +1,8 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-// This is for Sessions jwt w/o cookies
-// export default function useAuth() {
-//   const [user, setUser] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const router = useRouter();
-//
-//   useEffect(() => {
-//     const verifyToken = async () => {
-//       const token = sessionStorage.getItem("token");
-//
-//       if (!token) {
-//         setError("No token found. Please log in.");
-//         setLoading(false);
-//         await router.push("/pages/auth/login");
-//         return;
-//       }
-//
-//       try {
-//         const response = await fetch("/api/auth/verify-token", {
-//           method: "GET",
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           },
-//         });
-//
-//         if (!response.ok) {
-//           new Error("Token verification failed");
-//         }
-//
-//         const data = await response.json();
-//         setUser(data.user);
-//         setLoading(false);
-//       } catch (error) {
-//         setError(error.message);
-//         setLoading(false);
-//         await router.push("/pages/auth/login");
-//       }
-//     };
-//
-//     verifyToken();
-//   }, [router]);
-//
-//   const signOut = () => {
-//     sessionStorage.removeItem("token");
-//     setUser(null);
-//     router.push("/pages/auth/login");
-//   };
-//
-//   return { user, loading, error, signOut };
-// }
-
-//cookies
 
 export default function useAuth() {
   const [user, setUser] = useState(null);
@@ -63,9 +10,12 @@ export default function useAuth() {
   const [error, setError] = useState(null);
   const router = useRouter();
 
+  // Verify user session
   useEffect(() => {
     const verifySession = async () => {
       try {
+        setLoading(true);
+
         // Fetch user session from the backend
         const response = await fetch("/api/auth/me", {
           method: "GET",
@@ -73,32 +23,55 @@ export default function useAuth() {
         });
 
         if (!response.ok) {
-          new Error("Failed to verify session. Please log in.");
+          throw new Error("Session verification failed. Please log in.");
         }
 
         const data = await response.json();
-        setUser(data);
+        setUser(data); // Set the user data
         setLoading(false);
       } catch (error) {
         console.error("Session verification failed:", error);
         setError(error.message);
         setLoading(false);
-        await router.push("/pages/auth/login");
+        router.push("/pages/auth/login"); // Redirect to login page
       }
     };
 
     verifySession();
   }, [router]);
 
+  // Sign out the user
   const signOut = async () => {
     try {
       // Call logout endpoint to clear the session on the backend
-      await fetch("/api/auth/logout", {
+      const logoutResponse = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include", // Ensure cookies are included
       });
-      setUser(null);
-      router.push("/pages/auth/login");
+
+      if (!logoutResponse.ok) {
+         new Error("Failed to log out on the server.");
+      }
+
+      // Log user sign-out activity
+      const logResponse = await fetch("/api/activityLogs/signoutLogs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userID: user?.userID,
+          action: "User signed out",
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (!logResponse.ok) {
+        console.error("Failed to log sign-out activity.");
+      }
+
+      setUser(null); // Clear user state
+      router.push("/pages/auth/login"); // Redirect to login page
     } catch (error) {
       console.error("Logout failed:", error);
       setError("Failed to log out. Please try again.");
