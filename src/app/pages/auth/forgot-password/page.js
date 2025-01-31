@@ -1,156 +1,112 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { z } from "zod";
+import axios from "axios";
 
-const forgotPasswordSchema = z
-  .object({
-    email: z.string().email("Invalid email address"),
-    newPassword: z
-      .string()
-      .min(6, "Password must be at least 6 characters")
-      .regex(
-        /^[a-zA-Z0-9]+$/,
-        "Password must contain only letters and numbers"
-      ),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+/*
+TODO:
+REDESIGN THIS:
+
+1. User enters email only - DONE
+2. received email link to reset password. - DONE
+3. redirects to reset password page. - DONE
+
+ */
 
 export default function ForgotPassword() {
-  const [formData, setFormData] = useState({
-    email: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState({});
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleForgotPassword = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+    setMessage("");
+
     try {
-      // Validate form data
-      forgotPasswordSchema.parse(formData);
-      setErrors({});
-      console.log("Form submitted:", formData);
-      // Handle successful submission logic here
+      // Send a POST request to the backend to initiate the password reset process
+      const { data } = await axios.post("/api/auth/reset-request", { email });
+
+      // Display success message
+      setMessage(data.message);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        const fieldErrors = err.errors.reduce((acc, error) => {
-          acc[error.path[0]] = error.message;
-          return acc;
-        }, {});
-        setErrors(fieldErrors);
+      // Handle specific error for unregistered email
+      if (err.response?.data?.error === "Email not registered") {
+        setError("This email is not registered. Please sign up.");
+      } else {
+        setError(
+          err.response?.data?.message || "An error occurred. Please try again."
+        );
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="bg-white shadow-md rounded-2xl p-8 max-w-sm w-full">
-        <h1 className="text-2xl text-center text-gray-800 mb-3">
-          Rentahan Logo
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="bg-white shadow-lg rounded-2xl p-8 max-w-sm w-full">
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
+          Forgot Password?
         </h1>
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Forgot Password
-        </h2>
-        <p className="text-sm text-gray-600 text-center mb-8">
-          Enter your email and a new password to reset your account.
+        <p className="text-sm text-gray-600 text-center mb-6">
+          Enter your email address below, and we’ll send you a link to reset
+          your password.
         </p>
 
-        <form onSubmit={handleSubmit}>
-          {/* Email Address */}
-          <div className="mb-6">
-            <label htmlFor="email" className="text-gray-800 text-sm mb-2 block">
+        {/* Forgot Password Form */}
+        <form onSubmit={handleForgotPassword} className="space-y-6">
+          {/* Email Input */}
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Email Address
             </label>
             <input
-              id="email"
-              name="email"
               type="email"
-              className="w-full px-4 py-3 rounded-md border border-gray-300 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
+              required
             />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-            )}
-          </div>
-
-          {/* New Password */}
-          <div className="mb-6">
-            <label
-              htmlFor="newPassword"
-              className="text-gray-800 text-sm mb-2 block"
-            >
-              New Password
-            </label>
-            <input
-              id="newPassword"
-              name="newPassword"
-              type="password"
-              className="w-full px-4 py-3 rounded-md border border-gray-300 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your new password"
-              value={formData.newPassword}
-              onChange={handleChange}
-            />
-            {errors.newPassword && (
-              <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>
-            )}
-          </div>
-
-          {/* Confirm New Password */}
-          <div className="mb-6">
-            <label
-              htmlFor="confirmPassword"
-              className="text-gray-800 text-sm mb-2 block"
-            >
-              Confirm New Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              className="w-full px-4 py-3 rounded-md border border-gray-300 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Confirm your new password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-            />
-            {errors.confirmPassword && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.confirmPassword}
-              </p>
-            )}
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 bg-blue-600 text-white rounded-md font-semibold text-sm hover:bg-blue-700 transition"
+            disabled={loading}
+            className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Reset Password
+            {loading ? "Sending..." : "Send Reset Link"}
           </button>
         </form>
 
-        {/* Go Back to Login */}
-        <p className="text-sm text-gray-600 text-center mt-6">
-          Remember your password?{" "}
-          <Link
-            href="../auth/login"
-            className="text-blue-600 font-semibold hover:underline"
-          >
-            Login here
-          </Link>
-        </p>
+        {/* Feedback Messages */}
+        {message && (
+          <p className="mt-4 text-center text-sm text-green-600">{message}</p>
+        )}
+        {error && (
+          <p className="mt-4 text-center text-sm text-red-600">{error}</p>
+        )}
+
+        {/* Back to Login Link */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Remember your password?{" "}
+            <a
+              href="/pages/auth/login"
+              className="text-blue-600 hover:underline"
+            >
+              Log in
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

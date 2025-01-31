@@ -13,7 +13,7 @@ export default function ErrorPage({ statusCode }) {
             : "An unexpected error has occurred. Please try again later."}
         </p>
         <a
-          href="/"
+          href="/public"
           className="px-6 py-3 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 transition"
         >
           Go Back Home

@@ -1,102 +1,93 @@
 "use client";
-
-import { useState } from "react";
-import { z } from "zod";
-
-const emailVerificationSchema = z.object({
-  digits: z
-    .array(z.string().regex(/^\d$/, "Each input must be a single digit"))
-    .length(4, "All 4 digits are required"),
-});
+/**
+ * TODO:
+ * 1. Redesign this as it would email verification not otp.
+ *
+ */
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function VerifyEmail() {
-  const [email, setEmail] = useState(["", "", "", ""]);
-  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [status, setStatus] = useState("Verifying...");
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleInputChange = (value, index) => {
-    if (/^\d?$/.test(value)) {
-      const newEmail = [...email];
-      newEmail[index] = value;
-      setEmail(newEmail);
+  useEffect(() => {
+    const verifyEmail = async () => {
+      const token = searchParams.get("token");
 
-      // Automatically move to the next input if a digit is entered
-      if (value && index < 3) {
-        const nextInput = document.getElementById(`email-${index + 1}`);
-        nextInput?.focus();
+      if (!token) {
+        setStatus("Waiting for verify email");
+        setIsLoading(false);
+        return;
       }
-    }
-  };
 
-  const handleBackspace = (e, index) => {
-    if (e.key === "Backspace" && !email[index] && index > 0) {
-      const prevInput = document.getElementById(`email-${index - 1}`);
-      prevInput?.focus();
-    }
-  };
+      try {
+        const res = await fetch(`/api/auth/confirm-email?token=${token}`);
+        const data = await res.json();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    try {
-      // Validate the input data
-      emailVerificationSchema.parse({ digits: email });
-      setError("");
-      console.log("Verification Code:", email.join(""));
-      // Handle successful submission (e.g., API call)
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        setError(err.errors[0].message);
+        if (res.ok) {
+          setStatus("Email verified successfully! Redirecting...");
+          setTimeout(() => {
+            router.push("/pages/auth/login");
+          }, 3000);
+        } else {
+          setStatus(data.error || "Email verification failed.");
+        }
+      } catch (error) {
+        console.error("Verification error:", error);
+        setStatus("An unexpected error occurred. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-    }
-  };
+    };
+
+    verifyEmail();
+  }, [searchParams, router]);
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
-      <div className="bg-white shadow-md rounded-2xl p-8 max-w-sm w-full">
-        {/* Rentahan Logo */}
-        <h1 className="text-2xl text-center text-gray-800 mb-6">
-          Rentahan Logo
-        </h1>
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Verify Account!
-        </h2>
-        <p className="text-sm text-gray-600 text-center mb-8">
-          Enter the 4-digit code sent to your email.
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-50 to-indigo-100">
+      <div className="bg-white shadow-lg rounded-lg p-8 text-center max-w-md">
+        <h2 className="text-3xl font-bold mb-6">Verify Your Email</h2>
+        <p className="text-gray-700 mb-4">
+          We’ve sent a verification email to your inbox. Please click on the
+          link in the email to verify your account.
         </p>
-
-        {/* Email Inputs */}
-        <div className="flex items-center justify-center gap-3 mb-6">
-          {email.map((digit, index) => (
-            <input
-              key={index}
-              id={`email-${index}`}
-              type="text"
-              maxLength="1"
-              value={digit}
-              onChange={(e) => handleInputChange(e.target.value, index)}
-              onKeyDown={(e) => handleBackspace(e, index)}
-              className="w-12 h-12 text-center text-2xl border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          ))}
-        </div>
-
-        {error && (
-          <p className="text-red-500 text-sm text-center mb-4">{error}</p>
+        {isLoading ? (
+          <div className="mt-6">
+            <p className="text-gray-600">Verifying your email...</p>
+            <div className="mt-4">
+              <svg
+                className="animate-spin h-8 w-8 text-indigo-600 mx-auto"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4l3-3-3-3V4a8 8 0 110 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+                ></path>
+              </svg>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6">
+            <p className="text-green-600 font-semibold">{status}</p>
+            <p className="text-gray-600 mt-2">
+              You may close this page after verification.
+            </p>
+          </div>
         )}
-
-        <button
-          onClick={handleSubmit}
-          className="w-full py-3 bg-blue-600 text-white rounded-md font-semibold text-sm hover:bg-blue-700"
-        >
-          Verify Email
-        </button>
-
-        <p className="text-sm text-gray-600 text-center mt-6">
-          Didn&#39;t receive the code?{" "}
-          <a href="#" className="text-blue-600 font-semibold hover:underline">
-            Resend Code
-          </a>
-        </p>
       </div>
     </div>
   );

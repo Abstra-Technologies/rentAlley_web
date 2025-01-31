@@ -1,36 +1,75 @@
+/**
+ *
+ * TODO:
+ *  1. Show a prompt/message to show that he user successfully registered an account.
+ *  2. In scenarios of the user have an account already do the same.
+ *
+ *  1 - DONE Aidan Tsang
+ *  2 - DONE Aidan Tsang
+ *
+ *  Note:
+ *  console.log are use for debugging to check if the data are passed correctly.
+ *
+ */
+
 "use client";
 
-import GoogleLogo from "../../components/google-logo";
+import GoogleLogo from "../../../../components/google-logo";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
+import useRoleStore from "../../../../pages/zustand/store";
+import {router, useRouter} from "next/navigation";
 
-const schema = z
+// Define the schema for user registration validation
+const registerSchema = z
   .object({
-    firstName: z.string().min(2, "First Name is required"),
-    lastName: z.string().min(2, "Last Name is required"),
+    // First Name validation - must not be empty
+    firstName: z.string().nonempty("First Name is required"),
+
+    // Last Name validation - must not be empty
+    lastName: z.string().nonempty("Last Name is required"),
+
+    // Date of Birth validation - must not be empty
     dob: z.string().nonempty("Date of Birth is required"),
+
+    // Mobile Number validation - must be exactly 12 digits
     mobileNumber: z
       .string()
-      .regex(/^\d{12}$/, "Mobile Number must be 12 digits"),
+      .regex(/^\d{12}$/, "Mobile Number must be exactly 12 digits"),
+
+    // Email validation - must be a valid email address
     email: z.string().email("Invalid email address"),
+
+    // Password validation
     password: z
       .string()
-      .min(6, "Password is at least 6 characters")
+      .min(6, "Password must be 6 characters long") // Password must be at least 6 characters
       .refine(
-        (value) => /^[a-zA-Z0-9]+$/.test(value),
-        "Password must be alphanumeric"
+        (value) => /^[a-zA-Z0-9]+$/.test(value), // Password must be alphanumeric (letters and numbers only)
+        "Password must contain only letters and numbers"
       ),
+
+    // Confirm Password validation
     confirmPassword: z
       .string()
-      .min(6, "Confirm Password is at least 6 characters"),
+      .min(6, "Confirm Password must be 6 characters long"),
   })
+  // Check that the password and confirm password match
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords Do not match",
-    path: ["confirmPassword"],
+    message: "Passwords do not match", // Error message if passwords don't match
+    path: ["confirmPassword"], // This error will be shown under the 'confirmPassword' field
   });
 
+
+
 export default function Register() {
+  const role = useRoleStore((state) => state.role);
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -39,30 +78,69 @@ export default function Register() {
     email: "",
     password: "",
     confirmPassword: "",
+    role: role,
   });
 
-  const [errors, setErrors] = useState({});
+  const handleGoogleSignup = () => {
+    router.push(`/api/auth/google?role=${role}`);
+  };
+
+  useEffect(() => {
+    // Ensure the role is correctly set in formData even if reloaded will not return to null/"" n the db.
+    setFormData((prevData) => ({
+      ...prevData,
+      role: role,
+    }));
+  }, [role]);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [id]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
+    setError("");
+    setSuccessMessage("");
 
     try {
-      schema.parse(formData);
-      alert("Registration successful!");
-      console.log("Form Data:", formData);
-      setErrors({});
+      // Parse the form data using the registerSchema
+      registerSchema.parse(formData);
+
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      // Check if the registration was successful
+      if (res.ok) {
+        console.log("Registration Data: ", formData);
+        setSuccessMessage("Account successfully registered! Redirecting...");
+        setTimeout(() => {
+          router.push("/pages/auth/verify-email");
+        }, 2000); // Redirect after 2 seconds
+      } else if (data.error && data.error.includes("already registered")) {
+        setError("This email is already registered. Please login.");
+      } else {
+        setError(data.error || "Registration failed. Please try again.");
+      }
     } catch (err) {
-      if (err.errors) {
+      // Handle any validation errors thrown by Zod
+      if (err instanceof z.ZodError) {
         const errorObj = err.errors.reduce((acc, curr) => {
           acc[curr.path[0]] = curr.message;
           return acc;
         }, {});
         setErrors(errorObj);
+      } else {
+        console.error("Error during API call:", err);
+        setError("An unexpected error occurred. Please try again.");
       }
     }
   };
@@ -71,6 +149,21 @@ export default function Register() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-6">Rentahan Logo</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">
+          Register as {role}
+        </h1>
+
+        {/* Success or Error Message */}
+        {successMessage && (
+          <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
+            {successMessage}
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
 
         {/* Registration Form */}
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -126,8 +219,10 @@ export default function Register() {
               id="dob"
               value={formData.dob}
               onChange={handleChange}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:text-black"
+              placeholder="MM/DD/YYYY"
             />
+
             {errors.dob && <p className="text-red-500 text-sm">{errors.dob}</p>}
           </div>
 
@@ -143,6 +238,10 @@ export default function Register() {
               id="mobileNumber"
               value={formData.mobileNumber}
               onChange={handleChange}
+              onInput={(event) => {
+                event.target.value = event.target.value.replace(/[^0-9]/g, "");
+                handleChange(event); //ensure the change of value is still set using the handleChange function
+              }}
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="09XXXXXXXX"
             />
@@ -233,6 +332,7 @@ export default function Register() {
         {/* Sign up with Google */}
         <button
           type="button"
+          onClick={handleGoogleSignup}
           className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
         >
           <GoogleLogo />
