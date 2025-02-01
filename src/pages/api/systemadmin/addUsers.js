@@ -5,21 +5,21 @@ import {roles} from "../../../constant/adminroles";
 
 export default async function handler(req, res) {
     if (req.method === "POST") {
-        const { username, password, role } = req.body;
+        const { email, username, password, role } = req.body;
 
         if (!roles.some((r) => r.value === role)) {
             return res.status(400).json({ error: "Invalid role selected." });
         }
 
-        if (!username || !password || !role) {
+        if (!username || !password || !role || !email) {
             return res.status(400).json({ error: "All fields are required." });
         }
 
         try {
             // Check if username already exists
             const [existingUser] = await db.execute(
-                "SELECT username FROM Admin WHERE username = ?",
-                [username]
+                "SELECT email FROM Admin WHERE email = ?",
+                [email]
             );
 
             if (existingUser.length > 0) {
@@ -29,11 +29,9 @@ export default async function handler(req, res) {
             const hashedPassword = await bcrypt.hash(password, 10);
 
             await db.execute(
-                "INSERT INTO Admin (Admin.adminID, username, password, role) VALUES (uuid(),?, ?, ?)",
-                [username, hashedPassword, role]
+                "INSERT INTO Admin (Admin.adminID, username, password, role, email) VALUES (uuid(),?, ?, ?, ?)",
+                [username, hashedPassword, role, email]
             );
-
-
 
             return res.status(201).json({ message: "Admin registered successfully." });
         } catch (error) {
