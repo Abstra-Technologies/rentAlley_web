@@ -25,16 +25,16 @@ export default async function handler(req, res) {
             return res.status(401).json({ success: false, message: "Invalid Token" });
         }
 
-        if (!decoded || !decoded.adminID) {
+        if (!decoded || !decoded.admin_id) {
             return res.status(401).json({ success: false, message: "Invalid Token Data" });
         }
 
-        const currentAdminID = decoded.adminID; // Extract logged-in admin's ID
+        const currentadmin_id = decoded.admin_id; // Extract logged-in admin's ID
 
         // Fetch all admins except the logged-in one
         const [admins] = await db.query(
-            "SELECT adminID, username, email FROM Admin WHERE adminID != ?",
-            [currentAdminID]
+            "SELECT admin_id, username, email, status FROM Admin WHERE admin_id != ?",
+            [currentadmin_id]
         );
 
         if (!admins || admins.length === 0) {

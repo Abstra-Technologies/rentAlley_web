@@ -19,7 +19,7 @@ export default function AdminDashboard() {
             <h1>
                 Welcome, {user.username}!
             </h1>
-            <p>Your user type is: {user.role}  | ID: {user.adminID}</p>
+            <p>Your user type is: {user.role}  | ID: {user.admin_id}</p>
             <hr/>
             <h2 className='m-2'>Side Pan Nav Contents</h2>
             <p className='m-2' ><i>Kindly add these modules links on the sideNav</i></p>
@@ -30,7 +30,8 @@ export default function AdminDashboard() {
                 <Link className='m-2' href='./tenant_landlord/landlord_mgt'>Landlord Management</Link>
                 <Link className='m-2' href='./co_admin'>Landlord Verification</Link>
                 <Link className='m-2' href='./co_admin'>Property Verification</Link>
-
+                <Link className='m-2' href='./annoucement'>Annoucements</Link>
+                <Link className='m-2' href='./bug_report/list'>Bug Reports</Link>
             </div>
             <button
                 onClick={signOut_admin}

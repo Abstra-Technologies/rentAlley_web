@@ -31,6 +31,12 @@ export default async function handler(req, res) {
         }
 
         const adminRecord = admins[0];
+
+        if (adminRecord.status === "disabled") {
+            console.log("[DEBUG] Login attempt for disabled account:", email);
+            return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
+        }
+
         console.log("[DEBUG] Admin record found:", adminRecord);
 
         // Compare password
@@ -50,7 +56,7 @@ export default async function handler(req, res) {
         // Generate JWT token
         const token = await new SignJWT(
             {
-                adminID: adminRecord.adminID,
+                admin_id: adminRecord.admin_id,
                 username: adminRecord.username,
                 role: adminRecord.role,
                 email: adminRecord.email,
@@ -59,7 +65,7 @@ export default async function handler(req, res) {
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("1h")
             .setIssuedAt()
-            .setSubject(adminRecord.adminID.toString())
+            .setSubject(adminRecord.admin_id.toString())
             .sign(secret);
 
         const isDev = process.env.NODE_ENV === "development";
@@ -74,12 +80,12 @@ export default async function handler(req, res) {
         console.log("[DEBUG] Logging admin activity...");
         const action = "Admin logged in";
         const timestamp = new Date().toISOString();
-        const adminID = admins[0].adminID;
+        const admin_id = admins[0].admin_id;
 
         try {
             await db.query(
-                "INSERT INTO ActivityLog (adminID, action, timestamp) VALUES (?, ?, ?)",
-                [adminID, action, timestamp]
+                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, ?)",
+                [admin_id, action, timestamp]
             );
             console.log("[DEBUG] Activity logged successfully.");
         } catch (activityLogError) {
@@ -93,7 +99,7 @@ export default async function handler(req, res) {
         res.status(200).json({
             message: "Login successful.",
             admin: {
-                adminID: adminRecord.adminID,
+                admin_id: adminRecord.admin_id,
                 username: adminRecord.username,
                 role: adminRecord.role,
                 email: adminRecord.email,

@@ -51,7 +51,7 @@ export default function ActivityLogs() {
                 <tbody>
                 {logs.map((log) => (
                     <tr key={log.logID}>
-                        <td>{log.userID  || log.adminID}</td>
+                        <td>{log.userID  || log.admin_id}</td>
                         <td>{log.action}</td>
                         <td>{log.timestamp}</td>
                     </tr>

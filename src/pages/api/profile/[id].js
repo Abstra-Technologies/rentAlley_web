@@ -180,7 +180,7 @@ export default async function handler(req, res) {
           ]
         );
 
-        // Determine user type and update profile picture in the respective table
+        // Determine user type and details profile picture in the respective table
         const [userRows] = await db.execute(
           "SELECT userType FROM User WHERE userID = ?",
           [id]

@@ -37,7 +37,7 @@ export default async function handler(req, res) {
         );
 
         if (result.affectedRows === 0) {
-            return res.status(500).json({ message: 'Failed to update user with reset token.' });
+            return res.status(500).json({ message: 'Failed to details user with reset token.' });
         }
 
         // Send the reset email

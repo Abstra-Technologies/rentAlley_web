@@ -29,7 +29,7 @@ export default async function handler(req, res) {
             const hashedPassword = await bcrypt.hash(password, 10);
 
             await db.execute(
-                "INSERT INTO Admin (Admin.adminID, username, password, role, email) VALUES (uuid(),?, ?, ?, ?)",
+                "INSERT INTO Admin (Admin.admin_id, username, password, role, email) VALUES (uuid(),?, ?, ?, ?)",
                 [username, hashedPassword, role, email]
             );
 
