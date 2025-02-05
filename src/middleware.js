@@ -29,7 +29,7 @@ export async function middleware(req) {
     if (
       (pathname.startsWith("/pages/tenant") && userType !== "tenant") ||
       (pathname.startsWith("/landlord") && userType !== "landlord") ||
-      (pathname.startsWith("/system_admin") && userType !== "admin")
+      (pathname.startsWith("/pages/system_admin") && userType !== "admin")
     ) {
       return NextResponse.redirect(new URL("/pages/auth/login", req.url)); // Redirect if user type doesn't match
     }

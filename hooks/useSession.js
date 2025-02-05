@@ -78,5 +78,42 @@ export default function useAuth() {
     }
   };
 
-  return { user, loading, error, signOut };
+  const signOut_admin = async () => {
+    try {
+      // Call logout endpoint to clear the session on the backend
+      const logoutResponse = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include", // Ensure cookies are included
+      });
+
+      if (!logoutResponse.ok) {
+        new Error("Failed to log out on the server.");
+      }
+
+      // Log user sign-out activity
+      const logResponse = await fetch("/api/activityLogs/signoutLogs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userID: user?.userID,
+          action: "User signed out",
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (!logResponse.ok) {
+        console.error("Failed to log sign-out activity.");
+      }
+
+      setUser(null); // Clear user state
+      router.push("/pages/system_admin/login"); // Redirect to login page
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setError("Failed to log out. Please try again.");
+    }
+  };
+
+  return { user, loading, error, signOut, signOut_admin };
 }

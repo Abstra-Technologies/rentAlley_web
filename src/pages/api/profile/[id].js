@@ -61,23 +61,35 @@ export default async function handler(req, res) {
       const user = rows[0];
       const userType = user.userType; // Get the user type (landlord or tenant)
       let profilePicturePath = null;
-
+      let landlordId = null;
+      let verificationStatus = "not verified";
       // Depending on the user type, query the respective table for the profile picture
       if (userType === "landlord") {
+
         // Get the profile picture from the landlords table
         const [landlordRows] = await db.execute(
-            "SELECT profilePicture FROM landlords WHERE userID = ?",
-            [id]
+          "SELECT landlord_id, profilePicture, verified FROM landlords WHERE userID = ?",
+          [id]
         );
 
         if (landlordRows.length) {
           profilePicturePath = landlordRows[0].profilePicture;
+          landlordId = landlordRows[0].landlord_id;
+          verificationStatus = landlordRows[0].verified ? "approved" : "not verified";
+
+          const [verificationRows] = await db.execute(
+              "SELECT status FROM landlord_verification WHERE landlord_id = ? ORDER BY created_at DESC LIMIT 1",
+              [landlordId]
+          );
+          if (verificationRows.length) {
+            verificationStatus = verificationRows[0].status;
+          }
         }
       } else if (userType === "tenant") {
         // Get the profile picture from the tenants table
         const [tenantRows] = await db.execute(
-            "SELECT profilePicture FROM tenants WHERE userID = ?",
-            [id]
+          "SELECT profilePicture FROM tenants WHERE userID = ?",
+          [id]
         );
 
         if (tenantRows.length) {
@@ -93,14 +105,14 @@ export default async function handler(req, res) {
         phoneNumber: decryptData(user.phoneNumber),
         birthDate: user.birthDate,
         profilePicture: profilePicturePath || null, // Include the profile picture or null if not found
+        landlordId: landlordId || null,
+        verificationStatus: verificationStatus,
       });
     } catch (error) {
       console.error(error); // Log the error for better debugging
       res.status(500).json({ error: "Internal server error" });
     }
-  }
-
-  else if (req.method === "PUT") {
+  } else if (req.method === "PUT") {
     upload.single("profilePicture")(req, res, async (err) => {
       if (err) {
         console.error(err); // Log the error for better debugging
@@ -108,7 +120,7 @@ export default async function handler(req, res) {
       }
 
       const { firstName, lastName, email, phoneNumber, birthDate, password } =
-          req.body;
+        req.body;
 
       // Validate required fields
       if (!firstName || !lastName || !email || !phoneNumber || !birthDate) {
@@ -118,16 +130,16 @@ export default async function handler(req, res) {
       try {
         // Check for duplicate email
         const [existingUser] = await db.execute(
-            "SELECT userID FROM User WHERE email = ? AND userID != ?",
-            [encryptEmail(email), id]
+          "SELECT userID FROM User WHERE email = ? AND userID != ?",
+          [encryptEmail(email), id]
         );
         if (existingUser.length) {
           return res.status(409).json({ error: "Email already in use" });
         }
 
         const hashedPassword = password
-            ? await bcrypt.hash(password, 10)
-            : null;
+          ? await bcrypt.hash(password, 10)
+          : null;
 
         // Process the uploaded profile picture (if any)
         let profilePicturePath = null;
@@ -135,16 +147,16 @@ export default async function handler(req, res) {
           const originalFilePath = req.file.path;
           const resizedFileName = `resized-${Date.now()}-${req.file.filename}`;
           const resizedFilePath = path.join(
-              "./public/uploads",
-              resizedFileName
+            "./public/uploads",
+            resizedFileName
           );
 
           // Resize the image
           await sharp(originalFilePath)
-              .resize(256, 256)
-              .toFormat("jpeg")
-              .jpeg({ quality: 80 })
-              .toFile(resizedFilePath);
+            .resize(256, 256)
+            .toFormat("jpeg")
+            .jpeg({ quality: 80 })
+            .toFile(resizedFilePath);
 
           profilePicturePath = `/uploads/${resizedFileName}`;
 
@@ -154,36 +166,36 @@ export default async function handler(req, res) {
 
         // Update User table
         await db.execute(
-            `UPDATE User SET 
+          `UPDATE User SET 
           firstName = ?, lastName = ?, email = ?, phoneNumber = ?, birthDate = ?, password = COALESCE(?, password)
           WHERE userID = ?`,
-            [
-              encryptFName(firstName),
-              encryptLName(lastName),
-              encryptEmail(email),
-              encryptPhone(phoneNumber),
-              birthDate,
-              hashedPassword,
-              id,
-            ]
+          [
+            encryptFName(firstName),
+            encryptLName(lastName),
+            encryptEmail(email),
+            encryptPhone(phoneNumber),
+            birthDate,
+            hashedPassword,
+            id,
+          ]
         );
 
-        // Determine user type and update profile picture in the respective table
+        // Determine user type and details profile picture in the respective table
         const [userRows] = await db.execute(
-            "SELECT userType FROM User WHERE userID = ?",
-            [id]
+          "SELECT userType FROM User WHERE userID = ?",
+          [id]
         );
         const userType = userRows[0]?.userType;
 
         if (userType === "landlord") {
           await db.execute(
-              "UPDATE landlords SET profilePicture = ? WHERE userID = ?",
-              [profilePicturePath, id]
+            "UPDATE landlords SET profilePicture = ? WHERE userID = ?",
+            [profilePicturePath, id]
           );
         } else if (userType === "tenant") {
           await db.execute(
-              "UPDATE tenants SET profilePicture = ? WHERE userID = ?",
-              [profilePicturePath, id]
+            "UPDATE tenants SET profilePicture = ? WHERE userID = ?",
+            [profilePicturePath, id]
           );
         }
 

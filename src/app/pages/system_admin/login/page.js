@@ -5,7 +5,7 @@ import {router, useRouter} from "next/navigation";
 
 
 export default function Login() {
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
   const router = useRouter();
 
@@ -50,14 +50,14 @@ export default function Login() {
                   htmlFor="username"
                   className="block text-sm font-medium text-gray-700"
               >
-                Username
+                Email
               </label>
               <input
                   type="text"
-                  name="username"
-                  placeholder="Username"
+                  name="email"
+                  placeholder="email"
                   className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.username}
+                  value={form.email}
                   onChange={handleChange}
                   required
               />

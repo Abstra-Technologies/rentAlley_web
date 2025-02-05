@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const [logs] = await db.query("SELECT logID, userID, adminID, action, timestamp FROM ActivityLog");
+        const [logs] = await db.query("SELECT log_id, user_id, admin_id, action, timestamp FROM ActivityLog");
         res.status(200).json({ logs });
     } catch (error) {
         console.error("Error fetching activity logs:", error);

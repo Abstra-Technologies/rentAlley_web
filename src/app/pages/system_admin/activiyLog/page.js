@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState } from "react";
+import useAuth from "../../../../../hooks/useSession";
 
 export default function ActivityLogs() {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
 
     useEffect(() => {
         const fetchLogs = async () => {
@@ -13,7 +15,7 @@ export default function ActivityLogs() {
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.error || "Failed to fetch logs.");
+                     new Error(data.error || "Failed to fetch logs.");
                 }
 
                 setLogs(data.logs);
@@ -31,6 +33,10 @@ export default function ActivityLogs() {
         return <p>Loading...</p>;
     }
 
+    if (!user) {
+        return <p>You need to log in to access the dashboard.</p>;
+    }
+
     return (
         <div>
             <h1>Activity Logs</h1>
@@ -43,13 +49,14 @@ export default function ActivityLogs() {
                 </tr>
                 </thead>
                 <tbody>
-                {logs.map((log) => (
-                    <tr key ={log.logID}> {/* Use a unique key */}
-                        <td>{log.userID  || log.adminID}</td>
+                {logs.map((log, index) => (
+                    <tr key={log.logID || index}>
+                        <td>{log.user_id || log.admin_id}</td>
                         <td>{log.action}</td>
                         <td>{log.timestamp}</td>
                     </tr>
                 ))}
+
                 </tbody>
             </table>
         </div>
