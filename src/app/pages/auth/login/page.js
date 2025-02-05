@@ -53,15 +53,8 @@ export default function Login() {
   };
 
   const handleGoogleSignin = async () => {
-    try {
-      // Redirect the user to the Google OAuth login API route
-      window.location.href = "/api/auth/google-login";
-    } catch (error) {
-      console.error("Google Sign-In Error:", error);
-      setErrorMessage("Failed to sign in with Google.");
-    }
+    await router.push(`/api/auth/google-login`);
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();

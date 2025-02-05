@@ -5,17 +5,17 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    const { userID, action, timestamp } = req.body;
+    const { user_id, action, timestamp } = req.body;
 
-    if (!userID || !action || !timestamp) {
+    if (!user_id || !action || !timestamp) {
         return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
         await db.query(
-            `INSERT INTO ActivityLog (userID, action, timestamp)
+            `INSERT INTO ActivityLog (user_id, action, timestamp)
        VALUES (?, ?, ?)`,
-            [userID, action, timestamp]
+            [user_id, action, timestamp]
         );
         res.status(201).json({ message: "Activity logged successfully." });
     } catch (error) {

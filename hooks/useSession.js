@@ -60,7 +60,7 @@ export default function useAuth() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userID: user?.userID,
+          user_id: user?.user_id,
           action: "User signed out",
           timestamp: new Date().toISOString(),
         }),

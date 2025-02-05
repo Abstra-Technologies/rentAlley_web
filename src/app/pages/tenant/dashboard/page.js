@@ -124,7 +124,9 @@ export default function UserDashboard() {
             </button>
 
             {/* Chat Component */}
-            <ChatComponent user={user} />
+            <ChatComponent user={user}/>
+
+
 
             {/* Sign Out Button */}
             <button
