@@ -26,9 +26,9 @@ const TenantProfile = () => {
   }, [userId]);
 
   return (
-    <div>
-      <ProfileForm userId={userId} isLandlord={false} />
-    </div>
+      <div>
+        <ProfileForm userId={userId} isLandlord={false} />
+      </div>
   );
 };
 

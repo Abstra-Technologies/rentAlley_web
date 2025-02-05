@@ -1,113 +1,104 @@
-"use client";
-
-import { useState } from "react";
-import axios from "axios";
-
-/*
-TODO:
-REDESIGN THIS:
-
-1. User enters email only - DONE
-2. received email link to reset password. - DONE
-3. redirects to reset password page. - DONE
-
- */
+'use client';
+import { useState } from 'react';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setMessage("");
-
-    try {
-      // Send a POST request to the backend to initiate the password reset process
-      const { data } = await axios.post("/api/auth/reset-request", { email });
-
-      // Display success message
-      setMessage(data.message);
-    } catch (err) {
-      // Handle specific error for unregistered email
-      if (err.response?.data?.error === "Email not registered") {
-        setError("This email is not registered. Please sign up.");
-      } else {
-        setError(
-          err.response?.data?.message || "An error occurred. Please try again."
-        );
-      }
-    } finally {
-      setLoading(false);
+  // ✅ Step 1: Verify Email and Get Reset Token
+  const handleEmailSubmit = async () => {
+    if (!email) {
+      toast.error("Please enter your email.");
+      return;
     }
+
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/auth/reset-request', { email });
+      setResetToken(response.data.resetToken); // ✅ Store reset token
+      toast.success("Email verified. Set your new password.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to verify email.");
+    }
+    setLoading(false);
+  };
+
+  // ✅ Step 2: Set New Password
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post('/api/auth/reset-password', { resetToken, newPassword });
+      toast.success("Password reset successfully! Redirecting...");
+      setTimeout(() => window.location.href = "/pages/auth/login", 2000);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Password reset failed.");
+    }
+    setLoading(false);
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <div className="bg-white shadow-lg rounded-2xl p-8 max-w-sm w-full">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
-          Forgot Password?
-        </h1>
-        <p className="text-sm text-gray-600 text-center mb-6">
-          Enter your email address below, and we’ll send you a link to reset
-          your password.
-        </p>
+      <div className="flex justify-center items-center h-screen bg-gray-100">
+        <ToastContainer />
+        <div className="bg-white p-6 rounded-lg shadow-md w-96">
+          <h2 className="text-2xl font-bold mb-4 text-center">Forgot Password</h2>
 
-        {/* Forgot Password Form */}
-        <form onSubmit={handleForgotPassword} className="space-y-6">
-          {/* Email Input */}
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
+          {/* Step 1: Enter Email */}
+          {!resetToken && (
+              <>
+                <p className="text-gray-600 text-sm text-center mb-4">
+                  Enter your email to reset your password.
+                </p>
+                <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email"
+                    className="w-full p-2 border rounded-md mb-2 text-center"
+                    required
+                />
+                <button
+                    onClick={handleEmailSubmit}
+                    className="w-full p-2 bg-blue-600 text-white rounded-md"
+                    disabled={loading}
+                >
+                  {loading ? "Checking..." : "Next"}
+                </button>
+              </>
+          )}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Sending..." : "Send Reset Link"}
-          </button>
-        </form>
-
-        {/* Feedback Messages */}
-        {message && (
-          <p className="mt-4 text-center text-sm text-green-600">{message}</p>
-        )}
-        {error && (
-          <p className="mt-4 text-center text-sm text-red-600">{error}</p>
-        )}
-
-        {/* Back to Login Link */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Remember your password?{" "}
-            <a
-              href="/pages/auth/login"
-              className="text-blue-600 hover:underline"
-            >
-              Log in
-            </a>
-          </p>
+          {/* Step 2: Set New Password */}
+          {resetToken && (
+              <>
+                <h3 className="text-lg font-semibold mt-4 text-center">Set New Password</h3>
+                <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full p-2 border rounded-md mb-2 text-center"
+                    required
+                />
+                <button
+                    onClick={handleResetPassword}
+                    className="w-full p-2 bg-green-600 text-white rounded-md"
+                    disabled={loading}
+                >
+                  {loading ? "Resetting..." : "Reset Password"}
+                </button>
+              </>
+          )}
         </div>
       </div>
-    </div>
   );
 }
+

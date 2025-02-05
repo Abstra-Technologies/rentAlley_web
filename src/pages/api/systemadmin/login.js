@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         // Generate JWT token
         const token = jwt.sign(
             {
-                adminID: adminRecord.adminID,
+                admin_id: adminRecord.admin_id,
                 username: adminRecord.username,
             },
             process.env.JWT_SECRET,
@@ -77,12 +77,12 @@ export default async function handler(req, res) {
         console.log("[DEBUG] Logging admin activity...");
         const action = "Admin logged in";
         const timestamp = new Date().toISOString();
-        const adminID = admins[0].adminID;
+        const admin_id = admins[0].admin_id;
 
         try {
             await db.query(
-                "INSERT INTO ActivityLog (adminID, action, timestamp) VALUES (?, ?, ?)",
-                [adminID, action, timestamp]
+                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, ?)",
+                [admin_id, action, timestamp]
             );
             console.log("[DEBUG] Activity logged successfully.");
         } catch (activityLogError) {
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
         res.status(200).json({
             message: "Login successful.",
             admin: {
-                adminID: adminRecord.adminID,
+                admin_id: adminRecord.admin_id,
                 username: adminRecord.username,
             },
         });

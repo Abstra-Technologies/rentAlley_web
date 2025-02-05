@@ -1,20 +1,28 @@
-import { serialize } from 'cookie';
-import jwt from "jsonwebtoken";
+import { serialize } from "cookie";
+import axios from "axios";
+import { SignJWT } from "jose";
 import { db } from "../../lib/db";
-import axios from 'axios';
-import {decryptEmail} from "../../crypto/encrypt";
+import crypto from "crypto";
 
-export default async function returningUserCallback(req, res) {
+export default async function handler(req, res) {
     const { code } = req.query;
 
     if (!code) {
-        return res.status(400).json({ error: "Authorization code is required." });
+        console.error("❌ [Google OAuth] Missing authorization code.");
+        return res.status(400).json({ error: "Authorization code is required" });
     }
 
     try {
-        const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URI_SIGNIN, JWT_SECRET, NODE_ENV } = process.env;
+        const {
+            GOOGLE_CLIENT_ID,
+            GOOGLE_CLIENT_SECRET,
+            REDIRECT_URI_SIGNIN,
+            JWT_SECRET,
+            NODE_ENV,
+        } = process.env;
 
-        // Exchange authorization code for tokens
+        console.log("🔍 [Google OAuth] Exchanging authorization code for tokens...");
+
         const tokenResponse = await axios.post(
             "https://oauth2.googleapis.com/token",
             new URLSearchParams({
@@ -28,64 +36,61 @@ export default async function returningUserCallback(req, res) {
         );
 
         const { access_token } = tokenResponse.data;
+        console.log("✅ [Google OAuth] Token received.");
 
-        // Fetch user info from Google
         const userInfoResponse = await axios.get(
             "https://www.googleapis.com/oauth2/v3/userinfo",
-            {
-                headers: { Authorization: `Bearer ${access_token}` },
-            }
+            { headers: { Authorization: `Bearer ${access_token}` } }
         );
 
-        const { email } = userInfoResponse.data;
+        const user = userInfoResponse.data;
+        console.log("✅ [Google OAuth] User Info:", user);
 
-        if (!email) {
-            return res.status(400).json({ error: "Failed to retrieve email from Google." });
+        const emailHash = crypto.createHash("sha256").update(user.email.trim().toLowerCase()).digest("hex");
+        const [rows] = await db.query("SELECT * FROM User WHERE emailHashed = ?", [emailHash]);
+
+        if (rows.length === 0) {
+            console.error("❌ [Google OAuth] User not found.");
+            return res.status(400).json({ error: "User does not exist. Please register first." });
         }
 
-        console.log("Google User Info:", { email });
+        let dbUser;
 
-        // Check if user exists in the database
-        const [rows] = await db.query("SELECT * FROM User WHERE email = ?", [email]);
-        // const user = rows.find((c) => decryptEmail(c.email) === email);
-
-        if (!rows) {
-            return res.status(404).json({ error: "Account not found. Please register first." });
+        if(rows.length > 0){
+            dbUser = rows[0];
         }
 
-        const dbUser = rows[0];
+        const secret = new TextEncoder().encode(JWT_SECRET);
 
-        // Generate a JWT for the session
-        const token = jwt.sign(
-            {
-                userId: dbUser.userID,
-                username: `${dbUser.firstName} ${dbUser.lastName}`,
-                roles: dbUser.userType, // Fetching role from the database
-            },
-            JWT_SECRET,
-            { expiresIn: "1h" }
+        const token = await new SignJWT({
+            user_id: dbUser.user_id,
+            email: dbUser.email,
+            userType: dbUser.userType,
+        })
+            .setProtectedHeader({ alg: "HS256" })
+            .setExpirationTime("1h")
+            .setIssuedAt()
+            .setSubject(dbUser.user_id.toString())
+            .sign(secret);
+
+        const isDev = process.env.NODE_ENV === "development";
+        res.setHeader(
+            "Set-Cookie",
+            `token=${token}; HttpOnly; Path=/; ${isDev ? "" : "Secure;"} SameSite=Lax`
         );
 
-        // Set JWT as an HTTP-only cookie
-        const cookie = serialize("auth_token", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV !== "development",
-            sameSite: "strict",
-            path: "/",
-        });
 
-        res.setHeader("Set-Cookie", cookie);
-
-        // Redirect based on role
         if (dbUser.userType === "tenant") {
-            return res.redirect("/pages/tenant/dashboard");
-        } else if (dbUser.userType === "landlord") {
-            return res.redirect("/dashboard/landlord");
+            return res.redirect(302, "/pages/tenant/dashboard");  // Redirect for normal user
+        } else if (dbUser.roles === "landlord") {
+            return res.redirect(302, "/pages/tenant/dashboard");  // Redirect for admin
         } else {
-            return res.redirect("/");
+            return res.redirect(302, "/");  // Default fallback redirection
         }
+
     } catch (error) {
-        console.error("Error during returning user callback:", error.response?.data || error.message);
-        return res.status(500).json({ error: "Failed to authenticate user." });
+        console.error("❌ [Google OAuth] Error during authentication:", error);
+        return res.status(500).json({ error: "Failed to authenticate" });
     }
 }
+

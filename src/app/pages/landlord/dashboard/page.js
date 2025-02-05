@@ -3,12 +3,6 @@
 import Link from "next/link";
 import useAuth from "../../../../../hooks/useSession";
 
-/**
- * TODO
- *  1. Design this dahsboard pn what need to be displayed.
- *  2.  Decrypt Data Here.
- *
- */
 
 export default function LandlordDashboard() {
   const { user, loading, error, signOut } = useAuth();

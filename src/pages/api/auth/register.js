@@ -1,33 +1,43 @@
-import bcrypt from "bcrypt";
-import nodemailer from "nodemailer";
 import crypto from "crypto";
-import { db } from "../../lib/db";
-import {
-  encryptEmail,
-  encryptFName,
-  encryptLName,
-  encryptPhone,
-} from "../../crypto/encrypt";
+import bcrypt from "bcrypt";
 import CryptoJS from "crypto-js";
+import {SignJWT} from "jose";
+import nodemailer from "nodemailer";
+import mysql from 'mysql2/promise';
+import { encryptData } from "../../crypto/encrypt";
+
+
+const dbConfig = {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+};
 
 export default async function handler(req, res) {
-  if (req.method === "POST") {
-    const { firstName, lastName, email, password, dob, mobileNumber, role } =
-      req.body;
-    console.log("POST request received at /api/auth/register");
-
-    if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !password ||
-      !dob ||
-      !mobileNumber ||
-      !role
-    ) {
-      console.error("Missing fields in request body:", req.body);
-      return res.status(400).json({ error: "Missing fields" });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ message: 'Method Not Allowed' });
     }
+
+    const { firstName, lastName, email, password, dob, mobileNumber, role } =
+        req.body;
+
+    if(
+        !firstName ||
+        !lastName ||
+        !email ||
+        !password ||
+        !dob ||
+        !mobileNumber ||
+        !role
+    ) {
+        console.error("Missing fields in request body:", req.body);
+        return res.status(400).json({ error: "Missing fields" });
+    }
+    const db = await mysql.createConnection(dbConfig);
+    await db.execute("SET time_zone = '+08:00'");
+    const [timeResult] = await db.execute("SELECT NOW()");
+    console.log("MySQL Server Time:", timeResult);
 
     const emailHash = CryptoJS.SHA256(email).toString();
     const birthDate = dob; // Map `dob` to `birthDate`
@@ -35,113 +45,172 @@ export default async function handler(req, res) {
     const userType = role;
 
     try {
-      console.log("Checking for existing user...");
+        await db.beginTransaction();
 
-      const [existingUser] = await db.query(
-        "SELECT email FROM User WHERE email = ?",
-        [emailHash]
-      );
-      if (existingUser.length > 0) {
-        return res.status(409).json({
-          error: "User with this email already exists, Please Signin instead.",
-        });
-      }
-      console.log("Hashing password...");
+        // Check if user already exists
+        const [existingUser] = await db.execute("SELECT * FROM User WHERE email = ?", [email]);
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const emailEncrypted = encryptEmail(email);
-      const fnameEncrypted = encryptFName(firstName);
-      const lnameEncrypted = encryptLName(lastName);
-      const phoneEncrypted = encryptPhone(phoneNumber);
-      console.log("Generating email confirmation token...");
+        let user_id;
 
-      const emailConfirmationToken = crypto.randomBytes(32).toString("hex");
-      console.log("Inserting user into database...");
-      const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
-      const [result] = await db.query(
-        `INSERT INTO User (userID,firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, verificationToken, tokenExpiresAt, createdAt, updatedAt)
-                VALUES (uuid(),?, ?, ?, ?, ?, ?, ?, ?, ?,?, NOW(), NOW())`,
-        [
-          fnameEncrypted,
-          lnameEncrypted,
-          emailEncrypted,
-          emailHash,
-          hashedPassword,
-          birthDate,
-          phoneEncrypted,
-          userType,
-          emailConfirmationToken,
-          tokenExpiry,
-        ]
-      );
+        if (existingUser.length > 0) {
 
-      // Retrieve the generated `userID`
-      const [user] = await db.execute(
-          `SELECT userID FROM User WHERE emailHashed = ?`,
-          [emailHash]
-      );
+            user_id = existingUser[0].user_id;
 
-      if (!user || user.length === 0) {
-        throw new Error("Failed to retrieve userID after User creation");
-      }
+            // // If user is not verified, resend OTP
+            // if (!existingUser[0].email_verified) {
+            //     const otp = generateOTP();
+            //     await storeOTP(db, user_id, otp);
+            //     await sendOtpEmail(email, otp);
+            // }
 
-      const userId = user[0].userID;
-      console.log("Generated userID:", userId);
+        } else {
+            // Generate user_id (UUID)
+            const [userIdResult] = await db.query("SELECT UUID() AS uuid");
+            user_id = userIdResult[0].uuid;
 
-      if (role === "tenant") {
-        console.log("Inserting into Tenant table...");
-        await db.execute(
-            `INSERT INTO tenants (userID) VALUES (?)`,
-            [userId]
-        );
-      } else if (role === "landlord") {
-        console.log("Inserting into Landlord table...");
-        await db.execute(
-            `INSERT INTO landlords (userID) VALUES (?)`,
-            [userId]
-        );
-      }
+            // Hash the password securely
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const emailEncrypted = JSON.stringify(encryptData(email, process.env.ENCRYPTION_SECRET));
+            const fnameEncrypted = JSON.stringify(encryptData(firstName, process.env.ENCRYPTION_SECRET));
+            const lnameEncrypted = JSON.stringify(encryptData(lastName, process.env.ENCRYPTION_SECRET));
+            const phoneEncrypted = JSON.stringify(encryptData(phoneNumber, process.env.ENCRYPTION_SECRET));
+            // Hash email for uniqueness
 
-      console.log("Logging registration activity...");
-      await db.execute(
-          `INSERT INTO ActivityLog (userID, action, timestamp)
+            console.log("Generating email confirmation token...");
+            console.log("Inserting user into database...");
+            // Insert into `User_Tbl`
+            const [result] = await db.query(
+                `INSERT INTO User (user_id,firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, createdAt, updatedAt, emailVerified)
+                VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(),?)`,
+                [
+                    user_id,
+                    fnameEncrypted,
+                    lnameEncrypted,
+                    emailEncrypted,
+                    emailHash,
+                    hashedPassword,
+                    birthDate,
+                    phoneEncrypted,
+                    userType,
+                    0
+                ]
+            );
+    // this part is to insert to tenant.landoor table
+            const [user] = await db.execute(
+                `SELECT user_id FROM User WHERE emailHashed = ?`,
+                [emailHash]
+            );
+
+            if (!user || user.length === 0) {
+                new Error("Failed to retrieve userID after User creation");
+            }
+
+            const userId = user[0].user_id;
+
+            // If user is a tenant, insert into the `tenant` table
+            if (role === 'tenant') {
+                await db.execute(
+                    `INSERT INTO Tenant (user_id) VALUES (?)`,
+                    [userId]
+                );
+            }else if (role === "landlord") {
+                console.log("Inserting into Landlord table...");
+                await db.execute(
+                    `INSERT INTO Landlord (user_id) VALUES (?)`,
+                    [userId]
+                );
+            }
+            console.log("Logging registration activity...");
+            await db.execute(
+                `INSERT INTO ActivityLog (user_id, action, timestamp)
          VALUES (?, ?, NOW())`,
-          [userId, "User registered"]
-      );
+                [userId, "User registered"]
+            );
+            // Generate and send OTP
+            const otp = generateOTP();
+            await storeOTP(db, userId, otp);
+            await sendOtpEmail(email, otp);
+        }
 
+        // Generate JWT token for authentication
+        // Generate JWT token for authentication
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const token = await new SignJWT({ user_id })  // ✅ Ensure user_id is stored correctly
+            .setProtectedHeader({ alg: 'HS256' })
+            .setExpirationTime('15m')
+            .sign(secret);
 
-  // EMAIL VERIFICATION
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
-      const confirmationLink = `${process.env.NEXTAUTH_URL}/pages/auth/verify-email?token=${emailConfirmationToken}`;
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Rentahan: Email Confirmation",
-        text: `Please confirm your email by clicking the following link: ${confirmationLink}. This link will expire in 24 hours.`,
-      };
+        console.log("Generated JWT Token for User ID:", user_id);  // ✅ Debugging step
 
-      await transporter.sendMail(mailOptions);
+// Set HTTP-only cookie securely
+        const isDev = process.env.NODE_ENV === "development";
+        res.setHeader(
+            "Set-Cookie",
+            `token=${token}; HttpOnly; Path=/; ${
+                isDev ? "" : "Secure;"
+            } SameSite=Strict`
+        );
 
-      return res.status(201).json({
-        message:
-          "User registered successfully. Please check your email to confirm your account.",
-        userId,
-      });
+        console.log("Cookie Set: auth_token");  // ✅ Debugging step
+
+        await db.commit();
+        res.status(201).json({ message: 'User registered. Please verify your OTP.' });
+
     } catch (error) {
-      console.error("Error during registration:", error);
-      return res.status(500).json({ error: "Internal server error" });
+        await db.rollback();
+        console.error('Error:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+        await db.end();
     }
-  } else {
-    console.error("Invalid method:", req.method);
-    res.status(405).json({ error: "Method Not Allowed" });
-  }
+}
+
+// Function to generate a 6-digit OTP
+function generateOTP() {
+    return crypto.randomInt(100000, 999999).toString();
+}
+
+// Function to store OTP in DB
+async function storeOTP(connection, user_id, otp) {
+    console.log(`Storing OTP for User ID: ${user_id}, OTP: ${otp}`);
+
+    // ✅ Set session time zone (works even without SUPER privilege)
+    await connection.execute("SET time_zone = '+08:00'");
+
+    // ✅ Delete previous OTPs before inserting a new one
+    await connection.execute(
+        `DELETE FROM UserToken WHERE user_id = ? AND token_type = 'email_verification'`,
+        [user_id]
+    );
+
+    // ✅ Insert OTP with correct timestamps
+    await connection.execute(
+        `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
+        VALUES (?, 'email_verification', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))`,
+        [user_id, otp]
+    );
+
+    console.log(`OTP ${otp} stored for user ${user_id} (expires in 10 min)`);
+}
+
+
+
+// Function to send OTP email
+async function sendOtpEmail(toEmail, otp) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+        tls: {
+            rejectUnauthorized: false, // Disable certificate validation (not recommended for production)
+        },
+    });
+
+    await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: toEmail,
+        subject: 'Your OTP for Rentfolio',
+        text: `Your OTP is: ${otp}. It expires in 10 minutes.`,
+    });
+
+    console.log(`OTP sent to ${toEmail}`);
 }
