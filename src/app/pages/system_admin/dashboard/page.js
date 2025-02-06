@@ -2,16 +2,18 @@
 
 import useAuth from "../../../../../hooks/useSession";
 import Link from "next/link";
+import { useRouter} from "next/navigation";
 
 
 export default function AdminDashboard() {
-    const { user, loading, signOut_admin } = useAuth();
+    const { user, loading, signOut_admin } = useAuth()
+    const router = useRouter();
     if (loading) {
         return <p>Loading...</p>;
     }
 
     if (!user) {
-        return <p>You need to log in to access the dashboard.</p>;
+        return router.push("./login");
     }
 
     return (
@@ -26,12 +28,13 @@ export default function AdminDashboard() {
             <div className='mb-10'>
                 <Link className='m-2' href='./activiyLog'>ActivityLog</Link>
                 <Link className='m-2' href='./co_admin/list'>Add Co-admin</Link>
-                <Link className='m-2' href='./co_admin'>Tenant Management</Link>
+                <Link className='m-2' href='./tenant_landlord/tenant_mgt'>Tenant Management</Link>
                 <Link className='m-2' href='./tenant_landlord/landlord_mgt'>Landlord Management</Link>
                 <Link className='m-2' href='./co_admin'>Landlord Verification</Link>
                 <Link className='m-2' href='./co_admin'>Property Verification</Link>
                 <Link className='m-2' href='./annoucement'>Annoucements</Link>
                 <Link className='m-2' href='./bug_report/list'>Bug Reports</Link>
+                <Link className='m-2' href='./auditLogs'>Audit Logs</Link>
             </div>
             <button
                 onClick={signOut_admin}

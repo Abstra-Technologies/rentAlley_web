@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import useAuth from "../../../../../hooks/useSession";
+import { useRouter} from "next/navigation";
 
 export default function ActivityLogs() {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
-
+    const router = useRouter();
     useEffect(() => {
         const fetchLogs = async () => {
             try {
@@ -34,7 +35,7 @@ export default function ActivityLogs() {
     }
 
     if (!user) {
-        return <p>You need to log in to access the dashboard.</p>;
+        return router.push("./login");
     }
 
     return (

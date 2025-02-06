@@ -69,7 +69,7 @@ export default function AnnouncementsList() {
         try {
             const res = await fetch(`/api/systemadmin/annoucement/details/${id}`);
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed to fetch announcement details");
+            if (!res.ok) new Error(data.message || "Failed to fetch announcement details");
 
             setSelectedAnnouncement(id);
             setFormData({

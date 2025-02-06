@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
     try {
         console.log("Fetching users from database...");
-        const [bugReports] = await db.query("SELECT reportID, User_userID,subject,description,createdAt FROM BugReport");
+        const [bugReports] = await db.query("SELECT report_id, user_id,subject,description,created_at FROM BugReport");
         console.log("Reports fetched:", bugReports);
         return res.status(200).json({ success: true, bugReports });
     } catch (error) {

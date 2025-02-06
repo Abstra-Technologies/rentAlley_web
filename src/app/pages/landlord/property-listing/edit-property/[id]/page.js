@@ -30,7 +30,7 @@ export default function EditPropertyPage() {
   //   };
 
   //   fetchProperty();
-  // }, [id]);
+  // }, [user_id]);
 
   // Handle form submission
   // const handleSubmit = async (e) => {
@@ -60,7 +60,7 @@ export default function EditPropertyPage() {
   //   const { id, value } = e.target;
   //   setProperty((prev) => ({
   //     ...prev,
-  //     [id]: value,
+  //     [user_id]: value,
   //   }));
   // };
 

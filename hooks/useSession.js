@@ -33,7 +33,12 @@ export default function useAuth() {
         console.error("Session verification failed:", error);
         setError(error.message);
         setLoading(false);
-        router.push("/pages/auth/login"); // Redirect to login page
+
+        if (user?.role === "admin") {
+          router.push("/pages/system_admin/login"); // Admin login page
+        } else {
+          router.push("/pages/auth/login"); // Regular user login page
+        }
       }
     };
 
@@ -91,14 +96,14 @@ export default function useAuth() {
       }
 
       // Log user sign-out activity
-      const logResponse = await fetch("/api/activityLogs/signoutLogs", {
+      const logResponse = await fetch("/api/activityLogs/signoutLogs_admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userID: user?.userID,
-          action: "User signed out",
+          admin_id: user?.admin_id,
+          action: "Admin signed out",
           timestamp: new Date().toISOString(),
         }),
       });

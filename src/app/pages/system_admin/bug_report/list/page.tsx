@@ -1,6 +1,4 @@
 "use client";
-"use client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuth from "../../../../../../hooks/useSession";
 import useSWR from "swr";
@@ -43,14 +41,19 @@ export default function BugReports() {
                         <tbody>
 
                         {data.bugReports.length > 0 ? (
-                            data.bugReports.map((reports: { reportID: number; User_userID: string; subject: string; description: string; created_at: string }, index: number) => (
-                                <tr key={reports.reportID ?? `temp-key-${index}`}>
+                            data.bugReports.map((reports: { report_id: number; user_id: string; subject: string; description: string; created_at: string }, index: number) => (
+                                <tr key={reports.report_id ?? `temp-key-${index}`}>
                                     <td>{index + 1}</td>
-                                    <td>{reports.subject}</td>
+                                    <td
+                                        className="px-4 py-2 text-blue-500 cursor-pointer hover:underline"
+                                        onClick={() => router.push(`/admin/bugReports/${reports.report_id}`)}
+                                    >
+                                        {reports.subject}
+                                    </td>
                                     <td>{reports.description}</td>
-                                    <td>{reports.User_userID || "N/A"}</td>
-                                    <td>{reports.createdAt || "N/A"}</td>
-                                    <td>{new Date(reports.createdAt).toLocaleString()}</td>
+                                    <td>{reports.user_id || "N/A"}</td>
+                                    <td>{reports.created_at || "N/A"}</td>
+                                    <td>{new Date(reports.created_at).toLocaleString()}</td>
                                 </tr>
                             ))
                         ) : (

@@ -34,7 +34,7 @@ import jwt from "jsonwebtoken";
 //         }
 //
 //         // Delete co-admin
-//         const [result] = await db.query("DELETE FROM Admin WHERE admin_id = ?", [id]);
+//         const [result] = await db.query("DELETE FROM Admin WHERE admin_id = ?", [user_id]);
 //
 //         if (result.affectedRows === 0) {
 //             return res.status(404).json({ success: false, message: "Co-admin not found" });
@@ -86,6 +86,10 @@ export default async function handler(req, res) {
             if (result.affectedRows === 0) {
                 return res.status(404).json({ success: false, message: "Co-admin not found" });
             }
+            await db.query(
+                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
+                [req.admin_id, `Deleted Co-admin with ID: (ID: ${id})`]
+            );
 
             return res.status(200).json({ success: true, message: "Co-admin deleted successfully" });
         }
@@ -106,7 +110,10 @@ export default async function handler(req, res) {
             if (updateResult.affectedRows === 0) {
                 return res.status(404).json({ success: false, message: "Co-admin not found" });
             }
-
+            await db.query(
+                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
+                [req.admin_id, `Updated Co-admin - ID: ${id}) status to ${status}`]
+            );
             return res.status(200).json({ success: true, message: `Co-admin ${status} successfully` });
         }
 

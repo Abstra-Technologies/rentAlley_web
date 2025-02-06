@@ -10,6 +10,10 @@ export default async function handler(req, res) {
             if (admins.length === 0) {
                 return res.status(404).json({ success: false, message: "Co-admin not found" });
             }
+            await db.query(
+                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
+                [req.admin_id, `Viewed Co-Admins: ${admins[0].username}`]
+            );
             return res.status(200).json({ success: true, admin: admins[0] });
         } catch (error) {
             console.error("Error fetching admin details:", error);
@@ -19,6 +23,8 @@ export default async function handler(req, res) {
 
     if (req.method === "PATCH") {
         const { username, password, email, role, status } = req.body;
+        let logActions = [];
+
         try {
             let query = "UPDATE Admin SET";
             let params = [];
@@ -26,27 +32,32 @@ export default async function handler(req, res) {
             if (username) {
                 query += " username = ?";
                 params.push(username);
+                logActions.push(`Updated username to ${username}`);
             }
             if (email) {
                 if (params.length > 0) query += ",";
                 query += " email = ?";
                 params.push(email);
+                logActions.push(`Updated email to ${email}`);
             }
             if (role) {
                 if (params.length > 0) query += ",";
                 query += " role = ?";
                 params.push(role);
+                logActions.push(`Updated role to ${role}`);
             }
             if (status) {
                 if (params.length > 0) query += ",";
                 query += " status = ?";
                 params.push(status);
+                logActions.push(`Updated status to ${status}`);
             }
             if (password) {
                 const hashedPassword = await bcrypt.hash(password, 10);
                 if (params.length > 0) query += ",";
                 query += " password = ?";
                 params.push(hashedPassword);
+                logActions.push(`Updated password (hashed)`);
             }
 
             query += " WHERE admin_id = ?";
@@ -60,7 +71,12 @@ export default async function handler(req, res) {
             if (updateResult.affectedRows === 0) {
                 return res.status(404).json({ success: false, message: "Co-admin not found" });
             }
-
+            if (logActions.length > 0) {
+                await db.query(
+                    "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
+                    [req.admin_id, `Updated Co-admin (ID: ${id}): ${logActions.join(", ")}`]
+                );
+            }
             return res.status(200).json({ success: true, message: "Co-admin updated successfully" });
 
         } catch (error) {

@@ -5,6 +5,7 @@ import {SignJWT} from "jose";
 import nodemailer from "nodemailer";
 import mysql from 'mysql2/promise';
 import { encryptData } from "../../crypto/encrypt";
+import {logAuditEvent} from "../../utils/auditLogger";
 
 
 const dbConfig = {
@@ -67,7 +68,7 @@ export default async function handler(req, res) {
             // Generate user_id (UUID)
             const [userIdResult] = await db.query("SELECT UUID() AS uuid");
             user_id = userIdResult[0].uuid;
-
+            const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
             // Hash the password securely
             const hashedPassword = await bcrypt.hash(password, 10);
             const emailEncrypted = JSON.stringify(encryptData(email, process.env.ENCRYPTION_SECRET));
@@ -120,6 +121,8 @@ export default async function handler(req, res) {
                     [userId]
                 );
             }
+
+            await logAuditEvent(user_id, "User Registered", "User", user_id, ipAddress, "Success", `New user registered as ${role}`);
             console.log("Logging registration activity...");
             await db.execute(
                 `INSERT INTO ActivityLog (user_id, action, timestamp)

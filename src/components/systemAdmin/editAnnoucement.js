@@ -24,6 +24,7 @@ const EditAnnoucementModal = ({ formData, handleChange, handleUpdate, closeModal
 
                 <label className="block mt-2">message:</label>
                 <textarea
+                    name='message'
                     value={formData.message}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"

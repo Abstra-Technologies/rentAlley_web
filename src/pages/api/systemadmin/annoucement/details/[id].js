@@ -13,7 +13,10 @@ export default async function handler(req, res) {
             if (announcements.length === 0) {
                 return res.status(404).json({ success: false, message: "Announcement not found" });
             }
-
+            await db.query(
+                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
+                [req.admin_id, `Viewed announcement: ${announcements[0].title}`]
+            );
             return res.status(200).json({ success: true, announcement: announcements[0] });
         } catch (error) {
             console.error("Error fetching announcement details:", error);
@@ -55,6 +58,11 @@ export default async function handler(req, res) {
             if (updateResult.affectedRows === 0) {
                 return res.status(404).json({ success: false, message: "Announcement not found" });
             }
+
+            await db.query(
+                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
+                [req.admin_id, `Updated announcement"}`]
+            );
 
             return res.status(200).json({ success: true, message: "Announcement updated successfully" });
         } catch (error) {

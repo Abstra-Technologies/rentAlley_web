@@ -1,6 +1,7 @@
 import { db } from "../../../lib/db";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
+import {logAuditEvent} from "../../../utils/auditLogger";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -36,7 +37,7 @@ export default async function handler(req, res) {
         }
 
         const { title, message, target_audience } = req.body;
-
+        const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         if (!title || !message || !target_audience) {
             return res.status(400).json({ success: false, message: "All fields are required" });
         }
@@ -46,10 +47,32 @@ export default async function handler(req, res) {
             [decoded.admin_id, title, message, target_audience]
         );
 
+        await db.query(
+            "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
+            [decoded.admin_id, `Created an announcement: ${title}`]
+        );
+        await logAuditEvent(
+            decoded.admin_id,
+            "Created Announcement",
+            "AdminAnnouncement",
+            result.insertId,
+            ipAddress,
+            "Success",
+            `Admin created an announcement titled "${title}"`
+        );
         return res.status(201).json({ success: true, message: "Announcement created successfully!" });
 
     } catch (error) {
         console.error("Error creating announcement:", error);
+        await logAuditEvent(
+            req.admin_id,
+            "Failed to Create Announcement",
+            "AdminAnnouncement",
+            null,
+            req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+            "Failure",
+            `Error: ${error.message}`
+        );
         return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
