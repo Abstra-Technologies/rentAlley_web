@@ -6,5 +6,11 @@ const nextConfig: NextConfig = {
     domains: ["upload.wikimedia.org"],
   },
 };
+// to decrypt data in useSession
+module.exports = {
+  env: {
+    ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
+  },
+};
 
 export default nextConfig;
