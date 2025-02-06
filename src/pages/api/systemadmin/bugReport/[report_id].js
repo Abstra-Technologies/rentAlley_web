@@ -1,11 +1,11 @@
 import {db} from "../../../lib/db";
 
 export default async function handler(req, res) {
-    const { reportID } = req.query;
+    const { report_id } = req.query;
 
     if (req.method === "GET") {
         try {
-            const [rows] = await db.query("SELECT * FROM BugReport WHERE report_id = ?", [reportID]);
+            const [rows] = await db.query("SELECT * FROM BugReport WHERE report_id = ?", [report_id]);
 
             if (rows.length === 0) {
                 return res.status(404).json({ message: "Bug report not found" });

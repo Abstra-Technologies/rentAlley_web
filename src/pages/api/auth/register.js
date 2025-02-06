@@ -140,7 +140,7 @@ export default async function handler(req, res) {
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const token = await new SignJWT({ user_id })  // ✅ Ensure user_id is stored correctly
             .setProtectedHeader({ alg: 'HS256' })
-            .setExpirationTime('15m')
+            .setExpirationTime('2h')
             .sign(secret);
 
         console.log("Generated JWT Token for User ID:", user_id);  // ✅ Debugging step

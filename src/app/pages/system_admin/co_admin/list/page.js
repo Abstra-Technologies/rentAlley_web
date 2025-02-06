@@ -54,13 +54,13 @@ export default function CoAdminDashboard() {
     router.push("/pages/system_admin/co_admin/create");
   };
 
-  const handleEdit = async (id) => {
+  const handleEdit = async (admin_id) => {
     try {
-      const res = await fetch(`/api/systemadmin/co_admin/details/${id}`);
+      const res = await fetch(`/api/systemadmin/co_admin/details/${admin_id}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to fetch admin details");
 
-      setSelectedAdmin(id);
+      setSelectedAdmin(admin_id);
       setFormData({
         username: data.admin.username,
         email: data.admin.email,
@@ -113,20 +113,19 @@ export default function CoAdminDashboard() {
   };
 
   // Delete a co-admin
-  const handleDelete = async (id) => {
+  const handleDelete = async (admin_id) => {
     if (!confirm("Are you sure you want to delete this co-admin?")) return;
 
     try {
-      const res = await fetch(`/api/systemadmin/co_admin/${id}`, {
+      const res = await fetch(`/api/systemadmin/co_admin/${admin_id}`, {
         method: "DELETE",
         credentials: "include", // Ensures HTTP-only cookies are sent
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to delete co-admin");
-
+      if (!res.ok)  new Error(data.message || "Failed to delete co-admin");
       // Remove the deleted admin from state
-      setAdmins((prev) => prev.filter((admin) => admin.admin_id !== id));
+      setAdmins((prev) => prev.filter((admin) => admin.admin_id !== admin_id));
 
       alert("Co-admin deleted successfully!");
     } catch (err) {
@@ -135,17 +134,17 @@ export default function CoAdminDashboard() {
   };
 
 
-  const viewActivityLogs = async (id, name) => {
+  const viewActivityLogs = async (admin_id, name) => {
     setSelectedAdmin(name);
     setShowModal(true);
     setLogs([]); // Clear previous logs
 
     try {
-      const res = await fetch(`/api/systemadmin/co_admin/logs/${id}`);
+      const res = await fetch(`/api/systemadmin/co_admin/logs/${admin_id}`);
       const data = await res.json();
       if (!res.ok)  new Error(data.message || "Failed to fetch activity logs");
 
-      setLogs(data.logs);
+      setLogs(data.logs || []); // ✅ Ensure logs is always an array
     } catch (err) {
       console.error("Error fetching logs:", err.message);
       setLogs([{ action: "No logs available", timestamp: "" }]);
@@ -154,11 +153,11 @@ export default function CoAdminDashboard() {
 
 
 // this is to handle if the super admin wants to disable other admin accounts
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (admin_id, newStatus) => {
     if (!confirm(`Are you sure you want to ${newStatus === "disabled" ? "disable" : "re-enable"} this co-admin?`)) return;
 
     try {
-      const res = await fetch(`/api/systemadmin/co_admin/${id}`, {
+      const res = await fetch(`/api/systemadmin/co_admin/${admin_id}`, {
         method: "PATCH",
         credentials: "include",
         headers: {

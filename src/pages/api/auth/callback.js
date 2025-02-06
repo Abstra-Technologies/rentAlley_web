@@ -159,7 +159,7 @@ export default async function handler(req, res) {
             userType: dbUser.userType,
         })
             .setProtectedHeader({ alg: "HS256" })
-            .setExpirationTime("1h")
+            .setExpirationTime("2h")
             .setIssuedAt()
             .setSubject(userId.toString())
             .sign(secret);

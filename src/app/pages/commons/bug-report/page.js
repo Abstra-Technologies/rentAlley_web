@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import useAuth from "../../../../../hooks/useSession";
 import BugReportForm from "../../../../components/modules/bugreport";
 
@@ -20,8 +19,8 @@ export default function TenantDashboard() {
 
     return (
         <div>
-            <h4>User ID: {user.userID}</h4>
-            <BugReportForm userID={user.userID} />
+            <h4>User ID: {user.user_id}</h4>
+            <BugReportForm user_id={user.user_id} />
             {/* Sign Out Button */}
             <button
                 onClick={signOut}

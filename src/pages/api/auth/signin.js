@@ -42,10 +42,22 @@ export default async function handler(req, res) {
       lastName: lastName,
     })
       .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("1h")
+      .setExpirationTime("2h")
       .setIssuedAt()
       .setSubject(user.user_id)
       .sign(secret);
+
+    // const refreshToken = await new SignJWT({
+    //   user_id: user.user_id,
+    //   userType: user.userType,
+    //   firstName: firstName,
+    //   lastName: lastName,
+    // })
+    //     .setProtectedHeader({ alg: "HS256" })
+    //     .setExpirationTime("7d")
+    //     .setIssuedAt()
+    //     .setSubject(user.user_id)
+    //     .sign(secret);
 
     // Set the token as a cookie
     const isDev = process.env.NODE_ENV === "development";

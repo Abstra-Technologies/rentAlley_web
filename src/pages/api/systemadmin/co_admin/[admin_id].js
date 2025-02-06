@@ -68,27 +68,27 @@ export default async function handler(req, res) {
         }
 
         const currentadmin_id = decoded.admin_id;
-        const { id } = req.query; // Get co-admin ID from URL
+        const { admin_id } = req.query; // Get co-admin ID from URL
 
-        if (!id) {
+        if (!admin_id) {
             return res.status(400).json({ success: false, message: "Co-admin ID is required" });
         }
 
         // Prevent the user from deleting or disabling themselves
-        if (parseInt(id) === currentadmin_id) {
+        if (parseInt(admin_id) === currentadmin_id) {
             return res.status(403).json({ success: false, message: "You cannot modify yourself" });
         }
 
         // **DELETE Request: Remove Co-Admin**
         if (req.method === "DELETE") {
-            const [result] = await db.query("DELETE FROM Admin WHERE admin_id = ?", [id]);
+            const [result] = await db.query("DELETE FROM Admin WHERE admin_id = ?", [admin_id]);
 
             if (result.affectedRows === 0) {
                 return res.status(404).json({ success: false, message: "Co-admin not found" });
             }
             await db.query(
                 "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
-                [req.admin_id, `Deleted Co-admin with ID: (ID: ${id})`]
+                [req.admin_id, `Deleted Co-admin with ID: (ID: ${admin_id})`]
             );
 
             return res.status(200).json({ success: true, message: "Co-admin deleted successfully" });
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
 
             const [updateResult] = await db.query(
                 "UPDATE Admin SET status = ? WHERE admin_id = ?",
-                [status, id]
+                [status, admin_id]
             );
 
             if (updateResult.affectedRows === 0) {
@@ -112,7 +112,7 @@ export default async function handler(req, res) {
             }
             await db.query(
                 "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
-                [req.admin_id, `Updated Co-admin - ID: ${id}) status to ${status}`]
+                [req.admin_id, `Updated Co-admin - ID: ${admin_id}) status to ${status}`]
             );
             return res.status(200).json({ success: true, message: `Co-admin ${status} successfully` });
         }

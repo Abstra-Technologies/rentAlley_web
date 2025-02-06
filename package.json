@@ -10,6 +10,11 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.738.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^6.4.3",
+    "@mui/x-data-grid": "^7.25.0",
+    "@pusher/push-notifications-web": "^1.1.0",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "cookie": "^1.0.2",
