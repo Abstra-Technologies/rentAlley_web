@@ -63,7 +63,7 @@ export default async function handler(req, res) {
             },
         )
             .setProtectedHeader({ alg: "HS256" })
-            .setExpirationTime("1h")
+            .setExpirationTime("2h")
             .setIssuedAt()
             .setSubject(adminRecord.admin_id.toString())
             .sign(secret);

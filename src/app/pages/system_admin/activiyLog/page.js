@@ -11,7 +11,7 @@ import {
 export default function ActivityLogs() {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { user } = useAuth();
+    const { admin } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -33,7 +33,7 @@ export default function ActivityLogs() {
         fetchLogs();
     }, []);
 
-    if (!user) {
+    if (!admin) {
         return null;
     }
 

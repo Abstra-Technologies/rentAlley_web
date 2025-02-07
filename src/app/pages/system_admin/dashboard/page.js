@@ -7,14 +7,14 @@ import {useState} from "react";
 
 
 export default function AdminDashboard() {
-    const { user, loading, signOut_admin } = useAuth()
+    const { admin, loading, signOutAdmin } = useAuth()
     const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
     if (loading) {
         return <p>Loading...</p>;
     }
 
-    if (!user) {
+    if (!admin) {
         return router.push("./login");
     }
     const handleDeleteAccount = async () => {
@@ -35,7 +35,7 @@ export default function AdminDashboard() {
                 method: "DELETE",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ admin_id: user.admin_id }),
+                body: JSON.stringify({ admin_id: admin.admin_id }),
             });
 
             const data = await response.json();
@@ -54,12 +54,12 @@ export default function AdminDashboard() {
     return (
         <div>
             <h1>
-                Welcome, {user.username}!
+                Welcome, {admin.username}!
             </h1>
-            <p>Your user type is: {user.role}  | ID: {user.admin_id}</p>
+            <p>Your user type is: {admin.role} | ID: {admin.admin_id}</p>
             <hr/>
             <h2 className='m-2'>Side Pan Nav Contents</h2>
-            <p className='m-2' ><i>Kindly add these modules links on the sideNav</i></p>
+            <p className='m-2'><i>Kindly add these modules links on the sideNav</i></p>
             <div className='mb-10'>
                 <Link className='m-2' href='./activiyLog'>ActivityLog</Link>
                 <Link className='m-2' href='./co_admin/list'>Add Co-admin</Link>
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
             {/* Buttons */}
             <div className="flex space-x-4">
                 <button
-                    onClick={signOut_admin}
+                    onClick={signOutAdmin}
                     className="bg-red-500 text-white px-4 py-2 rounded-md"
                 >
                     Sign Out

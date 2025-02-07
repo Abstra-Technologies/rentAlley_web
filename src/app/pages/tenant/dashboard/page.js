@@ -6,28 +6,12 @@ import ChatComponent from "../../../../components/modules/chat";
 import {useRouter} from "next/navigation";
 import {initializePusher} from "../../utils/pusher";
 import {useEffect, useState} from "react";
+import ProfilePage from "../../../../components/profilePage";
 export default function TenantDashboard() {
   const { user, loading, error, signOut } = useAuth();
 const router = useRouter();
     initializePusher();
     const [userDetails, setUserDetails] = useState(null);
-
-
-    async function fetchUserData(user_id) {
-        try {
-            const response = await fetch(`/api/user/details/${user_id}`);
-            const data = await response.json();
-            setUserDetails(data);
-        } catch (error) {
-            console.error("Error fetching user data:", error);
-        }
-    }
-
-    useEffect(() => {
-        if (user?.user_id) {
-            fetchUserData(user.user_id);
-        }
-    }, [user?.user_id]);
 
     if (loading) {
     return <p>Loading...</p>;
@@ -53,7 +37,7 @@ const router = useRouter();
           {/*    </button>*/}
           {/*</Link>*/}
 
-
+        <ProfilePage />
 
           <ChatComponent user={user}/>
 
