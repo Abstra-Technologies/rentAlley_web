@@ -4,6 +4,12 @@ import { z } from "zod";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+/*
+REMOVE THIS ENTIRE FILE You do not need multer here.
+use the profilePage component instead.
+
+ */
+
 // Define the Zod schema for validation
 const profileSchema = z.object({
   firstName: z.string().min(2, { message: "First name is required." }),

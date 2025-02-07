@@ -108,7 +108,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Verify JWT token
         const token = await getCookie("token", { req, res });
 
         if (!token) {
