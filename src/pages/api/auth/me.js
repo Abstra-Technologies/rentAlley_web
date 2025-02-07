@@ -58,6 +58,7 @@ export default async function handler(req, res) {
             u.lastName,
             u.email,
             u.userType,
+            u.profilePicture,
             t.tenant_id,
             l.landlord_id
         FROM User u

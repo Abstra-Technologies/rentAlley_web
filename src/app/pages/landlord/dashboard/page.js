@@ -34,7 +34,6 @@ export default function LandlordDashboard() {
           >
               Sign Out
           </button>
-
           {/* Additional content can go here */}
       </div>
   );

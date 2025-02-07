@@ -48,6 +48,7 @@ export default async function handler(req, res) {
             u.firstName,
             u.lastName,
             u.email,
+            u.profilePicture,
             u.userType,
             t.tenant_id,
             l.landlord_id
@@ -70,6 +71,7 @@ export default async function handler(req, res) {
                     userType: user.userType,
                     tenant_id: user.tenant_id || null,
                     landlord_id: user.landlord_id || null,
+                    profilePicture: user.profilePicture || null,
                 };
             }
         }

@@ -432,6 +432,7 @@ export default function useAuth() {
       firstName: decryptData(JSON.parse(data.firstName), encryptionKey),
       lastName: decryptData(JSON.parse(data.lastName), encryptionKey),
       email: decryptData(JSON.parse(data.email), encryptionKey),
+      profilePicture: data.profilePicture,
       tenant_id: data.tenant_id || null,
       userType: data.userType || null,
       landlord_id: data.landlord_id || null,
@@ -454,6 +455,8 @@ export default function useAuth() {
       email: data.email,
       role: data.role,
       status: data.status,
+      profilePicture: data.profilePicture,
+
     };
   };
 
