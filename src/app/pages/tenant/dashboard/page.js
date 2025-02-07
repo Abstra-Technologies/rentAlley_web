@@ -27,15 +27,7 @@ const router = useRouter();
           </h1>
           <p>Your user type is: {user.userType} | ID: {user.user_id}</p>
           <p>Tenant ID: {user.tenant_id}</p>
-          {/*{userDetails && user.userType === "tenant" && `| Tenant ID: ${userDetails.tenant_id}`}*/}
-          {/*{userDetails && user.userType === "landlord" && `| Landlord ID: ${userDetails.landlord_id}`}*/}
 
-          {/* View Profile Button */}
-          {/*<Link href={`/pages/${user.userType}/profile/${user.userID}`}>*/}
-          {/*    <button className="bg-blue-500 text-white px-4 py-2 rounded-md">*/}
-          {/*        View Profile*/}
-          {/*    </button>*/}
-          {/*</Link>*/}
 
         <ProfilePage />
 
