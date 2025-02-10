@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuth from "../../hooks/useSession";
+import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import axios from "axios";
 
 export default function ProfilePage() {
@@ -23,7 +23,6 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (user) {
-            console.log("🔍 [DEBUG] User Data from useSession:", user);
             setProfileData(user);
             setProfilePicture(user.profilePicture || "https://via.placeholder.com/150");
             setFormData({
@@ -39,45 +38,37 @@ export default function ProfilePage() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    //file change for profile pic
-    const handleFileChange = (event) => {
+    const handleFileChange = async (event) => {
         const file = event.target.files[0];
-        if (file) {
-            setSelectedFile(file);
-            setProfilePicture(URL.createObjectURL(file)); // Show preview of the pic
-        }
-    };
-
-    const handleUpload = async () => {
-        if (!selectedFile) return;
+        if (!file) return;
+        setSelectedFile(file);
+        setProfilePicture(URL.createObjectURL(file));
+        
         setUploading(true);
-
         const formData = new FormData();
-        formData.append("file", selectedFile);
+        formData.append("file", file);
 
         try {
             const response = await axios.post("/api/profile/profilepic", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-
             setProfilePicture(response.data.imageUrl);
+            setProfileData((prev) => ({ ...prev, profilePicture: response.data.imageUrl }));
             console.log("✅ Image uploaded:", response.data.imageUrl);
         } catch (error) {
             console.error("❌ Upload failed:", error);
         }
-
         setUploading(false);
     };
 
     const handleUpdateProfile = async () => {
         try {
-            const response = await axios.post("/api/profile/update", formData, {
+            await axios.post("/api/profile/update", formData, {
                 headers: { "Content-Type": "application/json" },
                 withCredentials: true,
             });
-
             alert("Profile updated successfully!");
-            setProfileData((prev) => ({ ...prev, ...formData })); // Update state
+            setProfileData((prev) => ({ ...prev, ...formData }));
             setEditing(false);
         } catch (error) {
             console.error("Profile update failed:", error);
@@ -90,111 +81,115 @@ export default function ProfilePage() {
     if (error) return <p>Error: {error}</p>;
 
     return (
-        <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Profile Information</h1>
-
-            {/* Profile Picture Upload */}
-            <div className="flex flex-col items-center">
-                <img
-                    src={profilePicture || "https://via.placeholder.com/150"}
-                    alt="Profile"
-                    className="w-32 h-32 rounded-full object-cover border"
-                />
-                <input type="file" accept="image/*" onChange={handleFileChange} className="mt-3"/>
-                <button
-                    onClick={handleUpload}
-                    className="mt-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-                    disabled={uploading}
-                >
-                    {uploading ? "Uploading..." : "Upload Profile Picture"}
-                </button>
+        <div className="flex min-h-screen bg-gray-50">
+            <div className="w-64 bg-white border-r border-gray-200 py-4 px-6">
+                <h2 className="text-2xl font-semibold text-blue-600 mb-6">Menu</h2>
+                <nav>
+                    <ul>
+                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                            <a href="#" className="flex items-center space-x-2 text-gray-700">
+                                <UserIcon className="h-5 w-5" />
+                                <span>Profile</span>
+                            </a>
+                        </li>
+                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                            <a href="#" className="flex items-center space-x-2 text-gray-700">
+                                <ShieldCheckIcon className="h-5 w-5" />
+                                <span>Security & Privacy</span>
+                            </a>
+                        </li>
+                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                            <a href="#" className="flex items-center space-x-2 text-gray-700">
+                                <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            <div className="flex-1 p-8">
+                <h1 className="text-3xl font-semibold text-blue-600 mb-8">Profile</h1>
+                <div className="max-w-2xl mx-auto">
+                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center relative">
+    <label className="relative cursor-pointer group">
+        {/* Profile Picture */}
+        <img 
+            src={profilePicture} 
+            alt="Profile" 
+            className="w-32 h-32 rounded-full object-cover border border-gray-300 shadow-md"
+        />
+        
+        {/* Hidden File Input */}
+        <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            className="hidden"
+        />
+        
+        {/* Change Picture Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 
+                        group-hover:bg-opacity-50 rounded-full transition-all duration-300">
+            <span className="text-white text-sm font-medium opacity-0 group-hover:opacity-100 
+                           transition-opacity duration-300">
+                Change Picture
+            </span>
+        </div>
+    </label>
+</div>
             </div>
 
-            <div className="mt-6 space-y-3">
-                <div>
-                    <p className="font-semibold">First Name</p>
-                    {editing ? (
-                        <input
-                            type="text"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            className="w-full p-2 border rounded-md"
-                        />
+                    <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Welcome, {user?.firstName}!</h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">First Name</label>
+                            {editing ? (
+                            <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} className="w-full p-2 border rounded-md" />
+                        ) : (
+                            <input type="text" value={profileData?.firstName} className="text-gray-400 w-full p-2 border rounded-md"/>
+                        )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                            {editing ? (
+                            <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} className="w-full p-2 border rounded-md" />
+                        ) : (
+                            <input type="text" value={profileData?.lastName} className="text-gray-400 w-full p-2 border rounded-md"/>
+                        )}
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email (Read-Only)</label>
+                            <input type="text" value={profileData?.email} className="text-gray-400 w-full p-2 border rounded-md" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                            {editing ? (
+                        <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="w-full p-2 border rounded-md" />
                     ) : (
-                        <p>{profileData?.firstName}</p>
+                        <input type="text" name="phoneNumber" value={profileData?.phoneNumber || "Not provided"} className="text-gray-400 w-full p-2 border rounded-md"/>
                     )}
-                </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">User Type (Read-Only)</label>
+                            <input type="text" value={user.userType} className="text-gray-400 w-full p-2 border rounded-md" />
+                        </div>
+                    </div>
 
-                <div>
-                    <p className="font-semibold">Last Name</p>
-                    {editing ? (
-                        <input
-                            type="text"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            className="w-full p-2 border rounded-md"
-                        />
-                    ) : (
-                        <p>{profileData?.lastName}</p>
-                    )}
-                </div>
-
-                <div>
-                    <p className="font-semibold">Email (Read-Only)</p>
-                    <p className="text-gray-600">{profileData?.email}</p>
-                </div>
-
-                <div>
-                    <p className="font-semibold">Phone Number</p>
-                    {editing ? (
-                        <input
-                            type="text"
-                            name="phoneNumber"
-                            value={formData.phoneNumber}
-                            onChange={handleChange}
-                            className="w-full p-2 border rounded-md"
-                        />
-                    ) : (
-                        <p>{profileData?.phoneNumber || "Not provided"}</p>
-                    )}
-                </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-center mt-4 space-x-4">
+                    <div className="flex justify-between mt-4">
+                <button className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">Delete Account</button>
                 {editing ? (
-                    <>
-                        <button
-                            onClick={handleUpdateProfile}
-                            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-                        >
-                            Save Changes
-                        </button>
-                        <button
-                            onClick={() => setEditing(false)}
-                            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-                        >
-                            Cancel
-                        </button>
-                    </>
+                    <button onClick={handleUpdateProfile} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                        Save Changes
+                    </button>
                 ) : (
-                    <button
-                        onClick={() => setEditing(true)}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                    >
+                    <button onClick={() => setEditing(true)} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
                         Edit Profile
                     </button>
                 )}
             </div>
-
-            <button
-                className="mt-4 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                onClick={() => router.push("/dashboard")}
-            >
-                Back to Dashboard
-            </button>
+                </div>
+            </div>
         </div>
     );
 }

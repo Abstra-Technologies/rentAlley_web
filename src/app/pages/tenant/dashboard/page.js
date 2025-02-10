@@ -29,8 +29,6 @@ const router = useRouter();
           <p>Tenant ID: {user.tenant_id}</p>
 
 
-        <ProfilePage />
-
           <ChatComponent user={user}/>
 
           <button
