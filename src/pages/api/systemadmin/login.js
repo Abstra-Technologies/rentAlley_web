@@ -106,7 +106,7 @@ export default async function handler(req, res) {
             },
         });
     } catch (error) {
-        console.error("[DEBUG] Error during login:", { error: error.message, stack: error.stack });
+        console.error("[DEBUG] Error during admin_login:", { error: error.message, stack: error.stack });
         res.status(500).json({ error: "Internal server error." });
     }
 }

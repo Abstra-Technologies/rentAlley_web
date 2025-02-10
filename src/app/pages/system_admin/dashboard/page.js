@@ -43,7 +43,7 @@ export default function AdminDashboard() {
             if (!response.ok) throw new Error(data.message || "Failed to delete account.");
 
             alert("Your account has been successfully deleted.");
-            router.push("./login"); // Redirect to login after account deletion
+            router.push("./login"); // Redirect to admin_login after account deletion
         } catch (error) {
             alert("Error: " + error.message);
         } finally {
@@ -65,8 +65,8 @@ export default function AdminDashboard() {
                 <Link className='m-2' href='./co_admin/list'>Add Co-admin</Link>
                 <Link className='m-2' href='./tenant_landlord/tenant_mgt'>Tenant Management</Link>
                 <Link className='m-2' href='./tenant_landlord/landlord_mgt'>Landlord Management</Link>
-                <Link className='m-2' href='./co_admin'>Landlord Verification</Link>
-                <Link className='m-2' href='./co_admin'>Property Verification</Link>
+                {/*<Link className='m-2' href='./co_admin'>Landlord Verification</Link>*/}
+                <Link className='m-2' href='./propertyManagement/list'>Property Verification</Link>
                 <Link className='m-2' href='./annoucement'>Annoucements</Link>
                 <Link className='m-2' href='./bug_report/list'>Bug Reports</Link>
                 <Link className='m-2' href='./auditLogs'>Audit Logs</Link>

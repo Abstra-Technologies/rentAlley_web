@@ -6,7 +6,7 @@ export default function  LandlordList() {
     const [landlords, setLandlords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { user } = useAuth();
+    const { admin } = useAuth();
 
     useEffect(() => {
         const fetchLandlords = async () => {
@@ -35,7 +35,7 @@ export default function  LandlordList() {
         return <p>Loading...</p>;
     }
 
-    if (!user) {
+    if (!admin) {
         return <p>You need to log in to access the dashboard.</p>;
     }
 
@@ -57,7 +57,24 @@ export default function  LandlordList() {
                 <tbody>
                 <>
                     {landlords.map((landlord, index) => (
-                        <tr key={landlord.landlord_id}><td>{index + 1}</td><td>{landlord.landlord_id}</td><td>{landlord.userID}</td><td>{landlord.profilePicture}</td><td>{landlord.verified}</td><td>{landlord.createdAt}</td>
+                        <tr key={landlord.landlord_id}>
+                            <td>{index + 1}</td>
+                            <td>{landlord.landlord_id}</td>
+                            <td>
+                                <a
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        router.push(`./viewProfile/landlord/${landlord.user_id}`);
+                                    }}
+                                    style={{color: "blue", textDecoration: "underline", cursor: "pointer"}}
+                                >
+                                    {landlord.user_id}
+                                </a>
+                            </td>
+                            <td>{landlord.profilePicture}</td>
+                            <td>{landlord.verified}</td>
+                            <td>{landlord.createdAt}</td>
                         </tr>
                     ))}
                 </>

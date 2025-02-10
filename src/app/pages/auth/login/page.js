@@ -31,8 +31,6 @@ export default function Login() {
       router.push("/pages/tenant/dashboard");
     } else if (userType === "landlord") {
       router.push("/pages/landlord/dashboard");
-    } else if (userType === "admin") {
-      router.push("/admin-dashboard");
     }
   };
 
@@ -63,7 +61,7 @@ export default function Login() {
       // Validate the entire form
       loginSchema.parse(formData);
       console.log("Login Data:", formData);
-      // validation logic for login backend api if the credentials are correct
+      // validation logic for admin_login backend api if the credentials are correct
       const response = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,10 +74,7 @@ export default function Login() {
       } else {
         setMessage("Login successful!");
       }
-
       const token = data.token; // JWT token
-
-      // sessionStorage.setItem("token", token);
       const decodedToken = JSON.parse(atob(token.split(".")[1]));
       const userType = decodedToken.userType; // this is for the user to be redirected to proper page
 

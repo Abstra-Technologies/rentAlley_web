@@ -6,12 +6,12 @@ import { useRouter} from "next/navigation";
 // When the page loads (useEffect):
 //
 //     It checks localStorage for a saved lock expiration time.
-//     If the lock is still active, it keeps the login disabled.
+//     If the lock is still active, it keeps the admin_login disabled.
 //     A countdown timer updates dynamically.
 //
 //     After 3 failed attempts:
 //
-//     Locks login for 1 minute.
+//     Locks admin_login for 1 minute.
 //     Shows the countdown on the button: "Locked (XXs)".
 //     Even after a page refresh, the lock persists.
 
@@ -77,11 +77,11 @@ const router = useRouter();
         setMessage("Login successful!");
         setAttempts(0); // Reset attempts on success
         localStorage.removeItem("lockUntil");
-        router.push("./dashboard");
+        router.push("/pages/system_admin/dashboard");
       } else {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
-        setMessage(data.error || "Invalid login credentials.");
+        setMessage(data.error || "Invalid admin_login credentials.");
 
         if (newAttempts >= 3) {
           const lockDuration = 60000;
@@ -250,7 +250,7 @@ const router = useRouter();
 //     }
 //
 //     try {
-//       const res = await fetch("/api/systemadmin/login", {
+//       const res = await fetch("/api/systemadmin/admin_login", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(form),
@@ -266,7 +266,7 @@ const router = useRouter();
 //       } else {
 //         const newAttempts = attempts + 1;
 //         setAttempts(newAttempts);
-//         setMessage(data.error || "Invalid login credentials.");
+//         setMessage(data.error || "Invalid admin_login credentials.");
 //
 //         if (newAttempts >= 3) {
 //           const lockDuration = 60000; // 30 seconds lock time

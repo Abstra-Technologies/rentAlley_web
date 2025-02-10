@@ -7,7 +7,7 @@ export default function  LandlordList() {
     const [tenants, setTenants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { user } = useAuth();
+    const { admin } = useAuth();
 const router = useRouter();
     useEffect(() => {
         const fetchTenants = async () => {
@@ -36,7 +36,7 @@ const router = useRouter();
         return <p>Loading...</p>;
     }
 
-    if (!user) {
+    if (!admin) {
         return <p>You need to log in to access the dashboard.</p>;
     }
 
@@ -50,7 +50,6 @@ const router = useRouter();
                     <th>#</th>
                     <th>Tenant ID</th>
                     <th>User ID</th>
-                    <th>Profile Picture</th>
                     <th>Created At</th>
                 </tr>
                 </thead>
@@ -65,7 +64,6 @@ const router = useRouter();
                                     href="#"
                                     onClick={(e) => {
                                         e.preventDefault();
-                                        console.log("Navigating to:", `./viewProfile/tenant/${tenant.user_id}`);
                                         router.push(`./viewProfile/tenant/${tenant.user_id}`);
                                     }}
                                     style={{color: "blue", textDecoration: "underline", cursor: "pointer"}}
@@ -73,7 +71,6 @@ const router = useRouter();
                                     {tenant.user_id}
                                 </a>
                             </td>
-                            <td>{tenant.profilePicture}</td>
                             <td>{tenant.verified}</td>
                             <td>{tenant.createdAt}</td>
                         </tr>

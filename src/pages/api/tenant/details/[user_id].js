@@ -28,7 +28,7 @@ export default async function handler(req, res) {
                 u.userType,
                 u.emailVerified,
                 t.tenant_id,
-                t.profilePicture,
+                u.profilePicture,
                 t.createdAt AS tenantCreatedAt
             FROM User u
             INNER JOIN Tenant t ON u.user_id = t.user_id

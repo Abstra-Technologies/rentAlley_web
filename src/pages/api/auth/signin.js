@@ -90,7 +90,7 @@ export default async function handler(req, res) {
       },
     });
   } catch (error) {
-    console.error("Error during login:", error);
+    console.error("Error during admin_login:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }

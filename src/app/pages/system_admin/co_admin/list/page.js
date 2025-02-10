@@ -13,7 +13,7 @@ export default function CoAdminDashboard() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = useAuth();
+  const { admin } = useAuth();
   const [editModal, setEditModal] = useState(false);
   const [logs, setLogs] = useState([]); // Store logs for the selected admin
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function CoAdminDashboard() {
   const [formData, setFormData] = useState({ username: "", email: "", role: "", status: "", password: "" });
   // Fetch Co-Admins (Except Logged-in User)
   useEffect(() => {
-    if (!user) return; // Don't fetch if user is not authenticated
+    if (!admin) return; // Don't fetch if user is not authenticated
 
     const fetchCoAdmins = async () => {
       setLoading(true);
@@ -47,7 +47,7 @@ export default function CoAdminDashboard() {
     };
 
     fetchCoAdmins();
-  }, [user]);
+  }, [admin]);
 
   // Navigate to create co-admin page
   const handleAddCoAdmin = () => {
@@ -185,7 +185,7 @@ export default function CoAdminDashboard() {
   // Render Loading State
   if (loading) return <p className="text-center text-gray-500">Loading Co-admins...</p>;
   if (error) return <p className="text-center text-red-500">Error: {error}</p>;
-  if (!user) return <p className="text-center text-red-500">You need to log in to access the dashboard.</p>;
+  if (!admin) return <p className="text-center text-red-500">You need to log in to access the dashboard.</p>;
 
   return (
       <div className="p-6">

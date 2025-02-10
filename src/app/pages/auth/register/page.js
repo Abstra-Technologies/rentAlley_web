@@ -115,7 +115,7 @@ export default function Register() {
         }, 1000); // Redirect after 2 seconds
 
       } else if (data.error && data.error.includes("already registered")) {
-        setError("This email is already registered. Please login.");
+        setError("This email is already registered. Please admin_login.");
       } else {
         setError(data.error || "Registration failed. Please try again.");
       }
