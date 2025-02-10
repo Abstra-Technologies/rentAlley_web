@@ -1,10 +1,7 @@
-'use client'
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import {usePathname} from "next/navigation";
-import useAuth from "@/hooks/useSession";
-import Navibar from "@/src/components/navigation/navbar";
+import Navbar from "../../src/components/navigation/navbar";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -16,24 +13,16 @@ const geistMono = Geist_Mono({
     subsets: ["latin"],
 });
 
-<<<<<<< Updated upstream
 export const metadata: Metadata = {
     title: "Rentahan",
     description: "Real Estate Web Application",
 };
-=======
-// export const metadata: Metadata = {
-//   title: "Rentahan",
-//   description: "Real Estate Web Application",
-// };
->>>>>>> Stashed changes
 
 export default function RootLayout({
                                        children,
                                    }: Readonly<{
     children: React.ReactNode;
 }>) {
-<<<<<<< Updated upstream
     return (
         <html lang="en">
         <head><title></title></head>
@@ -45,19 +34,4 @@ export default function RootLayout({
         </body>
         </html>
     );
-=======
-  return (
-      <html lang="en">
-      <head><title></title></head>
-      <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-      {/*<Navbar/>*/}
-      {/* <Navibar />*/}
-      {children}
-
-      </body>
-      </html>
-  );
->>>>>>> Stashed changes
 }

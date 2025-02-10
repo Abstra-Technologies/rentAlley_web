@@ -1,13 +1,14 @@
 'use client'
 import {useEffect, useState} from "react";
 import useAuth from "../../../../../../hooks/useSession";
+import {useRouter} from "next/navigation";
 
 export default function  LandlordList() {
     const [landlords, setLandlords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { admin } = useAuth();
-
+    const router = useRouter();
     useEffect(() => {
         const fetchLandlords = async () => {
             try {
