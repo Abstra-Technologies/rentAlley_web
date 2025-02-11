@@ -16,7 +16,9 @@ const ViewPropertyPage = () => {
   // Handle Edit Unit
   const handleEditUnit = (unitId) => {
     // Navigate to the edit page for the specific unit
-    router.push(`/pages/landlord/property-listing/view-property/${id}/edit-unit/${unitId}`);
+    router.push(
+      `/pages/landlord/property-listing/view-property/${id}/edit-unit/${unitId}`
+    );
   };
 
   if (!property) {
@@ -25,6 +27,10 @@ const ViewPropertyPage = () => {
 
   return (
     <LandlordLayout>
+      <h1>
+        This page is where the single property details will be and tenant
+        request history.
+      </h1>
       <div className="min-h-screen bg-gray-100 p-6">
         {/* Property Header */}
         <h1 className="text-3xl font-bold mb-2">{property.name}</h1>
@@ -33,7 +39,11 @@ const ViewPropertyPage = () => {
         {/* Add New Unit Button */}
         <button
           className="px-4 py-2 mb-6 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-          onClick={() => router.push(`/pages/landlord/property-listing/view-property/${id}/create-unit`)}
+          onClick={() =>
+            router.push(
+              `/pages/landlord/property-listing/view-property/${id}/create-unit`
+            )
+          }
         >
           + Add New Unit
         </button>
@@ -42,7 +52,7 @@ const ViewPropertyPage = () => {
         <div className="grid grid-cols-1 gap-6">
           {propertyUnits.map((unit) => (
             <div
-            key={unit.unitId} // Add a unique key prop
+              key={unit.unitId} // Add a unique key prop
               className="p-4 bg-white rounded-lg shadow-md space-y-4 hover:shadow-lg transition-shadow"
             >
               {/* Unit Header */}
@@ -77,7 +87,9 @@ const ViewPropertyPage = () => {
               <div className="flex justify-between items-center mt-4">
                 <button
                   className="px-3 py-2 text-sm text-white bg-blue-500 rounded-md hover:bg-blue-600"
-                  onClick={() => alert(`Handle tenant request for unit ${unit.unitId}`)}
+                  onClick={() =>
+                    alert(`Handle tenant request for unit ${unit.unitId}`)
+                  }
                 >
                   Tenant Request
                 </button>

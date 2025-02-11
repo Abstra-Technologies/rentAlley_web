@@ -1,16 +1,12 @@
-import multer from "multer";
+import { IncomingForm } from "formidable";
 import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
+import fs from "fs";
 import { db } from "../../lib/db";
-import { runMiddleware } from "../../lib/middleware";
-import path from "path";
-import CryptoJS from "crypto-js"; // Import CryptoJS for encryption
-
-// Import the encrypt/decrypt functions from the specified path
-import { decryptData } from "../../crypto/encrypt";
+import { decryptData, encryptData } from "../../crypto/encrypt";
 
 // AWS S3 Configuration
 const s3Client = new S3Client({
@@ -21,30 +17,24 @@ const s3Client = new S3Client({
   },
 });
 
-// Encryption Secret (store this securely, e.g., in environment variables)
-const encryptionSecret = process.env.EMAIL_SECRET_KEY; // Load the encryption secret from environment variables
+// Encryption Secret
+const encryptionSecret = process.env.ENCRYPTION_SECRET;
 
-// Multer configuration
-const storage = multer.memoryStorage(); // Store files in memory as buffers
-const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    const allowedExtensions = [".jpg", ".jpeg", ".png"];
-    const fileExtension = path.extname(file.originalname).toLowerCase();
-    if (allowedExtensions.includes(fileExtension)) {
-      cb(null, true);
-    } else {
-      cb(new Error("File type not allowed"), false);
-    }
-  },
-});
-
-// API Config
+// API Config to disable default body parsing (important for Formidable)
 export const config = {
   api: {
     bodyParser: false,
   },
 };
+
+// Function to sanitize filenames, including special characters
+function sanitizeFilename(filename) {
+  // Replace special characters with underscores and remove whitespaces
+  const sanitized = filename
+    .replace(/[^a-zA-Z0-9.]/g, "_") // Replace non-alphanumeric chars with underscores
+    .replace(/\s+/g, "_"); // Replace consecutive whitespaces with a single underscore
+  return sanitized;
+}
 
 export default async function handler(req, res) {
   let connection;
@@ -72,91 +62,104 @@ export default async function handler(req, res) {
   }
 }
 
-// Handle multiple file uploads to S3
+// Handle file upload and save to S3
 async function handlePostRequest(req, res, connection) {
-  try {
-    await runMiddleware(req, res, upload.array("files", 5));
-  } catch (e) {
-    return res.status(500).json({ error: "File upload error: " + e.message });
-  }
+  const form = new IncomingForm({
+    multiples: true, // Allows multiple file uploads
+    keepExtensions: true, // Keeps file extensions
+    maxFileSize: 10 * 1024 * 1024, // 5MB limit per file
+  });
 
-  const { property_id } = req.body;
-  const files = req.files;
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error("Error parsing form:", err);
+      return res.status(400).json({ error: "Error parsing form data" });
+    }
 
-  if (!files || files.length === 0) {
-    return res.status(400).json({ error: "No files uploaded" });
-  }
+    // For Debugging
+    console.log("Error from form.parse:", err);
+    console.log("Fields from form.parse:", fields);
+    console.log("Files from form.parse:", files);
 
-  try {
-    await connection.beginTransaction();
+    const { property_id } = fields;
+    if (!property_id) {
+      return res.status(400).json({ error: "Missing property_id" });
+    }
 
-    const uploadPromises = files.map(async (file) => {
-      const key = `propertyPhoto/${Date.now()}_${file.originalname}`;
-      const photoUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    const uploadedFiles = Object.values(files).flat();
+    console.log("📂 Reformatted Uploaded Files:", uploadedFiles);
 
-      // Log the URL before encryption
-      console.log("Before Encryption - photoUrl:", photoUrl);
-      console.log("Before Encryption - encryptionSecret:", encryptionSecret);
+    if (!uploadedFiles.length) {
+      return res.status(400).json({ error: "No files uploaded" });
+    }
 
-      // Encrypt the URL using CryptoJS
-      const encryptedUrl = CryptoJS.AES.encrypt(
-        photoUrl,
-        encryptionSecret
-      ).toString();
+    try {
+      await connection.beginTransaction();
 
-      // Log the encrypted URL
-      console.log("After Encryption - encryptedUrl:", encryptedUrl);
+      const uploadPromises = uploadedFiles.map(async (file) => {
+        const filePath = file.filepath;
+        const sanitizedFilename = sanitizeFilename(file.originalFilename);
+        const fileName = `propertyPhoto/${Date.now()}_${sanitizedFilename}`;
+        const fileStream = fs.createReadStream(filePath);
+        const photoUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
-      // Upload the encrypted file to S3
-      const uploadParams = {
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: key,
-        Body: file.buffer, // Keep the original file buffer
-        ContentType: file.mimetype,
-      };
-
-      try {
-        await s3Client.send(new PutObjectCommand(uploadParams));
-        return {
-          property_id,
-          photo_url: encryptedUrl, // Store the encrypted URL
-        };
-      } catch (uploadError) {
-        console.error("Error uploading file to S3:", uploadError);
-        throw new Error(
-          `Failed to upload ${file.originalname}: ${uploadError.message}`
+        // Encrypt the URL
+        const encryptedUrl = JSON.stringify(
+          encryptData(photoUrl, encryptionSecret)
         );
-      }
-    });
 
-    const uploadedFilesData = await Promise.all(uploadPromises);
+        // Upload to S3
+        const uploadParams = {
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: fileName,
+          Body: fileStream,
+          ContentType: file.mimetype,
+        };
 
-    const values = uploadedFilesData.map((fileData) => [
-      fileData.property_id,
-      fileData.photo_url, // Store the encrypted URL in the database
-      new Date(),
-      new Date(),
-    ]);
+        try {
+          await s3Client.send(new PutObjectCommand(uploadParams));
 
-    const [result] = await connection.query(
-      `INSERT INTO PropertyPhoto (property_id, photo_url, created_at, updated_at) VALUES ?`,
-      [values]
-    );
+          return {
+            property_id,
+            photo_url: encryptedUrl, // Store encrypted URL
+          };
+        } catch (uploadError) {
+          console.error("Error uploading file to S3:", uploadError);
+          throw new Error(
+            `Failed to upload ${file.originalFilename}: ${uploadError.message}`
+          );
+        }
+      });
 
-    await connection.commit();
+      const uploadedFilesData = await Promise.all(uploadPromises);
 
-    res.status(201).json({
-      message: "Photos uploaded successfully",
-      insertedPhotoIDs: result.insertId,
-      files: uploadedFilesData,
-    });
-  } catch (error) {
-    await connection.rollback();
-    console.error("Error saving property photos:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to add property photos: " + error.message });
-  }
+      const values = uploadedFilesData.map((fileData) => [
+        fileData.property_id,
+        fileData.photo_url,
+        new Date(),
+        new Date(),
+      ]);
+
+      const [result] = await connection.query(
+        `INSERT INTO PropertyPhoto (property_id, photo_url, created_at, updated_at) VALUES ?`,
+        [values]
+      );
+
+      await connection.commit();
+
+      res.status(201).json({
+        message: "Photos uploaded successfully",
+        insertedPhotoIDs: result.insertId,
+        files: uploadedFilesData,
+      });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error saving property photos:", error);
+      res
+        .status(500)
+        .json({ error: "Failed to add property photos: " + error.message });
+    }
+  });
 }
 
 // Fetch property photos
@@ -174,18 +177,11 @@ async function handleGetRequest(req, res, connection) {
 
     const [rows] = await connection.execute(query, params);
 
-    // Decrypt the photo URLs before returning them to the client
+    // Decrypt the photo URLs before returning them
     const decryptedRows = rows.map((row) => {
-      // Log before decryption
-      console.log("Before Decryption - encryptedUrl (from DB):", row.photo_url);
-      console.log("Before Decryption - encryptionSecret:", encryptionSecret);
-
       try {
-        // Decrypt the photo_url using the decryptData function
-        const decryptedUrl = decryptData(row.photo_url);
-
-        // Log the decrypted URL
-        console.log("After Decryption - decryptedUrl:", decryptedUrl);
+        const encryptedData = JSON.parse(row.photo_url);
+        const decryptedUrl = decryptData(encryptedData, encryptionSecret);
 
         return {
           ...row,
@@ -193,15 +189,14 @@ async function handleGetRequest(req, res, connection) {
         };
       } catch (decryptionError) {
         console.error("Decryption Error:", decryptionError);
-        // Handle decryption error appropriately, e.g., return a default value
         return {
           ...row,
-          photo_url: null, // Or some default value
+          photo_url: null,
         };
       }
     });
 
-    res.status(200).json(decryptedRows); // Send the decrypted data to the client
+    res.status(200).json(decryptedRows);
   } catch (error) {
     console.error("Error fetching property photos:", error);
     res
@@ -212,12 +207,12 @@ async function handleGetRequest(req, res, connection) {
 
 // Delete property photo (Also delete from S3)
 async function handleDeleteRequest(req, res, connection) {
-  const { photoID } = req.query;
+  const { photo_id } = req.query;
 
   try {
     const [rows] = await connection.execute(
       `SELECT photo_url FROM PropertyPhoto WHERE photo_id = ?`,
-      [photoID]
+      [photo_id]
     );
 
     if (rows.length === 0) {
@@ -225,13 +220,9 @@ async function handleDeleteRequest(req, res, connection) {
     }
 
     let photo_url = rows[0].photo_url;
-    if (!photo_url) {
-      return res.status(400).json({ error: "photo_url is missing" });
-    }
 
     try {
-      // Decrypt the photo_url
-      photo_url = decryptData(photo_url);
+      photo_url = decryptData(JSON.parse(photo_url), encryptionSecret);
     } catch (decryptionError) {
       console.error("Decryption Error:", decryptionError);
       return res.status(500).json({ error: "Failed to decrypt photo URL." });
@@ -250,7 +241,7 @@ async function handleDeleteRequest(req, res, connection) {
 
         await connection.execute(
           `DELETE FROM PropertyPhoto WHERE photo_id = ?`,
-          [photoID]
+          [photo_id]
         );
 
         res.status(200).json({ message: "Photo deleted successfully" });

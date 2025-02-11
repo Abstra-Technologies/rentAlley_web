@@ -1,15 +1,15 @@
 import { db } from "../../lib/db";
 
-async function getLandlordIdFromUserID(userID, connection) {
+async function getLandlordIdFromUserID(user_id, connection) {
   try {
-    if (!userID) {
+    if (!user_id) {
       throw new Error("Invalid user ID provided");
     }
 
-    // Query the landlords table to get the landlord_id based on email
+    // Query the Landlord table to get the landlord_id based on email
     const [rows] = await connection.execute(
-      `SELECT landlord_id FROM landlords WHERE userID = ?`,
-      [userID]
+      `SELECT landlord_id FROM Landlord WHERE user_id = ?`,
+      [user_id]
     );
 
     // If no landlord is found with the given email
@@ -37,7 +37,8 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       await handlePostRequest(req, res, connection);
     } else if (req.method === "GET") {
-      await handleGetRequest(req, res, connection, id);
+      const { landlord_id, property_id } = req.query;
+      await handleGetRequest(req, res, connection, landlord_id, property_id);
     } else if (req.method === "PUT") {
       await handlePutRequest(req, res, connection, id);
     } else if (req.method === "DELETE") {
@@ -60,7 +61,7 @@ export default async function handler(req, res) {
 async function handlePostRequest(req, res, connection) {
   // Destructure the request body to get the property details
   const {
-    userID,
+    user_id,
     propertyName,
     propDesc,
     floorArea,
@@ -80,42 +81,52 @@ async function handlePostRequest(req, res, connection) {
     advancedPayment,
     furnish,
     propertyStatus,
+    hasElectricity,
+    hasWater,
+    hasAssocDues,
+    rentPayment,
+    lateFee,
   } = req.body;
 
-  // Ensure userID is not undefined
-  if (!userID) {
-    return res.status(400).json({ error: "userID is required" });
+  // Ensure user_id is not undefined
+  if (!user_id) {
+    return res.status(400).json({ error: "user_id is required" });
   }
 
   try {
-    // Retrieve landlord_id using userID
-    const landlord_id = await getLandlordIdFromUserID(userID, connection);
+    // Retrieve landlord_id using user_id
+    const landlord_id = await getLandlordIdFromUserID(user_id, connection);
 
     if (!landlord_id) {
       return res.status(400).json({ error: "User does not exist" });
     }
 
     const values = [
-      landlord_id, // landlord_id
-      propertyName || null, // propertyName
-      propDesc || null, // propDesc
-      floorArea || null, // floorArea
-      propertyType || null, // propertyType
-      amenities || null, // amenities
-      bedSpacing || null, // bedSpacing
-      availBeds || null, // availBeds
-      petFriendly || null, // petFriendly
-      unit || null, // unit
-      street || null, // street
-      parseInt(brgyDistrict) || null, // brgyDistrict (as integer)
-      city || null, // city
-      zipCode || null, // zipCode
-      province || null, // province
-      minStay || null, // minStay
-      secDeposit || null, // secDeposit
-      advancedPayment || null, // advancedPayment
-      furnish || null, // furnish (should be a valid enum string)
-      propertyStatus || "unoccupied", // propertyStatus (default to 'unoccupied')
+      landlord_id,
+      propertyName || null,
+      propDesc || null,
+      floorArea || null,
+      propertyType || null,
+      amenities ? amenities.join(",") : null,
+      bedSpacing ? 1 : 0,
+      availBeds || null,
+      petFriendly ? 1 : 0,
+      unit || null,
+      street || null,
+      parseInt(brgyDistrict) || null,
+      city || null,
+      zipCode || null,
+      province || null,
+      minStay || null,
+      secDeposit || null,
+      advancedPayment || null,
+      furnish || null,
+      propertyStatus || "unoccupied",
+      hasElectricity ? 1 : 0,
+      hasWater ? 1 : 0,
+      hasAssocDues ? 1 : 0,
+      rentPayment || 0.0,
+      lateFee || 0.0,
     ];
 
     console.log("Values array:", values);
@@ -146,9 +157,14 @@ async function handlePostRequest(req, res, connection) {
         sec_deposit,
         advanced_payment,
         furnish,
-        property_status
+        property_status,
+        has_electricity,
+        has_water,
+        has_assocdues,
+        rent_payment,
+        late_fee
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       values
     );
@@ -171,21 +187,34 @@ async function handlePostRequest(req, res, connection) {
 }
 
 //Get Properties by ID or All
-async function handleGetRequest(req, res, connection, id) {
+async function handleGetRequest(
+  req,
+  res,
+  connection,
+  landlord_id,
+  property_id
+) {
   try {
-    let query = `SELECT * FROM Property`;
+    let query = `SELECT * FROM Property WHERE 1=1`; // Ensures base query is always valid
     let params = [];
 
     // If an ID is provided, add it to the query
-    if (id) {
-      query += ` WHERE property_id = ?`;
-      params.push(id);
+    if (landlord_id) {
+      query += ` AND landlord_id = ?`;
+      params.push(landlord_id);
+    }
+
+    if (property_id) {
+      query += ` AND property_id = ?`;
+      params.push(property_id);
     }
 
     const [rows] = await connection.execute(query, params);
 
-    if (id && rows.length === 0) {
-      throw new Error("Property not found");
+    if (property_id && rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No Properties found for this Landlord" });
     }
 
     res.status(200).json(rows);
@@ -200,29 +229,6 @@ async function handleGetRequest(req, res, connection, id) {
 
 //Update Properties by ID
 async function handlePutRequest(req, res, connection, id) {
-  const {
-    landlord_id,
-    propertyName,
-    propDesc,
-    floorArea,
-    propertyType,
-    amenities,
-    bedSpacing,
-    availBeds,
-    petFriendly,
-    unit,
-    street,
-    brgyDistrict,
-    city,
-    zipCode,
-    province,
-    minStay,
-    secDeposit,
-    advancedPayment,
-    furnish,
-    propertyVerificationStatus,
-  } = req.body;
-
   try {
     // Check if the property exists
     const [rows] = await connection.execute(
@@ -235,38 +241,81 @@ async function handlePutRequest(req, res, connection, id) {
 
     await connection.beginTransaction();
 
+    // Replace undefined values with null
+    Object.keys(req.body).forEach((key) => {
+      if (req.body[key] === undefined) {
+        req.body[key] = null;
+      }
+    });
+
+    const {
+      propertyName,
+      propDesc,
+      floorArea,
+      propertyType,
+      amenities,
+      bedSpacing,
+      availBeds,
+      petFriendly,
+      unit,
+      street,
+      brgyDistrict,
+      city,
+      zipCode,
+      province,
+      minStay,
+      secDeposit,
+      advancedPayment,
+      furnish,
+      propertyStatus,
+      hasElectricity,
+      hasWater,
+      hasAssocDues,
+      rentPayment,
+      lateFee,
+    } = req.body;
+
+    console.log("Updating property with values:", req.body);
+
     const [result] = await connection.execute(
       `UPDATE Property SET
-          landlord_id = ?, propertyName = ?, propDesc = ?, floorArea = ?, propertyType = ?, amenities = ?,
-          bedSpacing = ?, availBeds = ?, petFriendly = ?, unit = ?, street = ?, brgyDistrict = ?, city = ?, zipCode = ?,
-          province = ?, minStay = ?, secDeposit = ?, advancedPayment = ?, furnish = ?, propertyVerificationStatus = ?, updatedAt = CURRENT_TIMESTAMP
-        WHERE propertyID = ?`,
+        property_name = ?, prop_desc = ?, floor_area = ?, property_type = ?, amenities = ?,
+        bed_spacing = ?, avail_beds = ?, pet_friendly = ?, unit = ?, street = ?, brgy_district = ?,
+        city = ?, zip_code = ?, province = ?, min_stay = ?, sec_deposit = ?, advanced_payment = ?,
+        furnish = ?, property_status = ?, has_electricity = ?, has_water = ?, has_assocdues = ?,
+        rent_payment = ?, late_fee = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE property_id = ?`,
       [
-        landlord_id,
         propertyName,
         propDesc,
         floorArea,
         propertyType,
-        amenities,
-        bedSpacing,
+        amenities ? amenities.join(",") : null,
+        bedSpacing ? 1 : 0,
         availBeds,
-        petFriendly,
+        petFriendly ? 1 : 0,
         unit,
         street,
-        brgyDistrict,
+        Number(brgyDistrict),
         city,
         zipCode,
         province,
         minStay,
-        secDeposit,
-        advancedPayment,
+        Number(secDeposit),
+        Number(advancedPayment),
         furnish,
-        propertyVerificationStatus,
+        propertyStatus ?? "unoccupied",
+        hasElectricity ? 1 : 0,
+        hasWater ? 1 : 0,
+        hasAssocDues ? 1 : 0,
+        Number(rentPayment),
+        Number(lateFee),
         id,
       ]
     );
 
     await connection.commit();
+    console.log("Result: ", result);
     res.status(200).json({ propertyID: id, ...req.body });
   } catch (error) {
     await connection.rollback();
