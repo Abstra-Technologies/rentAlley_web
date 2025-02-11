@@ -12,7 +12,9 @@ export default async function handler(req, res) {
                 p.property_name, 
                 p.city, 
                 p.property_status, 
-                pv.status AS verification_status
+                pv.status AS verification_status,
+                pv.reviewed_by,
+                pv.attempts
             FROM Property p
             LEFT JOIN PropertyVerification pv ON p.property_id = pv.property_id
         `);
