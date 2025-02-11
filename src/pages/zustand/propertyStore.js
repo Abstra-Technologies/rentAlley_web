@@ -1,3 +1,4 @@
+import axios from "axios";
 import { create } from "zustand";
 
 // Define the Zustand store
@@ -8,9 +9,9 @@ const usePropertyStore = create((set) => ({
     floorArea: 0,
     propertyType: "",
     amenities: [],
-    bedSpacing: false,
+    bedSpacing: 0,
     availBeds: 0,
-    petFriendly: false,
+    petFriendly: 0,
     unit: "",
     street: "",
     brgyDistrict: 0,
@@ -22,41 +23,106 @@ const usePropertyStore = create((set) => ({
     advancedPayment: 0,
     furnish: "",
     propertyStatus: "unoccupied",
-    hasElectricity: false,
-    hasWater: false,
-    hasAssocDues: false,
+    hasElectricity: 0,
+    hasWater: 0,
+    hasAssocDues: 0,
     rentPayment: 0.0,
     lateFee: 0.0,
   },
   photos: [],
   propertyTypes: [],
+  mayorPermit: null,
+  occPermit: null,
+  indoorPhoto: null,
+  outdoorPhoto: null,
+  properties: [],
+  loading: false,
+  error: null,
   // Set property details
   setProperty: (propertyDetails) =>
-    set((state) => ({ property: { ...state.property, ...propertyDetails } })),
-  // Add or remove amenities (toggle function)
-  toggleAmenity: (amenity) =>
     set((state) => ({
       property: {
         ...state.property,
-        amenities: state.property.amenities.includes(amenity)
-          ? state.property.amenities.filter((a) => a !== amenity) // Remove if exists
-          : [...state.property.amenities, amenity], // Add if not exists
+        ...propertyDetails,
       },
+    })),
+  // Add or remove amenities (toggle function)
+  toggleAmenity: (amenity) => {
+    set((state) => {
+      const amenities = state.property.amenities || []; // Ensure amenities is an array
+      const amenityIndex = amenities.indexOf(amenity);
+      let newAmenities;
+
+      if (amenityIndex > -1) {
+        // Amenity already exists, so remove it
+        newAmenities = [
+          ...amenities.slice(0, amenityIndex),
+          ...amenities.slice(amenityIndex + 1),
+        ];
+      } else {
+        // Amenity doesn't exist, so add it
+        newAmenities = [...amenities, amenity];
+      }
+
+      return {
+        property: {
+          ...state.property,
+          amenities: newAmenities,
+        },
+      };
+    });
+  },
+  // Fetch property details and photos
+  fetchAllProperties: async (landlordId) => {
+    set({ loading: true, error: null });
+
+    try {
+      // Fetch all properties and their photos
+      const [propertiesRes, photosRes] = await Promise.all([
+        axios.get(`/api/propertyListing/propListing?landlord_id=${landlordId}`), // Fetch all properties
+        axios.get("/api/propertyListing/propPhotos"), // Fetch all property photos
+      ]);
+
+      // Merge photos into properties
+      const propertiesWithPhotos = propertiesRes.data.map((property) => ({
+        ...property,
+        photos: photosRes.data.filter(
+          (photo) => photo.propertyId === property.id
+        ),
+      }));
+
+      set({ properties: propertiesWithPhotos, loading: false });
+    } catch (err) {
+      set({ error: err.message, loading: false });
+    }
+  },
+  updateProperty: (id, updatedData) =>
+    set((state) => ({
+      properties: state.properties.map((p) =>
+        p.property_id === id ? { ...p, ...updatedData } : p
+      ),
     })),
   // Set uploaded photos
   setPhotos: (photos) => set({ photos }),
+  // Set Document Files
+  setMayorPermit: (file) => set({ mayorPermit: file }),
+  setOccPermit: (file) => set({ occPermit: file }),
+  // Set Indoor Photo File
+  setIndoorPhoto: (file) => set({ indoorPhoto: file }),
+  // Set Outdoor Photo File
+  setOutdoorPhoto: (file) => set({ outdoorPhoto: file }),
   // Reset state
   reset: () =>
-    set({
+    set((state) => ({
       property: {
         propertyName: "",
         propDesc: "",
         floorArea: 0,
         propertyType: state.propertyTypes[0] || "",
         amenities: [],
-        bedSpacing: false,
+        bedSpacing: 0,
         availBeds: 0,
-        petFriendly: false,
+        petFriendly: 0,
         unit: "",
         street: "",
         brgyDistrict: 0,
@@ -68,14 +134,18 @@ const usePropertyStore = create((set) => ({
         advancedPayment: 0,
         furnish: "",
         propertyStatus: "unoccupied",
-        hasElectricity: false,
-        hasWater: false,
-        hasAssocDues: false,
+        hasElectricity: 0,
+        hasWater: 0,
+        hasAssocDues: 0,
         rentPayment: 0.0,
         lateFee: 0.0,
       },
       photos: [],
-    }),
+      mayorPermit: null,
+      occPermit: null,
+      indoorPhoto: null,
+      outdoorPhoto: null,
+    })),
 }));
 
 export default usePropertyStore;
