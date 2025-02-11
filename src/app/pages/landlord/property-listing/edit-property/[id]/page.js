@@ -30,7 +30,7 @@ export default function EditPropertyPage() {
   //   };
 
   //   fetchProperty();
-  // }, [id]);
+  // }, [user_id]);
 
   // Handle form submission
   // const handleSubmit = async (e) => {
@@ -46,9 +46,9 @@ export default function EditPropertyPage() {
   //     });
 
   //     if (response.ok) {
-  //       router.push("/pages/landlord/property-listing"); // Redirect after successful update
+  //       router.push("/pages/landlord/property-listing"); // Redirect after successful details
   //     } else {
-  //       console.error("Failed to update property");
+  //       console.error("Failed to details property");
   //     }
   //   } catch (error) {
   //     console.error("Error updating property:", error);
@@ -60,7 +60,7 @@ export default function EditPropertyPage() {
   //   const { id, value } = e.target;
   //   setProperty((prev) => ({
   //     ...prev,
-  //     [id]: value,
+  //     [user_id]: value,
   //   }));
   // };
 

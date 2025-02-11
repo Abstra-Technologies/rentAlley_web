@@ -9,7 +9,7 @@ const useForgotPasswordStore = create((set) => ({
     isLoading: false,
     message: '',
 
-    // Actions to update the state
+    // Actions to details the state
     setResetToken: (token) => set({ resetToken: token }),
     setNewPassword: (password) => set({ newPassword: password }),
     setConfirmPassword: (password) => set({ confirmPassword: password }),

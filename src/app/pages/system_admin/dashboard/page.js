@@ -1,74 +1,95 @@
 'use client'
 
-import { useEffect, useState } from "react";
-import {useRouter} from "next/navigation";
+import useAuth from "../../../../../hooks/useSession";
+import Link from "next/link";
+import { useRouter} from "next/navigation";
+import {useState} from "react";
+
 
 export default function AdminDashboard() {
-    const [adminInfo, setAdminInfo] = useState({ username: "", role: "" });
-    const [loading, setLoading] = useState(true);
+    const { admin, loading, signOutAdmin } = useAuth()
+    const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
-    useEffect(() => {
-        // Fetch admin info from the API
-        const fetchAdminInfo = async () => {
-            try {
-                const res = await fetch("/api/systemadmin/info", {
-                    method: "GET",
-                    credentials: "include", // Ensure cookies are sent with the request
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    setAdminInfo(data);
-                } else {
-                    console.error("Failed to fetch admin info.");
-                }
-            } catch (error) {
-                console.error("Error fetching admin info:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchAdminInfo();
-    }, []);
-
-    const handleSignout = async () => {
-        try {
-            const res = await fetch("/api/systemadmin/signout", {
-                method: "POST",
-                credentials: "include", // Ensure cookies are included
-            });
-
-            if (res.ok) {
-                alert("Successfully signed out.");
-                router.push("/pages/system_admin/login");
-            } else {
-                alert("Failed to sign out.");
-            }
-        } catch (error) {
-            console.error("Error during signout:", error);
-            alert("Something went wrong. Please try again.");
-        }
-    };
-
-
     if (loading) {
         return <p>Loading...</p>;
     }
 
+    if (!admin) {
+        return router.push("./login");
+    }
+    const handleDeleteAccount = async () => {
+        const confirmDelete = confirm(
+            "⚠️ Warning: Deleting your account is irreversible! \n\n" +
+            "• You will permanently lose access to your account. \n" +
+            "• All associated data (logs, reports, admin settings) may be deleted. \n" +
+            "• This action cannot be undone.\n\n" +
+            "Are you sure you want to continue?"
+        );
+
+        if (!confirmDelete) return;
+
+        setIsDeleting(true);
+
+        try {
+            const response = await fetch("/api/systemadmin/delete_account", {
+                method: "DELETE",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ admin_id: admin.admin_id }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.message || "Failed to delete account.");
+
+            alert("Your account has been successfully deleted.");
+            router.push("./login"); // Redirect to admin_login after account deletion
+        } catch (error) {
+            alert("Error: " + error.message);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
         <div>
-            <h1>Welcome to the Admin Dashboard</h1>
-            <p><strong>Name:</strong> {adminInfo.username}</p>
-            <p><strong>Role:</strong> {adminInfo.role}</p>
+            <h1>
+                Welcome, {admin.username}!
+            </h1>
+            <p>Your user type is: {admin.role} | ID: {admin.admin_id}</p>
+            <hr/>
+            <h2 className='m-2'>Side Pan Nav Contents</h2>
+            <p className='m-2'><i>Kindly add these modules links on the sideNav</i></p>
+            <div className='mb-10'>
+                <Link className='m-2' href='./activiyLog'>ActivityLog</Link>
+                <Link className='m-2' href='./co_admin/list'>Add Co-admin</Link>
+                <Link className='m-2' href='./tenant_landlord/tenant_mgt'>Tenant Management</Link>
+                <Link className='m-2' href='./tenant_landlord/landlord_mgt'>Landlord Management</Link>
+                {/*<Link className='m-2' href='./co_admin'>Landlord Verification</Link>*/}
+                <Link className='m-2' href='./propertyManagement/list'>Property Verification</Link>
+                <Link className='m-2' href='./annoucement'>Annoucements</Link>
+                <Link className='m-2' href='./bug_report/list'>Bug Reports</Link>
+                <Link className='m-2' href='./auditLogs'>Audit Logs</Link>
+            </div>
+            {/* Buttons */}
+            <div className="flex space-x-4">
+                <button
+                    onClick={signOutAdmin}
+                    className="bg-red-500 text-white px-4 py-2 rounded-md"
+                >
+                    Sign Out
+                </button>
 
+                <button
+                    onClick={handleDeleteAccount}
+                    className={`bg-gray-700 text-white px-4 py-2 rounded-md ${isDeleting ? "opacity-50 cursor-not-allowed" : "hover:bg-red-600"}`}
+                    disabled={isDeleting}
+                >
+                    {isDeleting ? "Deleting..." : "Delete Account"}
+                </button>
+            </div>
 
-            <button
-                onClick={handleSignout}
-                className="mt-4 py-2 px-4 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition"
-            >
-                Sign Out
-            </button>
+            {/* Additional content can go here */}
         </div>
     );
 }

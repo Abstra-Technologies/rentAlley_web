@@ -1,9 +1,6 @@
 import {
   decryptData,
-  encryptFName,
-  encryptLName,
-  encryptEmail,
-  encryptPhone,
+  encryptData,
 } from "../../crypto/encrypt";
 import { db } from "../../lib/db";
 import multer from "multer";
@@ -52,7 +49,7 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     // Fetch user data
     try {
-      const [rows] = await db.execute("SELECT * FROM User WHERE userID = ?", [
+      const [rows] = await db.execute("SELECT * FROM User WHERE user_id = ?", [
         id,
       ]);
       if (!rows.length)
@@ -61,22 +58,34 @@ export default async function handler(req, res) {
       const user = rows[0];
       const userType = user.userType; // Get the user type (landlord or tenant)
       let profilePicturePath = null;
-
+      let landlordId = null;
+      let verificationStatus = "not verified";
       // Depending on the user type, query the respective table for the profile picture
       if (userType === "landlord") {
+
         // Get the profile picture from the landlords table
         const [landlordRows] = await db.execute(
-          "SELECT profilePicture FROM landlords WHERE userID = ?",
+          "SELECT landlord_id, profilePicture, verified FROM Landlord WHERE user_id = ?",
           [id]
         );
 
         if (landlordRows.length) {
           profilePicturePath = landlordRows[0].profilePicture;
+          landlordId = landlordRows[0].landlord_id;
+          verificationStatus = landlordRows[0].verified ? "approved" : "not verified";
+
+          const [verificationRows] = await db.execute(
+              "SELECT status FROM LandlordVerification WHERE landlord_id = ? ORDER BY created_at DESC LIMIT 1",
+              [landlordId]
+          );
+          if (verificationRows.length) {
+            verificationStatus = verificationRows[0].status;
+          }
         }
       } else if (userType === "tenant") {
         // Get the profile picture from the tenants table
         const [tenantRows] = await db.execute(
-          "SELECT profilePicture FROM tenants WHERE userID = ?",
+          "SELECT profilePicture FROM Tenant WHERE user_id = ?",
           [id]
         );
 
@@ -87,12 +96,14 @@ export default async function handler(req, res) {
 
       // Construct the response object with user details and the profile picture
       await res.status(200).json({
-        firstName: decryptData(user.firstName),
-        lastName: decryptData(user.lastName),
-        email: decryptData(user.email),
+        firstName: decryptData(JSON.parse(user.firstName), process.env.ENCRYPTION_SECRET),
+        lastName: decryptData(JSON.parse(user.lastName), process.env.ENCRYPTION_SECRET),
+        email: decryptData(JSON.parse(user.email), process.env.ENCRYPTION_SECRET),
         phoneNumber: decryptData(user.phoneNumber),
         birthDate: user.birthDate,
         profilePicture: profilePicturePath || null, // Include the profile picture or null if not found
+        landlordId: landlordId || null,
+        verificationStatus: verificationStatus,
       });
     } catch (error) {
       console.error(error); // Log the error for better debugging
@@ -116,7 +127,7 @@ export default async function handler(req, res) {
       try {
         // Check for duplicate email
         const [existingUser] = await db.execute(
-          "SELECT userID FROM User WHERE email = ? AND userID != ?",
+          "SELECT user_id FROM User WHERE email = ? AND User.user_id != ?",
           [encryptEmail(email), id]
         );
         if (existingUser.length) {
@@ -154,33 +165,33 @@ export default async function handler(req, res) {
         await db.execute(
           `UPDATE User SET 
           firstName = ?, lastName = ?, email = ?, phoneNumber = ?, birthDate = ?, password = COALESCE(?, password)
-          WHERE userID = ?`,
+          WHERE user_id = ?`,
           [
-            encryptFName(firstName),
-            encryptLName(lastName),
-            encryptEmail(email),
-            encryptPhone(phoneNumber),
+            JSON.stringify(encryptData(firstName, process.env.ENCRYPTION_SECRET)),
+            JSON.stringify(encryptData(lastName, process.env.ENCRYPTION_SECRET)),
+            JSON.stringify(encryptData(email, process.env.ENCRYPTION_SECRET)),
+            JSON.stringify(encryptData(phoneNumber, process.env.ENCRYPTION_SECRET)),
             birthDate,
             hashedPassword,
             id,
           ]
         );
 
-        // Determine user type and update profile picture in the respective table
+        // Determine user type and details profile picture in the respective table
         const [userRows] = await db.execute(
-          "SELECT userType FROM User WHERE userID = ?",
+          "SELECT userType FROM User WHERE user_id = ?",
           [id]
         );
         const userType = userRows[0]?.userType;
 
         if (userType === "landlord") {
           await db.execute(
-            "UPDATE landlords SET profilePicture = ? WHERE userID = ?",
+            "UPDATE Landlord SET profilePicture = ? WHERE user_id = ?",
             [profilePicturePath, id]
           );
         } else if (userType === "tenant") {
           await db.execute(
-            "UPDATE tenants SET profilePicture = ? WHERE userID = ?",
+            "UPDATE Tenant SET profilePicture = ? WHERE user_id = ?",
             [profilePicturePath, id]
           );
         }

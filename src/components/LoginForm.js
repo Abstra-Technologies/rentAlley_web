@@ -8,7 +8,7 @@ function LoginForm({
   errors,
   showGoogleSignIn = true,
   showRegisterLink = true,
-  isSystemAdmin = false, // Check if it's a system admin login page
+  isSystemAdmin = false, // Check if it's a system admin admin_login page
   message,
 }) {
   return (

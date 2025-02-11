@@ -1,9 +1,5 @@
 "use client";
-/*
-TODO:
- 1. Backend- add protected page using middlware. - DONE Aidan
 
- */
 import GoogleLogo from "../../../../components/google-logo";
 import Link from "next/link";
 import { useState } from "react";
@@ -35,8 +31,6 @@ export default function Login() {
       router.push("/pages/tenant/dashboard");
     } else if (userType === "landlord") {
       router.push("/pages/landlord/dashboard");
-    } else if (userType === "admin") {
-      router.push("/admin-dashboard");
     }
   };
 
@@ -56,8 +50,8 @@ export default function Login() {
     }
   };
 
-  const handleGoogleSignin = () => {
-    router.push(`/api/auth/google/signin`);
+  const handleGoogleSignin = async () => {
+    await router.push(`/api/auth/google-login`);
   };
 
   const handleSubmit = async (e) => {
@@ -67,7 +61,7 @@ export default function Login() {
       // Validate the entire form
       loginSchema.parse(formData);
       console.log("Login Data:", formData);
-      // validation logic for login backend api if the credentials are correct
+      // validation logic for admin_login backend api if the credentials are correct
       const response = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,10 +74,7 @@ export default function Login() {
       } else {
         setMessage("Login successful!");
       }
-
       const token = data.token; // JWT token
-
-      // sessionStorage.setItem("token", token);
       const decodedToken = JSON.parse(atob(token.split(".")[1]));
       const userType = decodedToken.userType; // this is for the user to be redirected to proper page
 

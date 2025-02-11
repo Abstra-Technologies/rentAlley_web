@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import { SignJWT } from "jose";
 import { db } from "../../lib/db";
-import { decryptEmail, decryptData } from "../../crypto/encrypt";
+import {decryptData } from "../../crypto/encrypt";
+import nodeCrypto from "crypto";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -15,14 +16,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [users] = await db.query("SELECT * FROM User");
-
-    // Decrypt and compare email to find a match
-    const user = users.find((c) => decryptEmail(c.email) === email);
-
-    if (!user) {
+    const emailHash = nodeCrypto.createHash("sha256").update(email).digest("hex");
+    const [users] = await db.query("SELECT * FROM User WHERE emailHashed = ?", [emailHash]);
+    if (users.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
+
+    const user = users[0];
 
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -30,22 +30,34 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const decryptionKey = process.env.EMAIL_SECRET_KEY;
-    const firstName = decryptData(user.firstName, decryptionKey);
-    const lastName = decryptData(user.lastName, decryptionKey);
+    const firstName = decryptData(JSON.parse(user.firstName), process.env.ENCRYPTION_SECRET);
+    const lastName = decryptData(JSON.parse(user.lastName), process.env.ENCRYPTION_SECRET);
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+
     const token = await new SignJWT({
-      userID: user.userID,
+      user_id: user.user_id,
       userType: user.userType,
       firstName: firstName,
       lastName: lastName,
     })
       .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("1h")
+      .setExpirationTime("2h")
       .setIssuedAt()
-      .setSubject(user.userID.toString())
+      .setSubject(user.user_id)
       .sign(secret);
+
+    // const refreshToken = await new SignJWT({
+    //   user_id: user.user_id,
+    //   userType: user.userType,
+    //   firstName: firstName,
+    //   lastName: lastName,
+    // })
+    //     .setProtectedHeader({ alg: "HS256" })
+    //     .setExpirationTime("7d")
+    //     .setIssuedAt()
+    //     .setSubject(user.user_id)
+    //     .sign(secret);
 
     // Set the token as a cookie
     const isDev = process.env.NODE_ENV === "development";
@@ -59,9 +71,9 @@ export default async function handler(req, res) {
     //Activity Log
     const action = "User logged in";
     const timestamp = new Date().toISOString();
-    const userID = users[0].userID;
+    const userID = users[0].user_id;
     await db.query(
-      "INSERT INTO ActivityLog (userID, action, timestamp) VALUES (?, ?, ?)",
+      "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)",
       [userID, action, timestamp]
     );
 
@@ -70,15 +82,16 @@ export default async function handler(req, res) {
       message: "Login successful",
       token,
       user: {
-        userID: user.userID,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: email, // Send the plaintext email
+        userID: user.user_id,
+        firstName,
+        lastName,
+        email,
         userType: user.userType,
       },
     });
   } catch (error) {
-    console.error("Error during login:", error);
+    console.error("Error during admin_login:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+

@@ -1,33 +1,12 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import ProfileForm from "../../../../../components/profileForm";
+import ProfilePage from "../../../../../components/profilePage"; 
 import { useState, useEffect } from "react";
 import axios from "axios";
 
 export default function LandlordProfile() {
-  const params = useParams();
-  const userId = params.id;
+  return ( <ProfilePage />
 
-  const [userData, setUserData] = useState({});
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get(`/api/profile/${userId}`);
-        const data = response.data;
-        setUserData(data);
-        console.log("User Data: ", data);
-      } catch (error) {
-        console.error("Error fetching user data: ", error);
-      }
-    };
-    fetchUserData();
-  }, [userId]);
-
-  return (
-    <div>
-      <ProfileForm userId={userId} isLandlord={true} />
-    </div>
   );
 }
