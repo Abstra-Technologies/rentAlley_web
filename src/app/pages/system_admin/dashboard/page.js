@@ -4,6 +4,7 @@ import useAuth from "../../../../../hooks/useSession";
 import Link from "next/link";
 import { useRouter} from "next/navigation";
 import {useState} from "react";
+import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
 
 
 export default function AdminDashboard() {
@@ -70,6 +71,9 @@ export default function AdminDashboard() {
                 <Link className='m-2' href='./annoucement'>Annoucements</Link>
                 <Link className='m-2' href='./bug_report/list'>Bug Reports</Link>
                 <Link className='m-2' href='./auditLogs'>Audit Logs</Link>
+
+                <h3>Analytics</h3>
+                <PropertyAnalytics />
             </div>
             {/* Buttons */}
             <div className="flex space-x-4">

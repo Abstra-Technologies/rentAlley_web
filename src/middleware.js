@@ -53,12 +53,12 @@ import { jwtVerify } from "jose"; // Ensure you have 'jose' installed: npm insta
 // Function to verify JWT token
 async function verifyToken(token) {
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET); // Encode for Edge compatibility
-    const { payload } = await jwtVerify(token, secret); // Decode token
-    return payload; // Return decoded payload
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return payload;
   } catch (error) {
     console.error("Token verification failed:", error);
-    return null; // Return null if verification fails
+    return null;
   }
 }
 
@@ -67,8 +67,12 @@ export async function middleware(req) {
   const token = req.cookies.get("token")?.value;
 
   if (!token) {
-    return NextResponse.redirect(new URL("/pages/auth/admin_login", req.url)); // Redirect if no token
+    if (req.nextUrl.pathname.startsWith("/pages/system_admin" || "/pages/admin_login")) {
+      return NextResponse.redirect(new URL("/pages/admin_login", req.url));
+    }
+    return NextResponse.redirect(new URL("/pages/auth/login", req.url));
   }
+
 
   try {
     const decoded = await verifyToken(token);
@@ -90,14 +94,14 @@ export async function middleware(req) {
     }
 
     if (pathname.startsWith("/pages/system_admin") && role !== "super-admin") {
-      return NextResponse.redirect(new URL("/pages/system_admin/login", req.url));
+      return NextResponse.redirect(new URL("/pages/admin_login", req.url));
     }
 
     return NextResponse.next(); // Allow access if role matches
 
   } catch (error) {
     console.error("Token verification failed:", error);
-    return NextResponse.redirect(new URL("/pages/auth/admin_login", req.url)); // Redirect if an error occurs
+    return NextResponse.redirect(new URL("/pages/admin_login", req.url)); // Redirect if an error occurs
   }
 }
 

@@ -2,7 +2,7 @@
 import useAuth from "../../../../../hooks/useSession";
 import ChatComponent from "../../../../components/modules/chat";
 import {useRouter} from "next/navigation";
-import ProfilePage from "../../../../components/profilePage";
+
 export default function TenantDashboard() {
   const { user, loading, error, signOut } = useAuth();
 const router = useRouter();

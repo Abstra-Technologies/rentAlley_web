@@ -5,11 +5,8 @@ import {decryptData } from "../../crypto/encrypt";
 import nodeCrypto from "crypto";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
 
-  const { email, password } = req.body;
+  const { email, password, fcm_token  } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
@@ -18,6 +15,7 @@ export default async function handler(req, res) {
   try {
     const emailHash = nodeCrypto.createHash("sha256").update(email).digest("hex");
     const [users] = await db.query("SELECT * FROM User WHERE emailHashed = ?", [emailHash]);
+
     if (users.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
@@ -47,28 +45,18 @@ export default async function handler(req, res) {
       .setSubject(user.user_id)
       .sign(secret);
 
-    // const refreshToken = await new SignJWT({
-    //   user_id: user.user_id,
-    //   userType: user.userType,
-    //   firstName: firstName,
-    //   lastName: lastName,
-    // })
-    //     .setProtectedHeader({ alg: "HS256" })
-    //     .setExpirationTime("7d")
-    //     .setIssuedAt()
-    //     .setSubject(user.user_id)
-    //     .sign(secret);
-
-    // Set the token as a cookie
     const isDev = process.env.NODE_ENV === "development";
     res.setHeader(
       "Set-Cookie",
       `token=${token}; HttpOnly; Path=/; ${
         isDev ? "" : "Secure;"
-      } SameSite=Strict`
+      } SameSite=Lax`
     );
 
-    //Activity Log
+    if (fcm_token) {
+      await db.query("UPDATE User SET fcm_token = ? WHERE user_id = ?", [fcm_token, user.user_id]);
+    }
+
     const action = "User logged in";
     const timestamp = new Date().toISOString();
     const userID = users[0].user_id;

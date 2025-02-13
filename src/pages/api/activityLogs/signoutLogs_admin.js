@@ -1,10 +1,6 @@
 import { db } from "../../lib/db";
 
 export default async function handler(req, res) {
-    if (req.method !== "POST") {
-        return res.status(405).json({ error: "Method Not Allowed" });
-    }
-
     const { admin_id, action, timestamp } = req.body;
 
     if (!admin_id || !action || !timestamp) {
@@ -17,9 +13,8 @@ export default async function handler(req, res) {
        VALUES (?, ?, ?)`,
             [admin_id, action, timestamp]
         );
-        res.status(201).json({ message: "Activity logged successfully." });
+        return res.status(200).json({ message: "Signout log recorded successfully" });
     } catch (error) {
-        console.error("Error logging activity:", error);
-        res.status(500).json({ error: "Failed to log activity." });
+        console.error("Error logging admin signout activity:", error);
     }
 }

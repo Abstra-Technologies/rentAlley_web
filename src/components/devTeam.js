@@ -7,6 +7,7 @@ const CardWarning = () => {
             <div>
                 <h4 className="font-semibold text-red-700">REMINDER!</h4>
                 <h2 className="text-2xl font-medium">Front-end Developer. Modify this page UI</h2>
+                <p>Please view the front-end page code for further details.</p>
             </div>
         </div>
     );

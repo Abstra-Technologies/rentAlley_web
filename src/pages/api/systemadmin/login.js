@@ -4,20 +4,18 @@ import {SignJWT} from "jose";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
-        console.log("[DEBUG] Invalid HTTP Method:", req.method);
+        console.log("Invalid HTTP Method:", req.method);
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
     const { email, password } = req.body;
 
     if (!email || !password) {
-        console.log("[DEBUG] Missing credentials. Received data:", req.body);
+        console.log("Missing credentials. Received data:", req.body);
         return res.status(400).json({ error: "Username and password are required." });
     }
 
     try {
-        // Ensure JWT_SECRET is defined
-
         console.log("[DEBUG] Fetching admin details from the database...");
         // Fetch admin from database
         const [admins] = await db.execute(
@@ -76,8 +74,7 @@ export default async function handler(req, res) {
             } SameSite=Strict`
         );
 
-        // Log admin activity in ActivityLog
-        console.log("[DEBUG] Logging admin activity...");
+        console.log("Logging admin activity...");
         const action = "Admin logged in";
         const timestamp = new Date().toISOString();
         const admin_id = admins[0].admin_id;

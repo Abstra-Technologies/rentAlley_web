@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
+import {requestFCMPermission} from "../../../../pages/lib/firebaseConfig";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -38,7 +39,6 @@ export default function Login() {
     const { id, value } = e.target;
     setFormData({ ...formData, [id]: value });
 
-    // Validate the field as the user types
     try {
       loginSchema.pick({ [id]: true }).parse({ [id]: value });
       setErrors((prevErrors) => ({ ...prevErrors, [id]: "" }));
@@ -52,24 +52,30 @@ export default function Login() {
 
   const handleGoogleSignin = async () => {
     await router.push(`/api/auth/google-login`);
+    // this is for only non-fs time google authentication, it will cause error on the backend of trying to use it for the first time.
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    let fcmToken = null;
+    try {
+      fcmToken = await requestFCMPermission();
+      console.log("FCM Token" + fcmToken);
+    } catch (error) {
+      console.error("FCM Token Error:", error);
+    }
 
     try {
-      // Validate the entire form
       loginSchema.parse(formData);
       console.log("Login Data:", formData);
-      // validation logic for admin_login backend api if the credentials are correct
       const response = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, fcm_token: fcmToken }),
       });
       const data = await response.json();
       if (!response.ok) {
-        setErrorMessage("Login failed");
+        setErrorMessage("Login failed");z
         new Error(data.error || "Login failed");
       } else {
         setMessage("Login successful!");
@@ -89,20 +95,17 @@ export default function Login() {
       <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-6">Rentahan Logo</h1>
 
-        {/* Error Message */}
         {errorMessage && (
           <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
             {errorMessage}
           </div>
         )}
-        {/* Success Message */}
         {message && (
           <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
             {message}
           </div>
         )}
 
-        {/* Login Form */}
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label
@@ -159,14 +162,12 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Divider */}
         <div className="flex items-center my-6">
           <div className="border-t border-gray-300 flex-grow"></div>
           <span className="mx-3 text-gray-500 font-medium">or</span>
           <div className="border-t border-gray-300 flex-grow"></div>
         </div>
 
-        {/* Login with Google */}
         <button
           type="button"
           onClick={handleGoogleSignin}
@@ -176,7 +177,6 @@ export default function Login() {
           <span className="font-medium text-gray-700">Login with Google</span>
         </button>
 
-        {/* Register Link */}
         <p className="mt-6 text-center text-sm text-gray-500">
           Don&#39;t have an account?{" "}
           <Link
