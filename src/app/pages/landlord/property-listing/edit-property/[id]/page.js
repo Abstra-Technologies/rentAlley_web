@@ -11,37 +11,21 @@ const EditProperty = () => {
   const { id } = params; // Property ID from URL
 
   // Zustand State
-  const { properties, updateProperty, setProperty } = usePropertyStore();
+  const { updateProperty, setProperty } = usePropertyStore();
 
   // Local State for Form Inputs
   const [formData, setFormData] = useState({
     propertyName: "",
-    propDesc: "",
-    floorArea: "",
-    unit: "",
     street: "",
     brgyDistrict: "",
     city: "",
     province: "",
     zipCode: "",
-    rentPayment: "",
-    advancedPayment: "",
-    secDeposit: "",
-    minStay: "",
-    lateFee: "",
-    petFriendly: false,
-    bedSpacing: false,
-    availBeds: "",
-    hasElectricity: false,
-    hasWater: false,
-    hasAssocDues: false,
     propertyType: "",
-    furnish: "",
     amenities: [], // Ensure it's an array
   });
   const [photos, setPhotos] = useState([]); // For uploaded photos
   const [propertyTypes, setPropertyTypes] = useState([]); // Dynamic Property Types
-  const [furnishOptions, setFurnishOptions] = useState([]); // Dynamic Furnish Options
   const [loading, setLoading] = useState(false);
 
   // Fetch Property Details on Load
@@ -57,27 +41,12 @@ const EditProperty = () => {
 
         setFormData({
           propertyName: propertyData?.property_name || "",
-          propDesc: propertyData?.prop_desc || "",
-          floorArea: propertyData?.floor_area || "",
-          unit: propertyData?.unit || "",
           street: propertyData?.street || "",
           brgyDistrict: propertyData?.brgy_district || "",
           city: propertyData?.city || "",
           province: propertyData?.province || "",
           zipCode: propertyData?.zip_code || "",
-          rentPayment: propertyData?.rent_payment || "",
-          advancedPayment: propertyData?.advanced_payment || "",
-          secDeposit: propertyData?.sec_deposit || "",
-          minStay: propertyData?.min_stay || "",
-          lateFee: propertyData?.late_fee || "",
-          petFriendly: propertyData?.pet_friendly === 1,
-          bedSpacing: propertyData?.bed_spacing === 1,
-          availBeds: propertyData?.avail_beds ?? "",
-          hasElectricity: propertyData?.has_electricity === 1,
-          hasWater: propertyData?.has_water === 1,
-          hasAssocDues: propertyData?.has_assocdues === 1,
           propertyType: propertyData?.property_type || "", // Set selected property type
-          furnish: propertyData?.furnish || "", // Set selected furnish option
           // Convert amenities string to array
           amenities: propertyData?.amenities
             ? propertyData.amenities.split(",").map((amenity) => amenity.trim())
@@ -93,17 +62,14 @@ const EditProperty = () => {
     }
   }, [id]);
 
-  // Fetch Property Types, Furnish Options, and Photos
+  // Fetch Property Types, Photos
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [typesRes, furnishRes] = await Promise.all([
+        const [typesRes] = await Promise.all([
           axios.get("/api/propertyListing/propertyTypes"),
-          axios.get("/api/propertyListing/furnishOptions"),
         ]);
-
         setPropertyTypes(typesRes.data.propertyTypes);
-        setFurnishOptions(furnishRes.data.furnishOptions);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -158,7 +124,6 @@ const EditProperty = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-
   // Handle File Upload
   const handleFileChange = (e) => {
     const uploadedFiles = Array.from(e.target.files);
@@ -169,7 +134,6 @@ const EditProperty = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       // Update Property Details
       await axios.put(`/api/propertyListing/propListing?id=${id}`, {
@@ -178,7 +142,6 @@ const EditProperty = () => {
         bedSpacing: formData.bedSpacing ? 1 : 0,
       });
       updateProperty(id, formData);
-
       // Upload Photos if Any
       if (photos.length > 0 && photos.some((photo) => photo instanceof File)) {
         const formDataPhotos = new FormData();
@@ -188,12 +151,10 @@ const EditProperty = () => {
             formDataPhotos.append("photos", photo);
           }
         });
-
         await axios.post("/api/propertyListing/propPhotos", formDataPhotos, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
-
       alert("Property updated successfully!");
       router.push("/pages/landlord/property-listing"); // Redirect
     } catch (error) {
@@ -235,47 +196,6 @@ const EditProperty = () => {
             type="text"
             name="propertyName"
             value={formData.propertyName || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        {/* Property Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Description
-          </label>
-          <textarea
-            name="propDesc"
-            value={formData.propDesc || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          ></textarea>
-        </div>
-
-        {/* Floor Area */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Floor Area (sqm)
-          </label>
-          <input
-            type="number"
-            name="floorArea"
-            value={formData.floorArea || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        {/* Unit */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Unit
-          </label>
-          <input
-            type="text"
-            name="unit"
-            value={formData.unit || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
           />
@@ -351,153 +271,6 @@ const EditProperty = () => {
           />
         </div>
 
-        {/* Rent Payment */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Rent Payment
-          </label>
-          <input
-            type="number"
-            name="rentPayment"
-            value={formData.rentPayment || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        {/* Advanced Payment (Months) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Advanced Payment (Months)
-          </label>
-          <input
-            type="number"
-            name="advancedPayment"
-            value={formData.advancedPayment || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        {/* Security Deposit (Amount) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Security Deposit (Amount)
-          </label>
-          <input
-            type="number"
-            name="secDeposit"
-            value={formData.secDeposit || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        {/* Minimum Stay (Months) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Minimum Stay (Months)
-          </label>
-          <input
-            type="number"
-            name="minStay"
-            value={formData.minStay || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        {/* Late Fee (%) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Late Fee (%)
-          </label>
-          <input
-            type="number"
-            name="lateFee"
-            value={formData.lateFee || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        {/* Pet-Friendly Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="petFriendly"
-            checked={formData.petFriendly}
-            onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label className="text-gray-700">Pet-Friendly</label>
-        </div>
-
-        {/* Bed Spacing Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="bedSpacing"
-            checked={formData.bedSpacing}
-            onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label className="text-gray-700">Bed Spacing (if applicable)</label>
-        </div>
-
-        {/* Show Input for Available Bed Spacing */}
-        {formData.bedSpacing && (
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Available Bed Spacing (in number)
-            </label>
-            <input
-              type="number"
-              name="availBeds"
-              value={formData.availBeds || ""}
-              onChange={handleChange}
-              placeholder="Enter available bed spacing"
-              className="w-full p-2 border rounded"
-            />
-          </div>
-        )}
-
-        {/* Water Bill Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="hasWater"
-            checked={formData.hasWater}
-            onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label className="text-gray-700">Water Bill</label>
-        </div>
-
-        {/* Electricity Bill Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="hasElectricity"
-            checked={formData.hasElectricity}
-            onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label className="text-gray-700">Electricity Bill</label>
-        </div>
-
-        {/* Association Dues Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="hasAssocDues"
-            checked={formData.hasAssocDues}
-            onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label className="text-gray-700">Association Dues</label>
-        </div>
-
         {/* Property Type (Dynamic from API) */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
@@ -513,26 +286,6 @@ const EditProperty = () => {
             {propertyTypes?.map((type) => (
               <option key={type} value={type}>
                 {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Furnish Option (Dynamic from API) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Furnish Option
-          </label>
-          <select
-            name="furnish"
-            value={formData.furnish || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          >
-            <option value="">Select Furnish Option</option>
-            {furnishOptions?.map((option) => (
-              <option key={option} value={option}>
-                {option.charAt(0).toUpperCase() + option.slice(1)}
               </option>
             ))}
           </select>

@@ -1,7 +1,6 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation"; // For navigation
-// import properties from "../../../data/properties.json"; // Property data
 import LandlordLayout from "../layouts/landlordLayouts"; // Layout
 import usePropertyStore from "../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../hooks/useSession";
@@ -11,7 +10,7 @@ const PropertyListingPage = () => {
   const { user } = useAuth();
   const { properties, fetchAllProperties, loading, error } = usePropertyStore();
 
-  // // Fetch properties when the page loads
+  // Fetch properties when the page loads
   useEffect(() => {
     if (user?.landlord_id) {
       // Ensure user is not null/undefined
@@ -26,13 +25,15 @@ const PropertyListingPage = () => {
     router.push(`../landlord/property-listing/edit-property/${propertyId}`);
   };
 
-  const handleView = (propertyId, event) => {
+  const handleView = useCallback((property, event) => {
     event.stopPropagation(); // Prevent the parent div's onClick from firing
-    router.push(`../landlord/property-listing/view-property/${propertyId}`);
-  };
+    router.push(
+      `../landlord/property-listing/view-unit/${property.property_id}`
+    );
+  });
 
   // Handler for deleting a property
-  const handleDelete = async (propertyId, event) => {
+  const handleDelete = useCallback(async (propertyId, event) => {
     event.stopPropagation(); // Prevent card click from triggering
 
     // Show confirmation alert
@@ -60,7 +61,7 @@ const PropertyListingPage = () => {
       console.error("Error deleting property:", error);
       alert("An error occurred while deleting the property.");
     }
-  };
+  });
 
   // Show loading message if user.landlord_id is not yet available
   if (!user?.landlord_id) {
@@ -178,11 +179,7 @@ const PropertyListingPage = () => {
             properties.map((property) => (
               <div
                 key={property.property_id}
-                onClick={() =>
-                  router.push(
-                    `../landlord/property-listing/view-property/${property.property_id}`
-                  )
-                }
+                onClick={(event) => handleView(property, event)}
                 className="flex flex-col md:flex-row items-center p-4 bg-white rounded-lg shadow-md space-y-4 md:space-y-0 md:space-x-4 cursor-pointer hover:shadow-lg transition-shadow mb-4"
               >
                 {/* Property Image */}
@@ -214,17 +211,6 @@ const PropertyListingPage = () => {
 
                 {/* Occupied/Unoccupied Status */}
                 <div className="flex flex-col items-end md:items-start md:ml-auto">
-                  <span
-                    className={`px-3 py-1 text-sm font-semibold rounded-md ${
-                      property.property_status === "occupied"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {property.property_status.charAt(0).toUpperCase() +
-                      property.property_status.slice(1)}
-                  </span>
-
                   {/* Action Buttons */}
                   <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mt-2">
                     <button

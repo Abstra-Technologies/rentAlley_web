@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const [rows] = await db.query(`
           SELECT COLUMN_TYPE 
           FROM INFORMATION_SCHEMA.COLUMNS 
-          WHERE TABLE_NAME = 'Property' 
+          WHERE TABLE_NAME = 'Unit' 
           AND COLUMN_NAME = 'furnish'
       `);
 

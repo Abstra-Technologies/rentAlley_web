@@ -63,29 +63,13 @@ async function handlePostRequest(req, res, connection) {
   const {
     user_id,
     propertyName,
-    propDesc,
-    floorArea,
     propertyType,
     amenities,
-    bedSpacing,
-    availBeds,
-    petFriendly,
-    unit,
     street,
     brgyDistrict,
     city,
     zipCode,
     province,
-    minStay,
-    secDeposit,
-    advancedPayment,
-    furnish,
-    propertyStatus,
-    hasElectricity,
-    hasWater,
-    hasAssocDues,
-    rentPayment,
-    lateFee,
   } = req.body;
 
   // Ensure user_id is not undefined
@@ -104,29 +88,13 @@ async function handlePostRequest(req, res, connection) {
     const values = [
       landlord_id,
       propertyName || null,
-      propDesc || null,
-      floorArea || null,
       propertyType || null,
       amenities ? amenities.join(",") : null,
-      bedSpacing ? 1 : 0,
-      availBeds || null,
-      petFriendly ? 1 : 0,
-      unit || null,
       street || null,
       parseInt(brgyDistrict) || null,
       city || null,
       zipCode || null,
       province || null,
-      minStay || null,
-      secDeposit || null,
-      advancedPayment || null,
-      furnish || null,
-      propertyStatus || "unoccupied",
-      hasElectricity ? 1 : 0,
-      hasWater ? 1 : 0,
-      hasAssocDues ? 1 : 0,
-      rentPayment || 0.0,
-      lateFee || 0.0,
     ];
 
     console.log("Values array:", values);
@@ -140,31 +108,15 @@ async function handlePostRequest(req, res, connection) {
       INSERT INTO Property (
         landlord_id,
         property_name,
-        prop_desc,
-        floor_area,
         property_type,
         amenities,
-        bed_spacing,
-        avail_beds,
-        pet_friendly,
-        unit,
         street,
         brgy_district,
         city,
         zip_code,
-        province,
-        min_stay,
-        sec_deposit,
-        advanced_payment,
-        furnish,
-        property_status,
-        has_electricity,
-        has_water,
-        has_assocdues,
-        rent_payment,
-        late_fee
+        province
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       values
     );
@@ -250,66 +202,31 @@ async function handlePutRequest(req, res, connection, id) {
 
     const {
       propertyName,
-      propDesc,
-      floorArea,
       propertyType,
       amenities,
-      bedSpacing,
-      availBeds,
-      petFriendly,
-      unit,
       street,
       brgyDistrict,
       city,
       zipCode,
       province,
-      minStay,
-      secDeposit,
-      advancedPayment,
-      furnish,
-      propertyStatus,
-      hasElectricity,
-      hasWater,
-      hasAssocDues,
-      rentPayment,
-      lateFee,
     } = req.body;
 
     console.log("Updating property with values:", req.body);
 
     const [result] = await connection.execute(
       `UPDATE Property SET
-        property_name = ?, prop_desc = ?, floor_area = ?, property_type = ?, amenities = ?,
-        bed_spacing = ?, avail_beds = ?, pet_friendly = ?, unit = ?, street = ?, brgy_district = ?,
-        city = ?, zip_code = ?, province = ?, min_stay = ?, sec_deposit = ?, advanced_payment = ?,
-        furnish = ?, property_status = ?, has_electricity = ?, has_water = ?, has_assocdues = ?,
-        rent_payment = ?, late_fee = ?, updated_at = CURRENT_TIMESTAMP
+        property_name = ?, property_type = ?, amenities = ?, street = ?, brgy_district = ?,
+        city = ?, zip_code = ?, province = ?, updated_at = CURRENT_TIMESTAMP
       WHERE property_id = ?`,
       [
         propertyName,
-        propDesc,
-        floorArea,
         propertyType,
         amenities ? amenities.join(",") : null,
-        bedSpacing ? 1 : 0,
-        availBeds,
-        petFriendly ? 1 : 0,
-        unit,
         street,
         Number(brgyDistrict),
         city,
         zipCode,
         province,
-        minStay,
-        Number(secDeposit),
-        Number(advancedPayment),
-        furnish,
-        propertyStatus ?? "unoccupied",
-        hasElectricity ? 1 : 0,
-        hasWater ? 1 : 0,
-        hasAssocDues ? 1 : 0,
-        Number(rentPayment),
-        Number(lateFee),
         id,
       ]
     );

@@ -49,6 +49,7 @@ const DropzoneUploader = ({
         <p className="text-gray-500">
           Drag & drop or click to upload (single file only)
         </p>
+        <p className="text-gray-500">Max of 10MB</p>
       </div>
 
       {file && (
