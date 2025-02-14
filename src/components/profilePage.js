@@ -98,6 +98,15 @@ export default function ProfilePage() {
                                 <span>Security & Privacy</span>
                             </a>
                         </li>
+
+                        {user?.userType === "landlord" && (
+                            <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                                <a href="/pages/landlord/subscription" className="flex items-center space-x-2 text-gray-700">
+                                    <span>View Subscription</span>
+                                </a>
+                            </li>
+                        )}
+
                         <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
                             <a href="#" className="flex items-center space-x-2 text-gray-700">
                                 <ArrowRightOnRectangleIcon className="h-5 w-5" />

@@ -1,9 +1,10 @@
-
+'use client';
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "../../src/components/navigation/navbar";
-
+import useAuthStore from "../pages/zustand/authStore";
+import { useEffect } from "react";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -15,20 +16,20 @@ const geistMono = Geist_Mono({
     subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-    title: "Rentahan",
-    description: "Real Estate Web Application",
-};
+// export const metadata: Metadata = {
+//     title: "Rentahan",
+//     description: "Real Estate Web Application",
+// };
 
 export default function RootLayout({
                                        children,
                                    }: Readonly<{
     children: React.ReactNode;
 }>) {
-
-
-
-
+    const { fetchSession } = useAuthStore();
+    useEffect(() => {
+        fetchSession(); // Ensure user session is available globally
+    }, []);
 
     return (
         <html lang="en">

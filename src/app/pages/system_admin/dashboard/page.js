@@ -16,7 +16,7 @@ export default function AdminDashboard() {
     }
 
     if (!admin) {
-        return router.push("./login");
+
     }
     const handleDeleteAccount = async () => {
         const confirmDelete = confirm(
@@ -55,9 +55,9 @@ export default function AdminDashboard() {
     return (
         <div>
             <h1>
-                Welcome, {admin.username}!
+                Welcome, {admin?.username}!
             </h1>
-            <p>Your user type is: {admin.role} | ID: {admin.admin_id}</p>
+            <p>Your user type is: {admin?.role} | ID: {admin?.admin_id}</p>
             <hr/>
             <h2 className='m-2'>Side Pan Nav Contents</h2>
             <p className='m-2'><i>Kindly add these modules links on the sideNav</i></p>

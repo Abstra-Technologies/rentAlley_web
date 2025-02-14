@@ -1,11 +1,10 @@
-"use client";
 
+'use client'
 import GoogleLogo from "../../../../components/google-logo";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import {requestFCMPermission} from "../../../../pages/lib/firebaseConfig";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -13,25 +12,36 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const router = useRouter();
   const [message, setMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState({ email: "", password: "" });
 
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-  });
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          router.replace(`/pages/${data.userType}/dashboard`);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+      }
+    };
+    checkAuth();
+  }, []);
 
-  const redirectBasedOnUserType = (userType) => {
-    // Redirect based on userType
-    if (userType === "tenant") {
-      router.push("/pages/tenant/dashboard");
-    } else if (userType === "landlord") {
-      router.push("/pages/landlord/dashboard");
+  const redirectBasedOnUserType = async () => {
+    try {
+      const res = await fetch("/api/auth/me", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        router.replace(`/pages/${data.userType}/dashboard`);
+      }
+    } catch (error) {
+      console.error("Redirection failed:", error);
     }
   };
 
@@ -52,141 +62,130 @@ export default function Login() {
 
   const handleGoogleSignin = async () => {
     await router.push(`/api/auth/google-login`);
-    // this is for only non-fs time google authentication, it will cause error on the backend of trying to use it for the first time.
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    let fcmToken = null;
-    try {
-      fcmToken = await requestFCMPermission();
-      console.log("FCM Token" + fcmToken);
-    } catch (error) {
-      console.error("FCM Token Error:", error);
-    }
 
     try {
       loginSchema.parse(formData);
-      console.log("Login Data:", formData);
       const response = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, fcm_token: fcmToken }),
+        body: JSON.stringify(formData),
+        credentials: "include",
       });
-      const data = await response.json();
-      if (!response.ok) {
-        setErrorMessage("Login failed");z
-        new Error(data.error || "Login failed");
-      } else {
-        setMessage("Login successful!");
-      }
-      const token = data.token; // JWT token
-      const decodedToken = JSON.parse(atob(token.split(".")[1]));
-      const userType = decodedToken.userType; // this is for the user to be redirected to proper page
 
-      redirectBasedOnUserType(userType);
+      if (!response.ok) {
+        setErrorMessage("Login failed");
+        throw new Error("Login failed");
+      }
+
+      setMessage("Login successful!");
+      await redirectBasedOnUserType();
     } catch (error) {
-      setErrors(error);
+      console.error("Login error:", error);
+      setErrorMessage("Invalid credentials");
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Rentahan Logo</h1>
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
+          <h1 className="text-2xl font-bold text-center mb-6">Rentahan Logo</h1>
 
-        {errorMessage && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-            {errorMessage}
-          </div>
-        )}
-        {message && (
-          <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
-            {message}
-          </div>
-        )}
+          {errorMessage && (
+              <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+                {errorMessage}
+              </div>
+          )}
+          {message && (
+              <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
+                {message}
+              </div>
+          )}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div>
+              <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+              >
+                Email Address
+              </label>
+              <input
+                  type="email"
+                  id="email"
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="juantamad@email.com"
+              />
+              {errors.email && (
+                  <p className="text-red-500 text-sm">{errors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <input
+                  type="password"
+                  id="password"
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+              />
+              {errors.password && (
+                  <p className="text-red-500 text-sm">{errors.password}</p>
+              )}
+            </div>
+            <p className="text-center">
+              <Link
+                  href="./forgot-password"
+                  className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
+              >
+                Forgot Password?
+              </Link>
+            </p>
+            <button
+                type="submit"
+                className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
             >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="juantamad@email.com"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email}</p>
-            )}
+              Login
+            </button>
+          </form>
+
+          <div className="flex items-center my-6">
+            <div className="border-t border-gray-300 flex-grow"></div>
+            <span className="mx-3 text-gray-500 font-medium">or</span>
+            <div className="border-t border-gray-300 flex-grow"></div>
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password}</p>
-            )}
-          </div>
-          <p className="text-center">
+          <button
+              type="button"
+              onClick={handleGoogleSignin}
+              className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
+          >
+            <GoogleLogo />
+            <span className="font-medium text-gray-700">Login with Google</span>
+          </button>
+
+          <p className="mt-6 text-center text-sm text-gray-500">
+            Don&#39;t have an account?{" "}
             <Link
-              href="./forgot-password"
-              className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
+                href="../auth/register"
+                className="text-blue-600 hover:underline font-medium"
             >
-              Forgot Password?
+              Create Now
             </Link>
           </p>
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
-          >
-            Login
-          </button>
-        </form>
-
-        <div className="flex items-center my-6">
-          <div className="border-t border-gray-300 flex-grow"></div>
-          <span className="mx-3 text-gray-500 font-medium">or</span>
-          <div className="border-t border-gray-300 flex-grow"></div>
         </div>
-
-        <button
-          type="button"
-          onClick={handleGoogleSignin}
-          className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
-        >
-          <GoogleLogo />
-          <span className="font-medium text-gray-700">Login with Google</span>
-        </button>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Don&#39;t have an account?{" "}
-          <Link
-            href="../auth/register"
-            className="text-blue-600 hover:underline font-medium"
-          >
-            Create Now
-          </Link>
-        </p>
       </div>
-    </div>
   );
 }

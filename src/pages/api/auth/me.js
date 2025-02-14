@@ -57,12 +57,7 @@ export default async function handler(req, res) {
                     const [subscriptionRows] = await db.execute(
                         `
                         SELECT 
-                            subscription_id,
-                            plan_name,
-                            status,
-                            start_date,
-                            end_date,
-                            payment_status
+                           *
                         FROM Subscription
                         WHERE landlord_id = ?
                         ORDER BY created_at DESC

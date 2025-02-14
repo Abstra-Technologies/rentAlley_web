@@ -16,9 +16,8 @@ export default function SubscriptionPlans() {
     const router = useRouter();
     const [processing, setProcessing] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
-    const [trialUsed, setTrialUsed] = useState(null); // Track trial usage status
+    const [trialUsed, setTrialUsed] = useState(null);
 
-    // check the landlord if  trial status
     useEffect(() => {
         async function checkTrialStatus() {
             if (!user) return;
@@ -28,9 +27,8 @@ export default function SubscriptionPlans() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ landlord_id: user.landlord_id }),
                 });
-
                 const data = await response.json();
-                setTrialUsed(data.is_trial_used); // ✅ Store trial status
+                setTrialUsed(data.is_trial_used);
             } catch (error) {
                 console.error("Error checking trial status:", error);
             }
@@ -90,11 +88,15 @@ export default function SubscriptionPlans() {
         );
     };
 
+    const isTrialUsed = user?.is_trial_used ??  null;
+    const subscription = user?.subscription ?? null;
+
     return (
         <div className="max-w-4xl mx-auto p-6">
             <CardWarning />
             <h1 className="text-3xl font-bold mb-6">Choose Your Subscription Plan</h1>
-
+            <p><strong>Trial Used:</strong> {isTrialUsed ? "Yes" : "No"}</p>
+            <p> Your current subscription: {subscription.plan_name}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {plans.map((plan) => (
                     <div
