@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"; // For navigation
 import LandlordLayout from "../layouts/landlordLayouts"; // Layout
 import usePropertyStore from "../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../hooks/useSession";
+import Image from "next/image";
 
 const PropertyListingPage = () => {
   const router = useRouter();
@@ -184,10 +185,13 @@ const PropertyListingPage = () => {
               >
                 {/* Property Image */}
                 {property.photos.length > 0 ? (
-                  <img
-                    src={property.photos[0].photo_url} // Display first photo
+                  <Image
+                    src={property.photos[0].photo_url}
                     alt={property.property_name}
+                    width={400} // Set a reasonable width
+                    height={250} // Set a reasonable height
                     className="w-full md:w-3/12 md:h-36 rounded-lg object-cover"
+                    style={{ objectFit: "cover" }} // Ensures image covers its container
                   />
                 ) : (
                   <div className="w-full md:w-3/12 md:h-36 bg-gray-200 flex items-center justify-center rounded-lg">

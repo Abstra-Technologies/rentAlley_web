@@ -7,6 +7,7 @@ import axios from "axios";
 import Camera from "./lib/camera";
 import DropzoneUploader from "./dropzone-uploader";
 import AmenitiesSelector from "./amenities-selector";
+import { z } from "zod";
 
 const steps = [
   { id: 1, label: "Location" },
@@ -14,6 +15,15 @@ const steps = [
   { id: 3, label: "Property Photos" },
   { id: 4, label: "Requirements" },
 ];
+
+const propertySchema = z.object({
+  propertyName: z.string().min(1, "Property Name is required"),
+  street: z.string().min(1, "Street Address is required"),
+  brgyDistrict: z.string().min(1, "Barangay/District is required"),
+  city: z.string().min(1, "City/Municipality is required"),
+  zipCode: z.string().min(1, "ZIP Code is required"),
+  province: z.string().min(1, "Province is required"),
+});
 
 // StepCounter component
 const StepCounter = ({ currentStep }) => {
@@ -59,6 +69,7 @@ const fetcher = (url) => axios.get(url).then((res) => res.data);
 // Steps as individual components
 export const StepOne = () => {
   const { property, setProperty } = usePropertyStore();
+  const [errors, setErrors] = useState({});
 
   // Use SWR to fetch property types
   const { data, error } = useSWR("/api/propertyListing/propertyTypes", fetcher);
@@ -72,12 +83,27 @@ export const StepOne = () => {
     }
   }, [data, setProperty, property.propertyType]);
 
+  // Added Form Validations
+  const validateField = (name, value) => {
+    const result = propertySchema.safeParse({ ...property, [name]: value });
+    if (!result.success) {
+      const fieldErrors = result.error.format();
+      setErrors((prev) => ({
+        ...prev,
+        [name]: fieldErrors[name]?._errors?.[0] || "",
+      }));
+    } else {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
   if (error) return <p>Failed to load property types.</p>;
   if (!data) return <p>Loading property types...</p>;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProperty({ ...property, [name]: value });
+    validateField(name, value);
   };
 
   return (
@@ -129,6 +155,9 @@ export const StepOne = () => {
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
+          {errors.propertyName && (
+            <p className="text-red-500 text-sm">{errors.propertyName}</p>
+          )}
         </div>
 
         {/* Address Fields */}
@@ -144,6 +173,9 @@ export const StepOne = () => {
             placeholder="Enter street name"
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
+          {errors.street && (
+            <p className="text-red-500 text-sm">{errors.street}</p>
+          )}
         </div>
 
         {/* Other Address Fields */}
@@ -160,6 +192,9 @@ export const StepOne = () => {
             min={0}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
+          {errors.brgyDistrict && (
+            <p className="text-red-500 text-sm">{errors.brgyDistrict}</p>
+          )}
         </div>
 
         <div>
@@ -174,6 +209,7 @@ export const StepOne = () => {
             placeholder="Enter city"
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
+          {errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
         </div>
 
         <div>
@@ -189,6 +225,9 @@ export const StepOne = () => {
             min={0}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
+          {errors.zipCode && (
+            <p className="text-red-500 text-sm">{errors.zipCode}</p>
+          )}
         </div>
 
         <div>
@@ -203,6 +242,9 @@ export const StepOne = () => {
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
+          {errors.province && (
+            <p className="text-red-500 text-sm">{errors.province}</p>
+          )}
         </div>
       </form>
     </div>
@@ -327,8 +369,6 @@ export function StepThree() {
 export function StepFour() {
   // Access the property data and actions from Zustand store
   const {
-    property,
-    setProperty,
     setMayorPermit,
     setOccPermit,
     setIndoorPhoto,
@@ -346,7 +386,9 @@ export function StepFour() {
   const [indoorPreview, setIndoorPreview] = useState(null);
   const [outdoorPreview, setOutdoorPreview] = useState(null);
 
-  // **useEffect hooks to update previews when Zustand state changes**
+  const MAX_FILE_SIZE_MB = 10;
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
   useEffect(() => {
     if (indoorPhoto) {
       // Create a local URL for the indoor photo if it exists in Zustand
@@ -389,6 +431,33 @@ export function StepFour() {
     setShowCamera(false);
   };
 
+  const validateFile = (file, setFile) => {
+    if (!file) return true;
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      alert(
+        `File size exceeds ${MAX_FILE_SIZE_MB}MB. Please upload a smaller file.`
+      );
+      setFile(null); // Clear the file
+      return false;
+    }
+    return true;
+  };
+
+  const handleMayorPermitChange = (file) => {
+    if (validateFile(file?.file, setMayorPermit)) {
+      setMayorPermit(file);
+      console.log(file);
+    }
+  };
+
+  const handleOccPermitChange = (file) => {
+    if (validateFile(file?.file, setOccPermit)) {
+      setOccPermit(file);
+      console.log(file);
+    }
+  };
+
   return (
     <div>
       {/* Requirements Section */}
@@ -402,129 +471,11 @@ export function StepFour() {
       </ol>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Government ID Upload */}
-        {/* <div>
-          <label
-            htmlFor="governmentIDUpload"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Valid I.D.
-          </label>
-          <div className="border-2 border-dashed p-6 rounded-md text-center">
-            <FaCloudUploadAlt className="text-blue-500 text-4xl mx-auto mb-2" />
-            <input
-              type="file"
-              accept="image/jpeg, image/png"
-              className="hidden"
-              multiple
-              onChange={(e) => handleFileUpload(e, "governmentID")}
-              id="governmentIDUpload"
-            />
-            <label
-              htmlFor="governmentIDUpload"
-              className="cursor-pointer text-lg text-gray-700"
-            >
-              Drag & drop files or Browse
-            </label>
-            <p className="text-sm text-gray-500">
-              Supported formats: JPEG and PNG
-            </p>
-          </div> */}
-        {/* Display uploaded government ID files */}
-        {/* {governmentIDPreviews && governmentIDPreviews.length > 0 && (
-            <div className="mt-4">
-              {governmentIDPreviews.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between bg-gray-100 p-2 rounded-md mb-2"
-                >
-                  <div className="flex items-center gap-2">
-                    {item.preview && (
-                      <img
-                        src={item.preview}
-                        alt={item.file.name}
-                        className="w-12 h-12 object-cover rounded-md"
-                      />
-                    )}
-                    <span>{item.file.name}</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-red-500 hover:text-red-700 focus:outline-none"
-                    onClick={() => handleRemoveFile("governmentID", index)}
-                  >
-                    <FaTimes />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div> */}
-
-        {/* Mayor's Permit Upload */}
-        {/* <div>
-          <label
-            htmlFor="mayorsPermitUpload"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Business or Mayor's Permit
-          </label>
-          <div className="border-2 border-dashed p-6 rounded-md text-center">
-            <FaCloudUploadAlt className="text-blue-500 text-4xl mx-auto mb-2" />
-            <input
-              type="file"
-              accept="image/jpeg, image/png"
-              className="hidden"
-              multiple
-              onChange={(e) => handleFileUpload(e, "mayorsPermit")}
-              id="mayorsPermitUpload"
-            />
-            <label
-              htmlFor="mayorsPermitUpload"
-              className="cursor-pointer text-lg text-gray-700"
-            >
-              Drag & drop files or Browse
-            </label>
-            <p className="text-sm text-gray-500">
-              Supported formats: JPEG and PNG
-            </p>
-          </div> */}
-        {/* Display uploaded mayor's permit files */}
-        {/* {mayorsPermitPreviews && mayorsPermitPreviews.length > 0 && (
-            <div className="mt-4">
-              {mayorsPermitPreviews.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between bg-gray-100 p-2 rounded-md mb-2"
-                >
-                  <div className="flex items-center gap-2">
-                    {item.preview && (
-                      <img
-                        src={item.preview}
-                        alt={item.file.name}
-                        className="w-12 h-12 object-cover rounded-md"
-                      />
-                    )}
-                    <span>{item.file.name}</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-red-500 hover:text-red-700 focus:outline-none"
-                    onClick={() => handleRemoveFile("mayorsPermit", index)}
-                  >
-                    <FaTimes />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div> */}
-
         {/* Mayor's Permit Upload */}
         <DropzoneUploader
           label="Business or Mayor's Permit (PDF)"
           file={mayorPermit}
-          setFile={setMayorPermit}
+          setFile={handleMayorPermitChange}
           accept="application/pdf"
           multiple={false}
         />
@@ -533,7 +484,7 @@ export function StepFour() {
         <DropzoneUploader
           label="Occupancy Permit (PDF)"
           file={occPermit}
-          setFile={setOccPermit}
+          setFile={handleOccPermitChange}
           accept="application/pdf"
           multiple={false}
         />
