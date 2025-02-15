@@ -73,7 +73,6 @@ export default function PropertyDetails() {
             <p><strong>Rent Payment:</strong> ₱{property.rent_payment}</p>
 
             <h2 className="text-2xl font-semibold mt-4">Verification Documents</h2>
-            <p>{property.mayor_permit}</p>
             <div className="grid grid-cols-2 gap-4">
                 {property.mayor_permit && (
                     isPDF(property.mayor_permit) ? (
@@ -91,7 +90,23 @@ export default function PropertyDetails() {
                              className="w-full h-40 object-cover border"/>
                     )
                 )}
-                <p>OCC: {property.occ_permit}</p>
+
+                {property.occ_permit && (
+                    isPDF(property.occ_permit) ? (
+                        <div className="border p-4">
+                            <h3 className="font-semibold">Occupancy’s Permit</h3>
+                            <iframe
+                                src={property.occ_permit}
+                                width="100%"
+                                height="500px"
+                                style={{border: "none"}}
+                            ></iframe>
+                        </div>
+                    ) : (
+                        <img src={property.occ_permit} alt="Occupancy’s Permit"
+                             className="w-full h-40 object-cover border"/>
+                    )
+                )}
                 <p>photo: {property.indoor_photo}</p>
                 <img src={property.indoor_photo} />
                 {property.outdoor_photo && <img src={property.outdoor_photo} alt="Outdoor Photo"/>}

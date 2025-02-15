@@ -38,6 +38,8 @@ export default async function handler(req, res) {
                     u.email,
                     u.userType,
                     u.profilePicture,
+                    u.is_2fa_enabled,
+                    u.phoneNumber,
                     t.tenant_id,
                     l.landlord_id,
                     l.is_trial_used

@@ -84,10 +84,18 @@ export default function Login() {
         body: JSON.stringify({ ...formData, fcm_token }),
         credentials: "include",
       });
+      const data = await response.json();
 
-      if (!response.ok) {
-        setErrorMessage("Login failed");
-        throw new Error("Login failed");
+      if (res.ok) {
+        if (data.requires_2fa) {
+          Swal.fire("2FA Required", "OTP sent to your email.", "info");
+          router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
+        } else {
+          Swal.fire("Success", "Login successful!", "success");
+          router.push("/dashboard");
+        }
+      } else {
+        setMessage(data.error || "Login failed");
       }
 
       setMessage("Login successful!");

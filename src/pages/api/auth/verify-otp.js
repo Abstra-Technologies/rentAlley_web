@@ -27,8 +27,6 @@ export default async function handler(req, res) {
             return res.status(401).json({ message: 'Unauthorized: No valid token found.' });
         }
 
-
-        // Ensure JWT secret is available
         if (!process.env.JWT_SECRET) {
             new Error("JWT_SECRET is missing in environment variables");
         }

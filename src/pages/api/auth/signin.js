@@ -3,6 +3,7 @@ import { SignJWT } from "jose";
 import { db } from "../../lib/db";
 import {decryptData } from "../../crypto/encrypt";
 import nodeCrypto from "crypto";
+import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
 
@@ -57,6 +58,26 @@ export default async function handler(req, res) {
       await db.query("UPDATE User SET fcm_token = ? WHERE user_id = ?", [fcm_token, user.user_id]);
     }
 
+
+    if(user.is_2fa_enabled){
+
+      const otp = Math.floor(100000 + Math.random() * 900000);
+      const otp_expiry = new Date(Date.now() + 10 * 60000);
+
+      await db.query(
+          "INSERT INTO UserToken (user_id, token_type, token, otp_expiry) VALUES (?, '2fa', ?, ?)",
+          [user.user_id, otp, otp_expiry]
+      );
+
+      await sendOtpEmail(email, otp);
+
+      return res.status(200).json({
+        message: "OTP sent. Please verify to continue.",
+        requires_otp: true,
+        user_id: user.user_id,
+      });
+    }
+
     const action = "User logged in";
     const timestamp = new Date().toISOString();
     const userID = users[0].user_id;
@@ -82,3 +103,24 @@ export default async function handler(req, res) {
   }
 }
 
+async function sendOtpEmail(email, otp) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Your Rentahan 2FA OTP Code",
+    text: `Your OTP Code is: ${otp}\nThis code will expire in 10 minutes.`,
+  };
+
+  await transporter.sendMail(mailOptions);
+}

@@ -19,6 +19,7 @@ export default function ProfilePage() {
         firstName: "",
         lastName: "",
         phoneNumber: "",
+        is_2fa_enabled: false,
     });
 
     useEffect(() => {
@@ -29,6 +30,7 @@ export default function ProfilePage() {
                 firstName: user.firstName || "",
                 lastName: user.lastName || "",
                 phoneNumber: user.phoneNumber || "",
+                is_2fa_enabled: user.is2fa_enabled || false,
             });
         }
     }, [user]);
@@ -75,6 +77,39 @@ export default function ProfilePage() {
             alert("Failed to update profile. Try again.");
         }
     };
+
+    const handle2FAToggle = async () => {
+        const newStatus = !formData.is_2fa_enabled;
+
+        try {
+            const res = await fetch("/api/auth/toggle-2fa", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: user.user_id,
+                    enable_2fa: newStatus
+                }),
+                credentials: "include",
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                alert(data.message);
+                setFormData((prev) => ({
+                    ...prev,
+                    is_2fa_enabled: newStatus
+                }));
+
+                window.dispatchEvent(new Event("authChange"));
+            } else {
+                alert("Failed to update 2FA setting.");
+            }
+        } catch (error) {
+            console.error("Error updating 2FA:", error);
+        }
+    };
+
 
     if (loading) return <p>Loading profile...</p>;
     if (!user) return <p>User not found. Please log in.</p>;
@@ -196,6 +231,20 @@ export default function ProfilePage() {
                                 Edit Profile
                             </button>
                         )}
+                    </div>
+                    <div className="mt-6 p-4 border rounded-md">
+                        <h2 className="text-xl font-semibold">Two-Factor Authentication</h2>
+                        <p className="text-sm text-gray-600">
+                            Enable or disable 2FA for added security.
+                        </p>
+                        <button
+                            onClick={handle2FAToggle}
+                            className={`mt-4 px-4 py-2 text-white rounded ${
+                                formData.is_2fa_enabled ? "bg-red-600" : "bg-green-600"
+                            }`}
+                        >
+                            {formData.is_2fa_enabled ? "Disable 2FA" : "Enable 2FA"}
+                        </button>
                     </div>
                 </div>
             </div>
