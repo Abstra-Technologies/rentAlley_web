@@ -1,35 +1,19 @@
-// import { initializeApp } from "firebase/app";
-// import { getMessaging, onMessage, getToken } from "firebase/messaging";
-//
-// const firebaseConfig = {
-
-// };
-//
-// const app = initializeApp(firebaseConfig);
-//
-// let messaging;
-// if (typeof window !== "undefined") {
-//     messaging = getMessaging(app);
-// }
-//
-//
-// export { messaging, getToken, onMessage };
-
 import { initializeApp } from "firebase/app";
 import { getMessaging, onMessage, getToken } from "firebase/messaging";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBWAciEFsDOctZIEfoUf5VdtqhL2n0MBi4",
-    authDomain: "rentahan-3c6a9.firebaseapp.com",
-    projectId: "rentahan-3c6a9",
-    storageBucket: "rentahan-3c6a9.firebasestorage.app",
-    messagingSenderId: "345270510962",
-    appId: "1:345270510962:web:962d86d1b0816d9663e9eb",
-    measurementId: "G-1DBYWT2T33"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
 let messaging = null;
+
 if (typeof window !== "undefined") {
     messaging = getMessaging(firebaseApp);
 }

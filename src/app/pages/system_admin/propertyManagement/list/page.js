@@ -40,7 +40,6 @@ export default function PropertyList() {
                     <th className="border p-2">ID</th>
                     <th className="border p-2">Name</th>
                     <th className="border p-2">City</th>
-                    <th className="border p-2">Status</th>
                     <th className="border p-2">Verification</th>
                     <th className="border p-2">Attempts</th>
                     <th className="border p-2">Reviewed by</th>
@@ -54,17 +53,13 @@ export default function PropertyList() {
                         <td className="border p-2">{property.property_id}</td>
                         <td className="border p-2">{property.property_name}</td>
                         <td className="border p-2">{property.city}</td>
-                        <td className="border p-2">{property.property_status}</td>
                         <td className="border p-2">{property.verification_status || 'Pending'}</td>
                         <td className="border p-2">{property.attempts}</td>
                         <td className="border p-2">{property.reviewed_by}</td>
-
                         <td className="border p-2">
                             <button
                                 className="bg-blue-500 text-white px-3 py-1 rounded"
                                 onClick={() => router.push(`./details/${property.property_id}`)}
-                                // onClick={() => router.push(`/pages/system_admin/dashboard`)}
-
                             >
                                 View Details
                             </button>

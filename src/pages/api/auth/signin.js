@@ -65,7 +65,6 @@ export default async function handler(req, res) {
       [userID, action, timestamp]
     );
 
-    // Respond with token and user info
     return res.status(200).json({
       message: "Login successful",
       token,

@@ -1,6 +1,6 @@
 import { db } from "../../lib/db";
 
-export default async function handler(req, res) {
+export default async function propertyListing(req, res) {
     if (req.method !== "GET") {
         return res.status(405).json({ message: "Method Not Allowed" });
     }
@@ -9,9 +9,9 @@ export default async function handler(req, res) {
         const [properties] = await db.query(`
             SELECT 
                 p.property_id, 
+                p.landlord_id,
                 p.property_name, 
                 p.city, 
-                p.property_status, 
                 pv.status AS verification_status,
                 pv.reviewed_by,
                 pv.attempts

@@ -74,7 +74,6 @@ export default async function handler(req, res) {
             }
         }
 
-        // ✅ Check if it's a system admin
         if (payload.admin_id) {
             const adminId = payload.admin_id;
 
@@ -83,6 +82,9 @@ export default async function handler(req, res) {
                 SELECT 
                     a.admin_id,
                     a.username,
+                    a.first_name,
+                    a.last_name,
+                    a.profile_picture,
                     a.email,
                     a.role,
                     a.status
@@ -99,7 +101,10 @@ export default async function handler(req, res) {
                     email: adminRows[0].email,
                     role: adminRows[0].role,
                     status: adminRows[0].status,
+                    first_name: adminRows[0].first_name,
+                    last_name:adminRows[0].last_name,
                     userType: "admin",
+                    profile_picture: adminRows[0].profile_picture,
                 });
             }
         }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {roles} from "../../../../../constant/adminroles";
 //import axios from "axios";
+import useAuth from "../../../../../../hooks/useSession";
 
 const CreateCoAdmin = () => {
   const [formData, setFormData] = useState({
@@ -10,8 +11,11 @@ const CreateCoAdmin = () => {
     email: "",
     password: "",
     role:"",
+    first_name: "",
+    last_name: "",
   });
 
+  const { admin, loading, error } = useAuth();
   const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
@@ -32,6 +36,7 @@ const CreateCoAdmin = () => {
     try {
       const res = await fetch("/api/systemadmin/addUsers", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
@@ -40,7 +45,7 @@ const CreateCoAdmin = () => {
 
       if (res.ok) {
         setMessage("Admin registered successfully.");
-        setFormData({ username: "", email:" ", password: "", role: "" }); // Reset form
+        setFormData({ username: "", email:" ", password: "", role: "", first_name: "", last_name:" " });
       } else {
         setMessage(data.error);
       }
@@ -61,6 +66,28 @@ const CreateCoAdmin = () => {
               type="text"
               name="username"
               value={formData.username}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded"
+              required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">First Name</label>
+          <input
+              type="text"
+              name="first_name"
+              value={formData.first_name}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded"
+              required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Last Name</label>
+          <input
+              type="text"
+              name="last_name"
+              value={formData.last_name}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 rounded"
               required
@@ -98,11 +125,11 @@ const CreateCoAdmin = () => {
               required
 
           >
-            <option  value="" disabled>
+            <option value="" disabled>
               Choose a role
             </option>
             {roles.map((role) => (
-                <option key={role.value} value={role.value} >
+                <option key={role.value} value={role.value}>
                   {role.label}
                 </option>
             ))}

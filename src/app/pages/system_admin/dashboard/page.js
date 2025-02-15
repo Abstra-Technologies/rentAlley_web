@@ -5,11 +5,16 @@ import Link from "next/link";
 import { useRouter} from "next/navigation";
 import {useState} from "react";
 import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
+import { requestFCMPermission, onMessageListener } from "../../../../pages/lib/firebaseConfig";
+import useAuthStore from "../../../../pages/zustand/authStore";
 
 
 export default function AdminDashboard() {
-    const { admin, loading, signOutAdmin } = useAuth()
+    const { signOutAdmin, admin,loading, error } = useAuth();
     const [isDeleting, setIsDeleting] = useState(false);
+    const [notification, setNotification] = useState(null);
+    // const { user, admin, loading, logout, error, signout } = useAuthStore();
+
     const router = useRouter();
     if (loading) {
         return <p>Loading...</p>;
@@ -57,7 +62,9 @@ export default function AdminDashboard() {
             <h1>
                 Welcome, {admin?.username}!
             </h1>
+            <p>Full Name: {admin?.first_name} , {admin?.last_name}</p>
             <p>Your user type is: {admin?.role} | ID: {admin?.admin_id}</p>
+            <p>Email: {admin?.email}</p>
             <hr/>
             <h2 className='m-2'>Side Pan Nav Contents</h2>
             <p className='m-2'><i>Kindly add these modules links on the sideNav</i></p>

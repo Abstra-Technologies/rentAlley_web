@@ -111,7 +111,6 @@ io.on("connection", async (socket) => {
                 return;
             }
 
-            // 🔹 Save message to database
             const [result] = await pool.query(
                 "INSERT INTO Message (userID, message) VALUES (?, ?)",
                 [userID, message]
@@ -123,7 +122,7 @@ io.on("connection", async (socket) => {
             const newMessage = {
                 messageID: result.insertId,
                 userID,
-                firstName, // ✅ Send firstName instead of just userID
+                firstName,
                 message,
                 timestamp: new Date(),
             };

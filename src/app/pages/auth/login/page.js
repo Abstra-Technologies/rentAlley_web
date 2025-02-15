@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { requestFCMPermission } from "../../../../pages/lib/firebaseConfig";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -67,12 +68,20 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    let fcm_token = null;
+
+    try {
+      fcm_token = await requestFCMPermission();
+    } catch (error) {
+      console.error("FCM Token Error:", error);
+    }
+
     try {
       loginSchema.parse(formData);
       const response = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, fcm_token }),
         credentials: "include",
       });
 

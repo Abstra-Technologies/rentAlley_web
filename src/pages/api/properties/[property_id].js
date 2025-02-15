@@ -1,120 +1,3 @@
-// import mysql from 'mysql2/promise';
-// import { decryptData } from '../../crypto/encrypt'; // Import decryption function
-// export default async function handler(req, res) {
-//     const { property_id } = req.query;
-//
-//     const connection = await mysql.createConnection({
-//         host: process.env.DB_HOST,
-//         user: process.env.DB_USER,
-//         password: process.env.DB_PASSWORD,
-//         database: process.env.DB_NAME,
-//         timezone: '+08:00',
-//     });
-//
-//     // Fetch property details, verification details, and photos
-//     const [propertyRows] = await connection.execute(`
-//         SELECT p.*,
-//                pv.occ_permit, pv.mayor_permit, pv.outdoor_photo, pv.indoor_photo, pv.status AS verification_status, pv.verified,
-//                GROUP_CONCAT(pp.photo_url) AS photos
-//         FROM Property p
-//         LEFT JOIN PropertyVerification pv ON p.property_id = pv.property_id
-//         LEFT JOIN PropertyPhoto pp ON p.property_id = pp.property_id
-//         WHERE p.property_id = ?
-//         GROUP BY p.property_id, pv.occ_permit, pv.mayor_permit, pv.outdoor_photo, pv.indoor_photo, pv.status, pv.verified
-//     `, [property_id]);
-//
-//     await connection.end();
-//
-//     if (propertyRows.length === 0) {
-//         return res.status(404).json({ message: "Property not found" });
-//     }
-//     const secretKey = process.env.ENCRYPTION_SECRET_KEY; // Ensure this is set in .env
-//     // Convert photos from comma-separated string to an array
-//     const property = {
-//         ...propertyRows[0],
-//         photos: propertyRows[0].photos
-//             ? propertyRows[0].photos.split(',').map(photo => decryptData(JSON.parse(photo), secretKey))
-//             : [],    };
-//
-//     res.status(200).json(property);
-// }
-
-// import mysql from 'mysql2/promise';
-// import { decryptData } from '../../crypto/encrypt';
-//
-// export default async function handler(req, res) {
-//     try {
-//         const { property_id } = req.query;
-//
-//         console.log("Fetching property details for ID:", property_id);
-//
-//         if (!property_id) {
-//             return res.status(400).json({ message: "Missing property ID" });
-//         }
-//
-//         const connection = await mysql.createConnection({
-//             host: process.env.DB_HOST,
-//             user: process.env.DB_USER,
-//             password: process.env.DB_PASSWORD,
-//             database: process.env.DB_NAME,
-//             timezone: '+08:00',
-//         });
-//
-//         const [propertyRows] = await connection.execute(`
-//             SELECT p.*,
-//                    pv.occ_permit, pv.mayor_permit, pv.outdoor_photo, pv.indoor_photo, pv.status AS verification_status, pv.verified,
-//                    GROUP_CONCAT(pp.photo_url) AS photos
-//             FROM Property p
-//             LEFT JOIN PropertyVerification pv ON p.property_id = pv.property_id
-//             LEFT JOIN PropertyPhoto pp ON p.property_id = pp.property_id
-//             WHERE p.property_id = ?
-//             GROUP BY p.property_id, pv.occ_permit, pv.mayor_permit, pv.outdoor_photo, pv.indoor_photo, pv.status, pv.verified
-//         `, [property_id]);
-//
-//         await connection.end();
-//
-//         if (propertyRows.length === 0) {
-//             console.error("Property not found:", property_id);
-//             return res.status(404).json({ message: "Property not found" });
-//         }
-//
-//         const secretKey = process.env.ENCRYPTION_SECRET;
-//
-//         if (!secretKey) {
-//             console.error("Missing encryption secret key. Check ENCRYPTION_SECRET_KEY in .env.");
-//             return res.status(500).json({ message: "Internal Server Error: Encryption Key Missing" });
-//         }
-//
-//         console.log("Using secret key:", "✔ Available");
-//
-//         const decryptIfJSON = (data) => {
-//             if (!data || typeof data !== "string") return null; // Check for null or undefined values
-//             try {
-//                 return decryptData(data.startsWith("{") ? JSON.parse(data) : data, secretKey);
-//             } catch (error) {
-//                 console.error("Decryption error:", error.message, "Data:", data);
-//                 return null;
-//             }
-//         };
-//
-//         const property = {
-//             ...propertyRows[0],
-//             occ_permit: decryptIfJSON(propertyRows[0].occ_permit),
-//             mayor_permit: decryptIfJSON(propertyRows[0].mayor_permit),
-//             outdoor_photo: decryptIfJSON(propertyRows[0].outdoor_photo),
-//             indoor_photo: decryptIfJSON(propertyRows[0].indoor_photo),
-//             photos: propertyRows[0].photos
-//                 ? propertyRows[0].photos.split(',').map(photo => decryptIfJSON(photo))
-//                 : [],
-//         };
-//
-//         res.status(200).json(property);
-//
-//     } catch (error) {
-//         console.error("Error fetching property:", error);
-//         return res.status(500).json({ success: false, message: "Internal Server Error" });
-//     }
-// }
 
 import mysql from 'mysql2/promise';
 import { decryptData } from '../../crypto/encrypt';
@@ -148,8 +31,6 @@ export default async function handler(req, res) {
             GROUP BY p.property_id, pv.occ_permit, pv.mayor_permit, pv.outdoor_photo, pv.indoor_photo, pv.status, pv.verified
         `, [property_id]);
 
-        await connection.end();
-
         if (propertyRows.length === 0) {
             console.error("Property not found:", property_id);
             return res.status(404).json({ message: "Property not found" });
@@ -162,9 +43,6 @@ export default async function handler(req, res) {
             return res.status(500).json({ message: "Internal Server Error: Encryption Key Missing" });
         }
 
-        console.log("Using secret key:", "✔ Available");
-
-        // Helper function to safely decrypt data
         const decryptIfValid = (data) => {
             if (!data || typeof data !== "string") return null;
             try {
@@ -177,18 +55,16 @@ export default async function handler(req, res) {
             }
         };
 
-        // Decrypt property verification documents & photos
         const property = {
             ...propertyRows[0],
-            occ_permit: decryptIfValid(propertyRows[0].occ_permit),    // Decrypt `PropertyVerification`
+            occ_permit: decryptIfValid(propertyRows[0].occ_permit),
             mayor_permit: decryptIfValid(propertyRows[0].mayor_permit),
             outdoor_photo: decryptIfValid(propertyRows[0].outdoor_photo),
             indoor_photo: decryptIfValid(propertyRows[0].indoor_photo),
             photos: propertyRows[0].photos
-                ? propertyRows[0].photos.split(',').map(photo => decryptIfValid(photo)) // Decrypt `PropertyPhoto`
+                ? propertyRows[0].photos.split(',').map(photo => decryptIfValid(photo))
                 : [],
         };
-
         res.status(200).json(property);
 
     } catch (error) {

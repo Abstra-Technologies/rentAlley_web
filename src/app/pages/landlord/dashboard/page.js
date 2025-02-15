@@ -4,7 +4,10 @@ import useAuth from "../../../../../hooks/useSession";
 import axios from "axios";
 import {useRouter} from "next/navigation";
 import Navbar from "../../../../components/navigation/navbar";
-import LandlordSubscription from "../../../../components/landlord/subscrription"; // 🔹 Import the component
+import LandlordSubscription from "../../../../components/landlord/subscrription";
+import Sidebar from "../../../../components/navigation/sidebar-landlord";
+import Link from "next/link";
+
 export default function LandlordDashboard() {
     const { user, loading, error } = useAuth();
     const router = useRouter();
@@ -16,8 +19,12 @@ export default function LandlordDashboard() {
     const trialEndDate = user?.subscription?.trial_end_date || "N/A";
 
     return (
+        <div>
+            <div>
+                <p>Side Nav Contents</p>
+                <Link href="/pages/commons/bug-report">Report a Bug</Link>
+            </div>
         <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
-
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Landlord Dashboard</h1>
 
             <p><strong>Name:</strong> {user?.firstName} {user?.lastName}</p>
@@ -46,5 +53,7 @@ export default function LandlordDashboard() {
                 <p>View Subscription</p>
             </div>
         </div>
+        </div>
+
     );
 }

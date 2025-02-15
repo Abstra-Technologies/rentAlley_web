@@ -27,8 +27,9 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     const { fetchSession } = useAuthStore();
+
     useEffect(() => {
-        fetchSession(); // Ensure user session is available globally
+        fetchSession();
     }, []);
 
     return (

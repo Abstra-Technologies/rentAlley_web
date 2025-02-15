@@ -1,23 +1,19 @@
-// To Do
-//  1. Login Success and Error Message must be consistent across all login/regiser.
-//  2. Redeign if possible for login attempts.
-
 'use client'
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import { useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import CardWarning from "../../../components/devTeam";
+import { requestFCMPermission } from "../../../pages/lib/firebaseConfig";
 
 export default function Login() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ login: "", password: "" }); // ✅ Changed "email" to "login"
   const [message, setMessage] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [unlockTime, setUnlockTime] = useState(null);
-const router = useRouter();
+  const router = useRouter();
 
   useEffect(() => {
-    // this is for check the attempt for incorrect password entered.
     const storedLockTime = localStorage.getItem("lockUntil");
     if (storedLockTime) {
       const lockUntil = parseInt(storedLockTime, 10);
@@ -53,6 +49,13 @@ const router = useRouter();
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    let fcm_token = null;
+    try {
+      fcm_token = await requestFCMPermission();
+    } catch (error) {
+      console.error("FCM Token Error:", error);
+    }
+
     if (isLocked) {
       await Swal.fire("Too many attempts", "Please try again later.", "error");
       return;
@@ -62,7 +65,8 @@ const router = useRouter();
       const res = await fetch("/api/systemadmin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, fcm_token }), // ✅ Sends "login" field instead of just "email"
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -75,7 +79,7 @@ const router = useRouter();
       } else {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
-        setMessage(data.error || "Invalid admin_login credentials.");
+        setMessage(data.error || "Invalid credentials.");
 
         if (newAttempts >= 3) {
           const lockDuration = 60000;
@@ -121,17 +125,17 @@ const router = useRouter();
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label
-                  htmlFor="email"
+                  htmlFor="login"
                   className="block text-sm font-medium text-gray-700"
               >
-                Email
+                Email or Username
               </label>
               <input
                   type="text"
-                  name="email"
-                  placeholder="email"
+                  name="login" // ✅ Changed to "login"
+                  placeholder="Enter email or username"
                   className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.email}
+                  value={form.login}
                   onChange={handleChange}
                   required
                   disabled={isLocked}
@@ -156,7 +160,8 @@ const router = useRouter();
                   disabled={isLocked}
               />
             </div>
-            {/*button will be disabled base on the attempts made.*/}
+
+            {/*button will be disabled based on the attempts made.*/}
             <button
                 type="submit"
                 className={`w-full py-2 px-4 ${

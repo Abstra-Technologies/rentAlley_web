@@ -12,7 +12,6 @@ export const config = {
     },
 };
 
-// AWS S3 Configuration (v3)
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -21,7 +20,7 @@ const s3Client = new S3Client({
     },
 });
 
-export default async function handler(req, res) {
+export default async function adminProfilePic(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ message: "Method Not Allowed" });
     }
@@ -36,7 +35,7 @@ export default async function handler(req, res) {
 
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const { payload } = await jwtVerify(token, secret);
-        const userId = payload.user_id;
+        const userId = payload.admin_id;
 
         if (!userId) {
             console.error("❌ [Profile Upload] Invalid JWT payload.");
@@ -47,8 +46,8 @@ export default async function handler(req, res) {
 
         // Parse the uploaded file
         const form = formidable({
-            multiples: false, // Allow only a single file
-            keepExtensions: true, // Keep original file extensions
+            multiples: false,
+            keepExtensions: true,
         });
         const [fields, files] = await form.parse(req);
 
@@ -57,9 +56,8 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: "No file uploaded." });
         }
 
-        // Read file content
         const fileBuffer = await fs.readFile(file.filepath);
-        const fileName = `profile-pictures/${Date.now()}-${path.basename(file.originalFilename)}`;
+        const fileName = `admin-profile/${Date.now()}-${path.basename(file.originalFilename)}`;
 
         // Upload to S3
         const uploadParams = {
@@ -75,10 +73,7 @@ export default async function handler(req, res) {
         const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
         console.log(`✅ [Profile Upload] File Uploaded to S3: ${imageUrl}`);
 
-        // Store image URL in database
-        await db.query("UPDATE User SET profilePicture = ? WHERE user_id = ?", [imageUrl, userId]);
-
-        console.log(`✅ [Profile Upload] Profile picture updated in DB for User ID: ${userId}`);
+        await db.query("UPDATE Admin SET profile_picture = ? WHERE admin_id = ?", [imageUrl, userId]);
 
         res.status(200).json({ message: "Profile picture updated successfully!", imageUrl });
     } catch (error) {

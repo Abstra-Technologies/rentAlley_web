@@ -10,15 +10,13 @@ const Sidebar = () => {
         setIsOpen(false);
     }
 };
-
-  
     return (
 <div className="relative" onClick={handleOutsideClick}>
             {/* Mobile Menu Button */}
             <button 
                 className="md:hidden p-4 text-blue-900" 
                 onClick={(e) => {
-                    e.stopPropagation(); // Prevents closing immediately after opening
+                    e.stopPropagation();
                     setIsOpen(!isOpen);
                 }}
             >
@@ -37,9 +35,11 @@ const Sidebar = () => {
                     <a href="#" className="block px-6 py-2 text-blue-900">Maintenance Request</a>
                     <a href="#" className="block px-6 py-2 text-blue-900">Announcement</a>
                     <a href="#" className="block px-6 py-2 text-blue-900">Property Billing System</a>
+                    <Link href="#" className="block px-6 py-2 text-blue-900">Report a Bug</Link>
+
                 </nav>
             </div>
-        </div> )
+</div>)
 }
 
 export default Sidebar;

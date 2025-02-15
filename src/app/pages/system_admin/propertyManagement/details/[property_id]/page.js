@@ -7,14 +7,14 @@ export default function PropertyDetails() {
     const [property, setProperty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const params = useParams(); // Use useParams() instead of router.query
+    const params = useParams();
     const router = useRouter();
-    const property_id = params.property_id; // Get the property ID from the URL
+    const property_id = params.property_id;
     const [message, setMessage] = useState("");
 
 
     useEffect(() => {
-        if (!property_id) return; // Wait until ID is available
+        if (!property_id) return;
 
         async function fetchProperty() {
             try {
@@ -64,10 +64,11 @@ export default function PropertyDetails() {
             <h1 className="text-3xl font-bold mb-4">{property.property_name}</h1>
             <p><strong>Property ID:</strong> {property.property_id}</p>
             <p><strong>City:</strong> {property.city}</p>
+            <p><strong>Barangay:</strong> {property.brgy_district}</p>
+            <p><strong>ZIP Code:</strong> {property.zip_code}</p>
+
             <p><strong>Province:</strong> {property.province}</p>
             <p><strong>Property Type:</strong> {property.property_type}</p>
-            <p><strong>Status:</strong> {property.property_status}</p>
-            <p><strong>Verification Status:</strong> {property.verification_status}</p>
             <p><strong>Security Deposit:</strong> ₱{property.sec_deposit}</p>
             <p><strong>Rent Payment:</strong> ₱{property.rent_payment}</p>
 
@@ -92,6 +93,7 @@ export default function PropertyDetails() {
                 )}
                 <p>OCC: {property.occ_permit}</p>
                 <p>photo: {property.indoor_photo}</p>
+                <img src={property.indoor_photo} />
                 {property.outdoor_photo && <img src={property.outdoor_photo} alt="Outdoor Photo"/>}
                 {property.indoor_photo && <img src={property.indoor_photo} alt="Indoor Photo"/>}
             </div>
