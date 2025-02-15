@@ -30,8 +30,6 @@ const Navbar = () => {
 
     }, []);
 
-
-
     const handleLogout = async () => {
         if (admin) {
             await signOutAdmin();
@@ -142,6 +140,10 @@ const Navbar = () => {
                             </button>
                             {dropdownOpen && (
                                 <div className="absolute right-0 top-11 w-48 bg-white text-black rounded-md shadow-lg py-2 z-10 flex flex-col">
+                                    <Link href={`/pages/${user?.userType}/dashboard`} className="block px-4 py-2 hover:bg-gray-200">
+                                        Dashboard
+                                    </Link>
+
                                     {user && (
                                         <Link
                                             href={`/pages/${user.userType}/profile/${user.user_id}`}
@@ -149,6 +151,7 @@ const Navbar = () => {
                                         >
                                             View Profile
                                         </Link>
+
                                     )}
                                     {admin && (
                                         <Link
