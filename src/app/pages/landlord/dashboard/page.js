@@ -5,8 +5,8 @@ import axios from "axios";
 import {useRouter} from "next/navigation";
 import Navbar from "../../../../components/navigation/navbar";
 import LandlordSubscription from "../../../../components/landlord/subscrription";
-import Sidebar from "../../../../components/navigation/sidebar-landlord";
 import Link from "next/link";
+import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import useAuthStore from "../../../../pages/zustand/authStore";
 
 export default function LandlordDashboard() {
@@ -35,6 +35,7 @@ export default function LandlordDashboard() {
     const trialEndDate = user?.subscription?.trial_end_date || "N/A";
 
     return (
+        <LandlordLayout>
         <div>
             <div>
                 <p>Side Nav Contents</p>
@@ -70,6 +71,6 @@ export default function LandlordDashboard() {
             </div>
         </div>
         </div>
-
+        </LandlordLayout>
     );
 }

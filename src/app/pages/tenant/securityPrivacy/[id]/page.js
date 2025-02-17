@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ProfilePage from "../../../../../components/profilePage";
 import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import axios from "axios";
+import SecurityPage from "../../../../../components/securityPrivacy";
 
-
-export default function userProfile() {
-    return ( 
-    <ProfilePage /> 
+export default function userSecurityPrivacy() {
+    return ( <SecurityPage />
 
     );
 }

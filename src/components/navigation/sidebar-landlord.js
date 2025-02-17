@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { Home, Building, Calendar, Wrench, Bell, CreditCard } from 'lucide-react';
 
 const menuItems = [
-  { href: '/dashboard', icon: Home, label: 'Dashboard' },
-  { href: '/property-listing', icon: Building, label: 'Property Listing' },
+  { href: '/pages/landlord/dashboard', icon: Home, label: 'Dashboard' },
+  { href: '/pages/landlord/property-listing', icon: Building, label: 'Property Listing' },
   { href: '/visit-schedule', icon: Calendar, label: 'Visit Schedule' },
   { href: '/maintenance', icon: Wrench, label: 'Maintenance' },
   { href: '/announcements', icon: Bell, label: 'Announcements' },

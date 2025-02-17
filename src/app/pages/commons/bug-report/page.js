@@ -2,6 +2,7 @@
 
 import useAuth from "../../../../../hooks/useSession";
 import BugReportForm from "../../../../components/modules/bugreport";
+import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 
 
 export default function TenantDashboard() {
@@ -18,6 +19,7 @@ export default function TenantDashboard() {
     console.log("User Data ", user);
 
     return (
+        <LandlordLayout>
         <div>
             <h4>User ID: {user.user_id}</h4>
             <BugReportForm user_id={user.user_id} />
@@ -31,5 +33,6 @@ export default function TenantDashboard() {
 
             {/* Additional content can go here */}
         </div>
+        </LandlordLayout>
     );
 }

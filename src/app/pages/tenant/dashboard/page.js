@@ -2,6 +2,7 @@
 import useAuth from "../../../../../hooks/useSession";
 import ChatComponent from "../../../../components/modules/chat";
 import {useRouter} from "next/navigation";
+import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 import useAuthStore from "../../../../pages/zustand/authStore";
 import { useEffect } from "react";
 
@@ -30,6 +31,7 @@ export default function TenantDashboard() {
   }
   console.log("User Data ", user);
   return (
+      <TenantLayout>
       <div>
           <h1>
               Welcome, {user.firstName} {user.lastName}!
@@ -46,5 +48,6 @@ export default function TenantDashboard() {
           {/*</button>*/}
 
       </div>
+      </TenantLayout>
   );
 }
