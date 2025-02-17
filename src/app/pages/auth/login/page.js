@@ -22,40 +22,32 @@ export default function Login() {
   const { user, admin, logout } = useAuthStore();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          router.replace(`/pages/${data.userType}/dashboard`);
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-      }
-    };
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    // ✅ Remove 2FA session and replace history state
     sessionStorage.removeItem("pending2FA");
-
-    // ✅ Remove previous navigation history (disables forward button)
     window.history.pushState(null, "", "/pages/auth/login");
     window.history.replaceState(null, "", "/pages/auth/login");
-
     if (user || admin) {
       router.replace(user ? "/pages/tenant/dashboard" : "/pages/admin/dashboard");
     }
   }, [user, admin]);
-
 
   const redirectBasedOnUserType = async () => {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        router.replace(`/pages/${data.userType}/dashboard`);
+
+        console.log("✅ Redirecting user type:", data.userType);
+
+        switch (data.userType) {
+          case "tenant":
+            return router.replace("/pages/tenant/dashboard");
+          case "landlord":
+            return router.replace("/pages/landlord/dashboard");
+          case "admin":
+            return router.replace("/pages/admin/dashboard");
+          default:
+            return router.replace("/pages/auth/login");
+        }
       }
     } catch (error) {
       console.error("Redirection failed:", error);
@@ -100,16 +92,22 @@ export default function Login() {
         body: JSON.stringify({ ...formData, fcm_token }),
         credentials: "include",
       });
+
       const data = await response.json();
+
+      console.log("API Response:", data);
+
+      if (response.ok) {
         if (data.requires_otp) {
           Swal.fire("2FA Required", "OTP sent to your email.", "info");
           return router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
         } else {
           Swal.fire("Success", "Login successful!", "success");
+          return await redirectBasedOnUserType();
         }
-
-      setMessage("Login successful!");
-      return await redirectBasedOnUserType();
+      } else {
+        setErrorMessage(data.error || "Invalid credentials");
+      }
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage("Invalid credentials");

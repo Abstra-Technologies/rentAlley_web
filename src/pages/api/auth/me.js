@@ -35,6 +35,7 @@ export default async function handler(req, res) {
                     u.lastName,
                     u.email,
                     u.userType,
+                    u.userType,
                     u.profilePicture,
                     u.is_2fa_enabled,
                     u.phoneNumber,

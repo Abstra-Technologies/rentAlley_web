@@ -7,13 +7,29 @@ import Navbar from "../../../../components/navigation/navbar";
 import LandlordSubscription from "../../../../components/landlord/subscrription";
 import Sidebar from "../../../../components/navigation/sidebar-landlord";
 import Link from "next/link";
+import useAuthStore from "../../../../pages/zustand/authStore";
 
 export default function LandlordDashboard() {
-    const { user, loading, error } = useAuth();
+    const { user, admin, fetchSession, loading } = useAuthStore();
+
     const router = useRouter();
 
-    if (loading) return <p>Loading user data...</p>;
-    if (error) return <p>Error loading user session: {error}</p>;
+    useEffect(() => {
+        fetchSession();
+    }, []);
+
+    useEffect(() => {
+        if (!loading && !user && !admin) {
+
+        }
+    }, [user, admin, loading, router]);
+
+    if (loading) {
+        return <p>Loading...</p>;
+    }
+    if (!user) {
+        return <p>You need to log in to access the dashboard.</p>;
+    }
 
     const subscription = user?.subscription ?? null;
     const trialEndDate = user?.subscription?.trial_end_date || "N/A";
