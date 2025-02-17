@@ -69,7 +69,7 @@ export default function UnitListingForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const propURL = `/pages/landlord/property-listing/${propertyId}/view-unit`;
+    const propURL = `/pages/landlord/property-listing/view-unit/${propertyId}`;
     try {
       const unitResponse = await axios.post("/api/unitListing/unit", formData);
 

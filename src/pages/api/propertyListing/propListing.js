@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 
 //Create Properties
 async function handlePostRequest(req, res, connection) {
-  // Destructure the request body to get the property details
+  // Destructure request body to get property details
   const {
     user_id,
     propertyName,
@@ -70,6 +70,21 @@ async function handlePostRequest(req, res, connection) {
     city,
     zipCode,
     province,
+    numberOfUnit,
+    propDesc,
+    floorArea,
+    petFriendly,
+    bedSpacing,
+    availBeds,
+    rentPayment,
+    minStay,
+    lateFee,
+    secDeposit,
+    advancedPayment,
+    hasElectricity,
+    hasWater,
+    hasAssocDues,
+    propertyStatus,
   } = req.body;
 
   // Ensure user_id is not undefined
@@ -95,6 +110,21 @@ async function handlePostRequest(req, res, connection) {
       city || null,
       zipCode || null,
       province || null,
+      numberOfUnit || null,
+      propDesc || null,
+      floorArea,
+      petFriendly ? 1 : 0,
+      bedSpacing ? 1 : 0,
+      availBeds || null,
+      rentPayment || 0.0,
+      minStay || null,
+      lateFee || 0.0,
+      secDeposit || null,
+      advancedPayment || null,
+      hasElectricity ? 1 : 0,
+      hasWater ? 1 : 0,
+      hasAssocDues ? 1 : 0,
+      propertyStatus || "unoccupied",
     ];
 
     console.log("Values array:", values);
@@ -114,9 +144,23 @@ async function handlePostRequest(req, res, connection) {
         brgy_district,
         city,
         zip_code,
-        province
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        province,
+        number_of_units,
+        description,
+        floor_area,
+        pet_friendly,
+        bed_spacing,
+        avail_beds,
+        rent_payment,
+        min_stay,
+        late_fee,
+        sec_deposit,
+        advanced_payment,
+        has_electricity,
+        has_water,
+        has_assocdues,
+        status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       values
     );
@@ -193,9 +237,9 @@ async function handlePutRequest(req, res, connection, id) {
 
     await connection.beginTransaction();
 
-    // Replace undefined values with null
+    // Replace undefined/empty values with null
     Object.keys(req.body).forEach((key) => {
-      if (req.body[key] === undefined) {
+      if (req.body[key] === undefined || req.body[key] === "") {
         req.body[key] = null;
       }
     });
@@ -209,6 +253,20 @@ async function handlePutRequest(req, res, connection, id) {
       city,
       zipCode,
       province,
+      propDesc,
+      floorArea,
+      bedSpacing,
+      availBeds,
+      petFriendly,
+      numberOfUnit,
+      minStay,
+      secDeposit,
+      advancedPayment,
+      hasElectricity,
+      hasWater,
+      hasAssocDues,
+      rentPayment,
+      lateFee,
     } = req.body;
 
     console.log("Updating property with values:", req.body);
@@ -216,7 +274,7 @@ async function handlePutRequest(req, res, connection, id) {
     const [result] = await connection.execute(
       `UPDATE Property SET
         property_name = ?, property_type = ?, amenities = ?, street = ?, brgy_district = ?,
-        city = ?, zip_code = ?, province = ?, updated_at = CURRENT_TIMESTAMP
+        city = ?, zip_code = ?, province = ?, description = ?, floor_area = ?, bed_spacing = ?, avail_beds = ?, pet_friendly = ?, number_of_units = ?, min_stay = ?, sec_deposit = ?, advanced_payment = ?, has_electricity = ?, has_water = ?, has_assocdues = ?, rent_payment = ?, late_fee = ?, updated_at = CURRENT_TIMESTAMP
       WHERE property_id = ?`,
       [
         propertyName,
@@ -227,6 +285,20 @@ async function handlePutRequest(req, res, connection, id) {
         city,
         zipCode,
         province,
+        propDesc,
+        floorArea,
+        bedSpacing,
+        availBeds,
+        petFriendly,
+        numberOfUnit,
+        minStay,
+        secDeposit,
+        advancedPayment,
+        hasElectricity,
+        hasWater,
+        hasAssocDues,
+        rentPayment,
+        lateFee,
         id,
       ]
     );

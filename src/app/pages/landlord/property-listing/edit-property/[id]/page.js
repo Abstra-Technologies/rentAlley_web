@@ -23,6 +23,20 @@ const EditProperty = () => {
     zipCode: "",
     propertyType: "",
     amenities: [], // Ensure it's an array
+    propDesc: "",
+    floorArea: "",
+    numberOfUnit: "",
+    rentPayment: "",
+    advancedPayment: "",
+    secDeposit: "",
+    minStay: "",
+    lateFee: "",
+    petFriendly: false,
+    bedSpacing: false,
+    availBeds: "",
+    hasElectricity: false,
+    hasWater: false,
+    hasAssocDues: false,
   });
   const [photos, setPhotos] = useState([]); // For uploaded photos
   const [propertyTypes, setPropertyTypes] = useState([]); // Dynamic Property Types
@@ -41,6 +55,9 @@ const EditProperty = () => {
 
         setFormData({
           propertyName: propertyData?.property_name || "",
+          propDesc: propertyData?.description || "",
+          floorArea: propertyData?.floor_area || "",
+          numberOfUnit: propertyData?.number_of_units || 0,
           street: propertyData?.street || "",
           brgyDistrict: propertyData?.brgy_district || "",
           city: propertyData?.city || "",
@@ -51,6 +68,17 @@ const EditProperty = () => {
           amenities: propertyData?.amenities
             ? propertyData.amenities.split(",").map((amenity) => amenity.trim())
             : [],
+          rentPayment: propertyData?.rent_payment || 0,
+          advancedPayment: propertyData?.advanced_payment || 0,
+          secDeposit: propertyData?.sec_deposit || 0,
+          minStay: propertyData?.min_stay || 0,
+          lateFee: propertyData?.late_fee || 0,
+          petFriendly: propertyData?.pet_friendly === 1,
+          bedSpacing: propertyData?.bed_spacing === 1,
+          availBeds: propertyData?.avail_beds ?? "",
+          hasElectricity: propertyData?.has_electricity === 1,
+          hasWater: propertyData?.has_water === 1,
+          hasAssocDues: propertyData?.has_assocdues === 1,
         });
       } catch (error) {
         console.error("Error fetching property:", error);
@@ -297,6 +325,194 @@ const EditProperty = () => {
             selectedAmenities={formData.amenities || []}
             onAmenityChange={handleAmenityChange}
           />
+        </div>
+
+        {/* Number of Units */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Number of Units
+          </label>
+          <input
+            type="text"
+            name="numberOfUnit"
+            value={formData.numberOfUnit || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+
+        {/* Property Description */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Description
+          </label>
+          <textarea
+            name="propDesc"
+            value={formData.propDesc || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          ></textarea>
+        </div>
+
+        {/* Floor Area */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Floor Area (sqm)
+          </label>
+          <input
+            type="number"
+            name="floorArea"
+            value={formData.floorArea || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+
+        {/* Rent Payment */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Rent Payment
+          </label>
+          <input
+            type="number"
+            name="rentPayment"
+            value={formData.rentPayment || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+
+        {/* Advanced Payment (Months) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Advanced Payment (Months)
+          </label>
+          <input
+            type="number"
+            name="advancedPayment"
+            value={formData.advancedPayment || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+
+        {/* Security Deposit (Amount) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Security Deposit (Amount)
+          </label>
+          <input
+            type="number"
+            name="secDeposit"
+            value={formData.secDeposit || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+
+        {/* Minimum Stay (Months) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Minimum Stay (Months)
+          </label>
+          <input
+            type="number"
+            name="minStay"
+            value={formData.minStay || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+
+        {/* Late Fee (%) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Late Fee (%)
+          </label>
+          <input
+            type="number"
+            name="lateFee"
+            value={formData.lateFee || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+
+        {/* Pet-Friendly Checkbox */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="petFriendly"
+            checked={formData.petFriendly}
+            onChange={handleChange}
+            className="h-6 w-6"
+          />
+          <label className="text-gray-700">Pet-Friendly</label>
+        </div>
+
+        {/* Bed Spacing Checkbox */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="bedSpacing"
+            checked={formData.bedSpacing}
+            onChange={handleChange}
+            className="h-6 w-6"
+          />
+          <label className="text-gray-700">Bed Spacing (if applicable)</label>
+        </div>
+
+        {/* Show Input for Available Bed Spacing */}
+        {formData.bedSpacing && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              Available Bed Spacing (in number)
+            </label>
+            <input
+              type="number"
+              name="availBeds"
+              value={formData.availBeds || ""}
+              onChange={handleChange}
+              placeholder="Enter available bed spacing"
+              className="w-full p-2 border rounded"
+            />
+          </div>
+        )}
+
+        {/* Water Bill Checkbox */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="hasWater"
+            checked={formData.hasWater}
+            onChange={handleChange}
+            className="h-6 w-6"
+          />
+          <label className="text-gray-700">Water Bill</label>
+        </div>
+
+        {/* Electricity Bill Checkbox */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="hasElectricity"
+            checked={formData.hasElectricity}
+            onChange={handleChange}
+            className="h-6 w-6"
+          />
+          <label className="text-gray-700">Electricity Bill</label>
+        </div>
+
+        {/* Association Dues Checkbox */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="hasAssocDues"
+            checked={formData.hasAssocDues}
+            onChange={handleChange}
+            className="h-6 w-6"
+          />
+          <label className="text-gray-700">Association Dues</label>
         </div>
 
         {/* Upload Property Photos */}

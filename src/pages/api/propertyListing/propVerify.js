@@ -119,6 +119,7 @@ export default async function handler(req, res) {
       const mayorPermitFile = files.mayorPermit?.[0] || null;
       const indoorFile = files.indoor?.[0] || null;
       const outdoorFile = files.outdoor?.[0] || null;
+      const govIdFile = files.govID?.[0] || null;
 
       const occPermitUrl = occPermitFile
         ? await uploadToS3(occPermitFile, "property-docs")
@@ -132,14 +133,18 @@ export default async function handler(req, res) {
       const outdoorPhoto = outdoorFile
         ? await uploadToS3(outdoorFile, "property-photos/outdoor")
         : null;
+      const govID = govIdFile
+        ? await uploadToS3(govIdFile, "property-photos/govId")
+        : null;
 
       const query =
-        "INSERT INTO PropertyVerification (property_id, occ_permit, mayor_permit, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts) VALUES (?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 0)";
+        "INSERT INTO PropertyVerification (property_id, occ_permit, mayor_permit, gov_id, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts) VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 0)";
 
       console.log("Inserting into MySQL with:", {
         property_id,
         occPermitUrl,
         mayorPermitUrl,
+        govID,
         indoorPhoto,
         outdoorPhoto,
       });
@@ -148,6 +153,7 @@ export default async function handler(req, res) {
         Number(property_id),
         occPermitUrl,
         mayorPermitUrl,
+        govID,
         indoorPhoto,
         outdoorPhoto,
       ]);
