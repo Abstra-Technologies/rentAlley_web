@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link';
-import { Home, Building, Calendar, Wrench, Bell, CreditCard } from 'lucide-react';
+import { Home, Building, Calendar, Wrench, Bell, CreditCard, Bug } from 'lucide-react';
 
 const menuItems = [
   { href: '/pages/landlord/dashboard', icon: Home, label: 'Dashboard' },
@@ -8,7 +8,9 @@ const menuItems = [
   { href: '/visit-schedule', icon: Calendar, label: 'Visit Schedule' },
   { href: '/maintenance', icon: Wrench, label: 'Maintenance' },
   { href: '/announcements', icon: Bell, label: 'Announcements' },
-  { href: '/billing', icon: CreditCard, label: 'Billing' }
+  { href: '/billing', icon: CreditCard, label: 'Billing' },
+  { href: '/pages/commons/bug-report', icon: Bug, label: 'Report a Bug' }
+
 ];
 
 const LandlordLayout = ({ children }) => {

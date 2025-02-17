@@ -6,6 +6,10 @@ import usePropertyStore from "../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../hooks/useSession";
 import Image from "next/image";
 
+// To Follow:
+// - Implement Subscription Limit Here.
+// - If Landlord is not verified no property listing.
+
 const PropertyListingPage = () => {
   const router = useRouter();
   const { user } = useAuth();

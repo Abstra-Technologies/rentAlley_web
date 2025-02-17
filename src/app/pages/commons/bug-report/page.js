@@ -21,17 +21,7 @@ export default function TenantDashboard() {
     return (
         <LandlordLayout>
         <div>
-            <h4>User ID: {user.user_id}</h4>
             <BugReportForm user_id={user.user_id} />
-            {/* Sign Out Button */}
-            <button
-                onClick={signOut}
-                className="bg-red-500 text-white px-4 py-2 rounded-md ml-4"
-            >
-                Sign Out
-            </button>
-
-            {/* Additional content can go here */}
         </div>
         </LandlordLayout>
     );

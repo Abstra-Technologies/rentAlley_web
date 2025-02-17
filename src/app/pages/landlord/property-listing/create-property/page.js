@@ -1,14 +1,12 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import LandlordLayout from "../../../../../components/navigation/sidebar-landlord"; // Layout
 import { useRouter } from "next/navigation";
 import StepCounter from "../../../../../components/step-counter";
-import {
-  StepOne,
-  StepTwo,
-  StepThree,
-  StepFour,
-} from "../../../../../components/step-counter";
+import { StepOne } from "../../../../../components/landlord/step1";
+import { StepTwo } from "../../../../../components/landlord/step2";
+import { StepThree } from "../../../../../components/landlord/step3";
+import { StepFour } from "../../../../../components/landlord/step4";
 import axios from "axios";
 import usePropertyStore from "../../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../../hooks/useSession";
@@ -28,10 +26,58 @@ export default function AddNewProperty() {
     occPermit,
     indoorPhoto,
     outdoorPhoto,
+    govID,
   } = usePropertyStore();
 
+  const validateStep = () => {
+    if (step === 1) {
+      // Ensure property details are filled
+      if (
+        !property.propertyName ||
+        !property.street ||
+        !property.brgyDistrict ||
+        !property.city ||
+        !property.province ||
+        !property.zipCode
+      ) {
+        alert("Please fill in all property details before proceeding");
+        return false;
+      }
+    }
+
+    if (step === 3) {
+      if (!property.numberOfUnit) {
+        alert("Please fill in number of units before proceeding.");
+        return false;
+      }
+      // Ensure at least one photo is uploaded
+      if (photos.length === 0) {
+        alert("Please upload at least one property photo before proceeding.");
+        return false;
+      }
+    }
+
+    if (step === 4) {
+      // Ensure required documents are uploaded
+      if (
+        !occPermit?.file ||
+        !mayorPermit?.file ||
+        !indoorPhoto ||
+        !outdoorPhoto ||
+        !govID?.file
+      ) {
+        alert("Please upload all required documents before proceeding.");
+        return false;
+      }
+    }
+
+    return true; // If all validations pass
+  };
+
   const nextStep = () => {
-    setStep((prev) => Math.min(prev + 1, 4)); // Prevent going past step 4
+    if (validateStep()) {
+      setStep((prev) => Math.min(prev + 1, 4)); // Prevent going past step 4
+    }
   };
 
   const prevStep = () => {
@@ -55,7 +101,9 @@ export default function AddNewProperty() {
 
   // Upload photos function
   const uploadPhotos = async (propertyID) => {
-    if (!photos.length) return [];
+    if (!photos.length) {
+      alert("At least one property photo is required.");
+    }
 
     const formData = new FormData();
 
@@ -99,8 +147,8 @@ export default function AddNewProperty() {
   };
   // Upload Property Requirements
   const uploadPropertyRequirements = async (propertyID) => {
-    if (!occPermit || !mayorPermit || !indoorPhoto || !outdoorPhoto) {
-      console.warn("Missing property files for verification.");
+    if (!occPermit || !mayorPermit || !indoorPhoto || !outdoorPhoto || !govID) {
+      alert("Missing property files for verification.");
       return;
     }
 
@@ -109,6 +157,7 @@ export default function AddNewProperty() {
 
     formData.append("occPermit", occPermit?.file);
     formData.append("mayorPermit", mayorPermit?.file);
+    formData.append("govID", govID?.file);
     formData.append("indoor", indoorPhoto);
     formData.append("outdoor", outdoorPhoto);
 
@@ -116,6 +165,7 @@ export default function AddNewProperty() {
     console.log("mayorPermit Type:", mayorPermit); // Debug
     console.log("Indoor Photo Type:", indoorPhoto); // Debug
     console.log("Outdoor Photo Type:", outdoorPhoto); // Debug
+    console.log("Government ID:", govID); // Debug
 
     try {
       const { data } = await axios.post(
@@ -136,6 +186,19 @@ export default function AddNewProperty() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateStep()) {
+      return;
+    }
+
+    // Confirmation alert
+    const isConfirmed = window.confirm(
+      "Are you sure you want to submit this property?"
+    );
+    if (!isConfirmed) {
+      return; // Stop submission if the user cancels
+    }
+
     if (!user) {
       alert("User not authenticated. Please log in.");
       return;
