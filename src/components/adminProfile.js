@@ -66,14 +66,14 @@ export default function ProfilePageAdmin() {
             setProfileData((prev) => ({ ...prev, profilePicture: response.data.imageUrl }));
             console.log("✅ Image uploaded:", response.data.imageUrl);
         } catch (error) {
-            console.error("❌ Upload failed:", error);
+            console.error("Upload failed:", error);
         }
         setUploading(false);
     };
 
     const handleUpdateProfile = async () => {
         try {
-            await axios.post("/api/profile/update", formData, {
+            await axios.post("/api/profile/adminProfileUpdate", formData, {
                 headers: { "Content-Type": "application/json" },
                 withCredentials: true,
             });
@@ -90,6 +90,7 @@ export default function ProfilePageAdmin() {
     if (!admin) return <p>Admin not found. Please log in.</p>;
     if (error) return <p>Error: {error}</p>;
     if (!hydrated) return null;
+    const username = admin.username.toUpperCase();
     return (
         <div className="flex min-h-screen bg-gray-50">
             <div className="w-64 bg-white border-r border-gray-200 py-4 px-6">
@@ -145,7 +146,7 @@ export default function ProfilePageAdmin() {
                         </div>
                     </div>
 
-                    <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Welcome, {admin?.username}!</h2>
+                    <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Welcome, {username}!</h2>
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Username</label>

@@ -51,6 +51,7 @@ export default async function handler(req, res) {
             "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
             [decoded.admin_id, `Created an announcement: ${title}`]
         );
+
         await logAuditEvent(
             decoded.admin_id,
             "Created Announcement",

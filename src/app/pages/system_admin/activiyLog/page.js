@@ -7,6 +7,7 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
     Typography, CircularProgress, Box
 } from "@mui/material";
+import SideNavAdmin from "../../../../components/navigation/sidebar-admin";
 
 export default function ActivityLogs() {
     const [logs, setLogs] = useState([]);
@@ -46,6 +47,7 @@ export default function ActivityLogs() {
     }
 
     return (
+
         <Box sx={{ padding: 4 }}>
             <Typography variant="h5" gutterBottom>Activity Logs</Typography>
             <TableContainer component={Paper}>

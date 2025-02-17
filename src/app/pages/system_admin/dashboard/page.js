@@ -1,5 +1,4 @@
 'use client'
-
 import useAuth from "../../../../../hooks/useSession";
 import Link from "next/link";
 import { useRouter} from "next/navigation";
@@ -7,6 +6,7 @@ import {useState} from "react";
 import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
 import { requestFCMPermission, onMessageListener } from "../../../../pages/lib/firebaseConfig";
 import useAuthStore from "../../../../pages/zustand/authStore";
+import SideNavAdmin from "../../../../components/navigation/sidebar-admin";
 
 
 export default function AdminDashboard() {
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
             if (!response.ok) throw new Error(data.message || "Failed to delete account.");
 
             alert("Your account has been successfully deleted.");
-            router.push("./login"); // Redirect to admin_login after account deletion
+            router.push("./login");
         } catch (error) {
             alert("Error: " + error.message);
         } finally {
@@ -58,6 +58,7 @@ export default function AdminDashboard() {
     };
 
     return (
+        <SideNavAdmin>
         <div>
             <h1>
                 Welcome, {admin?.username}!
@@ -82,14 +83,7 @@ export default function AdminDashboard() {
                 <h3>Analytics</h3>
                 <PropertyAnalytics />
             </div>
-            {/* Buttons */}
             <div className="flex space-x-4">
-                <button
-                    onClick={signOutAdmin}
-                    className="bg-red-500 text-white px-4 py-2 rounded-md"
-                >
-                    Sign Out
-                </button>
 
                 <button
                     onClick={handleDeleteAccount}
@@ -99,8 +93,7 @@ export default function AdminDashboard() {
                     {isDeleting ? "Deleting..." : "Delete Account"}
                 </button>
             </div>
-
-            {/* Additional content can go here */}
         </div>
+        </SideNavAdmin>
     );
 }

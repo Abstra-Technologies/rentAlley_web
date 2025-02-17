@@ -16,7 +16,6 @@ const menuItems = [
 const LandlordLayout = ({ children }) => {
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <aside className="w-64 bg-white shadow-lg">
         {/* Title Section */}
         <div className="p-6 border-b">

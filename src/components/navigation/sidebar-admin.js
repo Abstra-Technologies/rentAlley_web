@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { Home, ScrollText, Users2, Users, Building2, Bug } from 'lucide-react'
 
-export default function SideNav({ admin }) {
+export default function SideNavAdmin({ admin }) {
   const sideNavItems = [
     { href: '/pages/system_admin/activiyLog', icon: ScrollText, label: 'Activity Log' },
     { href: '/pages/system_admin/co_admin/list', icon: Users2, label: 'Add Co-admin' },
@@ -15,16 +15,17 @@ export default function SideNav({ admin }) {
   ]
 
   return (
+
     <div className="w-64 bg-white shadow-lg">
       <div className="p-4">
         <div className="flex items-center space-x-2">
           <Home className="w-6 h-6 text-blue-600" />
-          <span className="text-xl font-semibold text-blue-600">Homepage</span>
+          <span className="text-xl font-semibold text-blue-600">Rentahan Admin Portal</span>
         </div>
-        <div className="mt-4 px-2">
-          <p className="text-sm text-gray-600">Welcome, {admin.username}</p>
-          <p className="text-xs text-gray-500">Role: {admin.role}</p>
-        </div>
+        {/*<div className="mt-4 px-2">*/}
+        {/*  <p className="text-sm text-gray-600">Welcome, {admin.username}</p>*/}
+        {/*  <p className="text-xs text-gray-500">Role: {admin.role}</p>*/}
+        {/*</div>*/}
       </div>
       <nav className="mt-4">
         {sideNavItems.map((item, index) => (

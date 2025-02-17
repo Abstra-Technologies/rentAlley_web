@@ -37,10 +37,6 @@ export default function LandlordDashboard() {
     return (
         <LandlordLayout>
         <div>
-            <div>
-                <p>Side Nav Contents</p>
-                <Link href="/pages/commons/bug-report">Report a Bug</Link>
-            </div>
         <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Landlord Dashboard</h1>
 
