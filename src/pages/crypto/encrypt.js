@@ -1,32 +1,3 @@
-// import CryptoJS from "crypto-js";
-//
-// const secretKey = process.env.EMAIL_SECRET_KEY;
-//
-// export const encryptEmail = (email) => {
-//   return CryptoJS.AES.encrypt(email, secretKey).toString();
-// };
-//
-// export const decryptEmail = (encryptedEmail) => {
-//   const bytes = CryptoJS.AES.decrypt(encryptedEmail, secretKey);
-//   return bytes.toString(CryptoJS.enc.Utf8);
-// };
-//
-// export const encryptFName = (fname) => {
-//   return CryptoJS.AES.encrypt(fname, secretKey).toString();
-// };
-//
-// export const encryptLName = (lname) => {
-//   return CryptoJS.AES.encrypt(lname, secretKey).toString();
-// };
-//
-// export const encryptPhone = (phone) => {
-//   return CryptoJS.AES.encrypt(phone, secretKey).toString();
-// };
-//
-// export const decryptData = (encryptedData) => {
-//   const bytes = CryptoJS.AES.decrypt(encryptedData, secretKey);
-//   return bytes.toString(CryptoJS.enc.Utf8); // Convert bytes to string
-// };
 
 import crypto from "crypto";
 
@@ -59,22 +30,45 @@ export const encryptData = (data, secret) => {
     };
 };
 
-/**
- * Decrypts data using AES-256-GCM
- */
 export const decryptData = (encryptedData, secret) => {
-    const key = getKey(secret);
-    const iv = Buffer.from(encryptedData.iv, "hex");
-    const encryptedText = encryptedData.data;
-    const authTag = Buffer.from(encryptedData.authTag, "hex");
+    try {
+        if (!encryptedData || typeof encryptedData !== "object" || !encryptedData.iv || !encryptedData.data || !encryptedData.authTag) {
+            console.warn("⚠️ DecryptData received invalid or undefined input:", encryptedData);
+            return "";
+        }
 
-    const decipher = crypto.createDecipheriv(algorithm, key, iv);
-    decipher.setAuthTag(authTag);
+        const key = getKey(secret);
+        const iv = Buffer.from(encryptedData.iv, "hex");
+        const encryptedText = encryptedData.data;
+        const authTag = Buffer.from(encryptedData.authTag, "hex");
 
-    let decrypted = decipher.update(encryptedText, "hex", "utf8");
-    decrypted += decipher.final("utf8");
+        const decipher = crypto.createDecipheriv(algorithm, key, iv);
+        decipher.setAuthTag(authTag);
 
-    return decrypted;
+        let decrypted = decipher.update(encryptedText, "hex", "utf8");
+        decrypted += decipher.final("utf8");
+
+        return decrypted;
+    } catch (error) {
+        console.error("❌ Error decrypting data:", error.message);
+        return "";
+    }
 };
 
 
+// export const decryptData = (encryptedData, secret) => {
+//     const key = getKey(secret);
+//     const iv = Buffer.from(encryptedData.iv, "hex");
+//     const encryptedText = encryptedData.data;
+//     const authTag = Buffer.from(encryptedData.authTag, "hex");
+//
+//     const decipher = crypto.createDecipheriv(algorithm, key, iv);
+//     decipher.setAuthTag(authTag);
+//
+//     let decrypted = decipher.update(encryptedText, "hex", "utf8");
+//     decrypted += decipher.final("utf8");
+//
+//     return decrypted;
+// };
+//
+//

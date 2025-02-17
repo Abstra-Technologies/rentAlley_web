@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 
@@ -10,6 +10,20 @@ export default function Verify2FA() {
 
     const [otp, setOtp] = useState("");
     const [message, setMessage] = useState("");
+
+    useEffect(() => {
+        // ✅ Prevent accessing this page if no pending 2FA session
+        if (!sessionStorage.getItem("pending_2fa")) {
+            router.push("/pages/auth/login"); // Redirect to login
+        }
+
+        // ✅ Prevent forward navigation to OTP page after going back
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = () => {
+            sessionStorage.removeItem("pending_2fa");
+            router.push("/pages/auth/login");
+        };
+    }, [router]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -26,10 +40,16 @@ export default function Verify2FA() {
 
             if (res.ok) {
                 Swal.fire("Success", "OTP verified successfully!", "success");
-                if (data.userType === "tenant") {
+                sessionStorage.removeItem("pending_2fa"); // ✅ Remove after successful login
+
+                // ✅ Redirect based on user type
+                if (data.user.userType === "tenant") {
                     router.push("/pages/tenant/dashboard");
-                } else if (data.userType === "landlord") {
+                } else if (data.user.userType === "landlord") {
                     router.push("/pages/landlord/dashboard");
+                } else {
+                    setMessage("Invalid user type.");
+                }
             } else {
                 setMessage(data.error || "Invalid OTP.");
             }

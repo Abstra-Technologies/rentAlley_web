@@ -9,10 +9,8 @@ export default async function handler(req, res) {
   try {
     connection = await db.getConnection();
 
-    // Get the property ID from the request query
     const { id } = req.query;
 
-    // Fetch the property from the database
     const [rows] = await connection.execute(
       "SELECT property_id, property_name FROM Property WHERE property_id = ?",
       [id]
@@ -22,7 +20,7 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Property not found" });
     }
 
-    return res.status(200).json(rows[0]); // Return the property details
+    return res.status(200).json(rows[0]);
   } catch (error) {
     console.error("Database Error:", error);
     return res.status(500).json({ error: "Internal Server Error" });

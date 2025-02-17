@@ -62,19 +62,29 @@ export default async function handler(req, res) {
     if(user.is_2fa_enabled){
 
       const otp = Math.floor(100000 + Math.random() * 900000);
-      const otp_expiry = new Date(Date.now() + 10 * 60000);
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes later
 
+      const nowUTC8 = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+      const expiresAtUTC8 = new Date(expiresAt.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+      await db.query("SET time_zone = '+08:00'");
       await db.query(
-          "INSERT INTO UserToken (user_id, token_type, token, otp_expiry) VALUES (?, '2fa', ?, ?)",
-          [user.user_id, otp, otp_expiry]
+          "INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at) \n" +
+          "VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))\n" +
+          "ON DUPLICATE KEY UPDATE \n" +
+          "  token = VALUES(token), \n" +
+          "  created_at = NOW(), \n" +
+          "  expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)",
+          [user.user_id, otp, nowUTC8, expiresAtUTC8]
       );
 
       await sendOtpEmail(email, otp);
-
+      res.setHeader("Set-Cookie", `pending_2fa=true; Path=/; HttpOnly`);
       return res.status(200).json({
         message: "OTP sent. Please verify to continue.",
         requires_otp: true,
         user_id: user.user_id,
+        userType: user.userType,
       });
     }
 

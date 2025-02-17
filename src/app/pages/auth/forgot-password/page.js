@@ -1,3 +1,5 @@
+// Add  Confirm new Password part. and validation.
+
 'use client';
 import { useState } from 'react';
 import axios from 'axios';
@@ -10,25 +12,8 @@ export default function ForgotPassword() {
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState(1); // Track steps: 1 = Enter Email, 2 = Enter OTP, 3 = Reset Password
+  const [step, setStep] = useState(1);
 
-  // ✅ Step 1: Verify Email and Get OTP
-  // const handleEmailSubmit = async () => {
-  //   if (!email) {
-  //     toast.error("Please enter your email.");
-  //     return;
-  //   }
-  //
-  //   setLoading(true);
-  //   try {
-  //     const response = await axios.post('/api/auth/reset-request', { email });
-  //     setResetToken(response.data.resetToken); // ✅ Store reset token
-  //     toast.success("Email verified. Set your new password.");
-  //   } catch (error) {
-  //     toast.error(error.response?.data?.message || "Failed to verify email.");
-  //   }
-  //   setLoading(false);
-  // };
   const handleEmailSubmit = async () => {
     if (!email) {
       toast.error("Please enter your email.");
@@ -45,7 +30,7 @@ export default function ForgotPassword() {
     }
     setLoading(false);
   };
-  // verify otp sent
+
   const handleVerifyOTP = async () => {
     if (!otp || otp.length !== 6) {
       toast.error("Enter a valid 6-digit OTP.");
@@ -63,23 +48,7 @@ export default function ForgotPassword() {
     }
     setLoading(false);
   };
-  // ✅ Step 3: Set New Password
-  // const handleResetPassword = async () => {
-  //   if (!newPassword || newPassword.length < 6) {
-  //     toast.error("Password must be at least 6 characters.");
-  //     return;
-  //   }
-  //
-  //   setLoading(true);
-  //   try {
-  //     await axios.post('/api/auth/reset-password', { resetToken, newPassword });
-  //     toast.success("Password reset successfully! Redirecting...");
-  //     setTimeout(() => window.location.href = "/pages/auth/admin_login", 2000);
-  //   } catch (error) {
-  //     toast.error(error.response?.data?.message || "Password reset failed.");
-  //   }
-  //   setLoading(false);
-  // };
+
   const handleResetPassword = async () => {
     if (!newPassword || newPassword.length < 6) {
       toast.error("Password must be at least 6 characters.");
@@ -90,7 +59,7 @@ export default function ForgotPassword() {
     try {
       await axios.post('/api/auth/reset-password', { resetToken, newPassword });
       toast.success("Password reset successfully! Redirecting...");
-      setTimeout(() => window.location.href = "/pages/auth/admin_login", 2000);
+      setTimeout(() => window.location.href = "/pages/auth/login", 2000);
     } catch (error) {
       toast.error(error.response?.data?.message || "Password reset failed.");
     }
@@ -102,7 +71,6 @@ export default function ForgotPassword() {
         <div className="bg-white p-6 rounded-lg shadow-md w-96">
           <h2 className="text-2xl font-bold mb-4 text-center">Forgot Password</h2>
 
-          {/* Step 1: Enter Email */}
           {step === 1 && (
               <>
                 <p className="text-gray-600 text-sm text-center mb-4">
@@ -126,7 +94,6 @@ export default function ForgotPassword() {
               </>
           )}
 
-          {/* Step 2: Enter OTP */}
           {step === 2 && (
               <>
                 <h3 className="text-lg font-semibold mt-4 text-center">Enter OTP</h3>
@@ -152,7 +119,6 @@ export default function ForgotPassword() {
               </>
           )}
 
-          {/* Step 3: Set New Password */}
           {step === 3 && (
               <>
                 <h3 className="text-lg font-semibold mt-4 text-center">Set New Password</h3>

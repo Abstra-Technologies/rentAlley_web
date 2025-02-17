@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { requestFCMPermission } from "../../../../pages/lib/firebaseConfig";
+import Swal from "sweetalert2";
+import useAuthStore from "../../../../pages/zustand/authStore"; // Your auth store
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -18,6 +20,7 @@ export default function Login() {
   const [message, setMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
+  const { user, admin, logout } = useAuthStore();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -33,6 +36,20 @@ export default function Login() {
     };
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    // ✅ Remove 2FA session and replace history state
+    sessionStorage.removeItem("pending2FA");
+
+    // ✅ Remove previous navigation history (disables forward button)
+    window.history.pushState(null, "", "/pages/auth/login");
+    window.history.replaceState(null, "", "/pages/auth/login");
+
+    if (user || admin) {
+      router.replace(user ? "/pages/tenant/dashboard" : "/pages/admin/dashboard");
+    }
+  }, [user, admin]);
+
 
   const redirectBasedOnUserType = async () => {
     try {
@@ -85,21 +102,15 @@ export default function Login() {
         credentials: "include",
       });
       const data = await response.json();
-
-      if (res.ok) {
-        if (data.requires_2fa) {
+        if (data.requires_otp) {
           Swal.fire("2FA Required", "OTP sent to your email.", "info");
-          router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
+          return router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
         } else {
           Swal.fire("Success", "Login successful!", "success");
-          router.push("/dashboard");
         }
-      } else {
-        setMessage(data.error || "Login failed");
-      }
 
       setMessage("Login successful!");
-      await redirectBasedOnUserType();
+      return await redirectBasedOnUserType();
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage("Invalid credentials");

@@ -18,7 +18,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Decode JWT
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const { payload } = await jwtVerify(token, secret);
 
@@ -26,7 +25,6 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: "Invalid session" });
         }
 
-        // ✅ Check if it's a regular user (Tenant or Landlord)
         if (payload.user_id) {
             const userId = payload.user_id;
             const [userRows] = await db.execute(
@@ -40,8 +38,10 @@ export default async function handler(req, res) {
                     u.profilePicture,
                     u.is_2fa_enabled,
                     u.phoneNumber,
+                    u.birthDate,
                     t.tenant_id,
                     l.landlord_id,
+                    l.verified,
                     l.is_trial_used
                 FROM User u
                 LEFT JOIN Tenant t ON u.user_id = t.user_id
@@ -54,7 +54,6 @@ export default async function handler(req, res) {
             if (userRows.length > 0) {
                 const user = userRows[0];
 
-                // ✅ If the user is a Landlord, fetch subscription details
                 if (user.landlord_id) {
                     const [subscriptionRows] = await db.execute(
                         `

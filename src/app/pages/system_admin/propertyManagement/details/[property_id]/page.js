@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import useAuth from "../../../../../../../hooks/useSession";
+import PropertyPhotos from "../../../../../../components/PropertyPhotos"
 
 export default function PropertyDetails() {
     const [property, setProperty] = useState(null);
@@ -115,9 +116,7 @@ export default function PropertyDetails() {
 
             <h2 className="text-2xl font-semibold mt-6">Property Photos</h2>
             <div className="grid grid-cols-3 gap-4">
-                {property.photos && property.photos.map((photo, index) => (
-                    <img key={index} src={photo} alt={`Property ${index}`} className="w-full h-40 object-cover border"/>
-                ))}
+                <PropertyPhotos property_id={property_id} />
             </div>
 
             <h1 className='text-3xl m-3'>Approval Section</h1>

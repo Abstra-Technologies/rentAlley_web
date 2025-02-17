@@ -19,7 +19,6 @@ export default function ProfilePage() {
         firstName: "",
         lastName: "",
         phoneNumber: "",
-        is_2fa_enabled: false,
     });
 
     useEffect(() => {
@@ -30,7 +29,6 @@ export default function ProfilePage() {
                 firstName: user.firstName || "",
                 lastName: user.lastName || "",
                 phoneNumber: user.phoneNumber || "",
-                is_2fa_enabled: user.is2fa_enabled || false,
             });
         }
     }, [user]);
@@ -79,7 +77,7 @@ export default function ProfilePage() {
     };
 
     const handle2FAToggle = async () => {
-        const newStatus = !formData.is_2fa_enabled;
+        const newStatus = !user.is_2fa_enabled; // ✅ Use `user.is_2fa_enabled`
 
         try {
             const res = await fetch("/api/auth/toggle-2fa", {
@@ -157,7 +155,6 @@ export default function ProfilePage() {
                     <div className="flex flex-col items-center">
                         <div className="flex flex-col items-center relative">
                             <label className="relative cursor-pointer group">
-                                {/* Profile Picture */}
                                 <img
                                     src={profilePicture}
                                     alt="Profile"
@@ -185,6 +182,23 @@ export default function ProfilePage() {
                     </div>
 
                     <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Welcome, {user?.firstName}!</h2>
+                    {user.userType === "landlord" && (
+                        <div className="mt-4">
+                            {user?.verified === "Verified" ? (
+                                <p className="text-green-600 font-bold">✅ Verified</p>
+                            ) : (
+                                <div>
+                                    <p className="text-red-600 font-bold">❌ Not Verified</p>
+                                    <button
+                                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                        onClick={() => router.push("/pages/landlord/verification")}
+                                    >
+                                        Verify Now
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">First Name</label>
@@ -234,16 +248,14 @@ export default function ProfilePage() {
                     </div>
                     <div className="mt-6 p-4 border rounded-md">
                         <h2 className="text-xl font-semibold">Two-Factor Authentication</h2>
-                        <p className="text-sm text-gray-600">
-                            Enable or disable 2FA for added security.
-                        </p>
+                        <p className="text-sm text-gray-600">Enable or disable 2FA for added security.</p>
                         <button
                             onClick={handle2FAToggle}
                             className={`mt-4 px-4 py-2 text-white rounded ${
-                                formData.is_2fa_enabled ? "bg-red-600" : "bg-green-600"
+                                user.is_2fa_enabled ? "bg-red-600" : "bg-green-600"
                             }`}
                         >
-                            {formData.is_2fa_enabled ? "Disable 2FA" : "Enable 2FA"}
+                            {user.is_2fa_enabled ? "Disable 2FA" : "Enable 2FA"}
                         </button>
                     </div>
                 </div>

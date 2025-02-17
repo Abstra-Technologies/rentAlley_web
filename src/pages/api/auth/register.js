@@ -7,7 +7,6 @@ import mysql from 'mysql2/promise';
 import { encryptData } from "../../crypto/encrypt";
 import {logAuditEvent} from "../../utils/auditLogger";
 
-
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -96,7 +95,7 @@ export default async function handler(req, res) {
                     0
                 ]
             );
-    // this part is to insert to tenant.landoor table
+
             const [user] = await db.execute(
                 `SELECT user_id FROM User WHERE emailHashed = ?`,
                 [emailHash]
@@ -108,7 +107,6 @@ export default async function handler(req, res) {
 
             const userId = user[0].user_id;
 
-            // If user is a tenant, insert into the `tenant` table
             if (role === 'tenant') {
                 await db.execute(
                     `INSERT INTO Tenant (user_id) VALUES (?)`,
@@ -135,17 +133,14 @@ export default async function handler(req, res) {
             await sendOtpEmail(email, otp);
         }
 
-        // Generate JWT token for authentication
-        // Generate JWT token for authentication
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const token = await new SignJWT({ user_id })  // ✅ Ensure user_id is stored correctly
+        const token = await new SignJWT({ user_id })
             .setProtectedHeader({ alg: 'HS256' })
             .setExpirationTime('2h')
             .sign(secret);
 
-        console.log("Generated JWT Token for User ID:", user_id);  // ✅ Debugging step
+        console.log("Generated JWT Token for User ID:", user_id);
 
-// Set HTTP-only cookie securely
         const isDev = process.env.NODE_ENV === "development";
         res.setHeader(
             "Set-Cookie",
@@ -154,7 +149,7 @@ export default async function handler(req, res) {
             } SameSite=Strict`
         );
 
-        console.log("Cookie Set: auth_token");  // ✅ Debugging step
+        console.log("Cookie Set: auth_token");
 
         await db.commit();
         res.status(201).json({ message: 'User registered. Please verify your OTP.' });
@@ -168,12 +163,11 @@ export default async function handler(req, res) {
     }
 }
 
-// Function to generate a 6-digit OTP
 function generateOTP() {
     return crypto.randomInt(100000, 999999).toString();
 }
 
-// Function to store OTP in DB
+
 async function storeOTP(connection, user_id, otp) {
     console.log(`Storing OTP for User ID: ${user_id}, OTP: ${otp}`);
 
@@ -197,14 +191,12 @@ async function storeOTP(connection, user_id, otp) {
 }
 
 
-
-// Function to send OTP email
 async function sendOtpEmail(toEmail, otp) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
         tls: {
-            rejectUnauthorized: false, // Disable certificate validation (not recommended for production)
+            rejectUnauthorized: false,
         },
     });
 

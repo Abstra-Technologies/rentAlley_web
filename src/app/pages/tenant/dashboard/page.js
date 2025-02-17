@@ -2,10 +2,26 @@
 import useAuth from "../../../../../hooks/useSession";
 import ChatComponent from "../../../../components/modules/chat";
 import {useRouter} from "next/navigation";
+import useAuthStore from "../../../../pages/zustand/authStore";
+import { useEffect } from "react";
 
 export default function TenantDashboard() {
-  const { user, loading, error, signOut } = useAuth();
-const router = useRouter();
+  // const { user,loading, error, signOut } = useAuth();
+  // const { user } = useAuthStore();
+    const { user, admin, fetchSession, loading } = useAuthStore();
+
+    const router = useRouter();
+
+    useEffect(() => {
+        fetchSession();
+    }, []);
+
+    useEffect(() => {
+        if (!loading && !user && !admin) {
+
+        }
+    }, [user, admin, loading, router]);
+
     if (loading) {
     return <p>Loading...</p>;
   }

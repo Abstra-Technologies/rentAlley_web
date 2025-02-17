@@ -10,7 +10,11 @@ export default function useAuth() {
   const router = useRouter();
 
   useEffect(() => {
-    fetchSession();
+
+    const pending2FA = sessionStorage.getItem("pending_2fa");
+    if (!pending2FA) {
+      fetchSession();
+    }
 
     const handleAuthChange = () => fetchSession();
     window.addEventListener("authChange", handleAuthChange);

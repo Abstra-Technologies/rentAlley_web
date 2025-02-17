@@ -15,7 +15,8 @@ export default function BugReportDetails() {
     const [bugReport, setBugReport] = useState(null);
     const [status, setStatus] = useState("open");
     const [adminMessage, setAdminMessage] = useState("");
-    const { user } = useAuth(); // Get logged-in user
+    const { admin } = useAuth();
+
     useEffect(() => {
         async function fetchBugReport() {
             const res = await fetch(`/api/systemadmin/bugReport/${report_id}`);
@@ -29,7 +30,7 @@ export default function BugReportDetails() {
     }, [report_id]);
 
     const handleUpdate = async () => {
-        if (!user || !user.admin_id) {
+        if (!admin.admin_id) {
             alert("Admin not logged in!");
             return;
         }
@@ -37,7 +38,7 @@ export default function BugReportDetails() {
         const response = await fetch(`/api/systemadmin/bugReport/update/${report_id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status, adminMessage, updatedByAdmin: user.admin_id }),
+            body: JSON.stringify({ status, adminMessage, updatedByAdmin: admin.admin_id }),
         });
 
         if (response.ok) {
