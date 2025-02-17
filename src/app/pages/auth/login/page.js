@@ -7,11 +7,10 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { requestFCMPermission } from "../../../../pages/lib/firebaseConfig";
 import Swal from "sweetalert2";
-import useAuthStore from "../../../../pages/zustand/authStore"; // Your auth store
+import useAuthStore from "../../../../pages/zustand/authStore";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export default function Login() {
@@ -207,7 +206,7 @@ export default function Login() {
           <p className="mt-6 text-center text-sm text-gray-500">
             Don&#39;t have an account?{" "}
             <Link
-                href="../auth/register"
+                href="../auth/selectRole"
                 className="text-blue-600 hover:underline font-medium"
             >
               Create Now
