@@ -120,13 +120,13 @@ export default function ProfilePage() {
                 <nav>
                     <ul>
                         <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
-                            <a href="#" className="flex items-center space-x-2 text-gray-700">
+                            <a href={`/pages/${user.userType}/profile/${user.user_id}`} className="flex items-center space-x-2 text-gray-700">
                                 <UserIcon className="h-5 w-5" />
                                 <span>Profile</span>
                             </a>
                         </li>
                         <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
-                            <a href="#" className="flex items-center space-x-2 text-gray-700">
+                            <a href={`/pages/${user.userType}/securityPrivacy/${user.user_id}`} className="flex items-center space-x-2 text-gray-700">
                                 <ShieldCheckIcon className="h-5 w-5" />
                                 <span>Security & Privacy</span>
                             </a>
