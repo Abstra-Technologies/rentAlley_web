@@ -7,6 +7,9 @@ import LandlordLayout from "../../../layouts/landlordLayouts";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
+// To Do:
+// Add units base on predetermined number to avoid abuse of adding units.
+
 const ViewUnitPage = () => {
   const { id } = useParams();
   const router = useRouter();
