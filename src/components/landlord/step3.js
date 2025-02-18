@@ -58,6 +58,7 @@ export function StepThree() {
               value={property.numberOfUnit || ""}
               onChange={handleChange}
               placeholder="2"
+              min="0"
               className="w-full p-2 border rounded"
             />
           </div>
