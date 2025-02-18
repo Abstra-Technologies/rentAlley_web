@@ -44,27 +44,6 @@ export default function LandlordDashboard() {
             <p><strong>Email:</strong> {user?.email}</p>
             <p><strong>User Type:</strong> {user?.userType}</p>
             <p><strong>ID:</strong> {user?.landlord_id}</p>
-
-            <h2 className="text-xl font-bold mt-4">Subscription Details</h2>
-            {subscription ? (
-                <div className="bg-white shadow rounded-lg p-4">
-                    <h2 className="text-xl font-semibold text-blue-600">Your Subscription</h2>
-                    {/*<p><strong>Subscription ID:</strong> {subscription.subscription_id}</p>*/}
-                    <p><strong>Plan Name:</strong> {subscription.plan_name}</p>
-                    <p><strong>Status:</strong> {subscription.status}</p>
-                    <p><strong>Start Date:</strong> {subscription.start_date}</p>
-                    <p><strong>End Date:</strong> {subscription.end_date}</p>
-                    <p><strong>Payment Status:</strong> {subscription.payment_status}</p>
-                    <p><strong>Trial End Date:</strong> {trialEndDate}</p>
-
-                </div>
-            ) : (
-                <p>No active subscription found.</p>
-            )}
-
-            <div>
-                <p>View Subscription</p>
-            </div>
         </div>
         </div>
         </LandlordLayout>

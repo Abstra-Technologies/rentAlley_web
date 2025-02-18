@@ -1,16 +1,16 @@
 'use client'
 import Link from 'next/link';
-import { Home, Building, Calendar, Wrench, Bell, CreditCard, Bug } from 'lucide-react';
+import { Home, Building, Calendar, Wrench, Bell, CreditCard, Bug, MessageSquareMore } from 'lucide-react';
 
 const menuItems = [
   { href: '/pages/landlord/dashboard', icon: Home, label: 'Dashboard' },
   { href: '/pages/landlord/property-listing', icon: Building, label: 'Property Listing' },
   { href: '/visit-schedule', icon: Calendar, label: 'Visit Schedule' },
+  { href: '/pages/commons/chat', icon: MessageSquareMore, label: 'Chats' },
   { href: '/maintenance', icon: Wrench, label: 'Maintenance' },
   { href: '/announcements', icon: Bell, label: 'Announcements' },
   { href: '/billing', icon: CreditCard, label: 'Billing' },
   { href: '/pages/commons/bug-report', icon: Bug, label: 'Report a Bug' }
-
 ];
 
 const LandlordLayout = ({ children }) => {
