@@ -1,94 +1,87 @@
-"use client";
-/**
- * TODO:
- * 1. Redesign this as it would email verification not otp.
- *
- */
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+'use client';
+import { useState } from 'react';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-export default function VerifyEmail() {
-  const searchParams = useSearchParams();
+export default function VerifyOTP() {
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const [status, setStatus] = useState("Verifying...");
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const verifyEmail = async () => {
-      const token = searchParams.get("token");
-
-      if (!token) {
-        setStatus("Waiting for verify email");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/auth/confirm-email?token=${token}`);
-        const data = await res.json();
-
-        if (res.ok) {
-          setStatus("Email verified successfully! Redirecting...");
-          setTimeout(() => {
-            router.push("/pages/auth/login");
-          }, 3000);
-        } else {
-          setStatus(data.error || "Email verification failed.");
+  // Function to verify OTP
+  const handleVerify = async () => {
+    if (otp.length !== 6 || isNaN(otp)) {
+      toast.error("OTP must be a 6-digit number");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/auth/verify-otp', { otp }, { withCredentials: true });
+      toast.success(response.data.message);
+      const userType = response.data.userType;
+      setTimeout(() => {
+        if (userType === "tenant") {
+          router.push('/pages/tenant/dashboard');
+        } else if (userType === "landlord") {
+          router.push('/pages/landlord/dashboard');
+        } else {// Default redirect
         }
-      } catch (error) {
-        console.error("Verification error:", error);
-        setStatus("An unexpected error occurred. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      }, 2000);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'OTP verification failed');
+    }
+    setLoading(false);
+  };
 
-    verifyEmail();
-  }, [searchParams, router]);
+  // Function to resend OTP
+  const handleResendOTP = async () => {
+    setLoading(true);
+    try {
+      await axios.post('/api/auth/resend-otp');  // Ensure this API is implemented
+      toast.info("New OTP sent. Check your email.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to resend OTP');
+    }
+    setLoading(false);
+  };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-50 to-indigo-100">
-      <div className="bg-white shadow-lg rounded-lg p-8 text-center max-w-md">
-        <h2 className="text-3xl font-bold mb-6">Verify Your Email</h2>
-        <p className="text-gray-700 mb-4">
-          We’ve sent a verification email to your inbox. Please click on the
-          link in the email to verify your account.
-        </p>
-        {isLoading ? (
-          <div className="mt-6">
-            <p className="text-gray-600">Verifying your email...</p>
-            <div className="mt-4">
-              <svg
-                className="animate-spin h-8 w-8 text-indigo-600 mx-auto"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4l3-3-3-3V4a8 8 0 110 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
-                ></path>
-              </svg>
-            </div>
+      <div className="flex justify-center items-center h-screen bg-gray-100">
+        <ToastContainer />
+        <div className="bg-white p-6 rounded-lg shadow-md w-96">
+          <h2 className="text-2xl font-bold mb-4 text-center">Verify Your Email</h2>
+          <p className="text-gray-600 text-sm text-center mb-4">
+            Enter the 6-digit OTP sent to your email.
+          </p>
+          <input
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="Enter OTP"
+              className="w-full p-2 border rounded-md mb-2 text-center"
+              maxLength="6"
+              required
+          />
+          <button
+              onClick={handleVerify}
+              className="w-full p-2 bg-blue-600 text-white rounded-md"
+              disabled={loading}
+          >
+            {loading ? 'Verifying...' : 'Verify OTP'}
+          </button>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">Didn't receive the OTP?</p>
+            <button
+                onClick={handleResendOTP}
+                className="text-blue-500 text-sm"
+                disabled={loading}
+            >
+              {loading ? 'Resending...' : 'Resend OTP'}
+            </button>
           </div>
-        ) : (
-          <div className="mt-6">
-            <p className="text-green-600 font-semibold">{status}</p>
-            <p className="text-gray-600 mt-2">
-              You may close this page after verification.
-            </p>
-          </div>
-        )}
+        </div>
       </div>
-    </div>
   );
 }

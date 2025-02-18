@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation"; // For navigation
-import LandlordLayout from "../layouts/landlordLayouts"; // Layout
+import LandlordLayout from "../../../../components/navigation/sidebar-landlord"; // Layout
 import usePropertyStore from "../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../hooks/useSession";
 import Image from "next/image";

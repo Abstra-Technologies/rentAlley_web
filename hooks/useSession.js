@@ -1,82 +1,48 @@
 
-"use client";
 
-import { useEffect, useState } from "react";
+"use client";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import useAuthStore from "../src/pages/zustand/authStore";
 
 export default function useAuth() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { user, admin, loading, fetchSession, logout } = useAuthStore();
   const router = useRouter();
 
-  // Verify user session
   useEffect(() => {
-    const verifySession = async () => {
-      try {
-        setLoading(true);
 
-        // Fetch user session from the backend
-        const response = await fetch("/api/auth/me", {
-          method: "GET",
-          credentials: "include", // Include HTTP-only cookies
-        });
+    const pending2FA = sessionStorage.getItem("pending_2fa");
+    if (!pending2FA) {
+      fetchSession();
+    }
 
-        if (!response.ok) {
-          throw new Error("Session verification failed. Please log in.");
-        }
+    const handleAuthChange = () => fetchSession();
+    window.addEventListener("authChange", handleAuthChange);
 
-        const data = await response.json();
-        setUser(data); // Set the user data
-        setLoading(false);
-      } catch (error) {
-        console.error("Session verification failed:", error);
-        setError(error.message);
-        setLoading(false);
-        router.push("/pages/auth/login"); // Redirect to login page
-      }
-    };
+    return () => window.removeEventListener("authChange", handleAuthChange);
+  }, []);
 
-    verifySession();
-  }, [router]);
-
-  // Sign out the user
   const signOut = async () => {
     try {
-      // Call logout endpoint to clear the session on the backend
-      const logoutResponse = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include", // Ensure cookies are included
-      });
-
-      if (!logoutResponse.ok) {
-         new Error("Failed to log out on the server.");
-      }
-
-      // Log user sign-out activity
-      const logResponse = await fetch("/api/activityLogs/signoutLogs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userID: user?.userID,
-          action: "User signed out",
-          timestamp: new Date().toISOString(),
-        }),
-      });
-
-      if (!logResponse.ok) {
-        console.error("Failed to log sign-out activity.");
-      }
-
-      setUser(null); // Clear user state
-      router.push("/pages/auth/login"); // Redirect to login page
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      logout();
+      window.dispatchEvent(new Event("authChange")); // Notify components
+      router.push("/pages/auth/login");
     } catch (error) {
       console.error("Logout failed:", error);
-      setError("Failed to log out. Please try again.");
     }
   };
 
-  return { user, loading, error, signOut };
+  const signOutAdmin = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      logout();
+      window.dispatchEvent(new Event("authChange"));
+      router.push("/pages/admin_login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  return { user, admin, loading, signOut, signOutAdmin };
 }

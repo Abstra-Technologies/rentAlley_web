@@ -1,108 +1,220 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { db } from "../../lib/db";
+import {SignJWT} from "jose";
+import nodeCrypto from "crypto";
+
+// export default async function handler(req, res) {
+//     if (req.method !== "POST") {
+//         console.log("Invalid HTTP Method:", req.method);
+//         return res.status(405).json({ error: "Method Not Allowed" });
+//     }
+//
+//     const { login, password, fcm_token } = req.body; // ✅ "login" can be either email or username
+//
+//     if (!login || !password) {
+//         console.log("Missing credentials. Received data:", req.body);
+//         return res.status(400).json({ error: "Username and password are required." });
+//     }
+//
+//     try {
+//         let user;
+//
+//         const emailHash = nodeCrypto.createHash("sha256").update(email).digest("hex");
+//         const [admins] = await db.execute(
+//             "SELECT * FROM Admin WHERE email_hash = ?",
+//             [emailHash]
+//         );
+//
+//         const [userByEmail] = await db.query("SELECT * FROM Admin WHERE email_hashed = ?", [emailHash]);
+//         const [userByUsername] = await db.query("SELECT * FROM Admin WHERE username = ?", [login]);
+//
+//         if (admins.length === 0) {
+//             console.log("[DEBUG] No admin found with username:", email);
+//             return res.status(401).json({ error: "Invalid credentials." });
+//         }
+//
+//         const adminRecord = admins[0];
+//
+//         if (adminRecord.status === "disabled") {
+//             console.log("[DEBUG] Login attempt for disabled account:", email);
+//             return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
+//         }
+//
+//         console.log("[DEBUG] Admin record found:", adminRecord);
+//
+//         console.log("[DEBUG] Comparing provided password with stored hash...");
+//         const isMatch = await bcrypt.compare(password, adminRecord.password);
+//         console.log("[DEBUG] Password comparison result:", isMatch);
+//
+//         if (!isMatch) {
+//             console.log("[DEBUG] Password mismatch for username:", username);
+//             return res.status(401).json({ error: "Invalid credentials." });
+//         }
+//
+//         console.log("[DEBUG] Password match. Generating JWT token...");
+//
+//
+//         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+//
+//         const token = await new SignJWT(
+//             {
+//                 admin_id: adminRecord.admin_id,
+//                 username: adminRecord.username,
+//                 role: adminRecord.role,
+//                 email: adminRecord.email,
+//             },
+//         )
+//             .setProtectedHeader({ alg: "HS256" })
+//             .setExpirationTime("2h")
+//             .setIssuedAt()
+//             .setSubject(adminRecord.admin_id.toString())
+//             .sign(secret);
+//
+//         const isDev = process.env.NODE_ENV === "development";
+//         res.setHeader(
+//             "Set-Cookie",
+//             `token=${token}; HttpOnly; Path=/; ${
+//                 isDev ? "" : "Secure;"
+//             } SameSite=Strict`
+//         );
+//
+//         if (fcm_token) {
+//             await db.query("UPDATE Admin SET fcm_token = ? WHERE admin_id = ?", [fcm_token, adminRecord.admin_id]);
+//         }
+//
+//         console.log("Logging admin activity...");
+//         const action = "Admin logged in";
+//         const timestamp = new Date().toISOString();
+//         const admin_id = admins[0].admin_id;
+//
+//         try {
+//             await db.query(
+//                 "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, ?)",
+//                 [admin_id, action, timestamp]
+//             );
+//             console.log("[DEBUG] Activity logged successfully.");
+//         } catch (activityLogError) {
+//             console.error(
+//                 "[DEBUG] Error inserting activity log:",
+//                 activityLogError.message
+//             );
+//         }
+//
+//         // Respond with success
+//         res.status(200).json({
+//             message: "Login successful.",
+//             admin: {
+//                 admin_id: adminRecord.admin_id,
+//                 username: adminRecord.username,
+//                 role: adminRecord.role,
+//                 email: adminRecord.email,
+//             },
+//         });
+//     } catch (error) {
+//         console.error("[DEBUG] Error during admin_login:", { error: error.message, stack: error.stack });
+//         res.status(500).json({ error: "Internal server error." });
+//     }
+// }
+
+import { parse } from "cookie";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
-        console.log("[DEBUG] Invalid HTTP Method:", req.method);
+        console.log("Invalid HTTP Method:", req.method);
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    const { username, password } = req.body;
+    const { login, password, fcm_token } = req.body;
 
-    if (!username || !password) {
-        console.log("[DEBUG] Missing credentials. Received data:", req.body);
-        return res.status(400).json({ error: "Username and password are required." });
+    if (!login || !password) {
+        console.log("Missing credentials. Received data:", req.body);
+        return res.status(400).json({ error: "Username or email and password are required." });
     }
-
     try {
-        // Ensure JWT_SECRET is defined
-        if (!process.env.JWT_SECRET) {
-            console.error("[DEBUG] Missing JWT_SECRET in environment variables.");
-            throw new Error("Missing JWT_SECRET in environment variables.");
+        let user;
+        let emailHash;
+
+        if (login.includes("@")) {
+            const emailHash = nodeCrypto.createHash("sha256").update(login).digest("hex");
+            console.log("Generate Hash:" + emailHash);
+            const [userByEmail] = await db.query("SELECT * FROM Admin WHERE email_hash = ?", [emailHash]);
+            user = userByEmail.length > 0 ? userByEmail[0] : null;
+        } else {
+            const [userByUsername] = await db.query("SELECT * FROM Admin WHERE username = ?", [login]);
+            user = userByUsername.length > 0 ? userByUsername[0] : null;
         }
 
-        console.log("[DEBUG] Fetching admin details from the database...");
-        // Fetch admin from database
-        const [admins] = await db.execute(
-            "SELECT * FROM Admin WHERE username = ?",
-            [username]
-        );
-
-        if (admins.length === 0) {
-            console.log("[DEBUG] No admin found with username:", username);
+        if (!user) {
+            console.log("[DEBUG] No admin found with provided credentials:", login);
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
-        const adminRecord = admins[0];
-        console.log("[DEBUG] Admin record found:", adminRecord);
+        if (user.status === "disabled") {
+            console.log("[DEBUG] Login attempt for disabled account:", login);
+            return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
+        }
 
-        // Compare password
+        console.log("[DEBUG] Admin record found:", user);
+
         console.log("[DEBUG] Comparing provided password with stored hash...");
-        const isMatch = await bcrypt.compare(password, adminRecord.password);
+        const isMatch = await bcrypt.compare(password, user.password);
         console.log("[DEBUG] Password comparison result:", isMatch);
 
         if (!isMatch) {
-            console.log("[DEBUG] Password mismatch for username:", username);
+            console.log("[DEBUG] Password mismatch for login:", login);
             return res.status(401).json({ error: "Invalid credentials." });
         }
-
         console.log("[DEBUG] Password match. Generating JWT token...");
-        // Generate JWT token
-        const token = jwt.sign(
-            {
-                adminID: adminRecord.adminID,
-                username: adminRecord.username,
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
+
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+
+        const token = await new SignJWT({
+            admin_id: user.admin_id,
+            username: user.username,
+            role: user.role,
+            email: user.email,
+        })
+            .setProtectedHeader({ alg: "HS256" })
+            .setExpirationTime("2h")
+            .setIssuedAt()
+            .setSubject(user.admin_id.toString())
+            .sign(secret);
+
+        const isDev = process.env.NODE_ENV === "development";
+        res.setHeader(
+            "Set-Cookie",
+            `token=${token}; HttpOnly; Path=/; ${isDev ? "" : "Secure;"} SameSite=Strict`
         );
 
-        console.log("[DEBUG] JWT token generated.");
+        if (fcm_token) {
+            await db.query("UPDATE Admin SET fcm_token = ? WHERE admin_id = ?", [fcm_token, user.admin_id]);
+        }
 
-        // Set cookie with secure options
-        const cookieOptions = [
-            `token=${token}`,
-            "HttpOnly",
-            "Path=/",
-            "Max-Age=3600",
-            process.env.NODE_ENV !== "development" ? "Secure" : "",
-            "SameSite=Strict",
-        ].filter(Boolean).join("; ");
-
-        console.log("[DEBUG] Setting cookie with options:", cookieOptions);
-        res.setHeader("Set-Cookie", cookieOptions);
-
-        // Log admin activity in ActivityLog
-        console.log("[DEBUG] Logging admin activity...");
+        console.log("Logging admin activity...");
         const action = "Admin logged in";
         const timestamp = new Date().toISOString();
-        const adminID = admins[0].adminID;
 
         try {
             await db.query(
-                "INSERT INTO ActivityLog (adminID, action, timestamp) VALUES (?, ?, ?)",
-                [adminID, action, timestamp]
+                "INSERT INTO ActivityLog (admin_username, action, timestamp) VALUES (?, ?, ?)",
+                [user.username, action, timestamp]
             );
             console.log("[DEBUG] Activity logged successfully.");
         } catch (activityLogError) {
-            console.error(
-                "[DEBUG] Error inserting activity log:",
-                activityLogError.message
-            );
-            // Continue to return success even if activity logging fails
+            console.error("[DEBUG] Error inserting activity log:", activityLogError.message);
         }
 
-        // Respond with success
         res.status(200).json({
             message: "Login successful.",
             admin: {
-                adminID: adminRecord.adminID,
-                username: adminRecord.username,
+                admin_id: user.admin_id,
+                username: user.username,
+                role: user.role,
+                email: user.email,
             },
         });
     } catch (error) {
-        console.error("[DEBUG] Error during login:", { error: error.message, stack: error.stack });
+        console.error("[DEBUG] Error during admin login:", { error: error.message, stack: error.stack });
         res.status(500).json({ error: "Internal server error." });
     }
 }

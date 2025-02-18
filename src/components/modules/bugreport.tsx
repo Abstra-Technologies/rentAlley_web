@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {bugTypes} from "../../constant/bugTypes";// Import the bugTypes constant
 
-export default function BugReportForm({ userID }: { userID: string }) {
+export default function BugReportForm({ user_id }: { user_id: string }) {
     const [bugType, setBugType] = useState("");
     const [subject, setSubject] = useState("");
     const [description, setDescription] = useState("");
@@ -23,7 +23,7 @@ export default function BugReportForm({ userID }: { userID: string }) {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ userID, bugType, subject, description }),
+                body: JSON.stringify({ user_id, bugType, subject, description }),
             });
 
             if (response.ok) {

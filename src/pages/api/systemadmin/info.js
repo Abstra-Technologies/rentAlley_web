@@ -22,8 +22,8 @@ export default async function handler(req, res) {
 
         // Fetch admin details from the database
         const [admins] = await db.execute(
-            "SELECT username, role FROM Admin WHERE adminID = ?",
-            [decoded.adminID]
+            "SELECT username, role FROM Admin WHERE admin_id = ?",
+            [decoded.admin_id]
         );
 
         if (admins.length === 0) {

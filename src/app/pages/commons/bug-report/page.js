@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import useAuth from "../../../../../hooks/useSession";
 import BugReportForm from "../../../../components/modules/bugreport";
+import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 
 
 export default function TenantDashboard() {
@@ -19,18 +19,10 @@ export default function TenantDashboard() {
     console.log("User Data ", user);
 
     return (
+        <LandlordLayout>
         <div>
-            <h4>User ID: {user.userID}</h4>
-            <BugReportForm userID={user.userID} />
-            {/* Sign Out Button */}
-            <button
-                onClick={signOut}
-                className="bg-red-500 text-white px-4 py-2 rounded-md ml-4"
-            >
-                Sign Out
-            </button>
-
-            {/* Additional content can go here */}
+            <BugReportForm user_id={user.user_id} />
         </div>
+        </LandlordLayout>
     );
 }

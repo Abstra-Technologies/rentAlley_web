@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import LandlordLayout from "../../layouts/landlordLayouts";
+import LandlordLayout from "../../../../../components/navigation/sidebar-landlord"; // Layout
 import { useRouter } from "next/navigation";
 import StepCounter from "../../../../../components/step-counter";
 import { StepOne } from "../../../../../components/landlord/step1";

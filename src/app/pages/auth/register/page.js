@@ -1,16 +1,4 @@
-/**
- *
- * TODO:
- *  1. Show a prompt/message to show that he user successfully registered an account.
- *  2. In scenarios of the user have an account already do the same.
- *
- *  1 - DONE Aidan Tsang
- *  2 - DONE Aidan Tsang
- *
- *  Note:
- *  console.log are use for debugging to check if the data are passed correctly.
- *
- */
+
 
 "use client";
 
@@ -36,7 +24,7 @@ const registerSchema = z
     // Mobile Number validation - must be exactly 12 digits
     mobileNumber: z
       .string()
-      .regex(/^\d{12}$/, "Mobile Number must be exactly 12 digits"),
+      .regex(/^\d{12}$/, "Mobile Number must be 12 digits"),
 
     // Email validation - must be a valid email address
     email: z.string().email("Invalid email address"),
@@ -61,8 +49,6 @@ const registerSchema = z
     path: ["confirmPassword"], // This error will be shown under the 'confirmPassword' field
   });
 
-
-
 export default function Register() {
   const role = useRoleStore((state) => state.role);
   const [errors, setErrors] = useState({});
@@ -82,7 +68,7 @@ export default function Register() {
   });
 
   const handleGoogleSignup = () => {
-    router.push(`/api/auth/google?role=${role}`);
+    router.push(`/api/auth/google?userType=${role}`);
   };
 
   useEffect(() => {
@@ -121,12 +107,15 @@ export default function Register() {
       // Check if the registration was successful
       if (res.ok) {
         console.log("Registration Data: ", formData);
+
         setSuccessMessage("Account successfully registered! Redirecting...");
+
         setTimeout(() => {
           router.push("/pages/auth/verify-email");
-        }, 2000); // Redirect after 2 seconds
+        }, 1000); // Redirect after 2 seconds
+
       } else if (data.error && data.error.includes("already registered")) {
-        setError("This email is already registered. Please login.");
+        setError("This email is already registered. Please admin_login.");
       } else {
         setError(data.error || "Registration failed. Please try again.");
       }
