@@ -8,6 +8,7 @@ import LandlordSubscription from "../../../../components/landlord/subscrription"
 import Link from "next/link";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import useAuthStore from "../../../../pages/zustand/authStore";
+import LandlordPropertyChart from "../../../../components/analytics/landlordAnalytics";
 
 export default function LandlordDashboard() {
     const { user, admin, fetchSession, loading } = useAuthStore();
@@ -45,6 +46,7 @@ export default function LandlordDashboard() {
             <p><strong>User Type:</strong> {user?.userType}</p>
             <p><strong>ID:</strong> {user?.landlord_id}</p>
         </div>
+            <LandlordPropertyChart/>
         </div>
         </LandlordLayout>
     );

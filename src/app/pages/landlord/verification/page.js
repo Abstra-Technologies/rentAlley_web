@@ -2,14 +2,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import useAuth from "../../../../../hooks/useSession";
 import Webcam from "react-webcam";
-import { DOCUMENT_TYPES } from "../../../../constant/docTypes"; // Import document types
+import { DOCUMENT_TYPES } from "../../../../constant/docTypes";
 
 export default function LandlordDashboard() {
-  const { user, loading, error, signOut } = useAuth();
+  const { user, loading, error } = useAuth();
   const [landlordId, setLandlordId] = useState(null);
-  const [currentStep, setCurrentStep] = useState(1); // Step tracker
-  const [selectedDocument, setSelectedDocument] = useState(""); // Store document type
-  const [uploadOption, setUploadOption] = useState(""); // Store chosen method (Upload/Capture)
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedDocument, setSelectedDocument] = useState("");
+  const [uploadOption, setUploadOption] = useState("");
   const [uploadedFile, setUploadedFile] = useState(null);
   const [capturedDocument, setCapturedDocument] = useState(null);
   const [selfie, setSelfie] = useState(null);
@@ -36,20 +36,15 @@ export default function LandlordDashboard() {
   if (error) return <p>{error}</p>;
   if (!user) return <p>You need to log in to access the dashboard.</p>;
 
-  const userId = user.userID;
-
-  // Handle document selection
   const handleDocumentChange = (event) => {
     setSelectedDocument(event.target.value);
   };
 
-  // Handle file upload
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     setUploadedFile(file);
   };
 
-  // Capture document using webcam
   const captureDocument = () => {
     if (webcamRef.current) {
       const imageSrc = webcamRef.current.getScreenshot();
@@ -57,7 +52,6 @@ export default function LandlordDashboard() {
     }
   };
 
-  // Capture selfie
   const captureSelfie = () => {
     if (webcamRef.current) {
       const imageSrc = webcamRef.current.getScreenshot();
@@ -65,7 +59,6 @@ export default function LandlordDashboard() {
     }
   };
 
-  // Submit verification data
   const handleSubmit = async () => {
     const formData = new FormData();
     formData.append("documentType", selectedDocument);
@@ -75,7 +68,6 @@ export default function LandlordDashboard() {
       formData.append("capturedDocument", capturedDocument);
     }
     formData.append("selfie", selfie);
-    formData.append("user_id", userId);
     formData.append("landlord_id", landlordId);
     formData.append("fullName", fullName);
     formData.append("homeAddress", homeAddress);
@@ -87,11 +79,9 @@ export default function LandlordDashboard() {
         method: "POST",
         body: formData,
       });
-
       if (!response.ok) {
-        throw new Error("Upload failed!");
+         new Error("Upload failed!");
       }
-
       alert("Upload successful!");
     } catch (error) {
       console.error(error);
