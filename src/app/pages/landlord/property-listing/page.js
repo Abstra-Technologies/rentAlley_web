@@ -1,5 +1,5 @@
 "use client";
-import React, {useEffect, useCallback, useState} from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation"; // For navigation
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord"; // Layout
 import usePropertyStore from "../../../../pages/zustand/propertyStore";
@@ -24,11 +24,12 @@ const PropertyListingPage = () => {
       console.log("Landlord ID:", user.landlord_id);
       fetchAllProperties(user.landlord_id);
 
-      fetch(`/api/landlord/getVerificationStatus?landlord_id=${user.landlord_id}`)
-          .then(response => response.json())
-          .then(data => setIsVerified(data.is_verified))
-          .catch(error => setFetchError(error.message));
-
+      fetch(
+        `/api/landlord/getVerificationStatus?landlord_id=${user.landlord_id}`
+      )
+        .then((response) => response.json())
+        .then((data) => setIsVerified(data.is_verified))
+        .catch((error) => setFetchError(error.message));
     }
   }, [user?.landlord_id]); // Add landlordId to the dependency array
 
@@ -50,6 +51,13 @@ const PropertyListingPage = () => {
       return;
     }
     router.push(`/pages/landlord/property-listing/create-property`);
+  };
+
+  const handleTenantRequest = (propertyId, event) => {
+    event.stopPropagation();
+    router.push(
+      `/pages/landlord/property-listing/tenant-req?property_id=${propertyId}`
+    );
   };
 
   const handleDelete = useCallback(async (propertyId, event) => {
@@ -95,13 +103,13 @@ const PropertyListingPage = () => {
         <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-white shadow-md">
           <h2 className="text-xl font-bold mb-4 md:mb-0">Property Listings</h2>
           <button
-              className={`px-4 py-2 rounded-md font-bold ${
-                  isVerified
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-gray-400 text-gray-700 cursor-not-allowed"
-              }`}
-              onClick={handleAddProperty}
-              disabled={!isVerified}
+            className={`px-4 py-2 rounded-md font-bold ${
+              isVerified
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-400 text-gray-700 cursor-not-allowed"
+            }`}
+            onClick={handleAddProperty}
+            disabled={!isVerified}
           >
             + Add New Property
           </button>
@@ -167,6 +175,15 @@ const PropertyListingPage = () => {
                     >
                       Delete
                     </button>
+
+                    <button
+                      className="px-3 py-2 text-white bg-orange-500 rounded-md hover:bg-orange-600"
+                      onClick={(event) =>
+                        handleTenantRequest(property.property_id, event)
+                      }
+                    >
+                      Tenant Request
+                    </button>
                   </div>
                 </div>
               </div>
@@ -174,18 +191,20 @@ const PropertyListingPage = () => {
           )}
         </div>
         {showVerifyPopup && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-              <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-                <h3 className="text-lg font-bold">Verification Required</h3>
-                <p className="mt-2">You need to verify your account before adding a property.</p>
-                <button
-                    className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    onClick={() => setShowVerifyPopup(false)}
-                >
-                  Okay
-                </button>
-              </div>
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+              <h3 className="text-lg font-bold">Verification Required</h3>
+              <p className="mt-2">
+                You need to verify your account before adding a property.
+              </p>
+              <button
+                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                onClick={() => setShowVerifyPopup(false)}
+              >
+                Okay
+              </button>
             </div>
+          </div>
         )}
       </div>
     </LandlordLayout>
