@@ -3,8 +3,10 @@ import React, { useEffect, useState, useRef } from "react";
 import useAuth from "../../../../../hooks/useSession";
 import Webcam from "react-webcam";
 import { DOCUMENT_TYPES } from "../../../../constant/docTypes";
+import { useRouter } from "next/navigation";
 
 export default function LandlordDashboard() {
+  const router = useRouter();
   const { user, loading, error } = useAuth();
   const [landlordId, setLandlordId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -18,6 +20,7 @@ export default function LandlordDashboard() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [citizenship, setCitizenship] = useState("");
   const webcamRef = useRef(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   useEffect(() => {
     if (user?.userType === "landlord") {
@@ -56,6 +59,7 @@ export default function LandlordDashboard() {
     if (webcamRef.current) {
       const imageSrc = webcamRef.current.getScreenshot();
       setSelfie(imageSrc);
+      setIsCameraOpen(false);
     }
   };
 
@@ -80,9 +84,10 @@ export default function LandlordDashboard() {
         body: formData,
       });
       if (!response.ok) {
-         new Error("Upload failed!");
+        new Error("Upload failed!");
       }
       alert("Upload successful!");
+      router.push("/pages/landlord/dashboard");
     } catch (error) {
       console.error(error);
       alert("Something went wrong!");
@@ -90,8 +95,8 @@ export default function LandlordDashboard() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-3xl md:max-w-2xl sm:max-w-md">
         <h1 className="text-2xl font-bold mb-4">Landlord Verification</h1>
         <p className="mb-4">User ID: {user.userID}</p>
         {landlordId && <p className="mb-4">Your Landlord ID: {landlordId}</p>}
@@ -166,11 +171,14 @@ export default function LandlordDashboard() {
             <div className="mb-4">
               <label className="block text-gray-700">Date of Birth</label>
               <input
-                  type="date"
-                  value={user.birthDate ? new Date(user.birthDate).toISOString().split("T")[0] : ""}
-                  readOnly
-                  className="w-full p-2 border border-gray-300 rounded"
-
+                type="date"
+                value={
+                  user.birthDate
+                    ? new Date(user.birthDate).toISOString().split("T")[0]
+                    : ""
+                }
+                readOnly
+                className="w-full p-2 border border-gray-300 rounded"
               />
             </div>
             <div className="mb-4">
@@ -274,23 +282,40 @@ export default function LandlordDashboard() {
             <h2 className="text-xl font-semibold mb-4">
               Step 3: Capture Selfie
             </h2>
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              className="mb-4"
-            />
-            <button
-              onClick={captureSelfie}
-              className="w-full bg-blue-500 text-white p-2 rounded mb-4"
-            >
-              Capture Selfie
-            </button>
-            {selfie && (
+
+            {isCameraOpen ? (
+              <>
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  className="mb-4"
+                />
+                <button
+                  onClick={captureSelfie}
+                  className="w-full bg-blue-500 text-white p-2 rounded mb-4"
+                >
+                  Capture Selfie
+                </button>
+              </>
+            ) : selfie ? (
               <>
                 <p className="mb-4">Selfie captured!</p>
                 <img src={selfie} alt="Selfie Preview" className="mb-4" />
+                <button
+                  onClick={() => setIsCameraOpen(true)}
+                  className="w-full bg-gray-500 text-white p-2 rounded mb-4"
+                >
+                  Retake Selfie
+                </button>
               </>
+            ) : (
+              <button
+                onClick={() => setIsCameraOpen(true)}
+                className="w-full bg-blue-500 text-white p-2 rounded mb-4"
+              >
+                Open Camera
+              </button>
             )}
           </div>
         )}
