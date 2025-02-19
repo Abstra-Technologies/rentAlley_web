@@ -7,6 +7,7 @@ export default function SideNavAdmin({ admin }) {
     { href: '/pages/system_admin/activiyLog', icon: ScrollText, label: 'Activity Log' },
     { href: '/pages/system_admin/co_admin/list', icon: Users2, label: 'Add Co-admin' },
     { href: '/pages/system_admin/tenant_landlord/tenant_mgt', icon: Users, label: 'Tenant Management' },
+    { href: '/pages/system_admin/tenant_landlord/verification', icon: Users, label: 'Landlord Verification' },
     { href: '/pages/system_admin/tenant_landlord/landlord_mgt', icon: Users, label: 'Landlord Management' },
     { href: '/pages/system_admin/propertyManagement/list', icon: Building2, label: 'Property Verification' },
     { href: '/pages/system_admin/annoucement', icon: ScrollText, label: 'Announcements' },

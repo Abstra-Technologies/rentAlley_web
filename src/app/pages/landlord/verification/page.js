@@ -14,9 +14,9 @@ export default function LandlordDashboard() {
   const [capturedDocument, setCapturedDocument] = useState(null);
   const [selfie, setSelfie] = useState(null);
   const [fullName, setFullName] = useState("");
-  const [homeAddress, setHomeAddress] = useState("");
+  const [homeAddress, sethomeAddress] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [placeOfBirth, setPlaceOfBirth] = useState("");
+  const [citizenship, setCitizenship] = useState("");
   const webcamRef = useRef(null);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function LandlordDashboard() {
     formData.append("fullName", fullName);
     formData.append("homeAddress", homeAddress);
     formData.append("dateOfBirth", dateOfBirth);
-    formData.append("placeOfBirth", placeOfBirth);
+    formData.append("citizenship", citizenship);
 
     try {
       const response = await fetch("/api/landlord/verifyupload", {
@@ -157,7 +157,7 @@ export default function LandlordDashboard() {
               <input
                 type="text"
                 value={homeAddress}
-                onChange={(e) => setHomeAddress(e.target.value)}
+                onChange={(e) => sethomeAddress(e.target.value)}
                 placeholder="Please input your home address."
                 required
                 className="w-full p-2 border border-gray-300 rounded"
@@ -177,8 +177,8 @@ export default function LandlordDashboard() {
               <label className="block text-gray-700">Place of Birth</label>
               <input
                 type="text"
-                value={placeOfBirth}
-                onChange={(e) => setPlaceOfBirth(e.target.value)}
+                value={citizenship}
+                onChange={(e) => setCitizenship(e.target.value)}
                 placeholder="Please input your place of birth."
                 required
                 className="w-full p-2 border border-gray-300 rounded"
@@ -311,7 +311,7 @@ export default function LandlordDashboard() {
               <strong>Date of Birth:</strong> {dateOfBirth}
             </p>
             <p className="mb-4">
-              <strong>Place of Birth:</strong> {placeOfBirth}
+              <strong>Place of Birth:</strong> {citizenship}
             </p>
             <p className="mb-4">
               <strong>Selected Document Type:</strong>{" "}
@@ -362,7 +362,7 @@ export default function LandlordDashboard() {
                   (!fullName ||
                     !homeAddress ||
                     !dateOfBirth ||
-                    !placeOfBirth)) ||
+                    !citizenship)) ||
                 (currentStep === 2 && !selectedDocument) ||
                 (currentStep === 2 && !uploadedFile && !capturedDocument) ||
                 (currentStep === 3 && !selfie)

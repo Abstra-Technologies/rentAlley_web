@@ -21,7 +21,21 @@ export default async function getSubscriptionLandlord(req, res) {
             return res.status(404).json({ error: "Subscription not found" });
         }
 
-        return res.status(200).json(rows[0]);
+        let subscription = rows[0];
+
+        const currentDate = new Date();
+        const trialEndDate = subscription.trial_end_date ? new Date(subscription.trial_end_date) : null;
+        const subscriptionEndDate = subscription.end_date ? new Date(subscription.end_date) : null;
+
+        // Remove trial_end_date if the trial has expired or user has paid
+        if (subscription.payment_status === "Paid" || (trialEndDate && trialEndDate <= currentDate)) {
+            delete subscription.trial_end_date;
+        }
+
+        // Determine if subscription is expired
+        subscription.isSubscriptionExpired = subscriptionEndDate && subscriptionEndDate <= currentDate;
+
+        return res.status(200).json(subscription);
     } catch (error) {
         console.error("Database query error:", error);
         return res.status(500).json({ error: "Internal server error" });

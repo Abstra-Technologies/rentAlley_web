@@ -14,12 +14,12 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
             fetch(`/api/subscription/${landlord_id}`)
                 .then(response => response.json())
                 .then(data => setSubscription(data))
+                .catch(error => setFetchError(error.message));
         }
     }, [landlord_id]);
 
-
     if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error loading subscription details.</p>;
+    if (error || fetchError) return <p>Error loading subscription details.</p>;
 
     return (
         <div>
@@ -31,10 +31,22 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
 
                         <p><strong>Plan Name:</strong> {subscription?.plan_name}</p>
                         <p><strong>Status:</strong> {subscription?.status}</p>
-                        <p><strong>Start Date:</strong> {subscription?.start_date}</p>
-                        <p><strong>End Date:</strong> {subscription?.end_date}</p>
+                        <p><strong>Start Date:</strong> {subscription?.start_date ? new Date(subscription.start_date).toLocaleDateString() : "N/A"}</p>
+                        <p><strong>Start Date:</strong> {subscription?.end_date ? new Date(subscription.end_date).toLocaleDateString() : "N/A"}</p>
                         <p><strong>Payment Status:</strong> {subscription?.payment_status}</p>
-                        <p><strong>Trial End Date:</strong> {subscription?.trial_end_date}</p>
+
+                        {subscription?.trial_end_date && (
+                            <p className="text-green-600 font-semibold">
+                                You are currently on a trial period until {subscription.trial_end_date}.
+                            </p>
+                        )}
+
+                        {/* Show "Upgrade Plan" button if the subscription has expired */}
+                        {subscription.isSubscriptionExpired ? (
+                            <Link href='/pages/landlord/sub_two/upgrade' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
+                                Upgrade Plan
+                            </Link>
+                        ) : null}
                     </div>
                 ) : (
                     <div>

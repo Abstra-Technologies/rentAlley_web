@@ -1,5 +1,3 @@
-// missing  update landlord tbale
-
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { IncomingForm } from "formidable";
 import { db } from "../../lib/db";
@@ -39,7 +37,7 @@ const uploadToS3 = async (file, folder) => {
     };
 
     s3.send(new PutObjectCommand(params))
-        .then((data) => {
+        .then(() => {
           const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
           resolve(s3Url);
         })
@@ -62,7 +60,7 @@ const uploadBase64ToS3 = async (base64String, folder) => {
     };
 
     s3.send(new PutObjectCommand(params))
-        .then((data) => {
+        .then(() => {
           const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
           resolve(s3Url);
         })
@@ -70,8 +68,7 @@ const uploadBase64ToS3 = async (base64String, folder) => {
   });
 };
 
-
-export default async function handler(req, res) {
+export default async function uploadLandlordDocs(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -83,7 +80,7 @@ export default async function handler(req, res) {
     allowEmptyFiles: false,
   });
 
-  form.parse(req, async (err, fields, files) => {
+  await form.parse(req, async (err, fields, files) => {
     if (err) {
       console.error("Error parsing form:", err);
       return res.status(500).json({ error: "File parsing error", message: err.message });
@@ -92,7 +89,10 @@ export default async function handler(req, res) {
     console.log("Parsed Fields:", fields);
     console.log("Parsed Files:", files);
 
-    const { landlord_id, documentType, selfie } = fields;
+    const { landlord_id, selfie, address, citizenship } = fields;
+    const documentType = fields.documentType?.[0] || null; // ✅ Extract the first item from array
+
+
     if (!landlord_id || !documentType) {
       return res.status(400).json({ error: "Missing landlord ID or document type" });
     }
@@ -101,6 +101,7 @@ export default async function handler(req, res) {
     try {
       connection = await db.getConnection();
 
+      // Check if landlord_id exists
       const [rows] = await connection.execute(
           "SELECT landlord_id FROM Landlord WHERE landlord_id = ?",
           [Number(landlord_id)]
@@ -128,17 +129,30 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Invalid selfie format. Must be a Base64 image." });
       }
 
-      const query = `
+      // Insert into LandlordVerification
+      const verificationQuery = `
         INSERT INTO LandlordVerification (landlord_id, document_type, document_url, selfie_url, status, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'pending', NOW(), NOW())`;
 
       console.log("Inserting into MySQL:", { landlord_id, documentType, documentUrl, selfieUrl });
 
-      await connection.execute(query, [Number(landlord_id), documentType, documentUrl, selfieUrl]);
+      await connection.execute(verificationQuery, [Number(landlord_id), documentType, documentUrl, selfieUrl]);
 
-      await connection.commit();
+      // ✅ Update Landlord's Address and Citizenship
+      if (address && citizenship) {
+        const updateLandlordQuery = `
+          UPDATE Landlord 
+          SET address = ?, citizenship = ?, updatedAt = NOW()
+          WHERE landlord_id = ?`;
 
-      res.status(201).json({ message: "Files uploaded and stored successfully", documentUrl, selfieUrl });
+        console.log("Updating Landlord Table:", { landlord_id, address, citizenship });
+
+        await connection.execute(updateLandlordQuery, [address, citizenship, Number(landlord_id)]);
+      }
+
+      await connection.commit(); // ✅ Commit transaction
+
+      res.status(201).json({ message: "Files uploaded and landlord info updated successfully", documentUrl, selfieUrl });
     } catch (error) {
       if (connection) await connection.rollback();
       console.error("Upload error:", error);

@@ -17,6 +17,7 @@ export default async function handler(req, res) {
       SELECT 
         p.property_id,
         p.property_name,
+        p.landlord_id,
         p.property_type,
         p.amenities,
         p.city,

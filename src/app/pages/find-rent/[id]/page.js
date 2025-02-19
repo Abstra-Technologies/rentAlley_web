@@ -260,7 +260,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import {useParams, useRouter} from "next/navigation";
 import Image from "next/image";
 import ScheduleVisitForm from "../../../../components/tenant/ScheduleVisitForm";
 import useAuth from "../../../../../hooks/useSession";
@@ -270,8 +270,8 @@ export default function PropertyDetails() {
   const { id } = useParams();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedUnitId, setSelectedUnitId] = useState(null); // Track selected unit
-
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
+const router = useRouter();
   useEffect(() => {
     async function fetchPropertyDetails() {
       try {
@@ -363,7 +363,7 @@ export default function PropertyDetails() {
                 {unit.status === "occupied" ? "Occupied" : "Available"}
               </p>
 
-              {/* 🔓 Unit Image */}
+              {/* Unit Image */}
               {unit.photos ? (
                 <Image
                   src={unit.photos[0]}
@@ -381,11 +381,23 @@ export default function PropertyDetails() {
           ))}
         </div>
       )}
-
+<div>
+    <div className="mt-6">
+        <h2 className="text-xl font-semibold">Chat</h2>
+        {property.landlord_id && (
+            <button
+                onClick={() => router.push(`/pages/commons/chat?landlord_id=${property.landlord_id}`)}
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+                Chat with Landlord
+            </button>
+        )}
+    </div>
+</div>
       <ScheduleVisitForm
         tenant_id={user?.tenant_id}
         property_id={parseInt(id)}
-        unit_id={selectedUnitId} // Pass selected unit ID (or null)
+        unit_id={selectedUnitId}
       />
     </div>
   );

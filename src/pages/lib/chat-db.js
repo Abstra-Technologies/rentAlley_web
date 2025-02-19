@@ -1,6 +1,6 @@
 const mysql = require("mysql2/promise");
 
-const pool = mysql.createPool({
+const chat_pool = mysql.createPool({
     host: 'rentahan-db.ctmeauk6wkzd.ap-southeast-1.rds.amazonaws.com',
     user: 'rentahan_dev', // Default value for debugging
     password: 'Rentahan_db_admin2024',
@@ -10,4 +10,4 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-module.exports = pool;
+module.exports = chat_pool;
