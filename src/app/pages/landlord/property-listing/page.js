@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useCallback } from "react";
+import React, {useEffect, useCallback, useState} from "react";
 import { useRouter } from "next/navigation"; // For navigation
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord"; // Layout
 import usePropertyStore from "../../../../pages/zustand/propertyStore";
@@ -14,17 +14,24 @@ const PropertyListingPage = () => {
   const router = useRouter();
   const { user } = useAuth();
   const { properties, fetchAllProperties, loading, error } = usePropertyStore();
+  const [isVerified, setIsVerified] = useState(null);
+  const [fetchError, setFetchError] = useState(null);
+  const [showVerifyPopup, setShowVerifyPopup] = useState(false);
 
-  // Fetch properties when the page loads
   useEffect(() => {
     if (user?.landlord_id) {
       // Ensure user is not null/undefined
       console.log("Landlord ID:", user.landlord_id);
       fetchAllProperties(user.landlord_id);
+
+      fetch(`/api/landlord/getVerificationStatus?landlord_id=${user.landlord_id}`)
+          .then(response => response.json())
+          .then(data => setIsVerified(data.is_verified))
+          .catch(error => setFetchError(error.message));
+
     }
   }, [user?.landlord_id]); // Add landlordId to the dependency array
 
-  // Handler for editing a property
   const handleEdit = (propertyId, event) => {
     event.stopPropagation(); // Prevent the parent div's onClick from firing
     router.push(`../landlord/property-listing/edit-property/${propertyId}`);
@@ -37,11 +44,17 @@ const PropertyListingPage = () => {
     );
   });
 
-  // Handler for deleting a property
+  const handleAddProperty = () => {
+    if (!isVerified) {
+      setShowVerifyPopup(true);
+      return;
+    }
+    router.push(`/pages/landlord/property-listing/create-property`);
+  };
+
   const handleDelete = useCallback(async (propertyId, event) => {
     event.stopPropagation(); // Prevent card click from triggering
 
-    // Show confirmation alert
     const isConfirmed = window.confirm(
       "Are you sure you want to delete this property? This action cannot be undone."
     );
@@ -68,7 +81,6 @@ const PropertyListingPage = () => {
     }
   });
 
-  // Show loading message if user.landlord_id is not yet available
   if (!user?.landlord_id) {
     return <p className="text-center mt-4">Loading...</p>;
   }
@@ -78,105 +90,23 @@ const PropertyListingPage = () => {
   if (error) return <p className="text-center mt-4 text-red-500">{error}</p>;
 
   return (
-    // <LandlordLayout>
-    //   <div className="flex-1">
-    //     <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-white shadow-md">
-    //       <h2 className="text-xl font-bold mb-4 md:mb-0">Property Listings</h2>
-    //       <button
-    //         className="px-4 py-2 mb-6 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-    //         onClick={() =>
-    //           router.push(`/pages/landlord/property-listing/create-property`)
-    //         }
-    //       >
-    //         + Add New Property
-    //       </button>
-    //     </div>
-
-    // {/* Property Cards */}
-    // <div className="p-6 space-y-4">
-    //   {properties.map((property) => {
-    //     return (
-    //       <div
-    //         key={property.id}
-    //         onClick={() =>
-    //           router.push(
-    //             `../landlord/property-listing/view-property/${property.id}`
-    //           )
-    //         } // Navigate to ViewPropertyPage where the tenant history will be found including the full property details.
-    //         className="flex flex-col md:flex-row items-center p-4 bg-white rounded-lg shadow-md space-y-4 md:space-y-0 md:space-x-4 cursor-pointer hover:shadow-lg transition-shadow mb-4"
-    //       >
-    // {/* Property Image */}
-    //     {/* <img
-    //   src={property.image}
-    //   alt={property.name}
-    //   className="w-full md:w-3/12 md:h-36 rounded-lg object-cover"
-    // /> */}
-
-    // {/* Property Details */}
-    // <div className="flex-1 text-center md:text-left">
-    //   <h3 className="text-lg font-bold">{property.name}</h3>
-    //   <p className="text-sm text-gray-600">{property.address}</p>
-    //   <p className="mt-1 text-sm text-blue-700">{property.type}</p>
-    // </div>
-
-    // {/* Occupied/Unoccupied Status */}
-    // <div className="flex flex-col items-end md:items-start md:ml-auto">
-    //   <span
-    //     className={`px-3 py-1 text-sm font-semibold rounded-md ${
-    //       property.status === "Occupied"
-    //         ? "bg-green-100 text-green-800"
-    //         : property.status === "Unoccupied"
-    //         ? "bg-red-100 text-red-800"
-    //         : "bg-orange-100 text-orange-800"
-    //     }`}
-    //   >
-    //     {property.status}
-    //   </span>
-
-    // {/* Action Buttons */}
-    //         <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mt-2">
-    //           <button
-    //             className="px-3 py-2 text-white bg-orange-500 rounded-md hover:bg-orange-600"
-    //             onClick={(event) => {
-    //               event.stopPropagation();
-    //               handleEdit(property.id, event);
-    //             }}
-    //           >
-    //             Edit
-    //           </button>
-    //           <button
-    //             className="px-3 py-2 text-white bg-red-500 rounded-md hover:bg-red-600"
-    //             onClick={(event) => {
-    //               event.stopPropagation();
-    //               handleDelete(property.id);
-    //             }}
-    //           >
-    //             Delete
-    //           </button>
-    //         </div>
-    //       </div>
-    //     </div>
-    //   );
-    // })}
-    //     </div>
-    //   </div>
-    // </LandlordLayout>
-
     <LandlordLayout>
       <div className="flex-1">
         <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-white shadow-md">
           <h2 className="text-xl font-bold mb-4 md:mb-0">Property Listings</h2>
           <button
-            className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-            onClick={() =>
-              router.push(`/pages/landlord/property-listing/create-property`)
-            }
+              className={`px-4 py-2 rounded-md font-bold ${
+                  isVerified
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "bg-gray-400 text-gray-700 cursor-not-allowed"
+              }`}
+              onClick={handleAddProperty}
+              disabled={!isVerified}
           >
             + Add New Property
           </button>
         </div>
 
-        {/* Property Cards */}
         <div className="p-6 space-y-4">
           {properties.length === 0 ? (
             <p className="text-center text-gray-500">No properties found.</p>
@@ -243,6 +173,20 @@ const PropertyListingPage = () => {
             ))
           )}
         </div>
+        {showVerifyPopup && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+                <h3 className="text-lg font-bold">Verification Required</h3>
+                <p className="mt-2">You need to verify your account before adding a property.</p>
+                <button
+                    className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                    onClick={() => setShowVerifyPopup(false)}
+                >
+                  Okay
+                </button>
+              </div>
+            </div>
+        )}
       </div>
     </LandlordLayout>
   );
