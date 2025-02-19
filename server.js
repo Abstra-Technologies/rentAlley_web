@@ -150,13 +150,14 @@
 // server.listen(PORT, () => {
 //     console.log(`🚀 Server running on port ${PORT}`);
 // });
-import express from "express";
-import { createServer } from "http";
-import { Server } from "socket.io";
-import mysql from "mysql2/promise";
-import CryptoJS from "crypto-js";
-import cors from "cors";
-import dotenv from "dotenv";
+
+const express = require("express");
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+const mysql = require("mysql2/promise");
+const CryptoJS = require("crypto-js");
+const cors = require("cors");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
@@ -172,12 +173,26 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-const db = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-});
+let db;
+
+async function initializeDB() {
+    try {
+        db = await mysql.createPool({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+        });
+        console.log("✅ Database connected successfully!");
+    } catch (error) {
+        console.error("❌ Database connection failed:", error);
+        process.exit(1); // Exit if DB connection fails
+    }
+}
+
+// Call the DB Initialization function
+initializeDB();
+
 
 const encryptionKey = process.env.CHAT_ENCRYPTION_SECRET;
 
@@ -202,19 +217,19 @@ io.on("connection", (socket) => {
     });
 
     socket.on("sendMessage", async ({ sender_id, receiver_id, message}) => {
-        if(!sender_id, !receiver_id, !message)  return;
+        if(!sender_id ||  !receiver_id ||  !message)  return;
 
         const chatRoom = [sender_id, receiver_id].sort().join("_"); // Unique chat ID
         const { encryptedMessage, iv } = encryptMessage(message);
 
         await db.execute(
-            `INSERT INTO Message (user_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)`,
             [sender_id, receiver_id, encryptedMessage, iv, chatRoom]
         );
 
         io.to(chatRoom).emit("receiveMessage", {
-            senderID,
-            receiverID,
+            sender_id,
+            receiver_id,
             encryptedMessage,
             iv,
             chatRoom,
@@ -233,11 +248,22 @@ app.get("/api/chat/:chatRoom", async (req, res) => {
     try{
 
         const [messages] = await db.execute(
-            "SELECT user_id, receiver_id, encrypted_message, iv FROM Message WHERE chat_room = ? ORDER BY timestamp ASC",
+            "SELECT sender_id, receiver_id, encrypted_message, iv FROM Message WHERE chat_room = ? ORDER BY timestamp ASC",
             [chatRoom]
         );
 
-    }catch (err){
+        const decryptedMessage = messages.map((msg) =>({
+            sender_id: msg.sender_id,
+            receiver_id: msg.receiver_id,
+            message: decryptMessage(msg.encryptedMessage, msg.iv),
+        }));
+        res.status(200).json(decryptedMessage);
 
+    }catch (err){
+        console.error("Error fetching chat:", err);
     }
-})
+});
+
+server.listen(4000, () => {
+    console.log("Chat server running on port 4000...");
+});
