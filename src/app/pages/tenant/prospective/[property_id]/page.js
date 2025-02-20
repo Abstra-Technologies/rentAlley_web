@@ -1,11 +1,12 @@
 "use client";
-import React, { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useRef, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { FiUploadCloud } from "react-icons/fi"; // Import the React Icon
 import axios from "axios";
-import useAuth from "../../../../../hooks/useSession";
+import useAuth from "../../../../../../hooks/useSession";
 
 const TenantApplicationForm = () => {
+  const { property_id } = useParams();
   const { user } = useAuth();
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState(null);
@@ -14,6 +15,12 @@ const TenantApplicationForm = () => {
     property_id: "",
     address: "", // address still used for display, but will be submitted as part of submit-reqs API
   });
+
+  useEffect(() => {
+    if (property_id) {
+      setFormData((prev) => ({ ...prev, property_id }));
+    }
+  }, [property_id]);
 
   // Ensure user is loaded before accessing properties
   if (!user) {
@@ -34,6 +41,11 @@ const TenantApplicationForm = () => {
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
+    if (!user.tenant_id) {
+      alert("Please log in.");
+      return;
+    }
+
     // Show confirmation alert
     const confirmSubmission = window.confirm(
       "Are you sure you want to proceed?"
@@ -44,8 +56,8 @@ const TenantApplicationForm = () => {
     try {
       const infoPayload = {
         property_id: formData.property_id,
-        tenant_id: user.tenant_id, // Use user.tenant_id
-        unit_id: "", // You can set these defaults as needed.
+        tenant_id: user.tenant_id,
+        unit_id: "",
         current_home_address: formData.address,
       };
 
@@ -99,6 +111,7 @@ const TenantApplicationForm = () => {
           alert("Tenant information saved, but no file was uploaded.");
         }
         alert("Submission successful!");
+        // To go to the my units page and not find rent if successful.
         router.push("/pages/find-rent");
       } else {
         console.error(
@@ -307,25 +320,6 @@ const TenantApplicationForm = () => {
                 value={formData.address || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
-                }
-              />
-            </div>
-
-            {/* Property ID */}
-            <div className="mb-4">
-              <label
-                htmlFor="property_id"
-                className="block text-gray-700 text-sm font-bold mb-2"
-              >
-                PROPERTY ID
-              </label>
-              <input
-                type="text"
-                id="property_id"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                value={formData.property_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, property_id: e.target.value })
                 }
               />
             </div>
