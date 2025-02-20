@@ -6,7 +6,7 @@ export default async function handler(req, res) {
             const [rows] = await db.query(`
         SELECT 
           l.landlord_id, 
-          l.verified, 
+          l.is_verified, 
           lv.status 
         FROM Landlord l
         LEFT JOIN LandlordVerification lv ON l.landlord_id = lv.landlord_id

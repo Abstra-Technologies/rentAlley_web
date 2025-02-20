@@ -184,7 +184,7 @@ export default function ProfilePage() {
                     <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Welcome, {user?.firstName}!</h2>
                     {user.userType === "landlord" && (
                         <div className="mt-4">
-                            {user?.verified === "Verified" ? (
+                            {user?.is_verified === "1" ? (
                                 <p className="text-green-600 font-bold">✅ Verified</p>
                             ) : (
                                 <div>

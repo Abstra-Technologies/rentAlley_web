@@ -1,0 +1,76 @@
+import { db } from "../../lib/db";
+import { parse } from "cookie";
+import { jwtVerify } from "jose";
+import { io } from "../socketio/socket";
+
+
+export default async function updateandlordStatus(req, res) {
+
+//region get admin id
+    const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
+    if (!cookies || !cookies.token) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
+    let decoded;
+    try {
+        const { payload } = await jwtVerify(cookies.token, secretKey);
+        decoded = payload;
+    } catch (err) {
+        return res.status(401).json({ success: false, message: "Invalid Token" });
+    }
+
+    if (!decoded || !decoded.admin_id) {
+        return res.status(401).json({ success: false, message: "Invalid Token Data" });
+    }
+
+    const currentadmin_id = decoded.admin_id;
+//endregion
+
+    const { landlord_id, status, message } = req.body;
+
+
+    const [rows] = await db.execute(
+        `SELECT lv.status AS verification_status,
+                lv.reviewed_by,
+                l.user_id
+         FROM LandlordVerification lv
+                  JOIN Landlord l ON lv.landlord_id = l.landlord_id
+         WHERE lv.landlord_id = ?`,
+        [landlord_id]
+    );
+
+    const { user_id } = rows[0];
+
+    try {
+        await db.query(
+            "UPDATE LandlordVerification SET status = ?, reviewed_by = ?, review_date = NOW(), message = ? WHERE landlord_id = ?",
+            [status, currentadmin_id,  message, landlord_id]
+        );
+
+        const notificationTitle = `Landlord Verification ${status}`;
+        const notificationBody = `Your Landlord Verification has been ${status.toUpperCase()} by the admin. ${
+            message ? `Message: ${message}` : ""
+        }`;
+
+        await db.execute(
+            `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
+            [user_id, notificationTitle, notificationBody]
+        );
+
+        if (io) {
+            io.to(user_id.toString()).emit("notification", {
+                user_id: user_id,
+                title: notificationTitle,
+                body: notificationBody,
+            });
+            console.log(`Notification sent to landlord (user_id: ${user_id})`);
+        }
+
+        return res.status(200).json({ message: `Verification ${status} successfully.` });
+    } catch (error) {
+        console.error("Error updating verification:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+}

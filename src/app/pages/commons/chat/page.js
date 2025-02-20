@@ -44,9 +44,9 @@ export default function Chat() {
 
         const socket = io("http://localhost:4000");
         socket.emit("sendMessage", {
-            sender_id: user.tenant_id || user.landlord_id,  // Use the appropriate ID
+            sender_id: user.tenant_id || user.landlord_id,
             sender_type: user.tenant_id ? "tenant" : "landlord",
-            receiver_id: landlord_id, // Assuming landlord_id is coming from the URL
+            receiver_id: landlord_id,
             receiver_type: "landlord",
             message: newMessage,
             chatRoom,

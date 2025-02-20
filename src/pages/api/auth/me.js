@@ -42,7 +42,7 @@ export default async function handler(req, res) {
                     u.birthDate,
                     t.tenant_id,
                     l.landlord_id,
-                    l.verified,
+                    l.is_verified,
                     l.is_trial_used
                 FROM User u
                 LEFT JOIN Tenant t ON u.user_id = t.user_id
