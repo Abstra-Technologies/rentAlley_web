@@ -7,9 +7,9 @@ import useAuth from "../../../../../hooks/useSession";
 import Image from "next/image";
 import axios from "axios";
 
-// To Follow:
-// - Implement Subscription Limit Here.
-// - If Landlord is not verified no property listing.
+// UI TODO: Remove this if finished.
+//  Alert/Warning Message on the limit and verification.
+
 
 const PropertyListingPage = () => {
   const router = useRouter();
@@ -17,7 +17,7 @@ const PropertyListingPage = () => {
   const { properties, fetchAllProperties, loading, error } = usePropertyStore();
   const [isVerified, setIsVerified] = useState(null);
   const [showVerifyPopup, setShowVerifyPopup] = useState(false);
-  const [isFetchingVerification, setIsFetchingVerification] = useState(true); // ✅ Track loading state
+  const [isFetchingVerification, setIsFetchingVerification] = useState(true); // Track loading state
   const [fetchingSubscription, setFetchingSubscription] = useState(true);
   const [subscription, setSubscription] = useState(null);
 
@@ -101,7 +101,7 @@ const PropertyListingPage = () => {
       "Are you sure you want to delete this property? This action cannot be undone."
     );
 
-    if (!isConfirmed) return; // Stop if user cancels
+    if (!isConfirmed) return;
 
     try {
       const response = await fetch(
@@ -113,7 +113,7 @@ const PropertyListingPage = () => {
 
       if (response.ok) {
         alert("Property deleted successfully.");
-        fetchAllProperties(user.landlord_id); // Refresh property list
+        fetchAllProperties(user.landlord_id);
       } else {
         alert("Failed to delete property.");
       }
@@ -145,7 +145,7 @@ const PropertyListingPage = () => {
           <button
               className={`px-4 py-2 rounded-md font-bold ${
                   isFetchingVerification
-                      ? "bg-gray-400 text-gray-700 cursor-not-allowed" // 🔄 Show "Checking..."
+                      ? "bg-gray-400 text-gray-700 cursor-not-allowed" 
                       : isVerified
                           ? "bg-blue-600 text-white hover:bg-blue-700"
                           : "bg-gray-400 text-gray-700 cursor-not-allowed"
