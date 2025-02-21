@@ -73,7 +73,6 @@ export default function LandlordDetails() {
                 <p><strong>Landlord ID:</strong> {landlord.landlord.landlord_id}</p>
                 <p><strong>User ID:</strong> {landlord.landlord.user_id}</p>
                 <p><strong>Verified:</strong> {landlord.verification.status}</p>
-                <p><strong>Subscription ID:</strong> {landlord.landlord.current_subscription_id || "None"}</p>
                 <p><strong>Citizenship:</strong> {landlord.landlord.citizenship}</p>
                 <p><strong>Address:</strong> {landlord.landlord.address}</p>
                 <p><strong>Trial Used:</strong> {landlord.landlord.is_trial_used ? "✅ Yes" : "❌ No"}</p>

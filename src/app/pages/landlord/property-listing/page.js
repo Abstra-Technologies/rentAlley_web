@@ -5,6 +5,7 @@ import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import usePropertyStore from "../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../hooks/useSession";
 import Image from "next/image";
+import axios from "axios";
 
 // To Follow:
 // - Implement Subscription Limit Here.
@@ -17,21 +18,36 @@ const PropertyListingPage = () => {
   const [isVerified, setIsVerified] = useState(null);
   const [fetchError, setFetchError] = useState(null);
   const [showVerifyPopup, setShowVerifyPopup] = useState(false);
+  const [isFetchingVerification, setIsFetchingVerification] = useState(true); // ✅ Track loading state
 
   useEffect(() => {
     if (user?.landlord_id) {
       // Ensure user is not null/undefined
       console.log("Landlord ID:", user.landlord_id);
       fetchAllProperties(user.landlord_id);
-
-      fetch(
-        `/api/landlord/getVerificationStatus?landlord_id=${user.landlord_id}`
-      )
-        .then((response) => response.json())
-        .then((data) => setIsVerified(data.is_verified))
-        .catch((error) => setFetchError(error.message));
     }
-  }, [user?.landlord_id]); // Add landlordId to the dependency array
+  }, [user?.landlord_id]);
+
+  useEffect(() => {
+    if (user?.userType === "landlord") {
+      setIsVerified(null);
+      setIsFetchingVerification(true);
+
+      axios
+          .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
+          .then((response) => {
+            console.log("✅ Fetched Verification Status:", response.data);
+            setIsVerified(response.data.is_verified);
+          })
+          .catch((err) => {
+            console.error("❌ Failed to fetch landlord verification status:", err);
+          })
+          .finally(() => {
+            setIsFetchingVerification(false);
+          });
+    }
+  }, [user]);
+
 
   const handleEdit = (propertyId, event) => {
     event.stopPropagation(); // Prevent the parent div's onClick from firing
@@ -101,15 +117,17 @@ const PropertyListingPage = () => {
         <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-white shadow-md">
           <h2 className="text-xl font-bold mb-4 md:mb-0">Property Listings</h2>
           <button
-            className={`px-4 py-2 rounded-md font-bold ${
-              isVerified
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-gray-400 text-gray-700 cursor-not-allowed"
-            }`}
-            onClick={handleAddProperty}
-            disabled={!isVerified}
+              className={`px-4 py-2 rounded-md font-bold ${
+                  isFetchingVerification
+                      ? "bg-gray-400 text-gray-700 cursor-not-allowed" // 🔄 Show "Checking..."
+                      : isVerified
+                          ? "bg-blue-600 text-white hover:bg-blue-700"
+                          : "bg-gray-400 text-gray-700 cursor-not-allowed"
+              }`}
+              onClick={handleAddProperty}
+              disabled={isFetchingVerification || !isVerified}
           >
-            + Add New Property
+            {isFetchingVerification ? "Checking..." : "+ Add New Property"}
           </button>
         </div>
 

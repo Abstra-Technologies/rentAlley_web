@@ -5,6 +5,7 @@ import LandlordSubscriptionPlanComponent from "../../../../components/landlord/s
 
 export default function LandlordSubscriptionPlan() {
     const { user, loading, error } = useAuth();
+
     if(!user) return ;
 
     return (

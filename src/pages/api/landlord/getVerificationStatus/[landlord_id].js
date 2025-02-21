@@ -4,10 +4,6 @@ export default async function getLandlordVerification(req, res) {
 
     const { landlord_id } = req.query;
 
-    if (!landlord_id) {
-        return res.status(400).json({ error: "Invalid request" });
-    }
-
     try {
         const [rows] = await db.query(
             "SELECT is_verified FROM Landlord WHERE landlord_id = ?",
