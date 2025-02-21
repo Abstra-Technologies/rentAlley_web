@@ -18,7 +18,7 @@ export default async function getSubscription(req, res) {
 
         const listingLimits = {
             "Free Plan": { maxProperties: 1, maxUnits: 2 },
-            "Basic Plan": { maxProperties: 5, maxUnits: 10 },
+            "Standard Plan": { maxProperties: 5, maxUnits: 10 },
             "Premium Plan": { maxProperties: 20, maxUnits: 50 },
         };
 

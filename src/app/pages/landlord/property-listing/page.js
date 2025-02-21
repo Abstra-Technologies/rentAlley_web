@@ -16,9 +16,10 @@ const PropertyListingPage = () => {
   const { user } = useAuth();
   const { properties, fetchAllProperties, loading, error } = usePropertyStore();
   const [isVerified, setIsVerified] = useState(null);
-  const [fetchError, setFetchError] = useState(null);
   const [showVerifyPopup, setShowVerifyPopup] = useState(false);
   const [isFetchingVerification, setIsFetchingVerification] = useState(true); // ✅ Track loading state
+  const [fetchingSubscription, setFetchingSubscription] = useState(true);
+  const [subscription, setSubscription] = useState(null);
 
   useEffect(() => {
     if (user?.landlord_id) {
@@ -40,14 +41,24 @@ const PropertyListingPage = () => {
             setIsVerified(response.data.is_verified);
           })
           .catch((err) => {
-            console.error("❌ Failed to fetch landlord verification status:", err);
+            console.error("Failed to fetch landlord verification status:", err);
           })
           .finally(() => {
             setIsFetchingVerification(false);
           });
+
+      setFetchingSubscription(true);
+      axios
+          .get(`/api/subscription/getCurrentPlan/${user.landlord_id}`)
+          .then((response) => {
+            setSubscription(response.data);
+          })
+          .catch((err) => {
+            console.error(" Failed to fetch subscription:", err);
+          })
+          .finally(() => setFetchingSubscription(false));
     }
   }, [user]);
-
 
   const handleEdit = (propertyId, event) => {
     event.stopPropagation(); // Prevent the parent div's onClick from firing
@@ -64,6 +75,13 @@ const PropertyListingPage = () => {
   const handleAddProperty = () => {
     if (!isVerified) {
       setShowVerifyPopup(true);
+      return;
+    }
+
+    // subscription handling goes here.
+// listing limit comes from api backend.
+    if(subscription && properties.length >= subscription.listingLimits.maxProperties){
+      alert(`🚨 You have reached the maximum property limit (${subscription.listingLimits.maxProperties}) for your plan.`);
       return;
     }
     router.push(`/pages/landlord/property-listing/create-property`);
@@ -118,6 +136,12 @@ const PropertyListingPage = () => {
       <div className="flex-1">
         <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-white shadow-md">
           <h2 className="text-xl font-bold mb-4 md:mb-0">Property Listings</h2>
+          {subscription && (
+              <p className="text-gray-600 text-sm">
+                {`You can list up to ${subscription.listingLimits.maxProperties} properties.`}
+                {` (${properties.length}/${subscription.listingLimits.maxProperties} used)`}
+              </p>
+          )}
           <button
               className={`px-4 py-2 rounded-md font-bold ${
                   isFetchingVerification
