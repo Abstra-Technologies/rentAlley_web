@@ -1,4 +1,5 @@
 import mysql from "mysql2/promise";
+import { decryptData } from "../../../crypto/encrypt";
 
 export default async function handler(req, res) {
     if (req.method !== "GET") {
@@ -6,8 +7,8 @@ export default async function handler(req, res) {
     }
 
     const { user_id } = req.query;
+    const encryptionKey = process.env.ENCRYPTION_SECRET;
 
-    // Establish MySQL Connection
     const db = await mysql.createConnection({
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
@@ -16,9 +17,8 @@ export default async function handler(req, res) {
     });
 
     try {
-        // Fetch tenant details by joining User and Tenant tables
         const [tenantResults] = await db.execute(`
-            SELECT 
+            SELECT
                 u.user_id,
                 u.firstName,
                 u.lastName,
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
                 u.profilePicture,
                 t.createdAt AS tenantCreatedAt
             FROM User u
-            INNER JOIN Tenant t ON u.user_id = t.user_id
+                     INNER JOIN Tenant t ON u.user_id = t.user_id
             WHERE u.user_id = ?
         `, [user_id]);
 
@@ -39,27 +39,46 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: "Tenant not found" });
         }
 
-        // Fetch activity logs for the user
         const [activityLogs] = await db.execute(`
-            SELECT 
-                action, 
-                timestamp 
-            FROM ActivityLog 
+            SELECT
+                action,
+                timestamp
+            FROM ActivityLog
             WHERE user_id = ?
             ORDER BY timestamp DESC
         `, [user_id]);
 
-        // Close the DB connection
         await db.end();
 
-        // Construct response data
+        console.log("🔒 Encrypted Tenant Data:", tenantResults[0]);
+
+        const decryptField = (value, fieldName) => {
+            if (!value) return value;
+
+            try {
+                const encryptedObject = typeof value === "string" ? JSON.parse(value) : value;
+
+                if (!encryptedObject.iv || !encryptedObject.data || !encryptedObject.authTag) {
+                    console.warn(`Invalid encrypted object format for ${fieldName}:`, encryptedObject);
+                    return "DECRYPTION_ERROR";
+                }
+
+                const decrypted = decryptData(encryptedObject, encryptionKey);
+                console.log(`✅ Decrypted ${fieldName}:`, decrypted);
+                return decrypted;
+            } catch (error) {
+                console.error(`Error decrypting ${fieldName}:`, error);
+                return "DECRYPTION_ERROR";
+            }
+        };
+
         const tenantDetails = {
             user_id: tenantResults[0].user_id,
             tenant_id: tenantResults[0].tenant_id,
-            firstName: tenantResults[0].firstName,
-            lastName: tenantResults[0].lastName,
-            email: tenantResults[0].email,
-            phoneNumber: tenantResults[0].phoneNumber,
+            firstName: decryptField(tenantResults[0].firstName, "firstName"),
+            lastName: decryptField(tenantResults[0].lastName, "lastName"),
+            email: decryptField(tenantResults[0].email, "email"),
+            phoneNumber: decryptField(tenantResults[0].phoneNumber, "phoneNumber"),
             birthDate: tenantResults[0].birthDate,
             userType: tenantResults[0].userType,
             emailVerified: tenantResults[0].emailVerified ? true : false,
@@ -71,9 +90,11 @@ export default async function handler(req, res) {
             }))
         };
 
+        console.log("🚀 Final Response:", tenantDetails);
+
         return res.status(200).json(tenantDetails);
     } catch (error) {
-        console.error("Database Error:", error);
+        console.error("🔥 Database Error:", error);
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }

@@ -1,4 +1,5 @@
 import mysql from "mysql2/promise";
+import { decryptData } from "../../../crypto/encrypt";
 
 export default async function handler(req, res) {
     if (req.method !== "GET") {
@@ -7,7 +8,6 @@ export default async function handler(req, res) {
 
     const { user_id } = req.query;
 
-    // Establish MySQL Connection
     const db = await mysql.createConnection({
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
@@ -16,7 +16,6 @@ export default async function handler(req, res) {
     });
 
     try {
-        // Fetch tenant details by joining User and Tenant tables
         const [landlordResults] = await db.execute(`
             SELECT 
                 u.user_id,
@@ -39,7 +38,6 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: "Landlord not found" });
         }
 
-        // Fetch activity logs for the user
         const [activityLogs] = await db.execute(`
             SELECT 
                 action, 
@@ -49,17 +47,35 @@ export default async function handler(req, res) {
             ORDER BY timestamp DESC
         `, [user_id]);
 
-        // Close the DB connection
-        await db.end();
+        const decryptField = (value, fieldName) => {
+            if (!value) return value;
 
-        // Construct response data
+            try {
+                const encryptedObject = typeof value === "string" ? JSON.parse(value) : value;
+
+                if (!encryptedObject.iv || !encryptedObject.data || !encryptedObject.authTag) {
+                    console.warn(`Invalid encrypted object format for ${fieldName}:`, encryptedObject);
+                    return "DECRYPTION_ERROR";
+                }
+
+                const decrypted = decryptData(encryptedObject, encryptionKey);
+                console.log(`✅ Decrypted ${fieldName}:`, decrypted);
+                return decrypted;
+            } catch (error) {
+                console.error(`Error decrypting ${fieldName}:`, error);
+                return "DECRYPTION_ERROR";
+            }
+        };
+
+        const encryptionKey = process.env.ENCRYPTION_SECRET;
+
         const landlordDetails = {
             user_id: landlordResults[0].user_id,
             landlord_id: landlordResults[0].landlord_id,
-            firstName: landlordResults[0].firstName,
-            lastName: landlordResults[0].lastName,
-            email: landlordResults[0].email,
-            phoneNumber: landlordResults[0].phoneNumber,
+            firstName: decryptField(landlordResults[0].firstName, "firstName"),
+            lastName: decryptField(landlordResults[0].lastName, "lastName"),
+            email:decryptField(landlordResults[0].email, "email"),
+            phoneNumber: decryptField(landlordResults[0].phoneNumber, "phoneNumber"),
             birthDate: landlordResults[0].birthDate,
             userType: landlordResults[0].userType,
             emailVerified: landlordResults[0].emailVerified ? true : false,
