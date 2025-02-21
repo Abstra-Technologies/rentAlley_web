@@ -36,7 +36,6 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
   };
 
   // Proceed to apply as a tenant
-
   const handleApplyAsTenant = async (e) => {
     e.preventDefault();
     setShowModal(false);

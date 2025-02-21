@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { property_id, unit_id } = req.query;
+  const { propertyId, unitId } = req.query;
 
   try {
     const [tenants] = await db.query(
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
        JOIN User u ON t.user_id = u.user_id
        WHERE (pt.property_id = ? OR pt.unit_id = ?)
        ORDER BY pt.created_at DESC`,
-      [property_id, unit_id]
+      [propertyId || null, unitId || null]
     );
 
     // Decrypt necessary fields before returning response

@@ -124,7 +124,9 @@ export default function PropertyDetails() {
                   key={unit.unit_id}
                   className="border rounded-lg p-4 shadow-md"
                 >
-                  <h3 className="text-lg font-semibold">{unit.unit_name}</h3>
+                  <h3 className="text-lg font-semibold">
+                    Unit - {unit.unit_name}
+                  </h3>
                   <p className="text-gray-600">
                     Floor Area: {unit.floor_area} sqm
                   </p>
