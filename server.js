@@ -172,7 +172,7 @@ const decryptMessage = (encryptedMessage, iv) => {
     }
 
     try {
-        const key = crypto.createHash("sha256").update(process.env.local.CHAT_ENCRYPTION_SECRET).digest();
+        const key = crypto.createHash("sha256").update(process.env.CHAT_ENCRYPTION_SECRET).digest();
         const decipher = crypto.createDecipheriv("aes-256-cbc", key, Buffer.from(iv, "hex"));
         let decrypted = decipher.update(encryptedMessage, "hex", "utf-8");
         decrypted += decipher.final("utf-8");
@@ -226,7 +226,6 @@ io.on("connection", (socket) => {
         try {
             console.log(`🔹 Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chatRoom });
 
-            // Fetch sender's user_id from Tenant or Landlord table
             let [senderResult] = await pool.query(
                 `SELECT user_id FROM ${sender_type === 'tenant' ? 'Tenant' : 'Landlord'} WHERE ${sender_type}_id = ?`,
                 [sender_id]

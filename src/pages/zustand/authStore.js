@@ -30,7 +30,7 @@ const useAuthStore = create(
                         tenant_id: data.tenant_id || null,
                         userType: data.userType || null,
                         landlord_id: data.landlord_id || null,
-                        verified: data.landlord_id ? data.verified || false : null,
+                        is_verified: data.landlord_id ? data.is_verified || false : null,
                         is_trial_used: data.landlord_id ? data.is_trial_used || false : null,
                         subscription: data.subscription
                             ? {
