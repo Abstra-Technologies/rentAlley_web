@@ -16,6 +16,7 @@ export default async function getSubscription(req, res) {
 
         let subscription = rows[0];
 
+        // modidy this part base on the table.
         const listingLimits = {
             "Free Plan": { maxProperties: 1, maxUnits: 2 },
             "Standard Plan": { maxProperties: 5, maxUnits: 10 },
