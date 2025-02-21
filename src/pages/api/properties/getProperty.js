@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   if (!id) return res.status(400).json({ message: "Property ID is required" });
 
   try {
-    // ✅ Fetch property details with an encrypted property photo
+    // ✅ Fetch property details
     let query = `
       SELECT 
         p.property_id,
@@ -21,40 +21,43 @@ export default async function handler(req, res) {
         p.property_type,
         p.amenities,
         p.city,
-        p.province,
-        (SELECT pp.photo_url FROM PropertyPhoto pp WHERE pp.property_id = p.property_id LIMIT 1) AS encrypted_property_photo
+        p.province
       FROM Property p
       WHERE p.property_id = ?;
     `;
-
     const [property] = await db.execute(query, [id]);
     if (!property.length)
       return res.status(404).json({ message: "Property not found" });
 
-    // ✅ Fetch units associated with the property
-    let unitsQuery = `
-      SELECT * FROM Unit WHERE property_id = ?;
+    // ✅ Fetch property photos (all photos)
+    let propertyPhotosQuery = `
+      SELECT photo_url FROM PropertyPhoto WHERE property_id = ?;
     `;
+    const [propertyPhotos] = await db.execute(propertyPhotosQuery, [id]);
+
+    // 🔑 Decrypt all property photos
+    let decryptedPropertyPhotos = propertyPhotos
+      .map((photo) => {
+        try {
+          return decryptData(JSON.parse(photo.photo_url), SECRET_KEY);
+        } catch (err) {
+          console.error("Decryption failed for property photo:", err);
+          return null;
+        }
+      })
+      .filter(Boolean); // Remove failed decryptions
+
+    // ✅ Fetch units associated with the property
+    let unitsQuery = `SELECT * FROM Unit WHERE property_id = ?;`;
     const [units] = await db.execute(unitsQuery, [id]);
 
-    // ✅ Fetch unit photos
+    // ✅ Fetch unit photos (Prevent malformed SQL if no units exist)
     let unitPhotosQuery = `
       SELECT unit_id, photo_url FROM UnitPhoto WHERE unit_id IN (${
-        units.map((u) => u.unit_id).join(",") || 0
+        units.length ? units.map((u) => u.unit_id).join(",") : "NULL"
       });
     `;
     const [unitPhotos] = await db.execute(unitPhotosQuery);
-
-    // ✅ Decrypt property photo
-    let decryptedPhoto = null;
-    try {
-      const encryptedPhoto = property[0].encrypted_property_photo;
-      if (encryptedPhoto) {
-        decryptedPhoto = decryptData(JSON.parse(encryptedPhoto), SECRET_KEY);
-      }
-    } catch (err) {
-      console.error("Decryption failed for property photo:", err);
-    }
 
     // 🔗 Attach and decrypt photos for respective units
     const unitsWithPhotos = units.map((unit) => {
@@ -62,24 +65,21 @@ export default async function handler(req, res) {
         .filter((photo) => photo.unit_id === unit.unit_id)
         .map((photo) => {
           try {
-            return decryptData(JSON.parse(photo.photo_url), SECRET_KEY); // ✅ Decrypt unit photo
+            return decryptData(JSON.parse(photo.photo_url), SECRET_KEY);
           } catch (err) {
             console.error("Decryption failed for unit photo:", err);
             return null;
           }
         })
-        .filter(Boolean); // Remove any failed decryptions
+        .filter(Boolean);
 
-      return {
-        ...unit,
-        photos: unitPhotosForThisUnit,
-      };
+      return { ...unit, photos: unitPhotosForThisUnit };
     });
 
     return res.status(200).json({
       ...property[0],
-      property_photo: decryptedPhoto,
-      units: unitsWithPhotos, // Now includes decrypted unit photos
+      property_photo: decryptedPropertyPhotos,
+      units: unitsWithPhotos,
     });
   } catch (error) {
     console.error("Error fetching property details:", error);

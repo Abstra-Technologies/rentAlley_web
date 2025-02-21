@@ -1,12 +1,22 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import formidable from "formidable";
 import fs from "fs/promises";
-import path from "path";
 import { db } from "../../../lib/db";
 import { encryptData } from "../../../crypto/encrypt";
+import { IncomingForm } from "formidable";
 
-// AWS S3 Configuration (v3)
-const s3Client = new S3Client({
+export const config = {
+  api: {
+    bodyParser: false, // Disable Next.js body parser for FormData handling
+  },
+};
+
+// Sanitize file names while preserving extension
+function sanitizeInput(filename) {
+  return filename.replace(/[^a-zA-Z0-9_.-]/g, "_");
+}
+
+// Initialize S3 client
+const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -14,16 +24,19 @@ const s3Client = new S3Client({
   },
 });
 
-// Sanitize Input Function
-const sanitizeInput = (input) => {
-  return input.replace(/[^a-zA-Z0-9_@. -]/g, "_"); // Replace special characters and spaces with underscores
-};
-
-export const config = {
-  api: {
-    bodyParser: false, // Required for Formidable to handle files
-  },
-};
+// Helper to parse form data with formidable as a promise
+const parseForm = (req) =>
+  new Promise((resolve, reject) => {
+    const form = new IncomingForm({
+      multiples: false,
+      keepExtensions: true,
+      maxFileSize: 15 * 1024 * 1024, // 15MB limit
+    });
+    form.parse(req, (err, fields, files) => {
+      if (err) return reject(err);
+      resolve({ fields, files });
+    });
+  });
 
 export default async function handler(req, res) {
   if (req.method !== "PUT") {
@@ -31,53 +44,66 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parse form data
-    const form = formidable({
-      multiples: false,
-      keepExtensions: true,
-    });
-    const [fields, files] = await form.parse(req);
+    // Parse the incoming form
+    const { fields, files } = await parseForm(req);
+    console.log("Parsed Fields:", fields);
+    console.log("Parsed Files:", files);
 
-    const { property_id } = fields;
+    // Extract property_id (if it's in an array, take the first element)
+    const property_id = Array.isArray(fields.property_id)
+      ? fields.property_id[0]
+      : fields.property_id;
 
-    // Handle file upload to S3
-    const file = files.file?.[0];
+    if (!property_id) {
+      return res.status(400).json({ message: "Property ID is required." });
+    }
+
+    // Retrieve the file. Ensure the form field name is 'file'
+    const file = Array.isArray(files.file) ? files.file[0] : files.file;
     if (!file) {
       return res
         .status(400)
         .json({ message: "Government ID file is required." });
     }
 
+    // Read file buffer
     const fileBuffer = await fs.readFile(file.filepath);
-    const fileName = `government-ids/${Date.now()}-${path.basename(
-      file.originalFilename
-    )}`;
+    const sanitizedFilename = sanitizeInput(file.originalFilename);
+    const fileName = `governmentIds/${Date.now()}-${sanitizedFilename}`;
 
+    // Prepare S3 upload parameters
     const uploadParams = {
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: sanitizeInput(fileName),
+      Key: fileName,
       Body: fileBuffer,
       ContentType: file.mimetype,
     };
 
-    // Upload to S3
-    await s3Client.send(new PutObjectCommand(uploadParams));
+    // Upload file to S3
+    await s3.send(new PutObjectCommand(uploadParams));
 
-    // Generate and encrypt S3 URL
+    // Generate S3 URL and encrypt it
     const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
     const encryptedS3Url = JSON.stringify(
       encryptData(s3Url, process.env.ENCRYPTION_SECRET)
     );
 
-    // Insert into ProspectiveTenant table
-    await db.query(
+    // Update the ProspectiveTenant table with the encrypted URL
+    const [result] = await db.query(
       "UPDATE ProspectiveTenant SET government_id = ? WHERE property_id = ?",
       [encryptedS3Url, property_id]
     );
 
+    // Check if the update affected any rows
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "No request found to update." });
+    }
+
     res.status(201).json({ message: "Requirement submitted successfully!" });
   } catch (error) {
     console.error("❌ [Submit Requirements] Error:", error);
-    res.status(500).json({ message: "Failed to submit requirements", error });
+    res
+      .status(500)
+      .json({ message: "Failed to submit requirements", error: error.message });
   }
 }
