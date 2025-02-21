@@ -8,17 +8,24 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
     const { user, loading, error } = useAuth();
     const [subscription, setSubscription] = useState(null);
     const [fetchError, setFetchError] = useState(null);
+    const [isFetching, setIsFetching] = useState(true);
 
     useEffect(() => {
         if (landlord_id) {
             fetch(`/api/subscription/${landlord_id}`)
                 .then(response => response.json())
-                .then(data => setSubscription(data))
-                .catch(error => setFetchError(error.message));
+                .then(data => {
+                    setSubscription(data);
+                    setIsFetching(false);
+                })
+                .catch(error => {
+                    setFetchError(error.message);
+                    setIsFetching(false);
+                });
         }
     }, [landlord_id]);
 
-    if (loading) return <p>Loading...</p>;
+    if (loading || isFetching) return <p>Loading your subscription details...</p>;
     if (error || fetchError) return <p>Error loading subscription details.</p>;
 
     return (
@@ -41,7 +48,6 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                             </p>
                         )}
 
-                        {/* Show "Upgrade Plan" button if the subscription has expired */}
                         {subscription.isSubscriptionExpired ? (
                             <Link href='/pages/landlord/sub_two/upgrade' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
                                 Upgrade Plan
