@@ -44,9 +44,18 @@ export default async function updateandlordStatus(req, res) {
     const { user_id } = rows[0];
 
     try {
+
         await db.query(
             "UPDATE LandlordVerification SET status = ?, reviewed_by = ?, review_date = NOW(), message = ? WHERE landlord_id = ?",
             [status, currentadmin_id,  message, landlord_id]
+        );
+
+        const isVerified = status.toLowerCase() === "approved" ? 1 : 0;
+        await db.execute(
+            `UPDATE Landlord 
+             SET is_verified = ? 
+             WHERE landlord_id = ?`,
+            [isVerified, landlord_id]
         );
 
         const notificationTitle = `Landlord Verification ${status}`;

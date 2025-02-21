@@ -20,22 +20,21 @@ export default function LandlordVerificationList(){
 
     return (
         <div className="flex">
-        {/* Sidebar Navigation */}
         <SideNavAdmin />
 
-        {/* Main Content */}
         <div className="flex-1 p-6 max-w-6xl mx-auto">
             <h1 className="text-2xl font-semibold text-blue-600 mb-6">Landlord Verification</h1>
 
-            {/* Landlord Verification Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
                 <TableContainer component={Paper}>
                     <Table className="min-w-full">
                         <TableHead className="bg-gray-50">
                             <TableRow>
                                 <TableCell className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Landlord ID</TableCell>
-                                <TableCell className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Verified</TableCell>
                                 <TableCell className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Verification Status</TableCell>
+                                <TableCell className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Last Reviewed by</TableCell>
+                                <TableCell className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Review Date</TableCell>
+
                                 <TableCell className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</TableCell>
                             </TableRow>
                         </TableHead>
@@ -44,10 +43,10 @@ export default function LandlordVerificationList(){
                                 landlords.map((landlord) => (
                                     <TableRow key={landlord.landlord_id} className="hover:bg-gray-50">
                                         <TableCell className="px-6 py-4">{landlord.landlord_id}</TableCell>
-                                        <TableCell className="px-6 py-4">
-                                            {landlord.verified ? "✅ Approved" : "❌ Not Verified"}
-                                        </TableCell>
                                         <TableCell className="px-6 py-4">{landlord.status}</TableCell>
+                                        <TableCell className="px-6 py-4">{landlord.reviewed_by || "Not yet Reviewed"} </TableCell>
+                                        <TableCell className="px-6 py-4">{landlord.review_date || "Not Applicable"}</TableCell>
+
                                         <TableCell className="px-6 py-4">
                                             <button
                                                 onClick={() =>
@@ -62,7 +61,7 @@ export default function LandlordVerificationList(){
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={4} className="px-6 py-12 text-center text-sm text-gray-500">
-                                        <p>No landlord verifications found</p>
+                                        <p>No pending landlord verifications found</p>
                                     </TableCell>
                                 </TableRow>
                             )}
