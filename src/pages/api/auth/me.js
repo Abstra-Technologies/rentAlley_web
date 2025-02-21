@@ -70,6 +70,8 @@ export default async function handler(req, res) {
 
                     user.subscription = subscriptionRows.length > 0 ? subscriptionRows[0] : null;
                     user.is_trial_used = user.is_trial_used ? true : false;
+                    user.is_verified = user.is_verified ? true : false;
+
                 }
 
                 return res.status(200).json(user);

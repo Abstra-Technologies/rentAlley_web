@@ -1,9 +1,6 @@
 "use client";
 
 import useAuth from "../../../../../hooks/useSession";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import LandlordSubscriptionPlanComponent from "../../../../components/landlord/subscrription";
 
 export default function LandlordSubscriptionPlan() {

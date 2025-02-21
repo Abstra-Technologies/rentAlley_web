@@ -10,7 +10,7 @@ export default async function getLandlordVerification(req, res) {
 
     try {
         const [rows] = await db.query(
-            "SELECT verified FROM Landlord WHERE landlord_id = ?",
+            "SELECT is_verified FROM Landlord WHERE landlord_id = ?",
             [landlord_id]
         );
         return res.status(200).json({ is_verified: rows[0].verified === 1 });

@@ -15,6 +15,8 @@ export default function ProfilePage() {
     const [uploading, setUploading] = useState(false);
     const [profilePicture, setProfilePicture] = useState("");
     const [editing, setEditing] = useState(false);
+    const [isVerified, setIsVerified] = useState(null);
+
     const [formData, setFormData] = useState({
         firstName: "",
         lastName: "",
@@ -23,6 +25,7 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (user) {
+            console.log("🔥 User Data from useAuth:", user); // Debugging log
             setProfileData(user);
             setProfilePicture(user.profilePicture || "https://via.placeholder.com/150");
             setFormData({
@@ -32,6 +35,20 @@ export default function ProfilePage() {
             });
         }
     }, [user]);
+
+    useEffect(() => {
+        if (user?.userType === "landlord") {
+            axios
+                .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
+                .then((response) => {
+                    setIsVerified(response.data.is_verified); // Update verification status
+                })
+                .catch((err) => {
+                    console.error("❌ Failed to fetch landlord verification status:", err);
+                });
+        }
+    }, [user]);
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -184,7 +201,7 @@ export default function ProfilePage() {
                     <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Welcome, {user?.firstName}!</h2>
                     {user.userType === "landlord" && (
                         <div className="mt-4">
-                            {user?.is_verified === "1" ? (
+                            {isVerified === 1 ? (
                                 <p className="text-green-600 font-bold">✅ Verified</p>
                             ) : (
                                 <div>
