@@ -38,7 +38,6 @@ export default async function handler(req, res) {
 
         let userData = null;
 
-        // Fetch regular user (Tenant or Landlord)
         if (payload.user_id) {
             const userId = payload.user_id;
             const [userRows] = await db.execute(
@@ -51,7 +50,8 @@ export default async function handler(req, res) {
             u.profilePicture,
             u.userType,
             t.tenant_id,
-            l.landlord_id
+            l.landlord_id,
+            l.is_verified
         FROM User u
         LEFT JOIN Tenant t ON u.user_id = t.user_id
         LEFT JOIN Landlord l ON u.user_id = l.user_id
@@ -72,11 +72,11 @@ export default async function handler(req, res) {
                     tenant_id: user.tenant_id || null,
                     landlord_id: user.landlord_id || null,
                     profilePicture: user.profilePicture || null,
+                    is_verified: user.is_verified || null,
                 };
             }
         }
 
-        // Fetch Admin user
         if (payload.admin_id) {
             const adminId = payload.admin_id;
             const [adminRows] = await db.execute(
