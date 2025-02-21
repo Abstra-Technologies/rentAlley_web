@@ -13,8 +13,6 @@ export default function InterestedTenants() {
   const [reason, setReason] = useState(""); // State for disapproval reason
   const [selectedTenantId, setSelectedTenantId] = useState(null); // Track selected tenant for disapproval
 
-  console.log("Property Id: ", propertyId);
-
   // Fetch tenants from the API
   useEffect(() => {
     const fetchTenants = async () => {
@@ -85,7 +83,6 @@ export default function InterestedTenants() {
               <tr
                 key={tenant.id}
                 className="border-b hover:bg-gray-100 cursor-pointer"
-                onClick={() => router.push(`/tenant/${tenant.id}`)}
               >
                 <td className="p-3">
                   <img
@@ -94,7 +91,11 @@ export default function InterestedTenants() {
                     className="w-12 h-12 rounded-full border"
                   />
                 </td>
-                <td className="p-3">
+                {/* Fix Redirection */}
+                <td
+                  className="p-3 cursor-pointer hover:text-blue-500 hover:underline"
+                  onClick={() => router.push(`/tenant/${tenant.id}`)}
+                >
                   {tenant.firstName} {tenant.lastName}
                 </td>
                 <td className="p-3">{tenant.email}</td>

@@ -243,7 +243,7 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
               Do you want to proceed to applying as a tenant?
             </h2>
 
-            <div className="flex justify-between mb-4">
+            <div className="flex justify-center gap-4 mb-4">
               <button
                 className="px-4 py-2 bg-green-600 text-white rounded"
                 onClick={handleApplyAsTenant}

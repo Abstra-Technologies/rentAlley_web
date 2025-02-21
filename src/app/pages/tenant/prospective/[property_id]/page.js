@@ -46,6 +46,14 @@ const TenantApplicationForm = () => {
       return;
     }
 
+    if (!selectedFile) {
+      alert("Please upload a valid ID.");
+      return;
+    } else if (!formData.address) {
+      alert("Please fill up the address field.");
+      return;
+    }
+
     // Show confirmation alert
     const confirmSubmission = window.confirm(
       "Are you sure you want to proceed?"
@@ -106,13 +114,13 @@ const TenantApplicationForm = () => {
             console.error("❌ Error submitting requirements:", reqError);
             alert(`Submission failed: ${reqError.message || "Network error"}`);
           }
+          alert("Submission successful!");
+          // To go to the my units page and not find rent if successful.
+          router.push("/pages/find-rent");
         } else {
           console.warn("⚠️ No file selected, skipping file upload.");
           alert("Tenant information saved, but no file was uploaded.");
         }
-        alert("Submission successful!");
-        // To go to the my units page and not find rent if successful.
-        router.push("/pages/find-rent");
       } else {
         console.error(
           "❌ Failed to save tenant info:",
