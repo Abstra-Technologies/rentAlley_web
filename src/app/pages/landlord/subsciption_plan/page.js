@@ -8,8 +8,6 @@ export default function LandlordSubscriptionPlan() {
 
     if(!user) return ;
 
-
-
     return (
         <div>
        <LandlordSubscriptionPlanComponent landlord_id={user.landlord_id} />
