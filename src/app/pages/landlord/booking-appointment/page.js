@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import LandlordLayout from '../layouts/landlordLayouts';
+import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 
 const BookingAppointment = () => {
   const [currentMonth, setCurrentMonth] = useState(dayjs());

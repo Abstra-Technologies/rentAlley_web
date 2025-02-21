@@ -76,6 +76,10 @@ export default function TenantDetails() {
                     <td>{tenantInfo?.phoneNumber || "N/A"}</td>
                 </tr>
                 <tr>
+                    <td><strong>Email Address:</strong></td>
+                    <td>{tenantInfo?.email || "N/A"}</td>
+                </tr>
+                <tr>
                     <td><strong>Verified:</strong></td>
                     <td>{tenantInfo?.emailVerified ? "Yes ✅" : "No ❌"}</td>
                 </tr>
