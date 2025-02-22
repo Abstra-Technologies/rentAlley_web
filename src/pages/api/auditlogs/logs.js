@@ -1,15 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 
-export default function handler(req, res) {
+export default function getAuditLogs(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ message: "Method Not Allowed" });
     }
 
     const logFilePath = path.join(process.cwd(), 'logs', 'audit.log');
-
+// For real time audit log this is different from act. logs
     try {
-        // Stream logs in real-time
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
 
         const logStream = fs.createReadStream(logFilePath, { encoding: 'utf8' });

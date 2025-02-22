@@ -1,6 +1,6 @@
 import { db } from "../../lib/db";
 
-export default async function handler(req, res) {
+export default async function logOutActivityLogs(req, res) {
     const { user_id, action, timestamp } = req.body;
 
     if (!user_id || !action || !timestamp) {
