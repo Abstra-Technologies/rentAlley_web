@@ -22,13 +22,22 @@ export default async function handler(req, res) {
 
     const { property_id, unit_id } = tenantRecord[0];
 
+    // Fetch landlord_id from Property table
+    const [propertyRecord] = await db.query(
+      "SELECT landlord_id FROM Property WHERE property_id = ? LIMIT 1",
+      [property_id]
+    );
+
+    const { landlord_id } = propertyRecord[0];
+
     // Insert into the database
     const [result] = await db.query(
       `INSERT INTO MaintenanceRequest 
-            (tenant_id, property_id, unit_id, subject, description, category, status) 
-            VALUES (?, ?, ?, ?, ?, ?, "Pending")`,
+            (tenant_id, landlord_id, property_id, unit_id, subject, description, category, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, "Pending")`,
       [
         tenant_id,
+        landlord_id,
         property_id || null,
         unit_id || null,
         subject,
