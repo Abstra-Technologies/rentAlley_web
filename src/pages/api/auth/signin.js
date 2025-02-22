@@ -63,11 +63,13 @@ export default async function handler(req, res) {
 
       const otp = Math.floor(100000 + Math.random() * 900000);
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 minutes later
+      const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
 
       const nowUTC8 = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
       const expiresAtUTC8 = new Date(expiresAt.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+
       await db.query("SET time_zone = '+08:00'");
+
       await db.query(
           "INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at) \n" +
           "VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))\n" +
