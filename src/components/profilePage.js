@@ -73,7 +73,7 @@ export default function ProfilePage() {
             setProfileData((prev) => ({ ...prev, profilePicture: response.data.imageUrl }));
             console.log("✅ Image uploaded:", response.data.imageUrl);
         } catch (error) {
-            console.error("❌ Upload failed:", error);
+            console.error("Upload failed:", error);
         }
         setUploading(false);
     };
