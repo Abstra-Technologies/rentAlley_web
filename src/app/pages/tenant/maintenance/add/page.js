@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import useAuth from "../../../../../../hooks/useSession";
+import { useRouter } from "next/navigation";
 
 export default function MaintenanceRequestPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [categories, setCategories] = useState([]);
-  const [propertyId, setPropertyId] = useState("");
-  const [unitId, setUnitId] = useState("");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -41,21 +41,21 @@ export default function MaintenanceRequestPage() {
       // Step 1: Create Maintenance Request
       const maintenanceRes = await axios.post("/api/maintenance/create", {
         tenant_id: user.tenant_id,
-        property_id: propertyId || null,
-        unit_id: unitId || null,
         subject,
         description,
         category: selectedCategory,
       });
+
+      console.log("Maintenance Reqs: ", maintenanceRes);
 
       const requestId = maintenanceRes.data.request_id;
 
       // Step 2: Upload Photos if any
       if (photos.length > 0) {
         const formData = new FormData();
-        formData.append("property_id", propertyId);
-        formData.append("unit_id", unitId);
         formData.append("request_id", requestId);
+
+        console.log("Form Data Photos: ", photos);
 
         photos.forEach((photo) => {
           formData.append("photos", photo);
@@ -67,6 +67,7 @@ export default function MaintenanceRequestPage() {
       }
 
       alert("Maintenance request submitted successfully!");
+      router.push("/pages/tenant/maintenance");
     } catch (error) {
       console.error("Error submitting maintenance request:", error);
     }
