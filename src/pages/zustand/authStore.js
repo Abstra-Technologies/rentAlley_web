@@ -23,7 +23,7 @@ const useAuthStore = create(
                         firstName: decryptData(JSON.parse(data.firstName), encryptionKey),
                         lastName: decryptData(JSON.parse(data.lastName), encryptionKey),
                         email: decryptData(JSON.parse(data.email), encryptionKey),
-                        profilePicture: data.profilePicture,
+                        profilePicture: decryptData(JSON.parse(data.profilePicture), encryptionKey),
                         birthDate: data.birthDate,
                         phoneNumber: decryptData(JSON.parse(data.phoneNumber), encryptionKey),
                         is_2fa_enabled: data.is_2fa_enabled,

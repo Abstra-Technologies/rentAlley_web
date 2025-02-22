@@ -10,7 +10,6 @@ export default function VerifyOTP() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Function to verify OTP
   const handleVerify = async () => {
     if (otp.length !== 6 || isNaN(otp)) {
       toast.error("OTP must be a 6-digit number");

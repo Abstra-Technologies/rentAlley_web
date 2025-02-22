@@ -183,7 +183,7 @@ const Navbar = () => {
                             <div className="relative">
                                 <button onClick={toggleDropdown} className="focus:outline-none">
                                     <Image
-                                        src={user?.profilePicture || admin?.profile_picture || "/profile-placeholder.png"}
+                                        src={user?.profilePicture || admin?.profile_picture || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"}
                                         alt="Profile"
                                         width={40}
                                         height={40}
