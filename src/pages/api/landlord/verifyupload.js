@@ -76,7 +76,7 @@ export default async function uploadLandlordDocs(req, res) {
   const form = new IncomingForm({
     multiples: false,
     keepExtensions: true,
-    maxFileSize: 10 * 1024 * 1024, // 10MB limit
+    maxFileSize: 10 * 1024 * 1024,
     allowEmptyFiles: false,
   });
 
@@ -89,9 +89,10 @@ export default async function uploadLandlordDocs(req, res) {
     console.log("Parsed Fields:", fields);
     console.log("Parsed Files:", files);
 
-    const { landlord_id, selfie, address, citizenship } = fields;
-    const documentType = fields.documentType?.[0] || null; // ✅ Extract the first item from array
-
+    const { landlord_id, selfie } = fields;
+    const documentType = fields.documentType?.[0] || null;
+    const address = fields.address?.[0] || null;
+    const citizenship = fields.citizenship?.[0] || null;
 
     if (!landlord_id || !documentType) {
       return res.status(400).json({ error: "Missing landlord ID or document type" });
@@ -111,7 +112,7 @@ export default async function uploadLandlordDocs(req, res) {
         return res.status(400).json({ error: "Invalid landlord_id: No matching record found" });
       }
 
-      await connection.beginTransaction(); // ✅ Start transaction
+      await connection.beginTransaction();
 
       const documentFile = files.uploadedFile?.[0] || null;
       let documentUrl = null;
