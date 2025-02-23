@@ -1,123 +1,4 @@
 
-
-// const express = require("express");
-// const { createServer } = require("http");
-// const { Server } = require("socket.io");
-// const mysql = require("mysql2/promise");
-// const CryptoJS = require("crypto-js");
-// const cors = require("cors");
-// const dotenv = require("dotenv");
-//
-// dotenv.config();
-//
-// const app = express();
-// const server = createServer(app);
-// const io = new Server(server, {
-//     cors: {
-//         origin: "*",
-//         methods: ["GET", "POST"],
-//     },
-// });
-//
-// app.use(cors());
-// app.use(express.json());
-//
-// let db;
-//
-// async function initializeDB() {
-//     try {
-//         db = await mysql.createPool({
-//             host: process.env.DB_HOST,
-//             user: process.env.DB_USER,
-//             password: process.env.DB_PASSWORD,
-//             database: process.env.DB_NAME,
-//         });
-//         console.log("✅ Database connected successfully!");
-//     } catch (error) {
-//         console.error("❌ Database connection failed:", error);
-//         process.exit(1); // Exit if DB connection fails
-//     }
-// }
-//
-// // Call the DB Initialization function
-// initializeDB();
-//
-//
-// const encryptionKey = process.env.CHAT_ENCRYPTION_SECRET;
-//
-// const encryptMessage  = (message) => {
-//     const iv = CryptoJS.lib.WordArray.random(16);
-//     const encrypted = CryptoJS.AES.encrypt(message, encryptionKey, {iv});
-//     return{
-//         encryptedMessage: encrypted.toString(),
-//         iv: iv.toString(),
-//     };
-// };
-//
-// const decryptMessage = (encryptedMessage, iv) => {
-//     const decrypted = CryptoJS.AES.decrypt(encryptedMessage, encryptionKey, { iv: CryptoJS.enc.Hex.parse(iv) });
-//     return decrypted.toString(CryptoJS.enc.Utf8);
-// }
-//
-// io.on("connection", (socket) => {
-//
-//     socket.on("joinRoom", (room) => {
-//         socket.join(room);
-//     });
-//
-//     socket.on("sendMessage", async ({ sender_id, receiver_id, message}) => {
-//         if(!sender_id ||  !receiver_id ||  !message)  return;
-//
-//         const chatRoom = [sender_id, receiver_id].sort().join("_"); // Unique chat ID
-//         const { encryptedMessage, iv } = encryptMessage(message);
-//
-//         await db.execute(
-//             `INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)`,
-//             [sender_id, receiver_id, encryptedMessage, iv, chatRoom]
-//         );
-//
-//         io.to(chatRoom).emit("receiveMessage", {
-//             sender_id,
-//             receiver_id,
-//             encryptedMessage,
-//             iv,
-//             chatRoom,
-//         });
-//     });
-//     socket.on("disconnect", () => {
-//         console.log("Client disconnected:", socket.id);
-//     });
-// });
-//
-// // For chat history.
-//
-// app.get("/api/chat/:chatRoom", async (req, res) => {
-//     const { chatRoom } = req.params;
-//
-//     try{
-//
-//         const [messages] = await db.execute(
-//             "SELECT sender_id, receiver_id, encrypted_message, iv FROM Message WHERE chat_room = ? ORDER BY timestamp ASC",
-//             [chatRoom]
-//         );
-//
-//         const decryptedMessage = messages.map((msg) =>({
-//             sender_id: msg.sender_id,
-//             receiver_id: msg.receiver_id,
-//             message: decryptMessage(msg.encryptedMessage, msg.iv),
-//         }));
-//         res.status(200).json(decryptedMessage);
-//
-//     }catch (err){
-//         console.error("Error fetching chat:", err);
-//     }
-// });
-//
-// server.listen(4000, () => {
-//     console.log("Chat server running on port 4000...");
-// });
-
-
 const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
@@ -161,9 +42,6 @@ const encryptMessage = (message) => {
     return { encrypted, iv: iv.toString("hex") };
 };
 
-
-
-
 // AES Decryption Function
 const decryptMessage = (encryptedMessage, iv) => {
     if (!encryptedMessage || !iv) {
@@ -172,7 +50,7 @@ const decryptMessage = (encryptedMessage, iv) => {
     }
 
     try {
-        const key = crypto.createHash("sha256").update(process.env.local.CHAT_ENCRYPTION_SECRET).digest();
+        const key = crypto.createHash("sha256").update(process.env.CHAT_ENCRYPTION_SECRET).digest();
         const decipher = crypto.createDecipheriv("aes-256-cbc", key, Buffer.from(iv, "hex"));
         let decrypted = decipher.update(encryptedMessage, "hex", "utf-8");
         decrypted += decipher.final("utf-8");
@@ -226,7 +104,6 @@ io.on("connection", (socket) => {
         try {
             console.log(`🔹 Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chatRoom });
 
-            // Fetch sender's user_id from Tenant or Landlord table
             let [senderResult] = await pool.query(
                 `SELECT user_id FROM ${sender_type === 'tenant' ? 'Tenant' : 'Landlord'} WHERE ${sender_type}_id = ?`,
                 [sender_id]
@@ -269,10 +146,6 @@ io.on("connection", (socket) => {
             console.error("❌ Error sending message:", error);
         }
     });
-
-
-
-
 
 
     // Handle disconnection

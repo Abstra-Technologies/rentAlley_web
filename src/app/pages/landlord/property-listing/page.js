@@ -5,33 +5,59 @@ import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import usePropertyStore from "../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../hooks/useSession";
 import Image from "next/image";
+import axios from "axios";
 
-// To Follow:
-// - Implement Subscription Limit Here.
-// - If Landlord is not verified no property listing.
+// UI TODO: Remove this if finished.
+//  Alert/Warning Message on the limit and verification.
 
 const PropertyListingPage = () => {
   const router = useRouter();
   const { user } = useAuth();
   const { properties, fetchAllProperties, loading, error } = usePropertyStore();
   const [isVerified, setIsVerified] = useState(null);
-  const [fetchError, setFetchError] = useState(null);
   const [showVerifyPopup, setShowVerifyPopup] = useState(false);
+  const [isFetchingVerification, setIsFetchingVerification] = useState(true); // Track loading state
+  const [fetchingSubscription, setFetchingSubscription] = useState(true);
+  const [subscription, setSubscription] = useState(null);
 
   useEffect(() => {
     if (user?.landlord_id) {
       // Ensure user is not null/undefined
       console.log("Landlord ID:", user.landlord_id);
       fetchAllProperties(user.landlord_id);
-
-      fetch(
-        `/api/landlord/getVerificationStatus?landlord_id=${user.landlord_id}`
-      )
-        .then((response) => response.json())
-        .then((data) => setIsVerified(data.is_verified))
-        .catch((error) => setFetchError(error.message));
     }
-  }, [user?.landlord_id]); // Add landlordId to the dependency array
+  }, [user?.landlord_id]);
+
+  useEffect(() => {
+    if (user?.userType === "landlord") {
+      setIsVerified(null);
+      setIsFetchingVerification(true);
+
+      axios
+        .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
+        .then((response) => {
+          console.log("✅ Fetched Verification Status:", response.data);
+          setIsVerified(response.data.is_verified);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch landlord verification status:", err);
+        })
+        .finally(() => {
+          setIsFetchingVerification(false);
+        });
+
+      setFetchingSubscription(true);
+      axios
+        .get(`/api/subscription/getCurrentPlan/${user.landlord_id}`)
+        .then((response) => {
+          setSubscription(response.data);
+        })
+        .catch((err) => {
+          console.error(" Failed to fetch subscription:", err);
+        })
+        .finally(() => setFetchingSubscription(false));
+    }
+  }, [user]);
 
   const handleEdit = (propertyId, event) => {
     event.stopPropagation(); // Prevent the parent div's onClick from firing
@@ -48,6 +74,18 @@ const PropertyListingPage = () => {
   const handleAddProperty = () => {
     if (!isVerified) {
       setShowVerifyPopup(true);
+      return;
+    }
+
+    // subscription handling goes here.
+    // listing limit comes from api backend.
+    if (
+      subscription &&
+      properties.length >= subscription.listingLimits.maxProperties
+    ) {
+      alert(
+        `🚨 You have reached the maximum property limit (${subscription.listingLimits.maxProperties}) for your plan.`
+      );
       return;
     }
     router.push(`/pages/landlord/property-listing/create-property`);
@@ -67,7 +105,7 @@ const PropertyListingPage = () => {
       "Are you sure you want to delete this property? This action cannot be undone."
     );
 
-    if (!isConfirmed) return; // Stop if user cancels
+    if (!isConfirmed) return;
 
     try {
       const response = await fetch(
@@ -79,7 +117,7 @@ const PropertyListingPage = () => {
 
       if (response.ok) {
         alert("Property deleted successfully.");
-        fetchAllProperties(user.landlord_id); // Refresh property list
+        fetchAllProperties(user.landlord_id);
       } else {
         alert("Failed to delete property.");
       }
@@ -102,16 +140,24 @@ const PropertyListingPage = () => {
       <div className="flex-1">
         <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-white shadow-md">
           <h2 className="text-xl font-bold mb-4 md:mb-0">Property Listings</h2>
+          {subscription && (
+            <p className="text-gray-600 text-sm">
+              {`You can list up to ${subscription.listingLimits.maxProperties} properties.`}
+              {` (${properties.length}/${subscription.listingLimits.maxProperties} used)`}
+            </p>
+          )}
           <button
             className={`px-4 py-2 rounded-md font-bold ${
-              isVerified
+              isFetchingVerification
+                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                : isVerified
                 ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-gray-400 text-gray-700 cursor-not-allowed"
             }`}
             onClick={handleAddProperty}
-            disabled={!isVerified}
+            disabled={isFetchingVerification || !isVerified}
           >
-            + Add New Property
+            {isFetchingVerification ? "Checking..." : "+ Add New Property"}
           </button>
         </div>
 
@@ -130,10 +176,10 @@ const PropertyListingPage = () => {
                   <Image
                     src={property.photos[0].photo_url}
                     alt={property.property_name}
-                    width={400} // Set a reasonable width
-                    height={250} // Set a reasonable height
+                    width={400}
+                    height={250}
                     className="w-full md:w-3/12 md:h-36 rounded-lg object-cover"
-                    style={{ objectFit: "cover" }} // Ensures image covers its container
+                    style={{ objectFit: "cover" }}
                   />
                 ) : (
                   <div className="w-full md:w-3/12 md:h-36 bg-gray-200 flex items-center justify-center rounded-lg">
@@ -177,7 +223,7 @@ const PropertyListingPage = () => {
                     </button>
 
                     <button
-                      className="px-3 py-2 text-white bg-orange-500 rounded-md hover:bg-orange-600"
+                      className="px-3 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600"
                       onClick={(event) =>
                         handleTenantRequest(property.property_id, event)
                       }

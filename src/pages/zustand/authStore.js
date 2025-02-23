@@ -23,14 +23,14 @@ const useAuthStore = create(
                         firstName: decryptData(JSON.parse(data.firstName), encryptionKey),
                         lastName: decryptData(JSON.parse(data.lastName), encryptionKey),
                         email: decryptData(JSON.parse(data.email), encryptionKey),
-                        profilePicture: data.profilePicture,
+                        profilePicture: decryptData(JSON.parse(data.profilePicture), encryptionKey),
                         birthDate: data.birthDate,
                         phoneNumber: decryptData(JSON.parse(data.phoneNumber), encryptionKey),
                         is_2fa_enabled: data.is_2fa_enabled,
                         tenant_id: data.tenant_id || null,
                         userType: data.userType || null,
                         landlord_id: data.landlord_id || null,
-                        verified: data.landlord_id ? data.verified || false : null,
+                        is_verified: data.landlord_id ? data.is_verified || false : null,
                         is_trial_used: data.landlord_id ? data.is_trial_used || false : null,
                         subscription: data.subscription
                             ? {

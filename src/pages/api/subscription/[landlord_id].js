@@ -32,7 +32,7 @@ export default async function getSubscriptionLandlord(req, res) {
             delete subscription.trial_end_date;
         }
 
-        // Determine if subscription is expired
+        // if subscription is expired
         subscription.isSubscriptionExpired = subscriptionEndDate && subscriptionEndDate <= currentDate;
 
         return res.status(200).json(subscription);

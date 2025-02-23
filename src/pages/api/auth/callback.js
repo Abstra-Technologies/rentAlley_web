@@ -54,10 +54,10 @@ export default async function handler(req, res) {
         const email = user.email ? user.email.trim().toLowerCase() : null;
         const phoneNumber = mobileNumber ? mobileNumber.trim() : null;
         const birthDate = dob ? dob.trim() : null;
-        const profilePicture = user.picture ;
+        const profilePicture = user?.picture || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s" ;
 
         if (!googleId) {
-            throw new Error("Google OAuth failed: Missing google_id (sub).");
+             new Error("Google OAuth failed: Missing google_id (sub).");
         }
         console.log("Processed Google OAuth Data:", { googleId, firstName, lastName, email, finalUserType });
         const emailHash = email ? crypto.createHash("sha256").update(email).digest("hex") : null;
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
         const fnameEncrypted = firstName ? JSON.stringify(await encryptData(firstName, ENCRYPTION_SECRET)) : null;
         const lnameEncrypted = lastName ? JSON.stringify(await encryptData(lastName, ENCRYPTION_SECRET)) : null;
         const phoneEncrypted = phoneNumber ? JSON.stringify(await encryptData(phoneNumber, ENCRYPTION_SECRET)) : null;
-        const photoEncrypted = phoneNumber ? JSON.stringify(await encryptData(profilePicture, ENCRYPTION_SECRET)) : null;
+        const photoEncrypted = profilePicture ? JSON.stringify(await encryptData(profilePicture, ENCRYPTION_SECRET)) : null;
 
         console.log("Inserting User:", {
             firstName: fnameEncrypted,
@@ -77,10 +77,15 @@ export default async function handler(req, res) {
             userType: finalUserType,
         });
 
-        const existingUsers = await db.query("SELECT * FROM User WHERE email = ? OR google_id = ?", [email, googleId]);
+        const [existingUsers] = await db.execute(
+            "SELECT * FROM User WHERE emailHashed = ? OR google_id = ?",
+            [emailHash, googleId]
+        );
+
         if (existingUsers.length > 0) {
             return res.status(400).json({ message: "An account with this email or Google ID already exists." });
         }
+
 
         let dbUser;
         let userId;

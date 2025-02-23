@@ -11,6 +11,7 @@ import axios from "axios";
 import usePropertyStore from "../../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../../hooks/useSession";
 import useSWRMutation from "swr/mutation";
+import Swal from "sweetalert2";
 
 export default function AddNewProperty() {
   const router = useRouter();
@@ -40,20 +41,66 @@ export default function AddNewProperty() {
         !property.province ||
         !property.zipCode
       ) {
-        alert("Please fill in all property details before proceeding");
+        Swal.fire(
+          "Missing Details",
+          "Please fill in all property details before proceeding.",
+          "warning"
+        );
+        return false;
+      }
+
+      // Validate ZIP code (must be exactly 4 digits)
+      const zipCodePattern = /^\d{4}$/; // Regex: Ensures exactly 4 digits
+      if (!zipCodePattern.test(property.zipCode)) {
+        Swal.fire(
+          "Invalid ZIP Code",
+          "Zip Code must be exactly 4 digits.",
+          "error"
+        );
         return false;
       }
     }
 
     if (step === 3) {
       if (!property.numberOfUnit) {
-        alert("Please fill in number of units before proceeding.");
+        Swal.fire(
+          "Missing Input",
+          "Please fill in number of units before proceeding.",
+          "warning"
+        );
         return false;
       }
       // Ensure at least one photo is uploaded
       if (photos.length === 0) {
-        alert("Please upload at least one property photo before proceeding.");
+        Swal.fire(
+          "No Photos",
+          "Please upload at least one property photo.",
+          "warning"
+        );
         return false;
+      }
+
+      if (property.numberOfUnit < 0) {
+        Swal.fire(
+          "Invalid Input",
+          "Number of units cannot be negative.",
+          "error"
+        );
+        return false;
+      }
+
+      // Validate that all uploaded files are images
+      const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+
+      for (let photo of photos) {
+        if (!allowedImageTypes.includes(photo.file?.type)) {
+          Swal.fire(
+            "Invalid File Type",
+            "Only image files (e.g. JPEG, PNG, WEBP) are allowed for property photos.",
+            "error"
+          );
+          return false;
+        }
       }
     }
 
@@ -66,7 +113,30 @@ export default function AddNewProperty() {
         !outdoorPhoto ||
         !govID?.file
       ) {
-        alert("Please upload all required documents before proceeding.");
+        Swal.fire(
+          "Missing Documents",
+          "Please upload all required documents.",
+          "warning"
+        );
+        return false;
+      }
+
+      // Validate PDF files (Mayor Permit & Occupancy Permit)
+      const isPDF = (file) => file && file.type === "application/pdf";
+      if (!isPDF(mayorPermit?.file)) {
+        Swal.fire(
+          "Invalid File",
+          "Business/Mayor's Permit must be a PDF file.",
+          "error"
+        );
+        return false;
+      }
+      if (!isPDF(occPermit?.file)) {
+        Swal.fire(
+          "Invalid File",
+          "Occupancy Permit must be a PDF file.",
+          "error"
+        );
         return false;
       }
     }
@@ -101,10 +171,6 @@ export default function AddNewProperty() {
 
   // Upload photos function
   const uploadPhotos = async (propertyID) => {
-    if (!photos.length) {
-      alert("At least one property photo is required.");
-    }
-
     const formData = new FormData();
 
     formData.append("property_id", propertyID); // ✅ Fix: Add property_id to FormData
@@ -147,11 +213,6 @@ export default function AddNewProperty() {
   };
   // Upload Property Requirements
   const uploadPropertyRequirements = async (propertyID) => {
-    if (!occPermit || !mayorPermit || !indoorPhoto || !outdoorPhoto || !govID) {
-      alert("Missing property files for verification.");
-      return;
-    }
-
     const formData = new FormData();
     formData.append("property_id", propertyID);
 
@@ -191,16 +252,24 @@ export default function AddNewProperty() {
       return;
     }
 
-    // Confirmation alert
-    const isConfirmed = window.confirm(
-      "Are you sure you want to submit this property?"
-    );
-    if (!isConfirmed) {
-      return; // Stop submission if the user cancels
-    }
+    const result = await Swal.fire({
+      title: "Confirm Submission",
+      text: "Are you sure you want to submit this property?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, submit it!",
+    });
+
+    if (!result.isConfirmed) return;
 
     if (!user) {
-      alert("User not authenticated. Please log in.");
+      Swal.fire(
+        "Authentication Error",
+        "User not authenticated. Please log in.",
+        "error"
+      );
       return;
     }
 
@@ -223,12 +292,11 @@ export default function AddNewProperty() {
       // Await all uploads in parallel
       await Promise.all([photoUploadPromise, verificationUploadPromise]);
 
-      alert("Property created successfully!");
+      Swal.fire("Success!", "Property created successfully!", "success");
       reset(); // Clear form
       router.push("/pages/landlord/property-listing"); // Redirect after success
     } catch (error) {
-      console.error("Error during property creation:", error);
-      alert("Error: " + error.message);
+      Swal.fire("Error", `Something went wrong: ${error.message}`, "error");
     }
   };
 

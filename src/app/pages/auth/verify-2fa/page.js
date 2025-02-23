@@ -3,6 +3,124 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 
+// export default function Verify2FA() {
+//     const searchParams = useSearchParams();
+//     const user_id = searchParams.get("user_id");
+//     const router = useRouter();
+//
+//     const [otp, setOtp] = useState("");
+//     const [message, setMessage] = useState("");
+//     const [resendMessage, setResendMessage] = useState("");
+//     const [isResending, setIsResending] = useState(false);
+//
+//     useEffect(() => {
+//         //  Prevent accessing this page if no pending 2FA session
+//         // Issue with this is when refresh it redirects back to login.
+//         // if (!sessionStorage.getItem("pending_2fa")) {
+//         //     router.push("/pages/auth/login");
+//         // }
+//
+//         if (!localStorage.getItem("pending_2fa")) {
+//             router.push("/pages/auth/login");
+//         }
+//
+//         // ✅ Prevent forward navigation to OTP page after going back
+//         window.history.pushState(null, null, window.location.href);
+//         window.onpopstate = () => {
+//             sessionStorage.removeItem("pending_2fa");
+//             router.push("/pages/auth/login");
+//         };
+//     }, [router]);
+//
+//     const handleSubmit = async (e) => {
+//         e.preventDefault();
+//
+//         try {
+//             const res = await fetch("/api/auth/verify-2fa-otp", {
+//                 method: "POST",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify({ user_id, otp }),
+//                 credentials: "include",
+//             });
+//
+//             const data = await res.json();
+//
+//             if (res.ok) {
+//                 await Swal.fire("Success", "OTP verified successfully!", "success");
+//                 sessionStorage.removeItem("pending_2fa");
+//
+//                 // ✅ Redirect based on user type
+//                 if (data.user.userType === "tenant") {
+//                     router.push("/pages/tenant/dashboard");
+//                 } else if (data.user.userType === "landlord") {
+//                     router.push("/pages/landlord/dashboard");
+//                 } else {
+//                     setMessage("Invalid user type.");
+//                 }
+//             } else {
+//                 setMessage(data.error || "Invalid OTP.");
+//             }
+//         } catch (error) {
+//             console.error("Error:", error);
+//             setMessage("Something went wrong.");
+//         }
+//     };
+//
+//     const handleResendOTP = async () =>{
+//         setIsResending(true);
+//         setResendMessage("");
+//         try{
+//             const res = await fetch("/api/auth/resend-2fa-otp", {
+//                 method: "POST",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify({ user_id }),
+//                 credentials: "include",
+//             });
+//
+//             const data = await res.json();
+//
+//             if (res.ok) {
+//                 alert("OTP resend successful!", "success");
+//             }else{
+//                 setResendMessage(data.error);
+//             }
+//         }catch (error) {
+//             setResendMessage("Something went wrong while resending OTP.", error);
+//         }
+//     }
+//
+//     return (
+//         <div className="flex items-center justify-center min-h-screen bg-gray-100">
+//             <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
+//                 <h1 className="text-2xl font-bold text-center mb-6">Enter OTP</h1>
+//                 <form className="space-y-4" onSubmit={handleSubmit}>
+//                     <input
+//                         type="text"
+//                         placeholder="Enter OTP"
+//                         className="w-full border p-2 rounded"
+//                         value={otp}
+//                         onChange={(e) => setOtp(e.target.value)}
+//                         required
+//                     />
+//                     <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">
+//                         Verify OTP
+//                     </button>
+//                 </form>
+//                 {message && <p className="mt-4 text-center text-sm text-red-500">{message}</p>}
+//             </div>
+//             <button
+//                 type="button"
+//                 onClick={handleResendOTP}
+//                 className="w-full py-2 bg-gray-600 text-white rounded mt-4"
+//                 disabled={isResending}
+//             >
+//                 {isResending ? "Resending..." : "Resend OTP"}
+//             </button>
+//             {resendMessage && <p className="mt-2 text-center text-sm text-green-500">{resendMessage}</p>}
+//         </div>
+//     );
+// }
+
 export default function Verify2FA() {
     const searchParams = useSearchParams();
     const user_id = searchParams.get("user_id");
@@ -10,17 +128,28 @@ export default function Verify2FA() {
 
     const [otp, setOtp] = useState("");
     const [message, setMessage] = useState("");
+    const [resendMessage, setResendMessage] = useState("");
+    const [isResending, setIsResending] = useState(false);
 
+    // Set the pending flag if user_id exists and it's not already set.
     useEffect(() => {
-        // ✅ Prevent accessing this page if no pending 2FA session
-        if (!sessionStorage.getItem("pending_2fa")) {
-            router.push("/pages/auth/login"); // Redirect to login
+        if (user_id && !localStorage.getItem("pending_2fa")) {
+            localStorage.setItem("pending_2fa", "true");
+            console.log("pending_2fa flag set in localStorage.");
+        }
+    }, [user_id]);
+
+    // Check for the pending flag and setup onpopstate handler.
+    useEffect(() => {
+        if (!localStorage.getItem("pending_2fa")) {
+            console.log("pending_2fa flag missing, redirecting to login.");
+            router.push("/pages/auth/login");
         }
 
-        // ✅ Prevent forward navigation to OTP page after going back
+        // Prevent forward navigation
         window.history.pushState(null, null, window.location.href);
         window.onpopstate = () => {
-            sessionStorage.removeItem("pending_2fa");
+            localStorage.removeItem("pending_2fa");
             router.push("/pages/auth/login");
         };
     }, [router]);
@@ -39,10 +168,10 @@ export default function Verify2FA() {
             const data = await res.json();
 
             if (res.ok) {
-                Swal.fire("Success", "OTP verified successfully!", "success");
-                sessionStorage.removeItem("pending_2fa"); // ✅ Remove after successful login
+                await Swal.fire("Success", "OTP verified successfully!", "success");
+                localStorage.removeItem("pending_2fa"); // Remove flag after successful login
 
-                // ✅ Redirect based on user type
+                // Redirect based on user type
                 if (data.user.userType === "tenant") {
                     router.push("/pages/tenant/dashboard");
                 } else if (data.user.userType === "landlord") {
@@ -59,10 +188,36 @@ export default function Verify2FA() {
         }
     };
 
+    const handleResendOTP = async () => {
+        setIsResending(true);
+        setResendMessage("");
+        try {
+            const res = await fetch("/api/auth/resend-2fa-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id }),
+                credentials: "include",
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                await Swal.fire("Success", "OTP resend successful!", "success");
+            } else {
+                setResendMessage(data.error);
+            }
+        } catch (error) {
+            console.error("Error resending OTP:", error);
+            setResendMessage("Something went wrong while resending OTP.");
+        } finally {
+            setIsResending(false);
+        }
+    };
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
-                <h1 className="text-2xl font-bold text-center mb-6">Enter OTP</h1>
+                <h1 className="text-2xl font-bold text-center mb-6">Enter 2FA OTP</h1>
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     <input
                         type="text"
@@ -77,6 +232,15 @@ export default function Verify2FA() {
                     </button>
                 </form>
                 {message && <p className="mt-4 text-center text-sm text-red-500">{message}</p>}
+                <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    className="w-full py-2 bg-gray-600 text-white rounded mt-4"
+                    disabled={isResending}
+                >
+                    {isResending ? "Resending..." : "Resend OTP"}
+                </button>
+                {resendMessage && <p className="mt-2 text-center text-sm text-green-500">{resendMessage}</p>}
             </div>
         </div>
     );

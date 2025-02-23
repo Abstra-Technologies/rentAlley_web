@@ -57,11 +57,11 @@ export async function middleware(req) {
   }
 }
 
-// Middleware applies only to these routes
 export const config = {
   matcher: [
-    "/pages/tenant/:path*",   // Protect tenant routes
-    "/pages/landlord/:path*", // Protect landlord routes
-    "/pages/system_admin/:path*", // Protect admin routes
+    "/pages/tenant/:path*",
+    "/pages/landlord/:path*",
+    "/pages/system_admin/:path*",
+    "/pages/commons/:path*",
   ],
 };

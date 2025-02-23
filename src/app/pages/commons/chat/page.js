@@ -13,13 +13,30 @@ export default function Chat() {
 
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
+    const [landlordName, setLandlordName] = useState("Landlord");
 
     const chatRoom = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
 
     useEffect(() => {
+        if (!landlord_id) return;
+
+        fetch(`/api/chat/getLandlordName?landlord_id=${landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.landlordName) {
+                    setLandlordName(data.landlordName);
+                } else {
+                    console.error("No landlord name found");
+                }
+            })
+            .catch((error) => console.error(" Fetch error:", error));
+    }, [landlord_id]);
+
+
+    useEffect(() => {
         if (!user || !landlord_id) return;
 
-        const socket = io("http://localhost:4000", { autoConnect: false });
+        const socket = io("http://localhost:4000", { autoConnect: true });
 
         socket.connect();
         socket.emit("joinRoom", { chatRoom });
@@ -44,9 +61,9 @@ export default function Chat() {
 
         const socket = io("http://localhost:4000");
         socket.emit("sendMessage", {
-            sender_id: user.tenant_id || user.landlord_id,  // Use the appropriate ID
+            sender_id: user.tenant_id || user.landlord_id,
             sender_type: user.tenant_id ? "tenant" : "landlord",
-            receiver_id: landlord_id, // Assuming landlord_id is coming from the URL
+            receiver_id: landlord_id,
             receiver_type: "landlord",
             message: newMessage,
             chatRoom,
@@ -58,7 +75,7 @@ export default function Chat() {
     return (
         <div className="flex flex-col h-screen">
             <div className="bg-blue-600 text-white p-4 text-center text-lg font-bold">
-                Chat with Landlord
+                Chat with {landlordName}
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
