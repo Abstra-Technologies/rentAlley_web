@@ -41,13 +41,6 @@ const uploadToS3 = async (file, folder) => {
     return null;
   }
 
-  console.log(
-    "Uploading to S3:",
-    file.filepath,
-    "Original filename:",
-    file.originalFilename
-  );
-
   const fileStream = fs.createReadStream(file.filepath);
   const sanitizedFilename = sanitizeFilename(file.originalFilename);
   const fileName = `${folder}/${Date.now()}_${sanitizedFilename}`;

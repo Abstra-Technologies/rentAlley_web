@@ -1,23 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import useSWR from "swr";
 import usePropertyStore from "../../pages/zustand/propertyStore";
 import axios from "axios";
-import { z } from "zod";
-
-const propertySchema = z.object({
-  propertyName: z.string().min(1, "Property Name is required"),
-  street: z.string().min(1, "Street Address is required"),
-  brgyDistrict: z.string().min(1, "Barangay/District is required"),
-  city: z.string().min(1, "City/Municipality is required"),
-  zipCode: z.string().min(1, "ZIP Code is required"),
-  province: z.string().min(1, "Province is required"),
-});
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 export const StepOne = () => {
   const { property, setProperty } = usePropertyStore();
-  const [errors, setErrors] = useState({});
 
   // Use SWR to fetch property types
   const { data, error } = useSWR("/api/propertyListing/propertyTypes", fetcher);
@@ -31,27 +20,12 @@ export const StepOne = () => {
     }
   }, [data, setProperty, property.propertyType]);
 
-  // Added Form Validations
-  const validateField = (name, value) => {
-    const result = propertySchema.safeParse({ ...property, [name]: value });
-    if (!result.success) {
-      const fieldErrors = result.error.format();
-      setErrors((prev) => ({
-        ...prev,
-        [name]: fieldErrors[name]?._errors?.[0] || "",
-      }));
-    } else {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
   if (error) return <p>Failed to load property types.</p>;
   if (!data) return <p>Loading property types...</p>;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProperty({ ...property, [name]: value });
-    validateField(name, value);
   };
 
   return (
@@ -103,9 +77,6 @@ export const StepOne = () => {
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
-          {errors.propertyName && (
-            <p className="text-red-500 text-sm">{errors.propertyName}</p>
-          )}
         </div>
 
         {/* Address Fields */}
@@ -121,9 +92,6 @@ export const StepOne = () => {
             placeholder="Enter street name"
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
-          {errors.street && (
-            <p className="text-red-500 text-sm">{errors.street}</p>
-          )}
         </div>
 
         {/* Other Address Fields */}
@@ -140,9 +108,6 @@ export const StepOne = () => {
             min={0}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
-          {errors.brgyDistrict && (
-            <p className="text-red-500 text-sm">{errors.brgyDistrict}</p>
-          )}
         </div>
 
         <div>
@@ -157,7 +122,6 @@ export const StepOne = () => {
             placeholder="Enter city"
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
-          {errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
         </div>
 
         <div>
@@ -173,9 +137,6 @@ export const StepOne = () => {
             min={0}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
-          {errors.zipCode && (
-            <p className="text-red-500 text-sm">{errors.zipCode}</p>
-          )}
         </div>
 
         <div>
@@ -190,9 +151,6 @@ export const StepOne = () => {
             onChange={handleChange}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
-          {errors.province && (
-            <p className="text-red-500 text-sm">{errors.province}</p>
-          )}
         </div>
       </form>
     </div>
