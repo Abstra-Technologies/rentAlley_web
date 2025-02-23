@@ -88,9 +88,6 @@ export default async function handler(req, res) {
         .json({ error: "File parsing error", message: err.message }); // Enhanced error message
     }
 
-    console.log("Parsed Fields:", fields);
-    console.log("Parsed Files:", files);
-
     const { property_id, unit_id } = fields;
 
     let connection;

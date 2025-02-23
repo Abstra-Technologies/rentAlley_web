@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       await handleGetRequest(req, res, connection, property_id, unit_id);
     } else if (req.method === "PUT") {
-      await handlePutRequest(req, res, connection);
+      await handlePutRequest(req, res, connection, property_id, unit_id);
     } else if (req.method === "DELETE") {
       await handleDeleteRequest(req, res, connection, property_id, unit_id);
     } else {
@@ -57,11 +57,9 @@ async function handleGetRequest(req, res, connection, unit_id, property_id) {
 }
 
 // Update Lease by property_id or unit_id
-async function handlePutRequest(req, res, connection) {
+async function handlePutRequest(req, res, connection, property_id, unit_id) {
   try {
-    const { property_id, unit_id, start_date, end_date } = req.body;
-
-    console.log("Updating lease with values:", req.body);
+    const { start_date, end_date } = req.body;
 
     if (!start_date || !end_date) {
       return res

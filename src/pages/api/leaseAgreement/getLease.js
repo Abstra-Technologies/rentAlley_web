@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   const { property_id, unit_id } = req.query;
 
   try {
-    let query = `SELECT agreement_url FROM LeaseAgreement`;
+    let query = `SELECT * FROM LeaseAgreement`;
     let params = [];
 
     if (property_id) {
