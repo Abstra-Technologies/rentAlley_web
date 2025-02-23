@@ -64,7 +64,6 @@ export default async function handler(req, res) {
             // }
 
         } else {
-            // Generate user_id (UUID)
             const [userIdResult] = await db.query("SELECT UUID() AS uuid");
             user_id = userIdResult[0].uuid;
             const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;

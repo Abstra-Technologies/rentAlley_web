@@ -1,4 +1,3 @@
-import { serialize } from 'cookie';
 import { db } from "../../lib/db";
 import { encryptData } from "../../crypto/encrypt";
 import axios from 'axios';

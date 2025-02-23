@@ -7,9 +7,9 @@ import useAuthStore from "../../../../pages/zustand/authStore";
 import { useEffect } from "react";
 
 export default function TenantDashboard() {
-  // const { user,loading, error, signOut } = useAuth();
+  const { user,loading, error, signOut } = useAuth();
   // const { user } = useAuthStore();
-    const { user, admin, fetchSession, loading } = useAuthStore();
+  //   const { user, admin, fetchSession, loading } = useAuthStore();
 
     const router = useRouter();
 
