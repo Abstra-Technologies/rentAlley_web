@@ -296,8 +296,7 @@ export default function AddNewProperty() {
       reset(); // Clear form
       router.push("/pages/landlord/property-listing"); // Redirect after success
     } catch (error) {
-      console.error("Error during property creation:", error);
-      alert("Error: " + error.message);
+      Swal.fire("Error", `Something went wrong: ${error.message}`, "error");
     }
   };
 

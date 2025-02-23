@@ -4,6 +4,8 @@ import useAuth from "../../../../../hooks/useSession";
 import Webcam from "react-webcam";
 import { DOCUMENT_TYPES } from "../../../../constant/docTypes";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
+import { FiInfo } from "react-icons/fi";
 
 export default function LandlordDashboard() {
   const router = useRouter();
@@ -21,6 +23,7 @@ export default function LandlordDashboard() {
   const [citizenship, setCitizenship] = useState("");
   const webcamRef = useRef(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     if (user?.userType === "landlord") {
@@ -86,11 +89,10 @@ export default function LandlordDashboard() {
       if (!response.ok) {
         new Error("Upload failed!");
       }
-      alert("Upload successful!");
+      Swal.fire("Success!", "Verification Submitted!", "success");
       router.push("/pages/landlord/dashboard");
     } catch (error) {
-      console.error(error);
-      alert("Something went wrong!");
+      Swal.fire("Error", `Something went wrong: ${error.message}`, "error");
     }
   };
 
@@ -196,11 +198,51 @@ export default function LandlordDashboard() {
         )}
 
         {/* Step 2: Select Document Type */}
+
         {currentStep === 2 && (
           <div>
-            <h2 className="text-xl font-semibold mb-4">
-              Step 2: Select Document Type
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                Step 2: Select Document Type
+              </h2>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-500 text-white p-2 rounded-full text-sm flex items-center"
+              >
+                <FiInfo className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal */}
+            {isModalOpen && (
+              <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
+                <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+                  <h3 className="text-lg font-semibold mb-2">Accepted IDs:</h3>
+                  <ul className="list-disc pl-5 text-gray-700">
+                    <li>Passport</li>
+                    <li>National ID</li>
+                    <li>Driver License</li>
+                    <li>State Identification Cards</li>
+                  </ul>
+                  <h3 className="text-lg font-semibold mt-3 mb-2 text-red-500">
+                    Not Accepted:
+                  </h3>
+                  <ul className="list-disc pl-5 text-gray-700">
+                    <li>Membership Cards</li>
+                    <li>School ID</li>
+                    <li>Any other similar ID</li>
+                  </ul>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="mt-4 w-full bg-gray-500 text-white p-2 rounded"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Document Selection */}
             <select
               value={selectedDocument}
               onChange={handleDocumentChange}
@@ -214,6 +256,8 @@ export default function LandlordDashboard() {
                 </option>
               ))}
             </select>
+
+            {/* Upload or Capture */}
             <div className="mb-4">
               <button
                 onClick={() => setUploadOption("upload")}
