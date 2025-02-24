@@ -7,6 +7,7 @@ import { MdPersonAddDisabled } from "react-icons/md";
 import useAuth from "../../../../../../hooks/useSession";
 import EditModal from "../../../../../components/systemAdmin/editAdmin";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
+import { logEvent } from "../../../../../pages/utils/gtag";
 
 export default function CoAdminDashboard() {
   const [admins, setAdmins] = useState([]);
@@ -83,12 +84,20 @@ export default function CoAdminDashboard() {
     }
   };
 
+  const handleAddCoAdmin = () => {
+    logEvent("page_view", "Navigation", "Add Co-Admin Page", 1); // Track page view in GA
+    router.push("/pages/system_admin/co_admin/create");
+  };
+
   return (
     <div className="flex h-screen">
       <SideNavAdmin/>
       <div className="flex-1 p-6 bg-gray-100">
         <h2 className="text-2xl font-bold text-blue-600 mb-4">Co-Admin Management</h2>
-        <button onClick={() => router.push("/pages/system_admin/co_admin/create")} className="mb-4 bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700">Add Co-Admin</button>
+        <button
+            onClick={handleAddCoAdmin}
+            className="mb-4 bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
+        >Add Co-Admin</button>
         {loading ? (
           <p className="text-center text-gray-500">Loading Co-admins...</p>
         ) : error ? (

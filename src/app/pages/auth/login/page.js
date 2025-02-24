@@ -70,11 +70,13 @@ export default function Login() {
   };
 
   const handleGoogleSignin = async () => {
+    logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1); // ✅ Track Google Sign-In Click
     await router.push(`/api/auth/google-login`);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    logEvent("Login Attempt", "User Interaction", "User Submitted Login Form", 1); // ✅ Track Login Form Submission
 
     try {
       loginSchema.parse(formData);
@@ -90,6 +92,8 @@ export default function Login() {
       console.log("API Response:", data);
 
       if (response.ok) {
+        logEvent("Login Success", "Authentication", "User Successfully Logged In", 1); // ✅ Track Successful Login
+
         if (data.requires_otp) {
           Swal.fire("2FA Required", "OTP sent to your email.", "info");
           return router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
@@ -98,6 +102,8 @@ export default function Login() {
           return await redirectBasedOnUserType();
         }
       } else {
+        logEvent("Login Failed", "Authentication", "User Entered Incorrect Credentials", 1); // ✅ Track Failed Login
+
         setErrorMessage(data.error || "Invalid credentials");
       }
     } catch (error) {
