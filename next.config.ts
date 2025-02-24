@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
       "rentahanbucket.s3.us-east-1.amazonaws.com",
       "lh3.googleusercontent.com",
       "encrypted-tbn0.gstatic.com",
+      "mir-s3-cdn-cf.behance.net",
     ],
     remotePatterns: [
       {
