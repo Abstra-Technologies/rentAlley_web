@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import useAuthStore from "../../../../pages/zustand/authStore";
 import ReceivedMessagesLandlord from "../../../../components/chat/landlordChats";
+import ChatComponent from "../../../../components/chat/chat";
 
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000");
@@ -17,7 +18,7 @@ export default function LandlordChatPage() {
 
             <p>{user?.user_id}</p>
             <h1 className="text-xl font-semibold mb-4">Chat List</h1>
-            <ReceivedMessagesLandlord  userId={userId}/>
+            <ChatComponent userId={userId}/>
         </div>
     );
 }
