@@ -59,7 +59,6 @@ async function handlePostRequest(req, res, connection) {
   const form = new IncomingForm({
     multiples: true, // Allows multiple file uploads
     keepExtensions: true, // Keeps file extensions
-    maxFileSize: 10 * 1024 * 1024, // 5MB limit per file
   });
 
   form.parse(req, async (err, fields, files) => {
@@ -68,15 +67,24 @@ async function handlePostRequest(req, res, connection) {
       return res.status(400).json({ error: "Error parsing form data" });
     }
 
-    // For Debugging
-    console.log("Error from form.parse:", err);
-    console.log("Fields from form.parse:", fields);
-    console.log("Files from form.parse:", files);
+    const { request_id } = fields;
 
-    const { property_id, unit_id } = fields;
-    if (!property_id) {
-      return res.status(400).json({ error: "Missing property_id" });
+    console.log("Fields: ", fields);
+
+    if (!request_id) {
+      return res.status(400).json({ error: "Missing request_id" });
     }
+    // Fetch property_id and unit_id from MaintenanceRequest table
+    const [requestData] = await connection.query(
+      "SELECT property_id, unit_id FROM MaintenanceRequest WHERE request_id = ?",
+      [request_id]
+    );
+
+    if (!requestData.length) {
+      return res.status(404).json({ error: "Maintenance request not found" });
+    }
+
+    const { property_id, unit_id } = requestData[0];
 
     const uploadedFiles = Object.values(files).flat();
 
@@ -111,6 +119,7 @@ async function handlePostRequest(req, res, connection) {
           await s3Client.send(new PutObjectCommand(uploadParams));
 
           return {
+            request_id,
             property_id,
             unit_id,
             photo_url: encryptedUrl, // Store encrypted URL
@@ -126,6 +135,7 @@ async function handlePostRequest(req, res, connection) {
       const uploadedFilesData = await Promise.all(uploadPromises);
 
       const values = uploadedFilesData.map((fileData) => [
+        fileData.request_id,
         fileData.property_id,
         fileData.unit_id,
         fileData.photo_url,
@@ -134,7 +144,7 @@ async function handlePostRequest(req, res, connection) {
       ]);
 
       const [result] = await connection.query(
-        `INSERT INTO MaintenancePhoto (property_id, unit_id, photo_url, created_at, updated_at) VALUES ?`,
+        `INSERT INTO MaintenancePhoto (request_id, property_id, unit_id, photo_url, created_at, updated_at) VALUES ?`,
         [values]
       );
 
