@@ -36,7 +36,7 @@ export default function TenantDashboard() {
           <h1>
               Welcome, {user.firstName} {user.lastName}!
           </h1>
-          <p>Your user type is: {user.userType} | ID: {user.user_id}</p>
+          <p>Your user type is: {user.userType} | ID: {user?.user_id}</p>
           <p>Tenant ID: {user.tenant_id}</p>
 
           {/*<ChatComponent user={user}/>*/}

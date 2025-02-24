@@ -18,7 +18,6 @@ const io = new Server(server, {
     },
 });
 
-// AES Encryption Function
 const encryptMessage = (message) => {
     if (!message || typeof message !== "string") {
         console.error("❌ Encryption Error: Invalid message.");
@@ -42,7 +41,6 @@ const encryptMessage = (message) => {
     return { encrypted, iv: iv.toString("hex") };
 };
 
-// AES Decryption Function
 const decryptMessage = (encryptedMessage, iv) => {
     if (!encryptedMessage || !iv) {
         console.error("❌ Decryption Error: Missing encrypted message or IV.");
@@ -61,11 +59,9 @@ const decryptMessage = (encryptedMessage, iv) => {
     }
 };
 
-// Handle socket connection
 io.on("connection", (socket) => {
     console.log(`✅ New client connected: ${socket.id}`);
 
-    // Join Room and Load Chat History
     socket.on("joinRoom", async ({ chatRoom }) => {
         try {
             if (!chatRoom) {
@@ -76,10 +72,9 @@ io.on("connection", (socket) => {
             socket.join(chatRoom);
             console.log(`👥 User joined room: ${chatRoom}`);
 
-            // Fetch messages
             const [messages] = await pool.query(
                 `SELECT m.*, u.firstName FROM Message m
-                                                  JOIN User u ON m.sender_id = u.user_id
+                 JOIN User u ON m.sender_id = u.user_id
                  WHERE chat_room = ? ORDER BY timestamp ASC`,
                 [chatRoom]
             );
@@ -99,7 +94,6 @@ io.on("connection", (socket) => {
         }
     });
 
-    // Send Message
     socket.on("sendMessage", async ({ sender_id, sender_type, receiver_id, receiver_type, message, chatRoom }) => {
         try {
             console.log(`🔹 Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chatRoom });
@@ -124,10 +118,8 @@ io.on("connection", (socket) => {
 
             console.log(`✅ Resolved user IDs - Sender: ${senderUserId}, Receiver: ${receiverUserId}`);
 
-            // Encrypt the message
             const { encrypted, iv } = encryptMessage(message);
 
-            // Insert into database using user_id instead of tenant_id/landlord_id
             await pool.query(
                 "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
                 [senderUserId, receiverUserId, encrypted, iv, chatRoom]
@@ -135,7 +127,6 @@ io.on("connection", (socket) => {
 
             console.log(`✅ Message saved to DB: ChatRoom - ${chatRoom}`);
 
-            // Emit the decrypted message back to the client
             io.to(chatRoom).emit("receiveMessage", {
                 sender_id: senderUserId,
                 receiver_id: receiverUserId,
@@ -143,18 +134,15 @@ io.on("connection", (socket) => {
                 timestamp: new Date(),
             });
         } catch (error) {
-            console.error("❌ Error sending message:", error);
+            console.error("Error sending message:", error);
         }
     });
 
-
-    // Handle disconnection
     socket.on("disconnect", () => {
-        console.log(`❌ User disconnected: ${socket.id}`);
+        console.log(`User disconnected: ${socket.id}`);
     });
 });
 
-// Start the server
 server.listen(4000, () => {
-    console.log("🚀 Socket.io server running on port 4000");
+    console.log("Socket.io server running on port 4000");
 });
