@@ -40,7 +40,7 @@ export default async function handler(req, res) {
 
             return {
                 chat_room: chat.chat_room,
-                name: `${decryptedFirstName} ${decryptedLastName}`, // Full Name
+                name: `${decryptedFirstName} ${decryptedLastName}`,
                 lastMessage: chat.lastMessage,
                 chatUserId: chat.chatUserId,
             };
