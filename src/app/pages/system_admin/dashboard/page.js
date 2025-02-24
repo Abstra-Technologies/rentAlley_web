@@ -4,10 +4,6 @@ import Link from "next/link";
 import { useRouter} from "next/navigation";
 import {useState} from "react";
 import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
-import { requestFCMPermission, onMessageListener } from "../../../../pages/lib/firebaseConfig";
-import useAuthStore from "../../../../pages/zustand/authStore";
-import SideNavAdmin from "../../../../components/navigation/sidebar-admin";
-
 
 export default function AdminDashboard() {
     const { signOutAdmin, admin,loading, error } = useAuth();
@@ -58,7 +54,7 @@ export default function AdminDashboard() {
     };
 
     return (
-        <SideNavAdmin>
+        // <SideNavAdmin>
         <div>
             <h1>
                 Welcome, {admin?.username}!
@@ -82,6 +78,13 @@ export default function AdminDashboard() {
 
                 <h3>Analytics</h3>
                 <PropertyAnalytics />
+                <div>
+                    <iframe width="600" height="450"
+                            src="https://lookerstudio.google.com/embed/reporting/543161d6-3d3e-44ab-b571-ec3446e99257/page/QogyE"
+                            style={{ width: "100%", height: "600px", border: "none" }} // ✅ Fix applied here
+                            allowFullScreen
+                            sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+                </div>
             </div>
             <div className="flex space-x-4">
 
@@ -94,6 +97,6 @@ export default function AdminDashboard() {
                 </button>
             </div>
         </div>
-        </SideNavAdmin>
+        // </SideNavAdmin>
     );
 }

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { requestFCMPermission } from "../../../../pages/lib/firebaseConfig";
 import Swal from "sweetalert2";
 import useAuthStore from "../../../../pages/zustand/authStore";
+import { logEvent } from "../../../../pages/utils/gtag";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -180,6 +181,9 @@ export default function Login() {
             </p>
             <button
                 type="submit"
+                onClick={() =>
+                    logEvent("Button Click", "User Interaction", "Use Login", 1)
+                }
                 className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
             >
               Login
