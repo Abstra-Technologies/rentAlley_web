@@ -54,10 +54,6 @@ export default async function handler(req, res) {
       } SameSite=Lax`
     );
 
-    if (fcm_token) {
-      await db.query("UPDATE User SET fcm_token = ? WHERE user_id = ?", [fcm_token, user.user_id]);
-    }
-
 
     if(user.is_2fa_enabled){
 

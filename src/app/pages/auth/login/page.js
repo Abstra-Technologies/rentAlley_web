@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { requestFCMPermission } from "../../../../pages/lib/firebaseConfig";
 import Swal from "sweetalert2";
 import useAuthStore from "../../../../pages/zustand/authStore";
 import { logEvent } from "../../../../pages/utils/gtag";
@@ -76,14 +75,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    let fcm_token = null;
-
-    try {
-      fcm_token = await requestFCMPermission();
-    } catch (error) {
-      console.error("FCM Token Error:", error);
-    }
 
     try {
       loginSchema.parse(formData);
