@@ -18,14 +18,15 @@ const MaintenanceRequestPage = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentRequestId, setCurrentRequestId] = useState(null);
-
+  const [fetchingSubscription, setFetchingSubscription] = useState(true);
+  const [subscription, setSubscription] = useState(null);
+  
   useEffect(() => {
     const fetchRequests = async () => {
       try {
         const response = await axios.get(
           `/api/maintenance/getAllMaintenance?landlord_id=${user?.landlord_id}`
         );
-
         console.log(response.data);
         if (response.data.success) {
           setRequests(response.data.data);
@@ -37,6 +38,23 @@ const MaintenanceRequestPage = () => {
 
     fetchRequests();
   }, [user]);
+
+
+  useEffect(() => {
+    if (user?.userType === "landlord") {
+      setFetchingSubscription(true);
+      axios
+          .get(`/api/subscription/getCurrentPlan/${user.landlord_id}`)
+          .then((response) => {
+            setSubscription(response.data);
+          })
+          .catch((err) => {
+            console.error(" Failed to fetch subscription:", err);
+          })
+          .finally(() => setFetchingSubscription(false));
+    }
+  }, [user]);
+
 
   const updateStatus = async (request_id, newStatus, additionalData = {}) => {
     try {

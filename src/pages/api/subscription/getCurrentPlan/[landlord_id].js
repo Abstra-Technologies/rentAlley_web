@@ -1,4 +1,5 @@
 import { db } from "../../../lib/db";
+import {infinite} from "swr/infinite";
 
 
 export default async function getSubscription(req, res) {
@@ -16,11 +17,10 @@ export default async function getSubscription(req, res) {
 
         let subscription = rows[0];
 
-        // modidy this part base on the table.
         const listingLimits = {
-            "Free Plan": { maxProperties: 1, maxUnits: 2 },
-            "Standard Plan": { maxProperties: 5, maxUnits: 10 },
-            "Premium Plan": { maxProperties: 20, maxUnits: 50 },
+            "Free Plan": { maxProperties: 1, maxUnits: 2, maxMaintenanceRequest: 5 },
+            "Standard Plan": { maxProperties: 5, maxUnits: 10, maxMaintenanceRequest: 10, },
+            "Premium Plan": { maxProperties: 20, maxUnits: 50, maxMaintenanceRequest: infinite },
         };
 
         subscription.listingLimits = listingLimits[subscription.plan_name] || listingLimits["Free Plan"];
