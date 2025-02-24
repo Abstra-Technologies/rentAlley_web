@@ -93,9 +93,7 @@ const PropertyListingPage = () => {
 
   const handleTenantRequest = (propertyId, event) => {
     event.stopPropagation();
-    router.push(
-      `/pages/landlord/property-listing/tenant-req?property_id=${propertyId}`
-    );
+    router.push(`/pages/landlord/property-listing/tenant-req/${propertyId}`);
   };
 
   const handleDelete = useCallback(async (propertyId, event) => {

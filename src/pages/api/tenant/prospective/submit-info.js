@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { property_id, tenant_id, unit_id, current_home_address } = req.body;
+    const { property_id, unit_id, tenant_id, current_home_address } = req.body;
 
     if (!property_id || !tenant_id || !current_home_address) {
       return res.status(400).json({ message: "Missing required fields." });
