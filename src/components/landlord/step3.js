@@ -62,10 +62,6 @@ export function StepThree() {
               className="w-full p-2 border rounded"
             />
           </div>
-
-          <p className="text-gray-500 font-bold mb-4">
-            Only fill up fields below if you don't have units.
-          </p>
           {/* Property Description */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">

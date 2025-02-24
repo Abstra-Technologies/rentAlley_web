@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import usePropertyStore from "../../pages/zustand/propertyStore";
 import DropzoneUploader from "../dropzone-uploader";
 import Camera from "../lib/camera";
+import Swal from "sweetalert2";
 
 export function StepFour() {
   // Access the property data and actions from Zustand store
@@ -74,8 +75,10 @@ export function StepFour() {
     if (!file) return true;
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      alert(
-        `File size exceeds ${MAX_FILE_SIZE_MB}MB. Please upload a smaller file.`
+      Swal.fire(
+        "File Size Too Large",
+        `File size exceeds ${MAX_FILE_SIZE_MB}MB. Please upload a smaller file.`,
+        "warning"
       );
       setFile(null); // Clear the file
       return false;
@@ -86,21 +89,18 @@ export function StepFour() {
   const handleMayorPermitChange = (file) => {
     if (validateFile(file?.file, setMayorPermit)) {
       setMayorPermit(file);
-      console.log(file);
     }
   };
 
   const handleOccPermitChange = (file) => {
     if (validateFile(file?.file, setOccPermit)) {
       setOccPermit(file);
-      console.log(file);
     }
   };
 
   const handleGovIDChange = (file) => {
     if (validateFile(file?.file, setGovID)) {
       setGovID(file);
-      console.log(file);
     }
   };
 
@@ -138,7 +138,7 @@ export function StepFour() {
 
         {/* Government ID Upload */}
         <DropzoneUploader
-          label="Government ID (PDF)"
+          label="Government ID"
           file={govID}
           setFile={handleGovIDChange}
           accept="application/pdf"
