@@ -94,7 +94,11 @@ export default function InterestedTenants() {
                 {/* Fix Redirection */}
                 <td
                   className="p-3 cursor-pointer hover:text-blue-500 hover:underline"
-                  onClick={() => router.push(`/tenant/${tenant.id}`)}
+                  onClick={() =>
+                    router.push(
+                      `/pages/landlord/property-listing/view-tenant/${propertyId}`
+                    )
+                  }
                 >
                   {tenant.firstName} {tenant.lastName}
                 </td>
