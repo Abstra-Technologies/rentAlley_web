@@ -18,7 +18,7 @@ export default function LandlordDashboard() {
   const [capturedDocument, setCapturedDocument] = useState(null);
   const [selfie, setSelfie] = useState(null);
   const [fullName, setFullName] = useState("");
-  const [homeAddress, sethomeAddress] = useState("");
+  const [address, setAddress] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [citizenship, setCitizenship] = useState("");
   const webcamRef = useRef(null);
@@ -77,7 +77,7 @@ export default function LandlordDashboard() {
     formData.append("selfie", selfie);
     formData.append("landlord_id", landlordId);
     formData.append("fullName", fullName);
-    formData.append("homeAddress", homeAddress);
+    formData.append("address", address);
     formData.append("dateOfBirth", dateOfBirth);
     formData.append("citizenship", citizenship);
 
@@ -163,8 +163,8 @@ export default function LandlordDashboard() {
               <label className="block text-gray-700">Home Address</label>
               <input
                 type="text"
-                value={homeAddress}
-                onChange={(e) => sethomeAddress(e.target.value)}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
                 placeholder="Please input your home address."
                 required
                 className="w-full p-2 border border-gray-300 rounded"
@@ -374,7 +374,7 @@ export default function LandlordDashboard() {
               <strong>Full Legal Name:</strong> {fullName}
             </p>
             <p className="mb-4">
-              <strong>Home Address:</strong> {homeAddress}
+              <strong>Home Address:</strong> {address}
             </p>
             <p className="mb-4">
               <strong>Date of Birth:</strong> {dateOfBirth}
@@ -429,7 +429,7 @@ export default function LandlordDashboard() {
               disabled={
                 (currentStep === 1 &&
                   (!fullName ||
-                    !homeAddress ||
+                    !address ||
                     !dateOfBirth ||
                     !citizenship)) ||
                 (currentStep === 2 && !selectedDocument) ||

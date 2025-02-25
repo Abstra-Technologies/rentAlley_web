@@ -8,6 +8,7 @@ export default function LandlordDetails() {
     const router = useRouter();
     const params = useParams();
     const landlord_id = params.landlord_id;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const {admin} = useAuth();
     const [landlord, setLandlord] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -48,6 +49,8 @@ export default function LandlordDetails() {
                     landlord_id,
                     status,
                     message: message || null,
+                    document_url: landlord.verification.document_url,
+                    selfie_url: landlord.verification.selfie_url,
                 }),
                 credentials: "include",
             });
