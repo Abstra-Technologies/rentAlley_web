@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
-import useAuthStore from "../../../../pages/zustand/authStore";
+import useAuthStore from "../../../../zustand/authStore";
 import ReceivedMessagesLandlord from "../../../../components/chat/landlordChats";
 import ChatComponent from "../../../../components/chat/chat";
 

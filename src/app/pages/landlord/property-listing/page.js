@@ -2,7 +2,7 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation"; // For navigation
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord"; // Layout
-import usePropertyStore from "../../../../pages/zustand/propertyStore";
+import usePropertyStore from "../../../../zustand/propertyStore";
 import useAuth from "../../../../../hooks/useSession";
 import Image from "next/image";
 import axios from "axios";

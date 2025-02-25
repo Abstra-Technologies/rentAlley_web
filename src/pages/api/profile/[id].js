@@ -1,8 +1,8 @@
 import {
   decryptData,
   encryptData,
-} from "../../crypto/encrypt";
-import { db } from "../../lib/db";
+} from "../../../crypto/encrypt";
+import { db } from "../../../lib/db";
 import multer from "multer";
 import sharp from "sharp";
 import path from "path";

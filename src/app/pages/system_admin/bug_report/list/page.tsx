@@ -4,7 +4,7 @@ import useAuth from "../../../../../../hooks/useSession";
 import useSWR from "swr";
 
 // Fetch function for SWR
-const fetcher = async (url) => {
+const fetcher = async (url: string | URL | Request) => {
     const res = await fetch(url);
     if (!res.ok) throw new Error("Failed to fetch bug reports");
     return res.json();
@@ -19,6 +19,7 @@ export default function BugReports() {
 
     if (error) return <p className="text-red-500 text-center">Failed to load bug reports.</p>;
     if (isLoading) return <p className="text-center text-gray-500">Loading bug reports...</p>;
+
 
     return (
         <div className="p-6">
@@ -62,7 +63,7 @@ export default function BugReports() {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="6">No Bug Reports found.</td>
+                                <td colSpan={6}>No Bug Reports found.</td>
                             </tr>
                         )}
                         </tbody>

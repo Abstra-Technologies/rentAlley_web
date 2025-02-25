@@ -5,8 +5,8 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import fs from "fs";
-import { db } from "../../lib/db";
-import { decryptData, encryptData } from "../../crypto/encrypt";
+import { db } from "../../../lib/db";
+import { decryptData, encryptData } from "../../../crypto/encrypt";
 
 // AWS S3 Configuration
 const s3Client = new S3Client({

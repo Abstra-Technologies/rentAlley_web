@@ -1,4 +1,4 @@
-import { db } from "../../../lib/db";
+import { db } from "../../../../lib/db";
 import { parse } from "cookie";
 import jwt from "jsonwebtoken";
 
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
             return res.status(401).json({ success: false, message: "Invalid Token" });
         }
 
-        const { id } = req.query; // Get annoucement ID from URL
+        const { id } = req.query; // Get annoucement ID
 
         if (!id) {
             return res.status(400).json({ success: false, message: "Co-admin ID is required" });
@@ -36,6 +36,7 @@ export default async function handler(req, res) {
 
         }
     }catch (error) {
+        console.log("Error:", error);
 
     }
 

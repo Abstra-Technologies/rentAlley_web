@@ -1,4 +1,4 @@
-import usePropertyStore from "../../pages/zustand/propertyStore";
+import usePropertyStore from "../../zustand/propertyStore";
 import { FaImage } from "react-icons/fa"; // Import checkmark icon from react-icons
 import { useDropzone } from "react-dropzone";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { requestNotificationPermission } from "../../pages/lib/firebaseMessaging";
+import { requestNotificationPermission } from "../../lib/firebaseMessaging";
 import axios from "axios";
 
 const NotificationToggle = ({ userId }) => {

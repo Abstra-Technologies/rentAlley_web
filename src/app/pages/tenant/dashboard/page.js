@@ -3,7 +3,7 @@ import useAuth from "../../../../../hooks/useSession";
 import ChatComponent from "../../../../components/modules/chat";
 import {useRouter} from "next/navigation";
 import TenantLayout from "../../../../components/navigation/sidebar-tenant";
-import useAuthStore from "../../../../pages/zustand/authStore";
+import useAuthStore from "../../../../zustand/authStore";
 import { useEffect } from "react";
 
 export default function TenantDashboard() {

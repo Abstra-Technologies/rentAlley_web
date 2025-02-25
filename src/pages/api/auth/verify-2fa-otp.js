@@ -1,4 +1,4 @@
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 import { SignJWT } from "jose";
 
 export default async function verify2faOtp(req, res) {

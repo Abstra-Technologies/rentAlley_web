@@ -6,9 +6,9 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import useAuthStore from "../../../../pages/zustand/authStore";
-import { logEvent } from "../../../../pages/utils/gtag";
-import { requestNotificationPermission } from "../../../../pages/lib/firebaseMessaging";
+import useAuthStore from "../../../../zustand/authStore";
+import { logEvent } from "../../../../utils/gtag";
+import { requestNotificationPermission } from "../../../../lib/firebaseMessaging";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -17,10 +17,10 @@ const loginSchema = z.object({
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const router = useRouter();
-  const [message, setMessage] = useState(null);
+  const [message] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
-  const { user, admin, logout } = useAuthStore();
+  const { user, admin } = useAuthStore();
 
   useEffect(() => {
     sessionStorage.removeItem("pending2FA");

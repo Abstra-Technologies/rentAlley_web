@@ -1,5 +1,5 @@
 import { jwtVerify } from "jose";
-import { parse } from "cookie"; // Install using `npm install cookie`
+import { parse } from "cookie";
 
 export async function getUserFromToken(req) {
     // Parse cookies from request headers

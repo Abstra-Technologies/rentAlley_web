@@ -1,9 +1,9 @@
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 import { getCookie } from "cookies-next";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import { jwtVerify } from "jose";
-import { decryptData } from "../../crypto/encrypt";
+import { decryptData } from "../../../crypto/encrypt";
 
 export default async function resendOtp(req, res) {
 
@@ -38,7 +38,7 @@ export default async function resendOtp(req, res) {
             email = await decryptData(JSON.parse(email), process.env.ENCRYPTION_SECRET);
             console.log("🔓 [Resend OTP] Decrypted Email:", email);
         } catch (err) {
-            console.warn("⚠ [Resend OTP] Email is not encrypted or decryption failed, using stored value.");
+            console.warn("⚠ [Resend OTP] Email is not encrypted or decryption failed, using stored value.", err);
         }
 
         const newOtp = crypto.randomInt(100000, 999999).toString();

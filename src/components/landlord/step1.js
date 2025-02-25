@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import useSWR from "swr";
-import usePropertyStore from "../../pages/zustand/propertyStore";
+import usePropertyStore from "../../zustand/propertyStore";
 import axios from "axios";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);

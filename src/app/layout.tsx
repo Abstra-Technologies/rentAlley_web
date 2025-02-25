@@ -1,11 +1,11 @@
 'use client';
-import type { Metadata } from "next";
+// import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "../../src/components/navigation/navbar";
 import { usePathname } from "next/navigation";
 import {useEffect} from "react";
-import {initGA, logPageView} from "@/src/pages/utils/gtag";
+import {initGA, logPageView} from "@/src/utils/gtag";
 import Script from "next/script";
 
 

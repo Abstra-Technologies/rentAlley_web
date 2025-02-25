@@ -11,7 +11,9 @@ export default function ProfilePage() {
     const router = useRouter();
 
     const [profileData, setProfileData] = useState(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedFile, setSelectedFile] = useState(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [uploading, setUploading] = useState(false);
     const [profilePicture, setProfilePicture] = useState("");
     const [editing, setEditing] = useState(false);

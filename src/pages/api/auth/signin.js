@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import { SignJWT } from "jose";
-import { db } from "../../lib/db";
-import {decryptData } from "../../crypto/encrypt";
+import { db } from "../../../lib/db";
+import {decryptData } from "../../../crypto/encrypt";
 import nodeCrypto from "crypto";
 import nodemailer from "nodemailer";
 

@@ -6,7 +6,7 @@ const mysql = require("mysql2/promise");
 const crypto = require("node:crypto");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("dotenv").config({ path: ".env.local" });
-const pool = require("./src/pages/lib/chat-db");
+const pool = require("./src/lib/chat-db");
 
 
 const app = express();

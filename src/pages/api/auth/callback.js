@@ -1,5 +1,5 @@
-import { db } from "../../lib/db";
-import { encryptData } from "../../crypto/encrypt";
+import { db } from "../../../lib/db";
+import { encryptData } from "../../../crypto/encrypt";
 import axios from 'axios';
 import crypto from "crypto";
 import { SignJWT } from "jose";
@@ -7,7 +7,7 @@ import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
     const { code, state } = req.query;
-    const { email, dob, mobileNumber } = req.body || {};
+    const { dob, mobileNumber } = req.body || {};
 
     if (!code || !state) {
         return res.status(400).json({ error: "Code and state are required" });
@@ -94,6 +94,7 @@ export default async function handler(req, res) {
             userId = dbUser.user_id;
         } else {
             // Insert new user
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [result] = await db.execute(
                 `INSERT INTO User (user_id, firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, createdAt, updatedAt, google_id, emailVerified, profilePicture)
                  VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?)`,

@@ -1,8 +1,8 @@
 import { IncomingForm } from "formidable";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
-import { db } from "../../lib/db";
-import { encryptData } from "../../crypto/encrypt";
+import { db } from "../../../lib/db";
+import { encryptData } from "../../../crypto/encrypt";
 
 // AWS S3 Configuration
 const s3Client = new S3Client({

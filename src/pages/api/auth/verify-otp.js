@@ -1,7 +1,7 @@
 import mysql from 'mysql2/promise';
 import {getCookie} from 'cookies-next';
 import {jwtVerify, SignJWT} from 'jose';
-import {decryptData } from "../../crypto/encrypt";
+import {decryptData } from "../../../crypto/encrypt";
 
 const dbConfig = {
     host: process.env.DB_HOST,

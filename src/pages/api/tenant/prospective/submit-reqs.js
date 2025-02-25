@@ -1,7 +1,7 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs/promises";
-import { db } from "../../../lib/db";
-import { encryptData } from "../../../crypto/encrypt";
+import { db } from "../../../../lib/db";
+import { encryptData } from "../../../../crypto/encrypt";
 import { IncomingForm } from "formidable";
 
 export const config = {

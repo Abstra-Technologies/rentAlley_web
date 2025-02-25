@@ -1,5 +1,5 @@
 import AmenitiesSelector from "../amenities-selector";
-import usePropertyStore from "../../pages/zustand/propertyStore";
+import usePropertyStore from "../../zustand/propertyStore";
 
 export function StepTwo() {
   // Access state and actions from Zustand store

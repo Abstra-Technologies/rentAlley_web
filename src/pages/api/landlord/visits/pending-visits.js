@@ -81,8 +81,8 @@
 //     res.status(500).json({ message: "Server error." });
 //   }
 // }
-import { db } from "../../../lib/db";
-import { decryptData } from "../../../crypto/encrypt";
+import { db } from "../../../../lib/db";
+import { decryptData } from "../../../../crypto/encrypt";
 
 export default async function handler(req, res) {
   if (req.method !== "GET")

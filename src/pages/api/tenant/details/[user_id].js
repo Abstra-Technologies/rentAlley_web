@@ -1,5 +1,5 @@
 import mysql from "mysql2/promise";
-import { decryptData } from "../../../crypto/encrypt";
+import { decryptData } from "../../../../crypto/encrypt";
 
 export default async function handler(req, res) {
     if (req.method !== "GET") {

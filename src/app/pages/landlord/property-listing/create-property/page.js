@@ -8,7 +8,7 @@ import { StepTwo } from "../../../../../components/landlord/step2";
 import { StepThree } from "../../../../../components/landlord/step3";
 import { StepFour } from "../../../../../components/landlord/step4";
 import axios from "axios";
-import usePropertyStore from "../../../../../pages/zustand/propertyStore";
+import usePropertyStore from "../../../../../zustand/propertyStore";
 import useAuth from "../../../../../../hooks/useSession";
 import useSWRMutation from "swr/mutation";
 import Swal from "sweetalert2";

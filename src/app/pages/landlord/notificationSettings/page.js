@@ -1,6 +1,6 @@
 'use client'
 import NotificationToggle from "../../../../components/notification/toggle";
-import useAuthStore from "../../../../pages/zustand/authStore";
+import useAuthStore from "../../../../zustand/authStore";
 
 export default function Home() {
     const { user, admin, fetchSession, loading } = useAuthStore();

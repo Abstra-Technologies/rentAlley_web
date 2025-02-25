@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import usePropertyStore from "../../pages/zustand/propertyStore";
+import usePropertyStore from "../../zustand/propertyStore";
 import DropzoneUploader from "../dropzone-uploader";
 import Camera from "../lib/camera";
 import Swal from "sweetalert2";
@@ -111,7 +111,7 @@ export function StepFour() {
       <ol className="text-gray-500 mb-6 list-decimal list-inside">
         <li>Please upload an occupancy permit in PDF format.</li>
         <li>
-          Please upload a business or mayor's permit of the property in PDF
+          Please upload a business or mayor&#39;s permit of the property in PDF
           format.
         </li>
         <li>Please upload a valid government ID in PDF format.</li>

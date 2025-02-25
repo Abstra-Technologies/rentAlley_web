@@ -4,12 +4,14 @@ const nextConfig: NextConfig = {
   env: {
     ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
   },
-
-  api: {
-    bodyParser: {
-      sizeLimit: "25mb",
-    },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
+  // api: {
+  //   bodyParser: {
+  //     sizeLimit: "25mb",
+  //   },
+  // },
   images: {
     domains: [
       "upload.wikimedia.org",

@@ -2,7 +2,7 @@
 
 import io from "socket.io-client";
 import ChatComponent from "../../../../components/chat/chat";
-import useAuthStore from "../../../../pages/zustand/authStore";
+import useAuthStore from "../../../../zustand/authStore";
 
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000");

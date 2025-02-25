@@ -1,5 +1,5 @@
 import mysql from "mysql2/promise";
-import  {db} from "../../lib/db";
+import  {db} from "../../../lib/db";
 
 export default async function getVerificationStatus(req, res) {
     try {

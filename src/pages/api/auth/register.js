@@ -4,8 +4,8 @@ import CryptoJS from "crypto-js";
 import {SignJWT} from "jose";
 import nodemailer from "nodemailer";
 import mysql from 'mysql2/promise';
-import { encryptData } from "../../crypto/encrypt";
-import {logAuditEvent} from "../../utils/auditLogger";
+import { encryptData } from "../../../crypto/encrypt";
+import {logAuditEvent} from "../../../utils/auditLogger";
 
 const dbConfig = {
     host: process.env.DB_HOST,
