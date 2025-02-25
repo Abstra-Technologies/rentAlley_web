@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 const EditUnit = () => {
   const router = useRouter();
@@ -89,26 +90,46 @@ const EditUnit = () => {
 
   // Handle new photo selection
   const handleFileChange = (e) => {
+    e.stopPropagation();
     setNewPhotos(e.target.files);
   };
 
   // Update Unit Details
   const handleUpdateUnit = async (e) => {
-    const viewUnitURL = `/pages/landlord/property-listing/view-unit/${unit.property_id}`;
     e.preventDefault();
-    try {
-      await axios.put(`/api/unitListing/unit?id=${unitId}`, formData);
-      alert("Unit updated successfully");
-      router.push(viewUnitURL); // Redirect after update
-    } catch (error) {
-      console.error("Error updating unit:", error);
-      alert("Failed to update unit");
-    }
+    const viewUnitURL = `/pages/landlord/property-listing/view-unit/${unit.property_id}`;
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to update this unit?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, update it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.put(`/api/unitListing/unit?id=${unitId}`, formData);
+          Swal.fire("Updated!", "Unit updated successfully.", "success").then(
+            () => {
+              router.push(viewUnitURL);
+              router.refresh();
+            }
+          );
+        } catch (error) {
+          console.error("Error updating unit:", error);
+          Swal.fire("Error", "Failed to update unit", "error");
+        }
+      }
+    });
   };
 
   // Upload new photos
   const handleUploadPhotos = async () => {
-    if (newPhotos.length === 0) return alert("No new photos selected");
+    if (newPhotos.length === 0) {
+      return Swal.fire("Warning", "No new photos selected", "warning");
+    }
 
     const formData = new FormData();
     formData.append("unit_id", unitId);
@@ -118,11 +139,14 @@ const EditUnit = () => {
 
     try {
       await axios.post(`/api/unitListing/unitPhoto`, formData);
-      alert("Photos uploaded successfully");
-      router.refresh(); // Reload page to show new photos
+      router.refresh();
+      Swal.fire("Success!", "Photos uploaded successfully.", "success");
+      router.push(
+        `/pages/landlord/property-listing/view-unit/${unit.property_id}`
+      );
     } catch (error) {
       console.error("Error uploading photos:", error);
-      alert("Failed to upload photos");
+      Swal.fire("Error", "Failed to upload photos", "error");
     }
   };
 
@@ -141,13 +165,26 @@ const EditUnit = () => {
 
   // Delete a photo
   const handleDeletePhoto = async (photoId) => {
-    try {
-      await axios.delete(`/api/unitListing/unitPhoto?id=${photoId}`);
-      setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
-    } catch (error) {
-      console.error("Error deleting photo:", error);
-      alert("Failed to delete photo");
-    }
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This photo will be permanently deleted.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`/api/unitListing/unitPhoto?id=${photoId}`);
+          setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
+          Swal.fire("Deleted!", "The photo has been deleted.", "success");
+        } catch (error) {
+          console.error("Error deleting photo:", error);
+          Swal.fire("Error", "Failed to delete photo", "error");
+        }
+      }
+    });
   };
 
   if (!unit) return <p>Loading...</p>;
@@ -452,41 +489,40 @@ const EditUnit = () => {
         >
           Update Unit
         </button>
-
         <hr className="my-6" />
-
-        <h3 className="text-xl font-bold mb-2">Unit Photos</h3>
-        <div className="flex gap-2 flex-wrap">
-          {photos.map((photo) => (
-            <div key={photo.id} className="relative">
-              <img
-                src={photo.photo_url}
-                alt="Unit"
-                className="w-40 h-40 object-cover"
-              />
-              <button
-                onClick={() => handleDeletePhoto(photo.id)}
-                className="absolute top-0 right-0 bg-red-500 text-white p-1"
-              >
-                X
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <input
-          type="file"
-          multiple
-          onChange={handleFileChange}
-          className="border p-2 w-full mt-4"
-        />
-        <button
-          onClick={handleUploadPhotos}
-          className="bg-green-500 text-white p-2 mt-2"
-        >
-          Upload New Photos
-        </button>
       </form>
+
+      <h3 className="text-xl font-bold mt-4 mb-2">Unit Photos</h3>
+      <div className="flex gap-2 flex-wrap">
+        {photos.map((photo) => (
+          <div key={photo.id} className="relative">
+            <img
+              src={photo.photo_url}
+              alt="Unit"
+              className="w-40 h-40 object-cover"
+            />
+            <button
+              onClick={() => handleDeletePhoto(photo.id)}
+              className="absolute top-0 right-0 bg-red-500 text-white p-1"
+            >
+              X
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <input
+        type="file"
+        multiple
+        onChange={handleFileChange}
+        className="border p-2 w-full mt-4"
+      />
+      <button
+        onClick={handleUploadPhotos}
+        className="bg-green-500 text-white p-2 mt-2"
+      >
+        Upload New Photos
+      </button>
     </div>
   );
 };

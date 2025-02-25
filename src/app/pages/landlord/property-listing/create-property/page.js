@@ -252,18 +252,6 @@ export default function AddNewProperty() {
       return;
     }
 
-    const result = await Swal.fire({
-      title: "Confirm Submission",
-      text: "Are you sure you want to submit this property?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, submit it!",
-    });
-
-    if (!result.isConfirmed) return;
-
     if (!user) {
       Swal.fire(
         "Authentication Error",
@@ -279,8 +267,6 @@ export default function AddNewProperty() {
       const createdProperty = await trigger(propertyData); // Send to propListing API
       const propertyID = createdProperty.propertyID;
 
-      console.log("Created Property ID:", propertyID);
-
       // Create promises for photo and verification file uploads (if any)
       const photoUploadPromise =
         photos.length > 0 ? uploadPhotos(propertyID) : Promise.resolve();
@@ -291,10 +277,8 @@ export default function AddNewProperty() {
 
       // Await all uploads in parallel
       await Promise.all([photoUploadPromise, verificationUploadPromise]);
-
-      Swal.fire("Success!", "Property created successfully!", "success");
       reset(); // Clear form
-      router.push("/pages/landlord/property-listing"); // Redirect after success
+      router.push("/pages/landlord/property-listing/review-listing"); // Redirect after success
     } catch (error) {
       Swal.fire("Error", `Something went wrong: ${error.message}`, "error");
     }
@@ -350,7 +334,7 @@ export default function AddNewProperty() {
                     disabled={isMutating}
                     className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50"
                   >
-                    {isMutating ? "Submitting..." : "Submit"}
+                    {isMutating ? "Publishing..." : "Publish"}
                   </button>
                 )}
               </div>

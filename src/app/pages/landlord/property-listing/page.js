@@ -6,6 +6,7 @@ import usePropertyStore from "../../../../pages/zustand/propertyStore";
 import useAuth from "../../../../../hooks/useSession";
 import Image from "next/image";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 // UI TODO: Remove this if finished.
 //  Alert/Warning Message on the limit and verification.
@@ -99,11 +100,18 @@ const PropertyListingPage = () => {
   const handleDelete = useCallback(async (propertyId, event) => {
     event.stopPropagation(); // Prevent card click from triggering
 
-    const isConfirmed = window.confirm(
-      "Are you sure you want to delete this property? This action cannot be undone."
-    );
+    // Show confirmation popup
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to recover this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
 
-    if (!isConfirmed) return;
+    if (!result.isConfirmed) return;
 
     try {
       const response = await fetch(
@@ -114,14 +122,29 @@ const PropertyListingPage = () => {
       );
 
       if (response.ok) {
-        alert("Property deleted successfully.");
-        fetchAllProperties(user.landlord_id);
+        Swal.fire({
+          title: "Deleted!",
+          text: "Property has been deleted.",
+          icon: "success",
+          showConfirmButton: true, // Adds a close button
+          confirmButtonText: "Close",
+        }).then(() => {
+          fetchAllProperties(user.landlord_id); // Refresh the list after closing
+        });
       } else {
-        alert("Failed to delete property.");
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to delete property.",
+          icon: "error",
+        });
       }
     } catch (error) {
       console.error("Error deleting property:", error);
-      alert("An error occurred while deleting the property.");
+      Swal.fire({
+        title: "Error!",
+        text: "An error occurred while deleting the property.",
+        icon: "error",
+      });
     }
   });
 
