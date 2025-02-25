@@ -4,6 +4,7 @@ import usePropertyStore from "../../../../../../zustand/propertyStore";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import AmenitiesSelector from "../../../../../../components/amenities-selector";
+import Swal from "sweetalert2";
 
 const EditProperty = () => {
   const router = useRouter();
@@ -161,46 +162,80 @@ const EditProperty = () => {
   // Submit Form (Update Property)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      // Update Property Details
-      await axios.put(`/api/propertyListing/propListing?id=${id}`, {
-        ...formData,
-        petFriendly: formData.petFriendly ? 1 : 0,
-        bedSpacing: formData.bedSpacing ? 1 : 0,
-      });
-      updateProperty(id, formData);
-      // Upload Photos if Any
-      if (photos.length > 0 && photos.some((photo) => photo instanceof File)) {
-        const formDataPhotos = new FormData();
-        formDataPhotos.append("property_id", id);
-        photos.forEach((photo) => {
-          if (photo instanceof File) {
-            formDataPhotos.append("photos", photo);
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to save these changes?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, save it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setLoading(true);
+        try {
+          await axios.put(`/api/propertyListing/propListing?id=${id}`, {
+            ...formData,
+            petFriendly: formData.petFriendly ? 1 : 0,
+            bedSpacing: formData.bedSpacing ? 1 : 0,
+          });
+          updateProperty(id, formData);
+
+          if (
+            photos.length > 0 &&
+            photos.some((photo) => photo instanceof File)
+          ) {
+            const formDataPhotos = new FormData();
+            formDataPhotos.append("property_id", id);
+            photos.forEach((photo) => {
+              if (photo instanceof File) {
+                formDataPhotos.append("photos", photo);
+              }
+            });
+            await axios.post(
+              "/api/propertyListing/propPhotos",
+              formDataPhotos,
+              {
+                headers: { "Content-Type": "multipart/form-data" },
+              }
+            );
           }
-        });
-        await axios.post("/api/propertyListing/propPhotos", formDataPhotos, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+          Swal.fire("Saved!", "Your property has been updated.", "success");
+          router.push("/pages/landlord/property-listing");
+        } catch (error) {
+          console.error("Error updating property:", error);
+          Swal.fire("Error", "Failed to update property.", "error");
+        } finally {
+          setLoading(false);
+        }
       }
-      alert("Property updated successfully!");
-      router.push("/pages/landlord/property-listing"); // Redirect
-    } catch (error) {
-      console.error("Error updating property:", error);
-      alert("Failed to update property.");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   // Delete Photo
   const handleDeletePhoto = async (photoId) => {
-    try {
-      await axios.delete(`/api/propertyListing/propPhotos?photo_id=${photoId}`);
-      setPhotos(photos.filter((photo) => photo.photo_id !== photoId));
-    } catch (error) {
-      console.error("Error deleting photo:", error);
-    }
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to recover this photo!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(
+            `/api/propertyListing/propPhotos?photo_id=${photoId}`
+          );
+          setPhotos(photos.filter((photo) => photo.photo_id !== photoId));
+          Swal.fire("Deleted!", "Your photo has been deleted.", "success");
+        } catch (error) {
+          console.error("Error deleting photo:", error);
+          Swal.fire("Error", "Failed to delete photo.", "error");
+        }
+      }
+    });
   };
 
   // Cancel Edit
@@ -335,7 +370,7 @@ const EditProperty = () => {
           <input
             type="text"
             name="numberOfUnit"
-            value={formData.numberOfUnit || ""}
+            value={formData.numberOfUnit || 0}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
           />
@@ -534,8 +569,8 @@ const EditProperty = () => {
           <div className="mt-4">
             <p className="text-sm text-gray-600">Existing Photos:</p>
             <div className="grid grid-cols-3 gap-2 mt-2">
-              {photos?.map((photo) => (
-                <div key={photo.photo_id} className="relative">
+              {photos?.map((photo, index) => (
+                <div key={photo.photo_id || index} className="relative">
                   <img
                     src={photo.photo_url}
                     alt="Property"
