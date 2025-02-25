@@ -3,7 +3,7 @@ import React from "react";
 import { useRouter, useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
-import LandlordLayout from "../../../layouts/landlordLayouts";
+import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 

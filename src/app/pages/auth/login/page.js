@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import useAuthStore from "../../../../pages/zustand/authStore";
 import { logEvent } from "../../../../pages/utils/gtag";
+import { requestNotificationPermission } from "../../../../pages/lib/firebaseMessaging";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -70,14 +71,14 @@ export default function Login() {
   };
 
   const handleGoogleSignin = async () => {
-    logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1); // ✅ Track Google Sign-In Click
+    logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1);
     await router.push(`/api/auth/google-login`);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    logEvent("Login Attempt", "User Interaction", "User Submitted Login Form", 1); // ✅ Track Login Form Submission
-
+    logEvent("Login Attempt", "User Interaction", "User Submitted Login Form", 1);
+    const fcm_token = await requestNotificationPermission();
     try {
       loginSchema.parse(formData);
       const response = await fetch("/api/auth/signin", {
@@ -92,17 +93,18 @@ export default function Login() {
       console.log("API Response:", data);
 
       if (response.ok) {
-        logEvent("Login Success", "Authentication", "User Successfully Logged In", 1); // ✅ Track Successful Login
+        logEvent("Login Success", "Authentication", "User Successfully Logged In", 1);
 
         if (data.requires_otp) {
           Swal.fire("2FA Required", "OTP sent to your email.", "info");
           return router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
         } else {
           Swal.fire("Success", "Login successful!", "success");
+
           return await redirectBasedOnUserType();
         }
       } else {
-        logEvent("Login Failed", "Authentication", "User Entered Incorrect Credentials", 1); // ✅ Track Failed Login
+        logEvent("Login Failed", "Authentication", "User Entered Incorrect Credentials", 1);
 
         setErrorMessage(data.error || "Invalid credentials");
       }

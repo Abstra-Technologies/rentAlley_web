@@ -1,7 +1,7 @@
 import { db } from "../../lib/db";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
-import { io } from "../socketio/socket";
+import { sendFCMNotification } from "../../lib/firebaseAdmin";
 
 
 export default async function updateandlordStatus(req, res) {
@@ -34,14 +34,16 @@ export default async function updateandlordStatus(req, res) {
     const [rows] = await db.execute(
         `SELECT lv.status AS verification_status,
                 lv.reviewed_by,
-                l.user_id
+                l.user_id,
+                u.fcm_token
          FROM LandlordVerification lv
                   JOIN Landlord l ON lv.landlord_id = l.landlord_id
+                  JOIN User u ON l.user_id = u.user_id
          WHERE lv.landlord_id = ?`,
         [landlord_id]
     );
 
-    const { user_id } = rows[0];
+    const { user_id, fcm_token } = rows[0];
 
     try {
 
@@ -59,23 +61,17 @@ export default async function updateandlordStatus(req, res) {
         );
 
         const notificationTitle = `Landlord Verification ${status}`;
-        const notificationBody = `Your Landlord Verification has been ${status.toUpperCase()} by the admin. ${
+        const notificationBody = `Your landlord verification has been ${status.toUpperCase()} by the admin. ${
             message ? `Message: ${message}` : ""
         }`;
 
         await db.execute(
-            `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
+            "INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())",
             [user_id, notificationTitle, notificationBody]
         );
 
-        if (io) {
-            io.to(user_id.toString()).emit("notification", {
-                user_id: user_id,
-                title: notificationTitle,
-                body: notificationBody,
-            });
-            console.log(`Notification sent to landlord (user_id: ${user_id})`);
-        }
+        await sendFCMNotification(fcm_token, notificationTitle, notificationBody);
+
 
         return res.status(200).json({ message: `Verification ${status} successfully.` });
     } catch (error) {

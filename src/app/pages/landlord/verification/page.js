@@ -82,7 +82,7 @@ export default function LandlordDashboard() {
     formData.append("citizenship", citizenship);
 
     try {
-      const response = await fetch("/api/landlord/verifyupload", {
+      const response = await fetch("/api/landlord/verifyUpload", {
         method: "POST",
         body: formData,
       });

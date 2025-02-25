@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CiBellOn } from "react-icons/ci";
 import useAuth from "../../../hooks/useSession";
+import axios from "axios";
 
 const Navbar = () => {
     const { user, admin, loading, signOut, signOutAdmin } = useAuth();
@@ -12,16 +13,34 @@ const Navbar = () => {
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
 
-    // Dummy function to fetch notifications - replace with actual implementation
-    useEffect(() => {
-        if (user || admin) {
-            // Example notifications - replace with actual API call
-            setNotifications([
-                { id: 1, title: "New message", body: "You have a new message from your landlord" },
-                { id: 2, title: "Payment reminder", body: "Your renter's due date is today." }
-            ]);
-        }
-    }, [user, admin]);
+    // useEffect(() => {
+    //     if (user || admin) {
+    //         const fetchNotifications = async () => {
+    //             try {
+    //                 const { data } = await axios.get(`/pages/api/notification/fetch`, {
+    //                     params: {
+    //                         user_id: user?.id || null,
+    //                         admin_id: admin?.id || null
+    //                     }
+    //                 });
+    //                 setNotifications(data.notifications);
+    //             } catch (error) {
+    //                 console.error("Error fetching notifications:", error);
+    //             }
+    //         };
+    //
+    //         fetchNotifications();
+    //
+    //         socket.on("notification", (newNotification) => {
+    //             console.log("New real-time notification:", newNotification);
+    //             setNotifications((prevNotifications) => [newNotification, ...prevNotifications]);
+    //         });
+    //
+    //         return () => {
+    //             socket.off("notification"); // Clean up listener
+    //         };
+    //     }
+    // }, [user, admin]);
 
     const toggleMenu = () => setMenuOpen(!menuOpen);
     const toggleDropdown = () => {

@@ -1,7 +1,7 @@
 import mysql from "mysql2/promise";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
-import { io } from "../../api/socketio/socket"; // Import the socket instance
+import { sendFCMNotification } from "../../lib/firebaseAdmin";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -45,10 +45,11 @@ export default async function handler(req, res) {
         });
 
         const [rows] = await connection.execute(
-            `SELECT pv.status, pv.attempts, l.user_id
+            `SELECT pv.status, pv.attempts, l.user_id, u.fcm_token
              FROM PropertyVerification pv
                       JOIN Property p ON pv.property_id = p.property_id
                       JOIN Landlord l ON p.landlord_id = l.landlord_id
+                      JOIN User u ON l.user_id = u.user_id
              WHERE pv.property_id = ?`,
             [property_id]
         );
@@ -58,7 +59,7 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: "Property not found" });
         }
 
-        const { status: currentStatus, attempts, user_id } = rows[0];
+        const { status: currentStatus, attempts, user_id, fcm_token } = rows[0];
 
         if (!user_id) {
             await connection.end();
@@ -90,9 +91,8 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: "Property not found" });
         }
 
-        // ✅ Store notification in database for the landlord (NOT admin)
         const notificationTitle = `Property ${status}`;
-        const notificationBody = `Your property listing has been ${status.toLowerCase()} by the admin. ${
+        const notificationBody = `Your property listing has been ${status.toLowerCase()}. ${
             message ? `Message: ${message}` : ""
         }`;
 
@@ -101,14 +101,9 @@ export default async function handler(req, res) {
             [user_id, notificationTitle, notificationBody]
         );
 
-        if (io) {
-            io.to(user_id.toString()).emit("notification", {
-                user_id: user_id,
-                title: notificationTitle,
-                body: notificationBody,
-            });
-            console.log(`Notification sent to landlord (user_id: ${user_id})`);
-        }
+        // ✅ Send Push Notification via FCM
+        await sendFCMNotification(fcm_token, notificationTitle, notificationBody);
+
 
         await connection.end();
 

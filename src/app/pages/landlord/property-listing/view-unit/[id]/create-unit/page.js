@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import LandlordLayout from "../../../../layouts/landlordLayouts";
+import LandlordLayout from "../../../../../../../components/navigation/sidebar-landlord";
 import { useEffect } from "react";
 import axios from "axios";
 import { useDropzone } from "react-dropzone";
@@ -10,7 +10,7 @@ export default function UnitListingForm() {
   const searchParams = useSearchParams();
   const propertyId = searchParams.get("property_id");
   const [formData, setFormData] = useState({
-    property_id: propertyId || "", // Ensure property_id is included
+    property_id: propertyId ,
     unitName: "",
     description: "",
     floorArea: "",
@@ -22,9 +22,9 @@ export default function UnitListingForm() {
     lateFee: "",
     secDeposit: "",
     advancedPayment: "",
-    hasElectricity: false, // or null
-    hasWater: false, // or null
-    hasAssocdues: false, // or null
+    hasElectricity: false,
+    hasWater: false,
+    hasAssocdues: false,
     furnish: "",
   });
   const [furnishOptions, setFurnishOptions] = useState([]);
@@ -37,11 +37,10 @@ export default function UnitListingForm() {
       try {
         const response = await axios.get("/api/unitListing/furnishOptions");
 
-        const data = response.data; // Access data using response.data for Axios
+        const data = response.data;
         setFurnishOptions(data.furnishOptions);
       } catch (error) {
         console.error("Error fetching furnish options:", error);
-        // Handle error (e.g., display an error message to the user)
       }
     };
 
@@ -49,7 +48,7 @@ export default function UnitListingForm() {
   }, []);
 
   const handleChange = (e) => {
-    const { name, type, checked, value } = e.target; //Destructure value
+    const { name, type, checked, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
@@ -76,7 +75,7 @@ export default function UnitListingForm() {
       const unitData = unitResponse.data;
       const unitId = unitData.unitId; // Get the unitId from the response
 
-      // 2. Upload Photos (POST to unitPhoto.js)
+      // 2. Upload Photos
       if (photos.length > 0) {
         const photoFormData = new FormData();
         photos.forEach((photo) => {
@@ -92,13 +91,11 @@ export default function UnitListingForm() {
         console.log("Photos uploaded:", photoResponse.data);
       }
 
-      // Success!  Redirect or display a success message.
       alert("Unit created successfully!");
       router.push(propURL); // Redirect to the units list
     } catch (error) {
       console.error("Error creating unit:", error);
       alert(`Error creating unit: ${error.message}`);
-      // Handle error (e.g., display an error message to the user)
     } finally {
       setLoading(false);
     }
@@ -106,7 +103,7 @@ export default function UnitListingForm() {
 
   const handleCancel = () => {
     const propURL = `/pages/landlord/property-listing/${propertyId}/view-unit`;
-    router.back(propURL); // Go back to the previous page
+    router.back(propURL);
   };
 
   return (

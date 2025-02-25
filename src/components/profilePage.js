@@ -156,7 +156,12 @@ export default function ProfilePage() {
                                 </a>
                             </li>
                         )}
-
+                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                            <a href={`/pages/${user.userType}/notificationSettings`} className="flex items-center space-x-2 text-gray-700">
+                                <ShieldCheckIcon className="h-5 w-5" />
+                                <span>Notification Settings</span>
+                            </a>
+                        </li>
                         <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
                             <a href="#" className="flex items-center space-x-2 text-gray-700">
                                 <ArrowRightOnRectangleIcon className="h-5 w-5" />

@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
-import axios from "axios";
 import ChatComponent from "../../../../components/chat/chat";
 import useAuthStore from "../../../../pages/zustand/authStore";
 

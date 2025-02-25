@@ -42,6 +42,10 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                         <p><strong>Start Date:</strong> {subscription?.end_date ? new Date(subscription.end_date).toLocaleDateString() : "N/A"}</p>
                         <p><strong>Payment Status:</strong> {subscription?.payment_status}</p>
 
+                        <Link href='/pages/landlord/sub_two/subscription' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
+                           Upgrade Plan
+                        </Link>
+
                         {subscription?.trial_end_date && (
                             <p className="text-green-600 font-semibold">
                                 You are currently on a trial period until {subscription.trial_end_date}.
@@ -50,7 +54,7 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
 
                         {subscription.isSubscriptionExpired ? (
                             <Link href='/pages/landlord/sub_two/upgrade' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
-                                Upgrade Plan
+                                Subscribe to a Plan
                             </Link>
                         ) : null}
                     </div>

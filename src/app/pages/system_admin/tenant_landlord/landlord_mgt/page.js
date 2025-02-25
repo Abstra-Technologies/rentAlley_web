@@ -78,7 +78,7 @@ export default function  LandlordList() {
                                         <td className="px-6 py-4">
                                             <img src={landlordInfo?.profilePicture || "/default-avatar.png"} alt="Profile" className="w-12 h-12 rounded-full object-cover" />
                                         </td>
-                                        <td className="px-6 py-4 text-lg">{landlord.verified ? "✅ Yes" : "❌ No"}</td>
+                                        <td className="px-6 py-4 text-lg">{landlord.is_verified ? "✅ Yes" : "❌ No"}</td>
                                         <td className="px-6 py-4 text-lg">{new Date(landlord.createdAt).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 text-lg text-right">
                       <div className="flex justify-end space-x-4">

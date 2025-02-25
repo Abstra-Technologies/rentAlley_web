@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import CardWarning from "../../../components/devTeam";
-import { requestFCMPermission } from "../../../pages/lib/firebaseConfig";
 
 export default function Login() {
   const [form, setForm] = useState({ login: "", password: "" }); // ✅ Changed "email" to "login"
@@ -49,13 +48,6 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    let fcm_token = null;
-    try {
-      fcm_token = await requestFCMPermission();
-    } catch (error) {
-      console.error("FCM Token Error:", error);
-    }
-
     if (isLocked) {
       await Swal.fire("Too many attempts", "Please try again later.", "error");
       return;
@@ -65,7 +57,7 @@ export default function Login() {
       const res = await fetch("/api/systemadmin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, fcm_token }), // ✅ Sends "login" field instead of just "email"
+        body: JSON.stringify(form),
         credentials: "include",
       });
 
@@ -73,7 +65,7 @@ export default function Login() {
 
       if (res.ok) {
         setMessage("Login successful!");
-        setAttempts(0); // Reset attempts on success
+        setAttempts(0);
         localStorage.removeItem("lockUntil");
         router.push("/pages/system_admin/dashboard");
       } else {
@@ -109,7 +101,7 @@ export default function Login() {
       cancelButtonText: "Close",
     }).then((result) => {
       if (result.isConfirmed) {
-        window.location.href = "mailto:bryan.lim@benilde.edu.ph"; // Replace with actual support email
+        window.location.href = "mailto:bryan.lim@benilde.edu.ph";
       }
     });
   };
@@ -161,7 +153,6 @@ export default function Login() {
               />
             </div>
 
-            {/*button will be disabled based on the attempts made.*/}
             <button
                 type="submit"
                 className={`w-full py-2 px-4 ${

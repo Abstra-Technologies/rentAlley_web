@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import LandlordSubscriptionCurrent from "../../../../../../../components/landlord/Landlordubscription";
+import PropertyListUser from "../../../../../../../components/landlord/PropertyLists";
 
 export default function TenantDetails() {
     const params = useParams();
@@ -40,7 +42,6 @@ export default function TenantDetails() {
         <div style={{ maxWidth: "600px", margin: "20px auto", padding: "20px", border: "1px solid #ddd", borderRadius: "10px" }}>
             <h2>Landlord Details</h2>
 
-            {/* Profile Section */}
             <div style={{ textAlign: "center", marginBottom: "20px" }}>
                 <img
                     src={landlordInfo?.profilePicture || "/default-avatar.png"}
@@ -77,6 +78,9 @@ export default function TenantDetails() {
                 </tr>
                 </tbody>
             </table>
+
+            <LandlordSubscriptionCurrent user_id={user_id} />
+            <PropertyListUser user_id={user_id} />
 
             {/* Activity Logs */}
             <h3 style={{ marginTop: "20px" }}>Activity Logs</h3>
