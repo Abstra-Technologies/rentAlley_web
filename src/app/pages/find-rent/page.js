@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { BiCheckCircle } from "react-icons/bi"; // ✅ Import check icon
+import { BiCheckCircle } from "react-icons/bi";
 
 export default function PropertySearch() {
   const [properties, setProperties] = useState([]);

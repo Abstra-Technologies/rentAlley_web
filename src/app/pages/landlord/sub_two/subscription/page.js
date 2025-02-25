@@ -151,6 +151,7 @@ import { useState, useEffect } from "react";
 import useAuth from "../../../../../../hooks/useSession";
 import { useRouter } from "next/navigation";
 import CardWarning from "../../../../../components/devTeam";
+import {logEvent} from "../../../../../utils/gtag";
 
 const plans = [
     { id: 1, name: "Free Plan", price: 0, trialDays: 0, features: ["1 Property", "2 Property Listings", "5 Maintenance Requests / month", "Up to 3 Prospective Tenants", "Up to 2 Property Billing", "Mobile Access"] },
@@ -188,6 +189,8 @@ export default function SubscriptionPlans() {
 
     const handleSelectPlan = (plan) => {
         setSelectedPlan(plan);
+        logEvent("Plan Selection", "User Interaction", `Selected Plan: ${plan}`, 1);
+
     };
 
     const handleProceed = async () => {
