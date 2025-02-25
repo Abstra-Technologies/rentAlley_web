@@ -54,9 +54,9 @@ export default async function handler(req, res) {
       ? fields.property_id[0]
       : fields.property_id;
 
-    if (!property_id) {
-      return res.status(400).json({ message: "Property ID is required." });
-    }
+    const unit_id = Array.isArray(fields.unit_id)
+      ? fields.unit_id[0]
+      : fields.unit_id;
 
     // Retrieve the file. Ensure the form field name is 'file'
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
@@ -90,8 +90,8 @@ export default async function handler(req, res) {
 
     // Update the ProspectiveTenant table with the encrypted URL
     const [result] = await db.query(
-      "UPDATE ProspectiveTenant SET government_id = ? WHERE property_id = ?",
-      [encryptedS3Url, property_id]
+      "UPDATE ProspectiveTenant SET government_id = ? WHERE property_id = ? OR unit_id = ?",
+      [encryptedS3Url, property_id || null, unit_id || null]
     );
 
     // Check if the update affected any rows

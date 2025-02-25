@@ -37,7 +37,6 @@ export default function InquiryBooking({
   };
 
   // Handle scheduling a visit
-
   const handleScheduleVisit = () => {
     setShowModal(true);
   };
@@ -81,9 +80,13 @@ export default function InquiryBooking({
       if (response.status === 200) {
         Swal.fire("Success", "Visit scheduled successfully!", "success").then(
           () => {
-            router.push(
-              `/pages/tenant/prospective/${property_id}?unit_id=${unit_id}`
-            );
+            if (property_id) {
+              router.push(`/pages/tenant/prospective/${property_id}`);
+            } else if (unit_id) {
+              router.push(`/pages/tenant/prospective/unit/${unit_id}`);
+            } else {
+              router.push(`/pages/find-rent`); // Fallback if neither is present
+            }
           }
         );
       }
