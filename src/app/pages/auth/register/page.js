@@ -8,8 +8,8 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import useRoleStore from "../../../../zustand/store";
 import { useRouter} from "next/navigation";
+import { logEvent } from "../../../../utils/gtag";
 
-// Define the schema for user registration validation
 const registerSchema = z
   .object({
     // First Name validation - must not be empty
@@ -38,15 +38,13 @@ const registerSchema = z
         "Password must contain only letters and numbers"
       ),
 
-    // Confirm Password validation
     confirmPassword: z
       .string()
       .min(6, "Confirm Password must be 6 characters long"),
   })
-  // Check that the password and confirm password match
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match", // Error message if passwords don't match
-    path: ["confirmPassword"], // This error will be shown under the 'confirmPassword' field
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
 export default function Register() {
@@ -68,6 +66,8 @@ export default function Register() {
   });
 
   const handleGoogleSignup = () => {
+    logEvent("Login Attempt", "Google Sign-Up", "User Clicked Google Sign-Up", 1);
+
     router.push(`/api/auth/google?userType=${role}`);
   };
 
@@ -104,11 +104,10 @@ export default function Register() {
 
       const data = await res.json();
 
-      // Check if the registration was successful
       if (res.ok) {
         console.log("Registration Data: ", formData);
-
         setSuccessMessage("Account successfully registered! Redirecting...");
+        logEvent("Register", "Authentication", "Register Successful", 1);
 
         setTimeout(() => {
           router.push("/pages/auth/verify-email");
@@ -120,7 +119,6 @@ export default function Register() {
         setError(data.error || "Registration failed. Please try again.");
       }
     } catch (err) {
-      // Handle any validation errors thrown by Zod
       if (err instanceof z.ZodError) {
         const errorObj = err.errors.reduce((acc, curr) => {
           acc[curr.path[0]] = curr.message;
@@ -142,7 +140,6 @@ export default function Register() {
           Register as {role}
         </h1>
 
-        {/* Success or Error Message */}
         {successMessage && (
           <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
             {successMessage}

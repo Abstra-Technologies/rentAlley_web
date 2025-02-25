@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { HiBadgeCheck } from "react-icons/hi";
-import { FaSearch, FaChevronDown, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
+import {
+  FaSearch,
+  FaChevronDown,
+  FaMapMarkerAlt,
+  FaSpinner,
+} from "react-icons/fa";
 
 export default function PropertySearch() {
   const [properties, setProperties] = useState([]);
@@ -78,7 +83,9 @@ export default function PropertySearch() {
         <h1 className="text-3xl font-bold mb-2 text-gray-800">
           Find Your Perfect Rental
         </h1>
-        <p className="text-gray-600">Browse our selection of premium rental properties</p>
+        <p className="text-gray-600">
+          Browse our selection of premium rental properties
+        </p>
       </div>
 
       {/* Search Section */}
@@ -96,7 +103,7 @@ export default function PropertySearch() {
                 className="w-full py-3 px-2 outline-none"
               />
               {searchQuery && (
-                <button 
+                <button
                   onClick={() => setSearchQuery("")}
                   className="mr-3 text-gray-400 hover:text-gray-600"
                 >
@@ -114,7 +121,11 @@ export default function PropertySearch() {
               aria-expanded={showPriceDropdown}
               aria-haspopup="listbox"
             >
-              <span className={priceRange ? "font-medium text-gray-800" : "text-gray-500"}>
+              <span
+                className={
+                  priceRange ? "font-medium text-gray-800" : "text-gray-500"
+                }
+              >
                 {priceRange || "Select Price Range"}
               </span>
               <FaChevronDown
@@ -125,7 +136,7 @@ export default function PropertySearch() {
             </button>
 
             {showPriceDropdown && (
-              <ul 
+              <ul
                 className="absolute w-full border bg-white rounded-lg shadow-lg mt-1 z-20 py-1 max-h-60 overflow-auto"
                 role="listbox"
               >
@@ -149,7 +160,7 @@ export default function PropertySearch() {
             )}
           </div>
         </div>
-        
+
         {/* Active filters */}
         {(debouncedSearch || priceRange) && (
           <div className="flex gap-2 mt-4 flex-wrap">
@@ -177,25 +188,31 @@ export default function PropertySearch() {
           <div className="flex justify-center mb-4">
             <FaSearch className="text-gray-400 text-5xl" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No properties found</h3>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            No properties found
+          </h3>
           <p className="text-gray-500">
-            Try adjusting your search criteria or price range to find more options.
+            Try adjusting your search criteria or price range to find more
+            options.
           </p>
         </div>
       ) : (
         <>
           {/* Results count */}
           <div className="mb-4 text-gray-600">
-            Found {properties.length} propert{properties.length === 1 ? 'y' : 'ies'}
+            Found {properties.length} propert
+            {properties.length === 1 ? "y" : "ies"}
           </div>
-          
+
           {/* Property Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {properties.map((property) => (
               <div
                 key={property.property_id}
                 className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                onClick={() => router.push(`/pages/find-rent/${property.property_id}`)}
+                onClick={() =>
+                  router.push(`/pages/find-rent/${property.property_id}`)
+                }
               >
                 {/* Property Image */}
                 <div className="relative">
@@ -213,7 +230,7 @@ export default function PropertySearch() {
                       <span className="text-gray-400">No Image Available</span>
                     </div>
                   )}
-                  
+
                   {/* Price Badge */}
                   <div className="absolute bottom-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full font-medium shadow-sm">
                     {property.rent_payment
@@ -228,12 +245,14 @@ export default function PropertySearch() {
                     {property.property_name}
                     <HiBadgeCheck className="text-blue-500" />
                   </h2>
-                  
+
                   <div className="flex items-center text-gray-600 mb-2">
                     <FaMapMarkerAlt className="mr-1 text-gray-400" />
-                    <p>{property.city}, {property.province}</p>
+                    <p>
+                      {property.city}, {property.province}
+                    </p>
                   </div>
-                  
+
                   <button className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors">
                     View Details
                   </button>

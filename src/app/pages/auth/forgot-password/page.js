@@ -5,6 +5,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { logEvent } from "../../../../utils/gtag";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');

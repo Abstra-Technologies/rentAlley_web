@@ -174,6 +174,7 @@ export default function Login() {
               <Link
                   href="./forgot-password"
                   className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
+                  onClick={() => logEvent("Forgot Password Click", "User Interaction", "Clicked Forgot Password", 1)}
               >
                 Forgot Password?
               </Link>
@@ -181,7 +182,7 @@ export default function Login() {
             <button
                 type="submit"
                 onClick={() =>
-                    logEvent("Button Click", "User Interaction", "Use Login", 1)
+                    logEvent("Button Click", "User Interaction", "User Login", 1)
                 }
                 className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
             >
