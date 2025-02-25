@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import useRoleStore from "../../../../zustand/store";
+import { logEvent } from "../../../../utils/gtag";
 
 import { useRouter } from "next/navigation";
 export default function RegisterAs() {
@@ -10,6 +11,8 @@ export default function RegisterAs() {
     const handleSelectRole = (role) => {
         setRole(role);
         router.push("/pages/auth/register");
+        logEvent("Role Selection", "User Interaction", `Selected Role: ${role}`, 1);
+
     };
 
     return (

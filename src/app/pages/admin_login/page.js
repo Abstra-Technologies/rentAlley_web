@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import CardWarning from "../../../components/devTeam";
+import { logEvent } from "../../../utils/gtag";
 
 export default function Login() {
   const [form, setForm] = useState({ login: "", password: "" }); // ✅ Changed "email" to "login"
@@ -49,9 +50,11 @@ export default function Login() {
     e.preventDefault();
 
     if (isLocked) {
+      logEvent("Login Attempt", "Security", "Locked Out - Too Many Attempts", 1);
       await Swal.fire("Too many attempts", "Please try again later.", "error");
       return;
     }
+    logEvent("Login Attempt", "User Interaction", "Admin Attempted Login", 1);
 
     try {
       const res = await fetch("/api/systemadmin/login", {
@@ -64,6 +67,8 @@ export default function Login() {
       const data = await res.json();
 
       if (res.ok) {
+        logEvent("Login Success", "Authentication", "Admin Logged In", 1);
+
         setMessage("Login successful!");
         setAttempts(0);
         localStorage.removeItem("lockUntil");
@@ -72,6 +77,7 @@ export default function Login() {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
         setMessage(data.error || "Invalid credentials.");
+        logEvent("Login Failed", "Authentication", "Admin Login Failed", newAttempts);
 
         if (newAttempts >= 3) {
           const lockDuration = 60000;
@@ -83,6 +89,8 @@ export default function Login() {
 
           setMessage("Too many failed attempts. Please try again later.");
           startUnlockCountdown(lockUntil);
+          logEvent("Account Locked", "Security", "Admin Account Temporarily Locked", 1);
+
         }
       }
     } catch (error) {

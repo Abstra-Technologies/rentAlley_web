@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import useAuth from "../../hooks/useSession";
 import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import axios from "axios";
+import { logEvent } from "../utils/gtag";
 
 export default function ProfilePage() {
     const { user, loading, error } = useAuth();
@@ -18,6 +19,7 @@ export default function ProfilePage() {
     const [profilePicture, setProfilePicture] = useState("");
     const [editing, setEditing] = useState(false);
     const [isVerified, setIsVerified] = useState(null);
+    const [dataLoading, setDataLoading] = useState(true); // 🔥 New state to track API loading
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -27,7 +29,6 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (user) {
-            console.log("🔥 User Data from useAuth:", user); // Debugging log
             setProfileData(user);
             setProfilePicture(user.profilePicture || "https://via.placeholder.com/150");
             setFormData({
@@ -35,6 +36,22 @@ export default function ProfilePage() {
                 lastName: user.lastName || "",
                 phoneNumber: user.phoneNumber || "",
             });
+
+            if (user.userType === "landlord") {
+                axios
+                    .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
+                    .then((response) => {
+                        setIsVerified(response.data.is_verified);
+                    })
+                    .catch((err) => {
+                        console.error("❌ Failed to fetch landlord verification status:", err);
+                    })
+                    .finally(() => {
+                        setDataLoading(false);
+                    });
+            } else {
+                setDataLoading(false);
+            }
         }
     }, [user]);
 
@@ -46,7 +63,7 @@ export default function ProfilePage() {
                     setIsVerified(response.data.is_verified); // Update verification status
                 })
                 .catch((err) => {
-                    console.error("❌ Failed to fetch landlord verification status:", err);
+                    console.error("Failed to fetch landlord verification status:", err);
                 });
         }
     }, [user]);
@@ -74,6 +91,7 @@ export default function ProfilePage() {
             setProfilePicture(response.data.imageUrl);
             setProfileData((prev) => ({ ...prev, profilePicture: response.data.imageUrl }));
             console.log("✅ Image uploaded:", response.data.imageUrl);
+
         } catch (error) {
             console.error("Upload failed:", error);
         }
@@ -81,6 +99,8 @@ export default function ProfilePage() {
     };
 
     const handleUpdateProfile = async () => {
+        logEvent("Profile Update", "User Interaction", "User Updated Profile", 1);
+
         try {
             await axios.post("/api/profile/update", formData, {
                 headers: { "Content-Type": "application/json" },
@@ -89,6 +109,7 @@ export default function ProfilePage() {
             alert("Profile updated successfully!");
             setProfileData((prev) => ({ ...prev, ...formData }));
             setEditing(false);
+
         } catch (error) {
             console.error("Profile update failed:", error);
             alert("Failed to update profile. Try again.");
@@ -96,7 +117,9 @@ export default function ProfilePage() {
     };
 
     const handle2FAToggle = async () => {
-        const newStatus = !user.is_2fa_enabled; // ✅ Use `user.is_2fa_enabled`
+
+        const newStatus = !user.is_2fa_enabled; // Use `user.is_2fa_enabled`
+        logEvent("2FA Enable", "User Interaction", "User Updated 2FA", 1);
 
         try {
             const res = await fetch("/api/auth/toggle-2fa", {
@@ -138,13 +161,20 @@ export default function ProfilePage() {
                 <h2 className="text-2xl font-semibold text-blue-600 mb-6">Menu</h2>
                 <nav>
                     <ul>
-                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                        <li
+                            className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                            onClick={() => logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1)}
+                        >
                             <a href={`/pages/${user.userType}/profile/${user.user_id}`} className="flex items-center space-x-2 text-gray-700">
                                 <UserIcon className="h-5 w-5" />
                                 <span>Profile</span>
                             </a>
                         </li>
-                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+
+                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                            onClick={() => logEvent("Navigation", "User Interaction", "Clicked Security & Privacy Link", 1)}
+
+                        >
                             <a href={`/pages/${user.userType}/securityPrivacy/${user.user_id}`} className="flex items-center space-x-2 text-gray-700">
                                 <ShieldCheckIcon className="h-5 w-5" />
                                 <span>Security & Privacy</span>
@@ -152,19 +182,25 @@ export default function ProfilePage() {
                         </li>
 
                         {user?.userType === "landlord" && (
-                            <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                            <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                                onClick={() => logEvent("Navigation", "User Interaction", "Clicked View Subscription Link", 1)}
+                            >
                                 <a href="/pages/landlord/subsciption_plan" className="flex items-center space-x-2 text-gray-700">
                                     <span>View Subscription</span>
                                 </a>
                             </li>
                         )}
-                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                            onClick={() => logEvent("Navigation", "User Interaction", "Clicked Notification Link", 1)}
+                        >
                             <a href={`/pages/${user.userType}/notificationSettings`} className="flex items-center space-x-2 text-gray-700">
                                 <ShieldCheckIcon className="h-5 w-5" />
                                 <span>Notification Settings</span>
                             </a>
                         </li>
-                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                        <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                            onClick={() => logEvent("Navigation", "User Interaction", "Clicked Logout Link", 1)}
+                        >
                             <a href="#" className="flex items-center space-x-2 text-gray-700">
                                 <ArrowRightOnRectangleIcon className="h-5 w-5" />
                                 <span>Logout</span>
@@ -261,11 +297,23 @@ export default function ProfilePage() {
                     <div className="flex justify-between mt-4">
                         <button className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">Delete Account</button>
                         {editing ? (
-                            <button onClick={handleUpdateProfile} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                            <button
+                                onClick={() => {
+                                    logEvent("Profile Update", "User Interaction", "Clicked Save Changes", 1);
+                                    handleUpdateProfile();
+                                }}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                            >
                                 Save Changes
                             </button>
                         ) : (
-                            <button onClick={() => setEditing(true)} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                            <button
+                                onClick={() => {
+                                    logEvent("Profile Edit", "User Interaction", "Clicked Edit Profile", 1);
+                                    setEditing(true);
+                                }}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                            >
                                 Edit Profile
                             </button>
                         )}
