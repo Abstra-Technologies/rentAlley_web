@@ -20,7 +20,7 @@ const PropertyPhotos = ({ property_id }) => {
                     setPhotos(data.photos || []);
                 }
             } catch (err) {
-                setError("Failed to load property photos.");
+                setError("Failed to load property photos.", err);
             }
             setLoading(false);
         }

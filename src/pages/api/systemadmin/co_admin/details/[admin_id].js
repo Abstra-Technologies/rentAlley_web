@@ -1,4 +1,4 @@
-import { db } from "../../../../lib/db";
+import { db } from "../../../../../lib/db";
 import bcrypt from "bcrypt";
 import {jwtVerify} from "jose";
 import {parse} from "cookie";
@@ -14,9 +14,9 @@ export default async function handler(req, res) {
 
         const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
         const { payload } = await jwtVerify(cookies.token, secretKey);
-        loggedAdminId = payload.admin_id; // The admin performing the action
+        loggedAdminId = payload.admin_id;
     } catch (err) {
-        return res.status(401).json({ success: false, message: "Invalid Token" });
+        console.log("Error:", err);
     }
 
     if (req.method === "GET") {

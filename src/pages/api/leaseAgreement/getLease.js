@@ -1,5 +1,5 @@
-import { db } from "../../lib/db";
-import { decryptData } from "../../crypto/encrypt";
+import { db } from "../../../lib/db";
+import { decryptData } from "../../../crypto/encrypt";
 
 // Encryption Secret
 const encryptionSecret = process.env.ENCRYPTION_SECRET;

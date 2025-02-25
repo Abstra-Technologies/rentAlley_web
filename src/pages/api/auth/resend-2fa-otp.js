@@ -1,7 +1,7 @@
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
-import { decryptData } from "../../crypto/encrypt";
+import { decryptData } from "../../../crypto/encrypt";
 
 // since 2fa is still not under a session.
 export default async function resend2faOtp(req, res) {
@@ -23,6 +23,7 @@ export default async function resend2faOtp(req, res) {
         let email = users[0].email;
         try {
             email = await decryptData(JSON.parse(email), process.env.ENCRYPTION_SECRET);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             console.error("[Resend OTP] Decryption failed for email.");
         }
@@ -31,7 +32,9 @@ export default async function resend2faOtp(req, res) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const nowUTC8 = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const expiresAtUTC8 = new Date(expiresAt.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
         await db.query("SET time_zone = '+08:00'");
 

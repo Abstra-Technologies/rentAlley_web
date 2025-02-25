@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import usePropertyStore from "../../../../../../pages/zustand/propertyStore";
+import usePropertyStore from "../../../../../../zustand/propertyStore";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import AmenitiesSelector from "../../../../../../components/amenities-selector";

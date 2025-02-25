@@ -1,4 +1,4 @@
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 
 async function getLandlordIdFromUserID(user_id, connection) {
   try {

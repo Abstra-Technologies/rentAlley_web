@@ -1,7 +1,7 @@
-import { db } from "../../../lib/db";
+import { db } from "../../../../lib/db";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
-import {logAuditEvent} from "../../../utils/auditLogger";
+import {logAuditEvent} from "../../../../utils/auditLogger";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
             const { payload } = await jwtVerify(cookies.token, secretKey);
             decoded = payload;
         } catch (err) {
-            return res.status(401).json({ success: false, message: "Invalid Token" });
+            console.log("Error:", err);
         }
 
         if (!decoded || !decoded.admin_id) {

@@ -3,14 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuth from "../../hooks/useSession";
-import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { UserIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import axios from "axios";
 
 export default function ProfilePageAdmin() {
     const { admin, loading, error, signOutAdmin } = useAuth();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const router = useRouter();
     const [profileData, setProfileData] = useState(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [selectedFile, setSelectedFile] = useState(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [uploading, setUploading] = useState(false);
     const [profilePicture, setProfilePicture] = useState("");
     const [editing, setEditing] = useState(false);

@@ -1,4 +1,4 @@
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 
 export default async function adminLogOutActLogs(req, res) {
     const { admin_id, action, timestamp } = req.body;

@@ -10,6 +10,7 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
   const [showModal, setShowModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 

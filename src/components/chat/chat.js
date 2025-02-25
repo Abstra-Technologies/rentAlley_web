@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import axios from "axios";
-import useAuthStore from "../../pages/zustand/authStore";
+import useAuthStore from "../../zustand/authStore";
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000");
 
@@ -12,7 +12,7 @@ export default function ChatComponent() {
     const [selectedChat, setSelectedChat] = useState(null);
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState("");
-    const { user, admin, fetchSession, loading } = useAuthStore();
+    const { user } = useAuthStore();
 
     const userId = user?.user_id;
 

@@ -7,7 +7,7 @@ import Navbar from "../../../../components/navigation/navbar";
 import LandlordSubscription from "../../../../components/landlord/subscrription";
 import Link from "next/link";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
-import useAuthStore from "../../../../pages/zustand/authStore";
+import useAuthStore from "../../../../zustand/authStore";
 import LandlordPropertyChart from "../../../../components/analytics/landlordAnalytics";
 
 export default function LandlordDashboard() {

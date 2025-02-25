@@ -151,7 +151,7 @@
 
 import axios from "axios";
 import { SignJWT } from "jose";
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 

@@ -2,7 +2,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import formidable from "formidable";
 import fs from "fs/promises";
 import path from "path";
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 import { jwtVerify } from "jose";
 import { getCookie } from "cookies-next";
 

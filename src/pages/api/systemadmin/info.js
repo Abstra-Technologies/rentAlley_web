@@ -1,6 +1,6 @@
 import { parse } from "cookie";
 import jwt from "jsonwebtoken";
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 
 
 export default async function handler(req, res) {

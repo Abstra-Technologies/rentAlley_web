@@ -1,6 +1,6 @@
 import { jwtVerify } from "jose";
 import mysql from "mysql2/promise";
-import {decryptData} from "../../crypto/encrypt";
+import {decryptData} from "../../../crypto/encrypt";
 
 
 const db = mysql.createPool({

@@ -1,7 +1,7 @@
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 import { getCookie } from "cookies-next";
 import { jwtVerify } from "jose";
-import { encryptData } from "../../crypto/encrypt";
+import { encryptData } from "../../../crypto/encrypt";
 
 export default async function handler(req, res) {
     try {

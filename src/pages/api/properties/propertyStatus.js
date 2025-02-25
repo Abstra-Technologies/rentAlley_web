@@ -1,7 +1,7 @@
 import mysql from "mysql2/promise";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
-import { sendFCMNotification } from "../../lib/firebaseAdmin";
+import { sendFCMNotification } from "../../../lib/firebaseAdmin";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         const { payload } = await jwtVerify(cookies.token, secretKey);
         decoded = payload;
     } catch (err) {
-        return res.status(401).json({ success: false, message: "Invalid Token" });
+        return res.status(401).json({ success: false, message: err });
     }
 
     if (!decoded || !decoded.admin_id) {

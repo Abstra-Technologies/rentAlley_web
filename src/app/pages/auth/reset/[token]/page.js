@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import useForgotPasswordStore from "../../../../../pages/zustand/forgotStore";
+import useForgotPasswordStore from "../../../../../zustand/forgotStore";
 
 const ResetPassword = () => {
   const {

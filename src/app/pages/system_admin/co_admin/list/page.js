@@ -7,7 +7,7 @@ import { MdPersonAddDisabled } from "react-icons/md";
 import useAuth from "../../../../../../hooks/useSession";
 import EditModal from "../../../../../components/systemAdmin/editAdmin";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
-import { logEvent } from "../../../../../pages/utils/gtag";
+import { logEvent } from "../../../../../utils/gtag";
 
 export default function CoAdminDashboard() {
   const [admins, setAdmins] = useState([]);

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import useRoleStore from "../../../../pages/zustand/store";
+import useRoleStore from "../../../../zustand/store";
 
 import { useRouter } from "next/navigation";
 export default function RegisterAs() {

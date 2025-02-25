@@ -7,8 +7,9 @@ import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from "@heroicons
 
 export default function SecurityPage() {
     const { user, loading, error } = useAuth();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const router = useRouter();
-    
+
     const [formData, setFormData] = useState({
         oldPassword: "",
         newPassword: "",

@@ -6,8 +6,8 @@ import GoogleLogo from "../../../../components/google-logo";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { z } from "zod";
-import useRoleStore from "../../../../pages/zustand/store";
-import {router, useRouter} from "next/navigation";
+import useRoleStore from "../../../../zustand/store";
+import { useRouter} from "next/navigation";
 
 // Define the schema for user registration validation
 const registerSchema = z

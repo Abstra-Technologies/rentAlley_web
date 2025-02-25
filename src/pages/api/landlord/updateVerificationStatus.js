@@ -1,7 +1,7 @@
-import { db } from "../../lib/db";
+import { db } from "../../../lib/db";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
-import { sendFCMNotification } from "../../lib/firebaseAdmin";
+import { sendFCMNotification } from "../../../lib/firebaseAdmin";
 
 
 export default async function updateandlordStatus(req, res) {

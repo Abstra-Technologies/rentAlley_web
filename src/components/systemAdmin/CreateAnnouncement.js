@@ -8,7 +8,7 @@
  */
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import useAnnouncementStore from "../../pages/zustand/annoucementAdminStore";
+import useAnnouncementStore from "../../zustand/annoucementAdminStore";
 
 export default function CreateAnnouncement() {
     const router = useRouter();
