@@ -40,12 +40,12 @@ export default function ChatComponent() {
 
         console.log("✅ Joining Room:", selectedChat.chat_room);
 
-        // ✅ Connect to WebSocket server
+        // Connect to WebSocket server
         const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
         socket.emit("joinRoom", { chatRoom: selectedChat.chat_room });
 
-        // ✅ Fetch past messages from API when joining a chat
+        // Fetch past messages from API when joining a chat
         const fetchMessages = async () => {
             try {
                 console.log(`📨 Fetching messages for chat_room: ${selectedChat.chat_room}`);
@@ -58,13 +58,12 @@ export default function ChatComponent() {
         };
         fetchMessages();
 
-        // ✅ Listen for loaded past messages from WebSocket
         const handleLoadMessages = (loadedMessages) => {
             console.log("📥 Received loadMessages event:", loadedMessages);
             setMessages(loadedMessages);
         };
 
-        // ✅ Listen for new messages via WebSocket
+        // Listen for new messages via WebSocket
         const handleReceiveMessage = (newMessage) => {
             console.log("📥 New message received via WebSocket:", newMessage);
             setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -82,14 +81,12 @@ export default function ChatComponent() {
     }, [user, selectedChat]);
 
 
-
-    // ✅ Send a new message
     const sendMessage = () => {
         if (!message.trim() || !selectedChat) return;
 
         const newMessage = {
             sender_id: userId,
-            receiver_id: selectedChat.chatUserId,  // ✅ Ensure correct receiver ID
+            receiver_id: selectedChat.chatUserId,
             message,
             chat_room: selectedChat.chat_room,
         };
@@ -137,9 +134,16 @@ export default function ChatComponent() {
                                 <p className="text-center text-gray-500">No messages yet</p>
                             ) : (
                                 messages.map((msg, index) => (
-                                    <div key={index} className={`flex ${msg.sender_id === userId ? "justify-end" : "justify-start"}`}>
+                                    <div key={index} className={`flex items-end space-x-2 ${msg.sender_id === userId ? "justify-end" : "justify-start"}`}>
+                                        {msg.sender_id !== userId && (
+                                            <img
+                                                src={msg.profilePicture || "/default-avatar.png"}
+                                                alt="User profile"
+                                                className="w-8 h-8 rounded-full"
+                                            />
+                                        )}
                                         <div
-                                            className={`px-4 py-2 max-w-xs text-white  text-xl rounded-lg ${
+                                            className={`px-4 py-2 max-w-xs text-white text-xl rounded-lg ${
                                                 msg.sender_id === userId ? "bg-blue-500" : "bg-gray-700"
                                             }`}
                                         >
@@ -165,6 +169,7 @@ export default function ChatComponent() {
                         Select a chat to start messaging
                     </p>
                 )}
+
             </div>
         </div>
     );

@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
     try {
         const [messages] = await db.query(
-            `SELECT m.*, u.firstName, u.lastName
+            `SELECT m.*, u.firstName, u.lastName, u.profilePicture
              FROM Message m
              JOIN User u ON m.sender_id = u.user_id
              WHERE m.chat_room = ?
