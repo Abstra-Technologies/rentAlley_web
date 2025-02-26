@@ -22,9 +22,15 @@ const BookingAppointment = () => {
       fetchVisits();
     }
   }, [user]);
-
+  
   const fetchVisits = async () => {
     try {
+      if (!user?.landlord_id) {
+        console.error("Landlord ID is not available");
+        setLoading(false);
+        return;
+      }
+      
       const response = await axios.get(`/api/landlord/visits/visit-all?landlord_id=${user.landlord_id}`);
       setVisits(response.data);
       setLoading(false);
@@ -349,13 +355,14 @@ const BookingAppointment = () => {
                             Time: {visit.visit_time}
                           </p>
                           <p className="text-sm mt-1">
-                            Status: <span className={`font-medium
-                              ${visit.status === 'approved' ? 'text-green-600' : 
-                                visit.status === 'pending' ? 'text-yellow-600' : 
-                                'text-red-600'}`}>
-                              {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
-                            </span>
-                          </p>
+                              Status: <span className={`font-medium
+                                ${visit?.status === 'approved' ? 'text-green-600' : 
+                                  visit?.status === 'pending' ? 'text-yellow-600' : 
+                                  visit?.status === 'disapproved' ? 'text-red-600' : 'text-gray-600'}`}
+                              >
+                                {visit?.status ? visit.status.charAt(0).toUpperCase() + visit.status.slice(1) : "Loading..."}
+                              </span>
+                            </p>
                           {visit.disapproval_reason && (
                             <p className="text-sm text-gray-500 mt-1">
                               Reason: {visit.disapproval_reason}
