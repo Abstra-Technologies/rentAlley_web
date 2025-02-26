@@ -1,15 +1,23 @@
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const express = require("express");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { createServer } = require("http");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { Server } = require("socket.io");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const mysql = require("mysql2/promise");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const crypto = require("node:crypto");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("dotenv").config({ path: ".env.local" });
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const pool = require("./src/lib/chat-db");
-
+// const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
+// app.use("/api/chats", chatRoutes);
+
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
@@ -18,6 +26,7 @@ const io = new Server(server, {
     },
 });
 
+//region ENCRYPT AND DECRYPT
 const encryptMessage = (message) => {
     if (!message || typeof message !== "string") {
         console.error("❌ Encryption Error: Invalid message.");
@@ -40,7 +49,6 @@ const encryptMessage = (message) => {
 
     return { encrypted, iv: iv.toString("hex") };
 };
-
 const decryptMessage = (encryptedMessage, iv) => {
     if (!encryptedMessage || !iv) {
         console.error("❌ Decryption Error: Missing encrypted message or IV.");
@@ -58,6 +66,7 @@ const decryptMessage = (encryptedMessage, iv) => {
         return "[Decryption Error]";
     }
 };
+//endregion
 
 io.on("connection", (socket) => {
     console.log(`✅ New client connected: ${socket.id}`);
@@ -65,7 +74,7 @@ io.on("connection", (socket) => {
     socket.on("joinRoom", async ({ chatRoom }) => {
         try {
             if (!chatRoom) {
-                console.error("❌ Invalid chatRoom received.");
+                console.error(`❌ Invalid chatRoom received. ${chatRoom}`);
                 return;
             }
 
