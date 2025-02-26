@@ -16,18 +16,18 @@ export default async function handler(req, res) {
   const { property_id, unit_id } = req.query;
 
   try {
-    let query = `SELECT * FROM LeaseAgreement`;
-    let params = [];
+    let query = `SELECT * FROM LeaseAgreement WHERE property_id = ? OR unit_id = ?`;
+    let params = [property_id || null, unit_id || null];
 
-    if (property_id) {
-      query += ` WHERE property_id = ?`;
-      params.push(property_id);
-    }
+    // if (property_id) {
+    //   query += ` WHERE property_id = ?`;
+    //   params.push(property_id);
+    // }
 
-    if (unit_id) {
-      query += ` WHERE unit_id = ?`;
-      params.push(unit_id);
-    }
+    // if (unit_id) {
+    //   query += ` WHERE unit_id = ?`;
+    //   params.push(unit_id);
+    // }
 
     const [rows] = await connection.execute(query, params);
 
