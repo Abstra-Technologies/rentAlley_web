@@ -199,6 +199,7 @@ const PropertyListingPage = () => {
                     alt={property.property_name}
                     width={400}
                     height={250}
+                    loading="lazy"
                     className="w-full md:w-3/12 md:h-36 rounded-lg object-cover"
                     style={{ objectFit: "cover" }}
                   />

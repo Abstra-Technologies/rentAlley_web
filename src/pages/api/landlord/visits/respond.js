@@ -1,33 +1,55 @@
 import { db } from "../../../../lib/db";
 
 export default async function handler(req, res) {
-  if (req.method !== "PUT")
+  if (req.method !== "PUT") {
     return res.status(405).json({ message: "Method Not Allowed" });
+  }
 
-  const { visit_id, reason, status } = req.body;
+  const { visit_id, status, reason } = req.body;
+
+  // Validate request body
+  if (!visit_id) {
+    return res.status(400).json({ message: "Missing visit_id." });
+  }
 
   if (!["approved", "disapproved"].includes(status)) {
     return res.status(400).json({ message: "Invalid status." });
   }
 
+  if (status === "disapproved" && !reason) {
+    return res.status(400).json({ message: "Disapproval reason is required." });
+  }
+
   try {
-    // Update the PropertyVisit table based on the status
+    // Debugging: Log received data
+    console.log("Updating Visit ID:", visit_id, "Status:", status, "Reason:", reason);
+
+    let result;
+
     if (status === "disapproved") {
-      // Update the visit with both status and reason
-      await db.query(
-        "UPDATE PropertyVisit SET status = ?, disapproval_reason = ? WHERE visit_id = ?",
+      [result] = await db.query(
+        `UPDATE PropertyVisit
+          SET status = ?, disapproval_reason = ?, updated_at = NOW()
+          WHERE visit_id = ?`,
         [status, reason, visit_id]
       );
     } else {
-      // Update the visit with just the status if it's approved
-      await db.query("UPDATE PropertyVisit SET status = ? WHERE visit_id = ?", [
-        status,
-        visit_id,
-      ]);
+      [result] = await db.query(
+        `UPDATE PropertyVisit
+          SET status = ?, disapproval_reason = NULL, updated_at = NOW()
+          WHERE visit_id = ?`,
+        [status, visit_id]
+      );
     }
-    res.status(200).json({ message: `Visit ${status}.` });
+
+    // Check if any rows were affected
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Visit not found or already updated." });
+    }
+
+    res.status(200).json({ message: `Visit ${status} successfully.` });
   } catch (error) {
-    console.error(error);
+    console.error("Database Error:", error);
     res.status(500).json({ message: "Server error." });
   }
 }
