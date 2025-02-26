@@ -17,7 +17,7 @@ export default function SideNavAdmin({ admin }) {
 
   return (
 
-    <div className="w-64 bg-white shadow-lg">
+    <div className="w-64 h-screen bg-white shadow-lg flex flex-col">
       <div className="p-4">
         <div className="flex items-center space-x-2">
           <Home className="w-6 h-6 text-blue-600" />

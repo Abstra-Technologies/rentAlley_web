@@ -5,6 +5,7 @@ import { useRouter} from "next/navigation";
 import {useState} from "react";
 import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
 import LoadingScreen from "../../../../components/loadingScreen";
+import SideNavAdmin from "../../../../components/navigation/sidebar-admin";
 
 export default function AdminDashboard() {
     const { signOutAdmin, admin,loading, error } = useAuth();
@@ -55,49 +56,43 @@ export default function AdminDashboard() {
     };
 
     return (
-        // <SideNavAdmin>
-        <div>
-            <h1>
-                Welcome, {admin?.username}!
-            </h1>
-            <p>Full Name: {admin?.first_name} , {admin?.last_name}</p>
-            <p>Your user type is: {admin?.role} | ID: {admin?.admin_id}</p>
-            <p>Email: {admin?.email}</p>
-            <hr/>
-            <h2 className='m-2'>Side Pan Nav Contents</h2>
-            <p className='m-2'><i>Kindly add these modules links on the sideNav</i></p>
-            <div className='mb-10'>
-                <Link className='m-2' href='./activiyLog'>ActivityLog</Link>
-                <Link className='m-2' href='./co_admin/list'>Add Co-admin</Link>
-                <Link className='m-2' href='./tenant_landlord/tenant_mgt'>Tenant Management</Link>
-                <Link className='m-2' href='./tenant_landlord/landlord_mgt'>Landlord Management</Link>
-                {/*<Link className='m-2' href='./co_admin'>Landlord Verification</Link>*/}
-                <Link className='m-2' href='./propertyManagement/list'>Property Verification</Link>
-                <Link className='m-2' href='./annoucement'>Annoucements</Link>
-                <Link className='m-2' href='./bug_report/list'>Bug Reports</Link>
-                <Link className='m-2' href='./auditLogs'>Audit Logs</Link>
+        <div className="flex h-screen">
+            {/* Sidebar */}
+            <SideNavAdmin admin={admin} />
 
-                <h3>Analytics</h3>
+            {/* Main Content */}
+            <div className="flex-1 p-6 overflow-auto">
+                <h1 className="text-2xl font-bold">Welcome, {admin?.username}!</h1>
+                <p>Full Name: {admin?.first_name}, {admin?.last_name}</p>
+                <p>Your user type is: {admin?.role} | ID: {admin?.admin_id}</p>
+                <p>Email: {admin?.email}</p>
+
+                <hr className="my-4" />
+                {/* Analytics Section */}
+                <h3 className="text-xl font-semibold">Analytics</h3>
                 <PropertyAnalytics />
-                <div>
-                    <iframe width="600" height="450"
-                            src="https://lookerstudio.google.com/embed/reporting/543161d6-3d3e-44ab-b571-ec3446e99257/page/QogyE"
-                            style={{ width: "100%", height: "600px", border: "none" }} // ✅ Fix applied here
-                            allowFullScreen
-                            sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+                <div className="mt-4">
+                    <iframe 
+                        width="100%" 
+                        height="600" 
+                        src="https://lookerstudio.google.com/embed/reporting/543161d6-3d3e-44ab-b571-ec3446e99257/page/QogyE"
+                        style={{ border: "none" }}
+                        allowFullScreen
+                        sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox">
+                    </iframe>
+                </div>
+
+                {/* Delete Account Button */}
+                <div className="mt-6">
+                    <button
+                        onClick={handleDeleteAccount}
+                        className={`bg-gray-700 text-white px-4 py-2 rounded-md ${isDeleting ? "opacity-50 cursor-not-allowed" : "hover:bg-red-600"}`}
+                        disabled={isDeleting}
+                    >
+                        {isDeleting ? "Deleting..." : "Delete Account"}
+                    </button>
                 </div>
             </div>
-            <div className="flex space-x-4">
-
-                <button
-                    onClick={handleDeleteAccount}
-                    className={`bg-gray-700 text-white px-4 py-2 rounded-md ${isDeleting ? "opacity-50 cursor-not-allowed" : "hover:bg-red-600"}`}
-                    disabled={isDeleting}
-                >
-                    {isDeleting ? "Deleting..." : "Delete Account"}
-                </button>
-            </div>
         </div>
-        // </SideNavAdmin>
     );
 }
