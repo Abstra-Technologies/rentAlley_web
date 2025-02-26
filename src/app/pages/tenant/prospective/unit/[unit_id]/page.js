@@ -3,28 +3,28 @@ import React, { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FiUploadCloud } from "react-icons/fi";
 import axios from "axios";
-import useAuth from "../../../../../../hooks/useSession";
+import useAuth from "../../../../../../../hooks/useSession";
 import Swal from "sweetalert2";
 
 const TenantApplicationForm = () => {
-  const { property_id } = useParams();
+  const { unit_id } = useParams();
   const { user } = useAuth();
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
-    property_id: "",
+    unit_id: "",
     address: "", // address still used for display, but will be submitted as part of submit-reqs API
   });
 
   useEffect(() => {
-    if (property_id) {
+    if (unit_id) {
       setFormData((prev) => ({
         ...prev,
-        property_id,
+        unit_id: unit_id || "",
       }));
     }
-  }, [property_id]);
+  }, [unit_id]);
 
   // Ensure user is loaded before accessing properties
   if (!user) {
@@ -71,7 +71,6 @@ const TenantApplicationForm = () => {
     // 1. Submit Tenant Information
     try {
       const infoPayload = {
-        property_id: formData.property_id,
         unit_id: formData.unit_id,
         tenant_id: user.tenant_id,
         current_home_address: formData.address,
@@ -87,8 +86,7 @@ const TenantApplicationForm = () => {
         if (selectedFile) {
           const fileFormData = new FormData();
           fileFormData.append("file", selectedFile);
-          // Append property_id, tenant_id, current_home_address to fileFormData
-          fileFormData.append("property_id", formData.property_id);
+          // Append tenant_id, current_home_address to fileFormData
           fileFormData.append("unit_id", formData.unit_id);
           fileFormData.append("tenant_id", user.tenant_id);
           fileFormData.append("current_home_address", formData.address);

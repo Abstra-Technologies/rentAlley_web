@@ -4,8 +4,14 @@ import { useState } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
+import Swal from "sweetalert2";
 
-export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
+export default function InquiryBooking({
+  tenant_id,
+  property_id,
+  unit_id,
+  rent_payment,
+}) {
   const [view, setView] = useState("inquire");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
@@ -31,7 +37,6 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
   };
 
   // Handle scheduling a visit
-
   const handleScheduleVisit = () => {
     setShowModal(true);
   };
@@ -42,10 +47,10 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
     setShowModal(false);
 
     if (!selectedDate || !selectedTime) {
-      alert("Please select both date and time.");
+      Swal.fire("Error", "Please select both date and time.", "error");
       return;
     } else if (!tenant_id) {
-      alert("Please log in.");
+      Swal.fire("Error", "Please log in.", "error");
       return;
     }
 
@@ -73,8 +78,17 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
       });
 
       if (response.status === 200) {
-        alert("Visit scheduled successfully!");
-        router.push(`/pages/find-rent/${property_id}`);
+        Swal.fire("Success", "Visit scheduled successfully!", "success").then(
+          () => {
+            if (property_id) {
+              router.push(`/pages/tenant/prospective/${property_id}`);
+            } else if (unit_id) {
+              router.push(`/pages/tenant/prospective/unit/${unit_id}`);
+            } else {
+              router.push(`/pages/find-rent`); // Fallback if neither is present
+            }
+          }
+        );
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);
@@ -82,8 +96,6 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
     } finally {
       setLoading(false);
     }
-
-    router.push(`/pages/tenant/prospective/${property_id}`);
   };
 
   // Just schedule the visit without applying as a tenant
@@ -91,10 +103,10 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
     e.preventDefault();
 
     if (!selectedDate || !selectedTime) {
-      alert("Please select both date and time.");
+      Swal.fire("Error", "Please select both date and time.", "error");
       return;
     } else if (!tenant_id) {
-      alert("Please log in.");
+      Swal.fire("Error", "Please log in.", "error");
       return;
     }
 
@@ -123,8 +135,8 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
       });
 
       if (response.status === 200) {
-        alert("Visit scheduled successfully!");
-        router.push(`/pages/find-rent/${property_id}`);
+        Swal.fire("Success", "Visit scheduled successfully!", "success");
+        router.push(`/pages/find-rent`);
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);
@@ -154,8 +166,7 @@ export default function InquiryBooking({ tenant_id, property_id, unit_id }) {
       </button>
 
       <div className="mt-4 text-center">
-        <p className="text-xl font-bold">P10,000 / P108,000</p>
-        <p className="text-gray-600">monthly / yearly</p>
+        <p className="text-xl font-bold">P{rent_payment}</p>
       </div>
 
       {view === "inquire" && (
