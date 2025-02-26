@@ -82,19 +82,23 @@ const usePropertyStore = create((set) => ({
     set({ loading: true, error: null });
 
     try {
-      // Fetch all properties and their photos
+      // Fetch all properties and only the first photo for each property
       const [propertiesRes, photosRes] = await Promise.all([
-        axios.get(`/api/propertyListing/propListing?landlord_id=${landlordId}`), // Fetch all properties
-        axios.get("/api/propertyListing/propPhotos"), // Fetch all property photos
+        axios.get(`/api/propertyListing/propListing?landlord_id=${landlordId}`), // Fetch properties
+        axios.get("/api/propertyListing/propPhotos"), // Fetch first property photos
       ]);
 
-      // Merge photos into properties
-      const propertiesWithPhotos = propertiesRes.data.map((property) => ({
-        ...property,
-        photos: photosRes.data.filter(
-          (photo) => photo.propertyId === property.id
-        ),
-      }));
+      // Ensure each property gets its correct first photo
+      const propertiesWithPhotos = propertiesRes.data.map((property) => {
+        const propertyPhoto = photosRes.data.find(
+          (photo) => photo.property_id === property.property_id
+        );
+
+        return {
+          ...property,
+          photos: propertyPhoto ? [propertyPhoto] : [], // Only assign first photo
+        };
+      });
 
       set({ properties: propertiesWithPhotos, loading: false });
     } catch (err) {
