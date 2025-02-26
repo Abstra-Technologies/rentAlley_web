@@ -6,17 +6,34 @@ import {
     Typography, CircularProgress, Box
 } from "@mui/material";
 import {useEffect, useState} from "react";
+import LoadingScreen from "../../../../../components/loadingScreen";
 
 export default function LandlordVerificationList(){
     const [landlords, setLandlords] = useState([]);
     const router = useRouter();
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/landlord/verifications")
-            .then((res) => res.json())
-            .then((data) => setLandlords(data))
-            .catch((error) => console.error("Error fetching landlords:", error));
+        const fetchLandlords = async () => {
+            try {
+                setLoading(true);
+
+                const response = await fetch("/api/landlord/verifications");
+                const data = await response.json();
+                setLandlords(data);
+            } catch (error) {
+                console.error("Error fetching landlords:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLandlords();
     }, []);
+
+    if(loading){
+        return <LoadingScreen />;
+    }
 
     return (
         <div className="flex">

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import LandlordSubscriptionCurrent from "../../../../../../../components/landlord/Landlordubscription";
 import PropertyListUser from "../../../../../../../components/landlord/PropertyLists";
+import LoadingScreen from "../../../../../../../components/loadingScreen";
 
 export default function TenantDetails() {
     const params = useParams();
@@ -35,7 +36,7 @@ export default function TenantDetails() {
         fetchLandlordDetails();
     }, [user_id]);
 
-    if (loading) return <p>Loading landlord details...</p>;
+    if (loading) return <LoadingScreen />;
     if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
 
     return (

@@ -4,6 +4,7 @@ import useAuth from "../../../../../../hooks/useSession";
 import {useRouter} from "next/navigation";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { Eye, Trash2 } from "lucide-react"
+import LoadingScreen from "../../../../../components/loadingScreen";
 
 export default function  LandlordList() {
     const [landlords, setLandlords] = useState([]);
@@ -32,11 +33,10 @@ export default function  LandlordList() {
         fetchLandlords();
     }, []);
 
-    if (loading) return <p>Loading landlords...</p>;
     if (error) return <p>Error: {error}</p>;
 
     if (loading) {
-        return <p>Loading...</p>;
+        return<LoadingScreen />;
     }
 
     if (!admin) {

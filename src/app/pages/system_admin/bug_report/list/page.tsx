@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import useAuth from "../../../../../../hooks/useSession";
 import useSWR from "swr";
+import LoadingScreen from "@/src/components/loadingScreen";
 
 // Fetch function for SWR
 const fetcher = async (url: string | URL | Request) => {
@@ -18,7 +19,7 @@ export default function BugReports() {
     const { data, error, isLoading } = useSWR("/api/systemadmin/bugReport/list", fetcher, { refreshInterval: 5000 });
 
     if (error) return <p className="text-red-500 text-center">Failed to load bug reports.</p>;
-    if (isLoading) return <p className="text-center text-gray-500">Loading bug reports...</p>;
+    if (isLoading) return <LoadingScreen />;
 
 
     return (

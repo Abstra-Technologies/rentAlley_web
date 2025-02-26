@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import LoadingScreen from "../../../../../components/loadingScreen";
 
 export default function PropertyList() {
     const [properties, setProperties] = useState([]);
@@ -28,7 +29,7 @@ export default function PropertyList() {
         fetchProperties();
     }, []);
 
-    if (loading) return <p className="text-center p-6">Loading properties...</p>;
+    if (loading) return <LoadingScreen />;
     if (error) return <p className="text-center text-red-500">{error}</p>;
 
     return (

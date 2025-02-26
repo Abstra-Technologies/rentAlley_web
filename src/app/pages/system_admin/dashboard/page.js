@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter} from "next/navigation";
 import {useState} from "react";
 import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
+import LoadingScreen from "../../../../components/loadingScreen";
 
 export default function AdminDashboard() {
     const { signOutAdmin, admin,loading, error } = useAuth();
@@ -13,7 +14,7 @@ export default function AdminDashboard() {
 
     const router = useRouter();
     if (loading) {
-        return <p>Loading...</p>;
+        return <LoadingScreen />;
     }
 
     if (!admin) {

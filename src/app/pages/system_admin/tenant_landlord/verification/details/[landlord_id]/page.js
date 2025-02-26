@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import useAuth from "../../../../../../../../hooks/useSession";
+import LoadingScreen from "../../../../../../../components/loadingScreen";
 
 
 export default function LandlordDetails() {
@@ -66,7 +67,7 @@ export default function LandlordDetails() {
         setIsSubmitting(true);
     }
 
-    if (loading) return <p className="text-center">Loading...</p>;
+    if (loading) return  <LoadingScreen />;
     if (!landlord) return <p className="text-center text-red-500">Landlord not found.</p>;
 
     return (

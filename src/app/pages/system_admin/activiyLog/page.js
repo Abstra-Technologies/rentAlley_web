@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import SideNavAdmin from "../../../../components/navigation/sidebar-admin";
 import Link from "next/link";
+import LoadingScreen from "../../../../components/loadingScreen";
 
 export default function ActivityLogs() {
     const [logs, setLogs] = useState([]);
@@ -18,12 +19,11 @@ export default function ActivityLogs() {
 
     useEffect(() => {
         const fetchLogs = async () => {
+            setLoading(true);
             try {
                 const response = await fetch("/api/activityLogs/logs");
                 const data = await response.json();
-
                 if (!response.ok) throw new Error(data.error || "Failed to fetch logs.");
-
                 setLogs(data.logs || []);
             } catch (error) {
                 console.error("Error fetching activity logs:", error);
@@ -40,11 +40,8 @@ export default function ActivityLogs() {
     }
 
     if (loading) {
-        return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-                <CircularProgress />
-            </Box>
-        );
+        return <LoadingScreen />;
+
     }
 
     return (

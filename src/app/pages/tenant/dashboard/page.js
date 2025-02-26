@@ -1,20 +1,31 @@
 "use client";
 import useAuth from "../../../../../hooks/useSession";
-import ChatComponent from "../../../../components/modules/chat";
 import {useRouter} from "next/navigation";
 import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 import useAuthStore from "../../../../zustand/authStore";
-import { useEffect } from "react";
+import {useEffect, useState} from "react";
+import LoadingScreen from "../../../../components/loadingScreen";
 
 export default function TenantDashboard() {
   // const { user,loading, error, signOut } = useAuth();
   // const { user } = useAuthStore();
     const { user, admin, fetchSession, loading } = useAuthStore();
-
+    const [dataLoading, setDataLoading] = useState(true); // ✅ New loading state
     const router = useRouter();
 
     useEffect(() => {
-        fetchSession();
+        const fetchData = async () => {
+            setDataLoading(true);
+            try {
+                await fetchSession();
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
+                setDataLoading(false);
+            }
+        };
+
+        fetchData();
     }, []);
 
     useEffect(() => {
@@ -23,9 +34,10 @@ export default function TenantDashboard() {
         }
     }, [user, admin, loading, router]);
 
-    if (loading) {
-    return <p>Loading...</p>;
-  }
+    if (loading || dataLoading) {
+        return <LoadingScreen />;
+    }
+
   if (!user) {
     return <p>You need to log in to access the dashboard.</p>;
   }

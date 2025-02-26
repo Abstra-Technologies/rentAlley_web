@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import useAuth from "../../../../../../../hooks/useSession";
 import PropertyPhotos from "../../../../../../components/PropertyPhotos"
 

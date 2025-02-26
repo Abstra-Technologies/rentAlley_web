@@ -8,6 +8,7 @@ TODO:
 'use client'
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import LoadingScreen from "../../../../../../../components/loadingScreen";
 
 export default function TenantDetails() {
     const params = useParams();
@@ -27,7 +28,6 @@ export default function TenantDetails() {
                 if (!response.ok) {
                     new Error('Failed to fetch tenant details.');
                 }
-
                 const data = await response.json();
                 setTenantInfo(data);
             } catch (error) {
@@ -40,7 +40,7 @@ export default function TenantDetails() {
         fetchTenantDetails();
     }, [user_id]);
 
-    if (loading) return <p>Loading tenant details...</p>;
+    if (loading) return  <LoadingScreen />;;
     if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
 
     return (

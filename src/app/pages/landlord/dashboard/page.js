@@ -9,25 +9,38 @@ import Link from "next/link";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import useAuthStore from "../../../../zustand/authStore";
 import LandlordPropertyChart from "../../../../components/analytics/landlordAnalytics";
+import LoadingScreen from "../../../../components/loadingScreen";
 
 export default function LandlordDashboard() {
     const { user, admin, fetchSession, loading } = useAuthStore();
-
+    const [dataLoading, setDataLoading] = useState(true); // ✅ New loading state
     const router = useRouter();
 
     useEffect(() => {
-        fetchSession();
+        const fetchData = async () => {
+            setDataLoading(true);
+            try {
+                await fetchSession();
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
+                setDataLoading(false);
+            }
+        };
+
+        fetchData();
     }, []);
 
     useEffect(() => {
         if (!loading && !user && !admin) {
-
+            return <p>Need Login.</p>
         }
     }, [user, admin, loading, router]);
 
-    if (loading) {
-        return <p>Loading...</p>;
+    if (loading || dataLoading) {
+        return <LoadingScreen />;
     }
+
     if (!user) {
         return <p>You need to log in to access the dashboard.</p>;
     }
@@ -40,7 +53,6 @@ export default function LandlordDashboard() {
         <div>
         <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Landlord Dashboard</h1>
-
             <p><strong>Name:</strong> {user?.firstName} {user?.lastName}</p>
             <p><strong>Email:</strong> {user?.email}</p>
             <p><strong>User Type:</strong> {user?.userType}</p>

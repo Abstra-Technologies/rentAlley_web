@@ -8,6 +8,7 @@ import useAuth from "../../../../../../hooks/useSession";
 import EditModal from "../../../../../components/systemAdmin/editAdmin";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { logEvent } from "../../../../../utils/gtag";
+import LoadingScreen from "../../../../../components/loadingScreen";
 
 export default function CoAdminDashboard() {
   const [admins, setAdmins] = useState([]);
@@ -88,6 +89,8 @@ export default function CoAdminDashboard() {
     logEvent("page_view", "Navigation", "Add Co-Admin Page", 1); // Track page view in GA
     router.push("/pages/system_admin/co_admin/create");
   };
+
+  if(loading){ return  <LoadingScreen />}
 
   return (
     <div className="flex h-screen">

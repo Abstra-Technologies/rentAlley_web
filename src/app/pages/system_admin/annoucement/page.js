@@ -6,7 +6,6 @@ import {useRouter} from "next/navigation";
 const AnnoucementPage = () => {
     const router = useRouter();
 
-    // Navigate to Announcements Page
     const handleViewAnnouncements = () => {
         router.push("/pages/system_admin/annoucement/view");
     };
@@ -14,7 +13,7 @@ const AnnoucementPage = () => {
 
     return (
         <div>
-            <h1>Annoucements</h1>
+            <h1>Announcements</h1>
             <CreateAnnouncement/>
 
             <div className="flex gap-4 mb-6">

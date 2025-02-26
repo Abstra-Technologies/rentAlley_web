@@ -4,9 +4,9 @@ import { jwtVerify } from "jose";
 import { sendFCMNotification } from "../../../lib/firebaseAdmin";
 
 export default async function handler(req, res) {
-    if (req.method !== "POST") {
-        return res.status(405).json({ message: "Method Not Allowed" });
-    }
+
+
+//region GET ADMIN ID
 
     const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
     if (!cookies || !cookies.token) {
@@ -28,6 +28,7 @@ export default async function handler(req, res) {
 
     const currentadmin_id = decoded.admin_id;
 
+//endregion
 
     const { property_id, status, message } = req.body;
 
