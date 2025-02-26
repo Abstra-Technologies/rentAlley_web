@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   try {
     const [tenants] = await db.query(
       `SELECT pt.id, pt.status, pt.government_id, pt.current_home_address, pt.created_at, 
-              u.firstName, u.lastName, u.email, u.phoneNumber, u.profilePicture
+              u.firstName, u.lastName, u.email, u.phoneNumber, u.profilePicture, u.birthDate
        FROM ProspectiveTenant pt
        JOIN Tenant t ON pt.tenant_id = t.tenant_id
        JOIN User u ON t.user_id = u.user_id
@@ -29,6 +29,7 @@ export default async function handler(req, res) {
       email: decryptData(JSON.parse(tenant.email), SECRET_KEY),
       phoneNumber: decryptData(JSON.parse(tenant.phoneNumber), SECRET_KEY),
       government_id: decryptData(JSON.parse(tenant.government_id), SECRET_KEY), // Decrypt S3 link
+      birthDate: tenant.birthDate,
     }));
 
     return res.status(200).json(decryptedTenants);

@@ -124,7 +124,9 @@ const ViewUnitPage = () => {
                 <button
                   className="px-3 py-2 text-sm text-white bg-blue-500 rounded-md hover:bg-blue-600"
                   onClick={() =>
-                    alert(`Handle tenant request for unit ${unit.unit_id}`)
+                    router.push(
+                      `/pages/landlord/property-listing/view-unit/tenant-req/${unit.unit_id}`
+                    )
                   }
                 >
                   Tenant Request
