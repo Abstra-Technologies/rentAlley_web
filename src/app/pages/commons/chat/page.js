@@ -114,7 +114,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { io } from "socket.io-client";
 import useAuth from "../../../../../hooks/useSession";
 
-// ✅ Wrap `useSearchParams()` inside a Suspense-wrapped component
 const SearchParamsWrapper = ({ setLandlordId }) => {
     const searchParams = useSearchParams();
     const landlord_id = searchParams.get("landlord_id");

@@ -66,14 +66,14 @@ export default function CoAdminDashboard() {
 
   const handleStatusChange = async (admin_id, newStatus) => {
     try {
-      const res = await fetch(`/api/systemadmin/co_admin/status/${admin_id}`, {
+      const res = await fetch(`/api/systemadmin/co_admin/${admin_id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
         credentials: "include"
       });
       
-      if (!res.ok) throw new Error("Failed to update co-admin status");
+      if (!res.ok) new Error("Failed to update co-admin status");
       
       setAdmins(prev => prev.map(admin => 
         admin.admin_id === admin_id ? {...admin, status: newStatus} : admin
