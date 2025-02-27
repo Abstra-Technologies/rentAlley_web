@@ -7,6 +7,9 @@ import {
   AiOutlineCheck,
   AiOutlineClose,
 } from "react-icons/ai";
+import Swal from "sweetalert2";
+import LoadingScreen from "../../components/loadingScreen";
+import Image from "next/image";
 
 export default function InterestedTenants({ unitId = null }) {
   const { propertyId } = useParams();
@@ -56,15 +59,23 @@ export default function InterestedTenants({ unitId = null }) {
         )
       );
 
-      alert(`Tenant ${status} successfully!`);
+      Swal.fire({
+        title: "Success!",
+        text: `Tenant has been ${status} successfully!`,
+        icon: "success",
+      });
       setReason("");
       setSelectedTenantId(null);
     } catch (error) {
-      alert("Error updating status.");
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to update tenant status.",
+        icon: "error",
+      });
     }
   };
 
-  if (loading) return <p>Loading tenants...</p>;
+  if (loading) return <LoadingScreen />;
   if (error) return <p>{error}</p>;
 
   return (
@@ -77,7 +88,7 @@ export default function InterestedTenants({ unitId = null }) {
         <AiOutlineArrowLeft className="text-xl" />
         <span>Back</span>
       </button>
-      <h2 className="text-2xl font-bold mb-4">Interested Tenants</h2>
+      <h2 className="text-2xl font-bold mb-4">Prospective Tenants</h2>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-300 shadow-md rounded-lg">
           <thead>
@@ -94,13 +105,15 @@ export default function InterestedTenants({ unitId = null }) {
           <tbody>
             {tenants.map((tenant) => (
               <tr
-                key={tenant.id}
+                key={tenant?.id}
                 className="border-b hover:bg-gray-100 cursor-pointer"
               >
                 <td className="p-3">
-                  <img
-                    src={tenant.profilePicture}
-                    alt="Profile"
+                  <Image
+                    src={tenant?.profilePicture}
+                    alt="Tenant Profile Picture"
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full border"
                   />
                 </td>
@@ -118,20 +131,20 @@ export default function InterestedTenants({ unitId = null }) {
                     }
                   }}
                 >
-                  {tenant.firstName} {tenant.lastName}
+                  {tenant?.firstName} {tenant?.lastName}
                 </td>
-                <td className="p-3">{tenant.email}</td>
-                <td className="p-3">{tenant.phoneNumber}</td>
-                <td className="p-3">{tenant.current_home_address}</td>
+                <td className="p-3">{tenant?.email}</td>
+                <td className="p-3">{tenant?.phoneNumber}</td>
+                <td className="p-3">{tenant?.current_home_address}</td>
                 <td className="p-3 font-semibold text-gray-700 capitalize">
-                  {tenant.status}
+                  {tenant?.status}
                 </td>
                 <td className="p-4 flex gap-2">
                   <button
                     className="flex items-center gap-2 bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600"
                     onClick={(e) => {
                       e.stopPropagation();
-                      updateTenantStatus(tenant.id, "approved");
+                      updateTenantStatus(tenant?.id, "approved");
                     }}
                   >
                     <AiOutlineCheck />
@@ -140,7 +153,7 @@ export default function InterestedTenants({ unitId = null }) {
                     className="flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedTenantId(tenant.id);
+                      setSelectedTenantId(tenant?.id);
                     }}
                   >
                     <AiOutlineClose />
