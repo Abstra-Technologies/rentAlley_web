@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import usePropertyStore from "../../../../../../zustand/propertyStore";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import AmenitiesSelector from "../../../../../../components/amenities-selector";
 import Swal from "sweetalert2";
+import { AiOutlineArrowLeft } from "react-icons/ai";
 
 const EditProperty = () => {
   const router = useRouter();
@@ -155,8 +157,15 @@ const EditProperty = () => {
   };
   // Handle File Upload
   const handleFileChange = (e) => {
-    const uploadedFiles = Array.from(e.target.files);
-    setPhotos((prevPhotos) => [...prevPhotos, ...uploadedFiles]);
+    const files = e.target.files;
+    if (!files.length) return;
+
+    const newPhotos = Array.from(files).map((file) => ({
+      photo_id: file.name, // Temp ID
+      photo_url: URL.createObjectURL(file), // ✅ Create a temporary preview
+    }));
+
+    setPhotos((prev) => [...prev, ...newPhotos]);
   };
 
   // Submit Form (Update Property)
@@ -244,19 +253,32 @@ const EditProperty = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
-      <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+    <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10 relative">
+      {/* Back Icon Button */}
+      <button
+        onClick={() => router.back()}
+        className="absolute top-2 left-2 flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+      >
+        <AiOutlineArrowLeft size={30} />
+        <span className="text-sm font-medium">Back</span>
+      </button>
+
+      <h2 className="text-2xl font-semibold text-gray-700 mb-4 text-center">
         Edit Property
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Property Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="propertyName"
+            className="block text-sm font-medium text-gray-700"
+          >
             Property Name
           </label>
           <input
             type="text"
+            id="propertyName"
             name="propertyName"
             value={formData.propertyName || ""}
             onChange={handleChange}
@@ -266,12 +288,16 @@ const EditProperty = () => {
 
         {/* Street Address */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="street"
+            className="block text-sm font-medium text-gray-700"
+          >
             Street Address
           </label>
           <input
             type="text"
             name="street"
+            id="street"
             value={formData.street || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -280,12 +306,16 @@ const EditProperty = () => {
 
         {/* Barangay / District */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="brgyDistrict"
+            className="block text-sm font-medium text-gray-700"
+          >
             Barangay / District
           </label>
           <input
             type="number"
             name="brgyDistrict"
+            id="brgyDistrict"
             value={formData.brgyDistrict || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -294,12 +324,16 @@ const EditProperty = () => {
 
         {/* City / Municipality */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="city"
+            className="block text-sm font-medium text-gray-700"
+          >
             City / Municipality
           </label>
           <input
             type="text"
             name="city"
+            id="city"
             value={formData.city || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -308,12 +342,16 @@ const EditProperty = () => {
 
         {/* province */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="province"
+            className="block text-sm font-medium text-gray-700"
+          >
             Province
           </label>
           <input
             type="text"
             name="province"
+            id="province"
             value={formData.province || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -322,12 +360,16 @@ const EditProperty = () => {
 
         {/* ZIP Code */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="zipCode"
+            className="block text-sm font-medium text-gray-700"
+          >
             ZIP Code
           </label>
           <input
             type="number"
             name="zipCode"
+            id="zipCode"
             value={formData.zipCode || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -336,11 +378,15 @@ const EditProperty = () => {
 
         {/* Property Type (Dynamic from API) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="propertyType"
+            className="block text-sm font-medium text-gray-700"
+          >
             Property Type
           </label>
           <select
             name="propertyType"
+            id="propertyType"
             value={formData.propertyType || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -364,12 +410,16 @@ const EditProperty = () => {
 
         {/* Number of Units */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="numberOfUnit"
+            className="block text-sm font-medium text-gray-700"
+          >
             Number of Units
           </label>
           <input
             type="text"
             name="numberOfUnit"
+            id="numberOfUnit"
             value={formData.numberOfUnit || 0}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -378,11 +428,15 @@ const EditProperty = () => {
 
         {/* Property Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="propDesc"
+            className="block text-sm font-medium text-gray-700"
+          >
             Description
           </label>
           <textarea
             name="propDesc"
+            id="propDesc"
             value={formData.propDesc || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -391,12 +445,16 @@ const EditProperty = () => {
 
         {/* Floor Area */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="floorArea"
+            className="block text-sm font-medium text-gray-700"
+          >
             Floor Area (sqm)
           </label>
           <input
             type="number"
             name="floorArea"
+            id="floorArea"
             value={formData.floorArea || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -405,12 +463,16 @@ const EditProperty = () => {
 
         {/* Rent Payment */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="rentPayment"
+            className="block text-sm font-medium text-gray-700"
+          >
             Rent Payment
           </label>
           <input
             type="number"
             name="rentPayment"
+            id="rentPayment"
             value={formData.rentPayment || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -419,12 +481,16 @@ const EditProperty = () => {
 
         {/* Advanced Payment (Months) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="advancedPayment"
+            className="block text-sm font-medium text-gray-700"
+          >
             Advanced Payment (Months)
           </label>
           <input
             type="number"
             name="advancedPayment"
+            id="advancedPayment"
             value={formData.advancedPayment || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -433,12 +499,16 @@ const EditProperty = () => {
 
         {/* Security Deposit (Amount) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="secDeposit"
+            className="block text-sm font-medium text-gray-700"
+          >
             Security Deposit (Amount)
           </label>
           <input
             type="number"
             name="secDeposit"
+            id="secDeposit"
             value={formData.secDeposit || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -447,12 +517,16 @@ const EditProperty = () => {
 
         {/* Minimum Stay (Months) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="minStay"
+            className="block text-sm font-medium text-gray-700"
+          >
             Minimum Stay (Months)
           </label>
           <input
             type="number"
             name="minStay"
+            id="minStay"
             value={formData.minStay || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -461,12 +535,16 @@ const EditProperty = () => {
 
         {/* Late Fee (%) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="lateFee"
+            className="block text-sm font-medium text-gray-700"
+          >
             Late Fee (%)
           </label>
           <input
             type="number"
             name="lateFee"
+            id="lateFee"
             value={formData.lateFee || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -478,11 +556,14 @@ const EditProperty = () => {
           <input
             type="checkbox"
             name="petFriendly"
+            id="petFriendly"
             checked={formData.petFriendly}
             onChange={handleChange}
             className="h-6 w-6"
           />
-          <label className="text-gray-700">Pet-Friendly</label>
+          <label htmlFor="petFriendly" className="text-gray-700">
+            Pet-Friendly
+          </label>
         </div>
 
         {/* Bed Spacing Checkbox */}
@@ -490,22 +571,29 @@ const EditProperty = () => {
           <input
             type="checkbox"
             name="bedSpacing"
+            id="bedSpacing"
             checked={formData.bedSpacing}
             onChange={handleChange}
             className="h-6 w-6"
           />
-          <label className="text-gray-700">Bed Spacing (if applicable)</label>
+          <label htmlFor="bedSpacing" className="text-gray-700">
+            Bed Spacing (if applicable)
+          </label>
         </div>
 
         {/* Show Input for Available Bed Spacing */}
         {formData.bedSpacing && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">
+            <label
+              htmlFor="availBeds"
+              className="block text-gray-700 font-medium mb-1"
+            >
               Available Bed Spacing (in number)
             </label>
             <input
               type="number"
               name="availBeds"
+              id="availBeds"
               value={formData.availBeds || ""}
               onChange={handleChange}
               placeholder="Enter available bed spacing"
@@ -519,11 +607,14 @@ const EditProperty = () => {
           <input
             type="checkbox"
             name="hasWater"
+            id="hasWater"
             checked={formData.hasWater}
             onChange={handleChange}
             className="h-6 w-6"
           />
-          <label className="text-gray-700">Water Bill</label>
+          <label htmlFor="hasWater" className="text-gray-700">
+            Water Bill
+          </label>
         </div>
 
         {/* Electricity Bill Checkbox */}
@@ -531,11 +622,14 @@ const EditProperty = () => {
           <input
             type="checkbox"
             name="hasElectricity"
+            id="hasElectricity"
             checked={formData.hasElectricity}
             onChange={handleChange}
             className="h-6 w-6"
           />
-          <label className="text-gray-700">Electricity Bill</label>
+          <label htmlFor="hasElectricity" className="text-gray-700">
+            Electricity Bill
+          </label>
         </div>
 
         {/* Association Dues Checkbox */}
@@ -543,20 +637,28 @@ const EditProperty = () => {
           <input
             type="checkbox"
             name="hasAssocDues"
+            id="hasAssocDues"
             checked={formData.hasAssocDues}
             onChange={handleChange}
             className="h-6 w-6"
           />
-          <label className="text-gray-700">Association Dues</label>
+          <label htmlFor="hasAssocDues" className="text-gray-700">
+            Association Dues
+          </label>
         </div>
 
         {/* Upload Property Photos */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="propertyPhotos"
+            className="block text-sm font-medium text-gray-700"
+          >
             Property Photos
           </label>
           <input
             type="file"
+            name="propertyPhotos"
+            id="propertyPhotos"
             multiple
             accept="image/*"
             onChange={handleFileChange}
@@ -569,22 +671,26 @@ const EditProperty = () => {
           <div className="mt-4">
             <p className="text-sm text-gray-600">Existing Photos:</p>
             <div className="grid grid-cols-3 gap-2 mt-2">
-              {photos?.map((photo, index) => (
-                <div key={photo.photo_id || index} className="relative">
-                  <img
-                    src={photo.photo_url}
-                    alt="Property"
-                    className="w-full h-20 object-cover rounded-md"
-                  />
-                  <button
-                    type="button"
-                    className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full text-xs"
-                    onClick={() => handleDeletePhoto(photo.photo_id)}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+              {photos
+                ?.filter((photo) => photo.photo_url) // ✅ Only include valid images
+                .map((photo, index) => (
+                  <div key={photo.photo_id || index} className="relative">
+                    <Image
+                      src={photo.photo_url} // ✅ Ensuring `photo_url` exists
+                      alt="Property Image"
+                      width={100}
+                      height={100}
+                      className="w-full h-40 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full text-xs"
+                      onClick={() => handleDeletePhoto(photo.photo_id)}
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
             </div>
           </div>
         )}
@@ -600,7 +706,7 @@ const EditProperty = () => {
           </button>
           <button
             type="button"
-            className="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500"
+            className="bg-white text-gray-700 border border-gray-500 px-4 py-2 rounded-md hover:bg-gray-200"
             onClick={handleCancel}
           >
             Cancel

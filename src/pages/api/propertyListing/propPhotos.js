@@ -171,7 +171,7 @@ async function handleGetRequest(req, res, connection) {
     let params = [];
 
     if (property_id) {
-      query += ` WHERE property_id = ? ORDER BY property_id ASC LIMIT 1`;
+      query += ` WHERE property_id = ? ORDER BY property_id ASC`;
       params.push(property_id);
     } else {
       query += ` GROUP BY property_id ORDER BY property_id ASC`; // Group photos by property
