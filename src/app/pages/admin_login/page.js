@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import CardWarning from "../../../components/devTeam";
-import { logEvent } from "../../../utils/gtag";
+import { logEvent } from "@/src/utils/gtag";
 
-export default function Login() {
-  const [form, setForm] = useState({ login: "", password: "" }); // ✅ Changed "email" to "login"
+export default function LoginAdmin() {
+  const [form, setForm] = useState({ login: "", password: "" });
   const [message, setMessage] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);

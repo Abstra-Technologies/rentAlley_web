@@ -1,65 +1,38 @@
 "use client";
 import { useEffect, useState } from "react";
-import useAuth from "../../../../../hooks/useSession";
-import axios from "axios";
-import {useRouter} from "next/navigation";
-import Navbar from "../../../../components/navigation/navbar";
-import LandlordSubscription from "../../../../components/landlord/subscrription";
-import Link from "next/link";
-import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import useAuthStore from "../../../../zustand/authStore";
+import { useRouter } from "next/navigation";
+import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import LandlordPropertyChart from "../../../../components/analytics/landlordAnalytics";
 import LoadingScreen from "../../../../components/loadingScreen";
+import useAuth from "../../../../../hooks/useSession";
 
 export default function LandlordDashboard() {
-    const { user, admin, fetchSession, loading } = useAuthStore();
-    const [dataLoading, setDataLoading] = useState(true);
+    const { user, admin, loading } = useAuthStore();
+    const [isMounted, setIsMounted] = useState(false); // Ensures hydration consistency
     const router = useRouter();
 
     useEffect(() => {
-        const fetchData = async () => {
-            setDataLoading(true);
-            try {
-                await fetchSession();
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            } finally {
-                setDataLoading(false);
-            }
-        };
-
-        fetchData();
+        setIsMounted(true); // Prevent hydration mismatch
     }, []);
 
     useEffect(() => {
-        if (!loading && !user && !admin) {
-            return <p>Need Login.</p>
+        if (isMounted && !loading && !user && !admin) {
+            router.push("/login");
         }
-    }, [user, admin, loading, router]);
+    }, [isMounted, user, admin, loading, router]);
 
-    if (loading || dataLoading) {
-        return <LoadingScreen />;
-    }
+    if (!isMounted) return null;
 
     if (!user) {
-        return <p>You need to log in to access the dashboard.</p>;
+        return null;
     }
-
-    const subscription = user?.subscription ?? null;
-    const trialEndDate = user?.subscription?.trial_end_date || "N/A";
 
     return (
         <LandlordLayout>
-        <div>
-        <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Landlord Dashboard</h1>
-            <p><strong>Name:</strong> {user?.firstName} {user?.lastName}</p>
-            <p><strong>Email:</strong> {user?.email}</p>
-            <p><strong>User Type:</strong> {user?.userType}</p>
-            <p><strong>ID:</strong> {user?.landlord_id}</p>
-        </div>
-            <LandlordPropertyChart/>
-        </div>
+            <div>
+                <LandlordPropertyChart />
+            </div>
         </LandlordLayout>
     );
 }

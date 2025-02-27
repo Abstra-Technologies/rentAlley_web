@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Building, Calendar, Wrench, Bell, CreditCard, Bug, MessageSquareMore, Menu, X, LogOut } from 'lucide-react';
+import useAuth from "../../../hooks/useSession";
 
 const menuItems = [
   { href: '/pages/landlord/dashboard', icon: Home, label: 'Dashboard' },
@@ -18,8 +19,8 @@ const menuItems = [
 const LandlordLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const {user} = useAuth();
   
-  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (sidebarOpen && !event.target.closest('aside') && !event.target.closest('button')) {
@@ -112,8 +113,8 @@ const LandlordLayout = ({ children }) => {
               LN
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-gray-900">Landlord Name</h3>
-              <p className="text-xs text-gray-500">landlord@example.com</p>
+              <h3 className="text-sm font-medium text-gray-900">{user.firstName}</h3>
+              <p className="text-xs text-gray-500">{user.email}</p>
             </div>
           </div>
         </div>

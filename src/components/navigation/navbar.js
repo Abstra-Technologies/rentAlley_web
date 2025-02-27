@@ -13,35 +13,6 @@ const Navbar = () => {
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifications, setNotifications] = useState([]);
 
-    // useEffect(() => {
-    //     if (user || admin) {
-    //         const fetchNotifications = async () => {
-    //             try {
-    //                 const { data } = await axios.get(`/pages/api/notification/fetch`, {
-    //                     params: {
-    //                         user_id: user?.id || null,
-    //                         admin_id: admin?.id || null
-    //                     }
-    //                 });
-    //                 setNotifications(data.notifications);
-    //             } catch (error) {
-    //                 console.error("Error fetching notifications:", error);
-    //             }
-    //         };
-    //
-    //         fetchNotifications();
-    //
-    //         socket.on("notification", (newNotification) => {
-    //             console.log("New real-time notification:", newNotification);
-    //             setNotifications((prevNotifications) => [newNotification, ...prevNotifications]);
-    //         });
-    //
-    //         return () => {
-    //             socket.off("notification"); // Clean up listener
-    //         };
-    //     }
-    // }, [user, admin]);
-
     const toggleMenu = () => setMenuOpen(!menuOpen);
     const toggleDropdown = () => {
         setDropdownOpen(!dropdownOpen);
