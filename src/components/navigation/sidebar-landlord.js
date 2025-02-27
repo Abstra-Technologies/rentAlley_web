@@ -19,7 +19,7 @@ const menuItems = [
 const LandlordLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const {user} = useAuth();
+  const {user, signOut} = useAuth();
   
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -164,6 +164,7 @@ const LandlordLayout = ({ children }) => {
               </Link>
               <button
                 className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors duration-200"
+                onClick={signOut}
               >
                 <LogOut className="w-5 h-5 mr-3 text-red-500" />
                 <span>Sign out</span>
