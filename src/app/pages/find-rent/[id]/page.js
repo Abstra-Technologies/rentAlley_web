@@ -376,22 +376,32 @@ export default function PropertyDetails() {
 
           {/* Right Column - Booking Form */}
           {property.units.length > 0 ? (
-            <p className="text-3xl font-extrabold text-blue-900 uppercase tracking-wide">
-              Choose a unit to proceed with booking.
-            </p>
+          <p className="text-3xl font-extrabold text-blue-900 uppercase tracking-wide">
+            Choose a unit to proceed with booking.
+          </p>
           ) : (
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
-                <h2 className="text-xl font-bold mb-4 text-gray-800">
-                  Book a Viewing
-                </h2>
-                <InquiryBooking
-                  tenant_id={user?.tenant_id}
-                  property_id={id}
-                  unit_id={selectedUnitId}
-                />
-              </div>
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+              <h2 className="text-xl font-bold mb-4 text-gray-800">
+                Book a Viewing
+              </h2>
+              <InquiryBooking
+                tenant_id={user?.tenant_id}
+                property_id={id}
+                unit_id={selectedUnitId}
+                rent_payment={
+                property.property_type === "house" && property.rent_payment
+                ? property.rent_payment
+                : selectedUnit?.rent_payment || "Not Available"
+              }/>
+              <p className="text-gray-600 mt-2">
+                Rent Payment: ₱
+                {property.property_type === "house" && property.rent_payment
+                ? property.rent_payment?.toLocaleString()
+                : selectedUnit?.rent_payment?.toLocaleString() || "N/A"}
+              </p>
             </div>
+          </div>
           )}
         </div>
       </div>

@@ -21,7 +21,8 @@ export default async function handler(req, res) {
         p.property_type,
         p.amenities,
         p.city,
-        p.province
+        p.province,
+        p.rent_payment
       FROM Property p
       WHERE p.property_id = ?;
     `;

@@ -16,7 +16,7 @@ const TenantLayout = ({ children }) => {
           <ul className="space-y-2">
             <li>
               <Link 
-                href="/dashboard"
+                href="/pages/tenant/dashboard"
                 className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg"
               >
                 <svg 
@@ -34,7 +34,7 @@ const TenantLayout = ({ children }) => {
             </li>
             <li>
               <Link 
-                href="/maintenance"
+                href="/pages/tenant/maintenance"
                 className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg"
               >
                 <svg 
@@ -51,7 +51,7 @@ const TenantLayout = ({ children }) => {
             </li>
             <li>
               <Link 
-                href="/billing"
+                href="/pages/tenant/billing"
                 className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg"
               >
                 <svg 
