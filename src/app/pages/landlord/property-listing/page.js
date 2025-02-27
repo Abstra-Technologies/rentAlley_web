@@ -8,9 +8,6 @@ import Image from "next/image";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-// UI TODO: Remove this if finished.
-//  Alert/Warning Message on the limit and verification.
-
 const PropertyListingPage = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -84,8 +81,10 @@ const PropertyListingPage = () => {
       subscription &&
       properties.length >= subscription.listingLimits.maxProperties
     ) {
-      alert(
-        `🚨 You have reached the maximum property limit (${subscription.listingLimits.maxProperties}) for your plan.`
+      Swal.fire(
+        "Property Limit Reached",
+        `You have reached the maximum property limit (${subscription.listingLimits.maxProperties}) for your plan.`,
+        "error"
       );
       return;
     }
@@ -181,6 +180,24 @@ const PropertyListingPage = () => {
             {isFetchingVerification ? "Checking..." : "+ Add New Property"}
           </button>
         </div>
+
+        {/* Show alert if the property limit is reached */}
+        {subscription &&
+          properties.length >= subscription.listingLimits.maxProperties && (
+            <div className="p-4 bg-red-100 text-red-700 border border-red-400 rounded-md text-center my-4">
+              <strong>
+                🚨 You have reached your max property listing limit!
+              </strong>
+              <p>Please upgrade your plan to list more properties.</p>
+            </div>
+          )}
+
+        {!isFetchingVerification && !isVerified && (
+          <div className="p-4 bg-red-100 text-red-700 border border-red-400 rounded-md text-center my-4">
+            <strong>⚠️ Verification Required!</strong>
+            <p>You must verify your account before listing a property.</p>
+          </div>
+        )}
 
         <div className="p-6 space-y-4">
           {properties.length === 0 ? (
