@@ -24,14 +24,42 @@ export default function MyUnit() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingPayment, setLoadingPayment] = useState(false);
+  const [landlord_id, setLandlordId] = useState(null);
+
+  // useEffect(() => {
+  //   const fetchUnitData = async () => {
+  //     try {
+  //       const { data } = await axios.get(
+  //         `/api/tenant/approved-tenant-property?tenantId=${user.tenant_id}`
+  //       );
+  //       setUnit(data[0]);
+  //       setLandlordId(data.landlord_id);
+  //       console.log("Landlord ID: ", data.landlord_id);
+  //
+  //     } catch (err) {
+  //       setError(err.response?.data?.message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //
+  //   fetchUnitData();
+  // }, [user, landlord_id]);
 
   useEffect(() => {
     const fetchUnitData = async () => {
       try {
         const { data } = await axios.get(
-          `/api/tenant/approved-tenant-property?tenantId=${user.tenant_id}`
+            `/api/tenant/approved-tenant-property?tenantId=${user.tenant_id}`
         );
-        setUnit(data[0]);
+
+        console.log("Fetched unit data:", data);
+
+        if (data) {
+          setUnit(data[0]);
+          setLandlordId(data[0].landlord_id);
+          console.log(setLandlordId(data[0].landlord_id));
+        }
       } catch (err) {
         setError(err.response?.data?.message);
       } finally {
@@ -41,6 +69,7 @@ export default function MyUnit() {
 
     fetchUnitData();
   }, [user]);
+
 
   const handlePayRent = () => {
     setLoadingPayment(true);
@@ -82,6 +111,17 @@ export default function MyUnit() {
     return `${unit.street || ""}, ${unit.city || ""}, ${unit.province || ""} ${
       unit.zip_code || ""
     }`.trim();
+  };
+
+
+  const handleContactLandlord = () => {
+    if (!landlord_id) {
+      console.error("Missing landlord_id!");
+      return;
+    }
+    const chatRoom = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
+
+    router.push(`/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${landlord_id}`);
   };
 
   if (loading) return <LoadingScreen />;
@@ -198,7 +238,7 @@ export default function MyUnit() {
                       "/api/placeholder/500/400"
                     }
                     alt={
-                      unit.unit_name || unit.property_name || "Property Image"
+                      unit?.unit_name || unit?.property_name || "Property Image"
                     }
                     layout="fill"
                     objectFit="cover"
@@ -207,8 +247,8 @@ export default function MyUnit() {
                   />
                   <div className="absolute top-4 right-4">
                     <span className="rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-800">
-                      {unit.property_type.charAt(0).toUpperCase() +
-                        unit.property_type.slice(1) || "Residential"}
+                      {unit?.property_type?.charAt(0).toUpperCase() +
+                        unit?.property_type?.slice(1) || "Residential"}
                     </span>
                   </div>
                 </div>
@@ -360,7 +400,9 @@ export default function MyUnit() {
               {/* Quick Actions Section */}
               <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
                 <div className="flex flex-wrap gap-3">
-                  <button className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                  <button
+                      onClick={handleContactLandlord}
+                      className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="mr-2 h-4 w-4"
