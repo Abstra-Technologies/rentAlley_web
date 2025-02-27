@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import InquiryBooking from "../../../../../components/tenant/inquiry";
 import Image from "next/image";
 import useAuth from "../../../../../../hooks/useSession";
+import { IoArrowBackOutline } from "react-icons/io5";
 
 export default function UnitDetailPage() {
   const router = useRouter();
@@ -99,27 +100,39 @@ export default function UnitDetailPage() {
         ))}
       </div>
 
+      {/* Back Button */}
+      <div className="mt-3 mb-3">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center text-gray-700 hover:text-gray-900"
+        >
+          <IoArrowBackOutline className="text-2xl" />
+          <span className="ml-2 text-lg font-medium">Back</span>
+        </button>
+      </div>
+
       {/* Main Content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         {/* Left: Unit Details */}
         <div className="md:col-span-2 bg-white p-6 shadow-lg rounded-lg">
-          <h1 className="text-2xl font-bold">{unit.unit_name}</h1>
-          <p className="text-gray-600 mt-2">{unit.description}</p>
+          <h1 className="text-2xl font-bold">Unit {unit?.unit_name}</h1>
+          <p className="text-gray-600 mt-2">{unit?.description}</p>
 
           <div className="mt-4">
             <h3 className="text-lg font-semibold">Details</h3>
             <ul className="list-disc list-inside text-gray-700">
-              <li>Floor Area: {unit.floor_area ?? "N/A"} sqm</li>
-              <li>Furnishing: {unit.furnish ?? "N/A"}</li>
-              <li>Pet Friendly: {unit.pet_friendly ? "Yes" : "No"}</li>
-              <li>Security Deposit: P{unit.sec_deposit?.toLocaleString()}</li>
-              <li>Min Stay: {unit.min_stay} months</li>
-              <li>Late Fee: P{unit.late_fee?.toLocaleString()}</li>
-              <li>Advanced Payment: {unit.advanced_payment} months</li>
+              <li>Floor Area: {unit?.floor_area ?? "N/A"} sqm</li>
+              <li>Furnishing: {unit?.furnish ?? "N/A"}</li>
+              <li>Pet Friendly: {unit?.pet_friendly ? "Yes" : "No"}</li>
+              <li>Security Deposit: P{unit?.sec_deposit?.toLocaleString()}</li>
+              <li>Min Stay: {unit?.min_stay} months</li>
+              <li>Late Fee: P{unit?.late_fee?.toLocaleString()}</li>
+              <li>Advanced Payment: {unit?.advanced_payment} months</li>
               <li>
-                Electricity Bill Included: {unit.has_electricity ? "Yes" : "No"}
+                Electricity Bill Included:{" "}
+                {unit?.has_electricity ? "Yes" : "No"}
               </li>
-              <li>Water Bill Included: {unit.has_water ? "Yes" : "No"}</li>
+              <li>Water Bill Included: {unit?.has_water ? "Yes" : "No"}</li>
             </ul>
           </div>
         </div>
@@ -129,7 +142,7 @@ export default function UnitDetailPage() {
           <InquiryBooking
             tenant_id={user?.tenant_id}
             property_id={""}
-            unit_id={unit.unit_id}
+            unit_id={unit?.unit_id}
             rent_payment={unit?.rent_payment}
           />
         </div>

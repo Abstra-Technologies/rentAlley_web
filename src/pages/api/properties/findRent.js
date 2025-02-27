@@ -26,7 +26,11 @@ export default async function handler(req, res) {
         COALESCE(
           (SELECT AVG(u.rent_payment) FROM Unit u WHERE u.property_id = p.property_id),
           p.rent_payment
-        ) AS rent_payment
+        ) AS rent_payment,
+        CASE 
+         WHEN (SELECT COUNT(*) FROM Unit u WHERE u.property_id = p.property_id) > 0 THEN 'unit'
+          ELSE 'property'
+      END AS type
       FROM Property p
       JOIN PropertyVerification pv ON p.property_id = pv.property_id
       WHERE pv.status = 'Verified'

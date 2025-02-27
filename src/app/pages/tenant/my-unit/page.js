@@ -12,10 +12,9 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   InformationCircleIcon,
-  IdentificationIcon,
-  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 export default function MyUnit() {
   const { user } = useAuth();
@@ -25,6 +24,7 @@ export default function MyUnit() {
   const [error, setError] = useState(null);
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [landlord_id, setLandlordId] = useState(null);
+  const [isSecurityPaid, setIsSecurityPaid] = useState(false);
 
   // useEffect(() => {
   //   const fetchUnitData = async () => {
@@ -50,7 +50,7 @@ export default function MyUnit() {
     const fetchUnitData = async () => {
       try {
         const { data } = await axios.get(
-            `/api/tenant/approved-tenant-property?tenantId=${user.tenant_id}`
+          `/api/tenant/approved-tenant-property?tenantId=${user.tenant_id}`
         );
 
         console.log("Fetched unit data:", data);
@@ -70,13 +70,37 @@ export default function MyUnit() {
     fetchUnitData();
   }, [user]);
 
+  // Handle Pay Security Deposit here
+  const handleSecurityPayment = async () => {
+    const result = await Swal.fire({
+      title: "Pay Security Deposit?",
+      text: "Are you sure you want to proceed with the payment?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Pay Now",
+      cancelButtonText: "Cancel",
+    });
 
-  const handlePayRent = () => {
-    setLoadingPayment(true);
-    setTimeout(() => {
-      setLoadingPayment(false);
-      router.push("/pages/tenant/dashboard");
-    }, 800);
+    if (result.isConfirmed) {
+      setLoadingPayment(true);
+
+      setTimeout(() => {
+        setLoadingPayment(false);
+        setIsSecurityPaid(true);
+
+        Swal.fire({
+          title: "Payment Successful",
+          text: "Your security deposit has been paid. You can now access the Rent Portal.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+      }, 1000);
+    }
+  };
+
+  // Handle Access Rent Portal here
+  const handleAccessRentPortal = () => {
+    router.push("/pages/tenant/dashboard");
   };
 
   const renderAmenities = (amenitiesData) => {
@@ -113,7 +137,6 @@ export default function MyUnit() {
     }`.trim();
   };
 
-
   const handleContactLandlord = () => {
     if (!landlord_id) {
       console.error("Missing landlord_id!");
@@ -121,7 +144,9 @@ export default function MyUnit() {
     }
     const chatRoom = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
 
-    router.push(`/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${landlord_id}`);
+    router.push(
+      `/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${landlord_id}`
+    );
   };
 
   if (loading) return <LoadingScreen />;
@@ -131,7 +156,7 @@ export default function MyUnit() {
     <div className="flex min-h-screen bg-gray-50">
       {/* Left Sidebar */}
       <div className="hidden w-64 border-r border-gray-200 bg-white py-6 px-6 md:block">
-        <div className="mb-8 flex items-center">
+        {/* <div className="mb-8 flex items-center">
           <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
             <UserCircleIcon className="h-6 w-6 text-indigo-700" />
           </div>
@@ -140,7 +165,7 @@ export default function MyUnit() {
               My Account
             </h2>
           </div>
-        </div>
+        </div> */}
         <nav>
           <ul className="space-y-3">
             <li className="rounded-md bg-indigo-50">
@@ -161,7 +186,7 @@ export default function MyUnit() {
                 <span>Unit History</span>
               </a>
             </li>
-            <li>
+            {/* <li>
               <a
                 href="#"
                 className="flex items-center space-x-3 rounded-md p-3 text-gray-700 transition-colors duration-200 hover:bg-gray-100"
@@ -169,7 +194,7 @@ export default function MyUnit() {
                 <CurrencyDollarIcon className="h-5 w-5" />
                 <span>Payment History</span>
               </a>
-            </li>
+            </li> */}
           </ul>
         </nav>
       </div>
@@ -213,14 +238,6 @@ export default function MyUnit() {
                 Current Unit
               </h1>
             </div>
-            {user?.tenant_id && (
-              <div className="flex items-center rounded-md bg-indigo-50 px-3 py-1 text-sm">
-                <UserCircleIcon className="mr-1 h-4 w-4 text-indigo-700" />
-                <span className="font-medium text-indigo-700">
-                  Tenant ID: {user.tenant_id}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -265,16 +282,6 @@ export default function MyUnit() {
                       <span>{formatAddress(unit)}</span>
                     </div>
 
-                    {/* Property/Unit ID Badge */}
-                    <div className="mb-4 inline-flex items-center rounded-md bg-blue-50 px-3 py-1">
-                      <IdentificationIcon className="mr-1 h-4 w-4 text-blue-700" />
-                      <span className="text-sm font-medium text-blue-700">
-                        {unit.unit_id
-                          ? `Unit ID: ${unit.unit_id}`
-                          : `Property ID: ${unit.property_id}`}
-                      </span>
-                    </div>
-
                     <p className="mb-6 line-clamp-4 text-gray-600">
                       {unit.description || "No description available"}
                     </p>
@@ -305,7 +312,8 @@ export default function MyUnit() {
                           Status:
                         </span>
                         <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-                          {unit.status || "Current"}
+                          {unit.status.charAt(0).toUpperCase() +
+                            unit.status.slice(1) || "Current"}
                         </span>
                       </div>
                     )}
@@ -334,14 +342,18 @@ export default function MyUnit() {
                   </div>
 
                   <button
-                    onClick={handlePayRent}
+                    onClick={
+                      isSecurityPaid
+                        ? handleAccessRentPortal
+                        : handleSecurityPayment
+                    }
                     disabled={loadingPayment}
-                    className="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md transition-colors duration-200 hover:bg-indigo-700"
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-indigo-700"
                   >
                     {loadingPayment ? (
                       <>
                         <svg
-                          className="-ml-1 mr-3 h-5 w-5 animate-spin text-white"
+                          className="h-5 w-5 animate-spin text-white"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
@@ -362,10 +374,12 @@ export default function MyUnit() {
                         </svg>
                         Processing...
                       </>
+                    ) : isSecurityPaid ? (
+                      "Access Rent Portal"
                     ) : (
                       <>
-                        <CurrencyDollarIcon className="mr-2 h-5 w-5" />
-                        Proceed to Rent Management
+                        <CurrencyDollarIcon className="h-5 w-5" />
+                        Pay Security Deposit
                       </>
                     )}
                   </button>
@@ -401,8 +415,9 @@ export default function MyUnit() {
               <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
                 <div className="flex flex-wrap gap-3">
                   <button
-                      onClick={handleContactLandlord}
-                      className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    onClick={handleContactLandlord}
+                    className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="mr-2 h-4 w-4"
@@ -418,24 +433,6 @@ export default function MyUnit() {
                       />
                     </svg>
                     Contact Landlord
-                  </button>
-
-                  <button className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="mr-2 h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                      />
-                    </svg>
-                    Report Issue
                   </button>
                 </div>
               </div>

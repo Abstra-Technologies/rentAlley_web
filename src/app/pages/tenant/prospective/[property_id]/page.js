@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { FiUploadCloud } from "react-icons/fi";
+import { FiArrowLeft, FiUploadCloud } from "react-icons/fi";
 import axios from "axios";
 import useAuth from "../../../../../../hooks/useSession";
 import Swal from "sweetalert2";
@@ -162,6 +162,15 @@ const TenantApplicationForm = () => {
   return (
     <div className="bg-white min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4"
+        >
+          <FiArrowLeft className="text-xl" />
+          <span>Back</span>
+        </button>
+
         <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">
           Tenant Application Form
         </h1>

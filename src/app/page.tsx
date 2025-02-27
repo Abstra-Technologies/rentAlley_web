@@ -1,4 +1,8 @@
+"use client";
+import { useRouter } from "next/navigation";
+
 export default function Home() {
+  const router = useRouter();
   return (
     <>
       <div className="bg-gray-100 min-h-screen flex flex-col">
@@ -11,7 +15,10 @@ export default function Home() {
                 Find your perfect home with ease. Browse listings, explore
                 options, and make your dreams a reality.
               </p>
-              <button className="px-6 py-3 bg-white text-blue-600 rounded-md font-semibold hover:bg-gray-200 transition">
+              <button
+                onClick={() => router.push("/pages/find-rent")}
+                className="px-6 py-3 bg-white text-blue-600 rounded-md font-semibold hover:bg-gray-200 transition"
+              >
                 Browse Properties
               </button>
             </div>

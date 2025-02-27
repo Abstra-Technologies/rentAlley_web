@@ -12,14 +12,10 @@ import {
   FaBuilding,
   FaSwimmingPool,
   FaWifi,
-  FaUserTie,
 } from "react-icons/fa";
 import { BsImageAlt, BsCheckCircleFill } from "react-icons/bs";
-import {
-  MdVerified,
-  MdKeyboardArrowRight,
-  MdOutlineApartment,
-} from "react-icons/md";
+import { MdVerified, MdOutlineApartment } from "react-icons/md";
+import { IoArrowBackOutline } from "react-icons/io5";
 
 export default function PropertyDetails() {
   const { user } = useAuth();
@@ -189,11 +185,21 @@ export default function PropertyDetails() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4">
+        {/* Back Button */}
+        <div className="mb-4">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-gray-700 hover:text-gray-900"
+          >
+            <IoArrowBackOutline className="text-2xl" />
+            <span className="ml-2 text-lg font-medium">Back</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Property & Unit Details */}
           <div className="lg:col-span-2">
             {/* Property Overview */}
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6 pl-12 relative">
               <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
                 <FaBuilding className="mr-2 text-blue-500" />
                 Property Overview
@@ -258,10 +264,10 @@ export default function PropertyDetails() {
                     {property.units.map((unit) => (
                       <div
                         key={unit.unit_id}
-                        className={`border p-4 rounded-lg cursor-pointer transition hover:shadow-md ${
+                        className={`border p-4 rounded-lg cursor-pointer transition hover:shadow-md hover:border-blue-500 hover:bg-blue-50 ${
                           unit.status === "occupied"
                             ? "opacity-60 cursor-not-allowed"
-                            : "border-blue-500 bg-blue-50"
+                            : ""
                         }`}
                         onClick={() =>
                           unit.status !== "occupied" &&
@@ -338,70 +344,27 @@ export default function PropertyDetails() {
                 </>
               )}
             </div>
-
-            {/* Landlord Contact */}
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
-                <FaUserTie className="mr-2 text-blue-500" />
-                Contact Landlord
-              </h2>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <FaUserTie className="text-blue-500" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="font-medium">Property Manager</p>
-                    <p className="text-gray-600 text-sm">
-                      Response time: Usually within 24 hours
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() =>
-                    router.push(
-                      `/pages/commons/chat?landlord_id=${property.landlord_id}`
-                    )
-                  }
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center"
-                >
-                  <span>Chat Now</span>
-                  <MdKeyboardArrowRight />
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Right Column - Booking Form */}
           {property.units.length > 0 ? (
-          <p className="text-3xl font-extrabold text-blue-900 uppercase tracking-wide">
-            Choose a unit to proceed with booking.
-          </p>
+            <h2 className="text-3xl font-extrabold text-blue-900 uppercase tracking-wide">
+              Choose a unit to proceed with booking.
+            </h2>
           ) : (
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">
-                Book a Viewing
-              </h2>
-              <InquiryBooking
-                tenant_id={user?.tenant_id}
-                property_id={id}
-                unit_id={selectedUnitId}
-                rent_payment={
-                property.property_type === "house" && property.rent_payment
-                ? property.rent_payment
-                : selectedUnit?.rent_payment || "Not Available"
-              }/>
-              <p className="text-gray-600 mt-2">
-                Rent Payment: ₱
-                {property.property_type === "house" && property.rent_payment
-                ? property.rent_payment?.toLocaleString()
-                : selectedUnit?.rent_payment?.toLocaleString() || "N/A"}
-              </p>
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+                <h2 className="text-xl font-bold mb-4 text-gray-800">
+                  Book a Viewing
+                </h2>
+                <InquiryBooking
+                  tenant_id={user?.tenant_id}
+                  property_id={id}
+                  unit_id={selectedUnitId}
+                  rent_payment={property?.rent_payment}
+                />
+              </div>
             </div>
-          </div>
           )}
         </div>
       </div>

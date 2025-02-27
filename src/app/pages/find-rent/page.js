@@ -9,6 +9,8 @@ import {
   FaChevronDown,
   FaMapMarkerAlt,
   FaSpinner,
+  FaBuilding,
+  FaHome,
 } from "react-icons/fa";
 
 export default function PropertySearch() {
@@ -206,59 +208,81 @@ export default function PropertySearch() {
 
           {/* Property Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <div
-                key={property.property_id}
-                className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                onClick={() =>
-                  router.push(`/pages/find-rent/${property.property_id}`)
-                }
-              >
-                {/* Property Image */}
-                <div className="relative">
-                  {property.property_photo ? (
-                    <div className="relative h-48">
-                      <Image
-                        src={property.property_photo}
-                        alt={property.property_name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-400">No Image Available</span>
-                    </div>
-                  )}
+            {properties.map((property) => {
+              const isUnitAverage = property.type === "unit"; // Determine if it's an avg. unit rent
 
-                  {/* Price Badge */}
-                  <div className="absolute bottom-3 right-3 bg-blue-600 text-white px-3 py-1 rounded-full font-medium shadow-sm">
-                    {property.rent_payment
-                      ? `₱${Math.round(property.rent_payment).toLocaleString()}`
-                      : "Price on Request"}
+              return (
+                <div
+                  key={property.property_id}
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  onClick={() =>
+                    router.push(`/pages/find-rent/${property.property_id}`)
+                  }
+                >
+                  {/* Property Image */}
+                  <div className="relative">
+                    {property?.property_photo ? (
+                      <div className="relative h-48">
+                        <Image
+                          src={property?.property_photo}
+                          alt={property?.property_name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">
+                          No Image Available
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Price Badge with Type Indicator */}
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                      <div
+                        className={`px-3 py-1 rounded-full font-medium shadow-sm ${
+                          isUnitAverage ? "bg-green-600" : "bg-blue-600"
+                        } text-white`}
+                      >
+                        ₱{Math.round(property.rent_payment).toLocaleString()}
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700 flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
+                        {isUnitAverage ? (
+                          <>
+                            <FaBuilding className="text-green-600" /> Avg. Unit
+                            Rent
+                          </>
+                        ) : (
+                          <>
+                            <FaHome className="text-blue-600" /> Property Rent
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Property Details */}
+                  <div className="p-4">
+                    <h2 className="text-lg font-semibold flex items-center gap-1 mb-1 text-gray-900">
+                      {property?.property_name}
+                      <HiBadgeCheck className="text-blue-500" />
+                    </h2>
+
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <FaMapMarkerAlt className="mr-1 text-gray-400" />
+                      <p>
+                        {property?.city}, {property?.province}
+                      </p>
+                    </div>
+
+                    <button className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors">
+                      View Details
+                    </button>
                   </div>
                 </div>
-
-                {/* Property Details */}
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold flex items-center gap-1 mb-1 text-gray-900">
-                    {property.property_name}
-                    <HiBadgeCheck className="text-blue-500" />
-                  </h2>
-
-                  <div className="flex items-center text-gray-600 mb-2">
-                    <FaMapMarkerAlt className="mr-1 text-gray-400" />
-                    <p>
-                      {property.city}, {property.province}
-                    </p>
-                  </div>
-
-                  <button className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors">
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

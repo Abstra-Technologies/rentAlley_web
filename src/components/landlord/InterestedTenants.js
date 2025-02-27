@@ -2,7 +2,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
-import { AiOutlineCheck, AiOutlineClose } from "react-icons/ai";
+import {
+  AiOutlineArrowLeft,
+  AiOutlineCheck,
+  AiOutlineClose,
+} from "react-icons/ai";
 
 export default function InterestedTenants({ unitId = null }) {
   const { propertyId } = useParams();
@@ -65,6 +69,14 @@ export default function InterestedTenants({ unitId = null }) {
 
   return (
     <div className="p-6">
+      {/* Back Button */}
+      <button
+        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4"
+        onClick={() => router.back()}
+      >
+        <AiOutlineArrowLeft className="text-xl" />
+        <span>Back</span>
+      </button>
       <h2 className="text-2xl font-bold mb-4">Interested Tenants</h2>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-300 shadow-md rounded-lg">

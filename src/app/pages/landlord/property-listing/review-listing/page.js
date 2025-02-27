@@ -10,7 +10,7 @@ export default function ReviewingListing() {
     // Automatically redirect after 1 second
     const timer = setTimeout(() => {
       router.push("/pages/landlord/property-listing");
-    }, 1000);
+    }, 3000);
 
     return () => clearTimeout(timer); // Cleanup on unmount
   }, [router]);

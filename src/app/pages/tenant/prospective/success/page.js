@@ -10,7 +10,7 @@ const SuccessPage = () => {
     // Automatically redirect after 1 second
     const timer = setTimeout(() => {
       router.push("/pages/tenant/my-unit");
-    }, 1000);
+    }, 3000);
 
     return () => clearTimeout(timer); // Cleanup timeout
   }, [router]);

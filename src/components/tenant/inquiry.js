@@ -78,17 +78,19 @@ export default function InquiryBooking({
       });
 
       if (response.status === 200) {
-        Swal.fire("Success", "Visit scheduled successfully!", "success").then(
-          () => {
-            if (property_id) {
-              router.push(`/pages/tenant/prospective/${property_id}`);
-            } else if (unit_id) {
-              router.push(`/pages/tenant/prospective/unit/${unit_id}`);
-            } else {
-              router.push(`/pages/find-rent`); // Fallback if neither is present
-            }
+        Swal.fire(
+          "Success",
+          "Visit scheduled successfully! Redirecting to Tenant Application...",
+          "success"
+        ).then(() => {
+          if (property_id) {
+            router.push(`/pages/tenant/prospective/${property_id}`);
+          } else if (unit_id) {
+            router.push(`/pages/tenant/prospective/unit/${unit_id}`);
+          } else {
+            router.push(`/pages/find-rent`); // Fallback if neither is present
           }
-        );
+        });
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);
@@ -165,12 +167,11 @@ export default function InquiryBooking({
         Schedule a Visit
       </button>
 
-      <div className="mt-4 text-center">
-        <p className="text-xl font-bold">P{rent_payment}</p>
-      </div>
-
       {view === "inquire" && (
         <div className="mt-4">
+          <div className="mt-4 mb-3 text-center">
+            <p className="text-xl font-bold">₱{rent_payment}</p>
+          </div>
           <textarea
             className="w-full p-2 border rounded-md"
             placeholder="ex. Is there any discounts?"
@@ -251,32 +252,32 @@ export default function InquiryBooking({
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-lg font-bold mb-4">
-              Do you want to proceed to applying as a tenant?
+            <h2 className="text-lg font-bold mb-4 text-center">
+              Would you like to proceed with applying for this rental?
             </h2>
 
-            <div className="flex justify-center gap-4 mb-4">
+            <div className="flex flex-col gap-3">
               <button
-                className="px-4 py-2 bg-green-600 text-white rounded"
+                className="w-full px-4 py-2 bg-green-600 text-white rounded"
                 onClick={handleApplyAsTenant}
               >
-                Yes
+                Yes, I want to
               </button>
 
               <button
-                className="px-4 py-2 bg-red-600 text-white rounded"
+                className="w-full px-4 py-2 bg-gray-400 text-white rounded"
                 onClick={() => setShowModal(false)}
               >
-                No
+                Cancel
+              </button>
+
+              <button
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded"
+                onClick={handleJustSchedule}
+              >
+                No, just schedule
               </button>
             </div>
-
-            <p
-              className="text-blue-600 underline cursor-pointer text-center"
-              onClick={handleJustSchedule}
-            >
-              No, I just want to schedule a visit.
-            </p>
           </div>
         </div>
       )}
