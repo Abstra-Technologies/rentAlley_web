@@ -101,13 +101,15 @@ function DropdownMenu({ billId }) {
           <ul className="py-1">
             <li
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-              onClick={() => router.push(`/pages/landlord/billing/create`)}
+              onClick={() => router.push(`/pages/landlord/billing/createRent`)}
             >
               Generate Rent Bill
             </li>
             <li
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-              onClick={() => router.push(`/pages/landlord/billing/create`)}
+              onClick={() =>
+                router.push(`/pages/landlord/billing/createUtility`)
+              }
             >
               Generate Utility Bill
             </li>
