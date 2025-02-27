@@ -13,20 +13,9 @@ export default function LandlordDashboard() {
     const router = useRouter();
 
     useEffect(() => {
-        setIsMounted(true); // Prevent hydration mismatch
+        setIsMounted(true);
     }, []);
 
-    useEffect(() => {
-        if (isMounted && !loading && !user && !admin) {
-            router.push("/login");
-        }
-    }, [isMounted, user, admin, loading, router]);
-
-    if (!isMounted) return null;
-
-    if (!user) {
-        return null;
-    }
 
     return (
         <LandlordLayout>
