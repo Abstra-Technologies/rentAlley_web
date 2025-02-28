@@ -33,6 +33,23 @@ const TenantLayout = ({ children }) => {
               </Link>
             </li>
             <li>
+              <Link
+                  href="/pages/tenant/announcement"
+                  className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg"
+              >
+                <svg
+                    className="w-5 h-5 mr-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                >
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                </svg>
+                <span>Announcements</span>
+              </Link>
+            </li>
+            <li>
               <Link 
                 href="/pages/tenant/maintenance"
                 className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg"

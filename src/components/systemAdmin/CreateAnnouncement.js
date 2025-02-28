@@ -54,7 +54,6 @@ export default function CreateAnnouncement() {
         };
     }, [title, message, targetAudience, isDirty, router, pathname, resetForm]);
 
-    // Detect Next.js route change and warn before leaving
     useEffect(() => {
         const handleRouteChange = () => {
             if (isDirty && !window.confirm("You have unsaved changes. Do you really want to leave?")) {
@@ -139,8 +138,8 @@ export default function CreateAnnouncement() {
                         required
                     >
                         <option value="all">All</option>
-                        <option value="tenants">Tenants</option>
-                        <option value="landlords">Landlords</option>
+                        <option value="tenant">Tenants</option>
+                        <option value="landlord">Landlords</option>
                     </select>
                 </div>
 
