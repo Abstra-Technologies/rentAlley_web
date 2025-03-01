@@ -184,11 +184,8 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         if (!loading && (!user || error)) {
-            router.push("/pages/auth/login");
         }
-        if (!planId || !planName || amount === null) {
-            router.push("/pages/landlord/subscription");
-        }
+
     }, [user, loading, error, planId, planName, amount, router]);
 
     if (loading) {

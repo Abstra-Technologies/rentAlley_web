@@ -76,7 +76,8 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
-import useAuth from "../../../../../../hooks/useSession"; // 🔥 Use your custom auth hook
+import useAuth from "../../../../../../hooks/useSession";
+import useAuthStore from "../../../../../zustand/authStore"; // 🔥 Use your custom auth hook
 
 // ✅ Move useSearchParams() inside a Suspense-wrapped component
 const SearchParamsWrapper = ({ setPlanId, setPlanName, setAmount }) => {
@@ -96,7 +97,7 @@ const SearchParamsWrapper = ({ setPlanId, setPlanName, setAmount }) => {
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { user, loading, error } = useAuth();
+    const { user, loading, error } = useAuthStore();
 
     const [planId, setPlanId] = useState(null);
     const [planName, setPlanName] = useState(null);
@@ -105,10 +106,6 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         if (!loading && (!user || error)) {
-            router.push("/pages/auth/login");
-        }
-        if (!planId || !planName || !amount) {
-            router.push("/pages/landlord/subscription");
         }
     }, [user, loading, error, planId, planName, amount, router]);
 
@@ -128,7 +125,7 @@ export default function CheckoutPage() {
             });
 
             if (response.data.checkoutUrl) {
-                window.location.href = response.data.checkoutUrl; // Redirect to Maya payment page
+                window.location.href = response.data.checkoutUrl;
             } else {
                 alert("Failed to retrieve payment URL.");
             }
