@@ -74,33 +74,33 @@ export default function LandlordDetails() {
         <div className="container mx-auto p-4">
             <h2 className="text-2xl font-bold mb-4">Landlord Details</h2>
             <div className="bg-gray-100 p-4 rounded">
-                <p><strong>Landlord ID:</strong> {landlord.landlord.landlord_id}</p>
-                <p><strong>User ID:</strong> {landlord.landlord.user_id}</p>
-                <p><strong>Verified:</strong> {landlord.verification.status}</p>
-                <p><strong>Citizenship:</strong> {landlord.landlord.citizenship}</p>
-                <p><strong>Address:</strong> {landlord.landlord.address}</p>
-                <p><strong>Trial Used:</strong> {landlord.landlord.is_trial_used ? "✅ Yes" : "❌ No"}</p>
+                <p><strong>Landlord ID:</strong> {landlord?.landlord?.landlord_id}</p>
+                <p><strong>User ID:</strong> {landlord?.landlord?.user_id}</p>
+                <p><strong>Verified:</strong> {landlord?.verification?.status}</p>
+                <p><strong>Citizenship:</strong> {landlord?.landlord?.citizenship}</p>
+                <p><strong>Address:</strong> {landlord?.landlord?.address}</p>
+                <p><strong>Trial Used:</strong> {landlord?.landlord?.is_trial_used ? "✅ Yes" : "❌ No"}</p>
             </div>
 
             {landlord.verification ? (
                 <div className="bg-gray-100 p-4 rounded mt-4">
                     <h3 className="text-xl font-bold">Verification Details</h3>
-                    <p><strong>Document Type:</strong> {landlord.verification.document_type}</p>
-                    <p><strong>Reviewed By:</strong> {landlord.verification.reviewed_by || "Not yet reviewed"}</p>
-                    <p><strong>Review Date:</strong> {landlord.verification.review_date || "Not yet reviewed"}</p>
-                    {landlord.verification.message && (
-                        <p className="text-red-500"><strong>Rejection Reason:</strong> {landlord.verification.message}</p>
+                    <p><strong>Document Type:</strong> {landlord?.verification?.document_type}</p>
+                    <p><strong>Reviewed By:</strong> {landlord?.verification?.reviewed_by || "Not yet reviewed"}</p>
+                    <p><strong>Review Date:</strong> {landlord?.verification?.review_date || "Not yet reviewed"}</p>
+                    {landlord?.verification?.message && (
+                        <p className="text-red-500"><strong>Rejection Reason:</strong> {landlord?.verification?.message}</p>
                     )}
                     <div className="mt-4">
                         <p><strong>Document:</strong></p>
-                        <img src={landlord.verification.document_url} alt="Document" className="w-64 h-auto border" />
+                        <img src={landlord?.verification?.document_url} alt="Document" className="w-64 h-auto border" />
                     </div>
                     <div className="mt-4">
                         <p><strong>Selfie:</strong></p>
-                        <img src={landlord.verification.selfie_url} alt="Selfie" className="w-64 h-auto border" />
+                        <img src={landlord?.verification?.selfie_url} alt="Selfie" className="w-64 h-auto border" />
                     </div>
 
-                    {landlord.verification.status === "pending" && (
+                    {landlord?.verification?.status === "pending" && (
                         <div className="mt-4">
                             <textarea
                                 className="w-full p-2 border rounded mb-2"

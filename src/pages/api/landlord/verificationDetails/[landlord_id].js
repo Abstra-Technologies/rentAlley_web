@@ -1,31 +1,71 @@
 import {db} from "../../../../lib/db";
+import {decryptData } from "../../../../crypto/encrypt";
 
-export default async function handler(req, res) {
+
+
+export default async function getLandlordVerificationData(req, res) {
     const { landlord_id } = req.query;
 
     if (req.method === "GET") {
         try {
+            // Query to fetch landlord data
             const [landlordData] = await db.query(
                 `SELECT * FROM Landlord WHERE landlord_id = ?`,
                 [landlord_id]
             );
 
+            // Query to fetch landlord verification data
             const [verificationData] = await db.query(
                 `SELECT * FROM LandlordVerification WHERE landlord_id = ?`,
                 [landlord_id]
             );
 
+            // If no landlord is found, return an error
             if (landlordData.length === 0) {
                 return res.status(404).json({ message: "Landlord not found" });
             }
 
+            // Decrypt sensitive data in landlordData
+            const decryptedLandlordData = {
+                ...landlordData[0],
+                address: landlordData[0].address ? decryptData(JSON.parse(landlordData[0].address), process.env.ENCRYPTION_SECRET) : null,
+                citizenship: landlordData[0].citizenship ? decryptData(JSON.parse(landlordData[0].citizenship), process.env.ENCRYPTION_SECRET) : null,
+            };
+
+            // Decrypt verification data
+            const decryptedVerificationData = verificationData.length > 0 ? {
+                ...verificationData[0],
+                selfie_url: verificationData[0].selfie_url ? decryptData(JSON.parse(verificationData[0].selfie_url), process.env.ENCRYPTION_SECRET) : null,
+                document_url: verificationData[0].document_url ? decryptData(JSON.parse(verificationData[0].document_url), process.env.ENCRYPTION_SECRET) : null,
+            } : null;
+
+            if (decryptedVerificationData?.selfie) {
+                try {
+                    decryptedVerificationData.selfie = JSON.parse(decryptedVerificationData.selfie);
+                } catch (error) {
+                    console.error("Error parsing selfie data:", error);
+                    decryptedVerificationData.selfie = null;
+                }
+            }
+
+            if (decryptedVerificationData?.document_url) {
+                try {
+                    decryptedVerificationData.document_url = JSON.parse(decryptedVerificationData.document_url);
+                } catch (error) {
+                    console.error("Error parsing document_url data:", error);
+                    decryptedVerificationData.document_url = null;
+                }
+            }
+
+            // Return the decrypted data in the response
             res.status(200).json({
-                landlord: landlordData[0],
-                verification: verificationData.length > 0 ? verificationData[0] : null,
+                landlord: decryptedLandlordData,
+                verification: decryptedVerificationData,
             });
+
         } catch (error) {
             console.error("Database Error:", error);
-            res.status(500).json({ message: "Database connection error" });
+            res.status(500).json({ message: "Database connection error", error: error.message });
         }
     } else {
         res.setHeader("Allow", ["GET"]);
