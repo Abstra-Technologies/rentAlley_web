@@ -18,7 +18,6 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Enum values not found" });
     }
 
-    // Extract and format ENUM values
     const enumString = rows[0].COLUMN_TYPE;
     const category = enumString
       .replace(/enum\(|\)/g, "") // Remove "enum(" and ")"

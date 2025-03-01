@@ -6,10 +6,11 @@ import { DOCUMENT_TYPES } from "../../../../constant/docTypes";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { FiInfo } from "react-icons/fi";
+import LoadingScreen from "../../../../components/loadingScreen";
 
 export default function LandlordDashboard() {
   const router = useRouter();
-  const { user, loading, error } = useAuth();
+  const { user, error } = useAuth();
   const [landlordId, setLandlordId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedDocument, setSelectedDocument] = useState("");
@@ -24,9 +25,11 @@ export default function LandlordDashboard() {
   const webcamRef = useRef(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     if (user?.userType === "landlord") {
+      setDataLoading(true);
       fetch(`/api/landlord/${user.landlord_id}`)
         .then((res) => res.json())
         .then((data) => {
@@ -34,11 +37,12 @@ export default function LandlordDashboard() {
           setFullName(`${user.firstName} ${user.lastName}`);
           setDateOfBirth(user.birthDate);
         })
-        .catch((err) => console.error("Error fetching landlord data:", err));
+        .catch((err) => console.error("Error fetching landlord data:", err)).finally(() => { setDataLoading(false);
+      })
     }
   }, [user]);
 
-  if (loading) return <p>Loading...</p>;
+  if(dataLoading) return  <LoadingScreen />;
   if (error) return <p>{error}</p>;
   if (!user) return <p>You need to log in to access the dashboard.</p>;
 
@@ -100,8 +104,6 @@ export default function LandlordDashboard() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-3xl md:max-w-2xl sm:max-w-md">
         <h1 className="text-2xl font-bold mb-4">Landlord Verification</h1>
-        <p className="mb-4">User ID: {user.userID}</p>
-        {landlordId && <p className="mb-4">Your Landlord ID: {landlordId}</p>}
 
         <div className="mb-4">
           <div className="flex justify-between mb-2">

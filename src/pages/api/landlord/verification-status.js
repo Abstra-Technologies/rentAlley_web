@@ -1,15 +1,9 @@
 import mysql from "mysql2/promise";
 
-export default async function handler(req, res) {
-    if (req.method !== "GET") {
-        return res.status(405).json({ message: "Method Not Allowed" });
-    }
+
+export default async function VerificationStatusLandlord(req, res) {
 
     const { user_id } = req.query;
-
-    if (!user_id) {
-        return res.status(400).json({ message: "Missing user_id" });
-    }
 
     const db = await mysql.createConnection({
         host: process.env.DB_HOST,
@@ -19,20 +13,50 @@ export default async function handler(req, res) {
     });
 
     try {
-        const [rows] = await db.execute(
-            `SELECT is_verified FROM Landlord WHERE user_id = ?`,
+        const [landlordRows] = await db.execute(
+            `SELECT landlord_id FROM Landlord WHERE user_id = ?`,
             [user_id]
         );
 
-        await db.end();
-
-        if (rows.length === 0) {
+        if (landlordRows.length === 0) {
+            await db.end();
             return res.status(404).json({ message: "Landlord not found" });
         }
 
-        return res.status(200).json({ is_verified: rows[0].is_verified });
+        const landlord_id = landlordRows[0].landlord_id;
+
+        //  check the verification status in LandlordVerification table using landlord_id
+        const [verificationRows] = await db.execute(
+            `SELECT status FROM LandlordVerification WHERE landlord_id = ?`,
+            [landlord_id]
+        );
+
+        // If no verification record exists for this landlord_id, return 'not verified'
+        if (verificationRows.length === 0) {
+            await db.end();
+            return res.status(200).json({
+                verification_status: 'not verified',
+            });
+        }
+
+        // Return the verification status from the LandlordVerification table
+        const verificationStatus = verificationRows[0].status;
+
+        const validStatuses = ['pending', 'verified', 'rejected', 'not verified'];
+
+        if (validStatuses.includes(verificationStatus)) {
+            return res.status(200).json({
+                verification_status: verificationStatus,
+            });
+        } else {
+            return res.status(200).json({
+                verification_status: 'not verified',
+            });
+        }
+
     } catch (error) {
-        console.error("🔥 Database Error:", error);
+        console.error("Database Error:", error);
+        await db.end();
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }

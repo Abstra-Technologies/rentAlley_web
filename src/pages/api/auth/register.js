@@ -14,13 +14,9 @@ const dbConfig = {
     database: process.env.DB_NAME,
 };
 
-export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Method Not Allowed' });
-    }
+export default async function RegisterAnAccount(req, res) {
 
-    const { firstName, lastName, email, password, dob, mobileNumber, role } =
-        req.body;
+    const { firstName, lastName, email, password, dob, mobileNumber, role } = req.body;
 
     if(
         !firstName ||
@@ -32,7 +28,6 @@ export default async function handler(req, res) {
         !role
     ) {
         console.error("Missing fields in request body:", req.body);
-        return res.status(400).json({ error: "Missing fields" });
     }
     const db = await mysql.createConnection(dbConfig);
     await db.execute("SET time_zone = '+08:00'");
@@ -40,14 +35,13 @@ export default async function handler(req, res) {
     console.log("MySQL Server Time:", timeResult);
 
     const emailHash = CryptoJS.SHA256(email).toString();
-    const birthDate = dob; // Map `dob` to `birthDate`
-    const phoneNumber = mobileNumber; // Map `mobileNumber` to `phoneNumber`
+    const birthDate = dob;
+    const phoneNumber = mobileNumber;
     const userType = role;
 
     try {
         await db.beginTransaction();
 
-        // Check if user already exists
         const [existingUser] = await db.execute("SELECT * FROM User WHERE email = ?", [email]);
 
         let user_id;
@@ -55,6 +49,7 @@ export default async function handler(req, res) {
         if (existingUser.length > 0) {
 
             user_id = existingUser[0].user_id;
+            new Error("An Existing account is already in use.");
 
             // // If user is not verified, resend OTP
             // if (!existingUser[0].email_verified) {
@@ -67,17 +62,15 @@ export default async function handler(req, res) {
             const [userIdResult] = await db.query("SELECT UUID() AS uuid");
             user_id = userIdResult[0].uuid;
             const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-            // Hash the password securely
             const hashedPassword = await bcrypt.hash(password, 10);
             const emailEncrypted = JSON.stringify(encryptData(email, process.env.ENCRYPTION_SECRET));
             const fnameEncrypted = JSON.stringify(encryptData(firstName, process.env.ENCRYPTION_SECRET));
             const lnameEncrypted = JSON.stringify(encryptData(lastName, process.env.ENCRYPTION_SECRET));
             const phoneEncrypted = JSON.stringify(encryptData(phoneNumber, process.env.ENCRYPTION_SECRET));
-            // Hash email for uniqueness
 
             console.log("Generating email confirmation token...");
             console.log("Inserting user into database...");
-            // Insert into `User_Tbl`
+
             const [result] = await db.query(
                 `INSERT INTO User (user_id,firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, createdAt, updatedAt, emailVerified)
                 VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(),?)`,
@@ -126,7 +119,6 @@ export default async function handler(req, res) {
          VALUES (?, ?, NOW())`,
                 [userId, "User registered"]
             );
-            // Generate and send OTP
             const otp = generateOTP();
             await storeOTP(db, userId, otp);
             await sendOtpEmail(email, otp);
@@ -170,16 +162,12 @@ function generateOTP() {
 async function storeOTP(connection, user_id, otp) {
     console.log(`Storing OTP for User ID: ${user_id}, OTP: ${otp}`);
 
-    // ✅ Set session time zone (works even without SUPER privilege)
     await connection.execute("SET time_zone = '+08:00'");
-
-    // ✅ Delete previous OTPs before inserting a new one
     await connection.execute(
         `DELETE FROM UserToken WHERE user_id = ? AND token_type = 'email_verification'`,
         [user_id]
     );
 
-    // ✅ Insert OTP with correct timestamps
     await connection.execute(
         `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
         VALUES (?, 'email_verification', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))`,
@@ -188,7 +176,6 @@ async function storeOTP(connection, user_id, otp) {
 
     console.log(`OTP ${otp} stored for user ${user_id} (expires in 10 min)`);
 }
-
 
 async function sendOtpEmail(toEmail, otp) {
     const transporter = nodemailer.createTransport({

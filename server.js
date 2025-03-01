@@ -152,7 +152,6 @@ io.on("connection", (socket) => {
     //         console.error("Error sending message:", error);
     //     }
     // });
-
     // socket.on("sendMessage", async ({ sender_id, sender_type, receiver_id, receiver_type, message, chat_room }) => {
     //     try {
     //         console.log(`🔹 Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chat_room });

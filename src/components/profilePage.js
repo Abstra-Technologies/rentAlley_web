@@ -18,8 +18,8 @@ export default function ProfilePage() {
     const [uploading, setUploading] = useState(false);
     const [profilePicture, setProfilePicture] = useState("");
     const [editing, setEditing] = useState(false);
-    const [isVerified, setIsVerified] = useState(null);
-    const [dataLoading, setDataLoading] = useState(true); // 🔥 New state to track API loading
+    const [dataLoading, setDataLoading] = useState(true);
+    const [verificationStatus, setVerificationStatus] = useState(null);
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -36,37 +36,28 @@ export default function ProfilePage() {
                 lastName: user.lastName || "",
                 phoneNumber: user.phoneNumber || "",
             });
-
-            if (user.userType === "landlord") {
-                axios
-                    .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
-                    .then((response) => {
-                        setIsVerified(response.data.is_verified);
-                    })
-                    .catch((err) => {
-                        console.error("❌ Failed to fetch landlord verification status:", err);
-                    })
-                    .finally(() => {
-                        setDataLoading(false);
-                    });
-            } else {
-                setDataLoading(false);
-            }
         }
     }, [user]);
 
     useEffect(() => {
-        if (user?.userType === "landlord") {
+        if (user && user.userType === "landlord") {
             axios
                 .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
                 .then((response) => {
-                    setIsVerified(response.data.is_verified); // Update verification status
+                    console.log("Verification Status Response:", response.data);
+                    if (response.data.verification_status) {
+                        setVerificationStatus(response.data.verification_status);
+                    } else {
+                        setVerificationStatus('not verified');
+                    }
                 })
                 .catch((err) => {
                     console.error("Failed to fetch landlord verification status:", err);
+                    setVerificationStatus('not verified');
                 });
         }
     }, [user]);
+
 
 
     const handleChange = (e) => {
@@ -244,9 +235,21 @@ export default function ProfilePage() {
                     <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Welcome, {user?.firstName}!</h2>
                     {user.userType === "landlord" && (
                         <div className="mt-4">
-                            {isVerified === 1 ? (
+                            {verificationStatus === 'pending' ? (
+                                <p className="text-yellow-600 font-bold">⏳ Verification Pending</p>
+                            ) : verificationStatus === 'verified' ? (
                                 <p className="text-green-600 font-bold">✅ Verified</p>
-                            ) : (
+                            ) : verificationStatus === 'rejected' ? (
+                                <div>
+                                    <p className="text-red-600 font-bold">❌ Verification Rejected</p>
+                                    <button
+                                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                        onClick={() => router.push("/pages/landlord/verification")}
+                                    >
+                                        Reapply for Verification
+                                    </button>
+                                </div>
+                            ) : verificationStatus === 'not verified' ? (
                                 <div>
                                     <p className="text-red-600 font-bold">❌ Not Verified</p>
                                     <button
@@ -256,9 +259,13 @@ export default function ProfilePage() {
                                         Verify Now
                                     </button>
                                 </div>
+                            ) : (
+                                <p className="text-gray-600 font-bold">Unknown Status</p>
                             )}
                         </div>
                     )}
+
+
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">First Name</label>

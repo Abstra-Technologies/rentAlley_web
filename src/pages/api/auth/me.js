@@ -42,7 +42,7 @@ export default async function handler(req, res) {
                     u.birthDate,
                     t.tenant_id,
                     l.landlord_id,
-                    l.is_verified,
+                    l.verification_status_id,
                     l.is_trial_used
                 FROM User u
                 LEFT JOIN Tenant t ON u.user_id = t.user_id
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
 
                     user.subscription = subscriptionRows.length > 0 ? subscriptionRows[0] : null;
                     user.is_trial_used = user.is_trial_used ? true : false;
-                    user.is_verified = user.is_verified ? true : false;
+                    // user.is_verified = user.verification_status_id ? true : false;
 
                 }
 

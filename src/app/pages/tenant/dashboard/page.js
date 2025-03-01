@@ -10,7 +10,7 @@ export default function TenantDashboard() {
   // const { user,loading, error, signOut } = useAuth();
   // const { user } = useAuthStore();
     const { user, admin, fetchSession, loading } = useAuthStore();
-    const [dataLoading, setDataLoading] = useState(true); // ✅ New loading state
+    const [dataLoading, setDataLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
