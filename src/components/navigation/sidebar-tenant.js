@@ -1,4 +1,5 @@
 "use client";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Home, Bell, Wrench, CreditCard, Building } from "lucide-react";
 
@@ -11,10 +12,12 @@ const menuItems = [
     label: "Maintenance Request",
   },
   { href: "/pages/tenant/billing", icon: CreditCard, label: "Billing Payment" },
-  { href: "/pages/tenant/my-unit", icon: Building, label: "My Unit" }, // New My Units menu item
+  { href: "/pages/tenant/my-unit", icon: Building, label: "My Unit" },
 ];
 
 const TenantLayout = ({ children }) => {
+  const pathname = usePathname();
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
@@ -27,17 +30,28 @@ const TenantLayout = ({ children }) => {
         {/* Navigation Links */}
         <nav className="px-4">
           <ul className="space-y-2">
-            {menuItems.map(({ href, icon: Icon, label }) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg"
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  <span>{label}</span>
-                </Link>
-              </li>
-            ))}
+            {menuItems.map(({ href, icon: Icon, label }) => {
+              const isActive = pathname === href;
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className={`
+                      flex items-center px-4 py-3 rounded-lg text-gray-700 transition-all duration-200
+                      ${
+                        isActive
+                          ? "bg-blue-50 text-blue-700 font-bold"
+                          : "hover:bg-gray-100"
+                      }
+                    `}
+                  >
+                    <Icon className={`w-5 h-5 mr-3 ${isActive ? "text-blue-700" : "text-gray-500"}`} />
+                    <span>{label}</span>
+                    {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </div>
