@@ -1,10 +1,10 @@
 import { db } from "../../../../../lib/db";
 
-export default async function handler(req, res) {
+export default async function viewAdminLogActivity(req, res) {
     const { admin_id } = req.query;
 
     if (req.method !== "GET") {
-        return res.status(405).json({ success: false, message: "Method Not Allowed" });
+        return res.status(405).json({ error: "Method Not Allowed, ONLY fetching of record is allowed." });
     }
 
     try {

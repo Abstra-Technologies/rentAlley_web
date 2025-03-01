@@ -1,6 +1,11 @@
 import { db } from "../../../lib/db";
 
 export default async function logOutActivityLogs(req, res) {
+
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method Not Allowed, ONLY creaetion of logs is allowed." });
+    }
+
     const { user_id, action, timestamp } = req.body;
 
     if (!user_id || !action || !timestamp) {

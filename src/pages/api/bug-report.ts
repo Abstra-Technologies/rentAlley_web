@@ -2,9 +2,9 @@
 import { db } from "../../lib/db";
 import {NextApiRequest, NextApiResponse} from "next";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function createBugReport(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== "POST") {
-        return res.status(405).json({ error: "Method Not Allowed" });
+        return res.status(405).json({ error: "Method Not Allowed, ONLY creaetion of bug report is allowed." });
     }
     try {
         const { user_id, subject, description } = req.body;
@@ -13,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: "All fields are required." });
         }
 
-        // Insert bug report into the database
         await db.query(
             `INSERT INTO BugReport (user_id, subject, description) VALUES (?, ?, ?)`,
             [user_id, subject, description]

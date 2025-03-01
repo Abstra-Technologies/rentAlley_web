@@ -3,13 +3,12 @@
 import { create } from 'zustand';
 
 const useForgotPasswordStore = create((set) => ({
-    resetToken: '', // Store the reset token
+    resetToken: '',
     newPassword: '',
     confirmPassword: '',
     isLoading: false,
     message: '',
 
-    // Actions to details the state
     setResetToken: (token) => set({ resetToken: token }),
     setNewPassword: (password) => set({ newPassword: password }),
     setConfirmPassword: (password) => set({ confirmPassword: password }),

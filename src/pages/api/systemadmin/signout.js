@@ -1,10 +1,9 @@
-export default function handler(req, res) {
+
+export default function adminSignout(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
-
     try {
-        // Clear the JWT token by setting an expired cookie
         res.setHeader(
             "Set-Cookie",
             "token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict"

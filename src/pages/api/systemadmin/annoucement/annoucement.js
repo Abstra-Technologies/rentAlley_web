@@ -3,26 +3,18 @@ import { parse } from "cookie";
 import { jwtVerify } from "jose";
 import {logAuditEvent} from "../../../../utils/auditLogger";
 
-export default async function handler(req, res) {
+export default async function addNewAnnouncement(req, res) {
     if (req.method !== "POST") {
-        return res.status(405).json({ message: "Method Not Allowed" });
+        return res.status(405).json({ message: "Method Not Allowed, only CREATION of records is allowed." });
     }
 
     try {
-        //   retrieving user information (specifically admin_id) only if the request is authorized.
-        // the process as follows:
-        // Checks for a token in cookies
-        // Verifies the token to ensure it's valid
-        // Extracts user data (admin_id) from the token
-        // ❌ Rejects the request if the token is missing, invalid, or does not contain required data
 
-        // Parse cookies to get the token
+        //region GET CURRENT LOGGED IN ADMIN ID
         const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
         if (!cookies || !cookies.token) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-
-        // Verify JWT token using `jose`
         const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
         let decoded;
         try {
@@ -35,6 +27,8 @@ export default async function handler(req, res) {
         if (!decoded || !decoded.admin_id) {
             return res.status(401).json({ success: false, message: "Invalid Token Data" });
         }
+
+        //endregion
 
         const { title, message, target_audience } = req.body;
         const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;

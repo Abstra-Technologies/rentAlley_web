@@ -1,6 +1,6 @@
 import { db } from "../../../lib/db";
 
-export default async function handler(req, res) {
+export default async function deleteAdminAccount(req, res) {
     if (req.method !== "DELETE") {
         return res.status(405).json({ message: "Method Not Allowed" });
     }

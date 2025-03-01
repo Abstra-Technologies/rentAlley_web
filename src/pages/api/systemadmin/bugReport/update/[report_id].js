@@ -1,10 +1,11 @@
 import {db} from "../../../../../lib/db";
 
 
-export default async function handler(req, res) {
+export default async function updateReportStatus(req, res) {
+
     const { report_id } = req.query;
 
-    if (req.method !== "PUT") return res.status(405).json({ message: "Method Not Allowed" });
+    if (req.method !== "PUT") return res.status(405).json({ message: "Method Not Allowed, only UPDATE of record is allowed." });
 
     const { status, adminMessage, updatedByAdmin } = req.body;
 

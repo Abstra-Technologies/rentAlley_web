@@ -3,9 +3,11 @@ import bcrypt from "bcrypt";
 import {jwtVerify} from "jose";
 import {parse} from "cookie";
 
-export default async function handler(req, res) {
+export default async function updateAdminDetails(req, res) {
     const { admin_id } = req.query;
     let loggedAdminId;
+
+    //region CURRENT LOGGED ADMIN
     try {
         const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
         if (!cookies || !cookies.token) {
@@ -18,6 +20,7 @@ export default async function handler(req, res) {
     } catch (err) {
         console.log("Error:", err);
     }
+    //endregion
 
     if (req.method === "GET") {
         try {

@@ -1,6 +1,11 @@
 import { db } from "../../../lib/db";
 
 export default async function viewActivityLogs(req, res) {
+
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method Not Allowed, ONLY creaetion of logs is allowed." });
+    }
+
     try {
         const [logs] = await db.query("SELECT log_id, user_id, admin_id, action, timestamp FROM ActivityLog");
         res.status(200).json({ logs });

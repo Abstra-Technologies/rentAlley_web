@@ -3,19 +3,18 @@ import { parse } from "cookie";
 import { jwtVerify } from "jose";
 
 
-export default async function handler(req, res) {
+export default async function viewListofAnnoucements(req, res) {
     if (req.method !== "GET") {
-        return res.status(405).json({ message: "Method Not Allowed" });
+        return res.status(405).json({ message: "Method Not Allowed, only fetching of data is allowed." });
     }
 
     try {
-        // Parse cookies to get the JWT token
+
+        //region GET CURRENT LOGGED IN USER ID
         const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
         if (!cookies || !cookies.token) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-
-        // Verify JWT token using `jose`
         const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
         let decoded;
         try {
@@ -24,15 +23,13 @@ export default async function handler(req, res) {
         } catch (err) {
             console.log("Error:", err);
         }
-
         if (!decoded || !decoded.admin_id) {
             return res.status(401).json({ success: false, message: "Invalid Token Data" });
         }
+        const admin_id = decoded.admin_id;
+        //endregion
 
-        const admin_id = decoded.admin_id; // Get logged-in admin's ID
-        console.log(`Fetching announcements made by admin_id: ${admin_id}...`);
-
-        // Fetch only announcements created by the logged-in admin
+        // ONLY FETCHING THE ANNOUCEMENT CREATED BY THIS ADMIN.
         const [announcements] = await db.query(
             `SELECT 
                 a.id, 
@@ -45,9 +42,8 @@ export default async function handler(req, res) {
              JOIN Admin ad ON a.admin_id = ad.admin_id 
              WHERE a.admin_id = ? 
              ORDER BY a.created_at DESC`,
-            [admin_id] // ✅ Securely filter announcements based on logged-in admin
+            [admin_id]
         );
-
         return res.status(200).json({ success: true, announcements });
 
     } catch (error) {

@@ -2,9 +2,8 @@ import { jwtVerify } from "jose";
 import { parse } from "cookie";
 
 export async function getUserFromToken(req) {
-    // Parse cookies from request headers
     const cookies = req.headers.cookie ? parse(req.headers.cookie) : {};
-    const token = cookies.authToken; // Ensure this matches your actual cookie name
+    const token = cookies.authToken;
 
     if (!token) {
         return { success: false, message: "Unauthorized", status: 401 };
@@ -19,7 +18,10 @@ export async function getUserFromToken(req) {
         }
 
         return { success: true, userId: payload.userId };
+
     } catch (err) {
-        return { success: false, message: "Invalid Token", status: 401 };
+
+        return { success: false, message: err, status: 401 };
+
     }
 }

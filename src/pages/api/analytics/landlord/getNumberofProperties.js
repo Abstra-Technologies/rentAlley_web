@@ -1,6 +1,11 @@
 import  {db} from "../../../../lib/db";
 
 export default async function getLandlordNumberofProperties(req, res) {
+
+    if (req.method !== "GET") {
+        return res.status(405).json({ error: "Method Not Allowed, ONLY fetching of records is allowed." });
+    }
+
     try {
         const { landlord_id } = req.query;
         const [rows] = await db.execute(

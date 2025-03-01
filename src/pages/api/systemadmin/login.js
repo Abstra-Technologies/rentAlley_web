@@ -3,9 +3,8 @@ import { db } from "../../../lib/db";
 import {SignJWT} from "jose";
 import nodeCrypto from "crypto";
 
-export default async function handler(req, res) {
+export default async function admminLogin(req, res) {
     if (req.method !== "POST") {
-        console.log("Invalid HTTP Method:", req.method);
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
@@ -29,26 +28,25 @@ export default async function handler(req, res) {
         }
 
         if (!user) {
-            console.log("[DEBUG] No admin found with provided credentials:", login);
+            console.log("No admin found with provided credentials:", login);
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
         if (user.status === "disabled") {
-            console.log("[DEBUG] Login attempt for disabled account:", login);
+            console.log("Login attempt for disabled account:", login);
             return res.status(403).json({ error: "Your account has been disabled. Please contact support." });
         }
 
-        console.log("[DEBUG] Admin record found:", user);
-
-        console.log("[DEBUG] Comparing provided password with stored hash...");
+        console.log("Admin record found:", user);
+        console.log("Comparing provided password with stored hash...");
         const isMatch = await bcrypt.compare(password, user.password);
-        console.log("[DEBUG] Password comparison result:", isMatch);
+        console.log("Password comparison result:", isMatch);
 
         if (!isMatch) {
-            console.log("[DEBUG] Password mismatch for login:", login);
+            console.log(" Password mismatch for login:", login);
             return res.status(401).json({ error: "Invalid credentials." });
         }
-        console.log("[DEBUG] Password match. Generating JWT token...");
+        console.log("Password match. Generating JWT token...");
 
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 

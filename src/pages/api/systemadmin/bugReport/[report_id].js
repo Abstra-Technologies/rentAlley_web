@@ -1,6 +1,6 @@
 import {db} from "../../../../lib/db";
 
-export default async function handler(req, res) {
+export default async function getDetailedBugReport(req, res) {
     const { report_id } = req.query;
 
     if (req.method === "GET") {
@@ -17,6 +17,6 @@ export default async function handler(req, res) {
             res.status(500).json({ error: "Database error" });
         }
     } else {
-        res.status(405).json({ message: "Method not allowed" });
+        res.status(405).json({ message: "Method not allowed， only fetching of data is allowed." });
     }
 }

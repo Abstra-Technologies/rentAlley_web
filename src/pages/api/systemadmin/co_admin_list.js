@@ -10,6 +10,7 @@ export default async function handler(req, res) {
     try {
         console.log("Fetching all admins except the logged-in user...");
 
+        //region GET CURRENT LOGGED IN ADMIN
         // this code is for to opt out from the list the current user.
         // Parse cookies to get the token of the current user.
         const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
@@ -30,6 +31,7 @@ export default async function handler(req, res) {
         }
 
         const currentadmin_id = decoded.admin_id; // Extract logged-in admin's ID
+//endregion
 
         // Fetch all admins except the logged-in one
         const [admins] = await db.query(

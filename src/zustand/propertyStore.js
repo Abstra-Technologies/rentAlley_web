@@ -1,7 +1,6 @@
 import axios from "axios";
 import { create } from "zustand";
 
-// Define the Zustand store
 const usePropertyStore = create((set) => ({
   property: {
     propertyName: "",
@@ -54,7 +53,7 @@ const usePropertyStore = create((set) => ({
   // Add or remove amenities (toggle function)
   toggleAmenity: (amenity) => {
     set((state) => {
-      const amenities = state.property.amenities || []; // Ensure amenities is an array
+      const amenities = state.property.amenities || [];
       const amenityIndex = amenities.indexOf(amenity);
       let newAmenities;
 
@@ -111,18 +110,15 @@ const usePropertyStore = create((set) => ({
         p.property_id === id ? { ...p, ...updatedData } : p
       ),
     })),
-  // Set uploaded photos
+  //  property photos
   setPhotos: (photos) => set({ photos }),
-  // Set Document Files
+  //  verification property documents
   setMayorPermit: (file) => set({ mayorPermit: file }),
   setOccPermit: (file) => set({ occPermit: file }),
-  // Set Indoor Photo File
   setIndoorPhoto: (file) => set({ indoorPhoto: file }),
-  // Set Outdoor Photo File
   setOutdoorPhoto: (file) => set({ outdoorPhoto: file }),
   setGovID: (file) => set({ govID: file }),
   setSelectedProperty: (property) => set({ selectedProperty: property }),
-  // Reset state
   reset: () =>
     set((state) => ({
       property: {

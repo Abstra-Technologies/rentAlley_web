@@ -1,6 +1,6 @@
 import { db } from "../../../../../lib/db";
 
-export default async function handler(req, res) {
+export default async function getAnnoucementDetails(req, res) {
     const { id } = req.query;
 
     if (req.method === "GET") {
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
         const { title, message, target_audience } = req.body;
 
         try {
-            // Ensure at least one field is updated
+            //  at least one field is updated
             if (!title && !message && !target_audience) {
                 return res.status(400).json({ success: false, message: "No updates provided" });
             }

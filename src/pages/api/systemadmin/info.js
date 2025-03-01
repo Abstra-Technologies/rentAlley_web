@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { db } from "../../../lib/db";
 
 
-export default async function handler(req, res) {
+export default async function getCurrentAdminInfo(req, res) {
     if (req.method !== "GET") {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
@@ -17,10 +17,8 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: "Unauthorized: Token missing" });
         }
 
-        // Decode JWT token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Fetch admin details from the database
         const [admins] = await db.execute(
             "SELECT username, role FROM Admin WHERE admin_id = ?",
             [decoded.admin_id]

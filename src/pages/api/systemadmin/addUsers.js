@@ -10,6 +10,8 @@ import CryptoJS from "crypto-js";
 export default async function addAdmin(req, res) {
     let currentLoggedAdmin;
     if (req.method === "POST") {
+
+        //region GET CURRENT USER ADMIN
         try {
             const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
             if (!cookies || !cookies.token) {
@@ -20,8 +22,10 @@ export default async function addAdmin(req, res) {
             currentLoggedAdmin = payload.admin_id;
 
         } catch (err) {
-            return res.status(401).json({ success: false, message: "Invalid Token" });
+            return res.status(401).json({ success: false, message: err });
         }
+
+        //endregion
 
         const { email, username, password, role, first_name, last_name } = req.body;
 
@@ -54,6 +58,7 @@ export default async function addAdmin(req, res) {
             const emailEncrypted = JSON.stringify(encryptData(email, process.env.ENCRYPTION_SECRET));
             const fnameEncrypted = JSON.stringify(encryptData(first_name, process.env.ENCRYPTION_SECRET));
             const lnameEncrypted = JSON.stringify(encryptData(last_name, process.env.ENCRYPTION_SECRET));
+
             await db.execute(
                 "INSERT INTO Admin (Admin.admin_id, username, first_name, last_name, email_hash, email,  password, role ) VALUES (uuid(),?, ?, ?, ?, ?,?,?)",
                 [
@@ -66,11 +71,14 @@ export default async function addAdmin(req, res) {
                     role
                 ]
             );
-            return res.status(201).json({ message: "Admin registered successfully." });
+
             await db.query(
                 "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
                 [currentLoggedAdmin, `Added new Co-admin  ${username}`]
             );
+
+            return res.status(201).json({ message: "Admin registered successfully." });
+
         } catch (error) {
             console.error("Error registering admin:", error);
             return res.status(500).json({ error: "Internal Server Error" });

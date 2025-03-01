@@ -75,6 +75,6 @@ export default async function updateAdminStatus(req, res) {
         }
     } catch (error) {
         console.error("Error processing co-admin request:", error);
-        return res.status(500).json({ success: false, message: "Internal Server Error" });
+        return res.status(500).json({ success: false, message: error});
     }
 }
