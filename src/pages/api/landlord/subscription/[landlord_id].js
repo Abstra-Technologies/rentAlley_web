@@ -1,12 +1,12 @@
 import { db } from "../../../../lib/db";
 
-export default async function handler(req, res) {
+export default async function getCurrentSubscription(req, res) {
     if (req.method !== "GET") {
         return res.status(405).json({ message: "Method Not Allowed" });
     }
 
     const { landlord_id } = req.query;
-
+        console.log("llandlord_id", landlord_id);
     try {
         const [subscription] = await db.query(
             `SELECT * FROM Subscription WHERE landlord_id = ? LIMIT 1`,
