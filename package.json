@@ -70,6 +70,7 @@
     "next": "^15.1.0",
     "next-auth": "^4.24.11",
     "next-connect": "^1.0.0",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.9.16",
     "npm": "^10.9.2",
     "pdfjs-dist": "^3.11.174",
