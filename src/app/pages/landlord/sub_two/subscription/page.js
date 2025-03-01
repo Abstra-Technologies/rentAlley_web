@@ -5,7 +5,9 @@ import useAuth from "../../../../../../hooks/useSession";
 import { useRouter } from "next/navigation";
 import CardWarning from "../../../../../components/devTeam";
 import {logEvent} from "../../../../../utils/gtag";
+import LoadingScreen from "../../../../../components/loadingScreen";
 
+// modify this part.
 const plans = [
     { id: 1, name: "Free Plan", price: 0, trialDays: 0, features: ["1 Property", "2 Property Listings", "5 Maintenance Requests / month", "Up to 3 Prospective Tenants", "Up to 2 Property Billing", "Mobile Access"] },
     { id: 2, name: "Standard Plan", price: 500, trialDays: 1, features: ["List 5 Properties",] },
@@ -13,49 +15,92 @@ const plans = [
 ];
 
 export default function SubscriptionPlans() {
-    const { user, loading } = useAuth();
+    const { user } = useAuth();
     const router = useRouter();
     const [processing, setProcessing] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [trialUsed, setTrialUsed] = useState(null);
     const [currentSubscription, setCurrentSubscription] = useState(null);
     const [proratedAmount, setProratedAmount] = useState(null);
+    const [dataLoading, setDataLoading] = useState(true);
+
+    // useEffect(() => {
+    //     async function checkTrialStatus() {
+    //         if (!user) return;
+    //         try {
+    //             setDataLoading(true);
+    //             const response = await fetch("/api/payment/stats", {
+    //                 method: "POST",
+    //                 headers: { "Content-Type": "application/json" },
+    //                 body: JSON.stringify({ landlord_id: user.landlord_id }),
+    //             });
+    //             const data = await response.json();
+    //             setTrialUsed(data.is_trial_used);
+    //         } catch (error) {
+    //             console.error("Error checking trial status:", error);
+    //         } finally {
+    //             setDataLoading(false);
+    //         }
+    //     }
+    //     if (user) checkTrialStatus();
+    // }, [user]);
+    //
+    // useEffect(() => {
+    //     async function fetchCurrentSubscription() {
+    //         if (!user) return;
+    //         setDataLoading(true);
+    //
+    //         try {
+    //             const response = await fetch(`/api/landlord/subscription/${user.landlord_id}`);
+    //             if (!response.ok) throw new Error("No active subscription found.");
+    //
+    //             const data = await response.json();
+    //             setCurrentSubscription(data);
+    //         } catch (error) {
+    //             console.error("Error fetching current subscription:", error);
+    //             setCurrentSubscription(null);
+    //         }finally {
+    //             setDataLoading(false);
+    //
+    //         }
+    //     }
+    //     if (user) fetchCurrentSubscription();
+    // }, [user]);
+
 
     useEffect(() => {
-        async function checkTrialStatus() {
+        async function fetchData() {
             if (!user) return;
+            setDataLoading(true); // ✅ Start loading
+
             try {
-                const response = await fetch("/api/payment/stats", {
+                const trialResponse = await fetch("/api/payment/stats", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ landlord_id: user.landlord_id }),
                 });
-                const data = await response.json();
-                setTrialUsed(data.is_trial_used);
+
+                const trialData = await trialResponse.json();
+                setTrialUsed(trialData.is_trial_used);
+
+                // **Fetch Current Subscription**
+                const subscriptionResponse = await fetch(`/api/landlord/subscription/${user.landlord_id}`);
+
+                if (!subscriptionResponse.ok) throw new Error("No active subscription found.");
+
+                const subscriptionData = await subscriptionResponse.json();
+                setCurrentSubscription(subscriptionData);
             } catch (error) {
-                console.error("Error checking trial status:", error);
+                console.error("Error fetching data:", error);
+                setCurrentSubscription(null); // Ensure null state if no subscription exists
+            } finally {
+                setDataLoading(false); // ✅ Stop loading
             }
         }
-        if (user) checkTrialStatus();
+
+        if (user) fetchData();
     }, [user]);
 
-    // Fetch current subscription
-    useEffect(() => {
-        async function fetchCurrentSubscription() {
-            if (!user) return;
-            try {
-                const response = await fetch(`/api/landlord/subscription/${user.landlord_id}`);
-                if (!response.ok) throw new Error("No active subscription found.");
-
-                const data = await response.json();
-                setCurrentSubscription(data);
-            } catch (error) {
-                console.error("Error fetching current subscription:", error);
-                setCurrentSubscription(null);
-            }
-        }
-        if (user) fetchCurrentSubscription();
-    }, [user]);
 
     const calculateProrate = (newPlan) => {
         if (!currentSubscription) return 0;
@@ -79,7 +124,7 @@ export default function SubscriptionPlans() {
         if (currentSubscription?.plan_name === plan.name) return; // Prevent selecting current plan
         setSelectedPlan(plan);
         const proratedCost = calculateProrate(plan);
-        setProratedAmount(proratedCost);
+        setProratedAmount(parseFloat(proratedCost.toFixed(2)));
     };
 
     const handleProceed = async () => {
@@ -126,14 +171,22 @@ export default function SubscriptionPlans() {
                     alert("Failed to activate free trial.");
                 }
             } else {
-                // Subscription with payment (including prorate)
+                // Determine the amount for checkout
+                let amountToCharge;
+
+                if (!currentSubscription && trialUsed) {
+                    // If there's NO current plan and the free trial is used, charge full price
+                    amountToCharge = selectedPlan.price;
+                } else {
+                    // If there IS a current plan, apply proration
+                    amountToCharge = proratedAmount;
+                }
+
+                // Proceed to checkout
                 router.push(
-                    `/pages/landlord/subscription/checkout?planId=${selectedPlan.id}&plan=${encodeURIComponent(selectedPlan.name)}&amount=${proratedAmount}&trialDays=${selectedPlan.trialDays}`
+                    `/pages/landlord/subscription/checkout?planId=${selectedPlan.id}&plan=${encodeURIComponent(selectedPlan.name)}&amount=${amountToCharge}&trialDays=${selectedPlan.trialDays}`
                 );
             }
-            // router.push(
-            //     `/pages/landlord/subscription/checkout?planId=${selectedPlan.id}&plan=${encodeURIComponent(selectedPlan.name)}&amount=${selectedPlan.price}&trialDays=${selectedPlan.trialDays}`
-            // );
         } catch (error) {
             alert("An error occurred. Please try again.", error);
         } finally {
@@ -141,7 +194,7 @@ export default function SubscriptionPlans() {
         }
     };
 
-    if (loading) return <p>Loading...</p>;
+    if (dataLoading) return <LoadingScreen />;
     if (!user) return;
 
     return (

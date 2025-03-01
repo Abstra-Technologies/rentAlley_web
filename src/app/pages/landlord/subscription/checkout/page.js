@@ -231,7 +231,7 @@ export default function CheckoutPage() {
                     alert("Failed to activate free plan. Please try again.");
                 }
             } catch (error) {
-                console.error("🚨 Error activating free plan:", error);
+                console.error("Error activating free plan:", error);
                 alert("An error occurred. Please try again.");
             } finally {
                 setProcessing(false);

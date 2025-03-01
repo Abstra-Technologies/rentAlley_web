@@ -100,7 +100,6 @@ export default async function subscriptionCheckout(req, res) {
         }
 
         const requestReferenceNumber = `REF-${Date.now()}`;
-        console.log("🔑 Debug - Generated Reference Number:", requestReferenceNumber);
 
         // Check if an existing subscription exists
         const [existingSubscription] = await connection.execute(
@@ -127,8 +126,8 @@ export default async function subscriptionCheckout(req, res) {
             buyer: { firstName, lastName, contact: { email } },
             redirectUrl: {
                 success: `${redirectUrl.success}?requestReferenceNumber=${encodeURIComponent(requestReferenceNumber)}&landlord_id=${landlord_id}`,
-                failure: redirectUrl.failure,
-                cancel: redirectUrl.cancel,
+                failure: `${redirectUrl.failure}?requestReferenceNumber=${encodeURIComponent(requestReferenceNumber)}&landlord_id=${landlord_id}`,
+                cancel: `${redirectUrl.cancel}?requestReferenceNumber=${encodeURIComponent(requestReferenceNumber)}&landlord_id=${landlord_id}`,
             },
             requestReferenceNumber,
             items: [{ name: description, quantity: 1, totalAmount: { value: amount, currency: "PHP" } }],
@@ -154,3 +153,5 @@ export default async function subscriptionCheckout(req, res) {
         return res.status(500).json({ error: "Payment initiation failed.", details: error.response?.data || error.message });
     }
 }
+
+

@@ -128,7 +128,9 @@
 //     }
 // }
 
-import mysql from "mysql2/promise"; // MySQL for database connection
+
+
+import mysql from "mysql2/promise";
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -137,7 +139,6 @@ export default async function handler(req, res) {
 
     const { requestReferenceNumber, landlord_id } = req.body;
 
-    // ✅ Validate required parameters
     if (!requestReferenceNumber || !landlord_id) {
         return res.status(400).json({ error: "Missing requestReferenceNumber or landlord_id." });
     }
@@ -202,3 +203,4 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Internal server error." });
     }
 }
+
