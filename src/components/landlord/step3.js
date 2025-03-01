@@ -1,6 +1,8 @@
 import usePropertyStore from "../../zustand/propertyStore";
 import { FaImage } from "react-icons/fa"; // Import checkmark icon from react-icons
 import { useDropzone } from "react-dropzone";
+import { UTILITY_BILLING_TYPES } from "../../constant/utilityBillingType";
+import { PAYMENT_FREQUENCIES } from "../../constant/paymentFrequency";
 
 export function StepThree() {
   // Access the property data and actions from Zustand store
@@ -27,10 +29,19 @@ export function StepThree() {
   // Handle input changes for property details
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
+    let newValue = type === "checkbox" ? (checked ? 1 : 0) : value;
 
-    setProperty({
-      [name]: type === "checkbox" ? (checked ? 1 : 0) : value,
-    });
+    if (name === "multipleUnits") {
+      newValue = checked ? 1 : 0;
+      setProperty({
+        ...property,
+        multipleUnits: newValue,
+        totalUnits: checked ? property.totalUnits || "" : 1,
+      });
+      return;
+    }
+
+    setProperty({ ...property, [name]: newValue });
   };
 
   // Remove image from preview
@@ -49,22 +60,40 @@ export function StepThree() {
         <div className="space-y-4">
           {/* Number of Units */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Number of Units (if Applicable)
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                name="multipleUnits"
+                checked={property.multipleUnits === 1}
+                onChange={handleChange}
+                className="h-5 w-5"
+              />
+              <span className="text-gray-700 font-medium">
+                Do you have one or more units?
+              </span>
             </label>
-            <input
-              type="number"
-              name="numberOfUnit"
-              value={property.numberOfUnit || ""}
-              onChange={handleChange}
-              placeholder="2"
-              min="0"
-              className="w-full p-2 border rounded"
-            />
           </div>
 
+          {/* Show total units input only if multiple units checkbox is checked */}
+          {property.multipleUnits === 1 && (
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">
+                Total Units
+              </label>
+              <input
+                type="number"
+                name="totalUnits"
+                value={property.totalUnits || ""}
+                onChange={handleChange}
+                placeholder="2"
+                min="1"
+                className="w-full p-2 border rounded"
+              />
+            </div>
+          )}
+
           {/* Conditionally show when numberOfUnit is 0 */}
-          {property.numberOfUnit > 0 ? (
+          {property.multipleUnits === 1 ? (
             <div className="bg-yellow-100 text-yellow-700 p-4 rounded-md shadow-md">
               <p className="font-medium">
                 Since you have more than one or more units, individual property
@@ -125,36 +154,27 @@ export function StepThree() {
                   <label className="text-gray-700">Pet-Friendly</label>
                 </div>
 
-                {/* Bed Spacing */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    name="bedSpacing"
-                    checked={property.bedSpacing === 1}
-                    onChange={handleChange}
-                    className="h-6 w-6"
-                  />
-                  <label className="text-gray-700">
-                    Bed Spacing (if applicable)
+                {/* Utility Billing Type */}
+                <div>
+                  <label className="block text-gray-700 font-medium mb-1">
+                    Utility Billing Type
                   </label>
+                  <select
+                    name="utilityBillingType"
+                    value={property.utilityBillingType || ""}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value="" disabled>
+                      Select a billing type
+                    </option>
+                    {UTILITY_BILLING_TYPES.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-
-                {/* Available Bed Spacing Input (If Checked) */}
-                {property.bedSpacing === 1 && (
-                  <div>
-                    <label className="block text-gray-700 font-medium mb-1">
-                      Available Bed Spacing (in number)
-                    </label>
-                    <input
-                      type="number"
-                      name="availBeds"
-                      value={property.availBeds || ""}
-                      onChange={handleChange}
-                      placeholder="Enter available bed spacing"
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Payment Term Details */}
@@ -168,7 +188,7 @@ export function StepThree() {
               {/* Payment Inputs */}
               <div className="space-y-4">
                 {/* Rent Payment */}
-                <div>
+                {/* <div>
                   <label
                     htmlFor="rentPayment"
                     className="block text-sm font-medium text-gray-700"
@@ -186,7 +206,7 @@ export function StepThree() {
                       setProperty({ ...property, rentPayment: e.target.value })
                     }
                   />
-                </div>
+                </div> */}
 
                 {/* Security Deposit */}
                 <div>
@@ -215,7 +235,7 @@ export function StepThree() {
                     htmlFor="advancedPayment"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Advanced Payment (Months)
+                    Advanced Payment
                   </label>
                   <input
                     type="number"
@@ -277,47 +297,52 @@ export function StepThree() {
                     }
                   />
                 </div>
-              </div>
 
-              {/* Utility Bill Checkboxes */}
-              <div className="mt-4 space-y-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Utility Bill (Check if included)
-                </label>
-
-                <div className="flex items-center space-x-4">
-                  {/* Water Bill */}
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-6 w-6"
-                      checked={property.hasWater || 0}
-                      onChange={(e) =>
-                        setProperty({ ...property, hasWater: e.target.checked })
-                      }
-                    />
-                    <span className="ml-3 text-lg text-gray-700">
-                      Water Bill
-                    </span>
+                {/* Association Dues */}
+                <div>
+                  <label
+                    htmlFor="assocDues"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Association Dues
                   </label>
+                  <input
+                    id="assocDues"
+                    type="number"
+                    placeholder="0"
+                    min={0}
+                    className="mt-1 block w-full rounded-md border p-3"
+                    value={property.assocDues || ""}
+                    onChange={(e) =>
+                      setProperty({ ...property, assocDues: e.target.value })
+                    }
+                  />
+                </div>
 
-                  {/* Electricity Bill */}
-                  <label className="inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-6 w-6"
-                      checked={property.hasElectricity || 0}
-                      onChange={(e) =>
-                        setProperty({
-                          ...property,
-                          hasElectricity: e.target.checked,
-                        })
-                      }
-                    />
-                    <span className="ml-3 text-lg text-gray-700">
-                      Electricity Bill
-                    </span>
+                {/* Payment Frequency */}
+                <div>
+                  <label
+                    htmlFor="paymentFrequency"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Payment Frequency
                   </label>
+                  <select
+                    id="paymentFrequency"
+                    name="paymentFrequency"
+                    value={property.paymentFrequency || ""}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border p-3"
+                  >
+                    <option value="" disabled>
+                      Select Payment Frequency
+                    </option>
+                    {PAYMENT_FREQUENCIES.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </>

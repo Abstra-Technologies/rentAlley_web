@@ -1,6 +1,7 @@
 import axios from "axios";
 import { create } from "zustand";
 
+// Define the Zustand store
 const usePropertyStore = create((set) => ({
   property: {
     propertyName: "",
@@ -13,23 +14,21 @@ const usePropertyStore = create((set) => ({
     province: "",
     propDesc: "",
     floorArea: 0,
-    bedSpacing: 0,
-    availBeds: 0,
     petFriendly: 0,
-    numberOfUnit: "",
+    totalUnits: "",
     street: "",
     brgyDistrict: 0,
     city: "",
     zipCode: 0,
     province: "",
+    utilityBillingType: "",
     minStay: 0,
     secDeposit: 0,
     advancedPayment: 0,
-    hasElectricity: 0,
-    hasWater: 0,
-    hasAssocDues: 0,
-    rentPayment: 0.0,
-    lateFee: 0.0,
+    lateFee: 0,
+    assocDues: 0,
+    secDeposit: 0,
+    paymentFrequency: 0,
   },
   photos: [],
   propertyTypes: [],
@@ -53,7 +52,7 @@ const usePropertyStore = create((set) => ({
   // Add or remove amenities (toggle function)
   toggleAmenity: (amenity) => {
     set((state) => {
-      const amenities = state.property.amenities || [];
+      const amenities = state.property.amenities || []; // Ensure amenities is an array
       const amenityIndex = amenities.indexOf(amenity);
       let newAmenities;
 
@@ -81,23 +80,30 @@ const usePropertyStore = create((set) => ({
     set({ loading: true, error: null });
 
     try {
-      // Fetch all properties and only the first photo for each property
+      // Fetch all properties and their full details
       const [propertiesRes, photosRes] = await Promise.all([
         axios.get(`/api/propertyListing/propListing?landlord_id=${landlordId}`), // Fetch properties
-        axios.get("/api/propertyListing/propPhotos"), // Fetch first property photos
+        axios.get("/api/propertyListing/propPhotos"), // Fetch property photos
       ]);
 
-      // Ensure each property gets its correct first photo
-      const propertiesWithPhotos = propertiesRes.data.map((property) => {
-        const propertyPhoto = photosRes.data.find(
-          (photo) => photo.property_id === property.property_id
-        );
-
-        return {
-          ...property,
-          photos: propertyPhoto ? [propertyPhoto] : [], // Only assign first photo
-        };
+      // Create a lookup table for photos based on `property_id`
+      const photoMap = {};
+      photosRes.data.forEach((photoData) => {
+        if (!photoMap[photoData.property_id]) {
+          photoMap[photoData.property_id] = [];
+        }
+        if (photoData.firstPhoto) {
+          photoMap[photoData.property_id].push(photoData.firstPhoto);
+        }
       });
+
+      // Merge properties with their corresponding photos
+      const propertiesWithPhotos = propertiesRes.data.map((property) => ({
+        ...property,
+        photos: photoMap[property.property_id] || [], // Assign all decrypted photos
+      }));
+
+      console.log("Properties with Photos:", propertiesWithPhotos);
 
       set({ properties: propertiesWithPhotos, loading: false });
     } catch (err) {
@@ -110,15 +116,18 @@ const usePropertyStore = create((set) => ({
         p.property_id === id ? { ...p, ...updatedData } : p
       ),
     })),
-  //  property photos
+  // Set uploaded photos
   setPhotos: (photos) => set({ photos }),
-  //  verification property documents
+  // Set Document Files
   setMayorPermit: (file) => set({ mayorPermit: file }),
   setOccPermit: (file) => set({ occPermit: file }),
+  // Set Indoor Photo File
   setIndoorPhoto: (file) => set({ indoorPhoto: file }),
+  // Set Outdoor Photo File
   setOutdoorPhoto: (file) => set({ outdoorPhoto: file }),
   setGovID: (file) => set({ govID: file }),
   setSelectedProperty: (property) => set({ selectedProperty: property }),
+  // Reset state
   reset: () =>
     set((state) => ({
       property: {
@@ -135,7 +144,8 @@ const usePropertyStore = create((set) => ({
         bedSpacing: 0,
         availBeds: 0,
         petFriendly: 0,
-        numberOfUnit: "",
+        totalUnits: "",
+        utilityBillingType: "",
         street: "",
         brgyDistrict: 0,
         city: "",
@@ -143,10 +153,9 @@ const usePropertyStore = create((set) => ({
         province: "",
         minStay: 0,
         secDeposit: 0,
+        assocDues: 0,
+        paymentFrequency: 0,
         advancedPayment: 0,
-        hasElectricity: 0,
-        hasWater: 0,
-        hasAssocDues: 0,
         rentPayment: 0.0,
         lateFee: 0.0,
       },

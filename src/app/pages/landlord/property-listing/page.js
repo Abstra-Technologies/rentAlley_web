@@ -205,15 +205,15 @@ const PropertyListingPage = () => {
           ) : (
             properties.map((property) => (
               <div
-                key={property.property_id}
+                key={property?.property_id}
                 onClick={(event) => handleView(property, event)}
                 className="flex flex-col md:flex-row items-center p-4 bg-white rounded-lg shadow-md space-y-4 md:space-y-0 md:space-x-4 cursor-pointer hover:shadow-lg transition-shadow mb-4"
               >
                 {/* Property Image */}
-                {property.photos.length > 0 ? (
+                {property?.photos.length > 0 ? (
                   <Image
-                    src={property.photos[0].photo_url}
-                    alt={property.property_name}
+                    src={property?.photos[0]}
+                    alt={property?.property_name}
                     width={400}
                     height={250}
                     loading="lazy"
@@ -229,14 +229,20 @@ const PropertyListingPage = () => {
                 {/* Property Details */}
                 <div className="flex-1 text-center md:text-left">
                   <h3 className="text-lg font-bold">
-                    {property.property_name}
+                    {property?.property_name}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {property.street}, {property.city}, {property.province}
+                    {property?.street}, {property?.city},{" "}
+                    {property?.province
+                      .split("_")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" ")}{" "}
                   </p>
                   <p className="mt-1 text-sm text-blue-700">
-                    {property.property_type.charAt(0).toUpperCase() +
-                      property.property_type.slice(1)}
+                    {property?.property_type.charAt(0).toUpperCase() +
+                      property?.property_type.slice(1)}
                   </p>
                 </div>
 
@@ -247,7 +253,7 @@ const PropertyListingPage = () => {
                     <button
                       className="px-3 py-2 text-white bg-orange-500 rounded-md hover:bg-orange-600"
                       onClick={(event) =>
-                        handleEdit(property.property_id, event)
+                        handleEdit(property?.property_id, event)
                       }
                     >
                       Edit
@@ -255,7 +261,7 @@ const PropertyListingPage = () => {
                     <button
                       className="px-3 py-2 text-white bg-red-500 rounded-md hover:bg-red-600"
                       onClick={(event) =>
-                        handleDelete(property.property_id, event)
+                        handleDelete(property?.property_id, event)
                       }
                     >
                       Delete
@@ -264,7 +270,7 @@ const PropertyListingPage = () => {
                     <button
                       className="px-3 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600"
                       onClick={(event) =>
-                        handleTenantRequest(property.property_id, event)
+                        handleTenantRequest(property?.property_id, event)
                       }
                     >
                       Tenant Request
