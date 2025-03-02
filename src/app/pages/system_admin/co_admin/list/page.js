@@ -73,7 +73,7 @@ export default function CoAdminDashboard() {
         credentials: "include"
       });
       
-      if (!res.ok) new Error("Failed to update co-admin status");
+      if (!res.ok) throw new Error("Failed to update co-admin status");
       
       setAdmins(prev => prev.map(admin => 
         admin.admin_id === admin_id ? {...admin, status: newStatus} : admin
@@ -90,88 +90,123 @@ export default function CoAdminDashboard() {
     router.push("/pages/system_admin/co_admin/create");
   };
 
-  if(loading){ return  <LoadingScreen />}
+  if(loading){ 
+    return <LoadingScreen />;
+  }
+
+  if(error) {
+    return <p className="text-red-500 p-6">Error: {error}</p>;
+  }
 
   return (
-    <div className="flex h-screen">
-      <SideNavAdmin/>
-      <div className="flex-1 p-6 bg-gray-100">
-        <h2 className="text-2xl font-bold text-blue-600 mb-4">Co-Admin Management</h2>
+    <div className="flex">
+      <SideNavAdmin />
+      
+      <div className="flex-1 p-6 max-w-6xl mx-auto">
+        <h1 className="text-2xl font-semibold text-blue-600 mb-6">Co-Admin Management</h1>
+        
         <button
-            onClick={handleAddCoAdmin}
-            className="mb-4 bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
-        >Add Co-Admin</button>
-        {loading ? (
-          <p className="text-center text-gray-500">Loading Co-admins...</p>
-        ) : error ? (
-          <p className="text-center text-red-500">Error: {error}</p>
-        ) : (
-          <div className="overflow-x-auto border border-gray-300 rounded-lg bg-white p-4 shadow-md">
-            <table className="table-auto w-full">
+          onClick={handleAddCoAdmin}
+          className="mb-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+        >
+          Add Co-Admin
+        </button>
+        
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
               <thead className="bg-gray-50">
-                <tr className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <th className="px-4 py-2">#</th>
-                  <th className="px-4 py-2">Name</th>
-                  <th className="px-4 py-2">Email</th>
-                  <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Actions</th>
+                <tr>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">#</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {admins.map((admin, index) => (
-                  <tr key={admin.admin_id} className="border-b border-gray-200 hover:bg-gray-100">
-                    <td className="px-4 py-2">{index + 1}</td>
-                    <td className="px-4 py-2">{admin.username}</td>
-                    <td className="px-4 py-2">{admin.email}</td>
-                    <td className={`px-4 py-2 font-bold ${admin.status === "active" ? "text-green-600" : "text-red-600"}`}>{admin.status}</td>
-                    <td className="px-4 py-2 text-center flex space-x-2">
-                      <button className="bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600" onClick={() => handleEdit(admin.admin_id)}>
-                        <FaEdit className="inline mr-1"/> Edit
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(admin.admin_id, admin.status === "active" ? "disabled" : "active")}
-                        className={`px-3 py-2 rounded flex items-center ${
-                          admin.status === "active" 
-                            ? "bg-red-600 text-white hover:bg-red-700" 
-                            : "bg-green-600 text-white hover:bg-green-700"
-                        }`}
-                      >
-                        <MdPersonAddDisabled className="mr-1"/>
-                        {admin.status === "active" ? "Disable" : "Enable"}
-                      </button>
-                      <button className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 flex items-center" onClick={() => handleDelete(admin.admin_id)}>
-                        <FaTrash className="mr-1"/> Delete
-                      </button>
+                {admins.length > 0 ? (
+                  admins.map((admin, index) => (
+                    <tr key={admin.admin_id} className="hover:bg-gray-50 border-b">
+                      <td className="px-6 py-4">{index + 1}</td>
+                      <td className="px-6 py-4">{admin.username}</td>
+                      <td className="px-6 py-4">{admin.email}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          admin.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        }`}>
+                          {admin.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex space-x-2">
+                          <button 
+                            className="p-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition flex items-center" 
+                            onClick={() => handleEdit(admin.admin_id)}
+                          >
+                            <FaEdit className="w-4 h-4 mr-1" /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleStatusChange(admin.admin_id, admin.status === "active" ? "disabled" : "active")}
+                            className={`p-2 rounded-md text-white flex items-center ${
+                              admin.status === "active" 
+                                ? "bg-red-600 hover:bg-red-700" 
+                                : "bg-green-600 hover:bg-green-700"
+                            }`}
+                          >
+                            <MdPersonAddDisabled className="w-4 h-4 mr-1" />
+                            {admin.status === "active" ? "Disable" : "Enable"}
+                          </button>
+                          <button 
+                            className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center" 
+                            onClick={() => handleDelete(admin.admin_id)}
+                          >
+                            <FaTrash className="w-4 h-4 mr-1" /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
+                      <p>No co-admins found</p>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
-        )}
-        {editModal && <EditModal formData={formData} handleChange={(e) => setFormData({ ...formData, [e.target.name]: e.target.value })} handleUpdate={async () => {
-          try {
-            const res = await fetch(`/api/systemadmin/co_admin/${selectedAdmin}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(formData),
-              credentials: "include"
-            });
-            
-            if (!res.ok) throw new Error("Failed to update co-admin");
-            
-            setAdmins(prev => prev.map(admin => 
-              admin.admin_id === selectedAdmin 
-                ? {...admin, username: formData.username, email: formData.email, role: formData.role, status: formData.status} 
-                : admin
-            ));
-            
-            setEditModal(false);
-            alert("Co-admin updated successfully!");
-          } catch (err) {
-            alert(err.message);
-          }
-        }} closeModal={() => setEditModal(false)} />}
+        </div>
+        
+        {editModal && <EditModal 
+          formData={formData} 
+          handleChange={(e) => setFormData({ ...formData, [e.target.name]: e.target.value })} 
+          handleUpdate={async () => {
+            try {
+              const res = await fetch(`/api/systemadmin/co_admin/${selectedAdmin}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+                credentials: "include"
+              });
+              
+              if (!res.ok) throw new Error("Failed to update co-admin");
+              
+              setAdmins(prev => prev.map(admin => 
+                admin.admin_id === selectedAdmin 
+                  ? {...admin, username: formData.username, email: formData.email, role: formData.role, status: formData.status} 
+                  : admin
+              ));
+              
+              setEditModal(false);
+              alert("Co-admin updated successfully!");
+            } catch (err) {
+              alert(err.message);
+            }
+          }} 
+          closeModal={() => setEditModal(false)} 
+        />}
       </div>
     </div>
   );
