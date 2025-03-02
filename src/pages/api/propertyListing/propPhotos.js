@@ -42,8 +42,8 @@ export default async function handler(req, res) {
   try {
     connection = await db.getConnection();
 
-    if (req.method === "POST") {
-      await handlePostRequest(req, res, connection);
+    if (req.method === "PUT") {
+      await handlePutRequest(req, res, connection);
     } else if (req.method === "GET") {
       await handleGetRequest(req, res, connection);
     } else if (req.method === "DELETE") {
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
 }
 
 // Handle file upload and save to S3
-async function handlePostRequest(req, res, connection) {
+async function handlePutRequest(req, res, connection) {
   const form = new IncomingForm({
     multiples: true, // Allows multiple file uploads
     keepExtensions: true, // Keeps file extensions
@@ -86,15 +86,31 @@ async function handlePostRequest(req, res, connection) {
       return res.status(400).json({ error: "Missing property_id" });
     }
 
-    const uploadedFiles = Object.values(files).flat();
-    console.log("📂 Reformatted Uploaded Files:", uploadedFiles);
+    const uploadedFiles = Array.isArray(files.files)
+      ? files.files
+      : [files.files]; // Ensure we handle single & multiple files
 
-    if (!uploadedFiles.length) {
+    if (!uploadedFiles.length || !uploadedFiles[0]) {
       return res.status(400).json({ error: "No files uploaded" });
     }
 
     try {
       await connection.beginTransaction();
+
+      // 🔍 Fetch existing photo URLs from the database
+      const [existingProperty] = await connection.query(
+        `SELECT photo_url FROM Property WHERE property_id = ?`,
+        [property_id]
+      );
+
+      let existingPhotos = [];
+      if (existingProperty.length > 0 && existingProperty[0].photo_url) {
+        try {
+          existingPhotos = JSON.parse(existingProperty[0].photo_url); // Convert JSON to array
+        } catch (error) {
+          console.error("⚠️ Error parsing existing photo URLs:", error);
+        }
+      }
 
       const uploadPromises = uploadedFiles.map(async (file) => {
         const filePath = file.filepath;
@@ -116,41 +132,27 @@ async function handlePostRequest(req, res, connection) {
           ContentType: file.mimetype,
         };
 
-        try {
-          await s3Client.send(new PutObjectCommand(uploadParams));
+        await s3Client.send(new PutObjectCommand(uploadParams));
 
-          return {
-            property_id,
-            photo_url: encryptedUrl, // Store encrypted URL
-          };
-        } catch (uploadError) {
-          console.error("Error uploading file to S3:", uploadError);
-          throw new Error(
-            `Failed to upload ${file.originalFilename}: ${uploadError.message}`
-          );
-        }
+        return encryptedUrl;
       });
-
-      const uploadedFilesData = await Promise.all(uploadPromises);
-
-      const values = uploadedFilesData.map((fileData) => [
-        fileData.property_id,
-        fileData.photo_url,
-        new Date(),
-        new Date(),
-      ]);
-
-      const [result] = await connection.query(
-        `INSERT INTO PropertyPhoto (property_id, photo_url, created_at, updated_at) VALUES ?`,
-        [values]
-      );
 
       await connection.commit();
 
+      const newPhotoUrls = await Promise.all(uploadPromises);
+
+      // 🛠️ Merge new photos with existing ones
+      const updatedPhotos = [...existingPhotos, ...newPhotoUrls];
+
+      // ✅ Update DB with the new JSON array
+      await connection.query(
+        `UPDATE Property SET photo_url = ?, updated_at = ? WHERE property_id = ?`,
+        [JSON.stringify(updatedPhotos), new Date(), property_id]
+      );
+
       res.status(201).json({
         message: "Photos uploaded successfully",
-        insertedPhotoIDs: result.insertId,
-        files: uploadedFilesData,
+        files: updatedPhotos,
       });
     } catch (error) {
       await connection.rollback();
@@ -167,38 +169,93 @@ async function handleGetRequest(req, res, connection) {
   const { property_id } = req.query;
 
   try {
-    let query = `SELECT * FROM PropertyPhoto`;
+    // let query = `SELECT * FROM Property`;
+    let query = `SELECT property_id, photo_url
+      FROM Property
+      WHERE 1=1`;
     let params = [];
 
+    // if (property_id) {
+    //   query += ` WHERE property_id = ? ORDER BY property_id ASC`;
+    //   params.push(property_id);
+    // } else {
+    //   query += ` GROUP BY property_id ORDER BY property_id ASC`; // Group photos by property
+    // }
+
+    // if (landlord_id) {
+    //   query += ` AND landlord_id = ?`;
+    //   params.push(landlord_id);
+    // }
+
     if (property_id) {
-      query += ` WHERE property_id = ? ORDER BY property_id ASC`;
+      query += ` AND property_id = ?`;
       params.push(property_id);
-    } else {
-      query += ` GROUP BY property_id ORDER BY property_id ASC`; // Group photos by property
     }
 
     const [rows] = await connection.execute(query, params);
 
-    // Decrypt the photo URLs before returning them
-    const decryptedRows = rows.map((row) => {
-      try {
-        const encryptedData = JSON.parse(row.photo_url);
-        const decryptedUrl = decryptData(encryptedData, encryptionSecret);
+    // Process the photos
+    const propertiesWithPhotos = rows.map((property) => {
+      let firstPhoto = null;
 
-        return {
-          ...row,
-          photo_url: decryptedUrl,
-        };
-      } catch (decryptionError) {
-        console.error("Decryption Error:", decryptionError);
-        return {
-          ...row,
-          photo_url: null,
-        };
+      try {
+        console.log("Raw photo_url from DB:", property.photo_url);
+
+        if (property.photo_url) {
+          // Parse the array itself first
+          const encryptedPhotoArray = JSON.parse(property.photo_url);
+
+          if (
+            Array.isArray(encryptedPhotoArray) &&
+            encryptedPhotoArray.length > 0
+          ) {
+            const decryptedPhotos = encryptedPhotoArray
+              .map((encryptedStr) => {
+                try {
+                  // Each element in the array is a **stringified object**, so parse it first!
+                  const encryptedData = JSON.parse(encryptedStr);
+                  return decryptData(encryptedData, encryptionSecret);
+                } catch (decryptErr) {
+                  console.error(
+                    "Error decrypting individual photo:",
+                    decryptErr
+                  );
+                  return null;
+                }
+              })
+              .filter(Boolean); // Remove null values from failed decryptions
+
+            firstPhoto = decryptedPhotos.length > 0 ? decryptedPhotos[0] : null;
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing or decrypting photo_url:", error);
       }
+
+      return { ...property, firstPhoto };
     });
 
-    res.status(200).json(decryptedRows);
+    // Decrypt the photo URLs before returning them
+    // const decryptedRows = rows.map((row) => {
+    //   try {
+    //     const encryptedData = JSON.parse(row.photo_url);
+    //     const decryptedUrl = decryptData(encryptedData, encryptionSecret);
+
+    //     return {
+    //       ...row,
+    //       photo_url: decryptedUrl,
+    //     };
+    //   } catch (decryptionError) {
+    //     console.error("Decryption Error:", decryptionError);
+    //     return {
+    //       ...row,
+    //       // photo_url: null,
+    //       photo_url: [],
+    //     };
+    //   }
+    // });
+
+    res.status(200).json(propertiesWithPhotos);
   } catch (error) {
     console.error("Error fetching property photos:", error);
     res

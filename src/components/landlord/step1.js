@@ -1,27 +1,18 @@
 import React, { useEffect } from "react";
-import useSWR from "swr";
 import usePropertyStore from "../../zustand/propertyStore";
 import axios from "axios";
-
-const fetcher = (url) => axios.get(url).then((res) => res.data);
+import { PROPERTY_TYPES } from "../../constant/propertyTypes";
+import { PROVINCES_PHILIPPINES } from "../../constant/provinces";
 
 export const StepOne = () => {
   const { property, setProperty } = usePropertyStore();
 
-  // Use SWR to fetch property types
-  const { data, error } = useSWR("/api/propertyListing/propertyTypes", fetcher);
-
-  // Update Zustand store when data is available
+  // Set default property type if not already set
   useEffect(() => {
-    if (data?.propertyTypes?.length) {
-      setProperty({
-        propertyType: property.propertyType || data.propertyTypes[0],
-      });
+    if (!property.propertyType && PROPERTY_TYPES.length > 0) {
+      setProperty({ propertyType: PROPERTY_TYPES[0].value });
     }
-  }, [data, setProperty, property.propertyType]);
-
-  if (error) return <p>Failed to load property types.</p>;
-  if (!data) return <p>Loading property types...</p>;
+  }, [property.propertyType, setProperty]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,9 +43,9 @@ export const StepOne = () => {
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm text-lg py-2 px-4 focus:ring-blue-500 focus:border-blue-500"
           >
-            {data.propertyTypes.map((type) => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+            {PROPERTY_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
               </option>
             ))}
           </select>
@@ -139,18 +130,26 @@ export const StepOne = () => {
           />
         </div>
 
+        {/* Province Dropdown */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Province
           </label>
-          <input
-            type="text"
+          <select
             name="province"
             value={property.province || ""}
-            placeholder="Enter province"
             onChange={handleChange}
-            className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          />
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm text-lg py-2 px-4 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="" disabled>
+              Select Province
+            </option>
+            {PROVINCES_PHILIPPINES.map((province) => (
+              <option key={province.value} value={province.value}>
+                {province.label}
+              </option>
+            ))}
+          </select>
         </div>
       </form>
     </div>

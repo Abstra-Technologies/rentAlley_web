@@ -1,31 +1,5 @@
 import { db } from "../../../lib/db";
 
-async function getLandlordIdFromUserID(user_id, connection) {
-  try {
-    if (!user_id) {
-      throw new Error("Invalid user ID provided");
-    }
-
-    // Query the Landlord table to get the landlord_id based on email
-    const [rows] = await connection.execute(
-      `SELECT landlord_id FROM Landlord WHERE user_id = ?`,
-      [user_id]
-    );
-
-    // If no landlord is found with the given email
-    if (rows.length === 0) {
-      throw new Error("Landlord not found");
-    }
-
-    console.log("Landlord ID: ", rows[0].landlord_id);
-    // Return the landlord_id (assuming it's the first result in the rows array)
-    return rows.length > 0 ? rows[0].landlord_id : null;
-  } catch (error) {
-    console.error("Error retrieving landlord ID:", error);
-    throw error; // Re-throw the error to handle it at a higher level
-  }
-}
-
 export default async function handler(req, res) {
   const { id } = req.query;
   let connection;
@@ -59,9 +33,7 @@ export default async function handler(req, res) {
 
 //Create Properties
 async function handlePostRequest(req, res, connection) {
-  // Destructure request body to get property details
   const {
-    user_id,
     propertyName,
     propertyType,
     amenities,
@@ -70,31 +42,22 @@ async function handlePostRequest(req, res, connection) {
     city,
     zipCode,
     province,
-    numberOfUnit,
+    totalUnits,
+    utilityBillingType,
     propDesc,
     floorArea,
     petFriendly,
-    bedSpacing,
-    availBeds,
-    rentPayment,
     minStay,
     lateFee,
+    assocDues,
     secDeposit,
     advancedPayment,
-    hasElectricity,
-    hasWater,
-    hasAssocDues,
-    propertyStatus,
+    paymentFrequency,
   } = req.body;
 
-  // Ensure user_id is not undefined
-  if (!user_id) {
-    return res.status(400).json({ error: "user_id is required" });
-  }
-
   try {
-    // Retrieve landlord_id using user_id
-    const landlord_id = await getLandlordIdFromUserID(user_id, connection);
+    const { landlord_id } = req.query;
+    console.log("Landlord ID:", landlord_id);
 
     if (!landlord_id) {
       return res.status(400).json({ error: "User does not exist" });
@@ -102,29 +65,25 @@ async function handlePostRequest(req, res, connection) {
 
     const values = [
       landlord_id,
-      propertyName || null,
-      propertyType || null,
+      propertyName,
+      propertyType,
       amenities ? amenities.join(",") : null,
       street || null,
       parseInt(brgyDistrict) || null,
       city || null,
       zipCode || null,
       province || null,
-      numberOfUnit || null,
+      totalUnits || 1,
+      utilityBillingType,
       propDesc || null,
       floorArea,
       petFriendly ? 1 : 0,
-      bedSpacing ? 1 : 0,
-      availBeds || null,
-      rentPayment || 0.0,
       minStay || null,
       lateFee || 0.0,
+      assocDues || 0.0,
       secDeposit || null,
       advancedPayment || null,
-      hasElectricity ? 1 : 0,
-      hasWater ? 1 : 0,
-      hasAssocDues ? 1 : 0,
-      propertyStatus || "unoccupied",
+      paymentFrequency || null,
     ];
 
     console.log("Values array:", values);
@@ -136,31 +95,12 @@ async function handlePostRequest(req, res, connection) {
     const [result] = await connection.execute(
       `
       INSERT INTO Property (
-        landlord_id,
-        property_name,
-        property_type,
-        amenities,
-        street,
-        brgy_district,
-        city,
-        zip_code,
-        province,
-        number_of_units,
-        description,
-        floor_area,
-        pet_friendly,
-        bed_spacing,
-        avail_beds,
-        rent_payment,
-        min_stay,
-        late_fee,
-        sec_deposit,
-        advanced_payment,
-        has_electricity,
-        has_water,
-        has_assocdues,
-        status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          landlord_id, property_name, property_type, amenities, street,
+          brgy_district, city, zip_code, province, total_units,
+          utility_billing_type, description, floor_area, pet_friendly,
+          min_stay, late_fee, assoc_dues, sec_deposit, advanced_payment,
+          payment_frequency, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `,
       values
     );

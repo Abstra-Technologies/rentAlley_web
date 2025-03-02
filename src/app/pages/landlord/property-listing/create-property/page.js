@@ -18,6 +18,7 @@ export default function AddNewProperty() {
   const [step, setStep] = useState(1);
   // Get user_id from useAuth hook
   const { user } = useAuth();
+
   // Access Zustand store
   const {
     property,
@@ -62,14 +63,14 @@ export default function AddNewProperty() {
     }
 
     if (step === 3) {
-      if (!property.numberOfUnit) {
-        Swal.fire(
-          "Missing Input",
-          "Please fill in number of units before proceeding.",
-          "warning"
-        );
-        return false;
-      }
+      // if (!property.totalUnits) {
+      //   Swal.fire(
+      //     "Missing Input",
+      //     "Please fill in number of units before proceeding.",
+      //     "warning"
+      //   );
+      //   return false;
+      // }
       // Ensure at least one photo is uploaded
       if (photos.length === 0) {
         Swal.fire(
@@ -80,7 +81,7 @@ export default function AddNewProperty() {
         return false;
       }
 
-      if (property.numberOfUnit < 0) {
+      if (property.totalUnits < 0) {
         Swal.fire(
           "Invalid Input",
           "Number of units cannot be negative.",
@@ -120,7 +121,6 @@ export default function AddNewProperty() {
         );
         return false;
       }
-
       // Validate PDF files (Mayor Permit & Occupancy Permit)
       const isPDF = (file) => file && file.type === "application/pdf";
       if (!isPDF(mayorPermit?.file)) {
@@ -165,7 +165,7 @@ export default function AddNewProperty() {
       .then((res) => res.data);
   };
   const { trigger, isMutating } = useSWRMutation(
-    "/api/propertyListing/propListing",
+    `/api/propertyListing/propListing?landlord_id=${user?.landlord_id}`,
     sendPropertyData
   );
 
@@ -191,8 +191,8 @@ export default function AddNewProperty() {
     }
 
     try {
-      const { data } = await axios.post(
-        "/api/propertyListing/propPhotos",
+      const { data } = await axios.put(
+        `/api/propertyListing/propPhotos`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" }, // Ensures proper handling
@@ -263,7 +263,7 @@ export default function AddNewProperty() {
 
     try {
       // Step 1: Submit property details first
-      const propertyData = { ...property, user_id: user.user_id };
+      const propertyData = { ...property, landlord_id: user?.landlord_id };
       const createdProperty = await trigger(propertyData); // Send to propListing API
       const propertyID = createdProperty.propertyID;
 
