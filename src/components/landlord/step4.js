@@ -154,6 +154,10 @@ export function StepFour() {
         Please take two photos of the property (inside and outside). This will
         be used for verification purposes only.
       </p>
+      <p className="text-gray-500 mb-4">
+        Please make sure that the photos are the same as the ones uploaded in
+        Step 3.
+      </p>
 
       <div className="flex gap-4">
         <button

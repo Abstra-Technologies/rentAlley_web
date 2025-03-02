@@ -1,9 +1,5 @@
 import { IncomingForm } from "formidable";
-import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
 import { db } from "../../../lib/db";
 import { decryptData, encryptData } from "../../../crypto/encrypt";
@@ -46,10 +42,8 @@ export default async function handler(req, res) {
       await handlePutRequest(req, res, connection);
     } else if (req.method === "GET") {
       await handleGetRequest(req, res, connection);
-    } else if (req.method === "DELETE") {
-      await handleDeleteRequest(req, res, connection);
     } else {
-      res.setHeader("Allow", ["POST", "GET", "DELETE"]);
+      res.setHeader("Allow", ["POST", "GET"]);
       res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {
@@ -75,11 +69,6 @@ async function handlePutRequest(req, res, connection) {
       console.error("Error parsing form:", err);
       return res.status(400).json({ error: "Error parsing form data" });
     }
-
-    // For Debugging
-    console.log("Error from form.parse:", err);
-    console.log("Fields from form.parse:", fields);
-    console.log("Files from form.parse:", files);
 
     const { property_id } = fields;
     if (!property_id) {
@@ -175,18 +164,6 @@ async function handleGetRequest(req, res, connection) {
       WHERE 1=1`;
     let params = [];
 
-    // if (property_id) {
-    //   query += ` WHERE property_id = ? ORDER BY property_id ASC`;
-    //   params.push(property_id);
-    // } else {
-    //   query += ` GROUP BY property_id ORDER BY property_id ASC`; // Group photos by property
-    // }
-
-    // if (landlord_id) {
-    //   query += ` AND landlord_id = ?`;
-    //   params.push(landlord_id);
-    // }
-
     if (property_id) {
       query += ` AND property_id = ?`;
       params.push(property_id);
@@ -235,89 +212,11 @@ async function handleGetRequest(req, res, connection) {
       return { ...property, firstPhoto };
     });
 
-    // Decrypt the photo URLs before returning them
-    // const decryptedRows = rows.map((row) => {
-    //   try {
-    //     const encryptedData = JSON.parse(row.photo_url);
-    //     const decryptedUrl = decryptData(encryptedData, encryptionSecret);
-
-    //     return {
-    //       ...row,
-    //       photo_url: decryptedUrl,
-    //     };
-    //   } catch (decryptionError) {
-    //     console.error("Decryption Error:", decryptionError);
-    //     return {
-    //       ...row,
-    //       // photo_url: null,
-    //       photo_url: [],
-    //     };
-    //   }
-    // });
-
     res.status(200).json(propertiesWithPhotos);
   } catch (error) {
     console.error("Error fetching property photos:", error);
     res
       .status(500)
       .json({ error: "Failed to fetch property photos: " + error.message });
-  }
-}
-
-// Delete property photo (Also delete from S3)
-async function handleDeleteRequest(req, res, connection) {
-  const { photo_id } = req.query;
-
-  try {
-    const [rows] = await connection.execute(
-      `SELECT photo_url FROM PropertyPhoto WHERE photo_id = ?`,
-      [photo_id]
-    );
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "Photo not found" });
-    }
-
-    let photo_url = rows[0].photo_url;
-
-    try {
-      photo_url = decryptData(JSON.parse(photo_url), encryptionSecret);
-    } catch (decryptionError) {
-      console.error("Decryption Error:", decryptionError);
-      return res.status(500).json({ error: "Failed to decrypt photo URL." });
-    }
-
-    try {
-      const key = new URL(photo_url).pathname.substring(1);
-
-      const deleteParams = {
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: key,
-      };
-
-      try {
-        await s3Client.send(new DeleteObjectCommand(deleteParams));
-
-        await connection.execute(
-          `DELETE FROM PropertyPhoto WHERE photo_id = ?`,
-          [photo_id]
-        );
-
-        res.status(200).json({ message: "Photo deleted successfully" });
-      } catch (deleteError) {
-        console.error("Error deleting from S3:", deleteError);
-        return res.status(500).json({
-          error: "Failed to delete photo from S3: " + deleteError.message,
-        });
-      }
-    } catch (urlError) {
-      console.error("URL Error:", urlError);
-      return res.status(500).json({ error: "Invalid URL after decryption." });
-    }
-  } catch (error) {
-    console.error("Error deleting property photo:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to delete property photo: " + error.message });
   }
 }

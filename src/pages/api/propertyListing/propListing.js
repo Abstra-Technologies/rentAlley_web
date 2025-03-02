@@ -194,18 +194,15 @@ async function handlePutRequest(req, res, connection, id) {
       zipCode,
       province,
       propDesc,
+      totalUnits,
       floorArea,
-      bedSpacing,
-      availBeds,
+      utilityBillingType,
       petFriendly,
-      numberOfUnit,
       minStay,
       secDeposit,
+      assocDues,
       advancedPayment,
-      hasElectricity,
-      hasWater,
-      hasAssocDues,
-      rentPayment,
+      paymentFrequency,
       lateFee,
     } = req.body;
 
@@ -214,7 +211,7 @@ async function handlePutRequest(req, res, connection, id) {
     const [result] = await connection.execute(
       `UPDATE Property SET
         property_name = ?, property_type = ?, amenities = ?, street = ?, brgy_district = ?,
-        city = ?, zip_code = ?, province = ?, description = ?, floor_area = ?, bed_spacing = ?, avail_beds = ?, pet_friendly = ?, number_of_units = ?, min_stay = ?, sec_deposit = ?, advanced_payment = ?, has_electricity = ?, has_water = ?, has_assocdues = ?, rent_payment = ?, late_fee = ?, updated_at = CURRENT_TIMESTAMP
+        city = ?, zip_code = ?, province = ?, total_units = ?, utility_billing_type = ?, description = ?, floor_area = ?, pet_friendly = ?, min_stay = ?, sec_deposit = ?, advanced_payment = ?, assoc_dues = ?, late_fee = ?, payment_frequency = ?, updated_at = CURRENT_TIMESTAMP
       WHERE property_id = ?`,
       [
         propertyName,
@@ -225,20 +222,17 @@ async function handlePutRequest(req, res, connection, id) {
         city,
         zipCode,
         province,
+        totalUnits,
+        utilityBillingType,
         propDesc,
         floorArea,
-        bedSpacing,
-        availBeds,
         petFriendly,
-        numberOfUnit,
         minStay,
         secDeposit,
         advancedPayment,
-        hasElectricity,
-        hasWater,
-        hasAssocDues,
-        rentPayment,
+        assocDues,
         lateFee,
+        paymentFrequency,
         id,
       ]
     );

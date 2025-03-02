@@ -7,6 +7,10 @@ import Image from "next/image";
 import AmenitiesSelector from "../../../../../../components/amenities-selector";
 import Swal from "sweetalert2";
 import { AiOutlineArrowLeft } from "react-icons/ai";
+import { PROPERTY_TYPES } from "../../../../../../constant/propertyTypes";
+import { PAYMENT_FREQUENCIES } from "../../../../../../constant/paymentFrequency";
+import { PROVINCES_PHILIPPINES } from "../../../../../../constant/provinces";
+import { UTILITY_BILLING_TYPES } from "../../../../../../constant/utilityBillingType";
 
 const EditProperty = () => {
   const router = useRouter();
@@ -28,8 +32,9 @@ const EditProperty = () => {
     amenities: [], // Ensure it's an array
     propDesc: "",
     floorArea: "",
-    numberOfUnit: "",
-    rentPayment: "",
+    totalUnits: "",
+    utilityBillingType: "",
+    paymentFrequency: "",
     advancedPayment: "",
     secDeposit: "",
     minStay: "",
@@ -37,12 +42,9 @@ const EditProperty = () => {
     petFriendly: false,
     bedSpacing: false,
     availBeds: "",
-    hasElectricity: false,
-    hasWater: false,
-    hasAssocDues: false,
+    assocDues: "",
   });
   const [photos, setPhotos] = useState([]); // For uploaded photos
-  const [propertyTypes, setPropertyTypes] = useState([]); // Dynamic Property Types
   const [loading, setLoading] = useState(false);
 
   // Fetch Property Details on Load
@@ -60,28 +62,37 @@ const EditProperty = () => {
           propertyName: propertyData?.property_name || "",
           propDesc: propertyData?.description || "",
           floorArea: propertyData?.floor_area || "",
-          numberOfUnit: propertyData?.number_of_units || 0,
+          totalUnits: propertyData?.total_units || 1,
           street: propertyData?.street || "",
           brgyDistrict: propertyData?.brgy_district || "",
           city: propertyData?.city || "",
           province: propertyData?.province || "",
           zipCode: propertyData?.zip_code || "",
-          propertyType: propertyData?.property_type || "", // Set selected property type
           // Convert amenities string to array
           amenities: propertyData?.amenities
             ? propertyData.amenities.split(",").map((amenity) => amenity.trim())
             : [],
-          rentPayment: propertyData?.rent_payment || 0,
+          utilityBillingType: UTILITY_BILLING_TYPES.some(
+            (p) => p.value === propertyData?.utility_billing_type
+          )
+            ? propertyData?.utility_billing_type
+            : "",
           advancedPayment: propertyData?.advanced_payment || 0,
           secDeposit: propertyData?.sec_deposit || 0,
           minStay: propertyData?.min_stay || 0,
           lateFee: propertyData?.late_fee || 0,
           petFriendly: propertyData?.pet_friendly === 1,
-          bedSpacing: propertyData?.bed_spacing === 1,
-          availBeds: propertyData?.avail_beds ?? "",
-          hasElectricity: propertyData?.has_electricity === 1,
-          hasWater: propertyData?.has_water === 1,
-          hasAssocDues: propertyData?.has_assocdues === 1,
+          assocDues: propertyData?.assoc_dues || "",
+          propertyType: PROPERTY_TYPES.some(
+            (p) => p.value === propertyData?.property_type
+          )
+            ? propertyData?.property_type
+            : "",
+          paymentFrequency: PAYMENT_FREQUENCIES.some(
+            (p) => p.value === propertyData?.payment_frequency
+          )
+            ? propertyData?.payment_frequency
+            : "",
         });
       } catch (error) {
         console.error("Error fetching property:", error);
@@ -93,33 +104,21 @@ const EditProperty = () => {
     }
   }, [id]);
 
+  const fetchPhotos = async () => {
+    if (!id) return;
+    try {
+      const { data } = await axios.get(
+        `/api/propertyListing/updatePropertyPhoto?property_id=${id}`
+      );
+
+      setPhotos(data.photos);
+    } catch (error) {
+      console.error("Error fetching photos:", error);
+    }
+  };
+
   // Fetch Property Types, Photos
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [typesRes] = await Promise.all([
-          axios.get("/api/propertyListing/propertyTypes"),
-        ]);
-        setPropertyTypes(typesRes.data.propertyTypes);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    const fetchPhotos = async () => {
-      if (!id) return;
-      try {
-        const { data } = await axios.get(
-          `/api/propertyListing/propPhotos?property_id=${id}`
-        );
-
-        setPhotos(data);
-      } catch (error) {
-        console.error("Error fetching photos:", error);
-      }
-    };
-
-    fetchData();
     fetchPhotos();
   }, [id]);
 
@@ -155,17 +154,61 @@ const EditProperty = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-  // Handle File Upload
-  const handleFileChange = (e) => {
-    const files = e.target.files;
+
+  // Handle File Upload for New or Replacing Photos
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    const newPhotos = Array.from(files).map((file) => ({
-      photo_id: file.name, // Temp ID
-      photo_url: URL.createObjectURL(file), // ✅ Create a temporary preview
-    }));
+    const formData = new FormData();
+    formData.append("property_id", id);
+    files.forEach((file) => formData.append("photos", file));
 
-    setPhotos((prev) => [...prev, ...newPhotos]);
+    try {
+      const response = await axios.put(
+        "/api/propertyListing/updatePropertyPhoto",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      // ✅ Append newly uploaded photos to state
+      setPhotos((prevPhotos) => [...prevPhotos, ...response.data.photos]);
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      Swal.fire("Error", "Failed to upload photo.", "error");
+    }
+  };
+
+  // Handle Photo Deletion
+  const handleDeletePhoto = async (photoUrl) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This photo will be permanently deleted!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`/api/propertyListing/updatePropertyPhoto`, {
+            params: { property_id: id, photo_url: photoUrl },
+          });
+
+          // ✅ Remove the deleted photo from the state
+          setPhotos((prevPhotos) =>
+            prevPhotos.filter((photo) => photo.photo_url !== photoUrl)
+          );
+
+          // ✅ Show success alert
+          Swal.fire("Deleted!", "The photo has been removed.", "success");
+        } catch (error) {
+          console.error("Error deleting photo:", error);
+          Swal.fire("Error", "Failed to delete photo.", "error");
+        }
+      }
+    });
   };
 
   // Submit Form (Update Property)
@@ -186,23 +229,22 @@ const EditProperty = () => {
           await axios.put(`/api/propertyListing/propListing?id=${id}`, {
             ...formData,
             petFriendly: formData.petFriendly ? 1 : 0,
-            bedSpacing: formData.bedSpacing ? 1 : 0,
           });
           updateProperty(id, formData);
 
-          if (
-            photos.length > 0 &&
-            photos.some((photo) => photo instanceof File)
-          ) {
+          // ✅ Check if there are new photos to upload
+          if (photos.some((photo) => photo instanceof File)) {
             const formDataPhotos = new FormData();
             formDataPhotos.append("property_id", id);
+
             photos.forEach((photo) => {
-              if (photo instanceof File) {
-                formDataPhotos.append("photos", photo);
+              if (photo.file) {
+                formDataPhotos.append("photos", photo.file);
               }
             });
+
             await axios.post(
-              "/api/propertyListing/propPhotos",
+              "/api/propertyListing/updatePropertyPhoto",
               formDataPhotos,
               {
                 headers: { "Content-Type": "multipart/form-data" },
@@ -216,32 +258,6 @@ const EditProperty = () => {
           Swal.fire("Error", "Failed to update property.", "error");
         } finally {
           setLoading(false);
-        }
-      }
-    });
-  };
-
-  // Delete Photo
-  const handleDeletePhoto = async (photoId) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to recover this photo!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axios.delete(
-            `/api/propertyListing/propPhotos?photo_id=${photoId}`
-          );
-          setPhotos(photos.filter((photo) => photo.photo_id !== photoId));
-          Swal.fire("Deleted!", "Your photo has been deleted.", "success");
-        } catch (error) {
-          console.error("Error deleting photo:", error);
-          Swal.fire("Error", "Failed to delete photo.", "error");
         }
       }
     });
@@ -340,7 +356,7 @@ const EditProperty = () => {
           />
         </div>
 
-        {/* province */}
+        {/* Province */}
         <div>
           <label
             htmlFor="province"
@@ -348,14 +364,22 @@ const EditProperty = () => {
           >
             Province
           </label>
-          <input
-            type="text"
+          <select
             name="province"
             id="province"
             value={formData.province || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
+          >
+            <option value="" disabled>
+              Select Province
+            </option>
+            {PROVINCES_PHILIPPINES.map((province) => (
+              <option key={province.value} value={province.value}>
+                {province.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* ZIP Code */}
@@ -376,7 +400,7 @@ const EditProperty = () => {
           />
         </div>
 
-        {/* Property Type (Dynamic from API) */}
+        {/* Property Type */}
         <div>
           <label
             htmlFor="propertyType"
@@ -386,15 +410,16 @@ const EditProperty = () => {
           </label>
           <select
             name="propertyType"
-            id="propertyType"
-            value={formData.propertyType || ""}
+            value={formData.propertyType}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            className="border rounded px-3 py-2 w-full"
           >
-            <option value="">Select Type</option>
-            {propertyTypes?.map((type) => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
+            <option value="" disabled>
+              Select Property Type
+            </option>
+            {PROPERTY_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
               </option>
             ))}
           </select>
@@ -408,19 +433,20 @@ const EditProperty = () => {
           />
         </div>
 
-        {/* Number of Units */}
+        {/* Total Units */}
         <div>
           <label
-            htmlFor="numberOfUnit"
+            htmlFor="totalUnits"
             className="block text-sm font-medium text-gray-700"
           >
             Number of Units
           </label>
           <input
             type="text"
-            name="numberOfUnit"
-            id="numberOfUnit"
-            value={formData.numberOfUnit || 0}
+            name="totalUnits"
+            id="totalUnits"
+            value={formData.totalUnits || 1}
+            min={1}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
           />
@@ -461,31 +487,42 @@ const EditProperty = () => {
           />
         </div>
 
-        {/* Rent Payment */}
+        {/* Utility Billing Type */}
         <div>
           <label
-            htmlFor="rentPayment"
+            htmlFor="utilityBillingType"
             className="block text-sm font-medium text-gray-700"
           >
-            Rent Payment
+            Utility Billing Type
           </label>
-          <input
-            type="number"
-            name="rentPayment"
-            id="rentPayment"
-            value={formData.rentPayment || ""}
+          <select
+            name="utilityBillingType"
+            id="utilityBillingType"
+            value={formData.utilityBillingType || ""}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
+          >
+            <option value="" disabled>
+              Select Utility Billing Type
+            </option>
+            {UTILITY_BILLING_TYPES.map((utilityBillingType) => (
+              <option
+                key={utilityBillingType.value}
+                value={utilityBillingType.value}
+              >
+                {utilityBillingType.label}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* Advanced Payment (Months) */}
+        {/* Advanced Payment (Amount) */}
         <div>
           <label
             htmlFor="advancedPayment"
             className="block text-sm font-medium text-gray-700"
           >
-            Advanced Payment (Months)
+            Advanced Payment
           </label>
           <input
             type="number"
@@ -551,6 +588,24 @@ const EditProperty = () => {
           />
         </div>
 
+        {/* Rent Payment */}
+        <div>
+          <label
+            htmlFor="assocDues"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Association Dues
+          </label>
+          <input
+            type="number"
+            name="assocDues"
+            id="assocDues"
+            value={formData.assocDues || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+
         {/* Pet-Friendly Checkbox */}
         <div className="flex items-center space-x-2">
           <input
@@ -566,85 +621,33 @@ const EditProperty = () => {
           </label>
         </div>
 
-        {/* Bed Spacing Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="bedSpacing"
-            id="bedSpacing"
-            checked={formData.bedSpacing}
-            onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label htmlFor="bedSpacing" className="text-gray-700">
-            Bed Spacing (if applicable)
+        {/* Payment Frequency */}
+        <div>
+          <label
+            htmlFor="paymentFrequency"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Payment Frequency
           </label>
-        </div>
-
-        {/* Show Input for Available Bed Spacing */}
-        {formData.bedSpacing && (
-          <div>
-            <label
-              htmlFor="availBeds"
-              className="block text-gray-700 font-medium mb-1"
-            >
-              Available Bed Spacing (in number)
-            </label>
-            <input
-              type="number"
-              name="availBeds"
-              id="availBeds"
-              value={formData.availBeds || ""}
-              onChange={handleChange}
-              placeholder="Enter available bed spacing"
-              className="w-full p-2 border rounded"
-            />
-          </div>
-        )}
-
-        {/* Water Bill Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="hasWater"
-            id="hasWater"
-            checked={formData.hasWater}
+          <select
+            name="paymentFrequency"
+            id="paymentFrequency"
+            value={formData.paymentFrequency || ""}
             onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label htmlFor="hasWater" className="text-gray-700">
-            Water Bill
-          </label>
-        </div>
-
-        {/* Electricity Bill Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="hasElectricity"
-            id="hasElectricity"
-            checked={formData.hasElectricity}
-            onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label htmlFor="hasElectricity" className="text-gray-700">
-            Electricity Bill
-          </label>
-        </div>
-
-        {/* Association Dues Checkbox */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="hasAssocDues"
-            id="hasAssocDues"
-            checked={formData.hasAssocDues}
-            onChange={handleChange}
-            className="h-6 w-6"
-          />
-          <label htmlFor="hasAssocDues" className="text-gray-700">
-            Association Dues
-          </label>
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          >
+            <option value="" disabled>
+              Select Payment Frequency
+            </option>
+            {PAYMENT_FREQUENCIES.map((paymentFrequency) => (
+              <option
+                key={paymentFrequency.value}
+                value={paymentFrequency.value}
+              >
+                {paymentFrequency.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Upload Property Photos */}
@@ -671,26 +674,26 @@ const EditProperty = () => {
           <div className="mt-4">
             <p className="text-sm text-gray-600">Existing Photos:</p>
             <div className="grid grid-cols-3 gap-2 mt-2">
-              {photos
-                ?.filter((photo) => photo.photo_url) // ✅ Only include valid images
-                .map((photo, index) => (
-                  <div key={photo.photo_id || index} className="relative">
-                    <Image
-                      src={photo.photo_url} // ✅ Ensuring `photo_url` exists
-                      alt="Property Image"
-                      width={100}
-                      height={100}
-                      className="w-full h-40 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full text-xs"
-                      onClick={() => handleDeletePhoto(photo.photo_id)}
-                    >
-                      X
-                    </button>
-                  </div>
-                ))}
+              {photos.map((photo, index) => (
+                <div key={index} className="relative">
+                  <Image
+                    src={photo}
+                    alt={`Property Image ${index}`}
+                    width={100}
+                    height={100}
+                    loading="lazy"
+                    className="w-full h-40 object-cover rounded-lg"
+                  />
+                  {/* Delete Photo Button */}
+                  <button
+                    type="button"
+                    className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full text-xs"
+                    onClick={() => handleDeletePhoto(photo)}
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
