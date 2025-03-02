@@ -5,6 +5,9 @@ import { FiUploadCloud } from "react-icons/fi";
 import axios from "axios";
 import useAuth from "../../../../../../../hooks/useSession";
 import Swal from "sweetalert2";
+import occupations from "../../../../../../constant/occupations";
+import employmentTypes from "../../../../../../constant/employementType";
+import monthlyIncomeRanges from "../../../../../../constant/monthlyIncome";
 
 const TenantApplicationForm = () => {
   const { unit_id } = useParams();
@@ -14,7 +17,7 @@ const TenantApplicationForm = () => {
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     unit_id: "",
-    address: "", // address still used for display, but will be submitted as part of submit-reqs API
+    address: "",
   });
 
   useEffect(() => {
@@ -26,9 +29,8 @@ const TenantApplicationForm = () => {
     }
   }, [unit_id]);
 
-  // Ensure user is loaded before accessing properties
   if (!user) {
-    return <div>Loading...</div>; // Show loading or fallback UI
+    return <div>Loading...</div>;
   }
 
   const handleFileSelect = (event) => {
@@ -106,7 +108,7 @@ const TenantApplicationForm = () => {
               console.log("✅ Requirements submitted successfully!");
             } else {
               console.error(
-                "❌ Failed to submit requirements:",
+                "Failed to submit requirements:",
                 reqResponse.data
               );
               alert(
@@ -116,7 +118,7 @@ const TenantApplicationForm = () => {
               );
             }
           } catch (reqError) {
-            console.error("❌ Error submitting requirements:", reqError);
+            console.error("Error submitting requirements:", reqError);
             Swal.fire(
               "Error",
               `Submission failed: ${reqError.message || "Network error"}`,
@@ -135,7 +137,7 @@ const TenantApplicationForm = () => {
         }
       } else {
         console.error(
-          "❌ Failed to save tenant info:",
+          "Failed to save tenant info:",
           infoResponse.data || infoResponse.status
         );
         alert(
@@ -347,6 +349,81 @@ const TenantApplicationForm = () => {
               />
             </div>
           </div>
+
+          <div className="mb-4">
+            <label
+                htmlFor="occupation"
+                className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Your Occupation
+            </label>
+            <select
+                id="occupation"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value={formData.occupation || ""}
+                onChange={(e) =>
+                    setFormData({ ...formData, occupation: e.target.value })
+                }
+            >
+              <option value="" disabled>Select Occupation</option>
+              {occupations.map((occupation) => (
+                  <option key={occupation.value} value={occupation.value}>
+                    {occupation.label}
+                  </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label
+                htmlFor="employmentType"
+                className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Employment Type
+            </label>
+            <select
+                id="employmentType"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value={formData.employmentType || ""}
+                onChange={(e) =>
+                    setFormData({ ...formData, employmentType: e.target.value })
+                }
+            >
+              <option value="" disabled>Select Employment Type</option>
+              {employmentTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label
+                htmlFor="monthlyIncome"
+                className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Monthly Income Range
+            </label>
+            <select
+                id="monthlyIncome"
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value={formData.monthlyIncome || ""}
+                onChange={(e) =>
+                    setFormData({ ...formData, monthlyIncome: e.target.value })
+                }
+            >
+              <option value="" disabled>Select Monthly Income</option>
+              {monthlyIncomeRanges.map((range) => (
+                  <option key={range.value} value={range.value}>
+                    {range.label}
+                  </option>
+              ))}
+            </select>
+          </div>
+
+
+
 
           <div className="flex justify-end space-x-4">
             <button
