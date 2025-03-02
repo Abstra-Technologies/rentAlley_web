@@ -1,8 +1,12 @@
 'use client'
-import Link from "next/link"
-import { Home, ScrollText, Users2, Users, Building2, Bug } from 'lucide-react'
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Home, ScrollText, Users2, Users, Building2, Bug } from 'lucide-react';
 
 export default function SideNavAdmin({ admin }) {
+  const pathname = usePathname();
+
   const sideNavItems = [
     { href: '/pages/system_admin/activiyLog', icon: ScrollText, label: 'Activity Log' },
     { href: '/pages/system_admin/co_admin/list', icon: Users2, label: 'Add Co-admin' },
@@ -13,33 +17,34 @@ export default function SideNavAdmin({ admin }) {
     { href: '/pages/system_admin/annoucement', icon: ScrollText, label: 'Announcements' },
     { href: '/pages/system_admin/bug_report/list', icon: Bug, label: 'Bug Reports' },
     { href: '/pages/system_admin/auditLogs', icon: ScrollText, label: 'Audit Logs' },
-  ]
+  ];
 
   return (
-
     <div className="w-64 h-screen bg-white shadow-lg flex flex-col">
       <div className="p-4">
         <div className="flex items-center space-x-2">
           <Home className="w-6 h-6 text-blue-600" />
           <span className="text-xl font-semibold text-blue-600">Rentahan Admin Portal</span>
         </div>
-        {/*<div className="mt-4 px-2">*/}
-        {/*  <p className="text-sm text-gray-600">Welcome, {admin.username}</p>*/}
-        {/*  <p className="text-xs text-gray-500">Role: {admin.role}</p>*/}
-        {/*</div>*/}
       </div>
       <nav className="mt-4">
-        {sideNavItems.map((item, index) => (
-          <Link 
-            key={index}
-            href={item.href}
-            className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100"
-          >
-            <item.icon className="w-5 h-5 mr-3" />
-            {item.label}
-          </Link>
-        ))}
+        {sideNavItems.map((item, index) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link 
+              key={index}
+              href={item.href}
+              className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200 ${
+                isActive ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-700' : 'text-gray-500'}`} />
+              {item.label}
+              {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>}
+            </Link>
+          );
+        })}
       </nav>
     </div>
-  )
+  );
 }
