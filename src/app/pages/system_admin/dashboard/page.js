@@ -1,6 +1,5 @@
 'use client'
 import useAuth from "../../../../../hooks/useSession";
-import Link from "next/link";
 import { useRouter} from "next/navigation";
 import {useState} from "react";
 import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
@@ -8,10 +7,9 @@ import LoadingScreen from "../../../../components/loadingScreen";
 import SideNavAdmin from "../../../../components/navigation/sidebar-admin";
 
 export default function AdminDashboard() {
-    const { signOutAdmin, admin,loading, error } = useAuth();
+    const { admin,loading } = useAuth();
     const [isDeleting, setIsDeleting] = useState(false);
     const [notification, setNotification] = useState(null);
-    // const { user, admin, loading, logout, error, signout } = useAuthStore();
 
     const router = useRouter();
     if (loading) {
@@ -57,7 +55,6 @@ export default function AdminDashboard() {
 
     return (
         <div className="flex h-screen">
-            {/* Sidebar */}
             <SideNavAdmin admin={admin} />
 
             {/* Main Content */}

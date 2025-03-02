@@ -4,6 +4,7 @@ import { useState } from "react";
 import {roles} from "../../../../../constant/adminroles";
 //import axios from "axios";
 import useAuth from "../../../../../../hooks/useSession";
+import {availablePermissions} from "../../../../../constant/adminPermission";
 
 const CreateCoAdmin = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ const CreateCoAdmin = () => {
     role:"",
     first_name: "",
     last_name: "",
+    permissions: [],
   });
 
   const { admin, loading, error } = useAuth();
@@ -29,6 +31,16 @@ const CreateCoAdmin = () => {
   const handleSelectRole = (e) => {
     const selectedRole = e.target.value;
     setFormData({ ...formData, role: selectedRole });
+  };
+
+  const handlePermissionChange = (e) => {
+    const { checked, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      permissions: checked
+          ? [...prevData.permissions, value]
+          : prevData.permissions.filter((perm) => perm !== value),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -134,6 +146,24 @@ const CreateCoAdmin = () => {
                 </option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-2">Permissions</label>
+          <div className="grid grid-cols-2 gap-2">
+            {availablePermissions.map((perm) => (
+                <div key={perm.id} className="flex items-center">
+                  <input
+                      type="checkbox"
+                      id={perm.id}
+                      value={perm.id}
+                      checked={formData.permissions?.includes(perm.id)}
+                      onChange={handlePermissionChange}
+                      className="mr-2"
+                  />
+                  <label htmlFor={perm.id} className="text-sm">{perm.label}</label>
+                </div>
+            ))}
+          </div>
         </div>
         <button
             type="submit"

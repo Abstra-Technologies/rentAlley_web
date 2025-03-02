@@ -75,7 +75,7 @@ const useAuthStore = create(
                         first_name: data.first_name ? decryptData(JSON.parse(data.first_name), encryptionKey) : null,
                         last_name: data.last_name ? decryptData(JSON.parse(data.last_name), encryptionKey) : null,
                         email: data.email ? decryptData(JSON.parse(data.email), encryptionKey) : null,
-                        role: data.role || "user",
+                        role: data.role,
                         status: data.status || "inactive",
                         profile_picture: data.profile_picture || null
                     };

@@ -13,7 +13,7 @@ export default async function getSubscriptionLandlord(req, res) {
 
     try {
         const [rows] = await db.query(
-            "SELECT plan_name, status, start_date, end_date, trial_end_date, payment_status FROM Subscription WHERE landlord_id = ?",
+            "SELECT plan_name, status, start_date, end_date, trial_end_date, payment_status FROM Subscription WHERE landlord_id = ? and is_active = 1",
             [landlord_id]
         );
 

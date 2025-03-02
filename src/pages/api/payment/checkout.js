@@ -2,6 +2,7 @@
 import axios from "axios";
 import mysql from "mysql2/promise";
 
+
 export default async function subscriptionCheckout(req, res) {
 
     const { amount, description, email, firstName, lastName, redirectUrl, landlord_id, plan_name } = req.body;
@@ -95,6 +96,7 @@ export default async function subscriptionCheckout(req, res) {
         }
 
         // **If the user has already used the trial, proceed to payment**
+        // check that the amount should be passed.
         if (!amount || isNaN(amount)) {
             return res.status(400).json({ error: "Invalid amount." });
         }
@@ -107,25 +109,25 @@ export default async function subscriptionCheckout(req, res) {
             [landlord_id]
         );
 
-        if (existingSubscription.length > 0) {
-            // Update existing subscription to a paid plan
-            await connection.execute(
-                "UPDATE Subscription SET plan_name = ?, status = 'pending', start_date = ?, end_date = ?, payment_status = 'unpaid', request_reference_number = ?, is_trial = 0, trial_end_date = NULL, amount_paid = ? WHERE landlord_id = ?",
-                [plan_name, start_date, formatted_end_date, requestReferenceNumber,amount, landlord_id]
-            );
-        } else {
-            // Insert new subscription if one does not exist
-            await connection.execute(
-                "INSERT INTO Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, created_at, request_reference_number, is_trial, trial_end_date, amount_paid) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, NULL,?)",
-                [landlord_id, plan_name, "pending", start_date, formatted_end_date, "unpaid", requestReferenceNumber, 0, amount]
-            );
-        }
+        // if (existingSubscription.length > 0) {
+        //     // Update existing subscription to a paid plan
+        //     await connection.execute(
+        //         "UPDATE Subscription SET plan_name = ?, status = 'pending', start_date = ?, end_date = ?, payment_status = 'unpaid', request_reference_number = ?, is_trial = 0, trial_end_date = NULL, amount_paid = ? WHERE landlord_id = ?",
+        //         [plan_name, start_date, formatted_end_date, requestReferenceNumber,amount, landlord_id]
+        //     );
+        // } else {
+        //     // Insert new subscription if one does not exist
+        //     await connection.execute(
+        //         "INSERT INTO Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, created_at, request_reference_number, is_trial, trial_end_date, amount_paid) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, NULL,?)",
+        //         [landlord_id, plan_name, "pending", start_date, formatted_end_date, "unpaid", requestReferenceNumber, 0, amount]
+        //     );
+        // }
 
         const payload = {
             totalAmount: { value: amount, currency: "PHP" },
             buyer: { firstName, lastName, contact: { email } },
             redirectUrl: {
-                success: `${redirectUrl.success}?requestReferenceNumber=${encodeURIComponent(requestReferenceNumber)}&landlord_id=${landlord_id}`,
+                success: `${redirectUrl.success}?requestReferenceNumber=${encodeURIComponent(requestReferenceNumber)}&landlord_id=${encodeURIComponent(landlord_id)}&plan_name=${encodeURIComponent(plan_name)}&amount=${encodeURIComponent(amount)}`,
                 failure: `${redirectUrl.failure}?requestReferenceNumber=${encodeURIComponent(requestReferenceNumber)}&landlord_id=${landlord_id}`,
                 cancel: `${redirectUrl.cancel}?requestReferenceNumber=${encodeURIComponent(requestReferenceNumber)}&landlord_id=${landlord_id}`,
             },
@@ -146,12 +148,12 @@ export default async function subscriptionCheckout(req, res) {
             requestReferenceNumber,
             landlord_id,
             subscriptionEndDate: formatted_end_date,
+            payload,
         });
+
     } catch (error) {
         console.error("🚨 Error during Maya checkout:", error.message);
         if (connection) await connection.end();
         return res.status(500).json({ error: "Payment initiation failed.", details: error.response?.data || error.message });
     }
 }
-
-

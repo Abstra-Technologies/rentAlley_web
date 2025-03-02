@@ -78,8 +78,8 @@ export default async function admminLogin(req, res) {
 
         try {
             await db.query(
-                "INSERT INTO ActivityLog (admin_username, action, timestamp) VALUES (?, ?, ?)",
-                [user.username, action, timestamp]
+                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, ?)",
+                [user.admin_id, action, timestamp]
             );
             console.log("[DEBUG] Activity logged successfully.");
         } catch (activityLogError) {

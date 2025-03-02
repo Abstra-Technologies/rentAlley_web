@@ -1,5 +1,6 @@
 import mysql from "mysql2/promise";
 
+
 export default async function cancelSubscription(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed" });
@@ -28,19 +29,31 @@ export default async function cancelSubscription(req, res) {
             database: dbName,
         });
 
-        // **Check if the subscription is still pending**
-        const [existingSubscription] = await connection.execute(
-            "SELECT subscription_id FROM Subscription WHERE request_reference_number = ? AND landlord_id = ? AND status = 'pending'",
+        // **Check if this is an upgrade attempt**
+        const [pendingSubscription] = await connection.execute(
+            "SELECT subscription_id, plan_name FROM Subscription WHERE request_reference_number = ? AND landlord_id = ? AND status = 'pending'",
             [requestReferenceNumber, landlord_id]
         );
 
-        if (existingSubscription.length === 0) {
+        if (pendingSubscription.length === 0) {
             console.log("⚠️ No pending subscription found.");
             await connection.end();
             return res.status(200).json({ message: "No pending subscription to cancel." });
         }
 
-        // **Delete the pending subscription**
+        const newPlanName = pendingSubscription[0].plan_name;
+
+        // **Check if landlord has an active subscription**
+        const [activeSubscription] = await connection.execute(
+            "SELECT subscription_id, plan_name FROM Subscription WHERE landlord_id = ? AND is_active = 1",
+            [landlord_id]
+        );
+
+        if (activeSubscription.length > 0) {
+            console.log(`🔹 Landlord has an active plan (${activeSubscription[0].plan_name}). Retaining it.`);
+        }
+
+        // **Delete only the pending upgrade (DO NOT DELETE ACTIVE PLAN)**
         await connection.execute(
             "DELETE FROM Subscription WHERE request_reference_number = ? AND landlord_id = ? AND status = 'pending'",
             [requestReferenceNumber, landlord_id]
@@ -48,7 +61,11 @@ export default async function cancelSubscription(req, res) {
 
         await connection.end();
 
-        return res.status(200).json({ message: "Subscription cancelled successfully." });
+        return res.status(200).json({
+            message: activeSubscription.length > 0
+                ? `Upgrade to ${newPlanName} was cancelled. You are still on ${activeSubscription[0].plan_name}.`
+                : "Subscription cancellation was attempted, but you have no active plan to retain."
+        });
     } catch (error) {
         console.error("🚨 Error cancelling subscription:", error);
         if (connection) await connection.end();

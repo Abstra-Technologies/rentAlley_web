@@ -1,6 +1,7 @@
-
 import { jwtVerify } from "jose";
 import mysql from "mysql2/promise";
+
+//  this is use to fetch the currently authenticated user's data/  session-based authentication.
 
 const db = mysql.createPool({
     host: process.env.DB_HOST,
@@ -13,7 +14,7 @@ export default async function handler(req, res) {
     const token = req.cookies.token;
 
     if (!token) {
-        console.error("❌ [User Fetch] Token not found in cookies.");
+        console.error("[User Fetch] Token not found in cookies.");
         return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -70,7 +71,6 @@ export default async function handler(req, res) {
 
                     user.subscription = subscriptionRows.length > 0 ? subscriptionRows[0] : null;
                     user.is_trial_used = user.is_trial_used ? true : false;
-                    // user.is_verified = user.verification_status_id ? true : false;
 
                 }
 
@@ -107,17 +107,15 @@ export default async function handler(req, res) {
                     status: adminRows[0].status,
                     first_name: adminRows[0].first_name,
                     last_name:adminRows[0].last_name,
-                    userType: "admin",
+                    // userType: "admin",
                     profile_picture: adminRows[0].profile_picture,
                 });
             }
         }
-
-        // If no user or admin found, return an error
         return res.status(404).json({ error: "User not found" });
 
     } catch (error) {
-        console.error("❌ [User Fetch] Token verification or database error:", error);
+        console.error("[User Fetch]Token verification or database error:", error);
         res.status(401).json({ error: "Invalid session" });
     }
 }

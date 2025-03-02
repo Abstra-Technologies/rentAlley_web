@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose"; // Ensure you have 'jose' installed: npm install jose
 
-// Function to verify JWT token
+// Function to verify JWT token during login.
 async function verifyToken(token) {
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -12,6 +12,20 @@ async function verifyToken(token) {
     return null;
   }
 }
+
+const permissionMapping = {
+  "/pages/system_admin/co_admin": "manage_users",
+  "/pages/system_admin/approve_properties": "approve_properties",
+  "/pages/system_admin/manage_announcements": "manage_announcements",
+  "/pages/system_admin/view_reports": "view_reports",
+  "/pages/system_admin/handle_disputes": "handle_disputes",
+};
+
+const excludePages = [
+  "/pages/system_admin/dashboard",
+];
+
+
 
 export async function middleware(req) {
 
@@ -33,7 +47,7 @@ export async function middleware(req) {
     //   return NextResponse.redirect(new URL("/pages/auth/admin_login", req.url)); // Redirect if invalid token
     // }
 
-    const { userType, role } = decoded;
+    const { userType, role,  permissions  } = decoded;
     const pathname = req.nextUrl.pathname;
 
     // Redirect based on role
@@ -45,15 +59,32 @@ export async function middleware(req) {
       return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
     }
 
-    if (pathname.startsWith("/pages/system_admin") && role !== "super-admin") {
-      return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
+    if (pathname.startsWith("/pages/system_admin")) {
+
+      if (role !== "super-admin" && role !== "co-admin") {
+        return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
+      }
+
+      if (excludePages.some(page => pathname.startsWith(page))) {
+        return NextResponse.next(); //  pages that do no need permission access.
+      }
+
+      const requiredPermission = Object.entries(permissionMapping).find(([key]) =>
+          pathname.startsWith(key)
+      );
+
+      if (requiredPermission && !permissions?.includes(requiredPermission[1])) {
+        return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
+      }
+
     }
+
 
     return NextResponse.next();
 
   } catch (error) {
     console.error("Token verification failed:", error);
-    return NextResponse.redirect(new URL("/pages/admin_login", req.url)); // Redirect if an error occurs
+    return NextResponse.redirect(new URL("/pages/admin_login", req.url));
   }
 }
 

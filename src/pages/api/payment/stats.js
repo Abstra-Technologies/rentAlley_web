@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
     const { landlord_id, plan_name } = req.body;
 
-    // ✅ Validate request parameters
+    // Validate request parameters
     if (!landlord_id) {
         console.error("🚨 Missing landlord_id.");
         return res.status(400).json({ error: "Missing landlord_id." });
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
             database: process.env.DB_NAME,
         });
 
-        // ✅ Check if the landlord exists
+        //  Check if the landlord exists
         console.log(`🔎 Checking database for landlord_id: ${landlord_id}`);
         const [landlordData] = await connection.execute(
             "SELECT is_trial_used FROM Landlord WHERE landlord_id = ? LIMIT 1",
@@ -41,9 +41,9 @@ export default async function handler(req, res) {
 
         const { is_trial_used } = landlordData[0];
 
-        console.log(`✅ Landlord found: landlord_id: ${landlord_id}, is_trial_used: ${is_trial_used}`);
+        console.log(`Landlord found: landlord_id: ${landlord_id}, is_trial_used: ${is_trial_used}`);
 
-        // ✅ If only checking trial status, return result
+        //  If only checking trial status of the landlord if ir is been used before/
         if (!plan_name) {
             await connection.end();
             return res.status(200).json({ is_trial_used });
@@ -54,21 +54,22 @@ export default async function handler(req, res) {
         if (plan_name === "Free Plan") {
 
             await connection.execute(
-                "INSERT INTO Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, is_trial, trial_end_date, created_at, request_reference_number) VALUES (?, ?, 'active', ?, '', 'paid', 0, '', NOW(), 0)",
+                "INSERT INTO Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, is_trial, trial_end_date, created_at, request_reference_number, is_active) VALUES (?, ?, 'active', ?, '', 'paid', 0, '', NOW(), 0, 1)",
                 [landlord_id, plan_name, startDate]
             );
 
             await connection.end();
             return res.status(201).json({ message: "Free Plan activated.", startDate });
         }
-        // ✅ If the trial has already been used before no more trial to be granted.
+
+        // If the trial has already been used before no more trial to be granted.
         if (is_trial_used) {
             console.warn(`⚠️ Trial already used for landlord_id: ${landlord_id}`);
             await connection.end();
             return res.status(403).json({ error: "Trial already used. Please subscribe to continue." });
         }
 
-        // ✅ Activate Free Trial if a valid plan is selected
+        // Activate Free Trial if a valid plan is selected
         if (["Standard Plan", "Premium Plan"].includes(plan_name)) {
             console.log(`🎉 Granting Free Trial for landlord_id: ${landlord_id} with ${plan_name}`);
 
@@ -81,8 +82,8 @@ export default async function handler(req, res) {
 
             await connection.execute(
                 "INSERT INTO " +
-                "Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, is_trial, trial_end_date, created_at, request_reference_number)" +
-                " VALUES (?, ?, 'active', ?, ?, 'pending', 1, ?, NOW(), 0)",
+                "Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, is_trial, trial_end_date, created_at, request_reference_number, is_active)" +
+                " VALUES (?, ?, 'active', ?, ?, 'pending', 1, ?, NOW(), 0, 1)",
                 [landlord_id, plan_name, startDate, formattedTrialEndDate, formattedTrialEndDate]
             );
 
