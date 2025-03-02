@@ -25,8 +25,6 @@ const excludePages = [
   "/pages/system_admin/dashboard",
 ];
 
-
-
 export async function middleware(req) {
 
   const token = req.cookies.get("token")?.value;

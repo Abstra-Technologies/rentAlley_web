@@ -26,9 +26,8 @@ const TenantApplicationForm = () => {
     }
   }, [property_id]);
 
-  // Ensure user is loaded before accessing properties
   if (!user) {
-    return <div>Loading...</div>; // Show loading or fallback UI
+    return <div>Loading...</div>;
   }
 
   const handleFileSelect = (event) => {
