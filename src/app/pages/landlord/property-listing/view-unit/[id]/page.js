@@ -5,11 +5,9 @@ import useSWR, { mutate } from "swr";
 import axios from "axios";
 import Swal from "sweetalert2";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
+import { BuildingOffice2Icon, HomeIcon, PlusCircleIcon, ClipboardDocumentListIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
-
-// To Do:
-// Add units base on predetermined number to avoid abuse of adding units.
 
 const ViewUnitPage = () => {
   const { id } = useParams();
@@ -22,14 +20,13 @@ const ViewUnitPage = () => {
   );
 
   // Fetch units for the specific property
-  const { data: units, error } = useSWR(
+  const { data: units, error, isLoading } = useSWR(
     id ? `/api/unitListing/unit?property_id=${id}` : null,
     fetcher
   );
 
   // Handle Edit Unit
   const handleEditUnit = (unitId) => {
-    // Navigate to the edit page for the specific unit
     router.push(
       `/pages/landlord/property-listing/view-unit/${id}/edit-unit/${unitId}`
     );
@@ -39,6 +36,13 @@ const ViewUnitPage = () => {
   const handleAddUnitClick = () => {
     router.push(
       `/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`
+    );
+  };
+
+  // Function to view unit details
+  const handleViewUnit = (unitId) => {
+    router.push(
+      `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unitId}`
     );
   };
 
@@ -73,90 +77,144 @@ const ViewUnitPage = () => {
     }
   };
 
-  if (error) return <p>Failed to load units.</p>;
-  if (!units) return <p>Loading...</p>;
+  if (error) return (
+    <LandlordLayout>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="bg-white p-8 rounded-lg shadow-md">
+          <p className="text-red-500 text-center">Failed to load units. Please try again later.</p>
+        </div>
+      </div>
+    </LandlordLayout>
+  );
 
   return (
     <LandlordLayout>
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gray-50 p-6">
         {/* Property Header */}
-        <h1 className="text-3xl font-bold mb-2">
-          {property?.property_name || "Loading..."}
-        </h1>
-
-        {/* Add New Unit Button */}
-        <button
-          className="px-4 py-2 mb-6 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-          onClick={handleAddUnitClick}
-        >
-          + Add New Unit
-        </button>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex items-center space-x-2 mb-2">
+            <BuildingOffice2Icon className="h-6 w-6 text-blue-600" />
+            <h1 className="text-2xl font-bold text-blue-600">
+              {isLoading ? "Loading..." : property?.property_name || "Property Details"}
+            </h1>
+          </div>
+          <p className="text-gray-600 mb-4">
+            Manage units for this property
+          </p>
+          <button
+            className="flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+            onClick={handleAddUnitClick}
+          >
+            <PlusCircleIcon className="h-5 w-5 mr-2" />
+            Add New Unit
+          </button>
+        </div>
 
         {/* Units Section */}
-        {units.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
-            {units.map((unit) => (
-              <div
-                key={unit?.unit_id} // Add a unique key prop
-                className="p-4 bg-white rounded-lg shadow-md space-y-4 hover:shadow-lg transition-shadow"
-              >
-                {/* Unit Header */}
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold">Unit {unit?.unit_name}</h3>
-                  <span
-                    className={`px-3 py-1 text-sm font-semibold rounded-md ${
-                      unit?.status === "Occupied"
-                        ? "bg-green-100 text-green-800"
-                        : unit?.status === "Unoccupied"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-orange-100 text-orange-800"
-                    }`}
-                  >
-                    {unit?.status.charAt(0).toUpperCase() +
-                      unit?.status.slice(1)}
-                  </span>
-                </div>
-
-                {/* Unit Details */}
-                <p className="text-sm text-gray-600">
-                  Unit Size: {unit?.unit_size} sqm
-                </p>
-
-                {/* Action Buttons */}
-                <div className="flex justify-between items-center mt-4">
-                  <button
-                    className="px-3 py-2 text-sm text-white bg-blue-500 rounded-md hover:bg-blue-600"
-                    onClick={() =>
-                      router.push(
-                        `/pages/landlord/property-listing/view-unit/tenant-req/${unit.unit_id}`
-                      )
-                    }
-                  >
-                    Tenant Request
-                  </button>
-                  <div className="flex space-x-2">
-                    <button
-                      className="px-3 py-2 text-sm text-white bg-orange-500 rounded-md hover:bg-orange-600"
-                      onClick={() => handleEditUnit(unit.unit_id)} // Pass unitId to the handler
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="px-3 py-2 text-sm text-white bg-red-500 rounded-md hover:bg-red-600"
-                      onClick={() => handleDeleteUnit(unit.unit_id)}
-                    >
-                      Delete
-                    </button>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+            <HomeIcon className="h-5 w-5 mr-2 text-blue-600" /> 
+            Available Units
+          </h2>
+          
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-pulse flex space-x-4">
+                <div className="rounded-full bg-gray-200 h-12 w-12"></div>
+                <div className="flex-1 space-y-4 py-1">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-500 text-lg font-semibold">
-            No Units Available
-          </p>
-        )}
+            </div>
+          ) : units && units.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {units.map((unit) => (
+                <div
+                  key={unit?.unit_id}
+                  className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  <div 
+                    className="h-32 bg-blue-50 flex items-center justify-center cursor-pointer"
+                    onClick={() => handleViewUnit(unit.unit_id)}
+                  >
+                    <div className="text-center">
+                      <HomeIcon className="h-12 w-12 text-blue-600 mx-auto" />
+                      <h3 className="text-xl font-bold text-gray-800">Unit {unit?.unit_name}</h3>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <p className="text-sm text-gray-600">
+                        Size: <span className="font-medium">{unit?.unit_size} sqm</span>
+                      </p>
+                      <span
+                        className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                          unit?.status === "Occupied"
+                            ? "bg-green-100 text-green-800"
+                            : unit?.status === "Unoccupied"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-orange-100 text-orange-800"
+                        }`}
+                      >
+                        {unit?.status.charAt(0).toUpperCase() +
+                          unit?.status.slice(1)}
+                      </span>
+                    </div>
+                    
+                    <hr className="my-3" />
+                    
+                    <div className="flex justify-between items-center">
+                      <button
+                        className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                        onClick={() =>
+                          router.push(
+                            `/pages/landlord/property-listing/view-unit/tenant-req/${unit.unit_id}`
+                          )
+                        }
+                      >
+                        <ClipboardDocumentListIcon className="h-4 w-4 mr-1" />
+                        Tenant Requests
+                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          className="p-2 text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
+                          onClick={() => handleEditUnit(unit.unit_id)}
+                          aria-label="Edit unit"
+                        >
+                          <PencilSquareIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                          onClick={() => handleDeleteUnit(unit.unit_id)}
+                          aria-label="Delete unit"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+              <HomeIcon className="h-12 w-12 text-gray-400 mb-3" />
+              <p className="text-gray-500 text-lg font-medium mb-2">No Units Available</p>
+              <p className="text-gray-400 text-sm mb-4">Add your first unit to get started</p>
+              <button
+                className="px-4 py-2 text-sm text-blue-600 bg-white border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                onClick={handleAddUnitClick}
+              >
+                Add Your First Unit
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </LandlordLayout>
   );
