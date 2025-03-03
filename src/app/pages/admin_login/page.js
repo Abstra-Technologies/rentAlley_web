@@ -131,8 +131,9 @@ export default function LoginAdmin() {
                 Email or Username
               </label>
               <input
+                  id='login'
                   type="text"
-                  name="login" // ✅ Changed to "login"
+                  name="login"
                   placeholder="Enter email or username"
                   className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.login}
@@ -150,6 +151,7 @@ export default function LoginAdmin() {
                 Password
               </label>
               <input
+                  id='password'
                   type="password"
                   name="password"
                   placeholder="Password"

@@ -31,8 +31,8 @@ describe("Admin Login Page", () => {
         const loginInput = screen.getByLabelText("Email or Username");
         const passwordInput = screen.getByLabelText("Password");
 
-        fireEvent.change(loginInput, { target: { value: "admin" } });
-        fireEvent.change(passwordInput, { target: { value: "password123" } });
+        fireEvent.change(loginInput, { target: { value: "bryanqlim@gmail.com" } });
+        fireEvent.change(passwordInput, { target: { value: "admin123" } });
 
         expect(loginInput.value).toBe("admin");
         expect(passwordInput.value).toBe("password123");
