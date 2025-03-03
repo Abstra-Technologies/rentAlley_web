@@ -6,6 +6,7 @@ import useAuth from "../../hooks/useSession";
 import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import axios from "axios";
 import { logEvent } from "../utils/gtag";
+import DeleteAccountButton from "./authentication/deleteAccountButton";
 
 export default function ProfilePage() {
     const { user, loading, error } = useAuth();
@@ -336,6 +337,10 @@ export default function ProfilePage() {
                         >
                             {user.is_2fa_enabled ? "Disable 2FA" : "Enable 2FA"}
                         </button>
+                    </div>
+                    <div>
+                        <h2>Delete Account</h2>
+                        <DeleteAccountButton user_id={user.user_id} userType={user.userType} />
                     </div>
                 </div>
             </div>

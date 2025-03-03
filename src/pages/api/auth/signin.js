@@ -17,11 +17,19 @@ export default async function handler(req, res) {
     const emailHash = nodeCrypto.createHash("sha256").update(email).digest("hex");
     const [users] = await db.query("SELECT * FROM User WHERE emailHashed = ?", [emailHash]);
 
-    if (users.length === 0) {
+    if (!users || users.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const user = users[0];
+
+
+    if(user.is_active === 0) {
+      return res.status(403).json({
+        error: "Your account is deactivated since you requested deletion. Please contact support if this was a mistake."
+      });
+    }
+
 
     const isMatch = await bcrypt.compare(password, user.password);
 
