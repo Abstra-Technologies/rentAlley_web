@@ -4,6 +4,9 @@ import { db } from "../../../lib/db";
 import {decryptData } from "../../../crypto/encrypt";
 import nodeCrypto from "crypto";
 import nodemailer from "nodemailer";
+import { sendFCMNotification } from "../../../lib/firebaseAdmin";
+
+
 
 export default async function handler(req, res) {
 
@@ -113,6 +116,10 @@ export default async function handler(req, res) {
       "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)",
       [userID, action, timestamp]
     );
+
+    if (fcm_token) {
+      await sendFCMNotification(fcm_token, "Success Login FCM!", `Welcome back, ${firstName}!`);
+    }
 
     return res.status(200).json({
       message: "Login successful",

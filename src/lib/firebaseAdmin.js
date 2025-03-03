@@ -8,6 +8,25 @@ if (!admin.apps.length) {
     });
 }
 
+// export const sendFCMNotification = async (fcmToken, title, body) => {
+//     if (!fcmToken) {
+//         console.warn("⚠️ No FCM token found. Skipping push notification.");
+//         return;
+//     }
+//
+//     const message = {
+//         notification: { title, body },
+//         token: fcmToken,
+//     };
+//
+//     try {
+//         await admin.messaging().send(message);
+//         console.log("✅ Push notification sent successfully!");
+//     } catch (error) {
+//         console.error("❌ Error sending push notification:", error);
+//     }
+// };
+
 export const sendFCMNotification = async (fcmToken, title, body) => {
     if (!fcmToken) {
         console.warn("⚠️ No FCM token found. Skipping push notification.");
@@ -15,14 +34,21 @@ export const sendFCMNotification = async (fcmToken, title, body) => {
     }
 
     const message = {
-        notification: { title, body },
+        notification: {
+            title,
+            body,
+
+        },
+        data: {
+            type: "notification",
+        },
         token: fcmToken,
     };
 
     try {
-        await admin.messaging().send(message);
-        console.log("✅ Push notification sent successfully!");
+        const response = await admin.messaging().send(message);
+        console.log("Push notification sent successfully!", response);
     } catch (error) {
-        console.error("❌ Error sending push notification:", error);
+        console.error("Error sending push notification:", error);
     }
 };

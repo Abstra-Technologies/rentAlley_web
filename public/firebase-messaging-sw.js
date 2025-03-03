@@ -24,3 +24,4 @@ messaging.onBackgroundMessage((payload) => {
         icon: "/logo.png", // App logo
     });
 });
+

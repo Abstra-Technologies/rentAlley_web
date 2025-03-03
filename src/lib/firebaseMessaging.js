@@ -28,15 +28,15 @@ if (typeof window !== "undefined") {
         });
 
     onMessage(messaging, (payload) => {
-        console.log("🔔 Foreground Notification:", payload);
-        alert(`🔔 ${payload.notification.title}\n${payload.notification.body}`);
+        console.log("Foreground Notification:", payload);
+        alert(`${payload.notification.title}\n${payload.notification.body}`);
     });
 }
 
-// ✅ Move export OUTSIDE the conditional block
+// Move export OUTSIDE the conditional block
 export const requestNotificationPermission = async () => {
     if (!messaging) {
-        console.warn("❌ Messaging is not initialized (probably running on the server)");
+        console.warn("Messaging is not initialized (probably running on the server)");
         return null;
     }
 
