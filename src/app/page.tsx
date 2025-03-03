@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FaSearch, FaChevronDown, FaMapMarkerAlt, FaBuilding, FaHome } from "react-icons/fa";
 import { HiBadgeCheck } from "react-icons/hi";
-import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from "react-icons/fa";
+import Footer from "../components/navigation/footer";
 
 // Define TypeScript interfaces for the data structures
 interface Property {
@@ -34,7 +34,7 @@ export default function SplashScreen() {
 
   // Sample locations and property types
   const locations: string[] = ["Manila", "Cebu", "Davao", "Quezon City", "Makati"];
-  const propertyTypes: string[] = ["Apartment", "Condominium", "House", "Dormitory", "Studio"];
+  const propertyTypes: string[] = ["Apartment", "Townhouses", "House", "Dormitory", "Studio"];
 
   // Featured properties data
   const featuredProperties: Property[] = [
@@ -149,17 +149,6 @@ export default function SplashScreen() {
             >
               ₱{Math.round(property.rent_payment).toLocaleString()}
             </div>
-            <span className="text-xs font-semibold text-gray-700 flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-              {isUnitAverage ? (
-                <>
-                  <FaBuilding className="text-green-600" /> Avg. Unit Rent
-                </>
-              ) : (
-                <>
-                  <FaHome className="text-blue-600" /> Property Rent
-                </>
-              )}
-            </span>
           </div>
         </div>
 
@@ -454,121 +443,8 @@ export default function SplashScreen() {
       </section>
       
       {/* Footer Section */}
-      <footer className="bg-gray-800 text-white pt-12 pb-6">
-        <div className="container mx-auto max-w-6xl px-4">
-          {/* Main Footer Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-            {/* Brand Column */}
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Rentahan</h2>
-              <p className="text-gray-400 mb-4">
-                Finding your perfect rental property has never been easier.
-              </p>
-              <div className="flex space-x-4">
-                <Link 
-                  href="https://facebook.com" 
-                  className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
-                  aria-label="Facebook"
-                >
-                  <FaFacebookF />
-                </Link>
-                <Link 
-                  href="https://twitter.com" 
-                  className="w-8 h-8 bg-blue-400 rounded-full flex items-center justify-center hover:bg-blue-500 transition-colors"
-                  aria-label="Twitter"
-                >
-                  <FaTwitter />
-                </Link>
-                <Link 
-                  href="https://instagram.com" 
-                  className="w-8 h-8 bg-pink-600 rounded-full flex items-center justify-center hover:bg-pink-700 transition-colors"
-                  aria-label="Instagram"
-                >
-                  <FaInstagram />
-                </Link>
-                <Link 
-                  href="https://linkedin.com" 
-                  className="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center hover:bg-blue-800 transition-colors"
-                  aria-label="LinkedIn"
-                >
-                  <FaLinkedinIn />
-                </Link>
-              </div>
-            </div>
-            
-            {/* Quick Links */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Explore</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/" className="text-gray-400 hover:text-white transition-colors">Home</Link>
-                </li>
-                <li>
-                  <Link href="/pages/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link>
-                </li>
-                <li>
-                  <Link href="/pages/pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</Link>
-                </li>
-                <li>
-                  <Link href="/pages/partners" className="text-gray-400 hover:text-white transition-colors">Partners</Link>
-                </li>
-                <li>
-                  <Link href="/pages/contact" className="text-gray-400 hover:text-white transition-colors">Contact</Link>
-                </li>
-              </ul>
-            </div>
-            
-            {/* Property Types */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Property Types</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/pages/find-rent?type=House" className="text-gray-400 hover:text-white transition-colors">House</Link>
-                </li>
-                <li>
-                  <Link href="/pages/find-rent?type=Apartment" className="text-gray-400 hover:text-white transition-colors">Apartment</Link>
-                </li>
-                <li>
-                  <Link href="/pages/find-rent?type=Condominium" className="text-gray-400 hover:text-white transition-colors">Duplex</Link>
-                </li>
-                <li>
-                  <Link href="/pages/find-rent?type=Dormitory" className="text-gray-400 hover:text-white transition-colors">Dormitory</Link>
-                </li>
-                <li>
-                  <Link href="/pages/find-rent?type=Studio" className="text-gray-400 hover:text-white transition-colors">Studio Unit</Link>
-                </li>
-                <li>
-                  <Link href="/pages/find-rent?type=Studio" className="text-gray-400 hover:text-white transition-colors">Town house</Link>
-                </li>
-              </ul>
-            </div>
-            
-            {/* Contact Information */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-              <address className="not-italic text-gray-400">
-                <p className="mb-2">123 Property Street, Manila</p>
-                <p className="mb-2">Philippines, 1000</p>
-                <p className="mb-2">Email: info@rentahan.com</p>
-                <p>Phone: +63 123 456 7890</p>
-              </address>
-            </div>
-          </div>
-          
-          {/* Divider */}
-          <hr className="border-gray-700 mb-6" />
-          
-          {/* Copyright & Credits */}
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm mb-4 md:mb-0">
-              Copyright © 2025 Rentahan. All rights reserved.
-            </p>
-            <p className="text-gray-400 text-sm">
-              Designed by IS Students in De La Salle College of Saint Benilde
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer/>
+
     </div>
   );
 }

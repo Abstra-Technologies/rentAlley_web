@@ -52,8 +52,8 @@ const Navbar = () => {
             return [
                 { href: "/pages/tenant/my-unit", label: "My Unit" },
                 { href: "/pages/tenant/inbox", label: "Inbox" },
-                { href: "/pages/tenant/find-rent", label: "Find Rent" },
-                { href: "/contact", label: "Contact Us" }
+                { href: "/pages/find-rent", label: "Find Rent" },
+                { href: "/pages/contact", label: "Contact Us" }
             ];
         }
         
