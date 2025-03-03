@@ -91,11 +91,6 @@ const PropertyListingPage = () => {
     router.push(`/pages/landlord/property-listing/create-property`);
   };
 
-  const handleTenantRequest = (propertyId, event) => {
-    event.stopPropagation();
-    router.push(`/pages/landlord/property-listing/tenant-req/${propertyId}`);
-  };
-
   const handleDelete = useCallback(async (propertyId, event) => {
     event.stopPropagation(); // Prevent card click from triggering
 
@@ -265,15 +260,6 @@ const PropertyListingPage = () => {
                       }
                     >
                       Delete
-                    </button>
-
-                    <button
-                      className="px-3 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600"
-                      onClick={(event) =>
-                        handleTenantRequest(property?.property_id, event)
-                      }
-                    >
-                      Tenant Request
                     </button>
                   </div>
                 </div>

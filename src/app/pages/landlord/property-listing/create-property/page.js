@@ -63,14 +63,6 @@ export default function AddNewProperty() {
     }
 
     if (step === 3) {
-      // if (!property.totalUnits) {
-      //   Swal.fire(
-      //     "Missing Input",
-      //     "Please fill in number of units before proceeding.",
-      //     "warning"
-      //   );
-      //   return false;
-      // }
       // Ensure at least one photo is uploaded
       if (photos.length === 0) {
         Swal.fire(
