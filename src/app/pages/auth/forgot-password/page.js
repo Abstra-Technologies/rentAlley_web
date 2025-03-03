@@ -14,6 +14,8 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1);
+  const [message] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleEmailSubmit = async () => {
     if (!email) {
@@ -23,14 +25,19 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      await axios.post('/api/auth/reset-request', { email });
+      const response = await axios.post('/api/auth/reset-request', { email });
       toast.success("OTP sent to your email. Enter OTP to proceed.");
       setStep(2);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to send OTP.");
+      // Extract error message properly
+      const errorMessage = error.response?.data?.error;
+
+      setErrorMessage(errorMessage);
+      toast.error(errorMessage);
     }
     setLoading(false);
   };
+
 
   const handleVerifyOTP = async () => {
     if (!otp || otp.length !== 6) {
@@ -43,7 +50,7 @@ export default function ForgotPassword() {
       const response = await axios.post('/api/auth/verify-otp-reset', { email, otp });
       setResetToken(response.data.resetToken);
       toast.success("OTP verified. Set your new password.");
-      setStep(3); // Move to password reset step
+      setStep(3);
     } catch (error) {
       toast.error(error.response?.data?.message || "Invalid OTP.");
     }
@@ -92,6 +99,17 @@ export default function ForgotPassword() {
                 >
                   {loading ? "Sending OTP..." : "Next"}
                 </button>
+
+                {errorMessage && (
+                    <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+                      {errorMessage}
+                    </div>
+                )}
+                {message && (
+                    <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
+                      {message}
+                    </div>
+                )}
               </>
           )}
 
