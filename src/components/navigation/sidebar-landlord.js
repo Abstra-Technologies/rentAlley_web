@@ -34,7 +34,7 @@ const menuItems = [
     icon: Wrench,
     label: "Maintenance",
   },
-  { href: "/pages/landlord/announcements", icon: Bell, label: "Announcements" },
+  { href: "/pages/landlord/announcement", icon: Bell, label: "Announcements" },
   { href: "/pages/landlord/billing", icon: CreditCard, label: "Billing" },
   { href: "/pages/commons/bug-report", icon: Bug, label: "Report a Bug" },
 ];
