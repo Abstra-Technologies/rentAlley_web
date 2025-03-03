@@ -126,8 +126,6 @@ export default async function handler(req, res) {
   }
 }
 
-
-
 async function sendOtpEmail(email, otp) {
   const transporter = nodemailer.createTransport({
     service: "gmail",

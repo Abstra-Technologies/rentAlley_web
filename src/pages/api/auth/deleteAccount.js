@@ -2,7 +2,7 @@ import { db } from "../../../lib/db";
 
 export default async function DeleteAccount(req, res) {
     try {
-        console.log("Received request:", req.method, req.body);
+        console.log("Received request contents:",req.body);
 
         if (req.method !== "POST") {
             return res.status(405).json({ error: "Method Not Allowed. Use POST." });
@@ -25,11 +25,11 @@ export default async function DeleteAccount(req, res) {
             );
 
             if (!landlordRows || landlordRows.length === 0) {
-                console.error("❌ No landlord found for user_id:", user_id);
+                console.error("No landlord found for user_id:", user_id);
             }
 
             landlordId = landlordRows[0].landlord_id;
-            console.log("✅ Landlord found:", landlordId);
+            console.log("Landlord found:", landlordId);
 
             const [leaseRows] = await db.query(
                 `SELECT COUNT(*) AS active_lease_count
@@ -46,13 +46,38 @@ export default async function DeleteAccount(req, res) {
             }
 
             const activeLeaseCount = parseInt(leaseRows[0]?.active_lease_count || 0);
-            console.log("✅ Active Lease Count:", activeLeaseCount);
+            console.log("Active Lease Count:", activeLeaseCount);
 
             if (activeLeaseCount > 0) {
                 console.error("Cannot deactivate account, active leases exist.");
                 return res.status(400).json({ error: "You cannot deactivate your account. You have active leases." });
             }
         }
+
+        if (userType === "tenant"){
+            const [tenantRows] = await db.query(
+                `SELECT tenant_id FROM Tenant WHERE user_id = ?`,
+                [user_id]
+            );
+
+            const tenantId = tenantRows[0].tenant_id;
+
+            const [tenantLeaseRows] = await db.query(
+                `SELECT COUNT(*) AS active_lease_count
+                 FROM LeaseAgreement l
+                          JOIN ProspectiveTenant pt ON l.prospective_tenant_id = pt.id
+                 WHERE pt.tenant_id = ? AND l.status = 'active'`,
+                [tenantId]
+            );
+
+            const activeTenantLeaseCount = parseInt(tenantLeaseRows[0]?.active_lease_count || 0);
+            console.log("Active Tenant Lease Count:", activeTenantLeaseCount);
+
+            if (activeTenantLeaseCount > 0) {
+                return res.status(400).json({ error: "You cannot deactivate your account. You have an active lease." });
+            }
+        }
+
         console.log("Deactivating user account...");
         await db.query(`UPDATE User SET is_active = 0 WHERE user_id = ?`, [user_id]);
 
@@ -60,6 +85,7 @@ export default async function DeleteAccount(req, res) {
             "Set-Cookie",
             "token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict"
         );
+
 
         return res.json({ message: "Your account has been deactivated. You can reactivate anytime by logging in." });
 
