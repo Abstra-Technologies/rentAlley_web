@@ -17,10 +17,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Await the getCookie() function
         const token = await getCookie('token', { req, res });
 
-        console.log("Received Token:", token);  // ✅ Debugging step
+        console.log("Received Token:", token);
 
         if (!token || typeof token !== 'string') {
             console.log("No valid token found.");
@@ -31,18 +30,16 @@ export default async function handler(req, res) {
             new Error("JWT_SECRET is missing in environment variables");
         }
 
-        // Verify JWT token
+
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const { payload } = await jwtVerify(token, secret);
 
-        // Extract user ID from JWT
         const user_id = payload.user_id;
 
         if (!user_id) {
             return res.status(400).json({ message: 'Invalid token data' });
         }
 
-        // Get OTP from the request body
         const { otp } = req.body;
 
         if (!otp || otp.length !== 6) {
@@ -52,7 +49,6 @@ export default async function handler(req, res) {
         const connection = await mysql.createConnection(dbConfig);
         await connection.beginTransaction();
 
-        // Verify OTP
         const [otpResult] = await connection.execute(`
             SELECT * FROM UserToken
             WHERE user_id = ? AND token = ?
@@ -60,14 +56,18 @@ export default async function handler(req, res) {
               AND expires_at > NOW() AND used_at IS NULL
         `, [user_id, otp]);
 
-        console.log("OTP Query Result:", otpResult);  // ✅ Debugging step
+        console.log("OTP Query Result:", otpResult);
         if (otpResult.length === 0) {
             console.log("OTP not found or expired:", { user_id, otp });
             return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
 
-        // Mark OTP as used
-        await connection.execute("UPDATE UserToken SET used_at = NOW() WHERE user_id = ? AND token = ?", [user_id, otp]);
+        // Delete OTP
+        // await connection.execute("UPDATE UserToken SET used_at = NOW() WHERE user_id = ? AND token = ?", [user_id, otp]);
+        await connection.execute(
+            "DELETE FROM UserToken WHERE user_id = ? AND token = ?",
+            [user_id, otp]
+        );
 
         // Update email_verified status
         await connection.execute("UPDATE User SET emailVerified = 1 WHERE user_id = ?", [user_id]);
