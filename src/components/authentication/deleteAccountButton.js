@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { useRouter} from "next/navigation";
+import useAuth from "../../../hooks/useSession";
+import useAuthStore from "../../zustand/authStore";
 
-export default function DeleteAccountButton({ user_id, userType }) {
+export default function DeleteAccountButton() {
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const router = useRouter(); // ✅ Initialize Next.js router
+    const {user} = useAuthStore();
+    const user_id = user?.user_id;
+    const userType = user?.userType;
 
     const handleDeleteAccount = async () => {
         setLoading(true);
@@ -15,7 +20,8 @@ export default function DeleteAccountButton({ user_id, userType }) {
             const response = await fetch("/api/auth/deleteAccount", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ user_id, userType }),
+                body: JSON.stringify({ user_id, userType }), // ✅ Ensure it's correctly formatted
+                credentials: "include",
             });
 
             const data = await response.json();
@@ -28,6 +34,8 @@ export default function DeleteAccountButton({ user_id, userType }) {
 
             setTimeout(() => {
                 router.push("/pages/auth/login");
+                window.location.reload();
+
             }, 1000);
 
         } catch (error) {

@@ -7,9 +7,10 @@ import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from '@heroicons
 import axios from "axios";
 import { logEvent } from "../utils/gtag";
 import DeleteAccountButton from "./authentication/deleteAccountButton";
+import useAuthStore from "../zustand/authStore";
 
 export default function ProfilePage() {
-    const { user, loading, error } = useAuth();
+    const { user, loading, error } = useAuthStore();
     const router = useRouter();
 
     const [profileData, setProfileData] = useState(null);
@@ -340,7 +341,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                         <h2>Delete Account</h2>
-                        <DeleteAccountButton user_id={user.user_id} userType={user.userType} />
+                        <DeleteAccountButton />
                     </div>
                 </div>
             </div>

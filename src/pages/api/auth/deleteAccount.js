@@ -86,7 +86,6 @@ export default async function DeleteAccount(req, res) {
             "token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict"
         );
 
-
         return res.json({ message: "Your account has been deactivated. You can reactivate anytime by logging in." });
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
