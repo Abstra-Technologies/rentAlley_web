@@ -80,30 +80,23 @@ const usePropertyStore = create((set) => ({
     set({ loading: true, error: null });
 
     try {
-      // Fetch all properties and their full details
+      // Fetch all properties and only the first photo for each property
       const [propertiesRes, photosRes] = await Promise.all([
         axios.get(`/api/propertyListing/propListing?landlord_id=${landlordId}`), // Fetch properties
-        axios.get("/api/propertyListing/propPhotos"), // Fetch property photos
+        axios.get("/api/propertyListing/propPhotos"), // Fetch first property photos
       ]);
 
-      // Create a lookup table for photos based on `property_id`
-      const photoMap = {};
-      photosRes.data.forEach((photoData) => {
-        if (!photoMap[photoData.property_id]) {
-          photoMap[photoData.property_id] = [];
-        }
-        if (photoData.firstPhoto) {
-          photoMap[photoData.property_id].push(photoData.firstPhoto);
-        }
+      // Ensure each property gets its correct first photo
+      const propertiesWithPhotos = propertiesRes.data.map((property) => {
+        const propertyPhoto = photosRes.data.find(
+          (photo) => photo.property_id === property.property_id
+        );
+
+        return {
+          ...property,
+          photos: propertyPhoto ? [propertyPhoto] : [], // Only assign first photo
+        };
       });
-
-      // Merge properties with their corresponding photos
-      const propertiesWithPhotos = propertiesRes.data.map((property) => ({
-        ...property,
-        photos: photoMap[property.property_id] || [], // Assign all decrypted photos
-      }));
-
-      console.log("Properties with Photos:", propertiesWithPhotos);
 
       set({ properties: propertiesWithPhotos, loading: false });
     } catch (err) {

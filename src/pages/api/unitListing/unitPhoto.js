@@ -76,18 +76,12 @@ async function handlePostRequest(req, res, connection) {
       return res.status(400).json({ error: "Error parsing form data" });
     }
 
-    // For Debugging
-    console.log("Error from form.parse:", err);
-    console.log("Fields from form.parse:", fields);
-    console.log("Files from form.parse:", files);
-
     const { unit_id } = fields;
     if (!unit_id) {
       return res.status(400).json({ error: "Missing unit_id" });
     }
 
     const uploadedFiles = Object.values(files).flat();
-    console.log("📂 Reformatted Uploaded Files:", uploadedFiles);
 
     if (!uploadedFiles.length) {
       return res.status(400).json({ error: "No files uploaded" });
@@ -99,7 +93,7 @@ async function handlePostRequest(req, res, connection) {
       const uploadPromises = uploadedFiles.map(async (file) => {
         const filePath = file.filepath;
         const sanitizedFilename = sanitizeFilename(file.originalFilename);
-        const fileName = `propertyPhoto/${Date.now()}_${sanitizedFilename}`;
+        const fileName = `unitPhoto/${Date.now()}_${sanitizedFilename}`;
         const fileStream = fs.createReadStream(filePath);
         const photoUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
@@ -162,7 +156,7 @@ async function handlePostRequest(req, res, connection) {
   });
 }
 
-// Fetch property photos
+// Fetch unit photos
 async function handleGetRequest(req, res, connection) {
   const { unit_id } = req.query;
 
@@ -205,7 +199,7 @@ async function handleGetRequest(req, res, connection) {
   }
 }
 
-// Delete property photo (Also delete from S3)
+// Delete unit photo (Also delete from S3)
 async function handleDeleteRequest(req, res, connection) {
   const { id } = req.query;
 
@@ -253,9 +247,9 @@ async function handleDeleteRequest(req, res, connection) {
       return res.status(500).json({ error: "Invalid URL after decryption." });
     }
   } catch (error) {
-    console.error("Error deleting property photo:", error);
+    console.error("Error deleting unit photo:", error);
     res
       .status(500)
-      .json({ error: "Failed to delete property photo: " + error.message });
+      .json({ error: "Failed to delete unit photo: " + error.message });
   }
 }

@@ -183,7 +183,7 @@ export default function AddNewProperty() {
     }
 
     try {
-      const { data } = await axios.put(
+      const { data } = await axios.post(
         `/api/propertyListing/propPhotos`,
         formData,
         {

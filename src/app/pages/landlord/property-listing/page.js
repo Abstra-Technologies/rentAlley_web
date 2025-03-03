@@ -65,7 +65,7 @@ const PropertyListingPage = () => {
   const handleView = useCallback((property, event) => {
     event.stopPropagation(); // Prevent the parent div's onClick from firing
     router.push(
-      `../landlord/property-listing/view-unit/${property.property_id}`
+      `/pages/landlord/property-listing/view-unit/${property.property_id}`
     );
   });
 
@@ -205,13 +205,12 @@ const PropertyListingPage = () => {
                 className="flex flex-col md:flex-row items-center p-4 bg-white rounded-lg shadow-md space-y-4 md:space-y-0 md:space-x-4 cursor-pointer hover:shadow-lg transition-shadow mb-4"
               >
                 {/* Property Image */}
-                {property?.photos.length > 0 ? (
+                {property.photos.length > 0 ? (
                   <Image
-                    src={property?.photos[0]}
-                    alt={property?.property_name}
+                    src={property.photos[0].photo_url}
+                    alt={property.property_name}
                     width={400}
                     height={250}
-                    loading="lazy"
                     className="w-full md:w-3/12 md:h-36 rounded-lg object-cover"
                     style={{ objectFit: "cover" }}
                   />

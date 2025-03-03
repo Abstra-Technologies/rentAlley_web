@@ -37,19 +37,10 @@ async function handlePostRequest(req, res, connection) {
   const {
     property_id,
     unitName,
-    description,
-    floorArea,
-    petFriendly,
+    unitSize,
     bedSpacing,
     availBeds,
-    rentPayment,
-    minStay,
-    lateFee,
-    secDeposit,
-    advancedPayment,
-    hasElectricity,
-    hasWater,
-    hasAssocdues,
+    rentAmt,
     furnish,
     status,
   } = req.body;
@@ -63,19 +54,10 @@ async function handlePostRequest(req, res, connection) {
     const values = [
       property_id,
       unitName,
-      description,
-      floorArea,
-      petFriendly,
+      unitSize,
       bedSpacing,
       availBeds,
-      rentPayment,
-      minStay,
-      lateFee,
-      secDeposit,
-      advancedPayment,
-      hasElectricity,
-      hasWater,
-      hasAssocdues,
+      rentAmt,
       furnish,
       status || "unoccupied",
     ];
@@ -88,8 +70,8 @@ async function handlePostRequest(req, res, connection) {
     // Execute the SQL query to insert a new property listing
     const [result] = await connection.execute(
       `INSERT INTO Unit 
-      (property_id, unit_name, description, floor_area, pet_friendly, bed_spacing, avail_beds, rent_payment, min_stay, late_fee, sec_deposit, advanced_payment, has_electricity, has_water, has_assocdues, furnish, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (property_id, unit_name, unit_size, bed_spacing, avail_beds, rent_amount, furnish, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       values
     );
 
@@ -168,19 +150,10 @@ async function handlePutRequest(req, res, connection, id) {
 
     const {
       unitName,
-      description,
-      floorArea,
-      petFriendly,
+      unitSize,
       bedSpacing,
       availBeds,
-      rentPayment,
-      minStay,
-      lateFee,
-      secDeposit,
-      advancedPayment,
-      hasElectricity,
-      hasWater,
-      hasAssocdues,
+      rentAmt,
       furnish,
       status,
     } = req.body;
@@ -189,24 +162,15 @@ async function handlePutRequest(req, res, connection, id) {
 
     const [result] = await connection.execute(
       `UPDATE Unit SET
-          unit_name = ?, description = ?, floor_area = ?, pet_friendly = ?, bed_spacing = ?,
-          avail_beds = ?, rent_payment = ?, min_stay = ?, late_fee = ?, sec_deposit = ?, advanced_payment = ?, has_electricity = ?, has_water = ?, has_assocdues = ?, furnish = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+          unit_name = ?, unit_size = ?, bed_spacing = ?,
+          avail_beds = ?, rent_amount = ?, furnish = ?, status = ?, updated_at = CURRENT_TIMESTAMP
         WHERE unit_id = ?`,
       [
         unitName,
-        description,
-        floorArea,
-        petFriendly,
+        unitSize,
         bedSpacing,
         availBeds,
-        rentPayment,
-        minStay,
-        lateFee,
-        secDeposit,
-        advancedPayment,
-        hasElectricity,
-        hasWater,
-        hasAssocdues,
+        rentAmt,
         furnish,
         status ?? "unoccupied",
         id,
