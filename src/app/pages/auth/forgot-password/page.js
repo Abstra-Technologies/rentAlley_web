@@ -1,21 +1,52 @@
 // Add  Confirm new Password part. and validation.
 
 'use client';
-import { useState } from 'react';
+import {useEffect, useState} from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { logEvent } from "../../../../utils/gtag";
+import { useRouter } from "next/navigation"; // Import Next.js router
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('');
-  const [resetToken, setResetToken] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState(1);
-  const [message] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState(1); // Default step
+
+  // Ensure localStorage is accessed only on the client-side
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedStep = Number(localStorage.getItem("forgotPasswordStep"));
+      if (storedStep) setStep(storedStep);
+    }
+  }, []);
+
+  // Save step to localStorage only on the client-side
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("forgotPasswordStep", step);
+    }
+  }, [step]);
+
+  // Reset process when user navigates away
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("forgotPasswordStep");
+      }
+    };
+
+    router.prefetch("/pages/auth/login"); //Prefetch login page for faster navigation
+    router.events?.on("routeChangeStart", handleRouteChange);
+
+    return () => {
+      router.events?.off("routeChangeStart", handleRouteChange);
+    };
+  }, [router]);
 
   const handleEmailSubmit = async () => {
     if (!email) {
@@ -25,19 +56,14 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/auth/reset-request', { email });
+      await axios.post("/api/auth/reset-request", { email });
       toast.success("OTP sent to your email. Enter OTP to proceed.");
       setStep(2);
     } catch (error) {
-      // Extract error message properly
-      const errorMessage = error.response?.data?.error;
-
-      setErrorMessage(errorMessage);
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.error || "Failed to send OTP.");
     }
     setLoading(false);
   };
-
 
   const handleVerifyOTP = async () => {
     if (!otp || otp.length !== 6) {
@@ -47,7 +73,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      const response = await axios.post('/api/auth/verify-otp-reset', { email, otp });
+      const response = await axios.post("/api/auth/verify-otp-reset", { email, otp });
       setResetToken(response.data.resetToken);
       toast.success("OTP verified. Set your new password.");
       setStep(3);
@@ -55,6 +81,21 @@ export default function ForgotPassword() {
       toast.error(error.response?.data?.message || "Invalid OTP.");
     }
     setLoading(false);
+  };
+
+  const [resendLoading, setResendLoading] = useState(false);
+
+  const handleResendOTP = async () => {
+    if (resendLoading) return;
+
+    setResendLoading(true);
+    try {
+      const response = await axios.post("/api/auth/resend-otp-password", { email });
+      toast.success(response.data.message || "New OTP sent to your email.");
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to resend OTP.");
+    }
+    setResendLoading(false);
   };
 
   const handleResetPassword = async () => {
@@ -65,14 +106,18 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      await axios.post('/api/auth/reset-password', { resetToken, newPassword });
+      await axios.post("/api/auth/reset-password", { resetToken, newPassword });
       toast.success("Password reset successfully! Redirecting...");
-      setTimeout(() => window.location.href = "/pages/auth/login", 2000);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("forgotPasswordStep");
+      }
+      setTimeout(() => router.push("/pages/auth/login"), 2000);
     } catch (error) {
       toast.error(error.response?.data?.message || "Password reset failed.");
     }
     setLoading(false);
   };
+
   return (
       <div className="flex justify-center items-center h-screen bg-gray-100">
         <ToastContainer />
@@ -99,17 +144,6 @@ export default function ForgotPassword() {
                 >
                   {loading ? "Sending OTP..." : "Next"}
                 </button>
-
-                {errorMessage && (
-                    <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-                      {errorMessage}
-                    </div>
-                )}
-                {message && (
-                    <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
-                      {message}
-                    </div>
-                )}
               </>
           )}
 
@@ -119,6 +153,7 @@ export default function ForgotPassword() {
                 <p className="text-gray-600 text-sm text-center mb-4">
                   A 6-digit OTP has been sent to your email.
                 </p>
+
                 <input
                     type="text"
                     value={otp}
@@ -128,6 +163,7 @@ export default function ForgotPassword() {
                     maxLength="6"
                     required
                 />
+
                 <button
                     onClick={handleVerifyOTP}
                     className="w-full p-2 bg-green-600 text-white rounded-md"
@@ -135,8 +171,21 @@ export default function ForgotPassword() {
                 >
                   {loading ? "Verifying..." : "Verify OTP"}
                 </button>
+
+                {/* ✅ Add Resend OTP Button Below */}
+                <p className="text-center text-sm text-gray-500 mt-3">
+                  Didn't receive an OTP?{" "}
+                  <button
+                      onClick={handleResendOTP}
+                      className="text-blue-600 font-medium hover:underline"
+                      disabled={resendLoading}
+                  >
+                    {resendLoading ? "Resending..." : "Resend OTP"}
+                  </button>
+                </p>
               </>
           )}
+
 
           {step === 3 && (
               <>
@@ -162,4 +211,3 @@ export default function ForgotPassword() {
       </div>
   );
 }
-

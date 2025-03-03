@@ -32,7 +32,24 @@ export default async function handler(req, res) {
         }
 
         const otp = crypto.randomInt(100000, 999999).toString();
-        await db.query("UPDATE UserToken SET token = ?, expires_at = NOW() + INTERVAL 10 MINUTE WHERE user_id = ?", [otp, users[0].user_id]);
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
+
+        const nowUTC8 = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+        const expiresAtUTC8 = new Date(expiresAt.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
+
+        await db.query("SET time_zone = '+08:00'");
+
+        await db.query(
+            "INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at) \n" +
+            "VALUES (?, 'password_reset', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))\n" +
+            "ON DUPLICATE KEY UPDATE \n" +
+            "  token = VALUES(token), \n" +
+            "  created_at = NOW(), \n" +
+            "  expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)",
+            [users[0].user_id, otp, nowUTC8, expiresAtUTC8]
+        );
+
 
         await sendOtpEmail(email, otp);
         res.status(200).json({ message: "OTP sent to your email." });

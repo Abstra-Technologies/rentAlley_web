@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // ✅ Check if reset token is valid and not expired
+
         const [tokens] = await db.execute(
             `SELECT user_id FROM UserToken 
              WHERE token = ? AND expires_at > NOW()`,
@@ -27,10 +27,8 @@ export default async function handler(req, res) {
         const userId = tokens[0].user_id;
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // ✅ Update password
         await db.execute("UPDATE User SET password = ? WHERE user_id = ?", [hashedPassword, userId]);
 
-        // ✅ Delete the reset token after use
         await db.execute("DELETE FROM UserToken WHERE user_id = ?", [userId]);
 
         res.status(200).json({ message: "Password reset successfully." });
