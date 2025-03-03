@@ -23,6 +23,11 @@ export default async function handler(req, res) {
 
     const user = users[0];
 
+    if (user.google_id) {
+      return res.status(403).json({
+        error: "Your account is linked with Google Sign-In. Please log in using Google."
+      });
+    }
 
     if(user.is_active === 0) {
       return res.status(403).json({
