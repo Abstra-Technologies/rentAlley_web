@@ -13,80 +13,86 @@ const BillingPaymentPage = () => {
 
   return (
     <TenantLayout>
-      <div className="bg-gray-100 min-h-screen">
-        <div className="container mx-auto py-8 px-4">
-          {/* Header */}
+      <div className="bg-gray-50 min-h-screen">
+        <div className="container mx-auto py-10 px-4 max-w-5xl">
+          {/* Header Section with improved spacing and styling */}
           <div className="mb-8">
-            <div className="flex items-center mb-2">
-              <IoIosArrowBack size={24} className="mr-2 cursor-pointer" />
-              <h1 className="text-2xl font-semibold text-gray-800">
+            <div className="flex items-center mb-3">
+              <button className="p-2 mr-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                <IoIosArrowBack size={22} className="text-blue-600" />
+              </button>
+              <h1 className="text-2xl font-bold text-blue-600">
                 Billing Payment
               </h1>
             </div>
-            <h2 className="text-lg text-gray-700">XYZ Residences . Unit 707</h2>
+            <h2 className="text-lg text-customBlue font-semibold pl-1">XYZ Residences • Unit 707</h2>
           </div>
 
-          {/* Bills Section - Grid layout for responsiveness */}
+          {/* Bills Section - Improved cards with better spacing */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Rent Bill */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">
+            {/* Rent Bill - Enhanced card */}
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-6 border border-gray-100">
+              <h3 className="text-xl font-semibold text-customBlue mb-4">
                 Rent Bill
               </h3>
-              <div className="flex justify-between">
-                <div>
-                  <p className="text-gray-600">FROM: May 1, 2024</p>
-                  <p className="text-gray-600">TO: June 1, 2024</p>
+              <div className="flex justify-between mb-4">
+                <div className="space-y-1">
+                  <p className="text-gray-600 font-medium">FROM: <span className="font-normal">May 1, 2024</span></p>
+                  <p className="text-gray-600 font-medium">TO: <span className="font-normal">June 1, 2024</span></p>
                 </div>
               </div>
-              <p className="text-gray-600 mt-2">Monthly Rental Payment</p>
-              <div className="flex justify-between items-center mt-4">
-                <span className="text-gray-800">₱10,000</span>
-                <span className="bg-red-500 text-white py-1 px-3 rounded-full text-sm">
+              <p className="text-gray-600 mb-4">Monthly Rental Payment</p>
+              <div className="flex justify-between items-center mt-6">
+                <span className="text-gray-800 text-xl font-bold">₱10,000</span>
+                <span className="bg-red-500 text-white py-1 px-4 rounded-full text-sm font-medium">
                   Unpaid
                 </span>
               </div>
             </div>
 
-            {/* Utility Bills */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">
+            {/* Utility Bills - Enhanced card */}
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-6 border border-gray-100">
+              <h3 className="text-xl font-semibold text-customBlue mb-4">
                 Utility Bills
               </h3>
-              <div className="flex justify-between">
-                <div>
-                  <p className="text-gray-600">FROM: May 1, 2024</p>
-                  <p className="text-gray-600">TO: June 1, 2024</p>
+              <div className="flex justify-between mb-4">
+                <div className="space-y-1">
+                  <p className="text-gray-600 font-medium">FROM: <span className="font-normal">May 1, 2024</span></p>
+                  <p className="text-gray-600 font-medium">TO: <span className="font-normal">June 1, 2024</span></p>
                 </div>
               </div>
-              <div className="mt-2">
-                <p className="text-gray-600">
-                  WATER CONSUMPTION <span className="float-right">₱1,234</span>
-                </p>
-                <p className="text-gray-600">
-                  ELECTRICITY BILL <span className="float-right">₱7,123</span>
-                </p>
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-gray-600">
+                  <span>WATER CONSUMPTION</span>
+                  <span>₱1,234</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>ELECTRICITY BILL</span>
+                  <span>₱7,123</span>
+                </div>
+                <div className="border-t border-gray-200 my-2"></div>
               </div>
               <div className="flex justify-between items-center mt-4">
                 <span className="text-gray-700 font-semibold">
                   Total Payment
                 </span>
-                <span className="text-gray-800 font-semibold">₱8,123</span>
-                <span className="bg-red-500 text-white py-1 px-3 rounded-full text-sm">
-                  Unpaid
-                </span>
+                <div className="flex items-center space-x-3">
+                  <span className="text-gray-800 text-xl font-bold">₱8,123</span>
+                  <span className="bg-red-500 text-white py-1 px-4 rounded-full text-sm font-medium">
+                    Unpaid
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Payment Options */}
-          <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">
-              Payment option
+          {/* Payment Options - Enhanced section */}
+          <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-6 mt-6 border border-gray-100">
+            <h3 className="text-xl font-semibold text-customBlue mb-5">
+              Payment Option
             </h3>
-            <div className="flex items-center mb-2">
-              <span className="mr-2 flex items-center h-5">
-                {" "}
+            <div className="flex items-center mb-3">
+              <div className="w-10 h-10 mr-3 flex items-center justify-center bg-gray-50 rounded-full">
                 <Image
                   src="https://mir-s3-cdn-cf.behance.net/projects/404/788fe9190546715.Y3JvcCwyNTYwLDIwMDIsMCwxOTA.png"
                   width={30}
@@ -94,64 +100,65 @@ const BillingPaymentPage = () => {
                   alt="Maya logo"
                   className="object-cover"
                 />
-              </span>
-              <span className="text-gray-700 font-semibold">Maya</span>
+              </div>
+              <span className="text-customBlue font-semibold">Maya</span>
             </div>
-            <p className="text-gray-600 mb-4">We Accept Paymaya payment.</p>
+            <p className="text-gray-600 mb-6 pl-1">We Accept Paymaya payment.</p>
 
             <button
               onClick={openModal}
-              className="flex items-center text-blue-600 hover:text-blue-800"
+              className="flex items-center text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 transition-colors duration-200 py-2 px-4 rounded-lg"
             >
-              <IoMdCloudUpload size={30} className="mr-2" />
-              Proof of Payment
+              <IoMdCloudUpload size={24} className="mr-2" />
+              <span className="font-medium">Upload Proof of Payment</span>
             </button>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-gray-500 text-sm mt-3 pl-1">
               Upload your proof of payment.
             </p>
-            <p className="text-gray-500 text-xs mt-1">
-              NOTE: After paying through check or cash, please show the receipt
-              for proof of payment.
-            </p>
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4 rounded">
+              <p className="text-gray-600 text-sm">
+                <span className="font-medium">NOTE:</span> After paying through check or cash, please show the receipt for proof of payment.
+              </p>
+            </div>
           </div>
 
-          {/* Proof of Payment Modal */}
+          {/* Enhanced Modal */}
           {isModalOpen && (
-            <div className="fixed top-0 left-0 w-full h-full bg-gray-500 bg-opacity-75 flex items-center justify-center">
-              <div className="bg-white rounded-lg p-8 max-w-md">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-                  PROOF OF PAYMENT SUBMISSION
+            <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full animate-fadeIn">
+                <h2 className="text-xl font-bold text-blue-600 mb-4">
+                  Proof of Payment Submission
                 </h2>
-                <p className="text-gray-700 mb-2">
+                <p className="text-gray-600 mb-2">
                   Instructions: Submit your proof of payment below.
                 </p>
-                <p className="text-gray-700 mb-4">
+                <p className="text-gray-700 mb-6">
                   Dropbox Below: Submit all requirements below. Thank you!
                 </p>
 
-                {/* Dropbox area */}
-                <div className="border-2 border-dashed border-gray-400 rounded-md p-8 text-center">
+                {/* Enhanced Dropbox area */}
+                <div className="border-2 border-dashed border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors duration-200 rounded-lg p-8 text-center cursor-pointer">
                   <IoMdCloudUpload
                     size={48}
-                    className="mx-auto text-gray-500"
+                    className="mx-auto text-blue-500"
                   />
-                  <p className="text-gray-600 mt-2">
+                  <p className="text-gray-600 mt-3 font-medium">
                     Drag & drop files or{" "}
-                    <button className="text-blue-600">Browse</button>
+                    <button className="text-blue-600 hover:text-blue-700 hover:underline">Browse</button>
                   </p>
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="text-gray-500 text-sm mt-2">
                     Supported formats: JPEG and PNG
                   </p>
                 </div>
 
-                <div className="mt-6 flex justify-end">
+                <div className="mt-8 flex justify-end space-x-3">
                   <button
                     onClick={closeModal}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-2 px-4 rounded mr-2"
+                    className="bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                   >
                     Cancel
                   </button>
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                  <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200">
                     Submit
                   </button>
                 </div>

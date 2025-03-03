@@ -78,7 +78,7 @@ export default function MaintenanceRequestPage() {
     <TenantLayout>
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
         <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg md:max-w-2xl">
-          <h2 className="text-2xl font-semibold text-center mb-4 text-gray-800">
+          <h2 className="text-2xl font-semibold text-center mb-4 text-blue-600">
             Submit Maintenance Request
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">

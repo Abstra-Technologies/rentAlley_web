@@ -42,7 +42,7 @@ const TenantMaintenance = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Header with Title and Create Button */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-700">
+          <h2 className="text-2xl font-bold text-blue-600">
             My Maintenance Requests
           </h2>
           <Link href="/pages/tenant/maintenance/add">

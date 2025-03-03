@@ -11,6 +11,7 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        customBlue: "#1c638b",
       },
       backgroundImage: {
         "hero-pattern": "url('/images/hero-section.jpeg')",
