@@ -18,7 +18,7 @@ const useAuthStore = create(
                         return data;
                     }
 
-                    console.log("[AuthStore] 🔓 Decrypting user data...", data);
+                    console.log("[AuthStore]Decrypting user data...", data);
 
                     console.log("Checking fields before JSON.parse():");
                     console.log("firstName:", data.firstName);
@@ -32,8 +32,7 @@ const useAuthStore = create(
                         firstName: data.firstName ? decryptData(JSON.parse(data.firstName), encryptionKey) : null,
                         lastName: data.lastName ? decryptData(JSON.parse(data.lastName), encryptionKey) : null,
                         email: data.email ? decryptData(JSON.parse(data.email), encryptionKey) : null,
-                        profilePicture: data.profilePicture,
-                        // profilePicture: data.profilePicture ? decryptData(JSON.parse(data.profilePicture), encryptionKey) : null,
+                        profilePicture: data.profilePicture ? decryptData(JSON.parse(data.profilePicture), encryptionKey) : null,
                         birthDate: data.birthDate || null,
                         phoneNumber: data.phoneNumber ? decryptData(JSON.parse(data.phoneNumber), encryptionKey) : null,
                         is_2fa_enabled: data.is_2fa_enabled || false,

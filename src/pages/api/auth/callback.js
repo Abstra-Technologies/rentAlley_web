@@ -53,7 +53,7 @@ export default async function handler(req, res) {
         const email = user.email ? user.email.trim().toLowerCase() : null;
         const phoneNumber = mobileNumber ? mobileNumber.trim() : null;
         const birthDate = dob ? dob.trim() : null;
-        const profilePicture = user?.picture || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s" ;
+        const profilePicture = user?.picture;
 
         if (!googleId) {
              new Error("Google OAuth failed: Missing google_id (sub).");
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
                     emailHash || null,
                     " ",
                     birthDate || null,
-                    phoneEncrypted || null,
+                    phoneEncrypted || 0,
                     finalUserType || "tenant",
                     googleId || null,
                     0,
