@@ -133,7 +133,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 
-// ✅ Create a separate component for `useSearchParams()`
+const TIMER_DURATION = 10 * 60; // 10 minutes in seconds
+
 const SearchParamsWrapper = ({ setUserId }) => {
   const searchParams = useSearchParams();
   const user_id = searchParams.get("user_id");
@@ -152,28 +153,45 @@ export default function Verify2FA() {
   const [message, setMessage] = useState("");
   const [resendMessage, setResendMessage] = useState("");
   const [isResending, setIsResending] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
-  // Set the pending flag if user_id exists and it's not already set.
   useEffect(() => {
-    if (user_id && !localStorage.getItem("pending_2fa")) {
-      localStorage.setItem("pending_2fa", "true");
-      console.log("pending_2fa flag set in localStorage.");
+    const storedExpiry = sessionStorage.getItem("otp_timer_expiry");
+    if (storedExpiry) {
+      const remainingTime = Math.floor((parseInt(storedExpiry) - Date.now()) / 1000);
+      if (remainingTime > 0) {
+        setTimeLeft(remainingTime);
+        return;
+      }
     }
-  }, [user_id]);
+    resetTimer();
+  }, []);
 
-  // Check for the pending flag and setup onpopstate handler.
   useEffect(() => {
-    if (!localStorage.getItem("pending_2fa")) {
-      console.log("pending_2fa flag missing, redirecting to login.");
-      router.push("/pages/auth/login");
-    }
+    if (timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          sessionStorage.removeItem("otp_timer_expiry");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timeLeft]);
 
-    window.history.pushState(null, null, window.location.href);
-    window.onpopstate = () => {
-      localStorage.removeItem("pending_2fa");
-      router.push("/pages/auth/login");
-    };
-  }, [router]);
+  const resetTimer = () => {
+    setTimeLeft(TIMER_DURATION);
+    sessionStorage.setItem("otp_timer_expiry", Date.now() + TIMER_DURATION * 1000);
+  };
+
+  const formatTime = (seconds) => {
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    return `${min}:${sec < 10 ? "0" : ""}${sec}`;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -190,9 +208,8 @@ export default function Verify2FA() {
 
       if (res.ok) {
         await Swal.fire("Success", "OTP verified successfully!", "success");
-        localStorage.removeItem("pending_2fa"); // Remove flag after successful login
+        localStorage.removeItem("pending_2fa");
 
-        // Redirect based on user type
         if (data.user.userType === "tenant") {
           router.push("/pages/tenant/dashboard");
         } else if (data.user.userType === "landlord") {
@@ -224,6 +241,7 @@ export default function Verify2FA() {
 
       if (res.ok) {
         await Swal.fire("Success", "OTP resend successful!", "success");
+        resetTimer();
       } else {
         setResendMessage(data.error);
       }
@@ -243,8 +261,11 @@ export default function Verify2FA() {
           <h1 className="text-2xl font-semibold text-center text-gray-800 mb-4">
             Two-Factor Authentication
           </h1>
-          <p className="text-sm text-gray-600 text-center mb-6">
+          <p className="text-sm text-gray-600 text-center mb-2">
             Enter the OTP sent to your registered email or phone.
+          </p>
+          <p className="text-sm text-gray-600 text-center mb-6">
+            Resend available in: {formatTime(timeLeft)}
           </p>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -282,11 +303,11 @@ export default function Verify2FA() {
               type="button"
               onClick={handleResendOTP}
               className={`w-full py-2 text-white font-medium rounded-md transition ${
-                isResending
+                isResending || timeLeft > 0
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-gray-600 hover:bg-gray-700"
               }`}
-              disabled={isResending}
+              disabled={isResending || timeLeft > 0}
             >
               {isResending ? "Resending..." : "Resend OTP"}
             </button>
@@ -301,6 +322,8 @@ export default function Verify2FA() {
       </div>
     </Suspense>
   );
+}
+
 
   // return (
   //     <Suspense fallback={<div>Loading...</div>}>
@@ -335,4 +358,4 @@ export default function Verify2FA() {
   //         </div>
   //     </Suspense>
   // );
-}
+
