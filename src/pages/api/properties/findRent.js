@@ -13,26 +13,17 @@ export default async function handler(req, res) {
   try {
     let query = `
       SELECT 
-        p.property_id,
-        p.property_name,
-        p.property_type,
-        p.amenities,
-        p.city,
-        p.street,
-        p.province,
-        pv.status AS verification_status,
-        (SELECT pp.photo_url FROM PropertyPhoto pp WHERE pp.property_id = p.property_id LIMIT 1) AS encrypted_property_photo,
-        -- Determine rent payment (either property rent or average unit rent)
-        COALESCE(
-          (SELECT AVG(u.rent_payment) FROM Unit u WHERE u.property_id = p.property_id),
-          p.rent_payment
-        ) AS rent_payment,
-        CASE 
-         WHEN (SELECT COUNT(*) FROM Unit u WHERE u.property_id = p.property_id) > 0 THEN 'unit'
-          ELSE 'property'
-      END AS type
+          p.property_id,
+          p.property_name,
+          p.city,
+          p.street,
+          p.province,
+          pv.status AS verification_status,
+          (SELECT pp.photo_url FROM PropertyPhoto pp WHERE pp.property_id = p.property_id LIMIT 1) AS encrypted_property_photo,
+          MIN(u.rent_amount) AS rent_amount
       FROM Property p
       JOIN PropertyVerification pv ON p.property_id = pv.property_id
+      LEFT JOIN Unit u ON p.property_id = u.property_id
       WHERE pv.status = 'Verified'
     `;
 
@@ -40,28 +31,23 @@ export default async function handler(req, res) {
 
     // ✅ Apply price range filter correctly
     if (minPrice || maxPrice) {
-      query += ` AND (
-        (SELECT AVG(u.rent_payment) FROM Unit u WHERE u.property_id = p.property_id) >= ? 
-        OR p.rent_payment >= ?
-      )`;
-
-      queryParams.push(minPrice || 0, minPrice || 0); // Default to 0 if undefined
+      query += ` AND u.rent_amount >= ?`;
+      queryParams.push(minPrice || 0);
 
       if (maxPrice) {
-        query += ` AND (
-          (SELECT AVG(u.rent_payment) FROM Unit u WHERE u.property_id = p.property_id) <= ? 
-          OR p.rent_payment <= ?
-        )`;
-
-        queryParams.push(maxPrice, maxPrice);
+        query += ` AND u.rent_amount <= ?`;
+        queryParams.push(maxPrice);
       }
     }
+
     // ✅ Search by Multiple Fields
     if (searchQuery) {
       query += ` AND (p.property_name LIKE ? OR p.city LIKE ? OR p.street LIKE ? OR p.province LIKE ?)`;
       const likeQuery = `%${searchQuery}%`;
       queryParams.push(likeQuery, likeQuery, likeQuery, likeQuery);
     }
+
+    query += ` GROUP BY p.property_id;`;
 
     const [properties] = await db.execute(query, queryParams);
 

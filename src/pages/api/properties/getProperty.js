@@ -15,14 +15,7 @@ export default async function handler(req, res) {
     // ✅ Fetch property details
     let query = `
       SELECT 
-        p.property_id,
-        p.property_name,
-        p.landlord_id,
-        p.property_type,
-        p.amenities,
-        p.city,
-        p.province,
-        p.rent_payment
+        p.*
       FROM Property p
       WHERE p.property_id = ?;
     `;

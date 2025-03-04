@@ -31,14 +31,16 @@ export function StepThree() {
     const { name, type, checked, value } = e.target;
     let newValue = type === "checkbox" ? (checked ? 1 : 0) : value;
 
-    if (name === "multipleUnits") {
-      newValue = checked ? 1 : 0;
-      setProperty({
-        ...property,
-        multipleUnits: newValue,
-        totalUnits: checked ? property.totalUnits || "" : 1,
-      });
-      return;
+    // Ensure totalUnits is at least 1
+    if (name === "totalUnits") {
+      // Allow clearing the input field
+      if (value === "") {
+        newValue = "";
+      } else if (Number(value) === 0) {
+        newValue = 1; // Set to 1 if the user types 0
+      } else {
+        newValue = Number(value); // Convert to number for valid input
+      }
     }
 
     setProperty({ ...property, [name]: newValue });
@@ -58,39 +60,28 @@ export function StepThree() {
           You can always change your property details later.
         </p>
         <div className="space-y-4">
-          {/* Number of Units */}
-          <div>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                name="multipleUnits"
-                checked={property.multipleUnits === 1}
-                onChange={handleChange}
-                className="h-5 w-5"
-              />
-              <span className="text-gray-700 font-medium">
-                Do you have one or more units?
-              </span>
-            </label>
+          {/* Units Info */}
+          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-md">
+            <p className="font-medium">
+              If the property is rented as a whole, then the unit count is 1 by
+              default.
+            </p>
           </div>
 
-          {/* Show total units input only if total units checkbox is checked */}
-          {property.multipleUnits === 1 && (
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Total Units
-              </label>
-              <input
-                type="number"
-                name="totalUnits"
-                value={property.totalUnits || ""}
-                onChange={handleChange}
-                placeholder="2"
-                min="1"
-                className="w-full p-2 border rounded"
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">
+              Total Units
+            </label>
+            <input
+              type="number"
+              name="totalUnits"
+              value={property.totalUnits || ""}
+              onChange={handleChange}
+              placeholder="2"
+              min="1"
+              className="w-full p-2 border rounded"
+            />
+          </div>
 
           {/* Property Description */}
           <div>

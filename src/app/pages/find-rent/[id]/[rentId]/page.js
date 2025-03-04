@@ -67,9 +67,9 @@ export default function UnitDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
+    <div className="max-w-6xl mx-auto px-4 py-6">
       {/* Photo Gallery */}
-      <div className="w-full h-96 relative">
+      <div className="w-full h-80 sm:h-96 relative rounded-lg overflow-hidden">
         {photos.length > 0 ? (
           <Image
             src={photos[activeImage]}
@@ -79,71 +79,85 @@ export default function UnitDetailPage() {
             className="rounded-lg"
           />
         ) : (
-          <div className="w-full h-96 bg-gray-200 flex items-center justify-center text-gray-500">
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-lg">
             No images available
           </div>
         )}
       </div>
 
-      {/* Thumbnails */}
-      <div className="flex overflow-x-auto mt-2 space-x-2">
-        {photos.map((photo, index) => (
-          <img
-            key={index}
-            src={photo}
-            alt={`Unit Image ${index + 1}`}
-            className={`h-20 w-20 rounded cursor-pointer ${
-              activeImage === index ? "border-2 border-blue-600" : ""
-            }`}
-            onClick={() => setActiveImage(index)}
-          />
-        ))}
-      </div>
+      {/* Thumbnail Row */}
+      {photos.length > 1 && (
+        <div className="flex overflow-x-auto mt-3 space-x-2 pb-2">
+          {photos.map((photo, index) => (
+            <img
+              key={index}
+              src={photo}
+              alt={`Unit Image ${index + 1}`}
+              className={`h-16 w-16 sm:h-20 sm:w-20 rounded-md cursor-pointer border-2 ${
+                activeImage === index ? "border-blue-600" : "border-transparent"
+              }`}
+              onClick={() => setActiveImage(index)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Back Button */}
-      <div className="mt-3 mb-3">
+      <div className="mt-4">
         <button
           onClick={() => router.back()}
-          className="flex items-center text-gray-700 hover:text-gray-900"
+          className="flex items-center text-gray-700 hover:text-gray-900 transition"
         >
-          <IoArrowBackOutline className="text-2xl" />
-          <span className="ml-2 text-lg font-medium">Back</span>
+          <IoArrowBackOutline className="text-xl sm:text-2xl" />
+          <span className="ml-2 text-base sm:text-lg font-medium">Back</span>
         </button>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         {/* Left: Unit Details */}
-        <div className="md:col-span-2 bg-white p-6 shadow-lg rounded-lg">
-          <h1 className="text-2xl font-bold">Unit {unit?.unit_name}</h1>
-          <p className="text-gray-600 mt-2">{unit?.description}</p>
+        <div className="lg:col-span-2 bg-white p-6 shadow-md rounded-lg">
+          <h1 className="text-2xl font-bold text-gray-800">
+            Unit {unit?.unit_name}
+          </h1>
 
           <div className="mt-4">
-            <h3 className="text-lg font-semibold">Details</h3>
-            <ul className="list-disc list-inside text-gray-700">
-              <li>Floor Area: {unit?.floor_area ?? "N/A"} sqm</li>
-              <li>Furnishing: {unit?.furnish ?? "N/A"}</li>
-              <li>Pet Friendly: {unit?.pet_friendly ? "Yes" : "No"}</li>
-              <li>Security Deposit: P{unit?.sec_deposit?.toLocaleString()}</li>
-              <li>Min Stay: {unit?.min_stay} months</li>
-              <li>Late Fee: P{unit?.late_fee?.toLocaleString()}</li>
-              <li>Advanced Payment: {unit?.advanced_payment} months</li>
+            <h3 className="text-lg font-semibold text-gray-700">
+              Unit Details
+            </h3>
+            <ul className="mt-2 space-y-2 text-gray-600">
               <li>
-                Electricity Bill Included:{" "}
-                {unit?.has_electricity ? "Yes" : "No"}
+                <strong className="text-gray-800">Unit Size:</strong>{" "}
+                {unit?.unit_size} sqm
               </li>
-              <li>Water Bill Included: {unit?.has_water ? "Yes" : "No"}</li>
+              <li>
+                <strong className="text-gray-800">Bed Spacing:</strong>{" "}
+                {unit?.bed_spacing === 0 ? "No" : "Yes"}
+              </li>
+              <li>
+                <strong className="text-gray-800">Available Beds:</strong>{" "}
+                {unit?.bed_spacing === 0 ? "N/A" : unit?.avail_beds}
+              </li>
+              <li>
+                <strong className="text-gray-800">Furnishing:</strong>{" "}
+                {unit?.furnish
+                  .split("_")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Right: Inquiry Booking */}
-        <div className="bg-white p-6 shadow-lg rounded-lg">
+        <div className="bg-white p-6 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Book This Unit
+          </h3>
           <InquiryBooking
             tenant_id={user?.tenant_id}
-            property_id={""}
             unit_id={unit?.unit_id}
-            rent_payment={unit?.rent_payment}
+            rent_amount={unit?.rent_amount}
           />
         </div>
       </div>

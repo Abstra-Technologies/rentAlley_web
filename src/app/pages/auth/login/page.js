@@ -1,5 +1,4 @@
-
-'use client'
+"use client";
 import GoogleLogo from "../../../../components/google-logo";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -27,7 +26,9 @@ export default function Login() {
     window.history.pushState(null, "", "/pages/auth/login");
     window.history.replaceState(null, "", "/pages/auth/login");
     if (user || admin) {
-      router.replace(user ? "/pages/tenant/dashboard" : "/pages/admin/dashboard");
+      router.replace(
+        user ? "/pages/tenant/dashboard" : "/pages/admin/dashboard"
+      );
     }
   }, [user, admin]);
 
@@ -77,7 +78,12 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    logEvent("Login Attempt", "User Interaction", "User Submitted Login Form", 1);
+    logEvent(
+      "Login Attempt",
+      "User Interaction",
+      "User Submitted Login Form",
+      1
+    );
     const fcm_token = await requestNotificationPermission();
     try {
       loginSchema.parse(formData);
@@ -93,7 +99,12 @@ export default function Login() {
       console.log("API Response:", data);
 
       if (response.ok) {
-        logEvent("Login Success", "Authentication", "User Successfully Logged In", 1);
+        logEvent(
+          "Login Success",
+          "Authentication",
+          "User Successfully Logged In",
+          1
+        );
 
         if (data.requires_otp) {
           Swal.fire("2FA Required", "OTP sent to your email.", "info");
@@ -104,7 +115,12 @@ export default function Login() {
           return await redirectBasedOnUserType();
         }
       } else {
-        logEvent("Login Failed", "Authentication", "User Entered Incorrect Credentials", 1);
+        logEvent(
+          "Login Failed",
+          "Authentication",
+          "User Entered Incorrect Credentials",
+          1
+        );
 
         setErrorMessage(data.error || "Invalid credentials");
       }
@@ -115,106 +131,115 @@ export default function Login() {
   };
 
   return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
-          <h1 className="text-2xl font-bold text-center mb-6">Rentahan Logo</h1>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
+        <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">
+          Rentahan
+        </h1>
 
-          {errorMessage && (
-              <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-                {errorMessage}
-              </div>
-          )}
-          {message && (
-              <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
-                {message}
-              </div>
-          )}
+        {errorMessage && (
+          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+            {errorMessage}
+          </div>
+        )}
+        {message && (
+          <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
+            {message}
+          </div>
+        )}
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-              >
-                Email Address
-              </label>
-              <input
-                  type="email"
-                  id="email"
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="juantamad@email.com"
-              />
-              {errors.email && (
-                  <p className="text-red-500 text-sm">{errors.email}</p>
-              )}
-            </div>
-
-            <div>
-              <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <input
-                  type="password"
-                  id="password"
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-              />
-              {errors.password && (
-                  <p className="text-red-500 text-sm">{errors.password}</p>
-              )}
-            </div>
-            <p className="text-center">
-              <Link
-                  href="./forgot-password"
-                  className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
-                  onClick={() => logEvent("Forgot Password Click", "User Interaction", "Clicked Forgot Password", 1)}
-              >
-                Forgot Password?
-              </Link>
-            </p>
-            <button
-                type="submit"
-                onClick={() =>
-                    logEvent("Button Click", "User Interaction", "User Login", 1)
-                }
-                className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
             >
-              Login
-            </button>
-          </form>
-
-          <div className="flex items-center my-6">
-            <div className="border-t border-gray-300 flex-grow"></div>
-            <span className="mx-3 text-gray-500 font-medium">or</span>
-            <div className="border-t border-gray-300 flex-grow"></div>
+              Email Address
+            </label>
+            <input
+              type="email"
+              id="email"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="juantamad@email.com"
+            />
+            {errors.email && (
+              <p className="text-red-500 text-sm">{errors.email}</p>
+            )}
           </div>
 
-          <button
-              type="button"
-              onClick={handleGoogleSignin}
-              className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
-          >
-            <GoogleLogo />
-            <span className="font-medium text-gray-700">Login with Google</span>
-          </button>
-
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Don&#39;t have an account?{" "}
-            <Link
-                href="../auth/selectRole"
-                className="text-blue-600 hover:underline font-medium"
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
             >
-              Create Now
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+            />
+            {errors.password && (
+              <p className="text-red-500 text-sm">{errors.password}</p>
+            )}
+          </div>
+          <p className="text-center">
+            <Link
+              href="./forgot-password"
+              className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
+              onClick={() =>
+                logEvent(
+                  "Forgot Password Click",
+                  "User Interaction",
+                  "Clicked Forgot Password",
+                  1
+                )
+              }
+            >
+              Forgot Password?
             </Link>
           </p>
+          <button
+            type="submit"
+            onClick={() =>
+              logEvent("Button Click", "User Interaction", "User Login", 1)
+            }
+            className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
+          >
+            Login
+          </button>
+        </form>
+
+        <div className="flex items-center my-6">
+          <div className="border-t border-gray-300 flex-grow"></div>
+          <span className="mx-3 text-gray-500 font-medium">or</span>
+          <div className="border-t border-gray-300 flex-grow"></div>
         </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleSignin}
+          className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
+        >
+          <GoogleLogo />
+          <span className="font-medium text-gray-700">Login with Google</span>
+        </button>
+
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Don&#39;t have an account?{" "}
+          <Link
+            href="../auth/selectRole"
+            className="text-blue-600 hover:underline font-medium"
+          >
+            Create Now
+          </Link>
+        </p>
       </div>
+    </div>
   );
 }
