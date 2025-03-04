@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import GoogleLogo from "../../../../components/google-logo";
@@ -7,7 +5,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import useRoleStore from "../../../../zustand/store";
-import { useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
 import { logEvent } from "../../../../utils/gtag";
 
 const registerSchema = z
@@ -66,7 +64,12 @@ export default function Register() {
   });
 
   const handleGoogleSignup = () => {
-    logEvent("Login Attempt", "Google Sign-Up", "User Clicked Google Sign-Up", 1);
+    logEvent(
+      "Login Attempt",
+      "Google Sign-Up",
+      "User Clicked Google Sign-Up",
+      1
+    );
 
     router.push(`/api/auth/google?userType=${role}`);
   };
@@ -112,7 +115,6 @@ export default function Register() {
         setTimeout(() => {
           router.push("/pages/auth/verify-email");
         }, 1000); // Redirect after 2 seconds
-
       } else if (data.error && data.error.includes("already registered")) {
         setError("This email is already registered. Please admin_login.");
       } else {
@@ -135,7 +137,9 @@ export default function Register() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Rentahan Logo</h1>
+        <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">
+          Rentahan
+        </h1>
         <h1 className="text-2xl font-bold text-center mb-6">
           Register as {role}
         </h1>
