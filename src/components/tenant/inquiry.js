@@ -6,12 +6,7 @@ import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-export default function InquiryBooking({
-  tenant_id,
-  property_id,
-  unit_id,
-  rent_payment,
-}) {
+export default function InquiryBooking({ tenant_id, unit_id, rent_amount }) {
   const [view, setView] = useState("inquire");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
@@ -63,7 +58,6 @@ export default function InquiryBooking({
 
       console.log({
         tenant_id,
-        property_id,
         unit_id,
         visit_date: selectedDate,
         visit_time: formattedTime.toString(),
@@ -71,7 +65,6 @@ export default function InquiryBooking({
 
       const response = await axios.post("/api/tenant/visits/schedule-visit", {
         tenant_id,
-        property_id,
         unit_id,
         visit_date: selectedDate,
         visit_time: formattedTime,
@@ -83,9 +76,7 @@ export default function InquiryBooking({
           "Visit scheduled successfully! Redirecting to Tenant Application...",
           "success"
         ).then(() => {
-          if (property_id) {
-            router.push(`/pages/tenant/prospective/${property_id}`);
-          } else if (unit_id) {
+          if (unit_id) {
             router.push(`/pages/tenant/prospective/unit/${unit_id}`);
           } else {
             router.push(`/pages/find-rent`); // Fallback if neither is present
@@ -122,7 +113,6 @@ export default function InquiryBooking({
 
       console.log({
         tenant_id,
-        property_id,
         unit_id,
         visit_date: selectedDate,
         visit_time: formattedTime.toString(),
@@ -130,7 +120,6 @@ export default function InquiryBooking({
 
       const response = await axios.post("/api/tenant/visits/schedule-visit", {
         tenant_id,
-        property_id,
         unit_id,
         visit_date: selectedDate,
         visit_time: formattedTime,
@@ -170,7 +159,7 @@ export default function InquiryBooking({
       {view === "inquire" && (
         <div className="mt-4">
           <div className="mt-4 mb-3 text-center">
-            <p className="text-xl font-bold">₱{rent_payment}</p>
+            <p className="text-xl font-bold">₱{rent_amount}</p>
           </div>
           <textarea
             className="w-full p-2 border rounded-md"

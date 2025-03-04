@@ -26,9 +26,7 @@ export default async function handler(req, res) {
 
     // Fetch unit photos
     const [photos] = await db.query(
-      `
-            SELECT photo_url FROM UnitPhoto WHERE unit_id = ?
-        `,
+      `SELECT photo_url FROM UnitPhoto WHERE unit_id = ?`,
       [rentId]
     );
 

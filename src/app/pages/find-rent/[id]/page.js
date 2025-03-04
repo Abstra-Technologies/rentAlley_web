@@ -3,22 +3,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import useAuth from "../../../../../hooks/useSession";
-import InquiryBooking from "../../../../components/tenant/inquiry";
 import {
   FaRuler,
   FaCouch,
-  FaMapMarkerAlt,
   FaBuilding,
   FaSwimmingPool,
   FaWifi,
+  FaInfoCircle,
 } from "react-icons/fa";
 import { BsImageAlt, BsCheckCircleFill } from "react-icons/bs";
 import { MdVerified, MdOutlineApartment } from "react-icons/md";
 import { IoArrowBackOutline } from "react-icons/io5";
 
 export default function PropertyDetails() {
-  const { user } = useAuth();
   const { id } = useParams();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -118,15 +115,9 @@ export default function PropertyDetails() {
             <div>
               <div className="flex items-center">
                 <h1 className="text-2xl font-bold text-gray-800">
-                  {property.property_name}
+                  {property?.property_name}
                 </h1>
                 <MdVerified className="ml-2 text-blue-500 text-xl" />
-              </div>
-              <div className="flex items-center text-gray-600 mt-1">
-                <FaMapMarkerAlt className="mr-2 text-gray-400" />
-                <span>
-                  {property.city}, {property.province}
-                </span>
               </div>
             </div>
           </div>
@@ -135,12 +126,12 @@ export default function PropertyDetails() {
 
       {/* Gallery Section */}
       <div className="container mx-auto px-4 py-6">
-        {property.property_photo && property.property_photo.length > 0 ? (
+        {property?.property_photo && property?.property_photo.length > 0 ? (
           <div className="relative">
             {/* Main Image */}
             <div className="w-full h-96 rounded-xl overflow-hidden shadow-lg relative">
               <Image
-                src={property.property_photo[activeImageIndex]}
+                src={property?.property_photo[activeImageIndex]}
                 alt={`Main Property Image`}
                 fill
                 loading="lazy"
@@ -149,9 +140,9 @@ export default function PropertyDetails() {
             </div>
 
             {/* Thumbnail Row */}
-            {property.property_photo.length > 1 && (
+            {property?.property_photo.length > 1 && (
               <div className="flex mt-4 space-x-2 overflow-x-auto pb-2">
-                {property.property_photo.map((photo, index) => (
+                {property?.property_photo.map((photo, index) => (
                   <div
                     key={index}
                     className={`relative w-24 h-24 rounded-lg overflow-hidden cursor-pointer transition transform hover:scale-105 ${
@@ -209,19 +200,43 @@ export default function PropertyDetails() {
                 <div>
                   <h3 className="font-medium text-gray-700">Property Type</h3>
                   <p className="text-gray-600">
-                    {property.property_type.charAt(0).toUpperCase() +
-                      property.property_type.slice(1)}
+                    {property?.property_type.charAt(0).toUpperCase() +
+                      property?.property_type.slice(1)}
                   </p>
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-700">Location</h3>
                   <p className="text-gray-600">
-                    {property.city}, {property.province}
+                    {property?.city},{" "}
+                    {property?.province
+                      .split("_")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" ")}
                   </p>
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-700">Total Units</h3>
                   <p className="text-gray-600">{property.units.length} units</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-700">Floor Area</h3>
+                  <p className="text-gray-600">{property.floor_area} sqm</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-700">Minimum Stay</h3>
+                  <p className="text-gray-600">{property.min_stay} month</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-700">Late Fee</h3>
+                  <p className="text-gray-600">{property.late_fee} %</p>
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-700">
+                    Security Deposit
+                  </h3>
+                  <p className="text-gray-600">₱{property.sec_deposit}</p>
                 </div>
               </div>
 
@@ -243,6 +258,19 @@ export default function PropertyDetails() {
                 </div>
               )}
             </div>
+
+            {/* Property Description */}
+            {property?.description && (
+              <div className="bg-white rounded-xl shadow-sm p-6 mb-6 pl-12 relative">
+                <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
+                  <FaInfoCircle className="mr-2 text-blue-500" />
+                  Property Description
+                </h2>
+                <p className="text-gray-600 leading-relaxed">
+                  {property.description}
+                </p>
+              </div>
+            )}
 
             {/* Available Units */}
             <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -317,7 +345,7 @@ export default function PropertyDetails() {
 
                               <div className="text-right">
                                 <div className="font-bold text-lg text-blue-600">
-                                  ₱{unit.rent_payment.toLocaleString()}
+                                  ₱{unit.rent_amount.toLocaleString()}
                                   <span className="text-sm text-gray-500">
                                     {" "}
                                     /month
@@ -345,27 +373,9 @@ export default function PropertyDetails() {
               )}
             </div>
           </div>
-
-          {/* Right Column - Booking Form */}
-          {property.units.length > 0 ? (
-            <h2 className="text-3xl font-extrabold text-blue-900 uppercase tracking-wide">
-              Choose a unit to proceed with booking.
-            </h2>
-          ) : (
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
-                <h2 className="text-xl font-bold mb-4 text-gray-800">
-                  Book a Viewing
-                </h2>
-                <InquiryBooking
-                  tenant_id={user?.tenant_id}
-                  property_id={id}
-                  unit_id={selectedUnitId}
-                  rent_payment={property?.rent_payment}
-                />
-              </div>
-            </div>
-          )}
+          <h2 className="text-3xl font-extrabold text-blue-900 uppercase tracking-wide">
+            Choose a unit to proceed with booking.
+          </h2>
         </div>
       </div>
     </div>

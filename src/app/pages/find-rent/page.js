@@ -9,15 +9,13 @@ import {
   FaChevronDown,
   FaMapMarkerAlt,
   FaSpinner,
-  FaBuilding,
-  FaHome,
 } from "react-icons/fa";
 
 export default function PropertySearch() {
-  const [properties, setProperties] = useState([]);
+  const [allProperties, setAllProperties] = useState([]); // Store all fetched properties
+  const [filteredProperties, setFilteredProperties] = useState([]); // Store filtered results
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const router = useRouter();
   const [priceRange, setPriceRange] = useState(""); // Price range filter
   const [showPriceDropdown, setShowPriceDropdown] = useState(false); // Toggle price dropdown
@@ -30,42 +28,17 @@ export default function PropertySearch() {
     { label: "Greater than ₱20,000", min: 20000, max: "" },
   ];
 
-  // ✅ Debounce Effect (Only updates `debouncedSearch`)
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 1000);
-
-    return () => {
-      clearTimeout(handler); // Clear timeout if user keeps typing
-    };
-  }, [searchQuery]);
-
-  // ✅ Fetch properties based on debounced search & price range
+  // Fetch all properties once on mount
   useEffect(() => {
     async function fetchProperties() {
       try {
         setLoading(true);
-        const params = new URLSearchParams();
-
-        if (debouncedSearch) params.append("searchQuery", debouncedSearch);
-        if (priceRange) {
-          const selectedRange = priceRanges.find(
-            (range) => range.label === priceRange
-          );
-          if (selectedRange) {
-            if (selectedRange.min) params.append("minPrice", selectedRange.min);
-            if (selectedRange.max) params.append("maxPrice", selectedRange.max);
-          }
-        }
-
-        const res = await fetch(
-          `/api/properties/findRent?${params.toString()}`
-        );
+        const res = await fetch("/api/properties/findRent");
         if (!res.ok) throw new Error("Failed to fetch properties");
 
         const data = await res.json();
-        setProperties(data);
+        setAllProperties(data);
+        setFilteredProperties(data); // Initialize filtered results
       } catch (error) {
         console.error(error.message);
       } finally {
@@ -74,7 +47,35 @@ export default function PropertySearch() {
     }
 
     fetchProperties();
-  }, [debouncedSearch, priceRange]); // 🔹 Trigger only when `debouncedSearch` or `priceRange` changes
+  }, []);
+
+  // Filter properties in real-time
+  useEffect(() => {
+    const filtered = allProperties.filter((property) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        property.property_name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        property.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        property.province.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        property.street.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const selectedRange = priceRanges.find(
+        (range) => range.label === priceRange
+      );
+      const minPrice = selectedRange?.min || 0;
+      const maxPrice = selectedRange?.max || Infinity;
+
+      const matchesPrice =
+        priceRange === "" ||
+        (property.rent_amount >= minPrice && property.rent_amount <= maxPrice);
+
+      return matchesSearch && matchesPrice;
+    });
+
+    setFilteredProperties(filtered);
+  }, [searchQuery, priceRange, allProperties]);
 
   if (loading)
     return <p className="text-center text-lg">Loading properties...</p>;
@@ -164,13 +165,8 @@ export default function PropertySearch() {
         </div>
 
         {/* Active filters */}
-        {(debouncedSearch || priceRange) && (
+        {(searchQuery || priceRange) && (
           <div className="flex gap-2 mt-4 flex-wrap">
-            {debouncedSearch && (
-              <span className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                Search: {debouncedSearch}
-              </span>
-            )}
             {priceRange && priceRange !== "All Prices" && (
               <span className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
                 Price: {priceRange}
@@ -185,7 +181,7 @@ export default function PropertySearch() {
         <div className="flex justify-center items-center py-12">
           <FaSpinner className="animate-spin text-blue-500 text-3xl" />
         </div>
-      ) : properties.length === 0 ? (
+      ) : filteredProperties.length === 0 ? (
         <div className="bg-gray-50 rounded-lg p-12 text-center">
           <div className="flex justify-center mb-4">
             <FaSearch className="text-gray-400 text-5xl" />
@@ -202,15 +198,13 @@ export default function PropertySearch() {
         <>
           {/* Results count */}
           <div className="mb-4 text-gray-600">
-            Found {properties.length} propert
-            {properties.length === 1 ? "y" : "ies"}
+            Found {filteredProperties.length} propert
+            {filteredProperties.length === 1 ? "y" : "ies"}
           </div>
 
           {/* Property Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => {
-              const isUnitAverage = property.type === "unit"; // Determine if it's an avg. unit rent
-
+            {filteredProperties.map((property) => {
               return (
                 <div
                   key={property.property_id}
@@ -237,45 +231,44 @@ export default function PropertySearch() {
                         </span>
                       </div>
                     )}
-
-                    {/* Price Badge with Type Indicator */}
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      <div
-                        className={`px-3 py-1 rounded-full font-medium shadow-sm ${
-                          isUnitAverage ? "bg-green-600" : "bg-blue-600"
-                        } text-white`}
-                      >
-                        ₱{Math.round(property.rent_payment).toLocaleString()}
-                      </div>
-                      <span className="text-xs font-semibold text-gray-700 flex items-center gap-1 bg-gray-200 px-2 py-1 rounded-md">
-                        {isUnitAverage ? (
-                          <>
-                            <FaBuilding className="text-green-600" /> Avg. Unit
-                            Rent
-                          </>
-                        ) : (
-                          <>
-                            <FaHome className="text-blue-600" /> Property Rent
-                          </>
-                        )}
-                      </span>
-                    </div>
                   </div>
 
                   {/* Property Details */}
                   <div className="p-4">
-                    <h2 className="text-lg font-semibold flex items-center gap-1 mb-1 text-gray-900">
-                      {property?.property_name}
-                      <HiBadgeCheck className="text-blue-500" />
-                    </h2>
+                    {/* Name & Verified Badge Row */}
+                    <div className="flex justify-between items-center mb-1">
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {property?.property_name}
+                      </h2>
+                      <div className="flex items-center gap-1">
+                        <HiBadgeCheck className="text-blue-500 text-lg" />
+                        <span className="text-blue-600 font-medium text-sm">
+                          Verified
+                        </span>
+                      </div>
+                    </div>
 
-                    <div className="flex items-center text-gray-600 mb-2">
+                    {/* Location */}
+                    <div className="flex items-center text-gray-600 mt-2">
                       <FaMapMarkerAlt className="mr-1 text-gray-400" />
-                      <p>
-                        {property?.city}, {property?.province}
+                      <p className="text-gray-800">
+                        {property?.city},{" "}
+                        {property?.province
+                          .split("_")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1)
+                          )
+                          .join(" ")}
                       </p>
                     </div>
 
+                    {/* Rent Amount */}
+                    <p className="text-xl font-semibold text-blue-600 mt-1">
+                      ₱{Math.round(property.rent_amount).toLocaleString()}
+                    </p>
+
+                    {/* View Details Button */}
                     <button className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors">
                       View Details
                     </button>
