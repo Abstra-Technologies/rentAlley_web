@@ -57,7 +57,6 @@ export function StepFour() {
         .then((blob) => {
           const file = new File([blob], "indoor.jpg", { type: "image/jpeg" });
           setIndoorPhoto(file);
-          // setIndoorPreview(image); // Update indoor preview
         });
     } else {
       fetch(image)
@@ -65,7 +64,6 @@ export function StepFour() {
         .then((blob) => {
           const file = new File([blob], "outdoor.jpg", { type: "image/jpeg" });
           setOutdoorPhoto(file);
-          // setOutdoorPreview(image); // Update outdoor preview
         });
     }
     setShowCamera(false);
@@ -83,6 +81,18 @@ export function StepFour() {
       setFile(null); // Clear the file
       return false;
     }
+
+    // Ensure only PDF files are allowed
+    if (file.type !== "application/pdf") {
+      Swal.fire(
+        "Invalid File Type",
+        "Only PDF file types are allowed.",
+        "error"
+      );
+      setFile(null);
+      return false;
+    }
+
     return true;
   };
 
