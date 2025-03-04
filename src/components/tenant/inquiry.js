@@ -247,21 +247,21 @@ export default function InquiryBooking({ tenant_id, unit_id, rent_amount }) {
 
             <div className="flex flex-col gap-3">
               <button
-                className="w-full px-4 py-2 bg-green-600 text-white rounded"
+                className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                 onClick={handleApplyAsTenant}
               >
                 Yes, I want to
               </button>
 
               <button
-                className="w-full px-4 py-2 bg-gray-400 text-white rounded"
+                className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
               </button>
 
               <button
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 onClick={handleJustSchedule}
               >
                 No, just schedule

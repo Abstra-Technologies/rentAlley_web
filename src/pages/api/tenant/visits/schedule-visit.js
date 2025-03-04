@@ -5,19 +5,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { tenant_id, property_id, unit_id, visit_date, visit_time } = req.body;
+  const { tenant_id, unit_id, visit_date, visit_time } = req.body;
 
   try {
     // Schedule the visit
     await db.query(
-      "INSERT INTO PropertyVisit (tenant_id, property_id, unit_id, visit_date, visit_time) VALUES (?, ?, ?, ?, ?)",
-      [
-        tenant_id,
-        property_id || null,
-        unit_id !== null ? unit_id : null,
-        visit_date,
-        visit_time,
-      ]
+      "INSERT INTO PropertyVisit (tenant_id, unit_id, visit_date, visit_time) VALUES (?, ?, ?, ?)",
+      [tenant_id, unit_id, visit_date, visit_time]
     );
 
     return res.status(200).json({ message: "Visit scheduled successfully." });
