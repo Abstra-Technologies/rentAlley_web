@@ -123,42 +123,40 @@ async function handlePostRequest(req, res, connection) {
 }
 
 //Get Properties by ID or All
-async function handleGetRequest(
-  req,
-  res,
-  connection,
-  landlord_id,
-  property_id
-) {
+// Get Properties by ID or All, including verification status
+async function handleGetRequest(req, res, connection, landlord_id, property_id) {
   try {
-    let query = `SELECT * FROM Property WHERE 1=1`; // Ensures base query is always valid
+    let query = `
+      SELECT
+        p.*,
+        pv.status AS verification_status
+      FROM Property p
+             LEFT JOIN PropertyVerification pv ON p.property_id = pv.property_id
+      WHERE 1=1
+    `;
+
     let params = [];
 
     // If an ID is provided, add it to the query
     if (landlord_id) {
-      query += ` AND landlord_id = ?`;
+      query += ` AND p.landlord_id = ?`;
       params.push(landlord_id);
     }
 
     if (property_id) {
-      query += ` AND property_id = ?`;
+      query += ` AND p.property_id = ?`;
       params.push(property_id);
     }
 
     const [rows] = await connection.execute(query, params);
 
     if (property_id && rows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No Properties found for this Landlord" });
+      return res.status(404).json({ error: "No Properties found for this Landlord" });
     }
 
     res.status(200).json(rows);
   } catch (error) {
-    // Log the error message
     console.error("Error fetching property listings:", error);
-
-    // Respond with an error message
     res.status(500).json({ error: "Failed to fetch property listings" });
   }
 }

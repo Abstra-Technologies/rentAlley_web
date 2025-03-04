@@ -298,6 +298,24 @@ const PropertyListingPage = () => {
                 {property?.property_type.charAt(0).toUpperCase() +
                   property?.property_type.slice(1)}
               </span>
+
+
+              <div className="mt-2">
+      <span
+          className={`inline-block px-3 py-1 text-xs font-semibold rounded-full 
+          ${
+              property?.verification_status === "Verified"
+                  ? "bg-green-100 text-green-700"
+                  : property?.verification_status === "Pending"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : property?.verification_status === "Rejected"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-700"
+          }`}
+      >
+        {property?.verification_status || "Not Submitted"}
+      </span>
+              </div>
             </div>
 
             {/* Action buttons at the bottom */}
