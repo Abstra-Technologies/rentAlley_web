@@ -146,7 +146,6 @@ export default function AddNewProperty() {
     setStep((prev) => Math.max(prev - 1, 1)); // Prevent going below step 1
   };
 
-  // Axios instance
   const axiosInstance = axios.create({});
 
   // SWR Mutation for property creation
@@ -161,7 +160,7 @@ export default function AddNewProperty() {
     sendPropertyData
   );
 
-  // Upload photos function
+  // Upload photos
   const uploadPhotos = async (propertyID) => {
     const formData = new FormData();
 
@@ -175,7 +174,7 @@ export default function AddNewProperty() {
       } else {
         console.warn(`Skipping invalid file:`, photo);
       }
-    }); // ✅ Ensure it's a File object;
+    }); // Ensure it's a File object;
 
     // Debugging FormData contents before sending
     for (let pair of formData.entries()) {
@@ -237,6 +236,45 @@ export default function AddNewProperty() {
     }
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //
+  //   if (!validateStep()) {
+  //     return;
+  //   }
+  //
+  //   if (!user) {
+  //     Swal.fire(
+  //       "Authentication Error",
+  //       "User not authenticated. Please log in.",
+  //       "error"
+  //     );
+  //     return;
+  //   }
+  //
+  //   try {
+  //     // Step 1: Submit property details first
+  //     const propertyData = { ...property, landlord_id: user?.landlord_id };
+  //     const createdProperty = await trigger(propertyData); // Send to propListing API
+  //     const propertyID = createdProperty.propertyID;
+  //
+  //     // Create promises for photo and verification file uploads (if any)
+  //     const photoUploadPromise =
+  //       photos.length > 0 ? uploadPhotos(propertyID) : Promise.resolve();
+  //     const verificationUploadPromise =
+  //       occPermit && mayorPermit && indoorPhoto && outdoorPhoto
+  //         ? uploadPropertyRequirements(propertyID)
+  //         : Promise.resolve();
+  //
+  //     // Await all uploads in parallel
+  //     await Promise.all([photoUploadPromise, verificationUploadPromise]);
+  //     reset(); // Clear form
+  //     router.push("/pages/landlord/property-listing/review-listing"); // Redirect after success
+  //   } catch (error) {
+  //     Swal.fire("Error", `Something went wrong: ${error.message}`, "error");
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -246,9 +284,9 @@ export default function AddNewProperty() {
 
     if (!user) {
       Swal.fire(
-        "Authentication Error",
-        "User not authenticated. Please log in.",
-        "error"
+          "Authentication Error",
+          "User not authenticated. Please log in.",
+          "error"
       );
       return;
     }
@@ -256,25 +294,49 @@ export default function AddNewProperty() {
     try {
       // Step 1: Submit property details first
       const propertyData = { ...property, landlord_id: user?.landlord_id };
-      const createdProperty = await trigger(propertyData); // Send to propListing API
+      const createdProperty = await trigger(propertyData);
       const propertyID = createdProperty.propertyID;
 
       // Create promises for photo and verification file uploads (if any)
       const photoUploadPromise =
-        photos.length > 0 ? uploadPhotos(propertyID) : Promise.resolve();
+          photos.length > 0 ? await uploadPhotos(propertyID) : Promise.resolve();
       const verificationUploadPromise =
-        occPermit && mayorPermit && indoorPhoto && outdoorPhoto
-          ? uploadPropertyRequirements(propertyID)
-          : Promise.resolve();
+          occPermit && mayorPermit && indoorPhoto && outdoorPhoto
+              ? await uploadPropertyRequirements(propertyID)
+              : Promise.resolve();
 
-      // Await all uploads in parallel
       await Promise.all([photoUploadPromise, verificationUploadPromise]);
+
       reset(); // Clear form
       router.push("/pages/landlord/property-listing/review-listing"); // Redirect after success
+
     } catch (error) {
-      Swal.fire("Error", `Something went wrong: ${error.message}`, "error");
+      console.error("Property listing failed:", error.response?.data);
+
+      // Check if rejection was due to verification failure
+      if (error.response?.data?.status === "rejected") {
+        if (verificationAttempts < 2) {
+          Swal.fire(
+              "Verification Failed",
+              "Your property verification was rejected. You have one more attempt.",
+              "warning"
+          );
+          setVerificationAttempts((prev) => prev + 1); // Increase attempt count
+          setStep(4); // Redirect user to verification step
+        } else {
+          Swal.fire(
+              "Verification Failed",
+              "Your property listing has been rejected twice. Please contact support.",
+              "error"
+          );
+          router.push("/pages/landlord/property-listing"); // Redirect to listing page
+        }
+      } else {
+        Swal.fire("Error", `Something went wrong: ${error.message}`, "error");
+      }
     }
   };
+
 
   const renderStep = () => {
     switch (step) {

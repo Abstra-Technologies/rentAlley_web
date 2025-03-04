@@ -1,0 +1,30 @@
+{
+  "C:\\Users\\ISPROJ\\Pictures\\rentahan\\serverless.yml": {
+    "versionFramework": "4.7.0",
+    "servicePath": "C:\\Users\\ISPROJ\\Pictures\\rentahan\\serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "org": "rentahan",
+      "myApp": {
+        "component": "@sls-next/serverless-component@latest",
+        "inputs": {
+          "cloudfront": {
+            "distributionId": "auto"
+          },
+          "bucketName": "rentahanbucket",
+          "runtime": "nodejs18.x",
+          "memory": 512,
+          "timeout": 15
+        }
+      }
+    },
+    "serviceRawFile": "# \"org\" ensures this Service is used with the correct Serverless Framework Access Key.\norg: rentahan\nmyApp:\r\n  component: \"@sls-next/serverless-component@latest\"\r\n  inputs:\r\n    cloudfront:\r\n      distributionId: auto # Automatically create a CloudFront distribution\r\n    bucketName: \"rentahanbucket\" # S3 bucket for static assets\r\n    runtime: \"nodejs18.x\"\r\n    memory: 512 # Adjust as needed\r\n    timeout: 15 # Max 15 seconds (adjust based on your needs)\r\n",
+    "command": [],
+    "options": {},
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}

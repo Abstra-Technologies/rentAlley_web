@@ -86,6 +86,11 @@ export default async function updateLandlordStatus(req, res) {
                 [status, currentadmin_id, message, landlord_id]
             );
 
+            await db.query(
+                "UPDATE Landlord SET is_verified = ? WHERE landlord_id = ?",
+                [status === 'approved' ? 1 : 0, landlord_id]
+            );
+
             const notificationTitle = `Landlord Verification ${status}`;
             const notificationBody = `Your landlord verification has been ${status.toUpperCase()} by the admin. ${
                 message ? `Message: ${message}` : ""

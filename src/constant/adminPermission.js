@@ -1,7 +1,8 @@
 export const availablePermissions = [
-    { id: "add_co_admin", label: "Add Co-admin" },
+    { id: "manage_users", label: "Add Co-admin" },
     { id: "approve_properties", label: "Approve Properties" },
-    { id: "create_announcements", label: "Create Announcements" },
-    { id: "verify_landord", label: "Verify Landord" },
-
+    { id: "manage_announcements", label: "Create Announcements" },
+    { id: "view_reports", label: "View Bug Reports" },
+    { id: "view_log", label: "View Activity Logs" },
+    { id: "tenant_landlord_management", label: "Tenant landlord management" },
 ];

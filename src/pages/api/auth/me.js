@@ -43,7 +43,7 @@ export default async function handler(req, res) {
                     u.birthDate,
                     t.tenant_id,
                     l.landlord_id,
-                    l.verification_status_id,
+                    l.is_verified,
                     l.is_trial_used
                 FROM User u
                 LEFT JOIN Tenant t ON u.user_id = t.user_id
@@ -91,7 +91,8 @@ export default async function handler(req, res) {
                     a.profile_picture,
                     a.email,
                     a.role,
-                    a.status
+                    a.status,
+                    a.permissions
                 FROM Admin a
                 WHERE a.admin_id = ?
                 `,
@@ -109,6 +110,8 @@ export default async function handler(req, res) {
                     last_name:adminRows[0].last_name,
                     // userType: "admin",
                     profile_picture: adminRows[0].profile_picture,
+                    permissions: adminRows[0].permissions
+
                 });
             }
         }

@@ -12,7 +12,7 @@ export default async function addAdmin(req, res) {
 
     if (req.method === "POST") {
 
-        //region GET CURRENT USER ADMIN
+        // region GET CURRENT USER ADMIN
         try {
             const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
             if (!cookies || !cookies.token) {
@@ -24,7 +24,7 @@ export default async function addAdmin(req, res) {
         } catch (err) {
             return res.status(401).json({ success: false, message: err });
         }
-        //endregion
+        endregion
 
         const { email, username, password, role, first_name, last_name, permissions } = req.body;
 

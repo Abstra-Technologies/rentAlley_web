@@ -237,11 +237,11 @@ export default function ProfilePage() {
                     <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">Welcome, {user?.firstName}!</h2>
                     {user.userType === "landlord" && (
                         <div className="mt-4">
-                            {verificationStatus === 'pending' ? (
+                            {verificationStatus === '1' ? (
                                 <p className="text-yellow-600 font-bold">⏳ Verification Pending</p>
                             ) : verificationStatus === 'verified' ? (
                                 <p className="text-green-600 font-bold">✅ Verified</p>
-                            ) : verificationStatus === 'rejected' ? (
+                            ) : verificationStatus === 'not verified' ? (
                                 <div>
                                     <p className="text-red-600 font-bold">❌ Verification Rejected</p>
                                     <button

@@ -55,6 +55,7 @@ export default async function admminLogin(req, res) {
             username: user.username,
             role: user.role,
             email: user.email,
+            permissions: user.permissions ? user.permissions.split(",").map(p => p.trim()) : [], // Ensure array format
         })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("2h")

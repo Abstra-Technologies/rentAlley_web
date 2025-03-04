@@ -45,6 +45,7 @@ const CreateCoAdmin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const res = await fetch("/api/systemadmin/addUsers", {
         method: "POST",
@@ -135,6 +136,18 @@ const CreateCoAdmin = () => {
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+                  required
               />
             </div>
 

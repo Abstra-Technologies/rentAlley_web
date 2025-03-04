@@ -76,7 +76,9 @@ const useAuthStore = create(
                         email: data.email ? decryptData(JSON.parse(data.email), encryptionKey) : null,
                         role: data.role,
                         status: data.status || "inactive",
-                        profile_picture: data.profile_picture || null
+                        profile_picture: data.profile_picture || null,
+                        permissions: data.permissions,
+
                     };
                 } catch (error) {
                     console.error("[AuthStore] Error decrypting admin data:", error);

@@ -28,7 +28,7 @@ const menuItems = [
     icon: Calendar,
     label: "Visit Schedule",
   },
-  { href: "/pages/commons/chat", icon: MessageSquareMore, label: "Chats" },
+  { href: "/pages/landlord/chat", icon: MessageSquareMore, label: "Chats" },
   {
     href: "/pages/landlord/maintenance-request",
     icon: Wrench,

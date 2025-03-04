@@ -1,0 +1,33 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+#org: rentahan
+## "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+#app: rentahan
+#myApp:
+#  component: "@sls-next/serverless-component@latest"
+#  inputs:
+#    cloudfront:
+#      distributionId: auto # Automatically create a CloudFront distribution
+#    bucketName: "rentahanbucket" # S3 bucket for static assets
+#    runtime: "nodejs18.x"
+#    memory: 512 # Adjust as needed
+#    timeout: 15 # Max 15 seconds (adjust based on your needs)
+#provider:
+#  name: aws
+#  runtime: nodejs18.x
+#  region: us-east-1 # Change if needed
+
+service: rentahan # Name of your service
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1 # Change if needed
+
+functions:
+  nextApp:
+    handler: index.handler
+    events:
+      - httpApi: '*'
+
+plugins:
+  - serverless-nextjs-plugin

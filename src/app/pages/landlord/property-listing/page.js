@@ -7,6 +7,7 @@ import useAuth from "../../../../../hooks/useSession";
 import Image from "next/image";
 import axios from "axios";
 import Swal from "sweetalert2";
+import Link from "next/link";
 
 const PropertyListingPage = () => {
   const router = useRouter();
@@ -20,7 +21,6 @@ const PropertyListingPage = () => {
 
   useEffect(() => {
     if (user?.landlord_id) {
-      // Ensure user is not null/undefined
       console.log("Landlord ID:", user.landlord_id);
       fetchAllProperties(user.landlord_id);
     }
@@ -35,7 +35,7 @@ const PropertyListingPage = () => {
         .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
         .then((response) => {
           console.log("✅ Fetched Verification Status:", response.data);
-          setIsVerified(response.data.is_verified);
+          setIsVerified(response.data.verification_status);
         })
         .catch((err) => {
           console.error("Failed to fetch landlord verification status:", err);
@@ -191,6 +191,7 @@ const PropertyListingPage = () => {
           <div className="p-4 bg-red-100 text-red-700 border border-red-400 rounded-md text-center my-4">
             <strong>⚠️ Verification Required!</strong>
             <p>You must verify your account before listing a property.</p>
+            <Link href='/pages/landlord/verification'>Verify your Account</Link>
           </div>
         )}
 
