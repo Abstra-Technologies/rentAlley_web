@@ -129,11 +129,13 @@ async function handleGetRequest(req, res, connection, landlord_id, property_id) 
     let query = `
       SELECT
         p.*,
-        pv.status AS verification_status
+        pv.status AS verification_status,
+        pv.admin_message AS verification_message
       FROM Property p
              LEFT JOIN PropertyVerification pv ON p.property_id = pv.property_id
       WHERE 1=1
     `;
+
 
     let params = [];
 

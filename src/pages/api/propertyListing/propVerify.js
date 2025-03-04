@@ -61,7 +61,7 @@ const uploadToS3 = async (file, folder) => {
  * API Handler to process file upload and save encrypted links to MySQL
  */
 
-export default async function handler(req, res) {
+export default async function uploadPropertyVerification(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -130,8 +130,20 @@ export default async function handler(req, res) {
         ? await uploadToS3(govIdFile, "property-photos/govId")
         : null;
 
+      // "INSERT INTO PropertyVerification (property_id, occ_permit, mayor_permit, gov_id, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts) VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 0)";
+
       const query =
-        "INSERT INTO PropertyVerification (property_id, occ_permit, mayor_permit, gov_id, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts) VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 0)";
+        "INSERT INTO PropertyVerification (property_id, occ_permit, mayor_permit, gov_id, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts)\n" +
+          "VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)\n" +
+          "ON DUPLICATE KEY UPDATE \n" +
+          "  occ_permit = VALUES(occ_permit), \n" +
+          "  mayor_permit = VALUES(mayor_permit), \n" +
+          "  gov_id = VALUES(gov_id), \n" +
+          "  indoor_photo = VALUES(indoor_photo), \n" +
+          "  outdoor_photo = VALUES(outdoor_photo), \n" +
+          "  status = 'Pending', \n" +
+          "  updated_at = NOW(), \n" +
+          "  attempts = attempts + 1;\n";
 
       console.log("Inserting into MySQL with:", {
         property_id,

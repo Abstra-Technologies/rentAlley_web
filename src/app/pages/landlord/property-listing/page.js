@@ -85,18 +85,28 @@ const PropertyListingPage = () => {
       setShowVerifyPopup(true);
       return;
     }
-
-    if (
-      subscription &&
-      properties.length >= subscription.listingLimits.maxProperties
-    ) {
+    if (!subscription) {
       Swal.fire(
-        "Property Limit Reached",
-        `You have reached the maximum property limit (${subscription.listingLimits.maxProperties}) for your plan.`,
-        "error"
+          "Subscription Required",
+          "You need an active subscription to add a property. Please subscribe to continue.",
+          "warning"
       );
       return;
     }
+
+    if (
+        subscription &&
+        properties.length >= subscription.listingLimits.maxProperties
+    ) {
+      Swal.fire(
+          "Property Limit Reached",
+          `You have reached the maximum property limit (${subscription.listingLimits.maxProperties}) for your plan.`,
+          "error"
+      );
+      return;
+    }
+
+    // Proceed to add a property
     router.push(`/pages/landlord/property-listing/create-property`);
   };
 
@@ -171,37 +181,57 @@ const PropertyListingPage = () => {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Show property limit if subscription exists */}
               {subscription && (
-                <p className="text-gray-600 text-sm hidden md:block">
-                  <span className="font-medium">{properties.length}/{subscription.listingLimits.maxProperties}</span> properties used
-                </p>
+                  <p className="text-gray-600 text-sm hidden md:block">
+                    <span className="font-medium">{properties.length}/{subscription.listingLimits.maxProperties}</span> properties used
+                  </p>
               )}
+
               <button
-                className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
-                  isFetchingVerification
-                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : isVerified
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-gray-400 text-gray-700 cursor-not-allowed"
-                }`}
-                onClick={handleAddProperty}
-                disabled={isFetchingVerification || !isVerified}
+                  className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
+                      isFetchingVerification || fetchingSubscription
+                          ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                          : !subscription
+                              ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                              : subscription?.status !== "active"
+                                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                                  : isVerified
+                                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                                      : "bg-gray-400 text-gray-700 cursor-not-allowed"
+                  }`}
+                  onClick={handleAddProperty}
+                  disabled={
+                      isFetchingVerification ||
+                      fetchingSubscription ||
+                      !isVerified ||
+                      !subscription ||
+                      subscription?.status !== "active"
+                  }
               >
-                {isFetchingVerification ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Checking...
-                  </span>
+                {isFetchingVerification || fetchingSubscription ? (
+                    <span className="flex items-center">
+        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Checking...
+      </span>
                 ) : (
-                  <>
-                    <PlusCircleIcon className="h-5 w-5 mr-2" />
-                    Add New Property
-                  </>
+                    <>
+                      <PlusCircleIcon className="h-5 w-5 mr-2" />
+                      Add New Property
+                    </>
                 )}
               </button>
+
+              {/* Show tooltip or alert when subscription is missing or expired */}
+              {!subscription && (
+                  <p className="text-red-500 text-xs">You need a subscription to add properties.</p>
+              )}
+              {subscription && subscription?.status !== "active" && (
+                  <p className="text-red-500 text-xs">Your subscription is expired. Renew to continue.</p>
+              )}
             </div>
           </div>
           <p className="text-gray-600">
@@ -232,7 +262,7 @@ const PropertyListingPage = () => {
                   Verify your Account
                 </Link>
               </div>
-            </div> // ✅ Properly closing the outer <div>
+            </div>
         )}
 
 
@@ -300,22 +330,34 @@ const PropertyListingPage = () => {
               </span>
 
 
-              <div className="mt-2">
-      <span
-          className={`inline-block px-3 py-1 text-xs font-semibold rounded-full 
-          ${
-              property?.verification_status === "Verified"
-                  ? "bg-green-100 text-green-700"
-                  : property?.verification_status === "Pending"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : property?.verification_status === "Rejected"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-700"
-          }`}
-      >
-        {property?.verification_status || "Not Submitted"}
-      </span>
+              <div className="flex items-center space-x-2">
+                {/* Verification Status Badge */}
+                <span
+                    className={`inline-block px-3 py-1 text-xs font-semibold rounded-full 
+      ${
+                        property?.verification_status === "Verified"
+                            ? "bg-green-100 text-green-700"
+                            : property?.verification_status === "Pending"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : property?.verification_status === "Rejected"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-gray-100 text-gray-700"
+                    }`}
+                >
+          {property?.verification_status || "Not Submitted"}
+        </span>
+
+                {property?.verification_status === "Rejected" && (
+                    <button
+                        className="px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                        onClick={() => router.push(`/pages/landlord/property-listing/resubmit-verification/${property?.property_id}`)
+                        }
+                    >
+                      Resubmit
+                    </button>
+                )}
               </div>
+
             </div>
 
             {/* Action buttons at the bottom */}
