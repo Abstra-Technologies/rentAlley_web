@@ -12,7 +12,7 @@ export const config = {
 
 // Sanitize file names while preserving extension
 function sanitizeInput(filename) {
-  return filename.replace(/[^a-zA-Z0-9_.-]/g, "_");
+  return filename.replace(/[^a-zA-Z0-9.]/g, "_").replace(/\s+/g, "_");
 }
 
 // Initialize S3 client
@@ -39,7 +39,7 @@ const parseForm = (req) =>
   });
 
 export default async function handler(req, res) {
-  if (req.method !== "PUT") {
+  if (req.method !== "POST") {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
@@ -49,27 +49,28 @@ export default async function handler(req, res) {
     console.log("Parsed Fields:", fields);
     console.log("Parsed Files:", files);
 
-    // Extract property_id (if it's in an array, take the first element)
-    const property_id = Array.isArray(fields.property_id)
-      ? fields.property_id[0]
-      : fields.property_id;
+    const tenant_id = Array.isArray(fields.tenant_id)
+      ? fields.tenant_id[0]
+      : fields.tenant_id;
 
     const unit_id = Array.isArray(fields.unit_id)
       ? fields.unit_id[0]
       : fields.unit_id;
 
+    if (!tenant_id || !unit_id) {
+      return res.status(400).json({ message: "Missing tenant_id or unit_id." });
+    }
+
     // Retrieve the file. Ensure the form field name is 'file'
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
     if (!file) {
-      return res
-        .status(400)
-        .json({ message: "Government ID file is required." });
+      return res.status(400).json({ message: "Valid ID file is required." });
     }
 
     // Read file buffer
     const fileBuffer = await fs.readFile(file.filepath);
     const sanitizedFilename = sanitizeInput(file.originalFilename);
-    const fileName = `governmentIds/${Date.now()}-${sanitizedFilename}`;
+    const fileName = `validId/${Date.now()}-${sanitizedFilename}`;
 
     // Prepare S3 upload parameters
     const uploadParams = {
@@ -88,18 +89,16 @@ export default async function handler(req, res) {
       encryptData(s3Url, process.env.ENCRYPTION_SECRET)
     );
 
-    // Update the ProspectiveTenant table with the encrypted URL
+    // Insert the Prospective Tenant record
     const [result] = await db.query(
-      "UPDATE ProspectiveTenant SET government_id = ? WHERE property_id = ? OR unit_id = ?",
-      [encryptedS3Url, property_id || null, unit_id || null]
+      "INSERT INTO ProspectiveTenant (tenant_id, unit_id, valid_id, status, created_at, updated_at) VALUES (?, ?, ?, 'pending', NOW(), NOW())",
+      [tenant_id, unit_id, encryptedS3Url]
     );
 
-    // Check if the update affected any rows
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "No request found to update." });
-    }
-
-    res.status(201).json({ message: "Requirement submitted successfully!" });
+    res.status(201).json({
+      message: "Requirement submitted successfully!",
+      prospectiveTenantId: result.insertId,
+    });
   } catch (error) {
     console.error("❌ [Submit Requirements] Error:", error);
     res

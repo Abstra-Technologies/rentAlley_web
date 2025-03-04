@@ -25,6 +25,7 @@ export default function MyUnit() {
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [landlord_id, setLandlordId] = useState(null);
   const [isSecurityPaid, setIsSecurityPaid] = useState(false);
+  const [isAdvancedPaid, setIsAdvancedPaid] = useState(false);
 
   // useEffect(() => {
   //   const fetchUnitData = async () => {
@@ -74,7 +75,7 @@ export default function MyUnit() {
   const handleSecurityPayment = async () => {
     const result = await Swal.fire({
       title: "Pay Security Deposit?",
-      text: "Are you sure you want to proceed with the payment?",
+      text: "Are you sure you want to proceed?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, Pay Now",
@@ -87,13 +88,29 @@ export default function MyUnit() {
       setTimeout(() => {
         setLoadingPayment(false);
         setIsSecurityPaid(true);
+        Swal.fire("Payment Successful", "Security deposit paid.", "success");
+      }, 1000);
+    }
+  };
 
-        Swal.fire({
-          title: "Payment Successful",
-          text: "Your security deposit has been paid. You can now access the Rent Portal.",
-          icon: "success",
-          confirmButtonText: "OK",
-        });
+  //Handle Advanced Payment here
+  const handleAdvancedPayment = async () => {
+    const result = await Swal.fire({
+      title: "Pay Advanced Rent?",
+      text: "Are you sure you want to proceed?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Pay Now",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      setLoadingPayment(true);
+
+      setTimeout(() => {
+        setLoadingPayment(false);
+        setIsAdvancedPaid(true);
+        Swal.fire("Payment Successful", "Advanced rent paid.", "success");
       }, 1000);
     }
   };
@@ -102,6 +119,13 @@ export default function MyUnit() {
   const handleAccessRentPortal = () => {
     router.push("/pages/tenant/dashboard");
   };
+
+  // Check required payments
+  const requiresSecurity = unit?.sec_deposit > 0;
+  const requiresAdvanced = unit?.advanced_payment > 0;
+  const allPaymentsMade =
+    (!requiresSecurity || isSecurityPaid) &&
+    (!requiresAdvanced || isAdvancedPaid);
 
   const renderAmenities = (amenitiesData) => {
     let amenities = [];
@@ -132,9 +156,12 @@ export default function MyUnit() {
   // Format address from individual fields
   const formatAddress = (unit) => {
     if (!unit) return "";
-    return `${unit.street || ""}, ${unit.city || ""}, ${unit.province || ""} ${
-      unit.zip_code || ""
-    }`.trim();
+    return `${unit.street || ""}, ${unit.city || ""}, ${
+      unit.province
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ") || ""
+    } ${unit.zip_code || ""}`.trim();
   };
 
   const handleContactLandlord = () => {
@@ -249,14 +276,8 @@ export default function MyUnit() {
                 {/* Left: Unit Image */}
                 <div className="relative h-64 md:h-auto md:w-1/2">
                   <Image
-                    src={
-                      unit.unit_photo ||
-                      unit.property_photo ||
-                      "/api/placeholder/500/400"
-                    }
-                    alt={
-                      unit?.unit_name || unit?.property_name || "Property Image"
-                    }
+                    src={unit.unit_photo || "/images/apt-img.jpg"}
+                    alt={unit?.unit_name || "Unit Image"}
                     layout="fill"
                     objectFit="cover"
                     className="h-full w-full"
@@ -274,7 +295,7 @@ export default function MyUnit() {
                 <div className="p-6 md:w-1/2">
                   <div className="mb-6">
                     <h2 className="mb-2 text-2xl font-bold text-gray-800">
-                      {unit.unit_name || unit.property_name}
+                      {unit.property_name} - Unit {unit.unit_name}
                     </h2>
 
                     <div className="mb-4 flex items-center text-sm text-gray-600">
@@ -289,100 +310,94 @@ export default function MyUnit() {
                     <div className="mb-8 flex items-center">
                       <BuildingOfficeIcon className="mr-2 h-5 w-5 text-indigo-700" />
                       <span className="font-medium text-indigo-700">
-                        {unit.unit_id ? "Individual Unit" : "Entire Property"}
+                        Individual Unit
                       </span>
                     </div>
                   </div>
 
                   <div className="mb-8 space-y-4">
-                    {unit.rent_payment && (
+                    {unit?.rent_amount && (
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-700">
                           Monthly Rent:
                         </span>
                         <span className="text-lg font-bold">
-                          ₱{parseFloat(unit.rent_payment).toLocaleString()}
+                          ₱{parseFloat(unit?.rent_amount).toLocaleString()}
                         </span>
                       </div>
                     )}
 
-                    {unit.status && (
+                    {unit?.status && (
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-700">
                           Status:
                         </span>
                         <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-                          {unit.status.charAt(0).toUpperCase() +
-                            unit.status.slice(1) || "Current"}
+                          {unit?.status.charAt(0).toUpperCase() +
+                            unit?.status.slice(1) || "Current"}
                         </span>
                       </div>
                     )}
 
-                    {unit.floor_area && (
+                    {unit?.unit_size && (
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-700">
-                          Floor Area:
+                          Unit Size:
                         </span>
                         <span className="text-gray-900">
-                          {unit.floor_area} sqm
+                          {unit?.unit_size} sqm
                         </span>
                       </div>
                     )}
 
-                    {unit.furnish && (
+                    {unit?.furnish && (
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-700">
                           Furnish Type:
                         </span>
                         <span className="capitalize text-gray-900">
-                          {unit.furnish}
+                          {unit?.furnish
+                            .split("_")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                            )
+                            .join(" ")}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  <button
-                    onClick={
-                      isSecurityPaid
-                        ? handleAccessRentPortal
-                        : handleSecurityPayment
-                    }
-                    disabled={loadingPayment}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-indigo-700"
-                  >
-                    {loadingPayment ? (
-                      <>
-                        <svg
-                          className="h-5 w-5 animate-spin text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Processing...
-                      </>
-                    ) : isSecurityPaid ? (
-                      "Access Rent Portal"
-                    ) : (
-                      <>
+                  <div className="space-y-4">
+                    {requiresSecurity && !isSecurityPaid && (
+                      <button
+                        onClick={handleSecurityPayment}
+                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-indigo-700"
+                      >
                         <CurrencyDollarIcon className="h-5 w-5" />
                         Pay Security Deposit
-                      </>
+                      </button>
                     )}
-                  </button>
+
+                    {requiresAdvanced && !isAdvancedPaid && (
+                      <button
+                        onClick={handleAdvancedPayment}
+                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-indigo-700"
+                      >
+                        <CurrencyDollarIcon className="h-5 w-5" />
+                        Pay Advanced Rent
+                      </button>
+                    )}
+
+                    {allPaymentsMade && (
+                      <button
+                        onClick={handleAccessRentPortal}
+                        className="w-full rounded-lg bg-green-600 px-4 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-700"
+                      >
+                        Access Rent Portal
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 

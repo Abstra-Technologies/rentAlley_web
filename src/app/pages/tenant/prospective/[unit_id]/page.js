@@ -3,11 +3,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { FiUploadCloud } from "react-icons/fi";
 import axios from "axios";
-import useAuth from "../../../../../../../hooks/useSession";
+import useAuth from "../../../../../../hooks/useSession";
 import Swal from "sweetalert2";
-import occupations from "../../../../../../constant/occupations";
-import employmentTypes from "../../../../../../constant/employementType";
-import monthlyIncomeRanges from "../../../../../../constant/monthlyIncome";
+import { FiArrowLeft } from "react-icons/fi";
+import occupations from "../../../../../constant/occupations";
+import employmentTypes from "../../../../../constant/employementType";
+import monthlyIncomeRanges from "../../../../../constant/monthlyIncome";
 
 const TenantApplicationForm = () => {
   const { unit_id } = useParams();
@@ -17,6 +18,9 @@ const TenantApplicationForm = () => {
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     unit_id: "",
+    occupation: "",
+    employment_type: "",
+    monthly_income: "",
     address: "",
   });
 
@@ -36,6 +40,12 @@ const TenantApplicationForm = () => {
   const handleFileSelect = (event) => {
     const file = event.target.files[0]; // Get only the first file
     if (file) {
+      // File Size validation
+      if (file.size > 15 * 1024 * 1024) {
+        Swal.fire("Error", "File size exceeds 15MB!", "error");
+        return;
+      }
+
       setSelectedFile(file);
     }
   };
@@ -55,8 +65,13 @@ const TenantApplicationForm = () => {
       return Swal.fire("Error", "Please upload a valid ID.", "error");
     }
 
-    if (!formData.address) {
-      return Swal.fire("Error", "Please fill up the address field.", "error");
+    if (
+      !formData.address ||
+      !formData.occupation ||
+      !formData.employment_type ||
+      !formData.monthly_income
+    ) {
+      return Swal.fire("Error", "All fields are required.", "error");
     }
 
     const confirmSubmission = await Swal.fire({
@@ -75,15 +90,18 @@ const TenantApplicationForm = () => {
       const infoPayload = {
         unit_id: formData.unit_id,
         tenant_id: user.tenant_id,
-        current_home_address: formData.address,
+        address: formData.address,
+        occupation: formData.occupation,
+        employment_type: formData.employment_type,
+        monthly_income: formData.monthly_income,
       };
 
-      const infoResponse = await axios.post(
+      const infoResponse = await axios.put(
         "/api/tenant/prospective/submit-info",
         infoPayload
       );
 
-      if (infoResponse.status === 201) {
+      if (infoResponse.status === 200) {
         // 2. Submit Requirements (File)
         if (selectedFile) {
           const fileFormData = new FormData();
@@ -91,10 +109,9 @@ const TenantApplicationForm = () => {
           // Append tenant_id, current_home_address to fileFormData
           fileFormData.append("unit_id", formData.unit_id);
           fileFormData.append("tenant_id", user.tenant_id);
-          fileFormData.append("current_home_address", formData.address);
 
           try {
-            const reqResponse = await axios.put(
+            const reqResponse = await axios.post(
               "/api/tenant/prospective/submit-reqs",
               fileFormData,
               {
@@ -107,10 +124,7 @@ const TenantApplicationForm = () => {
             if (reqResponse.status === 201) {
               console.log("✅ Requirements submitted successfully!");
             } else {
-              console.error(
-                "Failed to submit requirements:",
-                reqResponse.data
-              );
+              console.error("Failed to submit requirements:", reqResponse.data);
               alert(
                 `Submission failed: ${
                   reqResponse.data.message || "Unknown error"
@@ -160,7 +174,7 @@ const TenantApplicationForm = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div className="relative bg-white min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">
           Tenant Application Form
@@ -168,6 +182,14 @@ const TenantApplicationForm = () => {
 
         {/* Steps to Follow */}
         <div className="mb-6">
+          {/* Back Button */}
+          <button
+            onClick={() => router.back()}
+            className="absolute top-6 left-6 flex items-center text-gray-700 hover:text-gray-900"
+          >
+            <FiArrowLeft className="w-6 h-6 mr-2" />
+            <span className="text-sm font-semibold">Back</span>
+          </button>
           <h2 className="text-lg font-semibold text-gray-700 mb-2">
             Steps to follow:
           </h2>
@@ -192,9 +214,7 @@ const TenantApplicationForm = () => {
             <p className="text-sm text-gray-700 font-medium">
               Drag & drop files or <span className="text-blue-500">Browse</span>
             </p>
-            <p className="text-xs text-gray-500">
-              Supported formats: JPEG and PNG
-            </p>
+            <p className="text-xs text-gray-500">Max File Size: 15MB</p>
 
             {/* Hidden File Input */}
             <input
@@ -226,7 +246,7 @@ const TenantApplicationForm = () => {
                 htmlFor="firstName"
                 className="block text-gray-700 text-sm font-bold mb-2"
               >
-                FIRST NAME
+                First Name
               </label>
               <input
                 type="text"
@@ -246,7 +266,7 @@ const TenantApplicationForm = () => {
                 htmlFor="lastName"
                 className="block text-gray-700 text-sm font-bold mb-2"
               >
-                LAST NAME
+                Last Name
               </label>
               <input
                 type="text"
@@ -266,7 +286,7 @@ const TenantApplicationForm = () => {
                 htmlFor="birthDate"
                 className="block text-gray-700 text-sm font-bold mb-2"
               >
-                DATE OF BIRTH (MM/DD/YYYY)
+                Date Of Birth (MM/DD/YYYY)
               </label>
               <div className="flex space-x-2">
                 <input
@@ -296,7 +316,7 @@ const TenantApplicationForm = () => {
                 htmlFor="email"
                 className="block text-gray-700 text-sm font-bold mb-2"
               >
-                EMAIL ADDRESS
+                Email Address
               </label>
               <input
                 type="email"
@@ -316,7 +336,7 @@ const TenantApplicationForm = () => {
                 htmlFor="mobile"
                 className="block text-gray-700 text-sm font-bold mb-2"
               >
-                MOBILE NUMBER
+                Mobile Number
               </label>
               <input
                 type="tel"
@@ -336,7 +356,7 @@ const TenantApplicationForm = () => {
                 htmlFor="address"
                 className="block text-gray-700 text-sm font-bold mb-2"
               >
-                ADDRESS
+                Address
               </label>
               <input
                 type="text"
@@ -352,78 +372,81 @@ const TenantApplicationForm = () => {
 
           <div className="mb-4">
             <label
-                htmlFor="occupation"
-                className="block text-gray-700 text-sm font-bold mb-2"
+              htmlFor="occupation"
+              className="block text-gray-700 text-sm font-bold mb-2"
             >
               Your Occupation
             </label>
             <select
-                id="occupation"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                value={formData.occupation || ""}
-                onChange={(e) =>
-                    setFormData({ ...formData, occupation: e.target.value })
-                }
+              id="occupation"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={formData.occupation || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, occupation: e.target.value })
+              }
             >
-              <option value="" disabled>Select Occupation</option>
+              <option value="" disabled>
+                Select Occupation
+              </option>
               {occupations.map((occupation) => (
-                  <option key={occupation.value} value={occupation.value}>
-                    {occupation.label}
-                  </option>
+                <option key={occupation.value} value={occupation.value}>
+                  {occupation.label}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="mb-4">
             <label
-                htmlFor="employmentType"
-                className="block text-gray-700 text-sm font-bold mb-2"
+              htmlFor="employment_type"
+              className="block text-gray-700 text-sm font-bold mb-2"
             >
               Employment Type
             </label>
             <select
-                id="employmentType"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                value={formData.employmentType || ""}
-                onChange={(e) =>
-                    setFormData({ ...formData, employmentType: e.target.value })
-                }
+              id="employment_type"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={formData.employment_type || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, employment_type: e.target.value })
+              }
             >
-              <option value="" disabled>Select Employment Type</option>
+              <option value="" disabled>
+                Select Employment Type
+              </option>
               {employmentTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="mb-4">
             <label
-                htmlFor="monthlyIncome"
-                className="block text-gray-700 text-sm font-bold mb-2"
+              htmlFor="monthly_income"
+              className="block text-gray-700 text-sm font-bold mb-2"
             >
               Monthly Income Range
             </label>
             <select
-                id="monthlyIncome"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                value={formData.monthlyIncome || ""}
-                onChange={(e) =>
-                    setFormData({ ...formData, monthlyIncome: e.target.value })
-                }
+              id="monthly_income"
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              value={formData.monthly_income || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, monthly_income: e.target.value })
+              }
             >
-              <option value="" disabled>Select Monthly Income</option>
+              <option value="" disabled>
+                Select Monthly Income
+              </option>
               {monthlyIncomeRanges.map((range) => (
-                  <option key={range.value} value={range.value}>
-                    {range.label}
-                  </option>
+                <option key={range.value} value={range.value}>
+                  {range.label}
+                </option>
               ))}
             </select>
           </div>
-
-
-
 
           <div className="flex justify-end space-x-4">
             <button

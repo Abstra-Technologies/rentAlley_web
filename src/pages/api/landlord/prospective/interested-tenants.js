@@ -6,9 +6,9 @@ export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ message: "Method not allowed" });
   }
-  
-  const { propertyId, unitId } = req.query;
-  
+
+  const { unitId } = req.query;
+
   try {
     const [tenants] = await db.query(
       `SELECT pt.id, pt.status, pt.message, pt.valid_id, pt.created_at,
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
        ORDER BY pt.created_at DESC`,
       [unitId || null]
     );
-    
+
     // Decrypt necessary fields before returning response
     const decryptedTenants = tenants.map((tenant) => ({
       ...tenant,
@@ -29,14 +29,19 @@ export default async function handler(req, res) {
       lastName: decryptData(JSON.parse(tenant.lastName), SECRET_KEY),
       email: decryptData(JSON.parse(tenant.email), SECRET_KEY),
       phoneNumber: decryptData(JSON.parse(tenant.phoneNumber), SECRET_KEY),
-      valid_id: tenant.valid_id ? decryptData(JSON.parse(tenant.valid_id), SECRET_KEY) : null,
-      address: tenant.address ? decryptData(JSON.parse(tenant.address), SECRET_KEY) : null,
-      occupation: tenant.occupation ? decryptData(JSON.parse(tenant.occupation), SECRET_KEY) : null,
-      employment_type: tenant.employment_type ? decryptData(JSON.parse(tenant.employment_type), SECRET_KEY) : null,
-      monthly_income: tenant.monthly_income ? decryptData(JSON.parse(tenant.monthly_income), SECRET_KEY) : null,
+      profilePicture: tenant.profilePicture
+        ? decryptData(JSON.parse(tenant.profilePicture), SECRET_KEY)
+        : null,
+      valid_id: tenant.valid_id
+        ? decryptData(JSON.parse(tenant.valid_id), SECRET_KEY)
+        : null,
+      address: tenant.address.toString("utf8"),
+      occupation: tenant.occupation,
+      employment_type: tenant.employment_type,
+      monthly_income: tenant.monthly_income,
       birthDate: tenant.birthDate,
     }));
-    
+
     return res.status(200).json(decryptedTenants);
   } catch (error) {
     console.error("Database error:", error);

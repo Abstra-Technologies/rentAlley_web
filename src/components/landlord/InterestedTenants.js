@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   AiOutlineArrowLeft,
   AiOutlineCheck,
@@ -12,7 +12,6 @@ import LoadingScreen from "../../components/loadingScreen";
 import Image from "next/image";
 
 export default function InterestedTenants({ unitId = null }) {
-  const { propertyId } = useParams();
   const router = useRouter();
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,9 +24,7 @@ export default function InterestedTenants({ unitId = null }) {
     const fetchTenants = async () => {
       try {
         const response = await axios.get(
-          `/api/landlord/prospective/interested-tenants?propertyId=${propertyId}&unitId=${
-            unitId || ""
-          }`
+          `/api/landlord/prospective/interested-tenants?unitId=${unitId}`
         );
         setTenants(response.data);
       } catch (err) {
@@ -38,16 +35,15 @@ export default function InterestedTenants({ unitId = null }) {
     };
 
     fetchTenants();
-  }, [propertyId, unitId]);
+  }, [unitId]);
 
   // Function to update tenant status (Approve/Disapprove)
   const updateTenantStatus = async (tenantId, status) => {
     try {
       const payload = {
-        propertyId,
         unitId,
         status,
-        reason: status === "disapproved" ? reason : null,
+        message: status === "disapproved" ? reason : null,
       };
 
       await axios.put("/api/landlord/prospective/update-status", payload);
@@ -90,7 +86,9 @@ export default function InterestedTenants({ unitId = null }) {
             <AiOutlineArrowLeft className="text-xl" />
             <span className="font-medium">Back to Properties</span>
           </button>
-          <h2 className="text-3xl font-bold text-blue-600">Prospective Tenants</h2>
+          <h2 className="text-3xl font-bold text-blue-600">
+            Prospective Tenants
+          </h2>
         </div>
 
         {/* Content Card */}
@@ -99,21 +97,25 @@ export default function InterestedTenants({ unitId = null }) {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-4">
               <div className="text-sm font-medium text-gray-500">
-                Total Applicants: <span className="text-gray-900 ml-1">{tenants.length}</span>
+                Total Applicants:{" "}
+                <span className="text-gray-900 ml-1">{tenants.length}</span>
               </div>
               <div className="text-sm font-medium text-gray-500">
-                Approved: <span className="text-green-600 ml-1">
-                  {tenants.filter(t => t.status === 'approved').length}
+                Approved:{" "}
+                <span className="text-green-600 ml-1">
+                  {tenants.filter((t) => t.status === "approved").length}
                 </span>
               </div>
               <div className="text-sm font-medium text-gray-500">
-                Pending: <span className="text-amber-600 ml-1">
-                  {tenants.filter(t => t.status === 'pending').length}
+                Pending:{" "}
+                <span className="text-amber-600 ml-1">
+                  {tenants.filter((t) => t.status === "pending").length}
                 </span>
               </div>
               <div className="text-sm font-medium text-gray-500">
-                Disapproved: <span className="text-red-600 ml-1">
-                  {tenants.filter(t => t.status === 'disapproved').length}
+                Disapproved:{" "}
+                <span className="text-red-600 ml-1">
+                  {tenants.filter((t) => t.status === "disapproved").length}
                 </span>
               </div>
             </div>
@@ -124,22 +126,42 @@ export default function InterestedTenants({ unitId = null }) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profile</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Profile
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Phone
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Address
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {tenants.map((tenant) => (
-                  <tr key={tenant?.id} className="hover:bg-gray-50 transition-colors duration-150">
+                  <tr
+                    key={tenant?.id}
+                    className="hover:bg-gray-50 transition-colors duration-150"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex-shrink-0 h-12 w-12">
                         <Image
-                          src={tenant?.profilePicture}
+                          src={
+                            tenant?.profilePicture ||
+                            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                          }
                           alt="Tenant Profile"
                           width={48}
                           height={48}
@@ -147,18 +169,12 @@ export default function InterestedTenants({ unitId = null }) {
                         />
                       </div>
                     </td>
-                    <td 
+                    <td
                       className="px-6 py-4 whitespace-nowrap cursor-pointer"
                       onClick={() => {
-                        if (unitId) {
-                          router.push(
-                            `/pages/landlord/property-listing/view-unit/view-tenant/${unitId}`
-                          );
-                        } else {
-                          router.push(
-                            `/pages/landlord/property-listing/view-tenant/${propertyId}`
-                          );
-                        }
+                        router.push(
+                          `/pages/landlord/property-listing/view-unit/view-tenant/${unitId}`
+                        );
                       }}
                     >
                       <div className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors">
@@ -172,47 +188,50 @@ export default function InterestedTenants({ unitId = null }) {
                       {tenant?.phoneNumber}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                      {tenant?.current_home_address}
+                      {tenant?.address}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                        tenant?.status === 'approved' 
-                          ? 'bg-green-100 text-green-800' 
-                          : tenant?.status === 'disapproved'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {tenant?.status?.charAt(0).toUpperCase() + tenant?.status?.slice(1)}
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          tenant?.status === "approved"
+                            ? "bg-green-100 text-green-800"
+                            : tenant?.status === "disapproved"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {tenant?.status?.charAt(0).toUpperCase() +
+                          tenant?.status?.slice(1)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex space-x-2">
                         <button
                           className={`inline-flex items-center justify-center p-2 rounded-full ${
-                            tenant?.status === 'approved'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-green-500 text-white hover:bg-green-600'
+                            tenant?.status === "approved"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-green-500 text-white hover:bg-green-600"
                           } transition-colors duration-200`}
                           onClick={(e) => {
                             e.stopPropagation();
                             updateTenantStatus(tenant?.id, "approved");
                           }}
-                          disabled={tenant?.status === 'approved'}
+                          disabled={tenant?.status === "approved"}
                           title="Approve Tenant"
                         >
                           <AiOutlineCheck className="w-5 h-5" />
                         </button>
                         <button
                           className={`inline-flex items-center justify-center p-2 rounded-full ${
-                            tenant?.status === 'disapproved'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-red-500 text-white hover:bg-red-600'
+                            tenant?.status === "disapproved"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-red-500 text-white hover:bg-red-600"
                           } transition-colors duration-200`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedTenantId(tenant?.id);
                           }}
-                          disabled={tenant?.status === 'disapproved'}
+                          disabled={tenant?.status === "disapproved"}
                           title="Disapprove Tenant"
                         >
                           <AiOutlineClose className="w-5 h-5" />
@@ -223,7 +242,10 @@ export default function InterestedTenants({ unitId = null }) {
                 ))}
                 {tenants.length === 0 && (
                   <tr>
-                    <td colSpan="7" className="px-6 py-10 text-center text-gray-500">
+                    <td
+                      colSpan="7"
+                      className="px-6 py-10 text-center text-gray-500"
+                    >
                       No prospective tenants found
                     </td>
                   </tr>
@@ -239,7 +261,9 @@ export default function InterestedTenants({ unitId = null }) {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Disapprove Tenant</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Disapprove Tenant
+              </h3>
             </div>
             <div className="p-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -261,9 +285,13 @@ export default function InterestedTenants({ unitId = null }) {
                 </button>
                 <button
                   className={`px-4 py-2 bg-red-500 text-white rounded-md transition-colors duration-200 ${
-                    reason.trim() ? 'hover:bg-red-600' : 'opacity-50 cursor-not-allowed'
+                    reason.trim()
+                      ? "hover:bg-red-600"
+                      : "opacity-50 cursor-not-allowed"
                   }`}
-                  onClick={() => updateTenantStatus(selectedTenantId, "disapproved")}
+                  onClick={() =>
+                    updateTenantStatus(selectedTenantId, "disapproved")
+                  }
                   disabled={!reason.trim()}
                 >
                   Disapprove
