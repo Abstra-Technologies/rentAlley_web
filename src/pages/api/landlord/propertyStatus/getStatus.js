@@ -6,26 +6,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { propertyId, unitId } = req.query;
+    const { unitId } = req.query;
 
     let result;
-    if (propertyId) {
-      result = await db.query(
-        "SELECT status FROM Property WHERE property_id = ?",
-        [propertyId]
-      );
-    } else if (unitId) {
+    if (unitId) {
       result = await db.query("SELECT status FROM Unit WHERE unit_id = ?", [
         unitId,
       ]);
     } else {
-      return res
-        .status(400)
-        .json({ message: "Property ID or Unit ID is required" });
+      return res.status(400).json({ message: "Unit ID is required" });
     }
 
     if (result.length === 0) {
-      return res.status(404).json({ message: "Property or Unit not found" });
+      return res.status(404).json({ message: "Unit not found" });
     }
 
     return res.status(200).json({ status: result[0].status });

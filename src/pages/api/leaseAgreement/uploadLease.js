@@ -88,7 +88,7 @@ export default async function handler(req, res) {
         .json({ error: "File parsing error", message: err.message }); // Enhanced error message
     }
 
-    const { property_id, unit_id } = fields;
+    const { unit_id } = fields;
 
     let connection;
     try {
@@ -97,6 +97,21 @@ export default async function handler(req, res) {
 
       await connection.beginTransaction();
 
+      const [tenantResult] = await connection.execute(
+        "SELECT id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
+        [Number(unit_id)]
+      );
+
+      if (tenantResult.length === 0) {
+        return res
+          .status(400)
+          .json({
+            error: "No approved prospective tenant found for this unit.",
+          });
+      }
+
+      const prospective_tenant_id = tenantResult[0].id;
+
       const leaseAgreementFile = files.leaseFile?.[0] || null;
 
       const agreementUrl = leaseAgreementFile
@@ -104,17 +119,17 @@ export default async function handler(req, res) {
         : null;
 
       const query =
-        "INSERT INTO LeaseAgreement (property_id, unit_id, agreement_url, status, created_at, updated_at) VALUES (?, ?, ?, 'Pending', NOW(), NOW())";
+        "INSERT INTO LeaseAgreement (unit_id, prospective_tenant_id, agreement_url, status, created_at, updated_at) VALUES (?, ?, ?, 'Pending', NOW(), NOW())";
 
       console.log("Inserting into MySQL with:", {
-        property_id,
         unit_id,
+        prospective_tenant_id,
         agreementUrl,
       });
 
       await connection.execute(query, [
-        Number(property_id) || null,
-        Number(unit_id) || null,
+        Number(unit_id),
+        Number(prospective_tenant_id),
         agreementUrl,
       ]);
 

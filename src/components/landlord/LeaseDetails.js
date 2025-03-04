@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 import { FaArrowLeft } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 
-const LeaseDetails = ({ propertyId, unitId }) => {
+const LeaseDetails = ({ unitId }) => {
   const router = useRouter();
   const [lease, setLease] = useState(null);
   const [tenant, setTenant] = useState(null);
@@ -22,11 +22,11 @@ const LeaseDetails = ({ propertyId, unitId }) => {
     fetchStatus();
   }, []);
 
-  // Fetch current status of property or unit
+  // Fetch current status of  unit
   const fetchStatus = async () => {
     try {
       const response = await axios.get(
-        `/api/landlord/propertyStatus/getStatus?propertyId=${propertyId}&unitId=${unitId}`
+        `/api/landlord/propertyStatus/getStatus?unitId=${unitId}`
       );
       if (response.data.status) {
         setStatus(response.data.status);
@@ -42,7 +42,6 @@ const LeaseDetails = ({ propertyId, unitId }) => {
 
     try {
       await axios.put("/api/landlord/propertyStatus/update", {
-        propertyId,
         unitId,
         status: newStatus,
       });
@@ -59,7 +58,7 @@ const LeaseDetails = ({ propertyId, unitId }) => {
   const fetchLeaseDetails = async () => {
     try {
       const response = await axios.get(
-        `/api/leaseAgreement/getLease?property_id=${propertyId}&unit_id=${unitId}`
+        `/api/leaseAgreement/getLease?unit_id=${unitId}`
       );
 
       if (response.data.length > 0) {
@@ -79,12 +78,11 @@ const LeaseDetails = ({ propertyId, unitId }) => {
   const handleFileUpload = async (file) => {
     const formData = new FormData();
     formData.append("leaseFile", file);
-    formData.append("property_id", propertyId);
     formData.append("unit_id", unitId);
 
     try {
       await axios.post(
-        `/api/leaseAgreement/uploadLease?property_id=${propertyId}&unit_id=${unitId}`,
+        `/api/leaseAgreement/uploadLease?unit_id=${unitId}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -102,7 +100,7 @@ const LeaseDetails = ({ propertyId, unitId }) => {
   const fetchTenantDetails = async () => {
     try {
       const response = await axios.get(
-        `/api/landlord/prospective/interested-tenants?propertyId=${propertyId}&unitId=${unitId}`
+        `/api/landlord/prospective/interested-tenants?unitId=${unitId}`
       );
 
       if (response.data.length > 0) {
@@ -116,13 +114,10 @@ const LeaseDetails = ({ propertyId, unitId }) => {
   // Handle lease date update
   const handleUpdateLease = async () => {
     try {
-      await axios.put(
-        `/api/leaseAgreement/leaseDetails?property_id=${propertyId}&unit_id=${unitId}`,
-        {
-          start_date: startDate,
-          end_date: endDate,
-        }
-      );
+      await axios.put(`/api/leaseAgreement/leaseDetails?unit_id=${unitId}`, {
+        start_date: startDate,
+        end_date: endDate,
+      });
       Swal.fire("Success", "Lease dates updated successfully", "success");
       fetchLeaseDetails(); // Refresh data
     } catch (error) {
@@ -144,7 +139,7 @@ const LeaseDetails = ({ propertyId, unitId }) => {
       if (result.isConfirmed) {
         try {
           await axios.delete(
-            `/api/leaseAgreement/deleteLease?property_id=${propertyId}&unit_id=${unitId}`
+            `/api/leaseAgreement/deleteLease?unit_id=${unitId}`
           );
           Swal.fire("Deleted!", "Lease agreement has been deleted.", "success");
           setLease(null); // Remove lease from state
@@ -191,7 +186,7 @@ const LeaseDetails = ({ propertyId, unitId }) => {
                 Birthdate: {tenant.birthDate.split("T")[0]}
               </p>
               <p className="text-gray-700 mt-2">Address:</p>
-              <p className="text-gray-500">{tenant.current_home_address}</p>
+              <p className="text-gray-500">{tenant.address}</p>
               {/* Lease Info */}
               {lease && (
                 <div className="mt-4 text-left bg-gray-100 p-4 rounded-lg shadow-md w-full">
@@ -264,13 +259,13 @@ const LeaseDetails = ({ propertyId, unitId }) => {
           )}
         </div>
 
-        {/* Left Side: Government ID & Lease Upload */}
+        {/* Left Side: Valid ID & Lease Upload */}
         <div className="max-w-md min-w-80 bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold mb-4">Government ID</h2>
-          {tenant?.government_id ? (
+          <h2 className="text-xl font-semibold mb-4">Valid ID</h2>
+          {tenant?.valid_id ? (
             <div className="border rounded-lg overflow-hidden shadow-md p-4 text-center">
               <Link
-                href={tenant.government_id}
+                href={tenant?.valid_id}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"

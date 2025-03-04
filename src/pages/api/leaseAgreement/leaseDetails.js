@@ -1,18 +1,18 @@
 import { db } from "../../../lib/db";
 
 export default async function handler(req, res) {
-  const { property_id, unit_id } = req.query;
+  const { unit_id } = req.query;
   let connection;
 
   try {
     //Initialize DB Connection
     connection = await db.getConnection();
     if (req.method === "GET") {
-      await handleGetRequest(req, res, connection, property_id, unit_id);
+      await handleGetRequest(req, res, connection, unit_id);
     } else if (req.method === "PUT") {
-      await handlePutRequest(req, res, connection, property_id, unit_id);
+      await handlePutRequest(req, res, connection, unit_id);
     } else if (req.method === "DELETE") {
-      await handleDeleteRequest(req, res, connection, property_id, unit_id);
+      await handleDeleteRequest(req, res, connection, unit_id);
     } else {
       res.setHeader("Allow", ["POST", "GET", "PUT", "DELETE"]);
       res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 }
 
 //Get Lease by ID or All
-async function handleGetRequest(req, res, connection, unit_id, property_id) {
+async function handleGetRequest(req, res, connection, unit_id) {
   try {
     let query = `SELECT * FROM LeaseAgreement WHERE 1=1`; // Ensures base query is always valid
     let params = [];
@@ -37,11 +37,6 @@ async function handleGetRequest(req, res, connection, unit_id, property_id) {
     if (unit_id) {
       query += ` AND unit_id = ?`;
       params.push(unit_id);
-    }
-
-    if (property_id) {
-      query += ` AND property_id = ?`;
-      params.push(property_id);
     }
 
     const [rows] = await connection.execute(query, params);
@@ -56,8 +51,8 @@ async function handleGetRequest(req, res, connection, unit_id, property_id) {
   }
 }
 
-// Update Lease by property_id or unit_id
-async function handlePutRequest(req, res, connection, property_id, unit_id) {
+// Update Lease by  unit_id
+async function handlePutRequest(req, res, connection, unit_id) {
   try {
     const { start_date, end_date } = req.body;
 
@@ -69,8 +64,8 @@ async function handlePutRequest(req, res, connection, property_id, unit_id) {
 
     await connection.beginTransaction();
 
-    let query = `UPDATE LeaseAgreement SET start_date = ?, end_date = ?, status = 'active' WHERE property_id = ? OR unit_id = ?`;
-    let params = [start_date, end_date, property_id || null, unit_id || null];
+    let query = `UPDATE LeaseAgreement SET start_date = ?, end_date = ?, status = 'active' WHERE unit_id = ?`;
+    let params = [start_date, end_date, unit_id];
 
     const [result] = await connection.execute(query, params);
     await connection.commit();
@@ -92,14 +87,13 @@ async function handlePutRequest(req, res, connection, property_id, unit_id) {
 }
 
 //Delete Lease by ID
-async function handleDeleteRequest(req, res, connection, property_id, unit_id) {
+async function handleDeleteRequest(req, res, connection, unit_id) {
   try {
     await connection.beginTransaction();
 
-    await connection.execute(
-      `DELETE FROM LeaseAgreement WHERE property_id = ? OR unit_id = ?`,
-      [property_id || null, unit_id || null]
-    );
+    await connection.execute(`DELETE FROM LeaseAgreement WHERE unit_id = ?`, [
+      unit_id,
+    ]);
 
     await connection.commit();
     res.status(200).json({ message: "Lease Agreement deleted successfully" });
