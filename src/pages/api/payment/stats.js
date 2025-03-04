@@ -81,6 +81,11 @@ export default async function handler(req, res) {
             const formattedTrialEndDate = trialEndDate.toISOString().split("T")[0];
 
             await connection.execute(
+                "UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?",
+                [landlord_id]
+            );
+
+            await connection.execute(
                 "INSERT INTO " +
                 "Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, is_trial, trial_end_date, created_at, request_reference_number, is_active)" +
                 " VALUES (?, ?, 'active', ?, ?, 'pending', 1, ?, NOW(), 0, 1)",

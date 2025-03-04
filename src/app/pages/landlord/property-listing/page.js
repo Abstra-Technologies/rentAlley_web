@@ -86,8 +86,6 @@ const PropertyListingPage = () => {
       return;
     }
 
-    // subscription handling goes here.
-    // listing limit comes from api backend.
     if (
       subscription &&
       properties.length >= subscription.listingLimits.maxProperties

@@ -5,6 +5,7 @@ import path from "path";
 import { db } from "../../../lib/db";
 import { jwtVerify } from "jose";
 import { getCookie } from "cookies-next";
+import { encryptData } from "../../../crypto/encrypt";
 
 export const config = {
     api: {
@@ -45,10 +46,9 @@ export default async function handler(req, res) {
 
         console.log(`✅ [Profile Upload] Authenticated User ID: ${userId}`);
 
-        // Parse the uploaded file
         const form = formidable({
-            multiples: false, // Allow only a single file
-            keepExtensions: true, // Keep original file extensions
+            multiples: false,
+            keepExtensions: true,
         });
         const [fields, files] = await form.parse(req);
 
@@ -73,10 +73,12 @@ export default async function handler(req, res) {
 
         // Generate the S3 file URL
         const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        const encryptImage = imageUrl ? JSON.stringify(encryptData(imageUrl, process.env.ENCRYPTION_SECRET)) : null;
+
         console.log(`✅ [Profile Upload] File Uploaded to S3: ${imageUrl}`);
 
         // Store image URL in database
-        await db.query("UPDATE User SET profilePicture = ? WHERE user_id = ?", [imageUrl, userId]);
+        await db.query("UPDATE User SET profilePicture = ? WHERE user_id = ?", [encryptImage, userId]);
 
         console.log(`✅ [Profile Upload] Profile picture updated in DB for User ID: ${userId}`);
 

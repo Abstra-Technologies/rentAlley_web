@@ -183,15 +183,15 @@ export default function PropertyDetails() {
                                         <div className="space-y-3">
                                             <div className="flex">
                                                 <span className="w-32 text-sm font-medium text-gray-500">Type:</span>
-                                                <span className="text-sm text-gray-900">{property.property_type}</span>
+                                                <span className="text-sm text-gray-900">{property?.property_type}</span>
                                             </div>
                                             <div className="flex">
                                                 <span className="w-32 text-sm font-medium text-gray-500">Security Deposit:</span>
-                                                <span className="text-sm text-gray-900">₱{property.sec_deposit.toLocaleString()}</span>
+                                                <span className="text-sm text-gray-900">₱{property?.sec_deposit?.toLocaleString()}</span>
                                             </div>
                                             <div className="flex">
                                                 <span className="w-32 text-sm font-medium text-gray-500">Rent Payment:</span>
-                                                <span className="text-sm text-gray-900">₱{property.rent_payment.toLocaleString()}</span>
+                                                <span className="text-sm text-gray-900">₱{property?.rent_payment?.toLocaleString()}</span>
                                             </div>
                                         </div>
                                     </div>
