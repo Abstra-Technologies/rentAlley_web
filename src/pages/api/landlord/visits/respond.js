@@ -12,34 +12,52 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: "Missing visit_id." });
   }
 
-  if (!["approved", "disapproved"].includes(status)) {
+  // Expanded list of valid statuses
+  const validStatuses = ["approved", "disapproved", "cancelled", "pending"];
+  if (!validStatuses.includes(status)) {
     return res.status(400).json({ message: "Invalid status." });
   }
 
+  // Reason is required for disapproval
   if (status === "disapproved" && !reason) {
     return res.status(400).json({ message: "Disapproval reason is required." });
   }
 
   try {
-    // Debugging: Log received data
-    console.log("Updating Visit ID:", visit_id, "Status:", status, "Reason:", reason);
-
     let result;
-
-    if (status === "disapproved") {
-      [result] = await db.query(
-        `UPDATE PropertyVisit
-          SET status = ?, disapproval_reason = ?, updated_at = NOW()
-          WHERE visit_id = ?`,
-        [status, reason, visit_id]
-      );
-    } else {
-      [result] = await db.query(
-        `UPDATE PropertyVisit
-          SET status = ?, disapproval_reason = NULL, updated_at = NOW()
-          WHERE visit_id = ?`,
-        [status, visit_id]
-      );
+    
+    // Different update logic based on status
+    switch(status) {
+      case "disapproved":
+        [result] = await db.query(
+          `UPDATE PropertyVisit 
+           SET status = ?, 
+               disapproval_reason = ?, 
+               updated_at = NOW() 
+           WHERE visit_id = ?`,
+          [status, reason, visit_id]
+        );
+        break;
+      
+      case "cancelled":
+        [result] = await db.query(
+          `UPDATE PropertyVisit 
+           SET status = ?, 
+               updated_at = NOW() 
+           WHERE visit_id = ?`,
+          [status, visit_id]
+        );
+        break;
+      
+      default:
+        [result] = await db.query(
+          `UPDATE PropertyVisit 
+           SET status = ?, 
+               disapproval_reason = NULL, 
+               updated_at = NOW() 
+           WHERE visit_id = ?`,
+          [status, visit_id]
+        );
     }
 
     // Check if any rows were affected
@@ -47,7 +65,10 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Visit not found or already updated." });
     }
 
-    res.status(200).json({ message: `Visit ${status} successfully.` });
+    res.status(200).json({ 
+      message: `Visit ${status === 'cancelled' ? 'cancelled' : status} successfully.`,
+      updatedStatus: status 
+    });
   } catch (error) {
     console.error("Database Error:", error);
     res.status(500).json({ message: "Server error." });
