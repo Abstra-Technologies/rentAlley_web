@@ -27,19 +27,33 @@ export default async function handler(req, res) {
   }
 }
 
+// Retrieve prospective_tenant_id using unit_id
+async function getProspectiveTenantId(connection, unit_id) {
+  const [rows] = await connection.execute(
+    "SELECT id FROM ProspectiveTenant WHERE unit_id = ?",
+    [unit_id]
+  );
+  return rows.length > 0 ? rows[0].id : null;
+}
+
 //Get Lease by ID or All
 async function handleGetRequest(req, res, connection, unit_id) {
   try {
-    let query = `SELECT * FROM LeaseAgreement WHERE 1=1`; // Ensures base query is always valid
-    let params = [];
+    const prospectiveTenantId = await getProspectiveTenantId(
+      connection,
+      unit_id
+    );
 
-    // If an ID is provided, add it to the query
-    if (unit_id) {
-      query += ` AND unit_id = ?`;
-      params.push(unit_id);
+    if (!prospectiveTenantId) {
+      return res
+        .status(404)
+        .json({ error: "No prospective tenant found for this unit" });
     }
 
-    const [rows] = await connection.execute(query, params);
+    const [rows] = await connection.execute(
+      "SELECT * FROM LeaseAgreement WHERE prospective_tenant_id = ?",
+      [prospectiveTenantId]
+    );
 
     res.status(200).json(rows);
   } catch (error) {
@@ -62,12 +76,23 @@ async function handlePutRequest(req, res, connection, unit_id) {
         .json({ error: "Start date and end date are required" });
     }
 
+    const prospectiveTenantId = await getProspectiveTenantId(
+      connection,
+      unit_id
+    );
+
+    if (!prospectiveTenantId) {
+      return res
+        .status(404)
+        .json({ error: "No prospective tenant found for this unit" });
+    }
+
     await connection.beginTransaction();
 
-    let query = `UPDATE LeaseAgreement SET start_date = ?, end_date = ?, status = 'active' WHERE unit_id = ?`;
-    let params = [start_date, end_date, unit_id];
-
-    const [result] = await connection.execute(query, params);
+    const [result] = await connection.execute(
+      `UPDATE LeaseAgreement SET start_date = ?, end_date = ?, status = 'active' WHERE prospective_tenant_id = ?`,
+      [start_date, end_date, prospectiveTenantId]
+    );
     await connection.commit();
 
     if (result.affectedRows === 0) {
@@ -89,13 +114,30 @@ async function handlePutRequest(req, res, connection, unit_id) {
 //Delete Lease by ID
 async function handleDeleteRequest(req, res, connection, unit_id) {
   try {
+    const prospectiveTenantId = await getProspectiveTenantId(
+      connection,
+      unit_id
+    );
+
+    if (!prospectiveTenantId) {
+      return res
+        .status(404)
+        .json({ error: "No prospective tenant found for this unit" });
+    }
+
     await connection.beginTransaction();
 
-    await connection.execute(`DELETE FROM LeaseAgreement WHERE unit_id = ?`, [
-      unit_id,
-    ]);
+    const [deleteResult] = await connection.execute(
+      `DELETE FROM LeaseAgreement WHERE prospective_tenant_id = ?`,
+      [prospectiveTenantId]
+    );
 
     await connection.commit();
+
+    if (deleteResult.affectedRows === 0) {
+      return res.status(404).json({ error: "Lease agreement not found" });
+    }
+
     res.status(200).json({ message: "Lease Agreement deleted successfully" });
   } catch (error) {
     await connection.rollback();

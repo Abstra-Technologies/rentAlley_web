@@ -103,11 +103,9 @@ export default async function handler(req, res) {
       );
 
       if (tenantResult.length === 0) {
-        return res
-          .status(400)
-          .json({
-            error: "No approved prospective tenant found for this unit.",
-          });
+        return res.status(400).json({
+          error: "No approved prospective tenant found for this unit.",
+        });
       }
 
       const prospective_tenant_id = tenantResult[0].id;
@@ -119,16 +117,14 @@ export default async function handler(req, res) {
         : null;
 
       const query =
-        "INSERT INTO LeaseAgreement (unit_id, prospective_tenant_id, agreement_url, status, created_at, updated_at) VALUES (?, ?, ?, 'Pending', NOW(), NOW())";
+        "INSERT INTO LeaseAgreement (prospective_tenant_id, agreement_url, status, created_at, updated_at) VALUES (?, ?, 'Pending', NOW(), NOW())";
 
       console.log("Inserting into MySQL with:", {
-        unit_id,
         prospective_tenant_id,
         agreementUrl,
       });
 
       await connection.execute(query, [
-        Number(unit_id),
         Number(prospective_tenant_id),
         agreementUrl,
       ]);

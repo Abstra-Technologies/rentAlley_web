@@ -11,13 +11,11 @@ import Swal from "sweetalert2";
 import LoadingScreen from "../../components/loadingScreen";
 import Image from "next/image";
 
-export default function InterestedTenants({ unitId = null }) {
+export default function InterestedTenants({ unitId }) {
   const router = useRouter();
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = "";
-  const [reason, setReason] = useState(""); // State for disapproval reason
-  const [selectedTenantId, setSelectedTenantId] = useState(null); // Track selected tenant for disapproval
 
   // Fetch tenants from the API
   useEffect(() => {
@@ -36,40 +34,6 @@ export default function InterestedTenants({ unitId = null }) {
 
     fetchTenants();
   }, [unitId]);
-
-  // Function to update tenant status (Approve/Disapprove)
-  const updateTenantStatus = async (tenantId, status) => {
-    try {
-      const payload = {
-        unitId,
-        status,
-        message: status === "disapproved" ? reason : null,
-      };
-
-      await axios.put("/api/landlord/prospective/update-status", payload);
-
-      // Update UI after success
-      setTenants((prev) =>
-        prev.map((tenant) =>
-          tenant.id === tenantId ? { ...tenant, status } : tenant
-        )
-      );
-
-      Swal.fire({
-        title: "Success!",
-        text: `Tenant has been ${status} successfully!`,
-        icon: "success",
-      });
-      setReason("");
-      setSelectedTenantId(null);
-    } catch (error) {
-      Swal.fire({
-        title: "Error!",
-        text: "Failed to update tenant status.",
-        icon: "error",
-      });
-    }
-  };
 
   if (loading) return <LoadingScreen />;
   if (error) return <div className="p-6 text-red-500 text-center">{error}</div>;
@@ -144,9 +108,6 @@ export default function InterestedTenants({ unitId = null }) {
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -204,40 +165,6 @@ export default function InterestedTenants({ unitId = null }) {
                           tenant?.status?.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex space-x-2">
-                        <button
-                          className={`inline-flex items-center justify-center p-2 rounded-full ${
-                            tenant?.status === "approved"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-green-500 text-white hover:bg-green-600"
-                          } transition-colors duration-200`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateTenantStatus(tenant?.id, "approved");
-                          }}
-                          disabled={tenant?.status === "approved"}
-                          title="Approve Tenant"
-                        >
-                          <AiOutlineCheck className="w-5 h-5" />
-                        </button>
-                        <button
-                          className={`inline-flex items-center justify-center p-2 rounded-full ${
-                            tenant?.status === "disapproved"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-red-500 text-white hover:bg-red-600"
-                          } transition-colors duration-200`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedTenantId(tenant?.id);
-                          }}
-                          disabled={tenant?.status === "disapproved"}
-                          title="Disapprove Tenant"
-                        >
-                          <AiOutlineClose className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
                 {tenants.length === 0 && (
@@ -255,52 +182,6 @@ export default function InterestedTenants({ unitId = null }) {
           </div>
         </div>
       </div>
-
-      {/* Disapproval Modal - Improved */}
-      {selectedTenantId && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Disapprove Tenant
-              </h3>
-            </div>
-            <div className="p-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reason for disapproval:
-              </label>
-              <textarea
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                rows="4"
-                placeholder="Please provide a reason for disapproval..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
-              <div className="mt-6 flex items-center justify-end gap-3">
-                <button
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition-colors duration-200"
-                  onClick={() => setSelectedTenantId(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={`px-4 py-2 bg-red-500 text-white rounded-md transition-colors duration-200 ${
-                    reason.trim()
-                      ? "hover:bg-red-600"
-                      : "opacity-50 cursor-not-allowed"
-                  }`}
-                  onClick={() =>
-                    updateTenantStatus(selectedTenantId, "disapproved")
-                  }
-                  disabled={!reason.trim()}
-                >
-                  Disapprove
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

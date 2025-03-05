@@ -7,6 +7,14 @@ import Link from "next/link";
 import Swal from "sweetalert2";
 import { FaArrowLeft } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import {
+  DocumentTextIcon,
+  EnvelopeIcon,
+  IdentificationIcon,
+} from "@heroicons/react/24/outline";
+import { PhoneIcon } from "lucide-react";
+import { MapPinIcon } from "lucide-react";
+import { UserIcon } from "lucide-react";
 
 const LeaseDetails = ({ unitId }) => {
   const router = useRouter();
@@ -14,13 +22,69 @@ const LeaseDetails = ({ unitId }) => {
   const [tenant, setTenant] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("unoccupied"); // Default state
+  const [status, setStatus] = useState("unoccupied");
+  const [unitName, setUnitName] = useState("");
+  const [propertyName, setPropertyName] = useState("");
+  const [unitPhoto, setUnitPhoto] = useState("");
+  const [activeTab, setActiveTab] = useState("details");
+  const [prospectiveStatus, setProspectiveStatus] = useState("pending");
+  const [reason, setReason] = useState("");
 
   useEffect(() => {
     fetchLeaseDetails();
     fetchTenantDetails();
     fetchStatus();
+    fetchUnitDetails();
+    fetchProspectiveStatus();
   }, []);
+
+  const formatDate = (dateString) => {
+    if (!dateString) {
+      return "N/A"; // Or handle the case where the date is not available
+    }
+
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid Date"; // Handle invalid date strings
+    }
+  };
+
+  // Fetch prospective tenant status (pending/approved/disapproved)
+  const fetchProspectiveStatus = async () => {
+    try {
+      const response = await axios.get(
+        `/api/landlord/prospective/getProspectiveStatus?unit_id=${unitId}`
+      );
+      setProspectiveStatus(response.data.status);
+    } catch (error) {
+      console.error("Error fetching tenant status:", error);
+    }
+  };
+
+  const fetchUnitDetails = async () => {
+    try {
+      const response = await axios.get(
+        `/api/landlord/prospective/getUnitInfo?unit_id=${unitId}`
+      );
+
+      console.log("API Response:", response.data); // Log the entire response
+
+      if (response.data) {
+        setUnitName(response.data.unit?.unit_name || ""); // Safe access, default to empty string
+        setPropertyName(response.data.property?.property_name || ""); // Safe access, default to empty string
+        setUnitPhoto(response.data.photos?.[0] || ""); // Safe access to the first photo, default to empty string
+      }
+    } catch (error) {
+      console.error("Error fetching unit details:", error);
+    }
+  };
 
   // Fetch current status of  unit
   const fetchStatus = async () => {
@@ -36,8 +100,54 @@ const LeaseDetails = ({ unitId }) => {
     }
   };
 
-  // Handle status update
-  const toggleStatus = async () => {
+  // Approve or Disapprove tenant
+  const updateTenantStatus = async (newStatus) => {
+    if (newStatus === "disapproved") {
+      const { value: disapprovalReason } = await Swal.fire({
+        title: "Disapprove Tenant",
+        input: "textarea",
+        inputLabel: "Provide a reason for disapproval",
+        inputPlaceholder: "Type your reason here...",
+        inputAttributes: { "aria-label": "Disapproval reason" },
+        showCancelButton: true,
+      });
+
+      if (!disapprovalReason) return;
+
+      setReason(disapprovalReason);
+    }
+
+    try {
+      const payload = {
+        unitId,
+        status: newStatus,
+        message: newStatus === "disapproved" ? reason : null,
+      };
+
+      await axios.put("/api/landlord/prospective/update-status", payload);
+
+      Swal.fire("Success!", `Tenant ${newStatus} successfully!`, "success");
+
+      if (newStatus === "approved") {
+        // Update unit status to occupied in the database
+        await axios.put("/api/landlord/propertyStatus/update", {
+          unitId,
+          status: "occupied",
+        });
+
+        setStatus("occupied"); // Update frontend state
+        setProspectiveStatus("approved");
+      } else {
+        setProspectiveStatus("disapproved");
+      }
+    } catch (error) {
+      Swal.fire("Error!", "Failed to update tenant status.", "error");
+      console.error("Error updating tenant status:", error);
+    }
+  };
+
+  // Handle unit occupancy status update
+  const toggleUnitStatus = async () => {
     const newStatus = status === "occupied" ? "unoccupied" : "occupied";
 
     try {
@@ -46,14 +156,13 @@ const LeaseDetails = ({ unitId }) => {
         status: newStatus,
       });
 
-      setStatus(newStatus); // Update UI instantly
+      setStatus(newStatus);
       Swal.fire("Success", `Status updated to ${newStatus}`, "success");
     } catch (error) {
       console.error("Error updating status:", error);
       Swal.fire("Error", "Failed to update status", "error");
     }
   };
-
   // Fetch lease details
   const fetchLeaseDetails = async () => {
     try {
@@ -152,166 +261,375 @@ const LeaseDetails = ({ unitId }) => {
   };
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* Back Button */}
       <button
         onClick={() => router.back()}
-        className="flex items-center text-blue-500 hover:text-blue-700 mb-4"
+        className="flex items-center text-blue-600 hover:text-blue-800 mb-6"
       >
-        <FaArrowLeft className="mr-2" />
+        <FaArrowLeft className="h-4 w-4 mr-1" />
         Back
       </button>
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Right Side: Tenant Details */}
-        <div className="w-full md:w-1/2 bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold mb-4">Tenant Details</h2>
-          {tenant ? (
-            <div className="flex flex-col items-center text-center">
-              {/* Profile Picture */}
-              {tenant.profilePicture && (
-                <Image
-                  src={tenant.profilePicture}
-                  alt="Profile"
-                  width={96}
-                  height={96}
-                  className="w-24 h-24 rounded-full border shadow-md"
-                />
-              )}
 
-              {/* Tenant Info */}
-              <p className="mt-4 text-lg font-semibold">
-                {tenant.firstName} {tenant.lastName}
-              </p>
-              <p className="text-gray-500">
-                Birthdate: {tenant.birthDate.split("T")[0]}
-              </p>
-              <p className="text-gray-700 mt-2">Address:</p>
-              <p className="text-gray-500">{tenant.address}</p>
-              {/* Lease Info */}
-              {lease && (
-                <div className="mt-4 text-left bg-gray-100 p-4 rounded-lg shadow-md w-full">
-                  <h3 className="text-lg font-semibold text-center">
-                    Lease Details
-                  </h3>
-                  <p className="text-gray-700 mt-2">
-                    <strong>Start Date:</strong>{" "}
-                    {startDate
-                      ? new Date(startDate).toLocaleDateString()
-                      : "N/A"}
-                  </p>
-                  <p className="text-gray-700 mt-1">
-                    <strong>End Date:</strong>{" "}
-                    {endDate ? new Date(endDate).toLocaleDateString() : "N/A"}
-                  </p>
-                </div>
-              )}
-
-              <div className="p-4 bg-white shadow rounded-lg mt-4">
-                <h2 className="text-lg font-semibold">Unit/Property Status</h2>
-                <p
-                  className={`mt-2 text-sm font-medium ${
-                    status === "occupied" ? "text-red-500" : "text-green-500"
-                  }`}
-                >
-                  {status.toUpperCase()}
-                </p>
-                <button
-                  onClick={toggleStatus}
-                  className={`mt-4 px-4 py-2 rounded text-white ${
-                    status === "occupied"
-                      ? "bg-green-500 hover:bg-green-700"
-                      : "bg-red-500 hover:bg-red-700"
-                  }`}
-                >
-                  {status === "occupied"
-                    ? "Mark as Unoccupied"
-                    : "Mark as Occupied"}
-                </button>
-              </div>
-
-              {/* Lease File Viewer */}
-              {lease?.agreement_url && (
-                <div className="mt-6 border p-4 rounded-lg shadow-md">
-                  <h2 className="text-lg font-semibold">
-                    Lease Agreement Preview
-                  </h2>
-                  <a
-                    href={lease.agreement_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline"
-                  >
-                    View Lease Agreement
-                  </a>
-                </div>
-              )}
-              {lease && (
-                <button
-                  onClick={handleDeleteLease}
-                  className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
-                >
-                  Delete Lease
-                </button>
-              )}
-            </div>
+      {/* Property Header */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+        <div className="h-48 bg-gray-200 relative">
+          {/* Display Unit Photo if Available */}
+          {unitPhoto ? (
+            <Image
+              src={unitPhoto}
+              alt="Unit Photo"
+              layout="fill" // Makes the image fill the container
+              objectFit="cover" // Ensures the image covers the container without distortion
+              className="rounded-t-lg"
+            />
           ) : (
-            <p className="text-gray-500">No tenant information available</p>
-          )}
-        </div>
-
-        {/* Left Side: Valid ID & Lease Upload */}
-        <div className="max-w-md min-w-80 bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold mb-4">Valid ID</h2>
-          {tenant?.valid_id ? (
-            <div className="border rounded-lg overflow-hidden shadow-md p-4 text-center">
-              <Link
-                href={tenant?.valid_id}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
-              >
-                View Government ID
-              </Link>
+            <div className="w-full h-48 bg-gray-300 flex items-center justify-center">
+              No Image Available
             </div>
-          ) : (
-            <p className="text-gray-500">No government ID available</p>
           )}
-
-          {/* Lease Upload Below */}
-          <div className="mt-6 p-4 border rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-2">
-              Upload Lease Agreement
-            </h2>
-            <LeaseUpload onFileUpload={handleFileUpload} />
-            {lease && (
-              <div className="mt-4">
-                <label className="block text-gray-700">Start Date:</label>
-                <input
-                  type="date"
-                  className="border p-2 w-full rounded"
-                  value={startDate || ""}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-
-                <label className="block text-gray-700 mt-2">End Date:</label>
-                <input
-                  type="date"
-                  className="border p-2 w-full rounded"
-                  value={endDate || ""}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-
-                <button
-                  onClick={handleUpdateLease}
-                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Update Lease
-                </button>
-              </div>
-            )}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 flex flex-col justify-end p-6">
+            <h1 className="text-white text-2xl font-bold">
+              {propertyName || "Property Name"}
+            </h1>
+            <p className="text-white text-lg">Unit {unitName || "Unit Name"}</p>
           </div>
         </div>
+
+        {/* Tabs */}
+        <div className="flex border-b">
+          <button
+            className={`px-4 py-3 font-medium text-sm ${
+              activeTab === "details"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("details")}
+          >
+            Renter Details
+          </button>
+          <button
+            className={`px-4 py-3 font-medium text-sm ${
+              activeTab === "maintenance"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("maintenance")}
+          >
+            Maintenance Request History
+          </button>
+          <button
+            className={`px-4 py-3 font-medium text-sm ${
+              activeTab === "history"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("history")}
+          >
+            Tenant History
+          </button>
+        </div>
       </div>
+
+      {/* Content based on active tab */}
+      {activeTab === "details" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Tenant Info Card */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-start mb-4">
+                {/* Profile Image */}
+                <div className="w-16 h-16 rounded-full bg-gray-200 mr-4 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                  {tenant?.profilePicture ? (
+                    <Image
+                      src={tenant.profilePicture}
+                      alt="Profile"
+                      width={64}
+                      height={64}
+                      className="w-full h-full rounded-full object-cover object-center border-2 border-gray-300 shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-full border-2 border-gray-300 shadow-lg bg-gray-200 flex items-center justify-center">
+                      <UserIcon className="h-8 w-8 text-gray-500" />{" "}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {tenant?.firstName} {tenant?.lastName}
+                  </h2>
+                  <p className="text-gray-500 text-sm">
+                    Date of Birth: {formatDate(tenant?.birthDate)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 mt-6">
+                <div className="flex items-start">
+                  <EnvelopeIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500">Email Address:</p>
+                    <p className="text-gray-800 font-medium">{tenant?.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <PhoneIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500">Mobile Number:</p>
+                    <p className="text-gray-800 font-medium">
+                      {tenant?.phoneNumber}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <MapPinIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500">Address:</p>
+                    <p className="text-gray-800 font-medium">
+                      {tenant?.address}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lease Agreement Card */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Lease Agreement
+              </h2>
+
+              {/* Valid Government ID Section */}
+              {tenant?.valid_id ? (
+                <div className="mb-6">
+                  <p className="text-sm text-gray-500 mb-2">
+                    Valid Government ID:
+                  </p>
+                  <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-md bg-blue-100 text-blue-500 flex items-center justify-center mr-3">
+                        <IdentificationIcon className="h-6 w-6" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-700">
+                          Tenant's Valid ID
+                        </p>
+                        <Link
+                          href={tenant?.valid_id}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-500 hover:underline"
+                        >
+                          View Government ID
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500 mb-4">No valid ID available</p>
+              )}
+
+              {/* Lease Dates Update Section */}
+              <div className="mb-6">
+                <p className="text-md text-gray-500 mb-2">Lease Dates:</p>
+                {/* Display Start and End Dates */}
+                {lease?.start_date && lease?.end_date && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <p className="text-gray-700 text-md mb-2">
+                      Start Date: {formatDate(lease.start_date)}
+                    </p>
+                    <p className="text-gray-700 text-md">
+                      End Date: {formatDate(lease.end_date)}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="startDate"
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                    >
+                      Start Date:
+                    </label>
+                    <input
+                      type="date"
+                      id="startDate"
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      disabled={!lease?.agreement_url} // Disable if no lease agreement
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="endDate"
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                    >
+                      End Date:
+                    </label>
+                    <input
+                      type="date"
+                      id="endDate"
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      disabled={!lease?.agreement_url} // Disable if no lease agreement
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleUpdateLease}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
+                  disabled={!lease?.agreement_url} // Disable if no lease agreement
+                >
+                  Update Lease Dates
+                </button>
+                {!lease?.agreement_url && (
+                  <div
+                    className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mt-2"
+                    role="alert"
+                  >
+                    <span className="block sm:inline">
+                      {" "}
+                      Please upload a lease agreement to update lease dates.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Lease Agreement Upload/View/Delete Section */}
+              {lease?.agreement_url ? (
+                // If a lease agreement exists
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">Lease Agreement:</p>
+                  <div className="p-3 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-md bg-green-100 text-green-500 flex items-center justify-center mr-3">
+                        <DocumentTextIcon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">
+                          Current Lease Agreement
+                        </p>
+                        <Link
+                          href={lease.agreement_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-500 hover:underline"
+                        >
+                          View Lease Agreement
+                        </Link>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleDeleteLease}
+                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      Delete Lease
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // If no lease agreement exists
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Upload Lease Agreement:
+                  </p>
+                  <LeaseUpload onFileUpload={handleFileUpload} />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "maintenance" && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Maintenance Request History
+          </h2>
+          {/* {maintenanceRequests && maintenanceRequests.length > 0 ? (
+            <div className="divide-y">
+              {maintenanceRequests.map((request) => (
+                <div key={request.id} className="py-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium text-gray-800">
+                        {request.title}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {request.description}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        request.status === "Completed"
+                          ? "bg-green-100 text-green-800"
+                          : request.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {request.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Requested on: {request.date}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-6">
+              No maintenance requests found
+            </p>
+          )} */}
+          <p className="text-gray-500 text-center py-6">
+            No maintenance requests found
+          </p>
+        </div>
+      )}
+
+      {activeTab === "history" && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            Tenant History
+          </h2>
+          <p className="text-gray-500 text-center py-6">
+            No previous tenant history for this unit
+          </p>
+        </div>
+      )}
+      {/* Approve/Disapprove Buttons */}
+      {status === "unoccupied" && prospectiveStatus === "pending" ? (
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            className="px-6 py-2 bg-green-600 text-white font-medium rounded-lg shadow-md hover:bg-green-700 transition duration-300"
+            onClick={() => updateTenantStatus("approved")}
+          >
+            Approve
+          </button>
+          <button
+            className="px-6 py-2 bg-red-600 text-white font-medium rounded-lg shadow-md hover:bg-red-700 transition duration-300"
+            onClick={() => updateTenantStatus("disapproved")}
+          >
+            Disapprove
+          </button>
+        </div>
+      ) : status === "occupied" ? (
+        <button
+          className="px-6 py-2 bg-yellow-500 text-white font-medium rounded-lg shadow-md hover:bg-yellow-600 transition duration-300 mt-6"
+          onClick={toggleUnitStatus}
+        >
+          Mark as Unoccupied
+        </button>
+      ) : null}
     </div>
   );
 };

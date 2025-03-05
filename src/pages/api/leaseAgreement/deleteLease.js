@@ -22,10 +22,25 @@ export default async function handler(req, res) {
   try {
     connection = await db.getConnection();
     await connection.beginTransaction();
+
+    // First, get the prospective_tenant_id using unit_id
+    const [prospectiveRows] = await connection.execute(
+      `SELECT id FROM ProspectiveTenant WHERE unit_id = ?`,
+      [unit_id]
+    );
+
+    if (prospectiveRows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No prospective tenant found for this unit" });
+    }
+
+    const prospectiveTenantId = prospectiveRows[0].id;
+
     // Retrieve the lease agreement file URL
     const [leaseRows] = await connection.execute(
-      "SELECT agreement_url FROM LeaseAgreement WHERE unit_id = ?",
-      [unit_id]
+      "SELECT agreement_url FROM LeaseAgreement WHERE prospective_tenant_id = ?",
+      [prospectiveTenantId]
     );
 
     if (leaseRows.length === 0) {
@@ -66,8 +81,8 @@ export default async function handler(req, res) {
 
     // Delete lease record from the database
     const [deleteResult] = await connection.execute(
-      "DELETE FROM LeaseAgreement WHERE unit_id = ?",
-      [unit_id]
+      "DELETE FROM LeaseAgreement WHERE prospective_tenant_id = ?",
+      [prospectiveTenantId]
     );
 
     if (deleteResult.affectedRows === 0) {

@@ -26,7 +26,7 @@ const LeaseUpload = ({ onFileUpload }) => {
         {file ? (
           <p className="text-green-500">{file.name}</p>
         ) : (
-          <p>Upload Lease Agreement here.</p>
+          <p>Upload Lease Agreement here (PDF Only).</p>
         )}
       </div>
     </div>
