@@ -1,12 +1,22 @@
 "use client";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import Swal from "sweetalert2";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 import ChatInquiry from "./chatInquiry";
 import useAuth from "../../../hooks/useSession";
+
+// Custom CSS for calendar to improve disabled date styling
+const customCalendarStyles = `
+  .react-calendar__tile--disabled {
+    background-color: #f0f0f0 !important;
+    color: #999 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+  }
+`;
 
 export default function InquiryBooking({
   tenant_id,
@@ -18,16 +28,52 @@ export default function InquiryBooking({
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
   const [showModal, setShowModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [bookedDates, setBookedDates] = useState({});
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
 
-  const handleTimeChange = (e) => {
-    setSelectedTime(e.target.value);
+  // Fetch booked dates when the component mounts
+  useEffect(() => {
+    const fetchBookedDates = async () => {
+      try {
+        const response = await axios.get("/api/tenant/visits/booked-dates");
+        setBookedDates(response.data.bookedDates);
+      } catch (error) {
+        console.error("Error fetching booked dates:", error);
+      }
+    };
+
+    fetchBookedDates();
+  }, []);
+
+  // Enhanced function to disable booked dates
+  const isTileDisabled = ({ date, view }) => {
+    if (view !== 'month') return false;
+  
+    const formattedDate = date.toISOString().split('T')[0];
+    const bookingInfo = bookedDates[formattedDate];
+    
+    // Disable date if it has 1
+    return (bookingInfo && bookingInfo.count >= 1) || date < new Date();
   };
 
-  // Combine Date and Time into a single Date object
+  const handleTimeChange = (e) => {
+    const selected = e.target.value;
+    const [hours] = selected.split(":").map(Number);
+    
+    if (hours < 8 || hours > 20) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Time',
+        text: 'Please select a time between 8 AM and 8 PM.',
+        confirmButtonColor: '#3085d6'
+      });
+      return;
+    }
+    setSelectedTime(selected);
+  };
+
   const getCombinedDateTime = () => {
     if (!selectedDate || !selectedTime) return null;
 
@@ -35,77 +81,72 @@ export default function InquiryBooking({
     const updatedDate = new Date(selectedDate);
     updatedDate.setHours(parseInt(hours, 10), parseInt(minutes, 10));
 
-    return updatedDate.toLocaleString(); // Format the date & time
+    return updatedDate.toLocaleString('en-US', {
+      dateStyle: 'full',
+      timeStyle: 'short'
+    });
   };
 
   const handleScheduleVisit = () => {
     setShowModal(true);
   };
 
-  // Proceed to apply as a tenant
   const handleApplyAsTenant = async (e) => {
     e.preventDefault();
     setShowModal(false);
 
     if (!selectedDate || !selectedTime) {
-      Swal.fire("Error", "Please select both date and time.", "error");
-      return;
-    } else if (!tenant_id) {
-      Swal.fire("Error", "Please log in.", "error");
+      Swal.fire({
+        icon: 'error',
+        title: 'Incomplete Selection',
+        text: 'Please select both date and time.',
+        confirmButtonColor: '#3085d6'
+      });
       return;
     }
 
     try {
       setLoading(true);
-
-      const formattedTime = selectedTime.includes(":")
-        ? `${selectedTime}:00`
-        : selectedTime;
-
-      console.log({
-        tenant_id,
-        unit_id,
-        visit_date: selectedDate,
-        visit_time: formattedTime.toString(),
-      });
-
       const response = await axios.post("/api/tenant/visits/schedule-visit", {
         tenant_id,
         unit_id,
-        visit_date: selectedDate,
-        visit_time: formattedTime,
+        visit_date: selectedDate.toISOString().split('T')[0],
+        visit_time: `${selectedTime}:00`,
       });
 
       if (response.status === 200) {
-        Swal.fire(
-          "Success",
-          "Visit scheduled successfully! Redirecting to Tenant Application...",
-          "success"
-        ).then(() => {
-          if (unit_id) {
-            router.push(`/pages/tenant/prospective/${unit_id}`);
-          } else {
-            router.push(`/pages/find-rent`); // Fallback if neither is present
-          }
+        await Swal.fire({
+          icon: 'success',
+          title: 'Visit Scheduled',
+          text: 'Visit scheduled successfully! Redirecting to Tenant Application...',
+          confirmButtonColor: '#3085d6'
         });
+
+        router.push(unit_id ? `/pages/tenant/prospective/${unit_id}` : '/pages/find-rent');
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);
-      setError("Failed to schedule visit. Please try again.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Scheduling Error',
+        text: 'Failed to schedule visit. Please try again.',
+        confirmButtonColor: '#3085d6'
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Just schedule the visit without applying as a tenant
   const handleJustSchedule = async (e) => {
     e.preventDefault();
 
     if (!selectedDate || !selectedTime) {
-      Swal.fire("Error", "Please select both date and time.", "error");
-      return;
-    } else if (!tenant_id) {
-      Swal.fire("Error", "Please log in.", "error");
+      Swal.fire({
+        icon: 'error',
+        title: 'Incomplete Selection',
+        text: 'Please select both date and time.',
+        confirmButtonColor: '#3085d6'
+      });
       return;
     }
 
@@ -113,123 +154,117 @@ export default function InquiryBooking({
       setShowModal(false);
       setLoading(true);
 
-      const formattedTime = selectedTime.includes(":")
-        ? `${selectedTime}:00`
-        : selectedTime;
-
-      console.log({
-        tenant_id,
-        unit_id,
-        visit_date: selectedDate,
-        visit_time: formattedTime.toString(),
-      });
-
       const response = await axios.post("/api/tenant/visits/schedule-visit", {
         tenant_id,
         unit_id,
-        visit_date: selectedDate,
-        visit_time: formattedTime,
+        visit_date: selectedDate.toISOString().split('T')[0],
+        visit_time: `${selectedTime}:00`,
       });
 
       if (response.status === 200) {
-        Swal.fire("Success", "Visit scheduled successfully!", "success");
-        router.push(`/pages/find-rent`);
+        await Swal.fire({
+          icon: 'success',
+          title: 'Visit Scheduled',
+          text: 'Visit scheduled successfully!',
+          confirmButtonColor: '#3085d6'
+        });
+        router.push('/pages/find-rent');
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);
-      setError("Failed to schedule visit. Please try again.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Scheduling Error',
+        text: 'Failed to schedule visit. Please try again.',
+        confirmButtonColor: '#3085d6'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-sm p-4 border rounded-lg shadow-md bg-white">
-      <button
-        className={`w-full py-2 text-white font-semibold rounded ${
-          view === "inquire" ? "bg-blue-900" : "bg-gray-200"
-        }`}
-        onClick={() => setView("inquire")}
-      >
-        Inquire
-      </button>
-      <button
-        className={`w-full py-2 mt-2 font-semibold rounded ${
-          view === "schedule" ? "bg-blue-900 text-white" : "bg-gray-200"
-        }`}
-        onClick={() => setView("schedule")}
-      >
-        Schedule a Visit
-      </button>
+    <div className="max-w-sm mx-auto p-4 border rounded-lg shadow-md bg-white">
+      {/* Custom Calendar Styles */}
+      <style>{customCalendarStyles}</style>
 
-      {/*CHAT COMPONENT NP REDIRECTOPMS BUT ONLY AM ALERT THAT MESSAGE IS SENT*/}
+      {/* View Toggle Buttons */}
+      <div className="flex space-x-2 mb-4">
+        <button
+          className={`flex-1 py-2 font-semibold rounded transition-colors ${
+            view === "inquire" 
+              ? "bg-blue-900 text-white" 
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          onClick={() => setView("inquire")}
+        >
+          Inquire
+        </button>
+        <button
+          className={`flex-1 py-2 font-semibold rounded transition-colors ${
+            view === "schedule" 
+              ? "bg-blue-900 text-white" 
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          onClick={() => setView("schedule")}
+        >
+          Schedule a Visit
+        </button>
+      </div>
+
       {view === "inquire" && (
-        <div className="mt-4">
-          <div className="mt-4 mb-3 text-center">
-            <p className="text-xl font-bold">₱{rent_amount}</p>
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-blue-900">₱{rent_amount}</p>
           </div>
           <ChatInquiry landlord_id={landlord_id} />
-          <div className="mt-2 flex items-center">
-            <input type="checkbox" className="mr-2" />
-            <p className="text-xs">
-              I have read and agreed to the{" "}
-              <a href="#" className="text-blue-600">
-                Terms
-              </a>
-              ,
-              <a href="#" className="text-blue-600">
-                {" "}
-                Privacy Policy
-              </a>
-              , and
-              <a href="#" className="text-blue-600">
-                {" "}
-                Safety Guidelines
-              </a>
-              .
-            </p>
-          </div>
         </div>
       )}
 
       {view === "schedule" && (
-        <div className="mt-4">
-          <p className="text-sm text-blue-600">
-            Select a date and time to schedule a visit.
+        <div className="space-y-4">
+          <p className="text-sm text-blue-900 text-center">
+            Select a date and time to schedule a visit
           </p>
+          
           <Calendar
-            onChange={(date) => setSelectedDate(date)}
+            onChange={setSelectedDate}
             value={selectedDate}
-            className="mt-2 w-full border rounded-md"
+            tileDisabled={isTileDisabled}
+            className="w-full border rounded-md custom-calendar"
+            minDetail="month"
+            minDate={new Date()}
           />
 
           {selectedDate && (
-            <div className="mt-4">
-              <label className="block text-sm font-semibold">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">
                 Select Time:
               </label>
               <input
                 type="time"
                 value={selectedTime}
                 onChange={handleTimeChange}
-                className="w-full p-2 mt-2 border rounded-md"
+                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
+                min="08:00"
+                max="17:00"
               />
             </div>
           )}
 
           {selectedDate && selectedTime && (
-            <div className="mt-4 p-3 bg-gray-200 rounded-lg shadow">
-              <p className="text-sm font-semibold text-gray-700">
+            <div className="p-3 bg-blue-50 rounded-lg shadow-inner">
+              <p className="text-sm font-semibold text-blue-900">
                 Selected: {getCombinedDateTime()}
               </p>
             </div>
           )}
 
           <button
-            className={`w-full mt-4 py-2 rounded ${
+            className={`w-full py-2 rounded transition-colors ${
               selectedDate && selectedTime
-                ? "bg-blue-900 text-white"
-                : "bg-gray-300 text-gray-500"
+                ? "bg-blue-900 text-white hover:bg-blue-800"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }`}
             disabled={!selectedDate || !selectedTime}
             onClick={handleScheduleVisit}
@@ -239,33 +274,34 @@ export default function InquiryBooking({
         </div>
       )}
 
+      {/* Modal for Confirmation */}
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-lg font-bold mb-4 text-center">
-              Would you like to proceed with applying for this rental?
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-96 space-y-4">
+            <h2 className="text-xl font-bold text-center text-blue-900">
+              Proceed with Rental Application?
             </h2>
 
-            <div className="flex flex-col gap-3">
+            <div className="space-y-3">
               <button
-                className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                 onClick={handleApplyAsTenant}
               >
-                Yes, I want to
+                Yes, I want to apply
               </button>
 
               <button
-                className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                onClick={handleJustSchedule}
+              >
+                Just schedule a visit
+              </button>
+
+              <button
+                className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
-              </button>
-
-              <button
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={handleJustSchedule}
-              >
-                No, just schedule
               </button>
             </div>
           </div>
