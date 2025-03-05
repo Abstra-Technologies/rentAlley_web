@@ -36,7 +36,7 @@ export default async function subscriptionCheckout(req, res) {
         );
 
         const hasUsedTrial = landlordData.length > 0 && landlordData[0].is_trial_used;
-        console.log("🔍 Debug - Has Used Trial Before?", hasUsedTrial);
+        console.log("Debug - Has Used Trial Before?", hasUsedTrial);
 
         //  **Determine Trial Days Based on Plan**
         const start_date = new Date().toISOString().split("T")[0];

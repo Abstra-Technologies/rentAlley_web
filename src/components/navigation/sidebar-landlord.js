@@ -24,6 +24,11 @@ const menuItems = [
     label: "Property Listing",
   },
   {
+    href: "/pages/landlord/property-listing",
+    icon: Building,
+    label: "My Tenants",
+  },
+  {
     href: "/pages/landlord/booking-appointment",
     icon: Calendar,
     label: "Visit Schedule",
