@@ -9,9 +9,8 @@ export default async function handler(req, res) {
 
     const { landlord_id, plan_name } = req.body;
 
-    // Validate request parameters
     if (!landlord_id) {
-        console.error("🚨 Missing landlord_id.");
+        console.error("Missing landlord_id.");
         return res.status(400).json({ error: "Missing landlord_id." });
     }
 
@@ -25,16 +24,16 @@ export default async function handler(req, res) {
         });
 
         //  Check if the landlord exists
-        console.log(`🔎 Checking database for landlord_id: ${landlord_id}`);
+        console.log(`Checking database for landlord_id: ${landlord_id}`);
         const [landlordData] = await connection.execute(
             "SELECT is_trial_used FROM Landlord WHERE landlord_id = ? LIMIT 1",
             [landlord_id]
         );
 
-        console.log(`🔍 Debug: Fetched landlordData:`, landlordData);
+        console.log(`Debug: Fetched landlordData:`, landlordData);
 
         if (!landlordData.length) {
-            console.error(`🚨 No landlord found with landlord_id: ${landlord_id}`);
+            console.error(`No landlord found with landlord_id: ${landlord_id}`);
             await connection.end();
             return res.status(404).json({ error: "Landlord not found." });
         }
@@ -64,17 +63,17 @@ export default async function handler(req, res) {
 
         // If the trial has already been used before no more trial to be granted.
         if (is_trial_used) {
-            console.warn(`⚠️ Trial already used for landlord_id: ${landlord_id}`);
+            console.warn(`Trial already used for landlord_id: ${landlord_id}`);
             await connection.end();
             return res.status(403).json({ error: "Trial already used. Please subscribe to continue." });
         }
 
         // Activate Free Trial if a valid plan is selected
         if (["Standard Plan", "Premium Plan"].includes(plan_name)) {
-            console.log(`🎉 Granting Free Trial for landlord_id: ${landlord_id} with ${plan_name}`);
+            console.log(`Granting Free Trial for landlord_id: ${landlord_id} with ${plan_name}`);
 
             // const trialDays = plan_name === "Standard Plan" ? 10 : 14;
-            const trialDays = plan_name === "Standard Plan" ? 1 : 1;
+            const trialDays = plan_name === "Standard Plan" ? 0 :0;
 
             const trialEndDate = new Date();
             trialEndDate.setDate(trialEndDate.getDate() + trialDays);
@@ -105,7 +104,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Invalid plan selection." });
 
     } catch (error) {
-        console.error("🚨 Database update failed:", error);
+        console.error(" Database update failed:", error);
         return res.status(500).json({ error: "Internal server error." });
     }
 }

@@ -48,7 +48,7 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
 
                         {subscription?.trial_end_date && (
                             <p className="text-green-600 font-semibold">
-                                You are currently on a trial period until {subscription.trial_end_date}.
+                                You are currently on a trial period until {subscription?.trial_end_date}.
                             </p>
                         )}
 
