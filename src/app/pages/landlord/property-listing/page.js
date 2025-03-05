@@ -31,8 +31,6 @@ const PropertyListingPage = () => {
 
   useEffect(() => {
     if (user?.landlord_id) {
-      // Ensure user is not null/undefined
-      console.log("Landlord ID:", user.landlord_id);
       fetchAllProperties(user.landlord_id);
     }
   }, [user?.landlord_id]);

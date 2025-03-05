@@ -5,8 +5,10 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
 import Swal from "sweetalert2";
+import ChatInquiry from "./chatInquiry";
+import useAuth from "../../../hooks/useSession";
 
-export default function InquiryBooking({ tenant_id, unit_id, rent_amount }) {
+export default function InquiryBooking({ tenant_id, unit_id, rent_amount, landlord_id }) {
   const [view, setView] = useState("inquire");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
@@ -14,8 +16,8 @@ export default function InquiryBooking({ tenant_id, unit_id, rent_amount }) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const {user} = useAuth();
 
-  // Handle time change
   const handleTimeChange = (e) => {
     setSelectedTime(e.target.value);
   };
@@ -31,7 +33,6 @@ export default function InquiryBooking({ tenant_id, unit_id, rent_amount }) {
     return updatedDate.toLocaleString(); // Format the date & time
   };
 
-  // Handle scheduling a visit
   const handleScheduleVisit = () => {
     setShowModal(true);
   };
@@ -156,15 +157,13 @@ export default function InquiryBooking({ tenant_id, unit_id, rent_amount }) {
         Schedule a Visit
       </button>
 
+      {/*CHAT COMPONENT NP REDIRECTOPMS BUT ONLY AM ALERT THAT MESSAGE IS SENT*/}
       {view === "inquire" && (
         <div className="mt-4">
           <div className="mt-4 mb-3 text-center">
             <p className="text-xl font-bold">₱{rent_amount}</p>
           </div>
-          <textarea
-            className="w-full p-2 border rounded-md"
-            placeholder="ex. Is there any discounts?"
-          ></textarea>
+          <ChatInquiry landlord_id={landlord_id} />
           <div className="mt-2 flex items-center">
             <input type="checkbox" className="mr-2" />
             <p className="text-xs">
@@ -185,9 +184,7 @@ export default function InquiryBooking({ tenant_id, unit_id, rent_amount }) {
               .
             </p>
           </div>
-          <button className="w-full mt-2 bg-blue-700 text-white py-2 rounded">
-            Send Message
-          </button>
+
         </div>
       )}
 
