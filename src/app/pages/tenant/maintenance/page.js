@@ -40,16 +40,26 @@ const TenantMaintenance = () => {
   return (
     <TenantLayout>
       <div className="container mx-auto px-4 py-6">
-        {/* Header with Title and Create Button */}
+        {/* Header with Title and Buttons */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-blue-600">
             My Maintenance Requests
           </h2>
-          <Link href="/pages/tenant/maintenance/add">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-              + Create
-            </button>
-          </Link>
+          <div className="flex space-x-2">
+            {/* Create Button */}
+            <Link href="/pages/tenant/maintenance/add">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                + Create
+              </button>
+            </Link>
+
+            {/* View History Button */}
+            <Link href="/pages/tenant/maintenance/history">
+              <button className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                View History
+              </button>
+            </Link>
+          </div>
         </div>
 
         {loading ? (
@@ -66,7 +76,7 @@ const TenantMaintenance = () => {
                 {/* Maintenance Image */}
                 {request.photos && request.photos.length > 0 ? (
                   <img
-                    src={request.photos} // Show first image
+                    src={request.photos[0]} // Show first image
                     alt="Maintenance"
                     className="w-40 h-32 object-cover rounded-lg"
                   />
@@ -82,19 +92,14 @@ const TenantMaintenance = () => {
                     {request.subject}
                   </h3>
                   <p className="text-gray-600">{request.description}</p>
-                  {request.property_name ? (
-                    <p className="text-sm text-gray-500">
-                      Property:{" "}
-                      <span className="font-medium">
-                        {request.property_name}
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      Unit:{" "}
-                      <span className="font-medium">{request.unit_name}</span>
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-500">
+                    Property:{" "}
+                    <span className="font-medium">{request.property_name}</span>
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Unit:{" "}
+                    <span className="font-medium">{request.unit_name}</span>
+                  </p>
                   <p className="text-sm text-gray-500">
                     Category:{" "}
                     <span className="font-medium">{request.category}</span>

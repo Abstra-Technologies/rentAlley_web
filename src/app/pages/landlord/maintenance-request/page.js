@@ -150,20 +150,20 @@ const MaintenanceRequestPage = () => {
                   {new Date(request.created_at).toISOString().split("T")[0]}
                 </td>
                 <td className="px-6 py-4">
-                  {request.photo_url ? (
+                  {request.photo_urls && request.photo_urls.length > 0 ? (
                     <a
-                      href={request.photo_url}
+                      href={request.photo_urls[0]}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
                       <img
-                        src={request.photo_url}
-                        alt="Maintenance"
+                        src={request.photo_urls[0]}
+                        alt="Maintenance Photo"
                         className="h-10 w-10 rounded"
                       />
                     </a>
                   ) : (
-                    "No Photo"
+                    "No Photos"
                   )}
                 </td>
                 <td className="px-6 py-4">

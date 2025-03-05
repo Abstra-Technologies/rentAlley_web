@@ -11,10 +11,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: "Tenant ID is required" });
 
   try {
-    // Check if tenant is approved
+    // Verify if tenant is approved
     const [approvedTenant] = await db.query(
       `SELECT * FROM ProspectiveTenant 
-   WHERE tenant_id = ? AND status = 'approved'`,
+       WHERE tenant_id = ? AND status = 'approved'`,
       [tenantId]
     );
 
@@ -24,21 +24,27 @@ export default async function handler(req, res) {
         .json({ message: "Access denied. Tenant not approved." });
     }
 
+    // Fetch maintenance requests with the allowed statuses
     const [maintenanceRequests] = await db.query(
       `SELECT m.*, u.unit_name, p.property_name
-           FROM MaintenanceRequest m
-           LEFT JOIN Unit u ON m.unit_id = u.unit_id
-           LEFT JOIN Property p ON m.property_id = p.property_id
-           WHERE m.tenant_id = ?`,
+       FROM MaintenanceRequest m
+       LEFT JOIN Unit u ON m.unit_id = u.unit_id
+       LEFT JOIN Property p ON u.property_id = p.property_id
+       WHERE m.tenant_id = ? 
+       AND m.status IN ('Pending', 'Scheduled', 'In-Progress')`,
       [tenantId]
     );
 
+    // If no requests, return early
+    if (maintenanceRequests.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Process each request to fetch and decrypt photos
     for (const request of maintenanceRequests) {
       const [photos] = await db.query(
-        `SELECT photo_url FROM MaintenancePhoto
-        WHERE (property_id = ? AND property_id IS NOT NULL)
-        OR (unit_id = ? AND unit_id IS NOT NULL)`,
-        [request.property_id, request.unit_id]
+        `SELECT photo_url FROM MaintenancePhoto WHERE request_id = ?`,
+        [request.request_id]
       );
 
       request.photos =

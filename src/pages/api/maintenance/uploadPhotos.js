@@ -74,17 +74,6 @@ async function handlePostRequest(req, res, connection) {
     if (!request_id) {
       return res.status(400).json({ error: "Missing request_id" });
     }
-    // Fetch property_id and unit_id from MaintenanceRequest table
-    const [requestData] = await connection.query(
-      "SELECT property_id, unit_id FROM MaintenanceRequest WHERE request_id = ?",
-      [request_id]
-    );
-
-    if (!requestData.length) {
-      return res.status(404).json({ error: "Maintenance request not found" });
-    }
-
-    const { property_id, unit_id } = requestData[0];
 
     const uploadedFiles = Object.values(files).flat();
 
@@ -120,8 +109,6 @@ async function handlePostRequest(req, res, connection) {
 
           return {
             request_id,
-            property_id,
-            unit_id,
             photo_url: encryptedUrl, // Store encrypted URL
           };
         } catch (uploadError) {
@@ -136,15 +123,13 @@ async function handlePostRequest(req, res, connection) {
 
       const values = uploadedFilesData.map((fileData) => [
         fileData.request_id,
-        fileData.property_id,
-        fileData.unit_id,
         fileData.photo_url,
         new Date(),
         new Date(),
       ]);
 
       const [result] = await connection.query(
-        `INSERT INTO MaintenancePhoto (request_id, property_id, unit_id, photo_url, created_at, updated_at) VALUES ?`,
+        `INSERT INTO MaintenancePhoto (request_id, photo_url, created_at, updated_at) VALUES ?`,
         [values]
       );
 
@@ -157,10 +142,10 @@ async function handlePostRequest(req, res, connection) {
       });
     } catch (error) {
       await connection.rollback();
-      console.error("Error saving property photos:", error);
+      console.error("Error saving maintenance photos:", error);
       res
         .status(500)
-        .json({ error: "Failed to add property photos: " + error.message });
+        .json({ error: "Failed to add maintenance photos: " + error.message });
     }
   });
 }

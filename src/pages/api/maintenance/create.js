@@ -10,9 +10,9 @@ export default async function handler(req, res) {
 
     console.log("Request Data:", req.body);
 
-    // Fetch property_id and unit_id from ProspectiveTenant table
+    // Fetch unit_id from ProspectiveTenant table
     const [tenantRecord] = await db.query(
-      "SELECT property_id, unit_id FROM ProspectiveTenant WHERE tenant_id = ? AND status = 'approved' LIMIT 1",
+      "SELECT unit_id FROM ProspectiveTenant WHERE tenant_id = ? AND status = 'approved'",
       [tenant_id]
     );
 
@@ -20,30 +20,14 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "No approved rental found" });
     }
 
-    const { property_id, unit_id } = tenantRecord[0];
-
-    // Fetch landlord_id from Property table
-    const [propertyRecord] = await db.query(
-      "SELECT landlord_id FROM Property WHERE property_id = ? LIMIT 1",
-      [property_id]
-    );
-
-    const { landlord_id } = propertyRecord[0];
+    const { unit_id } = tenantRecord[0];
 
     // Insert into the database
     const [result] = await db.query(
       `INSERT INTO MaintenanceRequest 
-            (tenant_id, landlord_id, property_id, unit_id, subject, description, category, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, "Pending")`,
-      [
-        tenant_id,
-        landlord_id,
-        property_id || null,
-        unit_id || null,
-        subject,
-        description,
-        category,
-      ]
+            (tenant_id, unit_id, subject, description, category, status) 
+            VALUES (?, ?, ?, ?, ?, "Pending")`,
+      [tenant_id, unit_id, subject, description, category]
     );
 
     return res.status(201).json({
