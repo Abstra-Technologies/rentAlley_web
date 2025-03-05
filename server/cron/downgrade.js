@@ -3,7 +3,7 @@ const  cron = require( "node-cron");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const  axios =  require("axios");
 
-console.log("🔄 Scheduled task to downgrade expired subscriptions.");
+console.log("Scheduled task to downgrade expired subscriptions.");
 
 // **Run every midnight (12:00 AM)**
 cron.schedule("0 0 * * *", async () => {

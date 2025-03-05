@@ -5,7 +5,7 @@ export default async function downgradeExpiredSubscriptions(req, res) {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    console.log("🔍 Checking for expired subscriptions...");
+    console.log("Checking for expired subscriptions...");
 
     const dbHost = process.env.DB_HOST;
     const dbUser = process.env.DB_USER;

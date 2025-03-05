@@ -13,7 +13,7 @@ export default async function getSubscriptionLandlord(req, res) {
 
     try {
         const [rows] = await db.query(
-            "SELECT plan_name, status, start_date, end_date, trial_end_date, payment_status FROM Subscription WHERE landlord_id = ? and is_active = 1",
+            "SELECT plan_name, status, start_date, end_date, payment_status, is_trial FROM Subscription WHERE landlord_id = ? and is_active = 1",
             [landlord_id]
         );
 
@@ -24,7 +24,8 @@ export default async function getSubscriptionLandlord(req, res) {
         let subscription = rows[0];
 
         const currentDate = new Date();
-        const trialEndDate = subscription.trial_end_date ? new Date(subscription.trial_end_date) : null;
+        console.log(currentDate);
+        const trialEndDate = subscription.end_date ? new Date(subscription.end_date) : null;
         const subscriptionEndDate = subscription.end_date ? new Date(subscription.end_date) : null;
 
         // Remove trial_end_date if the trial has expired or user has paid
