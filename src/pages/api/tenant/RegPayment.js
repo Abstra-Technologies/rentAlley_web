@@ -1,5 +1,4 @@
 import axios from "axios";
-import mysql from "mysql2/promise";
 
 export default async function tenantPayment(req, res) {
     if (req.method !== "POST") {
@@ -13,13 +12,13 @@ export default async function tenantPayment(req, res) {
         email,
         payment_method_id,
         payment_type,  // security_deposit or advance_rent
-        agreement_id,  // Needed to update lease agreement
+        agreement_id,
         redirectUrl
     } = req.body;
 
-    console.log("📤 Payment Request:", { amount, firstName, lastName, email, payment_method_id, payment_type, agreement_id, redirectUrl });
+    console.log("Payment Request:", { amount, firstName, lastName, email, payment_method_id, payment_type, agreement_id, redirectUrl });
 
-    // ✅ Check Required Fields
+    // Check Required Fields
     if (!amount || isNaN(amount) || !payment_type || !payment_method_id || !agreement_id || !firstName || !lastName || !email) {
         return res.status(400).json({ error: "Invalid request parameters. Check required fields." });
     }
@@ -47,16 +46,16 @@ export default async function tenantPayment(req, res) {
             }],
         };
 
-        console.log("📤 Sending Payload to Maya:", JSON.stringify(payload, null, 2));
+        console.log("Sending Payload to Maya:", JSON.stringify(payload, null, 2));
 
-        // ✅ Send Request to Maya
+        // Send Request to Maya
         const response = await axios.post(
             "https://pg-sandbox.paymaya.com/checkout/v1/checkouts",
             payload,
             { headers: { "Content-Type": "application/json", Authorization: `Basic ${Buffer.from(`${publicKey}:${secretKey}`).toString("base64")}` } }
         );
 
-        console.log("✅ Maya Response:", response.data);
+        console.log("Maya Response:", response.data);
 
         return res.status(200).json({
             checkoutUrl: response.data.redirectUrl,
@@ -64,7 +63,7 @@ export default async function tenantPayment(req, res) {
         });
 
     } catch (error) {
-        console.error("🚨 Error during Maya payment processing:", error.response?.data || error.message);
+        console.error("Error during Maya payment processing:", error.response?.data || error.message);
         return res.status(500).json({ error: "Payment initiation failed.", details: error.response?.data || error.message });
     }
 }

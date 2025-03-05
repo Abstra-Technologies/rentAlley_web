@@ -19,7 +19,7 @@ function SecSuccess() {
     useEffect(() => {
         async function updateLeaseStatus() {
             if (!agreement_id || !payment_type || !amount  || !requestReferenceNumber) {
-                console.warn("⚠️ Missing required payment details. Waiting...");
+                console.warn(" Missing required payment details. Waiting...");
                 return;
             }
 
@@ -28,7 +28,7 @@ function SecSuccess() {
                     agreement_id, payment_type, amount, requestReferenceNumber
                 });
 
-                // ✅ Update Lease Agreement Payment Status
+                // Update Lease Agreement Payment Status
                 await axios.post("/api/payment/update-lease", {
                     agreement_id,
                     payment_type,
@@ -38,8 +38,8 @@ function SecSuccess() {
 
                 setMessage("Your payment was successful! Lease agreement updated.");
             } catch (error) {
-                setMessage("⚠️ Failed to update payment status.");
-                console.error("🚨 Error updating lease agreement:", error.response?.data || error.message);
+                setMessage("⚠Failed to update payment status.");
+                console.error(" Error updating lease agreement:", error.response?.data || error.message);
             } finally {
                 setLoading(false);
             }
@@ -53,13 +53,13 @@ function SecSuccess() {
     return (
         <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg text-center">
             <h2 className={`text-2xl font-semibold mb-4 ${loading ? "text-yellow-600" : "text-green-600"}`}>
-                {loading ? "⏳ Processing..." : "✅ Payment Successful"}
+                {loading ? "Processing..." : "Payment Successful"}
             </h2>
             <p>{message}</p>
 
             {!loading && (
                 <div className="mt-4 p-4 border rounded bg-gray-100">
-                    <h3 className="text-lg font-bold">Payment Receipt</h3>
+                    <h3 className="text-lg font-bold">Payment Receipt Invoice</h3>
                     <p><strong>Request Reference:</strong> {requestReferenceNumber}</p>
                     <p><strong>Payment Type:</strong> {payment_type.replace("_", " ")}</p>
                     <p><strong>Amount Paid:</strong> ₱{parseFloat(amount).toLocaleString()}</p>

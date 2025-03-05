@@ -8,7 +8,6 @@ export default async function updateLeasePayment(req, res) {
     try {
         const { agreement_id, payment_type, requestReferenceNumber, amount } = req.body;
 
-        // ✅ Validate required fields
         if (!agreement_id || !payment_type || !requestReferenceNumber || !amount) {
             return res.status(400).json({ message: "Missing required fields." });
         }
@@ -37,7 +36,7 @@ export default async function updateLeasePayment(req, res) {
                 database: dbName,
             });
 
-            // ✅ Ensure payment is not already recorded
+            //  Ensure payment is not already recorded
             const [existingPayment] = await connection.execute(
                 `SELECT * FROM Payment WHERE receipt_reference = ? LIMIT 1`,
                 [requestReferenceNumber]
@@ -81,7 +80,7 @@ export default async function updateLeasePayment(req, res) {
         }
 
     } catch (error) {
-        console.error("🚨 Error updating lease payment:", error);
+        console.error("Error updating lease payment:", error);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }
