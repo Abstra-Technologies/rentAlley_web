@@ -334,11 +334,20 @@ export default function PropertyDetails() {
                                 <div className="flex flex-wrap gap-3 mt-2">
                                   <div className="flex items-center text-gray-600 text-sm">
                                     <FaRuler className="mr-1" />
-                                    <span>{unit.floor_area} sqm</span>
+                                    <span>{unit.unit_size} sqm</span>
                                   </div>
                                   <div className="flex items-center text-gray-600 text-sm">
                                     <FaCouch className="mr-1" />
-                                    <span>{unit.furnish}</span>
+                                    <span>
+                                      {unit.furnish
+                                        .split("_")
+                                        .map(
+                                          (word) =>
+                                            word.charAt(0).toUpperCase() +
+                                            word.slice(1)
+                                        )
+                                        .join(" ")}
+                                    </span>
                                   </div>
                                 </div>
                               </div>

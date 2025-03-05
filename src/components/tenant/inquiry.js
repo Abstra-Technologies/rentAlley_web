@@ -8,7 +8,12 @@ import Swal from "sweetalert2";
 import ChatInquiry from "./chatInquiry";
 import useAuth from "../../../hooks/useSession";
 
-export default function InquiryBooking({ tenant_id, unit_id, rent_amount, landlord_id }) {
+export default function InquiryBooking({
+  tenant_id,
+  unit_id,
+  rent_amount,
+  landlord_id,
+}) {
   const [view, setView] = useState("inquire");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
@@ -16,7 +21,7 @@ export default function InquiryBooking({ tenant_id, unit_id, rent_amount, landlo
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   const handleTimeChange = (e) => {
     setSelectedTime(e.target.value);
@@ -78,7 +83,7 @@ export default function InquiryBooking({ tenant_id, unit_id, rent_amount, landlo
           "success"
         ).then(() => {
           if (unit_id) {
-            router.push(`/pages/tenant/prospective/unit/${unit_id}`);
+            router.push(`/pages/tenant/prospective/${unit_id}`);
           } else {
             router.push(`/pages/find-rent`); // Fallback if neither is present
           }
@@ -184,7 +189,6 @@ export default function InquiryBooking({ tenant_id, unit_id, rent_amount, landlo
               .
             </p>
           </div>
-
         </div>
       )}
 
