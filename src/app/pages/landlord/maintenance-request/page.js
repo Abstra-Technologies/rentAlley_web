@@ -29,6 +29,11 @@ const MaintenanceRequestPage = () => {
   const [currentRequestId, setCurrentRequestId] = useState(null);
   const [fetchingSubscription, setFetchingSubscription] = useState(true);
   const [subscription, setSubscription] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState(null); // Holds the selected request details
+  const [showModal, setShowModal] = useState(false); // Controls modal visibility
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [sendAutoReply, setSendAutoReply] = useState(false); // Toggle for automated reply
+  const [autoReplyMessage, setAutoReplyMessage] = useState(""); // Message input
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -88,6 +93,12 @@ const MaintenanceRequestPage = () => {
   const getActiveRequests = () =>
     requests.filter((req) => req.status.toLowerCase() === activeTab);
 
+  // Opens modal and sets selected request
+  const handleViewDetails = (request) => {
+    setSelectedRequest(request);
+    setShowModal(true);
+  };
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <SearchParamsWrapper setActiveTab={setActiveTab} />
@@ -124,6 +135,7 @@ const MaintenanceRequestPage = () => {
                 "Photo",
                 "Status",
                 "Action",
+                "View",
               ].map((header) => (
                 <th
                   key={header}
@@ -207,6 +219,14 @@ const MaintenanceRequestPage = () => {
                     </button>
                   )}
                 </td>
+                <td className="px-6 py-4">
+                  <button
+                    onClick={() => handleViewDetails(request)}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    <EyeIcon className="h-5 w-5" />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -214,19 +234,47 @@ const MaintenanceRequestPage = () => {
 
         {showCalendar && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-[400px] max-w-full">
               <h2 className="text-lg font-bold mb-4">Select Scheduled Date</h2>
 
+              {/* Calendar Picker */}
               <Calendar onChange={setSelectedDate} value={selectedDate} />
 
+              {/* Toggle for Automated Reply */}
+              <div className="mt-4 flex items-center">
+                <label
+                  htmlFor="auto-reply"
+                  className="text-sm font-medium text-gray-700 mr-2"
+                >
+                  Send Automated Reply?
+                </label>
+                <input
+                  type="checkbox"
+                  id="auto-reply"
+                  checked={sendAutoReply}
+                  onChange={() => setSendAutoReply(!sendAutoReply)}
+                  className="cursor-pointer h-5 w-5"
+                />
+              </div>
+
+              {/* Reply Message Input (Only visible if enabled) */}
+              {sendAutoReply && (
+                <textarea
+                  className="w-full mt-2 p-2 border rounded text-sm"
+                  placeholder="Enter your message to the tenant..."
+                  value={autoReplyMessage}
+                  onChange={(e) => setAutoReplyMessage(e.target.value)}
+                />
+              )}
+
+              {/* Buttons */}
               <div className="mt-4 flex justify-end">
                 <button
                   onClick={handleScheduleConfirm}
                   className="px-4 py-2 bg-blue-500 text-white rounded-md mr-2"
                 >
-                  Confirm
+                  Confirm & Schedule
                 </button>
-
                 <button
                   onClick={() => setShowCalendar(false)}
                   className="px-4 py-2 bg-gray-500 text-white rounded-md"
@@ -235,6 +283,93 @@ const MaintenanceRequestPage = () => {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ✅ Maintenance Request Modal */}
+        {showModal && selectedRequest && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-[500px] max-w-full">
+              <h2 className="text-lg font-bold mb-4">
+                Maintenance Request Details
+              </h2>
+
+              <p>
+                <strong>Tenant:</strong> {selectedRequest.tenant_first_name}{" "}
+                {selectedRequest.tenant_last_name}
+              </p>
+              <p>
+                <strong>Property:</strong> {selectedRequest.property_name}
+              </p>
+              <p>
+                <strong>Unit:</strong> {selectedRequest.unit_name}
+              </p>
+              <p>
+                <strong>Subject:</strong> {selectedRequest.subject}
+              </p>
+              <p>
+                <strong>Description:</strong> {selectedRequest.description}
+              </p>
+              <p>
+                <strong>Category:</strong> {selectedRequest.category}
+              </p>
+              <p>
+                <strong>Status:</strong> {selectedRequest.status.toUpperCase()}
+              </p>
+              <p>
+                <strong>Date:</strong>{" "}
+                {
+                  new Date(selectedRequest.created_at)
+                    .toISOString()
+                    .split("T")[0]
+                }
+              </p>
+
+              {/* Photos */}
+              {selectedRequest.photo_urls &&
+              selectedRequest.photo_urls.length > 0 ? (
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {selectedRequest.photo_urls.map((photo, index) => (
+                    <img
+                      key={index}
+                      src={photo}
+                      alt={`Maintenance Photo ${index + 1}`}
+                      className="h-20 w-20 rounded object-cover cursor-pointer"
+                      onClick={() => setSelectedImage(photo)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 text-gray-500">No Photos Available</p>
+              )}
+
+              {/* Close Button */}
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-md"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ Fullscreen Image Modal */}
+        {selectedImage && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50">
+            <button
+              className="absolute top-4 right-4 text-white text-xl"
+              onClick={() => setSelectedImage(null)}
+            >
+              ✕
+            </button>
+            <img
+              src={selectedImage}
+              alt="Enlarged Maintenance Photo"
+              className="max-w-full max-h-full rounded-lg shadow-lg"
+            />
           </div>
         )}
       </div>
