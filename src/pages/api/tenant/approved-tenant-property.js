@@ -194,8 +194,8 @@ export default async function getProperty(req, res) {
             `SELECT
                  u.unit_id, u.unit_name, u.unit_size, u.bed_spacing, u.avail_beds,
                  u.rent_amount, u.furnish, u.status,
-                 p.property_id, p.property_name, p.min_stay, p.landlord_id,
-                 p.sec_deposit, p.advanced_payment
+                 p.property_id, p.property_name, p.property_type, p.min_stay, p.landlord_id,
+                 p.sec_deposit, p.advanced_payment, p.city, p.zip_code, p.province, p.street, p.brgy_district
              FROM Unit u
              INNER JOIN Property p ON u.property_id = p.property_id
              WHERE u.unit_id = ?`,
@@ -208,12 +208,19 @@ export default async function getProperty(req, res) {
 
         // Merge lease details with unit details
         let unitData = {
-            ...unitDetails[0],
-            agreement_id: leaseDetails[0].agreement_id,
-            start_date: leaseDetails[0].start_date,
-            end_date: leaseDetails[0].end_date,
-            is_advance_payment_paid: leaseDetails[0].is_advance_payment_paid,
-            is_security_deposit_paid: leaseDetails[0].is_security_deposit_paid
+            ...unitDetails[0],  // Ensure all unit details are included
+            agreement_id: leaseDetails[0]?.agreement_id || null,
+            start_date: leaseDetails[0]?.start_date || null,
+            end_date: leaseDetails[0]?.end_date || null,
+            is_advance_payment_paid: leaseDetails[0]?.is_advance_payment_paid || 0,
+            is_security_deposit_paid: leaseDetails[0]?.is_security_deposit_paid || 0,
+        
+            // ✅ Explicitly include property address details
+            street: unitDetails[0]?.street || "",  
+            brgy_district: unitDetails[0]?.brgy_district || "",
+            city: unitDetails[0]?.city || "",
+            province: unitDetails[0]?.province || "",
+            zip_code: unitDetails[0]?.zip_code || ""
         };
 
         // etch and decrypt unit photos

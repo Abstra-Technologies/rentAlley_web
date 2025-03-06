@@ -3,6 +3,7 @@
 import Link from "next/link";
 import useRoleStore from "../../../../zustand/store";
 import { logEvent } from "../../../../utils/gtag";
+import Image from "next/image";
 
 import { useRouter } from "next/navigation";
 export default function RegisterAs() {
@@ -15,8 +16,15 @@ export default function RegisterAs() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-lg p-8 max-w-sm w-full">
+    <div className="relative flex justify-center items-center h-screen bg-gray-100 overflow-hidden">
+      <Image 
+                  src="/images/hero-section.jpeg" 
+                  alt="Cityscape view of high-rise buildings" 
+                  fill
+                  className="object-cover brightness-75 z-0"
+                  priority
+                />
+      <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <div className="text-2xl font-bold text-blue-600">Rentahan</div>

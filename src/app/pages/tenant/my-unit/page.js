@@ -1,476 +1,3 @@
-// "use client";
-//
-// import { useState, useEffect } from "react";
-// import Image from "next/image";
-// import axios from "axios";
-// import useAuth from "../../../../../hooks/useSession";
-// import {
-//   HomeIcon,
-//   ClockIcon,
-//   BuildingOfficeIcon,
-//   CurrencyDollarIcon,
-//   CheckCircleIcon,
-//   XCircleIcon,
-//   InformationCircleIcon,
-// } from "@heroicons/react/24/outline";
-// import { useRouter } from "next/navigation";
-// import Swal from "sweetalert2";
-//
-// export default function MyUnit() {
-//   const { user } = useAuth();
-//   const router = useRouter();
-//   const [unit, setUnit] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [loadingPayment, setLoadingPayment] = useState(false);
-//   const [landlord_id, setLandlordId] = useState(null);
-//   const [isSecurityPaid, setIsSecurityPaid] = useState(false);
-//   const [isAdvancedPaid, setIsAdvancedPaid] = useState(false);
-//
-//   // useEffect(() => {
-//   //   const fetchUnitData = async () => {
-//   //     try {
-//   //       const { data } = await axios.get(
-//   //         `/api/tenant/approved-tenant-property?tenantId=${user.tenant_id}`
-//   //       );
-//   //       setUnit(data[0]);
-//   //       setLandlordId(data.landlord_id);
-//   //       console.log("Landlord ID: ", data.landlord_id);
-//   //
-//   //     } catch (err) {
-//   //       setError(err.response?.data?.message);
-//   //     } finally {
-//   //       setLoading(false);
-//   //     }
-//   //   };
-//   //
-//   //   fetchUnitData();
-//   // }, [user, landlord_id]);
-//
-//   useEffect(() => {
-//     const fetchUnitData = async () => {
-//       try {
-//         const { data } = await axios.get(
-//           `/api/tenant/approved-tenant-property?tenantId=${user.tenant_id}`
-//         );
-//
-//         console.log("Fetched unit data:", data);
-//
-//         if (data) {
-//           setUnit(data[0]);
-//           setLandlordId(data[0].landlord_id);
-//           console.log(setLandlordId(data[0].landlord_id));
-//         }
-//       } catch (err) {
-//         setError(err.response?.data?.message);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-//
-//     fetchUnitData();
-//   }, [user]);
-//
-//   // Handle Pay Security Deposit here
-//   const handleSecurityPayment = async () => {
-//     const result = await Swal.fire({
-//       title: "Pay Security Deposit?",
-//       text: "Are you sure you want to proceed?",
-//       icon: "warning",
-//       showCancelButton: true,
-//       confirmButtonText: "Yes, Pay Now",
-//       cancelButtonText: "Cancel",
-//     });
-//
-//     if (result.isConfirmed) {
-//       setLoadingPayment(true);
-//
-//       setTimeout(() => {
-//         setLoadingPayment(false);
-//         setIsSecurityPaid(true);
-//         Swal.fire("Payment Successful", "Security deposit paid.", "success");
-//       }, 1000);
-//     }
-//   };
-//
-//   //Handle Advanced Payment here
-//   const handleAdvancedPayment = async () => {
-//     const result = await Swal.fire({
-//       title: "Pay Advanced Rent?",
-//       text: "Are you sure you want to proceed?",
-//       icon: "warning",
-//       showCancelButton: true,
-//       confirmButtonText: "Yes, Pay Now",
-//       cancelButtonText: "Cancel",
-//     });
-//
-//     if (result.isConfirmed) {
-//       setLoadingPayment(true);
-//
-//       setTimeout(() => {
-//         setLoadingPayment(false);
-//         setIsAdvancedPaid(true);
-//         Swal.fire("Payment Successful", "Advanced rent paid.", "success");
-//       }, 1000);
-//     }
-//   };
-//
-//   // Handle Access Rent Portal here
-//   const handleAccessRentPortal = () => {
-//     router.push("/pages/tenant/dashboard");
-//   };
-//
-//   // Check required payments
-//   const requiresSecurity = unit?.sec_deposit > 0;
-//   const requiresAdvanced = unit?.advanced_payment > 0;
-//   const allPaymentsMade =
-//     (!requiresSecurity || isSecurityPaid) &&
-//     (!requiresAdvanced || isAdvancedPaid);
-//
-//   const renderAmenities = (amenitiesData) => {
-//     let amenities = [];
-//
-//     try {
-//       if (typeof amenitiesData === "string") {
-//         // Check if it's a valid JSON array (i.e., starts with "[" and ends with "]")
-//         if (
-//           amenitiesData.trim().startsWith("[") &&
-//           amenitiesData.trim().endsWith("]")
-//         ) {
-//           amenities = JSON.parse(amenitiesData);
-//         } else {
-//           // If it's a comma-separated string, split into an array
-//           amenities = amenitiesData.split(",").map((item) => item.trim());
-//         }
-//       } else if (Array.isArray(amenitiesData)) {
-//         amenities = amenitiesData;
-//       }
-//     } catch (e) {
-//       console.error("Error parsing amenities:", e);
-//       return [];
-//     }
-//
-//     return amenities;
-//   };
-//
-//   // Format address from individual fields
-//   const formatAddress = (unit) => {
-//     if (!unit) return "";
-//     return `${unit.street || ""}, ${unit.city || ""}, ${
-//       unit.province
-//         .split("_")
-//         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-//         .join(" ") || ""
-//     } ${unit.zip_code || ""}`.trim();
-//   };
-//
-//   const handleContactLandlord = () => {
-//     if (!landlord_id) {
-//       console.error("Missing landlord_id!");
-//       return;
-//     }
-//     const chatRoom = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
-//
-//     router.push(
-//       `/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${landlord_id}`
-//     );
-//   };
-//
-//   if (loading) return <LoadingScreen />;
-//   if (error) return <ErrorScreen error={error} />;
-//
-//   return (
-//     <div className="flex min-h-screen bg-gray-50">
-//       {/* Left Sidebar */}
-//       <div className="hidden w-64 border-r border-gray-200 bg-white py-6 px-6 md:block">
-//         {/* <div className="mb-8 flex items-center">
-//           <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100">
-//             <UserCircleIcon className="h-6 w-6 text-indigo-700" />
-//           </div>
-//           <div>
-//             <h2 className="text-xl font-semibold text-indigo-900">
-//               My Account
-//             </h2>
-//           </div>
-//         </div> */}
-//         <nav>
-//           <ul className="space-y-3">
-//             <li className="rounded-md bg-indigo-50">
-//               <a
-//                 href="#"
-//                 className="flex items-center space-x-3 rounded-md p-3 font-medium text-indigo-900"
-//               >
-//                 <HomeIcon className="h-5 w-5" />
-//                 <span>Current Unit</span>
-//               </a>
-//             </li>
-//             <li>
-//               <a
-//                 href="#"
-//                 className="flex items-center space-x-3 rounded-md p-3 text-gray-700 transition-colors duration-200 hover:bg-gray-100"
-//               >
-//                 <ClockIcon className="h-5 w-5" />
-//                 <span>Unit History</span>
-//               </a>
-//             </li>
-//             {/* <li>
-//               <a
-//                 href="#"
-//                 className="flex items-center space-x-3 rounded-md p-3 text-gray-700 transition-colors duration-200 hover:bg-gray-100"
-//               >
-//                 <CurrencyDollarIcon className="h-5 w-5" />
-//                 <span>Payment History</span>
-//               </a>
-//             </li> */}
-//           </ul>
-//         </nav>
-//       </div>
-//
-//       {/* Main Content */}
-//       <div className="flex-1">
-//         {/* Mobile Header with Menu Toggle */}
-//         <div className="bg-white shadow-sm md:hidden">
-//           <div className="flex items-center justify-between px-4 py-4">
-//             <div className="flex items-center">
-//               <HomeIcon className="mr-2 h-6 w-6 text-indigo-900" />
-//               <div>
-//                 <h1 className="text-xl font-bold text-indigo-900">My Unit</h1>
-//               </div>
-//             </div>
-//             <button className="rounded-md p-2 text-gray-600 hover:bg-gray-100">
-//               <svg
-//                 xmlns="http://www.w3.org/2000/svg"
-//                 className="h-6 w-6"
-//                 fill="none"
-//                 viewBox="0 0 24 24"
-//                 stroke="currentColor"
-//               >
-//                 <path
-//                   strokeLinecap="round"
-//                   strokeLinejoin="round"
-//                   strokeWidth={2}
-//                   d="M4 6h16M4 12h16M4 18h16"
-//                 />
-//               </svg>
-//             </button>
-//           </div>
-//         </div>
-//
-//         {/* Desktop Header */}
-//         <div className="hidden bg-white shadow-sm md:block">
-//           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-//             <div className="flex items-center">
-//               <HomeIcon className="mr-3 h-7 w-7 text-indigo-900" />
-//               <h1 className="text-2xl font-bold text-indigo-900">
-//                 Current Unit
-//               </h1>
-//             </div>
-//           </div>
-//         </div>
-//
-//         {/* Unit Details */}
-//         <div className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8">
-//           {unit && (
-//             <div className="overflow-hidden rounded-lg bg-white shadow-lg">
-//               <div className="md:flex">
-//                 {/* Left: Unit Image */}
-//                 <div className="relative h-64 md:h-auto md:w-1/2">
-//                   <Image
-//                     src={unit.unit_photo || "/images/apt-img.jpg"}
-//                     alt={unit?.unit_name || "Unit Image"}
-//                     layout="fill"
-//                     objectFit="cover"
-//                     className="h-full w-full"
-//                     loading="lazy"
-//                   />
-//                   <div className="absolute top-4 right-4">
-//                     <span className="rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-800">
-//                       {unit?.property_type?.charAt(0).toUpperCase() +
-//                         unit?.property_type?.slice(1) || "Residential"}
-//                     </span>
-//                   </div>
-//                 </div>
-//
-//                 {/* Right: Unit Details */}
-//                 <div className="p-6 md:w-1/2">
-//                   <div className="mb-6">
-//                     <h2 className="mb-2 text-2xl font-bold text-gray-800">
-//                       {unit.property_name} - Unit {unit.unit_name}
-//                     </h2>
-//
-//                     <div className="mb-4 flex items-center text-sm text-gray-600">
-//                       <InformationCircleIcon className="mr-1 h-4 w-4" />
-//                       <span>{formatAddress(unit)}</span>
-//                     </div>
-//
-//                     <p className="mb-6 line-clamp-4 text-gray-600">
-//                       {unit.description || "No description available"}
-//                     </p>
-//
-//                     <div className="mb-8 flex items-center">
-//                       <BuildingOfficeIcon className="mr-2 h-5 w-5 text-indigo-700" />
-//                       <span className="font-medium text-indigo-700">
-//                         Individual Unit
-//                       </span>
-//                     </div>
-//                   </div>
-//
-//                   <div className="mb-8 space-y-4">
-//                     {unit?.rent_amount && (
-//                       <div className="flex items-center justify-between">
-//                         <span className="font-medium text-gray-700">
-//                           Monthly Rent:
-//                         </span>
-//                         <span className="text-lg font-bold">
-//                           ₱{parseFloat(unit?.rent_amount).toLocaleString()}
-//                         </span>
-//                       </div>
-//                     )}
-//
-//                     {unit?.status && (
-//                       <div className="flex items-center justify-between">
-//                         <span className="font-medium text-gray-700">
-//                           Status:
-//                         </span>
-//                         <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-//                           {unit?.status.charAt(0).toUpperCase() +
-//                             unit?.status.slice(1) || "Current"}
-//                         </span>
-//                       </div>
-//                     )}
-//
-//                     {unit?.unit_size && (
-//                       <div className="flex items-center justify-between">
-//                         <span className="font-medium text-gray-700">
-//                           Unit Size:
-//                         </span>
-//                         <span className="text-gray-900">
-//                           {unit?.unit_size} sqm
-//                         </span>
-//                       </div>
-//                     )}
-//
-//                     {unit?.furnish && (
-//                       <div className="flex items-center justify-between">
-//                         <span className="font-medium text-gray-700">
-//                           Furnish Type:
-//                         </span>
-//                         <span className="capitalize text-gray-900">
-//                           {unit?.furnish
-//                             .split("_")
-//                             .map(
-//                               (word) =>
-//                                 word.charAt(0).toUpperCase() + word.slice(1)
-//                             )
-//                             .join(" ")}
-//                         </span>
-//                       </div>
-//                     )}
-//                   </div>
-//
-//                   <div className="space-y-4">
-//                     {requiresSecurity && !isSecurityPaid && (
-//                       <button
-//                         onClick={handleSecurityPayment}
-//                         className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-indigo-700"
-//                       >
-//                         <CurrencyDollarIcon className="h-5 w-5" />
-//                         Pay Security Deposit
-//                       </button>
-//                     )}
-//
-//                     {requiresAdvanced && !isAdvancedPaid && (
-//                       <button
-//                         onClick={handleAdvancedPayment}
-//                         className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-indigo-700"
-//                       >
-//                         <CurrencyDollarIcon className="h-5 w-5" />
-//                         Pay Advanced Rent
-//                       </button>
-//                     )}
-//
-//                     {allPaymentsMade && (
-//                       <button
-//                         onClick={handleAccessRentPortal}
-//                         className="w-full rounded-lg bg-green-600 px-4 py-3 font-semibold text-white shadow-md transition duration-200 hover:bg-green-700"
-//                       >
-//                         Access Rent Portal
-//                       </button>
-//                     )}
-//                   </div>
-//                 </div>
-//               </div>
-//
-//               {/* Additional Details Section */}
-//               {unit.amenities && (
-//                 <div className="border-t border-gray-200 px-6 py-6">
-//                   <h3 className="mb-4 text-lg font-semibold">
-//                     Amenities & Inclusions
-//                   </h3>
-//                   <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
-//                     {renderAmenities(unit.amenities).map((amenity, index) => (
-//                       <li
-//                         key={index}
-//                         className="flex items-center text-gray-700"
-//                       >
-//                         <CheckCircleIcon className="mr-2 h-5 w-5 text-green-600" />
-//                         {amenity}
-//                       </li>
-//                     ))}
-//                     {renderAmenities(unit.amenities).length === 0 && (
-//                       <li className="italic text-gray-500">
-//                         No amenities information available
-//                       </li>
-//                     )}
-//                   </ul>
-//                 </div>
-//               )}
-//
-//               {/* Quick Actions Section */}
-//               <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
-//                 <div className="flex flex-wrap gap-3">
-//                   <button
-//                     onClick={handleContactLandlord}
-//                     className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-//                   >
-//                     <svg
-//                       xmlns="http://www.w3.org/2000/svg"
-//                       className="mr-2 h-4 w-4"
-//                       fill="none"
-//                       viewBox="0 0 24 24"
-//                       stroke="currentColor"
-//                     >
-//                       <path
-//                         strokeLinecap="round"
-//                         strokeLinejoin="round"
-//                         strokeWidth={2}
-//                         d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-//                       />
-//                     </svg>
-//                     Contact Landlord
-//                   </button>
-//                 </div>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-//
-// const LoadingScreen = () => (
-//   <div className="flex min-h-screen items-center justify-center">
-//     Loading...
-//   </div>
-// );
-//
-// const ErrorScreen = ({ error }) => (
-//   <div className="flex min-h-screen items-center justify-center text-red-500">
-//     <XCircleIcon className="h-8 w-8 mr-2" />
-//     {error}
-//   </div>
-// );
 'use client'
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -484,6 +11,11 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   InformationCircleIcon,
+  ChatBubbleLeftRightIcon,
+  ArrowRightIcon,
+  MapPinIcon,
+  KeyIcon,
+  CreditCardIcon
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
@@ -524,53 +56,35 @@ export default function MyUnit() {
   }, [user]);
 
   const handlePayment = async (type) => {
+    if (!unit) {
+      Swal.fire("Payment Error", "Unit details are not available.", "error");
+      return;
+    }
+  
     const isSecurity = type === "security_deposit";
     const title = isSecurity ? "Pay Security Deposit?" : "Pay Advance Rent?";
-    const amount = isSecurity ? unit.sec_deposit : unit.advanced_payment;
-
+    const amount = isSecurity ? unit?.sec_deposit : unit?.advanced_payment;
+  
     if (!amount || amount <= 0) {
       Swal.fire("Invalid Payment", "Payment amount is not set or is zero.", "error");
       return;
     }
-
+  
     const result = await Swal.fire({
       title,
       text: `Are you sure you want to pay ₱${amount.toLocaleString()} for ${isSecurity ? "Security Deposit" : "Advance Rent"}?`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, Pay Now",
+      confirmButtonText: "Yes, Proceed to Checkout",
       cancelButtonText: "Cancel",
     });
-
+  
     if (result.isConfirmed) {
-      setLoadingPayment(true);
-
-      try {
-        const response = await axios.post("/api/tenant/RegPayment", {
-          agreement_id: unit.agreement_id,
-          amount,
-          payment_method_id: 1,
-          payment_type: type,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          redirectUrl: {
-            success:  "http://localhost:3000/pages/payment/secSuccess",
-            failure: `${window.location.origin}/payment-failure`,
-            cancel: `${window.location.origin}/payment-cancel`,
-          },
-        });
-
-        if (response.status === 200) {
-          window.location.href = response.data.checkoutUrl;
-        }
-      } catch (error) {
-        Swal.fire("Payment Failed", "An error occurred while processing your payment.", "error");
-      } finally {
-        setLoadingPayment(false);
-      }
+      // Redirect user to your custom checkout page
+      router.push(`/pages/tenant/my-unit/checkout?type=${type}&amount=${amount}&agreement_id=${unit?.agreement_id}`);
     }
   };
+  
 
   const handleAccessRentPortal = () => {
     router.push("/pages/tenant/dashboard");
@@ -593,90 +107,291 @@ export default function MyUnit() {
   const requiresAdvanced = unit?.advanced_payment > 0;
   const allPaymentsMade = (!requiresSecurity || isSecurityPaid) && (!requiresAdvanced || isAdvancedPaid);
 
+  // Status badge color logic
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Payment status indicators
+  const PaymentStatus = ({ isPaid, label }) => (
+    <div className="flex items-center gap-2 text-sm">
+      {isPaid ? 
+        <CheckCircleIcon className="h-5 w-5 text-green-500" /> : 
+        <InformationCircleIcon className="h-5 w-5 text-amber-500" />
+      }
+      <span>{label}: {isPaid ? 'Paid' : 'Pending'}</span>
+    </div>
+  );
+
+  // Format complete address
+  const formatAddress = () => {
+    if (!unit) return "";
+    
+    const addressParts = [
+      unit.street,
+      unit.brgy_district,
+      unit.city,
+    ].filter(Boolean);
+    
+    return addressParts.join(", ");
+  };
+
   return (
-      <div className="flex min-h-screen bg-gray-50">
-        {/* Sidebar */}
-        <div className="hidden w-64 border-r border-gray-200 bg-white py-6 px-6 md:block">
-          <nav>
-            <ul className="space-y-3">
-              <li className="rounded-md bg-indigo-50">
-                <a href="#" className="flex items-center space-x-3 rounded-md p-3 font-medium text-indigo-900">
-                  <HomeIcon className="h-5 w-5" />
-                  <span>Current Unit</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100">
-                  <ClockIcon className="h-5 w-5" />
-                  <span>Unit History</span>
-                </a>
-              </li>
-            </ul>
-          </nav>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className="hidden w-64 border-r border-gray-200 bg-white py-6 px-4 md:block">
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-indigo-900">My Rental</h2>
+          <p className="text-sm text-gray-500">Manage your rental property</p>
+        </div>
+        
+        <nav>
+          <ul className="space-y-2">
+            <li className="rounded-md bg-indigo-50">
+              <a href="#" className="flex items-center space-x-3 rounded-md p-3 font-medium text-indigo-900">
+                <HomeIcon className="h-5 w-5" />
+                <span>Current Unit</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100">
+                <ClockIcon className="h-5 w-5" />
+                <span>Unit History</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100">
+                <CreditCardIcon className="h-5 w-5" />
+                <span>Payment History</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 px-4 py-6 md:px-8 md:py-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-indigo-900">My Unit</h1>
+          
+          <button 
+            onClick={handleContactLandlord} 
+            className="mt-3 sm:mt-0 flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            <ChatBubbleLeftRightIcon className="h-5 w-5" />
+            <span>Contact Landlord</span>
+          </button>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 px-6 py-8">
-          <h1 className="text-2xl font-bold text-indigo-900">My Unit</h1>
+        {unit && (
+          <div className="overflow-hidden rounded-xl bg-white shadow-md">
+            {/* Unit photo and header */}
+            <div className="relative h-56 sm:h-72 w-full">
+              {unit.unit_photos && unit.unit_photos.length > 0 ? (
+                <Image 
+                  src={unit.unit_photos[0]} 
+                  alt={`${unit.property_name} - Unit ${unit.unit_name}`} 
+                  layout="fill" 
+                  objectFit="cover" 
+                  className="brightness-90"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-indigo-800"></div>
+              )}
+              
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
+                <div className="absolute bottom-0 left-0 p-6 text-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(unit.status)}`}>
+                      {unit?.status || "Status"}
+                    </span>
+                    <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
+                      {unit?.property_type
+                        ? unit.property_type.charAt(0).toUpperCase() + unit.property_type.slice(1).toLowerCase()
+                        : "Property Type"}
+                    </span>
 
-          {unit && (
-              <div className="overflow-hidden rounded-lg bg-white shadow-lg mt-6">
-                {/* Unit Image */}
-                <div className="relative h-64 md:h-auto md:w-1/2">
-                  <Image src={unit?.unit_photo || "/images/apt-img.jpg"} alt={unit.unit_name} layout="fill" objectFit="cover" />
-                  <div className="absolute top-4 right-4">
-                <span className="rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-800">
-                  {unit?.property_type}
-                </span>
                   </div>
-                </div>
-
-                {/* Unit Details */}
-                <div className="p-6">
-                  <h2 className="text-xl font-bold">{unit?.property_name} - Unit {unit.unit_name}</h2>
-                  <p className="text-gray-600 mt-2">Address: {unit?.address}</p>
-                  <p className="text-gray-600 mt-2">Security Deposit: ₱{unit?.sec_deposit?.toLocaleString()}</p>
-                  <p className="text-gray-600 mt-2">Advance Payment: ₱{unit?.advanced_payment?.toLocaleString()}</p>
-
-                  <div className="mt-4 space-y-3">
-                    <p className="font-medium text-gray-700">Monthly Rent: <span className="text-lg font-bold">₱{unit.rent_amount?.toLocaleString()}</span></p>
-                    <p className="font-medium text-gray-700">Status: <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">{unit.status}</span></p>
+                  <h2 className="text-2xl font-bold">{unit?.property_name} - Unit {unit.unit_name}</h2>
+                  <div className="flex items-center mt-2 text-white/90">
+                    <MapPinIcon className="h-4 w-4 mr-1" />
+                    <p className="text-sm">{formatAddress()}</p>
                   </div>
-
-                  {/* Payment Buttons */}
-                  <div className="mt-6 space-y-4">
-                    {requiresSecurity && !isSecurityPaid && (
-                        <button onClick={() => handlePayment("security_deposit")} className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-3 rounded-lg shadow-md hover:bg-indigo-700">
-                          <CurrencyDollarIcon className="h-5 w-5" />
-                          Pay Security Deposit
-                        </button>
-                    )}
-
-                    {requiresAdvanced && !isAdvancedPaid && (
-                        <button onClick={() => handlePayment("advance_rent")} className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-3 rounded-lg shadow-md hover:bg-indigo-700">
-                          <CurrencyDollarIcon className="h-5 w-5" />
-                          Pay Advance Rent
-                        </button>
-                    )}
-
-                    {allPaymentsMade && (
-                        <button onClick={handleAccessRentPortal} className="w-full bg-green-600 text-white px-4 py-3 rounded-lg shadow-md hover:bg-green-700">
-                          Access Rent Portal
-                        </button>
-                    )}
-                  </div>
-
-                  <button onClick={handleContactLandlord} className="mt-6 w-full border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50">
-                    Contact Landlord
-                  </button>
                 </div>
               </div>
-          )}
-        </div>
+            </div>
+
+            {/* Payment progress card */}
+            <div className="p-6">
+              {/* Unit details card */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Unit Details</h3>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Size</p>
+                      <p className="font-medium">{unit.unit_size || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Furnishing</p>
+                      <p className="font-medium">
+                        {unit.furnish
+                          ?.split("_")
+                          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                          .join(" ") || "Not furnished"}
+                      </p>
+
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Minimum Stay</p>
+                      <p className="font-medium">{unit.min_stay || 'N/A'} month(s)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment Details</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 transition-all hover:shadow-md">
+                    <div className="flex items-center mb-2">
+                      <CurrencyDollarIcon className="h-5 w-5 text-indigo-500 mr-2" />
+                      <p className="text-sm text-gray-500">Monthly Rent</p>
+                    </div>
+                    <p className="text-xl font-bold text-indigo-600">₱{unit.rent_amount?.toLocaleString() || 0}</p>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 transition-all hover:shadow-md">
+                    <div className="flex items-center mb-2">
+                      <KeyIcon className="h-5 w-5 text-indigo-500 mr-2" />
+                      <p className="text-sm text-gray-500">Security Deposit</p>
+                    </div>
+                    <p className="text-xl font-bold text-indigo-600">₱{unit.sec_deposit?.toLocaleString() || 0}</p>
+                    {requiresSecurity && (
+                      <PaymentStatus isPaid={isSecurityPaid} label="Security Deposit" />
+                    )}
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 transition-all hover:shadow-md">
+                    <div className="flex items-center mb-2">
+                      <CreditCardIcon className="h-5 w-5 text-indigo-500 mr-2" />
+                      <p className="text-sm text-gray-500">Advance Payment</p>
+                    </div>
+                    <p className="text-xl font-bold text-indigo-600">₱{unit.advanced_payment?.toLocaleString() || 0}</p>
+                    {requiresAdvanced && (
+                      <PaymentStatus isPaid={isAdvancedPaid} label="Advance Payment" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment action buttons */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
+                
+                {/* Only show security deposit payment if needed */}
+                {requiresSecurity && !isSecurityPaid && (
+                  <button 
+                    onClick={() => handlePayment("security_deposit")} 
+                    disabled={loadingPayment}
+                    className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
+                  >
+                    <div className="flex items-center">
+                      <KeyIcon className="h-6 w-6 mr-3" />
+                      <div>
+                        <p className="font-medium">Pay Security Deposit</p>
+                        <p className="text-xs text-indigo-200">Required to secure your unit</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-bold mr-2">₱{unit.sec_deposit?.toLocaleString()}</span>
+                      <ArrowRightIcon className="h-4 w-4" />
+                    </div>
+                  </button>
+                )}
+                
+                {/* Only show advance rent payment if needed */}
+                {requiresAdvanced && !isAdvancedPaid && (
+                  <button 
+                    onClick={() => handlePayment("advance_rent")} 
+                    disabled={loadingPayment}
+                    className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
+                  >
+                    <div className="flex items-center">
+                      <CurrencyDollarIcon className="h-6 w-6 mr-3" />
+                      <div>
+                        <p className="font-medium">Pay Advance Rent</p>
+                        <p className="text-xs text-indigo-200">Required before move-in</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-bold mr-2">₱{unit.advanced_payment?.toLocaleString()}</span>
+                      <ArrowRightIcon className="h-4 w-4" />
+                    </div>
+                  </button>
+                )}
+                
+                {/* Show rent portal access when all payments are made */}
+                {allPaymentsMade && (
+                  <button 
+                    onClick={handleAccessRentPortal} 
+                    className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg shadow-md hover:from-green-700 hover:to-green-800 transition-all transform hover:scale-[1.01]"
+                  >
+                    <div className="flex items-center">
+                      <BuildingOfficeIcon className="h-6 w-6 mr-3" />
+                      <div>
+                        <p className="font-medium">Access Rent Portal</p>
+                        <p className="text-xs text-green-200">Manage your monthly payments</p>
+                      </div>
+                    </div>
+                    <ArrowRightIcon className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Mobile contact landlord button */}
+              <div className="mt-8 md:hidden">
+                <button 
+                  onClick={handleContactLandlord} 
+                  className="w-full flex items-center justify-center gap-2 py-3 border border-indigo-200 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
+                >
+                  <ChatBubbleLeftRightIcon className="h-5 w-5" />
+                  <span>Contact Landlord</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
   );
 }
 
+const LoadingScreen = () => (
+  <div className="flex items-center justify-center h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+    <span className="ml-3 text-lg text-indigo-600">Loading your unit details...</span>
+  </div>
+);
 
-const LoadingScreen = () => <div className="flex items-center justify-center h-screen">Loading...</div>;
-const ErrorScreen = ({ error }) => <div className="flex items-center justify-center h-screen text-red-500"><XCircleIcon className="h-8 w-8 mr-2" />{error}</div>;
+const ErrorScreen = ({ error }) => (
+  <div className="flex flex-col items-center justify-center h-screen px-4 text-center">
+    <XCircleIcon className="h-16 w-16 text-red-500 mb-4" />
+    <h2 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h2>
+    <p className="text-red-500 mb-6">{error || "Failed to load unit details"}</p>
+    <button 
+      onClick={() => window.location.reload()} 
+      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+    >
+      Try Again
+    </button>
+  </div>
+);
