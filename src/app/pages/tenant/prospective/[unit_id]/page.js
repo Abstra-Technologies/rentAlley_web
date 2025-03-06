@@ -350,6 +350,84 @@ const TenantApplicationForm = () => {
               />
             </div>
 
+            <div className="mb-4">
+              <label
+                htmlFor="occupation"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                Your Occupation
+              </label>
+              <select
+                id="occupation"
+                className="w-full border border-gray-300 bg-white text-gray-700 rounded py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={formData.occupation || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, occupation: e.target.value })
+                }
+              >
+                <option value="" disabled>
+                  Select Occupation
+                </option>
+                {occupations.map((occupation) => (
+                  <option key={occupation.value} value={occupation.value}>
+                    {occupation.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label
+                htmlFor="employment_type"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                Employment Type
+              </label>
+              <select
+                id="employment_type"
+                className="w-full border border-gray-300 bg-white text-gray-700 rounded py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={formData.employment_type || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, employment_type: e.target.value })
+                }
+              >
+                <option value="" disabled>
+                  Select Employment Type
+                </option>
+                {employmentTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label
+                htmlFor="monthly_income"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                Monthly Income Range
+              </label>
+              <select
+                id="monthly_income"
+                className="w-full border border-gray-300 bg-white text-gray-700 rounded py-2 px-4 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={formData.monthly_income || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, monthly_income: e.target.value })
+                }
+              >
+                <option value="" disabled>
+                  Select Monthly Income
+                </option>
+                {monthlyIncomeRanges.map((range) => (
+                  <option key={range.value} value={range.value}>
+                    {range.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Address */}
             <div className="mb-4">
               <label
@@ -368,84 +446,6 @@ const TenantApplicationForm = () => {
                 }
               />
             </div>
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="occupation"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
-              Your Occupation
-            </label>
-            <select
-              id="occupation"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              value={formData.occupation || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, occupation: e.target.value })
-              }
-            >
-              <option value="" disabled>
-                Select Occupation
-              </option>
-              {occupations.map((occupation) => (
-                <option key={occupation.value} value={occupation.value}>
-                  {occupation.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="employment_type"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
-              Employment Type
-            </label>
-            <select
-              id="employment_type"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              value={formData.employment_type || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, employment_type: e.target.value })
-              }
-            >
-              <option value="" disabled>
-                Select Employment Type
-              </option>
-              {employmentTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="monthly_income"
-              className="block text-gray-700 text-sm font-bold mb-2"
-            >
-              Monthly Income Range
-            </label>
-            <select
-              id="monthly_income"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              value={formData.monthly_income || ""}
-              onChange={(e) =>
-                setFormData({ ...formData, monthly_income: e.target.value })
-              }
-            >
-              <option value="" disabled>
-                Select Monthly Income
-              </option>
-              {monthlyIncomeRanges.map((range) => (
-                <option key={range.value} value={range.value}>
-                  {range.label}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="flex justify-end space-x-4">

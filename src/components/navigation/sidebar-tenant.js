@@ -12,7 +12,6 @@ const menuItems = [
     label: "Maintenance Request",
   },
   { href: "/pages/tenant/billing", icon: CreditCard, label: "Billing Payment" },
-  { href: "/pages/tenant/my-unit", icon: Building, label: "My Unit" },
 ];
 
 const TenantLayout = ({ children }) => {
@@ -45,9 +44,15 @@ const TenantLayout = ({ children }) => {
                       }
                     `}
                   >
-                    <Icon className={`w-5 h-5 mr-3 ${isActive ? "text-blue-700" : "text-gray-500"}`} />
+                    <Icon
+                      className={`w-5 h-5 mr-3 ${
+                        isActive ? "text-blue-700" : "text-gray-500"
+                      }`}
+                    />
                     <span>{label}</span>
-                    {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>}
+                    {isActive && (
+                      <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>
+                    )}
                   </Link>
                 </li>
               );
