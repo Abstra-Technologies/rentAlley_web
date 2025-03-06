@@ -8,6 +8,8 @@ import Swal from "sweetalert2";
 import useAuthStore from "../../../../zustand/authStore";
 import { logEvent } from "../../../../utils/gtag";
 import { requestNotificationPermission } from "../../../../lib/firebaseMessaging";
+import Footer from "../../../../components/navigation/footer";
+import Image from "next/image";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -123,30 +125,32 @@ export default function Login() {
         );
 
         setErrorMessage(data.error || "Invalid credentials");
+        Swal.fire("Error", data.error || "Invalid credentials", "error");
       }
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage("Invalid credentials");
+
+      Swal.fire("Error", "Something went wrong. Please try again.", "error");
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
+    <>
+    <div className="relative flex justify-center items-center h-screen bg-gray-100 overflow-hidden">
+      <Image 
+                  src="/images/hero-section.jpeg" 
+                  alt="Cityscape view of high-rise buildings" 
+                  fill
+                  className="object-cover brightness-75 z-0"
+                  priority
+                />
+      <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
         <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">
           Rentahan
         </h1>
 
-        {errorMessage && (
-          <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-            {errorMessage}
-          </div>
-        )}
-        {message && (
-          <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
-            {message}
-          </div>
-        )}
+        
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
@@ -241,5 +245,8 @@ export default function Login() {
         </p>
       </div>
     </div>
+    {/* Footer Section */}
+   <Footer />
+   </>
   );
 }

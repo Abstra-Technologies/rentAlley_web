@@ -1,46 +1,75 @@
-// Add  Confirm new Password part. and validation.
+// Add Confirm new Password part. and validation.
 
 'use client';
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { logEvent } from "../../../../utils/gtag";
-import { useRouter } from "next/navigation"; // Import Next.js router
+import { useRouter } from "next/navigation";
+import Footer from "../../../../components/navigation/footer";
+import Image from "next/image";
 
 export default function ForgotPassword() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState(1); // Default step
+  const [step, setStep] = useState(1);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
 
-  // Ensure localStorage is accessed only on the client-side
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedStep = Number(localStorage.getItem("forgotPasswordStep"));
+      const storedStep = Number(sessionStorage.getItem("forgotPasswordStep"));
       if (storedStep) setStep(storedStep);
+      
+      const storedEmail = sessionStorage.getItem("forgotPasswordEmail");
+      if (storedEmail) setEmail(storedEmail);
+  
+      const countdownEnd = Number(sessionStorage.getItem("otpCountdownEnd"));
+      if (countdownEnd) {
+        const remaining = countdownEnd - Date.now();
+        if (remaining > 0) setTimer(Math.floor(remaining / 1000));
+      }
     }
   }, []);
+  
 
-  // Save step to localStorage only on the client-side
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("forgotPasswordStep", step);
+      sessionStorage.setItem("forgotPasswordStep", step);
     }
   }, [step]);
 
-  // Reset process when user navigates away
+  useEffect(() => {
+    let interval;
+    if (step === 2 && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
+
   useEffect(() => {
     const handleRouteChange = () => {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("forgotPasswordStep");
+        sessionStorage.removeItem("forgotPasswordStep");
+        sessionStorage.removeItem("otpCountdownEnd");
       }
     };
 
-    router.prefetch("/pages/auth/login"); //Prefetch login page for faster navigation
+    router.prefetch("/pages/auth/login");
     router.events?.on("routeChangeStart", handleRouteChange);
 
     return () => {
@@ -59,10 +88,32 @@ export default function ForgotPassword() {
       await axios.post("/api/auth/reset-request", { email });
       toast.success("OTP sent to your email. Enter OTP to proceed.");
       setStep(2);
+
+      sessionStorage.setItem("forgotPasswordEmail", email);
+
+      const countdownEnd = Date.now() + 10 * 60 * 1000;
+      sessionStorage.setItem("otpCountdownEnd", countdownEnd);
+      setTimer(10 * 60);
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to send OTP.");
     }
     setLoading(false);
+  };
+
+  const handleResendOTP = async () => {
+    if (resendLoading || timer > 0) return;
+
+    setResendLoading(true);
+    try {
+      const response = await axios.post("/api/auth/resend-otp-password", { email });
+      toast.success(response.data.message || "New OTP sent to your email.");
+      const countdownEnd = Date.now() + 10 * 60 * 1000;
+      sessionStorage.setItem("otpCountdownEnd", countdownEnd);
+      setTimer(10 * 60);
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to resend OTP.");
+    }
+    setResendLoading(false);
   };
 
   const handleVerifyOTP = async () => {
@@ -83,34 +134,29 @@ export default function ForgotPassword() {
     setLoading(false);
   };
 
-  const [resendLoading, setResendLoading] = useState(false);
-
-  const handleResendOTP = async () => {
-    if (resendLoading) return;
-
-    setResendLoading(true);
-    try {
-      const response = await axios.post("/api/auth/resend-otp-password", { email });
-      toast.success(response.data.message || "New OTP sent to your email.");
-    } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to resend OTP.");
-    }
-    setResendLoading(false);
-  };
-
   const handleResetPassword = async () => {
     if (!newPassword || newPassword.length < 6) {
       toast.error("Password must be at least 6 characters.");
       return;
     }
 
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    if (!resetToken) {
+      toast.error("Missing reset token.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await axios.post("/api/auth/reset-password", { resetToken, newPassword });
+      await axios.post("/api/auth/reset-password", { resetToken, newPassword }, {
+        headers: { "Content-Type": "application/json" },
+      });
       toast.success("Password reset successfully! Redirecting...");
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("forgotPasswordStep");
-      }
+      sessionStorage.clear();
       setTimeout(() => router.push("/pages/auth/login"), 2000);
     } catch (error) {
       toast.error(error.response?.data?.message || "Password reset failed.");
@@ -119,9 +165,17 @@ export default function ForgotPassword() {
   };
 
   return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
+    <>
+      <div className="relative flex justify-center items-center h-screen bg-gray-100 overflow-hidden">
         <ToastContainer />
-        <div className="bg-white p-6 rounded-lg shadow-md w-96">
+        <Image 
+            src="/images/hero-section.jpeg" 
+            alt="Cityscape view of high-rise buildings" 
+            fill
+            className="object-cover brightness-75 z-0"
+            priority
+          />
+        <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
           <h2 className="text-2xl font-bold mb-4 text-center">Forgot Password</h2>
 
           {step === 1 && (
@@ -147,45 +201,39 @@ export default function ForgotPassword() {
               </>
           )}
 
+          {/* Step 2 - OTP */}
           {step === 2 && (
-              <>
-                <h3 className="text-lg font-semibold mt-4 text-center">Enter OTP</h3>
-                <p className="text-gray-600 text-sm text-center mb-4">
-                  A 6-digit OTP has been sent to your email.
-                </p>
+            <>
+              <h3 className="text-lg font-semibold mt-4 text-center">Enter OTP</h3>
+              <p className="text-gray-600 text-sm text-center mb-4">
+                A 6-digit OTP has been sent to your email.
+              </p>
 
-                <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    placeholder="Enter OTP"
-                    className="w-full p-2 border rounded-md mb-2 text-center"
-                    maxLength="6"
-                    required
-                />
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Enter OTP"
+                className="w-full p-2 border rounded-md mb-2 text-center"
+                maxLength="6"
+                required
+              />
 
-                <button
-                    onClick={handleVerifyOTP}
-                    className="w-full p-2 bg-green-600 text-white rounded-md"
-                    disabled={loading}
-                >
-                  {loading ? "Verifying..." : "Verify OTP"}
-                </button>
+              <button
+                onClick={handleVerifyOTP}
+                className="w-full p-2 bg-green-600 text-white rounded-md"
+                disabled={loading}
+              >
+                {loading ? "Verifying..." : "Verify OTP"}
+              </button>
 
-                {/* ✅ Add Resend OTP Button Below */}
-                <p className="text-center text-sm text-gray-500 mt-3">
-                  Didn't receive an OTP?{" "}
-                  <button
-                      onClick={handleResendOTP}
-                      className="text-blue-600 font-medium hover:underline"
-                      disabled={resendLoading}
-                  >
-                    {resendLoading ? "Resending..." : "Resend OTP"}
-                  </button>
-                </p>
-              </>
+              <p className="text-center text-sm text-gray-500 mt-3">
+                {timer > 0
+                  ? `Resend available in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}`
+                  : (<>Didn't receive an OTP? <button onClick={handleResendOTP} className="text-blue-600 font-medium hover:underline">Resend OTP</button></>)}
+              </p>
+            </>
           )}
-
 
           {step === 3 && (
               <>
@@ -198,6 +246,16 @@ export default function ForgotPassword() {
                     className="w-full p-2 border rounded-md mb-2 text-center"
                     required
                 />
+
+                <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full p-2 border rounded-md mb-2 text-center"
+                    required
+                />
+
                 <button
                     onClick={handleResetPassword}
                     className="w-full p-2 bg-green-600 text-white rounded-md"
@@ -209,5 +267,8 @@ export default function ForgotPassword() {
           )}
         </div>
       </div>
+      {/* Footer Section */}
+      <Footer />
+           </>
   );
 }
