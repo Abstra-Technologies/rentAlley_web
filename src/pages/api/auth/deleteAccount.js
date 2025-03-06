@@ -2,7 +2,7 @@ import { db } from "../../../lib/db";
 
 export default async function DeleteAccount(req, res) {
     try {
-        console.log("Received request contents:",req.body);
+        console.log("Received request contents:", req.body);
 
         if (req.method !== "POST") {
             return res.status(405).json({ error: "Method Not Allowed. Use POST." });
@@ -14,8 +14,6 @@ export default async function DeleteAccount(req, res) {
             return res.status(400).json({ error: "Missing user_id or userType in request." });
         }
 
-        let landlordId = null;
-
         if (userType === "landlord") {
             console.log("Checking if user is a landlord...");
 
@@ -26,9 +24,10 @@ export default async function DeleteAccount(req, res) {
 
             if (!landlordRows || landlordRows.length === 0) {
                 console.error("No landlord found for user_id:", user_id);
+                return res.status(400).json({ error: "Landlord account not found." });
             }
 
-            landlordId = landlordRows[0].landlord_id;
+            const landlordId = landlordRows[0].landlord_id;
             console.log("Landlord found:", landlordId);
 
             const [leaseRows] = await db.query(
@@ -41,10 +40,6 @@ export default async function DeleteAccount(req, res) {
                 [landlordId]
             );
 
-            if (!leaseRows || leaseRows.length === 0) {
-                console.error("No lease count received");
-            }
-
             const activeLeaseCount = parseInt(leaseRows[0]?.active_lease_count || 0);
             console.log("Active Lease Count:", activeLeaseCount);
 
@@ -54,11 +49,15 @@ export default async function DeleteAccount(req, res) {
             }
         }
 
-        if (userType === "tenant"){
+        if (userType === "tenant") {
             const [tenantRows] = await db.query(
                 `SELECT tenant_id FROM Tenant WHERE user_id = ?`,
                 [user_id]
             );
+
+            if (!tenantRows || tenantRows.length === 0) {
+                return res.status(400).json({ error: "Tenant account not found." });
+            }
 
             const tenantId = tenantRows[0].tenant_id;
 
@@ -88,8 +87,8 @@ export default async function DeleteAccount(req, res) {
 
         return res.json({ message: "Your account has been deactivated. You can reactivate anytime by logging in." });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+        console.error("Error deactivating account:", error);
         return res.status(500).json({ error: "Failed to deactivate account." });
     }
 }

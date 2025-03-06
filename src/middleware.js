@@ -27,6 +27,8 @@ const permissionMapping = {
 const excludePages = [
   "/pages/system_admin/dashboard",
   "/pages/system_admin/profile",
+  "/pages/system_admin/supportIssues",
+
 ];
 
 export async function middleware(req) {
