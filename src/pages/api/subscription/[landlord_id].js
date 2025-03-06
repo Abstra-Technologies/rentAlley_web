@@ -8,12 +8,13 @@ export default async function getSubscriptionLandlord(req, res) {
     const { landlord_id } = req.query;
 
     if (!landlord_id) {
-        return res.status(400).json({ error: "Invalid request" });
+        return res.status(400).json({ error: "Invalid request, missing landlord_id" });
     }
 
     try {
+        // Fetch subscription details
         const [rows] = await db.query(
-            "SELECT plan_name, status, start_date, end_date, payment_status, is_trial FROM Subscription WHERE landlord_id = ? and is_active = 1",
+            "SELECT plan_name, start_date, end_date, payment_status, is_trial FROM Subscription WHERE landlord_id = ? AND is_active = 1",
             [landlord_id]
         );
 
@@ -24,17 +25,13 @@ export default async function getSubscriptionLandlord(req, res) {
         let subscription = rows[0];
 
         const currentDate = new Date();
-        console.log(currentDate);
-        const trialEndDate = subscription.end_date ? new Date(subscription.end_date) : null;
         const subscriptionEndDate = subscription.end_date ? new Date(subscription.end_date) : null;
 
-        // Remove trial_end_date if the trial has expired or user has paid
-        if (subscription.payment_status === "Paid" || (trialEndDate && trialEndDate <= currentDate)) {
-            delete subscription.trial_end_date;
+        // If the subscription has expired, mark it as inactive
+        if (subscriptionEndDate && subscriptionEndDate < currentDate && subscription.is_active === 1) {
+            await db.query("UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?", [landlord_id]);
+            subscription.is_active = 0; // Update the response immediately
         }
-
-        // if subscription is expired
-        subscription.isSubscriptionExpired = subscriptionEndDate && subscriptionEndDate <= currentDate;
 
         return res.status(200).json(subscription);
     } catch (error) {

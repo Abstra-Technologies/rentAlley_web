@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import useAuth from "../../../hooks/useSession";
 
+
+
 export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
     const { user, loading, error } = useAuth();
     const [subscription, setSubscription] = useState(null);
@@ -37,32 +39,42 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                         <h2 className="text-xl font-semibold text-blue-600">Your Subscription</h2>
 
                         <p><strong>Plan Name:</strong> {subscription?.plan_name}</p>
-                        <p><strong>Status:</strong> {subscription?.status}</p>
                         <p><strong>Start Date:</strong> {subscription?.start_date ? new Date(subscription.start_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "N/A"}</p>
                         <p><strong>End Date:</strong> {subscription?.end_date ? new Date(subscription.end_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) + " at 11:59 PM" : "N/A"}</p>
-
                         <p><strong>Payment Status:</strong> {subscription?.payment_status}</p>
 
-                        {subscription?.is_trial === 0 && (
-                            <Link href='/pages/landlord/sub_two/subscription' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
-                                Upgrade Plan
-                            </Link>
-                        )}
+                        {/* 🔴 If Subscription is Inactive (Automatically Downgraded) */}
+                        {subscription?.is_active === 0 ? (
+                            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                                <p className="font-semibold">⚠ Your subscription has expired, your account is automatically downgraded to the free plan!</p>
+                                <Link href="/pages/landlord/sub_two/subscription" className="mt-2 inline-block bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                                    Subscribe to a Plan
+                                </Link>
+                            </div>
+                        ) : (
+                            <>
+                                {/* ✅ If Subscription is Active */}
+                                {subscription?.is_trial === 0 && (
+                                    <Link href='/pages/landlord/sub_two/subscription' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
+                                        Upgrade Plan
+                                    </Link>
+                                )}
 
-                        {subscription?.is_trial === 1 && (
-                            <p className="text-green-600 font-semibold">
-                                You are currently on a trial period until {new Date(subscription.end_date).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                            })}.
-                            </p>
-                        )}
-
-                        {subscription?.is_trial === 1 && (
-                            <Link href='/pages/landlord/sub_two/upgrade' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
-                                Subscribe to a Plan
-                            </Link>
+                                {subscription?.is_trial === 1 && subscription?.is_active === 1 && (
+                                    <>
+                                        <p className="text-green-600 font-semibold">
+                                            You are currently on a trial period until {new Date(subscription.end_date).toLocaleDateString("en-US", {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                        })}.
+                                        </p>
+                                        <Link href='/pages/landlord/sub_two/upgrade' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
+                                            Subscribe to a Plan
+                                        </Link>
+                                    </>
+                                )}
+                            </>
                         )}
                     </div>
                 ) : (
@@ -76,5 +88,4 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
             </div>
         </div>
     );
-
 }

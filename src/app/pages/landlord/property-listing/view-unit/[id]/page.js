@@ -6,18 +6,25 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 import { BuildingOffice2Icon, HomeIcon, PlusCircleIcon, ClipboardDocumentListIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import useAuth from "../../../../../../../hooks/useSession";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 const ViewUnitPage = () => {
   const { id } = useParams();
   const router = useRouter();
-
+  const { user } = useAuth();
+const landlord_id = user?.landlord_id;
   // Fetch property details
   const { data: property } = useSWR(
     id ? `/api/propertyListing/property/${id}` : null,
     fetcher
   );
+  const { data: subscription, isLoading: loadingSubscription } = useSWR(
+      `/api/subscription/getCurrentPlan/${landlord_id}`,
+      fetcher
+  );
+
 
   // Fetch units for the specific property
   const { data: units, error, isLoading } = useSWR(
@@ -25,28 +32,40 @@ const ViewUnitPage = () => {
     fetcher
   );
 
-  // Handle Edit Unit
   const handleEditUnit = (unitId) => {
     router.push(
       `/pages/landlord/property-listing/view-unit/${id}/edit-unit/${unitId}`
     );
   };
 
-  // Function to navigate to Create Unit page with property_id
   const handleAddUnitClick = () => {
-    router.push(
-      `/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`
-    );
+    if (!subscription) {
+      Swal.fire(
+          "Subscription Required",
+          "You need an active subscription to add a unit. Please subscribe to continue.",
+          "warning"
+      );
+      return;
+    }
+
+    if (units.length >= subscription.listingLimits.maxUnits) {
+      Swal.fire(
+          "Unit Limit Reached",
+          `You have reached the maximum unit limit (${subscription.listingLimits.maxUnits}) for your plan.`,
+          "error"
+      );
+      return;
+    }
+
+    router.push(`/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`);
   };
 
-  // Function to view unit details
   const handleViewUnit = (unitId) => {
     router.push(
       `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unitId}`
     );
   };
 
-  // Function to handle deleting a unit
   const handleDeleteUnit = async (unitId) => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -101,13 +120,33 @@ const ViewUnitPage = () => {
           <p className="text-gray-600 mb-4">
             Manage units for this property
           </p>
+          {subscription && (
+              <p className="text-gray-600 text-sm mb-2">
+                <span className="font-medium">{units?.length}/{subscription.listingLimits.maxUnits}</span> units used
+              </p>
+          )}
           <button
-            className="flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-            onClick={handleAddUnitClick}
+              className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
+                  loadingSubscription || !subscription || (units?.length >= subscription?.listingLimits?.maxUnits)
+                      ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+              onClick={handleAddUnitClick}
+              disabled={loadingSubscription || !subscription || (units?.length >= subscription?.listingLimits?.maxUnits)}
           >
             <PlusCircleIcon className="h-5 w-5 mr-2" />
             Add New Unit
           </button>
+          {subscription && units?.length >= subscription.listingLimits.maxUnits && (
+              <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                <div className="flex items-center">
+                  <ExclamationCircleIcon className="h-6 w-6 text-red-600 mr-2" />
+                  <p className="font-semibold">
+                    You have reached your unit limit. Upgrade your plan to add more.
+                  </p>
+                </div>
+              </div>
+          )}
         </div>
 
         {/* Units Section */}

@@ -83,6 +83,7 @@ const PropertyListingPage = () => {
       setShowVerifyPopup(true);
       return;
     }
+
     if (!subscription) {
       Swal.fire(
           "Subscription Required",
@@ -92,10 +93,16 @@ const PropertyListingPage = () => {
       return;
     }
 
-    if (
-        subscription &&
-        properties.length >= subscription.listingLimits.maxProperties
-    ) {
+    if (!subscription.listingLimits || !subscription.listingLimits.maxProperties) {
+      Swal.fire(
+          "Error",
+          "Subscription data is incomplete. Please try again later.",
+          "error"
+      );
+      return;
+    }
+
+    if (properties.length >= subscription.listingLimits.maxProperties) {
       Swal.fire(
           "Property Limit Reached",
           `You have reached the maximum property limit (${subscription.listingLimits.maxProperties}) for your plan.`,
@@ -104,9 +111,10 @@ const PropertyListingPage = () => {
       return;
     }
 
-    // Proceed to add a property
+    // Proceed to add a property if the criteria above are satisfied.
     router.push(`/pages/landlord/property-listing/create-property`);
   };
+
 
   const handleDelete = useCallback(async (propertyId, event) => {
     event.stopPropagation();
@@ -192,7 +200,7 @@ const PropertyListingPage = () => {
                           ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                           : !subscription
                               ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                              : subscription?.status !== "active"
+                              : subscription?.is_active !== 1
                                   ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                                   : isVerified
                                       ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -204,7 +212,7 @@ const PropertyListingPage = () => {
                       fetchingSubscription ||
                       !isVerified ||
                       !subscription ||
-                      subscription?.status !== "active"
+                      subscription?.is_active !== 1
                   }
               >
                 {isFetchingVerification || fetchingSubscription ? (
@@ -227,9 +235,8 @@ const PropertyListingPage = () => {
               {!subscription && (
                   <p className="text-red-500 text-xs">You need a subscription to add properties.</p>
               )}
-              {subscription && subscription?.status !== "active" && (
-                  <p className="text-red-500 text-xs">Your subscription is expired. Renew to continue.</p>
-              )}
+
+
             </div>
           </div>
           <p className="text-gray-600">
@@ -278,118 +285,136 @@ const PropertyListingPage = () => {
     </div>
   ) : (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {properties.map((property) => (
-        <div
-          key={property?.property_id}
-          className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col"
-        >
-          {/* Property Image - Fixed height */}
-          <div
-            className="h-48 cursor-pointer"
-            onClick={(event) => handleView(property, event)}
-          >
-            {property.photos.length > 0 ? (
-              <Image
-                src={property.photos[0].photo_url}
-                alt={property.property_name}
-                width={400}
-                height={250}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                <BuildingOffice2Icon className="h-12 w-12 text-gray-400" />
-              </div>
-            )}
-          </div>
+      {properties.map((property, index) => {
+        const isDisabled = subscription && index >= subscription.listingLimits.maxProperties;
 
-          {/* Property Details - Flex grow to fill space */}
-          <div className="p-4 flex-1 flex flex-col">
-            <div className="mb-2 flex-1">
-              {/* Truncate long text */}
-              <h3 className="text-xl font-bold text-gray-800 mb-1 truncate">
-                {property?.property_name}
-              </h3>
-              <div className="flex items-start text-gray-600 text-sm mb-2">
-                <MapPinIcon className="h-4 w-4 mr-1 flex-shrink-0 mt-0.5" />
-                <p className="line-clamp-2">
-                  {property?.street}, {property?.city},{" "}
-                  {property?.province
-                    .split("_")
-                    .map(
-                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                    )
-                    .join(" ")}{" "}
-                </p>
-              </div>
-              <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                {property?.property_type.charAt(0).toUpperCase() +
-                  property?.property_type.slice(1)}
-              </span>
+        return (
+            <div
+                key={property?.property_id}
+                className={`relative bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden transition-shadow h-full flex flex-col ${
+                    isDisabled ? "opacity-50 pointer-events-none" : "hover:shadow-md"
+                }`}
+            >
+              {/* Disabled Overlay for Exceeded Properties */}
+              {isDisabled && (
+                  <div className="absolute inset-0 bg-gray-100 bg-opacity-75 flex flex-col items-center justify-center text-gray-500 font-semibold">
+                    <p className="text-red-600 font-bold">Locked - Upgrade Plan</p>
+                    <Link href="/pages/landlord/sub_two/subscription" className="mt-2 text-blue-600 underline text-sm">
+                      Upgrade Subscription
+                    </Link>
+                  </div>
+              )}
 
-
-              <div className="flex items-center space-x-2">
-                {/* Verification Status Badge */}
-                <span
-                    className={`inline-block px-3 py-1 text-xs font-semibold rounded-full 
-      ${
-                        property?.verification_status === "Verified"
-                            ? "bg-green-100 text-green-700"
-                            : property?.verification_status === "Pending"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : property?.verification_status === "Rejected"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-gray-100 text-gray-700"
-                    }`}
-                >
-          {property?.verification_status || "Not Submitted"}
-        </span>
-
-                {property?.verification_status === "Rejected" && (
-                    <button
-                        className="px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
-                        onClick={() => router.push(`/pages/landlord/property-listing/resubmit-verification/${property?.property_id}`)
-                        }
-                    >
-                      Resubmit
-                    </button>
+              {/* Property Image - Fixed height */}
+              <div
+                  className="h-48 cursor-pointer"
+                  onClick={!isDisabled ? (event) => handleView(property, event) : undefined}
+              >
+                {property.photos.length > 0 ? (
+                    <Image
+                        src={property.photos[0].photo_url}
+                        alt={property.property_name}
+                        width={400}
+                        height={250}
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                      <BuildingOffice2Icon className="h-12 w-12 text-gray-400" />
+                    </div>
                 )}
               </div>
 
-            </div>
+              {/* Property Details - Flex grow to fill space */}
+              <div className="p-4 flex-1 flex flex-col">
+                <div className="mb-2 flex-1">
+                  <h3 className="text-xl font-bold text-gray-800 mb-1 truncate">
+                    {property?.property_name}
+                  </h3>
+                  <div className="flex items-start text-gray-600 text-sm mb-2">
+                    <MapPinIcon className="h-4 w-4 mr-1 flex-shrink-0 mt-0.5" />
+                    <p className="line-clamp-2">
+                      {property?.street}, {property?.city},{" "}
+                      {property?.province
+                          .split("_")
+                          .map(
+                              (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                          )
+                          .join(" ")}
+                    </p>
+                  </div>
+                  <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                        {property?.property_type.charAt(0).toUpperCase() +
+                            property?.property_type.slice(1)}
+                    </span>
 
-            {/* Action buttons at the bottom */}
-            <div className="mt-auto pt-4 border-t border-gray-100">
-              <div className="flex justify-between">
-                <button
-                  className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
-                  onClick={(event) => handleView(property, event)}
-                >
-                  <HomeIcon className="h-4 w-4 mr-1" />
-                  View Units
-                </button>
+                  <div className="flex items-center space-x-2">
+                    {/* Verification Status Badge */}
+                    <span
+                        className={`inline-block px-3 py-1 text-xs font-semibold rounded-full 
+                                ${
+                            property?.verification_status === "Verified"
+                                ? "bg-green-100 text-green-700"
+                                : property?.verification_status === "Pending"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : property?.verification_status === "Rejected"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-gray-100 text-gray-700"
+                        }`}
+                    >
+                            {property?.verification_status || "Not Submitted"}
+                        </span>
 
-                <div className="flex space-x-2">
-                  <button
-                    className="p-2 text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
-                    onClick={(event) => handleEdit(property?.property_id, event)}
-                    aria-label="Edit property"
-                  >
-                    <PencilSquareIcon className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                    onClick={(event) => handleDelete(property?.property_id, event)}
-                    aria-label="Delete property"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
+                    {property?.verification_status === "Rejected" && (
+                        <button
+                            className="px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                            onClick={() =>
+                                router.push(`/pages/landlord/property-listing/resubmit-verification/${property?.property_id}`)
+                            }
+                        >
+                          Resubmit
+                        </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action buttons at the bottom */}
+                <div className="mt-auto pt-4 border-t border-gray-100">
+                  <div className="flex justify-between">
+                    <button
+                        className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                        onClick={!isDisabled ? (event) => handleView(property, event) : undefined}
+                        disabled={isDisabled}
+                    >
+                      <HomeIcon className="h-4 w-4 mr-1" />
+                      View Units
+                    </button>
+
+                    <div className="flex space-x-2">
+                      <button
+                          className="p-2 text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
+                          onClick={!isDisabled ? (event) => handleEdit(property?.property_id, event) : undefined}
+                          disabled={isDisabled}
+                          aria-label="Edit property"
+                      >
+                        <PencilSquareIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                          onClick={!isDisabled ? (event) => handleDelete(property?.property_id, event) : undefined}
+                          disabled={isDisabled}
+                          aria-label="Delete property"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
+
     </div>
   )}
 </div>

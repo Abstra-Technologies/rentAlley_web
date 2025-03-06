@@ -53,7 +53,7 @@ export default async function handler(req, res) {
         if (plan_name === "Free Plan") {
 
             await connection.execute(
-                "INSERT INTO Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, is_trial, trial_end_date, created_at, request_reference_number, is_active) VALUES (?, ?, 'active', ?, '', 'paid', 0, '', NOW(), 0, 1)",
+                "INSERT INTO Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, is_trial, created_at, request_reference_number, is_active) VALUES (?, ?, 'active', ?, '', 'paid', 0, '', NOW(), 0, 1)",
                 [landlord_id, plan_name, startDate]
             );
 

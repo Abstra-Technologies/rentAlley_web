@@ -49,13 +49,14 @@ export default async function paymentSuccess(req, res) {
 
         console.log("[DEBUG] Inserting New Subscription...");
         await connection.execute(
-            "INSERT INTO Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, created_at, request_reference_number, is_trial, trial_end_date, amount_paid, is_active) VALUES (?, ?, 'active', ?, ?, 'paid', NOW(), ?, 0, NULL, ?, 1)",
+            "INSERT INTO Subscription (landlord_id, plan_name, start_date, end_date, payment_status, created_at, request_reference_number, is_trial, amount_paid, is_active)" +
+            " VALUES (?, ?, ?, ?, 'paid', NOW(), ?, 0, ?, 1)",
             [landlord_id, plan_name, start_date, formatted_end_date, requestReferenceNumber, amount]
         );
         console.log("[SUCCESS] Subscription successfully inserted for landlord:", landlord_id);
 
         await connection.end();
-        console.log("🔌 [DEBUG] Database connection closed.");
+        console.log("[DEBUG] Database connection closed.");
 
         return res.status(200).json({ message: "Subscription activated successfully." });
     } catch (error) {
