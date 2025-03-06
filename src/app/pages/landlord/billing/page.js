@@ -74,7 +74,6 @@ const PropertyListPage = () => {
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </div>
-          
         </div>
       </div>
 
@@ -95,7 +94,7 @@ const PropertyListPage = () => {
               `}
             >
               <div className="p-5">
-                
+                <h2 className="text-xl font-bold text-gray-800 mb-2">{property.name}</h2>
                 <div className="space-y-3 text-gray-600 mb-4">
                   <div className="flex items-center">
                     <MapPin className="mr-2 text-blue-500" size={20} />
