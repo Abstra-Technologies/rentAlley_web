@@ -16,6 +16,8 @@ const TenantApplicationForm = () => {
   const router = useRouter();
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     unit_id: "",
     occupation: "",
@@ -23,6 +25,35 @@ const TenantApplicationForm = () => {
     monthly_income: "",
     address: "",
   });
+
+  useEffect(() => {
+    if (!user || !unit_id) return;
+
+    // Check if tenant has already applied
+    const checkTenantApplication = async () => {
+      try {
+        const response = await axios.get(
+          `/api/tenant/prospective/check-application`,
+          {
+            params: {
+              tenant_id: user?.tenant_id,
+              unit_id,
+            },
+          }
+        );
+
+        if (response.data.hasApplied) {
+          setHasApplied(true);
+        }
+      } catch (error) {
+        console.error("Error checking tenant application:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkTenantApplication();
+  }, [user, unit_id]);
 
   useEffect(() => {
     if (unit_id) {
@@ -33,8 +64,33 @@ const TenantApplicationForm = () => {
     }
   }, [unit_id]);
 
-  if (!user) {
+  if (!user || loading) {
     return <div>Loading...</div>;
+  }
+
+  if (hasApplied) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] px-4 text-center">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          You have already applied for this property.
+        </h2>
+
+        <div className="mt-6 flex space-x-4">
+          <button
+            className="px-5 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition"
+            onClick={() => router.push("/pages/tenant/my-unit")}
+          >
+            View My Units
+          </button>
+          <button
+            className="px-5 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 transition"
+            onClick={() => router.push("/pages/find-rent")}
+          >
+            Find Another Rental
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const handleFileSelect = (event) => {
