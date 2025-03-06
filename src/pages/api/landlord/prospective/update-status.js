@@ -8,6 +8,8 @@ export default async function handler(req, res) {
   try {
     const { unitId, status, message } = req.body;
 
+    console.log("Received Payload:", req.body);
+
     // Ensure status is valid
     if (!["pending", "approved", "disapproved"].includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });

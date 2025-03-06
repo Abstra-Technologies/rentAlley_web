@@ -102,8 +102,10 @@ const LeaseDetails = ({ unitId }) => {
 
   // Approve or Disapprove tenant
   const updateTenantStatus = async (newStatus) => {
+    let disapprovalReason = null;
+
     if (newStatus === "disapproved") {
-      const { value: disapprovalReason } = await Swal.fire({
+      const { value } = await Swal.fire({
         title: "Disapprove Tenant",
         input: "textarea",
         inputLabel: "Provide a reason for disapproval",
@@ -112,16 +114,15 @@ const LeaseDetails = ({ unitId }) => {
         showCancelButton: true,
       });
 
-      if (!disapprovalReason) return;
-
-      setReason(disapprovalReason);
+      if (!value) return; // Ensure the user provided a reason
+      disapprovalReason = value;
     }
 
     try {
       const payload = {
         unitId,
         status: newStatus,
-        message: newStatus === "disapproved" ? reason : null,
+        message: newStatus === "disapproved" ? disapprovalReason : null,
       };
 
       await axios.put("/api/landlord/prospective/update-status", payload);
@@ -129,13 +130,12 @@ const LeaseDetails = ({ unitId }) => {
       Swal.fire("Success!", `Tenant ${newStatus} successfully!`, "success");
 
       if (newStatus === "approved") {
-        // Update unit status to occupied in the database
         await axios.put("/api/landlord/propertyStatus/update", {
           unitId,
           status: "occupied",
         });
 
-        setStatus("occupied"); // Update frontend state
+        setStatus("occupied");
         setProspectiveStatus("approved");
       } else {
         setProspectiveStatus("disapproved");
