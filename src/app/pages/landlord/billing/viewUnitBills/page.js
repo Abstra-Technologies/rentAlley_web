@@ -141,10 +141,11 @@ const PropertyUnitsPage = () => {
   const [showUtilityModal, setShowUtilityModal] = useState(false);
   const [electricity, setElectricity] = useState({ amount: "", rate: "" });
   const [water, setWater] = useState({ amount: "", rate: "" });
+  const [billingPeriod, setBillingPeriod] = useState("");
 
   // Form state
   const [utilityForm, setUtilityForm] = useState({
-    billingPeriod: "",
+    readingDate: "",
     electricityRate: 12.5,
     waterRate: 4.0,
     electricityPrevReading: "",
@@ -152,18 +153,17 @@ const PropertyUnitsPage = () => {
     waterPrevReading: "",
     waterCurrentReading: "",
     otherCharges: 0,
-    rentAmount: 0, // Auto-filled, ensure it's never undefined
-    associationDues: 0, // Auto-filled, ensure it's never undefined
-    dueDate: "", // Empty string for date inputs
+    rentAmount: 0,
+    associationDues: 0,
+    dueDate: "",
     lateFee: "",
   });
 
   const [rentForm, setRentForm] = useState({
-    billingPeriod: "",
+    readingDate: "",
     rentAmount: 0,
     additionalCharges: 0,
     dueDate: "",
-    notes: "",
   });
 
   // Filter units based on search
@@ -282,7 +282,7 @@ const PropertyUnitsPage = () => {
     // Create dummy bill object
     const billData = {
       unitId: propertyDetails.units.id,
-      billingPeriod: utilityForm.billingPeriod,
+      readingDate: utilityForm.readingDate,
       electricityCost: bill.electricity.cost,
       waterCost: bill.water.cost,
       rentAmount: bill.rentAmount,
@@ -290,7 +290,6 @@ const PropertyUnitsPage = () => {
       lateFee: bill.lateFee,
       otherCharges: utilityForm.otherCharges || 0,
       totalAmount: bill.total,
-      notes: utilityForm.notes,
     };
 
     // Simulate saving the bill (just logging it for now)
@@ -298,7 +297,7 @@ const PropertyUnitsPage = () => {
 
     // Reset form after confirming
     setUtilityForm({
-      billingPeriod: "",
+      readingDate: "",
       electricityRate: 12.5,
       waterRate: 4.0,
       electricityPrevReading: "",
@@ -309,7 +308,6 @@ const PropertyUnitsPage = () => {
       associationDues: 0,
       lateFee: 0,
       otherCharges: 0,
-      notes: "",
     });
 
     // Simulate navigating to summary
@@ -396,6 +394,20 @@ const PropertyUnitsPage = () => {
               Enter Utility Details
             </h2>
 
+            {/* Billing Period */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Billing Period
+              </label>
+              <input
+                type="month"
+                value={billingPeriod}
+                onChange={(e) => setBillingPeriod(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
             {/* Electricity Section */}
             <div className="mb-4">
               <h3 className="font-medium">Electricity</h3>
@@ -448,6 +460,7 @@ const PropertyUnitsPage = () => {
               </button>
               <button
                 onClick={() => {
+                  console.log("Billing Period:", billingPeriod);
                   console.log("Electricity:", electricity);
                   console.log("Water:", water);
                   setShowUtilityModal(false);
@@ -749,15 +762,15 @@ const PropertyUnitsPage = () => {
                             </h3>
 
                             <div className="space-y-4">
-                              {/* Billing Period */}
+                              {/* Reading Date */}
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                  Billing Period
+                                  Reading Date
                                 </label>
                                 <input
                                   type="month"
-                                  name="billingPeriod"
-                                  value={utilityForm.billingPeriod}
+                                  name="readingDate"
+                                  value={utilityForm.readingDate}
                                   onChange={handleUtilityFormChange}
                                   className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   required
@@ -855,7 +868,7 @@ const PropertyUnitsPage = () => {
                                   onClick={nextUtilityStep}
                                   className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-colors flex items-center"
                                   disabled={
-                                    !utilityForm.billingPeriod ||
+                                    !utilityForm.readingDate ||
                                     !utilityForm.electricityPrevReading ||
                                     !utilityForm.electricityCurrentReading ||
                                     !utilityForm.waterPrevReading ||
