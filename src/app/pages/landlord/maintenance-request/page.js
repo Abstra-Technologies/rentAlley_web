@@ -19,40 +19,145 @@ const SearchParamsWrapper = ({ setActiveTab }) => {
   return null;
 };
 
+// Mock subscription data to handle missing API
+const SUBSCRIPTION_PLANS = {
+  "Free Plan": { maxMaintenanceRequest: 5 },
+  "Standard Plan": { maxMaintenanceRequest: 10 },
+  "Premium Plan": { maxMaintenanceRequest: Infinity }
+};
+
 const MaintenanceRequestPage = () => {
   const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("pending"); // Default state
-  const [requests, setRequests] = useState([]);
+  const [allRequests, setAllRequests] = useState([]);
+  const [visibleRequests, setVisibleRequests] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentRequestId, setCurrentRequestId] = useState(null);
-  const [fetchingSubscription, setFetchingSubscription] = useState(true);
   const [subscription, setSubscription] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [hiddenRequestCount, setHiddenRequestCount] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState(null); // Holds the selected request details
   const [showModal, setShowModal] = useState(false); // Controls modal visibility
   const [selectedImage, setSelectedImage] = useState(null);
   const [sendAutoReply, setSendAutoReply] = useState(false); // Toggle for automated reply
   const [autoReplyMessage, setAutoReplyMessage] = useState(""); // Message input
 
+  // Simulated subscription fetch - replace with real API when available
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      if (!user?.landlord_id) return;
+      
+      try {
+        // Since the actual API is returning 404, use a simulated response
+        // In a real scenario, this would be: await axios.get(`/api/getSubscription?landlord_id=${user.landlord_id}`);
+        
+        // For demo purposes: randomly assign a plan or use a fixed plan
+        // You can adjust this to use a specific plan for testing
+        const plans = ["Free Plan", "Standard Plan", "Premium Plan"];
+        const userPlan = plans[0]; // Set to first plan (Free) for testing
+        
+        const mockSubscription = {
+          plan_name: userPlan,
+          is_active: 1,
+          listingLimits: SUBSCRIPTION_PLANS[userPlan]
+        };
+        
+        setSubscription(mockSubscription);
+      } catch (error) {
+        console.error("Error fetching subscription:", error);
+      }
+    };
+
+    fetchSubscription();
+  }, [user]);
+
+  // Fetch maintenance requests
   useEffect(() => {
     const fetchRequests = async () => {
+      if (!user?.landlord_id) return;
+      
       try {
         const response = await axios.get(
-          `/api/maintenance/getAllMaintenance?landlord_id=${user?.landlord_id}`
+          `/api/maintenance/getAllMaintenance?landlord_id=${user.landlord_id}`
         );
 
-        console.log(response.data);
         if (response.data.success) {
-          setRequests(response.data.data);
+          setAllRequests(response.data.data);
         }
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching maintenance requests:", error);
+        setLoading(false);
       }
     };
 
     fetchRequests();
   }, [user]);
+
+  // Process requests to determine visibility based on subscription limits
+  useEffect(() => {
+    if (!subscription || !allRequests.length) return;
+
+    // Process requests for the current tab
+    const filteredByTab = allRequests.filter(req => 
+      req.status.toLowerCase() === activeTab
+    );
+    
+    // Get max request limit from subscription
+    const { maxMaintenanceRequest } = subscription.listingLimits || { 
+      maxMaintenanceRequest: 5 // Default to Free plan if missing
+    };
+    
+    // For completed requests, show all (no limit)
+    if (activeTab === "completed") {
+      setVisibleRequests(filteredByTab);
+      setHiddenRequestCount(0);
+      return;
+    }
+    
+    // For active requests (pending, scheduled, in progress)
+    const completedRequests = allRequests.filter(
+      request => request.status.toLowerCase() === "completed"
+    );
+    
+    const activeRequests = allRequests.filter(
+      request => request.status.toLowerCase() !== "completed"
+    );
+    
+    // Sort active requests by creation date (oldest first)
+    const sortedActiveRequests = [...activeRequests].sort(
+      (a, b) => new Date(a.created_at) - new Date(b.created_at)
+    );
+    
+    // Determine how many active requests can be shown
+    const visibleActiveCount = Math.min(
+      maxMaintenanceRequest === Infinity ? activeRequests.length : maxMaintenanceRequest,
+      activeRequests.length
+    );
+    
+    // Get the IDs of visible active requests
+    const visibleActiveRequestIds = sortedActiveRequests
+      .slice(0, visibleActiveCount)
+      .map(req => req.request_id);
+    
+    // Filter the current tab requests to only show those that are visible
+    const visibleTabRequests = filteredByTab.filter(req => {
+      // Completed requests are always visible
+      if (req.status.toLowerCase() === "completed") return true;
+      // For active requests, check if they're in the visible set
+      return visibleActiveRequestIds.includes(req.request_id);
+    });
+    
+    setVisibleRequests(visibleTabRequests);
+    
+    // Calculate hidden request count for the current tab
+    const hiddenTabRequests = activeTab !== "completed" ? 
+      filteredByTab.length - visibleTabRequests.length : 0;
+    
+    setHiddenRequestCount(hiddenTabRequests);
+  }, [allRequests, subscription, activeTab]);
 
   const updateStatus = async (request_id, newStatus, additionalData = {}) => {
     try {
@@ -61,7 +166,9 @@ const MaintenanceRequestPage = () => {
         status: newStatus,
         ...additionalData,
       });
-      setRequests((prevRequests) =>
+      
+      // Update the local state
+      setAllRequests((prevRequests) =>
         prevRequests.map((req) =>
           req.request_id === request_id
             ? { ...req, status: newStatus, ...additionalData }
@@ -75,7 +182,6 @@ const MaintenanceRequestPage = () => {
 
   const handleStartClick = (request_id) => {
     setCurrentRequestId(request_id);
-
     setShowCalendar(true);
   };
 
@@ -90,22 +196,48 @@ const MaintenanceRequestPage = () => {
     }
   };
 
-  const getActiveRequests = () =>
-    requests.filter((req) => req.status.toLowerCase() === activeTab);
-
   // Opens modal and sets selected request
   const handleViewDetails = (request) => {
     setSelectedRequest(request);
     setShowModal(true);
   };
 
+  // Get subscription plan details
+  const getPlanDetails = () => {
+    if (!subscription) return { name: "Loading...", limit: "..." };
+    
+    const { plan_name } = subscription;
+    const { maxMaintenanceRequest } = subscription.listingLimits || { maxMaintenanceRequest: 5 };
+    
+    return { 
+      name: plan_name, 
+      limit: maxMaintenanceRequest === Infinity ? "Unlimited" : maxMaintenanceRequest 
+    };
+  };
+
+  const planDetails = getPlanDetails();
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <SearchParamsWrapper setActiveTab={setActiveTab} />
       <div className="p-6 w-full bg-gray-50">
-        <h1 className="text-2xl font-bold text-blue-900">
-          Maintenance Requests
-        </h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-blue-900">
+            Maintenance Requests
+          </h1>
+          <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200">
+            <span className="font-medium">Subscription:</span> {planDetails.name} 
+            <span className="mx-2">|</span>
+            <span className="font-medium">Request Limit:</span> {planDetails.limit}
+          </div>
+        </div>
+
+        {hiddenRequestCount > 0 && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700">
+            <strong>Note:</strong> {hiddenRequestCount} maintenance request{hiddenRequestCount !== 1 ? 's' : ''} {hiddenRequestCount !== 1 ? 'are' : 'is'} hidden due to your plan limit. 
+            Complete some active requests to view these or upgrade your plan.
+          </div>
+        )}
 
         <div className="mb-6 border-b border-gray-200 bg-white rounded-t-lg flex">
           {["pending", "scheduled", "in progress", "completed"].map((tab) => (
@@ -123,114 +255,121 @@ const MaintenanceRequestPage = () => {
           ))}
         </div>
 
-        {/* ✅ The rest of your page remains unchanged */}
-        <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
-          <thead className="bg-gray-50">
-            <tr>
-              {[
-                "Name",
-                "Property / Unit",
-                "Category",
-                "Date",
-                "Photo",
-                "Status",
-                "Action",
-                "View",
-              ].map((header) => (
-                <th
-                  key={header}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {getActiveRequests().map((request) => (
-              <tr key={request.request_id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {request.tenant_first_name} {request.tenant_last_name}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {request.property_name} / {request.unit_name}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {request.category}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {new Date(request.created_at).toISOString().split("T")[0]}
-                </td>
-                <td className="px-6 py-4">
-                  {request.photo_urls && request.photo_urls.length > 0 ? (
-                    <a
-                      href={request.photo_urls[0]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <img
-                        src={request.photo_urls[0]}
-                        alt="Maintenance Photo"
-                        className="h-10 w-10 rounded"
-                      />
-                    </a>
-                  ) : (
-                    "No Photos"
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full bg-gray-200`}
+        {loading ? (
+          <div className="text-center py-8">Loading requests...</div>
+        ) : visibleRequests.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+            No {activeTab} maintenance requests found.
+          </div>
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+            <thead className="bg-gray-50">
+              <tr>
+                {[
+                  "Name",
+                  "Property / Unit",
+                  "Category",
+                  "Date",
+                  "Photo",
+                  "Status",
+                  "Action",
+                  "View",
+                ].map((header) => (
+                  <th
+                    key={header}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    {request.status.toUpperCase()}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  {activeTab === "pending" && (
-                    <button
-                      onClick={() =>
-                        updateStatus(request.request_id, "scheduled")
-                      }
-                      className="px-2 py-1 bg-green-500 text-white rounded-md"
-                    >
-                      Approve
-                    </button>
-                  )}
-                  {activeTab === "scheduled" && (
-                    <button
-                      onClick={() => handleStartClick(request.request_id)}
-                      className="px-2 py-1 bg-yellow-500 text-white rounded-md"
-                    >
-                      Start
-                    </button>
-                  )}
-                  {activeTab === "in progress" && (
-                    <button
-                      onClick={() =>
-                        updateStatus(request.request_id, "completed", {
-                          completion_date: new Date()
-                            .toISOString()
-                            .split("T")[0],
-                        })
-                      }
-                      className="px-2 py-1 bg-blue-500 text-white rounded-md"
-                    >
-                      Complete
-                    </button>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <button
-                    onClick={() => handleViewDetails(request)}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    <EyeIcon className="h-5 w-5" />
-                  </button>
-                </td>
+                    {header}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {visibleRequests.map((request) => (
+                <tr key={request.request_id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    {request.tenant_first_name} {request.tenant_last_name}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {request.property_name} / {request.unit_name}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {request.category}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {new Date(request.created_at).toISOString().split("T")[0]}
+                  </td>
+                  <td className="px-6 py-4">
+                    {request.photo_urls && request.photo_urls.length > 0 ? (
+                      <a
+                        href={request.photo_urls[0]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src={request.photo_urls[0]}
+                          alt="Maintenance Photo"
+                          className="h-10 w-10 rounded"
+                        />
+                      </a>
+                    ) : (
+                      "No Photos"
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full bg-gray-200`}
+                    >
+                      {request.status.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {activeTab === "pending" && (
+                      <button
+                        onClick={() =>
+                          updateStatus(request.request_id, "scheduled")
+                        }
+                        className="px-2 py-1 bg-green-500 text-white rounded-md"
+                      >
+                        Approve
+                      </button>
+                    )}
+                    {activeTab === "scheduled" && (
+                      <button
+                        onClick={() => handleStartClick(request.request_id)}
+                        className="px-2 py-1 bg-yellow-500 text-white rounded-md"
+                      >
+                        Start
+                      </button>
+                    )}
+                    {activeTab === "in progress" && (
+                      <button
+                        onClick={() =>
+                          updateStatus(request.request_id, "completed", {
+                            completion_date: new Date()
+                              .toISOString()
+                              .split("T")[0],
+                          })
+                        }
+                        className="px-2 py-1 bg-blue-500 text-white rounded-md"
+                      >
+                        Complete
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleViewDetails(request)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <EyeIcon className="h-5 w-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
         {showCalendar && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
@@ -286,7 +425,7 @@ const MaintenanceRequestPage = () => {
           </div>
         )}
 
-        {/* ✅ Maintenance Request Modal */}
+        {/* Maintenance Request Modal */}
         {showModal && selectedRequest && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-[500px] max-w-full">
@@ -356,7 +495,7 @@ const MaintenanceRequestPage = () => {
           </div>
         )}
 
-        {/* ✅ Fullscreen Image Modal */}
+        {/* Fullscreen Image Modal */}
         {selectedImage && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50">
             <button
