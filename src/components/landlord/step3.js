@@ -3,10 +3,13 @@ import { FaImage } from "react-icons/fa"; // Import checkmark icon from react-ic
 import { useDropzone } from "react-dropzone";
 import { UTILITY_BILLING_TYPES } from "../../constant/utilityBillingType";
 import { PAYMENT_FREQUENCIES } from "../../constant/paymentFrequency";
+import { FaInfoCircle } from "react-icons/fa";
+import { useState } from "react";
 
 export function StepThree() {
   // Access the property data and actions from Zustand store
   const { property, photos, setProperty, setPhotos } = usePropertyStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Handle file drop
   const onDrop = (acceptedFiles) => {
@@ -116,10 +119,10 @@ export function StepThree() {
             <span className="text-gray-500">sqm</span>
           </div>
 
-          {/* Additional Features Checkboxes */}
+          {/* Property Preferences Checkboxes */}
           <div className="space-y-2">
             <label className="block text-gray-700 font-medium mb-1">
-              Additional Features
+              Property Preferences
             </label>
 
             {/* Pet-Friendly */}
@@ -136,8 +139,12 @@ export function StepThree() {
 
             {/* Utility Billing Type */}
             <div>
-              <label className="block text-gray-700 font-medium mb-1">
-                Utility Billing Type
+              <label className="text-gray-700 font-medium flex items-center space-x-2 mt-4">
+                <span>Utility Billing Type</span>
+                <FaInfoCircle
+                  className="text-blue-600 text-lg cursor-pointer"
+                  onClick={() => setIsModalOpen(true)}
+                />
               </label>
               <select
                 name="utilityBillingType"
@@ -303,6 +310,38 @@ export function StepThree() {
                 ))}
               </select>
             </div>
+
+            {/* Utility Billing Info Modal */}
+            {isModalOpen && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Utility Billing Types
+                  </h3>
+                  <ul className="space-y-2 text-gray-700">
+                    <li>
+                      <strong>Included:</strong> Rent amount covers electricity,
+                      water, and utilities.
+                    </li>
+                    <li>
+                      <strong>Provider:</strong> The rent does not cover
+                      utilities. Tenants pay their utility providers directly
+                      for electricity and water.
+                    </li>
+                    <li>
+                      <strong>Submetered:</strong> Billed based on individual
+                      usage.
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="mt-4 w-full bg-blue-500 text-white p-2 rounded-lg"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
