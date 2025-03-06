@@ -1,168 +1,153 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
-import { FiEye, FiEdit, FiTrash2, FiFileText, FiZap } from "react-icons/fi";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { Building, MapPin, Grid3x3 } from 'lucide-react';
 
-export default function BillsTable() {
-  const bills = [
-    {
-      id: 1,
-      name: "Greenview Apartment",
-      unit: "Main Building",
-      date: "2025-02-22",
-      rent: 1200.0,
-      electricity: 100.0,
-      water: 50.0,
-      associationDues: 30.0,
-    },
-    {
-      id: 2,
-      name: "Blue Towers",
-      unit: "Unit 2A",
-      date: "2025-02-22",
-      rent: 800.0,
-      electricity: 80.0,
-      water: 40.0,
-      associationDues: 20.0,
-    },
-  ];
+// Mock data - replace with actual data fetching
+const properties = [
+  {
+    id: '1',
+    name: 'Sunrise Apartments',
+    location: 'Manila',
+    numberOfUnits: 5,
+    occupancyRate: 80,
+    totalRevenue: 75000,
+    
+  },
+  {
+    id: '2',
+    name: 'Horizon Residences',
+    location: 'Quezon City',
+    numberOfUnits: 3,
+    occupancyRate: 66,
+    totalRevenue: 45000,
+    
+  },
+  {
+    id: '3',
+    name: 'Seaside Condos',
+    location: 'Pasay City',
+    numberOfUnits: 2,
+    occupancyRate: 50,
+    totalRevenue: 30000,
+    
+  }
+];
+
+const PropertyListPage = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  // Filter properties based on search and status
+  const filteredProperties = properties.filter((property) => 
+    property.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (filterStatus === 'all' || property.status === filterStatus)
+  );
 
   return (
-    <LandlordLayout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-blue-600">Billing Records</h2>
-        </div>
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+          <Building className="mr-3 text-blue-500" size={32} />
+          My Properties
+        </h1>
         
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-4 text-left text-gray-600 font-semibold">Property</th>
-                  <th className="p-4 text-left text-gray-600 font-semibold">Unit</th>
-                  <th className="p-4 text-left text-gray-600 font-semibold">Date</th>
-                  <th className="p-4 text-right text-gray-600 font-semibold">Rent</th>
-                  <th className="p-4 text-right text-gray-600 font-semibold">Electricity</th>
-                  <th className="p-4 text-right text-gray-600 font-semibold">Water</th>
-                  <th className="p-4 text-right text-gray-600 font-semibold">Assoc. Dues</th>
-                  <th className="p-4 text-right text-gray-600 font-semibold">Total</th>
-                  <th className="p-4 text-center text-gray-600 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bills.map((bill, index) => (
-                  <tr 
-                    key={bill.id} 
-                    className={`border-t border-gray-200 hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                  >
-                    <td className="p-4 font-medium text-gray-800">{bill.name}</td>
-                    <td className="p-4 text-gray-600">{bill.unit}</td>
-                    <td className="p-4 text-gray-600">{bill.date}</td>
-                    <td className="p-4 text-right text-gray-800">${bill.rent.toFixed(2)}</td>
-                    <td className="p-4 text-right text-gray-600">${bill.electricity.toFixed(2)}</td>
-                    <td className="p-4 text-right text-gray-600">${bill.water.toFixed(2)}</td>
-                    <td className="p-4 text-right text-gray-600">${bill.associationDues.toFixed(2)}</td>
-                    <td className="p-4 text-right font-bold text-gray-800">
-                      ${(
-                        bill.rent +
-                        bill.electricity +
-                        bill.water +
-                        bill.associationDues
-                      ).toFixed(2)}
-                    </td>
-                    <td className="p-4 text-center">
-                      <DropdownMenu billId={bill.id} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="flex space-x-4">
+          <div className="relative">
+            <input 
+              type="text"
+              placeholder="Search properties..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="absolute left-3 top-3 text-gray-400" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
           </div>
+          
         </div>
       </div>
-    </LandlordLayout>
-  );
-}
 
-function DropdownMenu({ billId }) {
-  const [open, setOpen] = useState(false);
-  const router = useRouter();
+      {filteredProperties.length === 0 ? (
+        <div className="text-center py-10 bg-gray-100 rounded-lg">
+          <p className="text-xl text-gray-600">No properties found</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProperties.map((property) => (
+            <div
+              key={property.id}
+              className={`
+                bg-white shadow-md rounded-lg overflow-hidden 
+                hover:shadow-xl transition-all duration-300 
+                border-l-4 
+                ${property.status === 'active' ? 'border-green-500' : 'border-yellow-500'}
+              `}
+            >
+              <div className="p-5">
+                
+                <div className="space-y-3 text-gray-600 mb-4">
+                  <div className="flex items-center">
+                    <MapPin className="mr-2 text-blue-500" size={20} />
+                    <span className="font-medium">{property.location}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Grid3x3 className="mr-2 text-blue-500" size={20} />
+                    <span className="font-medium">{property.numberOfUnits} Units</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <div>
+                      <span className="font-medium">Occupancy:</span> {property.occupancyRate}%
+                    </div>
+                    <div>
+                      <span className="font-medium">Revenue:</span> ₱{property.totalRevenue.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
 
-  const handleClick = (action) => {
-    setOpen(false);
-    
-    if (action === "view") {
-      router.push(`/pages/landlord/billing/view/${billId}`);
-    } else if (action === "generateRent") {
-      router.push(`/pages/landlord/billing/createRent`);
-    } else if (action === "generateUtility") {
-      router.push(`/pages/landlord/billing/createUtility`);
-    } else if (action === "edit") {
-      // Handle edit action
-    } else if (action === "delete") {
-      // Handle delete action
-    }
-  };
-
-  return (
-    <div className="relative inline-block">
-      {/* Three dots button */}
-      <button
-        className="p-2 text-gray-600 hover:bg-gray-200 rounded-full focus:outline-none transition-colors"
-        onClick={() => setOpen(!open)}
-      >
-        ⋮
-      </button>
-
-      {/* Dropdown menu with animation */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="absolute right-0 mt-2 w-56 bg-white rounded-lg border border-gray-200 shadow-lg z-50"
-            style={{ top: "100%" }}
-          >
-            <ul className="py-1 rounded-lg overflow-hidden">
-              <li
-                className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-gray-700"
-                onClick={() => handleClick("view")}
-              >
-                <FiEye className="text-blue-600" /> View Bill Details
-              </li>
-              <li
-                className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-gray-700"
-                onClick={() => handleClick("generateRent")}
-              >
-                <FiFileText className="text-green-600" /> Generate Rent Bill
-              </li>
-              <li
-                className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-gray-700"
-                onClick={() => handleClick("generateUtility")}
-              >
-                <FiZap className="text-yellow-600" /> Generate Utility Bill
-              </li>
-              <li 
-                className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-gray-700"
-                onClick={() => handleClick("edit")}
-              >
-                <FiEdit className="text-gray-600" /> Edit
-              </li>
-              <li 
-                className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-red-600"
-                onClick={() => handleClick("delete")}
-              >
-                <FiTrash2 /> Delete
-              </li>
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                <Link href={`/billing/${property.id}`}>
+                  <button 
+                    className="
+                      w-full mt-4 
+                      bg-blue-500 text-white 
+                      py-2 rounded-md 
+                      hover:bg-blue-600 
+                      transition-colors 
+                      flex items-center justify-center
+                    "
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      className="mr-2"
+                    >
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    View Units
+                  </button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default PropertyListPage;

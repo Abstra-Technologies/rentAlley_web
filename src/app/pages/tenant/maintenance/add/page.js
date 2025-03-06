@@ -1,31 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import useAuth from "../../../../../../hooks/useSession";
 import { useRouter } from "next/navigation";
 import TenantLayout from "../../../../../components/navigation/sidebar-tenant";
+import { MAINTENANCE_CATEGORIES } from "../../../../../constant/maintenanceCategories";
+import Swal from "sweetalert2";
+import { z } from "zod";
+
+export const maintenanceRequestSchema = z.object({
+  category: z.string().min(1, "Category is required"), // Ensures category is selected
+  subject: z.string().min(1, "Subject is required"), // Ensures subject is provided
+  description: z.string().min(1, "Description is required"), // Ensures description is provided
+  photos: z.array(z.instanceof(File)).min(1, "At least one photo is required"), // Ensures at least one photo is uploaded
+});
 
 export default function MaintenanceRequestPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [categories, setCategories] = useState([]);
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [photos, setPhotos] = useState([]);
-
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const response = await axios.get("/api/maintenance/getCategory");
-        setCategories(response.data.category);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    }
-    fetchCategories();
-  }, []);
+  const [errors, setErrors] = useState({});
 
   const handleFileChange = (e) => {
     setPhotos([...e.target.files]);
@@ -33,8 +31,32 @@ export default function MaintenanceRequestPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedCategory || !subject || !description) {
-      alert("Please fill in all required fields");
+    // Validate form data using Zod
+    const formData = {
+      category: selectedCategory,
+      subject,
+      description,
+      photos,
+    };
+
+    const validation = maintenanceRequestSchema.safeParse(formData);
+
+    if (!validation.success) {
+      // Map validation errors
+      const formattedErrors = validation.error.format();
+      setErrors({
+        category: formattedErrors.category?._errors[0],
+        subject: formattedErrors.subject?._errors[0],
+        description: formattedErrors.description?._errors[0],
+        photos: formattedErrors.photos?._errors[0],
+      });
+
+      Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        text: "Please fill in all required fields correctly.",
+      });
+
       return;
     }
 
@@ -67,10 +89,20 @@ export default function MaintenanceRequestPage() {
         });
       }
 
-      alert("Maintenance request submitted successfully!");
-      router.push("/pages/tenant/maintenance");
+      Swal.fire({
+        icon: "success",
+        title: "Request Submitted",
+        text: "Your maintenance request has been submitted successfully!",
+      }).then(() => {
+        router.push("/pages/tenant/maintenance"); // Redirect after success
+      });
     } catch (error) {
       console.error("Error submitting maintenance request:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Submission Failed",
+        text: "Something went wrong. Please try again later.",
+      });
     }
   };
 
@@ -90,18 +122,20 @@ export default function MaintenanceRequestPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                required
                 className="w-full p-2 border rounded-lg"
               >
                 <option value="" disabled>
                   Select a category
                 </option>
-                {categories.map((category, index) => (
-                  <option key={index} value={category}>
-                    {category}
+                {MAINTENANCE_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
                   </option>
                 ))}
               </select>
+              {errors.category && (
+                <p className="text-red-500 text-sm">{errors.category}</p>
+              )}
             </div>
 
             {/* Subject */}
@@ -111,10 +145,12 @@ export default function MaintenanceRequestPage() {
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                required
                 className="w-full p-2 border rounded-lg"
                 placeholder="Enter subject"
               />
+              {errors.subject && (
+                <p className="text-red-500 text-sm">{errors.subject}</p>
+              )}
             </div>
 
             {/* Description */}
@@ -125,11 +161,13 @@ export default function MaintenanceRequestPage() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                required
                 className="w-full p-2 border rounded-lg"
                 rows="4"
                 placeholder="Describe the issue"
               />
+              {errors.description && (
+                <p className="text-red-500 text-sm">{errors.description}</p>
+              )}
             </div>
 
             {/* Upload Photos */}
@@ -144,6 +182,9 @@ export default function MaintenanceRequestPage() {
                 onChange={handleFileChange}
                 className="w-full p-2 border rounded-lg"
               />
+              {errors.photos && (
+                <p className="text-red-500 text-sm">{errors.photos}</p>
+              )}
             </div>
 
             {/* Submit Button */}
