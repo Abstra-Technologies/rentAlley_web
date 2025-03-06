@@ -31,55 +31,6 @@ export default function ChatComponent() {
         if (userId) fetchChats();
     }, [userId]);
 
-    // useEffect(() => {
-    //     if (!selectedChat || !selectedChat.chat_room) {
-    //         console.error(" Missing chat_room!", { user, selectedChat });
-    //         return;
-    //     }
-    //
-    //     console.log("✅ Joining Room:", selectedChat.chat_room);
-    //
-    //     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
-    //
-    //     socket.emit("joinRoom", { chatRoom: selectedChat.chat_room });
-    //
-    //     // Fetch past messages from API when joining a chat
-    //     const fetchMessages = async () => {
-    //         try {
-    //             console.log(`📨 Fetching messages for chat_room: ${selectedChat.chat_room}`);
-    //             const response = await axios.get(`/api/chats/messages?chat_room=${selectedChat.chat_room}`);
-    //             console.log("✅ Messages Loaded:", response.data);
-    //             setMessages(response.data);
-    //         } catch (error) {
-    //             console.error("❌ Error fetching messages:", error);
-    //         }
-    //     };
-    //     fetchMessages();
-    //
-    //     const handleLoadMessages = (loadedMessages) => {
-    //         console.log("📥 Received loadMessages event:", loadedMessages);
-    //         setMessages(loadedMessages);
-    //     };
-    //
-    //     // Listen for new messages via WebSocket
-    //     const handleReceiveMessage = (newMessage) => {
-    //         console.log("📥 New message received via WebSocket:", newMessage);
-    //         setMessages((prevMessages) => [...prevMessages, newMessage]);
-    //     };
-    //
-    //
-    //
-    //     socket.on("loadMessages", handleLoadMessages);
-    //     socket.on("receiveMessage", handleReceiveMessage);
-    //
-    //     return () => {
-    //         console.log("🔄 Cleaning up WebSocket listeners...");
-    //         socket.disconnect();
-    //         socket.off("loadMessages", handleLoadMessages);
-    //         socket.off("receiveMessage", handleReceiveMessage);
-    //     };
-    // }, [user, selectedChat]);
-
     useEffect(() => {
         if (!selectedChat || !selectedChat.chat_room) {
             console.error(" Missing chat_room!", { user, selectedChat });
@@ -103,12 +54,12 @@ export default function ChatComponent() {
         console.log("✅ Joining Room:", selectedChat.chat_room);
         console.log("✅ User ID:", userId, "User Type:", userType);
 
-        // ✅ Connect to WebSocket
+        //  Connect to WebSocket
         const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
         socket.emit("joinRoom", { chatRoom: selectedChat.chat_room });
 
-        // ✅ Fetch past messages from API when joining a chat
+        //  Fetch past messages from API when joining a chat
         const fetchMessages = async () => {
             try {
                 console.log(`📨 Fetching messages for chat_room: ${selectedChat.chat_room}`);
@@ -116,7 +67,7 @@ export default function ChatComponent() {
                 console.log("✅ Messages Loaded:", response.data);
                 setMessages(response.data);
             } catch (error) {
-                console.error("❌ Error fetching messages:", error);
+                console.error("Error fetching messages:", error);
             }
         };
 
@@ -152,33 +103,59 @@ export default function ChatComponent() {
             return;
         }
 
-        console.log(" Debugging `sendMessage` Function:");
-        console.log(" Selected Chat Object:", selectedChat);
-        console.log(" Chat Room (selectedChat.chat_room):", selectedChat.chat_room);
-        console.log(" User Object (from session):", user);
+        if (!user) {
+            console.error("❌ Error: User session not available.");
+            return;
+        }
+
+        console.log("🛠 Debugging `sendMessage` Function:");
+        console.log("🔹 Selected Chat Object:", selectedChat);
+        console.log("🔹 Chat Room:", selectedChat?.chat_room);
+        console.log("🔹 User from Session:", user);
 
         if (!selectedChat.chat_room) {
-            console.error(" Chat room is undefined! Cannot send message.");
+            console.error("❌ Chat room is undefined! Cannot send message.");
             return;
         }
 
-        //  Determine sender type  based on session user
-        const senderType = user.tenant_id ? "tenant" : "landlord";
-        const senderId = user.tenant_id || user.landlord_id; // ✅ Ensure sender_id comes from session
+        // Ensure user has tenant_id or landlord_id before proceeding
+        if (!user.tenant_id && !user.landlord_id) {
+            console.error("❌ Error: User does not have a valid tenant_id or landlord_id.");
+            return;
+        }
 
-        // Determine receiver type dynamically (opposite of sender)
+        // Determine sender type and ID based on session user
+        const senderType = user.tenant_id ? "tenant" : "landlord";
+        let senderId;
+
+        if(user?.userType === "tenant") {
+             senderId = user?.tenant_id;
+
+        }else{
+             senderId = user?.landlord_id;
+
+        }
+
+        console.log(`🛠 Sender Info: ID = ${senderId}, Type = ${senderType}`);
+
+        // Ensure selectedChat has valid tenant_id and landlord_id
+        // if (!selectedChat.tenant_id || !selectedChat.landlord_id) {
+        //     console.error("❌ Error: selectedChat is missing required user IDs:", selectedChat);
+        //     return;
+        // }
+
+        // Determine receiver dynamically (opposite of sender)
+        let receiverId = senderType === "tenant" ? selectedChat.landlord_id : selectedChat.tenant_id;
         const receiverType = senderType === "tenant" ? "landlord" : "tenant";
 
-        //  Fetch the correct `receiver_id` (tenant_id or landlord_id) from `selectedChat`
-        const receiverId = senderType === "tenant"
-            ? selectedChat.landlord_id // If sender is tenant, receiver must be the landlord
-            : selectedChat.tenant_id;   // If sender is landlord, receiver must be the tenant
+        console.log(`🛠 Receiver Info: ID = ${receiverId}, Type = ${receiverType}`);
 
-        // Prevent sending a message to yourself
-        if (receiverId === senderId) {
-            console.error(" Error: Sender and receiver cannot be the same.");
-            return;
-        }
+        // Double-check that sender and receiver are different
+        // if (!receiverId || receiverId === senderId) {
+        //     console.error("❌ Error: Invalid receiver ID. Sender and receiver cannot be the same.");
+        //     console.log("🔎 Debug Values:", { senderId, receiverId, senderType, receiverType });
+        //     return;
+        // }
 
         const newMessage = {
             sender_id: senderId,
@@ -189,8 +166,15 @@ export default function ChatComponent() {
             chat_room: selectedChat.chat_room,
         };
 
-        console.log("📤 Sending message:", newMessage);
-        socket.emit("sendMessage", newMessage);
+        console.log("📤 Preparing to send message:", newMessage);
+
+        try {
+            socket.emit("sendMessage", newMessage, (ack) => {
+                console.log("✅ Message sent successfully:", ack);
+            });
+        } catch (error) {
+            console.error("❌ Error sending message via WebSocket:", error);
+        }
 
         setMessage("");
     };

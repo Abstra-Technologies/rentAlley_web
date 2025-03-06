@@ -106,7 +106,7 @@ export default async function Chats(req, res) {
                 lastMessage: chat.lastMessage || "No messages yet",
                 chatUserId: chat.chatUserId,
                 tenant_id: chat.tenant_id || null,
-                landlord_id: chat.landlord_id || null
+                landlord_id: chat.landlord_id
             };
         });
 

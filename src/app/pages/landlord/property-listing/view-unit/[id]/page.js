@@ -5,7 +5,15 @@ import useSWR, { mutate } from "swr";
 import axios from "axios";
 import Swal from "sweetalert2";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
-import { BuildingOffice2Icon, HomeIcon, PlusCircleIcon, ClipboardDocumentListIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  BuildingOffice2Icon,
+  HomeIcon,
+  PlusCircleIcon,
+  ClipboardDocumentListIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  ExclamationCircleIcon
+} from '@heroicons/react/24/outline';
 import useAuth from "../../../../../../../hooks/useSession";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);

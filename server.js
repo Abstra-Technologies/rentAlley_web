@@ -103,132 +103,17 @@ io.on("connection", (socket) => {
         }
     });
 
-    // socket.on("sendMessage", async ({ sender_id, sender_type, receiver_id, receiver_type, message, chatRoom }) => {
-    //     try {
-    //         console.log(`🔹 Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chatRoom });
-    //
-    //         let [senderResult] = await pool.query(
-    //             `SELECT user_id FROM ${sender_type === 'tenant' ? 'Tenant' : 'Landlord'} WHERE ${sender_type}_id = ?`,
-    //             [sender_id]
-    //         );
-    //
-    //         let [receiverResult] = await pool.query(
-    //             `SELECT user_id FROM ${receiver_type === 'tenant' ? 'Tenant' : 'Landlord'} WHERE ${receiver_type}_id = ?`,
-    //             [receiver_id]
-    //         );
-    //
-    //         if (senderResult.length === 0 ) {
-    //             console.error("❌ Error: Sender not found in database.");
-    //             return;
-    //         }
-    //
-    //         if(receiverResult.length === 0) {
-    //             console.error("❌ Error:  receiver not found in database.");
-    //             return;
-    //         }
-    //
-    //
-    //         const senderUserId = senderResult[0].user_id;
-    //         const receiverUserId = receiverResult[0].user_id;
-    //
-    //         console.log(`✅ Resolved user IDs - Sender: ${senderUserId}, Receiver: ${receiverUserId}`);
-    //
-    //         const { encrypted, iv } = encryptMessage(message);
-    //
-    //         await pool.query(
-    //             "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
-    //             [senderUserId, receiverUserId, encrypted, iv, chatRoom]
-    //         );
-    //
-    //         console.log(`✅ Message saved to DB: ChatRoom - ${chatRoom}`);
-    //
-    //         io.to(chatRoom).emit("receiveMessage", {
-    //             sender_id: senderUserId,
-    //             receiver_id: receiverUserId,
-    //             message,
-    //             timestamp: new Date(),
-    //         });
-    //     } catch (error) {
-    //         console.error("Error sending message:", error);
-    //     }
-    // });
-    // socket.on("sendMessage", async ({ sender_id, sender_type, receiver_id, receiver_type, message, chat_room }) => {
-    //     try {
-    //         console.log(`🔹 Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chat_room });
-    //
-    //         // ✅ Validate `chat_room` exists
-    //         if (!chat_room) {
-    //             console.error("❌ Error: Chat room is undefined!");
-    //             return;
-    //         }
-    //
-    //         // ✅ Fetch sender's `user_id`
-    //         let senderQuery = sender_type === 'tenant'
-    //             ? 'SELECT user_id, tenant_id FROM Tenant WHERE tenant_id = ?'
-    //             : 'SELECT user_id, landlord_id FROM Landlord WHERE landlord_id = ?';
-    //
-    //         let [senderResult] = await pool.query(senderQuery, [sender_id]);
-    //
-    //         if (senderResult.length === 0) {
-    //             console.error("❌ Error: Sender not found in database. Sender ID:", sender_id);
-    //             return;
-    //         }
-    //
-    //         const senderUserId = senderResult[0].user_id;
-    //
-    //         // ✅ Fetch receiver's `tenant_id` or `landlord_id` using `user_id`
-    //         let receiverQuery = receiver_type === 'tenant'
-    //             ? 'SELECT tenant_id FROM Tenant WHERE user_id = ?'
-    //             : 'SELECT landlord_id FROM Landlord WHERE user_id = ?';
-    //
-    //         let [receiverResult] = await pool.query(receiverQuery, [receiver_id]);
-    //
-    //         if (receiverResult.length === 0) {
-    //             console.error("❌ Error: Receiver not found in database. Receiver user_id:", receiver_id);
-    //             return;
-    //         }
-    //
-    //         // ✅ Get correct `receiver_id` (tenant_id or landlord_id)
-    //         const correctedReceiverId = receiver_type === "tenant"
-    //             ? receiverResult[0].tenant_id
-    //             : receiverResult[0].landlord_id;
-    //
-    //         console.log(`✅ Resolved IDs - Sender: ${sender_id}, Receiver: ${correctedReceiverId}`);
-    //
-    //         // ✅ Encrypt message before saving
-    //         const { encrypted, iv } = encryptMessage(message);
-    //
-    //         // ✅ Store message in database with correct `receiver_id`
-    //         await pool.query(
-    //             "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
-    //             [sender_id, correctedReceiverId, encrypted, iv, chat_room]
-    //         );
-    //
-    //         console.log(`✅ Message saved to DB: ChatRoom - ${chat_room}`);
-    //
-    //         // ✅ Send message to all users in the chat room
-    //         io.to(chat_room).emit("receiveMessage", {
-    //             sender_id,
-    //             receiver_id: correctedReceiverId, // ✅ Now sending `tenant_id` or `landlord_id`
-    //             message,
-    //             timestamp: new Date(),
-    //         });
-    //     } catch (error) {
-    //         console.error("❌ Error sending message:", error);
-    //     }
-    // });
-
     socket.on("sendMessage", async ({ sender_id, sender_type, receiver_id, receiver_type, message, chat_room }) => {
         try {
             console.log(`🔹 Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chat_room });
 
-            // ✅ Validate `chat_room` exists
+            // Validate `chat_room` exists
             if (!chat_room) {
                 console.error("❌ Error: Chat room is undefined!");
                 return;
             }
 
-            // ✅ Fetch sender's `user_id` using their `tenant_id` or `landlord_id`
+            // Fetch sender's `user_id` using their `tenant_id` or `landlord_id`
             let senderQuery = sender_type === 'tenant'
                 ? 'SELECT user_id FROM Tenant WHERE tenant_id = ?'
                 : 'SELECT user_id FROM Landlord WHERE landlord_id = ?';
