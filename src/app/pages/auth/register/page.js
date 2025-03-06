@@ -7,6 +7,9 @@ import { z } from "zod";
 import useRoleStore from "../../../../zustand/store";
 import { useRouter } from "next/navigation";
 import { logEvent } from "../../../../utils/gtag";
+import Footer from "../../../../components/navigation/footer";
+import Image from "next/image";
+
 
 const registerSchema = z
   .object({
@@ -22,7 +25,7 @@ const registerSchema = z
     // Mobile Number validation - must be exactly 12 digits
     mobileNumber: z
       .string()
-      .regex(/^\d{12}$/, "Mobile Number must be 12 digits"),
+      .regex(/^\d{11}$/, "Mobile Number must be 11 digits"),
 
     // Email validation - must be a valid email address
     email: z.string().email("Invalid email address"),
@@ -135,8 +138,16 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
+    <>
+    <div className="relative flex items-center justify-center min-h-screen bg-gray-100 overflow-hidden">
+      <Image 
+                  src="/images/hero-section.jpeg" 
+                  alt="Cityscape view of high-rise buildings" 
+                  fill
+                  className="object-cover brightness-75 z-0"
+                  priority
+                />
+      <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
         <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">
           Rentahan
         </h1>
@@ -233,7 +244,7 @@ export default function Register() {
                 handleChange(event); //ensure the change of value is still set using the handleChange function
               }}
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="09XXXXXXXX"
+              placeholder="09XXXXXXXXX"
             />
             {errors.mobileNumber && (
               <p className="text-red-500 text-sm">{errors.mobileNumber}</p>
@@ -341,5 +352,10 @@ export default function Register() {
         </p>
       </div>
     </div>
+     
+
+   {/* Footer Section */}
+   <Footer />
+ </>
   );
 }
