@@ -198,80 +198,91 @@ export default function ChatComponent() {
 
 
     return (
-        <div className="min-h-screen flex bg-gray-100 p-4">
-            {/* ✅ Chat List Section */}
-            <div className="w-1/3 bg-white p-4 rounded-lg shadow overflow-y-auto">
-                <h1 className="text-xl font-semibold mb-4">Chats</h1>
-                {chatList.length === 0 ? (
-                    <p className="text-center text-gray-500">No chats available</p>
-                ) : (
-                    <ul>
-                        {chatList.map((chat) => (
-                            <li
-                                key={chat.chat_room}
-                                className={`p-2 border-b cursor-pointer ${
-                                    selectedChat?.chat_room === chat.chat_room ? "bg-gray-300" : "hover:bg-gray-200"
-                                }`}
-                                onClick={() => {
-                                    console.log("🖱 Chat selected:", chat);
-                                    setSelectedChat(chat);
-                                }}
-                            >
-                                <p className="font-semibold">{chat.name}</p>
-                                <p className="text-sm text-gray-500">Last message: {chat.lastMessage || "No messages yet"}</p>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-
-            {/* ✅ Chat Messages Section */}
-            <div className="w-2/3 bg-white p-4 rounded-lg shadow flex flex-col">
-                {selectedChat ? (
-                    <>
-                        <h2 className="text-lg font-semibold mb-2">Chat with {selectedChat.name}</h2>
-                        <div className="flex-1 overflow-y-auto p-2 border rounded-lg h-80">
-                            {messages.length === 0 ? (
-                                <p className="text-center text-gray-500">No messages yet</p>
-                            ) : (
-                                messages.map((msg, index) => (
-                                    <div key={index} className={`flex items-end space-x-2 ${msg.sender_id === userId ? "justify-end" : "justify-start"}`}>
-                                        {msg.sender_id !== userId && (
-                                            <img
-                                                src={msg.profilePicture || "/default-avatar.png"}
-                                                alt="User profile"
-                                                className="w-8 h-8 rounded-full"
-                                            />
-                                        )}
-                                        <div
-                                            className={`px-4 py-2 max-w-xs text-white text-xl rounded-lg ${
-                                                msg.sender_id === userId ? "bg-blue-500" : "bg-gray-700"
-                                            }`}
-                                        >
-                                            {msg.message}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+        <div className="flex flex-col lg:flex-row bg-gray-100 h-screen w-full p-0">
+          {/* ✅ Chat List Section */}
+          <div className="w-full lg:w-1/3 bg-white p-4 rounded-none lg:rounded-lg shadow-md overflow-y-auto h-full">
+            <h1 className="text-xl font-semibold mb-4">Chats</h1>
+            {chatList.length === 0 ? (
+              <p className="text-center text-gray-500">No chats available</p>
+            ) : (
+              <ul>
+                {chatList.map((chat) => (
+                  <li
+                    key={chat.chat_room}
+                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 flex justify-between items-center ${
+                      selectedChat?.chat_room === chat.chat_room
+                        ? "bg-blue-100 font-semibold"
+                        : "hover:bg-gray-200"
+                    }`}
+                    onClick={() => setSelectedChat(chat)}
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-800">{chat.name}</p>
+                      <p className="text-sm text-gray-500 truncate w-40">{chat.lastMessage || "No messages yet"}</p>
+                    </div>
+                    <span className="text-xs text-gray-400">🗨️</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+      
+          {/* ✅ Chat Messages Section */}
+          <div className="flex-1 bg-white p-4 lg:rounded-lg shadow-md flex flex-col h-full w-full">
+            {selectedChat ? (
+              <>
+                <h2 className="text-lg font-semibold mb-3 border-b pb-2">Chat with {selectedChat.name}</h2>
+                <div className="flex-1 overflow-y-auto p-2 space-y-3">
+                  {messages.length === 0 ? (
+                    <p className="text-center text-gray-500">No messages yet</p>
+                  ) : (
+                    messages.map((msg, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-end space-x-2 ${msg.sender_id === userId ? "justify-end" : "justify-start"}`}
+                      >
+                        {msg.sender_id !== userId && (
+                          <img
+                            src={msg.profilePicture || "/default-avatar.png"}
+                            alt="User profile"
+                            className="w-10 h-10 rounded-full"
+                          />
+                        )}
+                        <div
+                          className={`px-4 py-2 max-w-xs text-white rounded-lg shadow-md relative text-sm ${
+                            msg.sender_id === userId ? "bg-blue-500" : "bg-gray-700"
+                          }`}
+                        >
+                          {msg.message}
+                          <span className="block text-xs text-gray-300 mt-1 text-right">{msg.timestamp}</span>
                         </div>
-                        <div className="p-2 flex items-center gap-2 border-t mt-2">
-                            <input
-                                type="text"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                className="flex-1 p-2 border rounded-lg focus:outline-none"
-                                placeholder="Type a message..."
-                            />
-                            <button onClick={sendMessage} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Send</button>
-                        </div>
-                    </>
-                ) : (
-                    <p className="text-center text-gray-500 flex-1 flex items-center justify-center">
-                        Select a chat to start messaging
-                    </p>
-                )}
-
-            </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="p-2 flex items-center gap-2 border-t mt-2 bg-white sticky bottom-0 w-full">
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    placeholder="Type a message..."
+                  />
+                  <button
+                    onClick={sendMessage}
+                    className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                  >
+                    Send
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="text-center text-gray-500 flex-1 flex items-center justify-center">
+                Select a chat to start messaging
+              </p>
+            )}
+          </div>
         </div>
-    );
+      );
+      
 }
