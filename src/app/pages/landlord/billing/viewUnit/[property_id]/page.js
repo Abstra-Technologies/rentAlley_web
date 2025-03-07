@@ -51,12 +51,12 @@ export default function ViewUnits() {
       <div className="p-6 max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-3xl font-bold text-gray-900">
             Units in Property {property_id}
           </h1>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition"
           >
             Property Utility
           </button>
@@ -68,35 +68,40 @@ export default function ViewUnits() {
             units.map((unit) => (
               <div
                 key={unit.unit_id}
-                className="bg-white p-4 border rounded-lg shadow-md"
+                className="bg-white p-6 border rounded-lg shadow-lg"
               >
-                <h2 className="text-lg font-semibold text-gray-800">
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">
                   {unit.unit_name}
                 </h2>
                 <p className="text-gray-600">Size: {unit.unit_size} sqm</p>
                 <p className="text-gray-600">Rent: ₱{unit.rent_amount}</p>
-                <div className="mt-4 flex justify-between">
-                  <Link
-                    href={`/pages/landlord/billingHistory/${unit.unit_id}`}
-                    className="w-full text-center"
-                  >
+                <div className="mt-4 flex flex-col gap-3">
+                  <Link href={`/pages/landlord/billingbillingHistory`}>
                     <button className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 transition">
                       Billing History
                     </button>
                   </Link>
                   <Link
                     href={`/pages/landlord/billing/createUnitBill/${unit.unit_id}`}
-                    className="w-full text-center"
                   >
                     <button className="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition">
                       Create Unit Bill
+                    </button>
+                  </Link>
+                  <Link
+                    href={`/pages/landlord/billing/editUnitBill/${unit.unit_id}`}
+                  >
+                    <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-yellow-700 transition">
+                      Edit Unit Bill
                     </button>
                   </Link>
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-gray-600">No units found.</p>
+            <p className="text-gray-600 text-center col-span-full">
+              No units found.
+            </p>
           )}
         </div>
 
