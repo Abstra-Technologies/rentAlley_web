@@ -67,12 +67,20 @@ export default async function handler(req, res) {
             return res.status(500).json({ message: "Landlord not found for this property." });
         }
 
-        // ✅ Prevent further submissions after two rejections
+        // Prevent further submissions after two rejections
         if (currentStatus === "Rejected" && attempts >= 2) {
-            await connection.end();
-            return res.status(403).json({
-                message: "This listing has reached the maximum number of rejection attempts. A new application is required."
-            });
+
+            const notificationTitle = `Property ${status} `;
+            const notificationBody = `Your property listing has been  ${status.toLowerCase()} twice, you cannot resend documents again. ${
+                message ? `Message: ${message}` : ""
+            }`;
+
+            await connection.execute(
+                `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
+                [user_id, notificationTitle, notificationBody]
+            );
+
+            await sendFCMNotification(fcm_token, notificationTitle, notificationBody);
         }
 
         let newAttempts = attempts;
@@ -80,7 +88,7 @@ export default async function handler(req, res) {
             newAttempts = attempts + 1;
         }
 
-        // ✅ Update the property verification status
+        // Update the property verification status
         const [result] = await connection.execute(
             `UPDATE PropertyVerification
              SET status = ?, admin_message = ?, reviewed_by = ?, attempts = ?
@@ -102,7 +110,7 @@ export default async function handler(req, res) {
             [user_id, notificationTitle, notificationBody]
         );
 
-        // ✅ Send Push Notification via FCM
+        //Send Push Notification via FCM
         await sendFCMNotification(fcm_token, notificationTitle, notificationBody);
 
 

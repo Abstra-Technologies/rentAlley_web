@@ -1,11 +1,14 @@
 // components/TenantList.js /api/landlord/tenantList?landlord_id=${landlordId}
 'use client'
 import { useEffect, useState } from "react";
+import {router, useRouter} from "next/navigation";
 
 export default function TenantList({ landlord_id }) {
     const [tenants, setTenants] = useState([]); // Ensure tenants is always an array
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const router = useRouter();
+
 
     useEffect(() => {
         if (!landlord_id) return;
@@ -27,6 +30,10 @@ export default function TenantList({ landlord_id }) {
             });
     }, [landlord_id]);
 
+    const handleViewDetails = (tenant_id) => {
+        router.push(`/pages/landlord/list_of_tenants/${tenant_id}`);
+    };
+
     if (!landlord_id) return <p>Please provide a valid landlord ID.</p>;
     if (loading) return <p>Loading tenants...</p>;
     if (error) return <p className="text-red-500">{error}</p>;
@@ -46,6 +53,8 @@ export default function TenantList({ landlord_id }) {
                         <th className="border p-2">Unit Occupied</th>
                         <th className="border p-2">Start Date</th>
                         <th className="border p-2">End Date</th>
+                        <th className="border p-2">Actions</th>
+
                     </tr>
                     </thead>
                     <tbody>
@@ -55,8 +64,16 @@ export default function TenantList({ landlord_id }) {
                             <td className="border p-2">{tenant?.email}</td>
                             <td className="border p-2">{tenant?.property_name}</td>
                             <td className="border p-2">{tenant?.unit_id}</td>
-                            <td className="border p-2">{new Date(tenant.start_date).toLocaleDateString()}</td>
-                            <td className="border p-2">{new Date(tenant.end_date).toLocaleDateString()}</td>
+                            <td className="border p-2">{new Date(tenant?.start_date).toLocaleDateString()}</td>
+                            <td className="border p-2">{new Date(tenant?.end_date).toLocaleDateString()}</td>
+                            <td className="border p-2">
+                                <button
+                                    onClick={() => handleViewDetails(tenant?.tenant_id)}
+                                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                >
+                                    View Details
+                                </button>
+                            </td>
                         </tr>
                     ))}
                     </tbody>

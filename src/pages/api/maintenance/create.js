@@ -12,7 +12,7 @@ export default async function CreateNewMaintenanceRequest(req, res) {
     console.log("Request Data:", req.body);
 
     const [tenantRecord] = await db.query(
-      "SELECT unit_id FROM LeaseAgreement WHERE tenant_id = ? AND status = 'approved'",
+      "SELECT unit_id FROM LeaseAgreement WHERE tenant_id = ? AND status = 'active'",
       [tenant_id]
     );
 
