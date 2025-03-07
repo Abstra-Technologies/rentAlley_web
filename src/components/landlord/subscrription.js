@@ -47,15 +47,19 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                         {subscription?.is_active === 0 ? (
                             <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                                 <p className="font-semibold">⚠ Your subscription has expired, your account is automatically downgraded to the free plan!</p>
-                                <Link href="/pages/landlord/sub_two/subscription" className="mt-2 inline-block bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                                <Link href="/pages/landlord/sub_two/subscription"
+                                      onClick={() => logEvent("Subscription Expired", "Subscription", "User clicked to renew", 1)}
+                                      className="mt-2 inline-block bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
                                     Subscribe to a Plan
                                 </Link>
                             </div>
                         ) : (
                             <>
-                                {/* ✅ If Subscription is Active */}
+                                {/* If Subscription is Active */}
                                 {subscription?.is_trial === 0 && (
-                                    <Link href='/pages/landlord/sub_two/subscription' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
+                                    <Link href='/pages/landlord/sub_two/subscription'
+                                          onClick={() => logEvent("Upgrade Clicked", "Subscription", "User clicked upgrade", 1)}
+                                          className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
                                         Upgrade Plan
                                     </Link>
                                 )}
@@ -69,7 +73,9 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                                             day: "numeric",
                                         })}.
                                         </p>
-                                        <Link href='/pages/landlord/sub_two/upgrade' className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
+                                        <Link href='/pages/landlord/sub_two/upgrade'
+                                              onClick={() => logEvent("Trial User Subscription", "Subscription", "Trial user clicked subscribe", 1)}
+                                              className='mt-4 block bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded text-center'>
                                             Subscribe to a Plan
                                         </Link>
                                     </>
@@ -80,7 +86,9 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                 ) : (
                     <div>
                         <p className='m-2'>No active subscription found.</p>
-                        <Link href='/pages/landlord/sub_two/subscription' className='m-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>
+                        <Link href='/pages/landlord/sub_two/subscription'
+                              onClick={() => logEvent("No Subscription", "Subscription", "User clicked subscribe", 1)}
+                              className='m-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>
                             Subscribe Now
                         </Link>
                     </div>

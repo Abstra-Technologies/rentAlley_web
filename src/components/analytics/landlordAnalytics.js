@@ -76,42 +76,63 @@ const LandlordPropertyChart = () => {
         colors: ["#6A0DAD"],
     };
 
-    const chartDataOccupancy = {
-        series: totalUnits > 0 ? [occupancyRate] : [0],
-        options: {
-            chart: {
-                type: "radialBar",
-                height: 350
-            },
-            plotOptions: {
-                radialBar: {
-                    hollow: {
-                        size: "70%",
-                    },
-                    dataLabels: {
-                        name: {
-                            show: false
-                        },
-                        value: {
-                            fontSize: "24px",
-                            formatter: (val) => (totalUnits > 0 ? `${val.toFixed(2)}%` : "0%")
-                        }
-                    }
-                }
-            },
-            labels: ["Occupancy Rate"],
-            title: {
-                text: totalUnits > 0 ? `Total Units: ${totalUnits}` : "No Data Available",
-                align: "center",
-                margin: 20,
-                style: {
-                    fontSize: "16px",
-                    fontWeight: "bold"
-                }
-            }
-        }
-    };
+    // const chartDataOccupancy = {
+    //     series: totalUnits > 0 ? [occupancyRate] : [0],
+    //     options: {
+    //         chart: {
+    //             type: "radialBar",
+    //             height: 350
+    //         },
+    //         plotOptions: {
+    //             radialBar: {
+    //                 hollow: {
+    //                     size: "70%",
+    //                 },
+    //                 dataLabels: {
+    //                     name: {
+    //                         show: false
+    //                     },
+    //                     value: {
+    //                         fontSize: "24px",
+    //                         formatter: (val) => (totalUnits > 0 ? `${val.toFixed(2)}%` : "0%")
+    //                     }
+    //                 }
+    //             }
+    //         },
+    //         labels: ["Occupancy Rate"],
+    //         title: {
+    //             text: totalUnits > 0 ? `Total Units: ${totalUnits}` : "No Data Available",
+    //             align: "center",
+    //             margin: 20,
+    //             style: {
+    //                 fontSize: "16px",
+    //                 fontWeight: "bold"
+    //             }
+    //         }
+    //     }
+    // };
 
+    const chartOptionsOccupancy = {
+        chart: {
+            type: "radialBar",
+        },
+        plotOptions: {
+            radialBar: {
+                hollow: { size: "60%" },
+                dataLabels: {
+                    show: true,
+                    name: { show: false },
+                    value: {
+                        fontSize: "22px",
+                        fontWeight: "bold",
+                        formatter: (val) => `${val}%`,
+                    },
+                },
+            },
+        },
+        labels: ["Occupancy Rate of All Properties"],
+    };
+    const chartSeries = [occupancyRate];
 
     return (
         <div>
@@ -136,8 +157,16 @@ const LandlordPropertyChart = () => {
                 )}
             </div>
             <div>
-                    <h3>Overall Occupancy Rate</h3>
-                    <Chart options={chartDataOccupancy.options} series={chartDataOccupancy.series} type="radialBar" height={350} />
+                <div className="p-4 bg-white shadow rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Occupancy Rate Overall Property</h3>
+                    {loading ? (
+                        <p>Loading...</p>
+                    ) : totalUnits > 0 ? (
+                        <Chart options={chartOptionsOccupancy} series={chartSeries} type="radialBar" height={250} />
+                    ) : (
+                        <p>No data available</p>
+                    )}
+                </div>
 
             </div>
 

@@ -168,17 +168,16 @@ export default async function getProperty(req, res) {
             return res.status(400).json({ message: "Tenant ID is required" });
         }
 
-        // ✅ Fetch the most recent active lease for the tenant
+        // Fetch the most recent active lease for the tenant
         const [leaseDetails] = await db.query(
             `SELECT
-                 l.agreement_id, l.start_date, l.end_date,
-                 l.is_advance_payment_paid, l.is_security_deposit_paid,
-                 pt.unit_id, pt.tenant_id
-             FROM LeaseAgreement l
-             INNER JOIN ProspectiveTenant pt ON l.prospective_tenant_id = pt.id
-             WHERE pt.tenant_id = ?
-               AND l.status = 'active'
-             ORDER BY l.updated_at DESC
+                 agreement_id, start_date, end_date,
+                 is_advance_payment_paid, is_security_deposit_paid,
+                 unit_id, tenant_id
+             FROM LeaseAgreement
+             WHERE tenant_id = ?
+               AND status = 'active'
+             ORDER BY updated_at DESC
              LIMIT 1`,
             [tenantId]
         );
