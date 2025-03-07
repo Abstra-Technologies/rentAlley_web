@@ -223,6 +223,16 @@ const LeaseDetails = ({ unitId }) => {
 
   // Handle lease date update
   const handleUpdateLease = async () => {
+    if (!startDate || !endDate) {
+      Swal.fire({
+        title: "Error",
+        text: "Start date and End date cannot be empty!",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return; // Stop execution if validation fails
+    }
+
     try {
       await axios.put(`/api/leaseAgreement/leaseDetails?unit_id=${unitId}`, {
         start_date: startDate,
@@ -393,6 +403,37 @@ const LeaseDetails = ({ unitId }) => {
                     </p>
                   </div>
                 </div>
+
+                {/* Valid Government ID Section */}
+                {tenant?.valid_id ? (
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-500 mb-2">
+                      Valid Government ID:
+                    </p>
+                    <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded-md bg-blue-100 text-blue-500 flex items-center justify-center mr-3">
+                          <IdentificationIcon className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-700">
+                            Tenant's Valid ID
+                          </p>
+                          <Link
+                            href={tenant?.valid_id}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-500 hover:underline"
+                          >
+                            View Government ID
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 mb-4">No valid ID available</p>
+                )}
               </div>
             </div>
           </div>
@@ -403,37 +444,6 @@ const LeaseDetails = ({ unitId }) => {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 Lease Agreement
               </h2>
-
-              {/* Valid Government ID Section */}
-              {tenant?.valid_id ? (
-                <div className="mb-6">
-                  <p className="text-sm text-gray-500 mb-2">
-                    Valid Government ID:
-                  </p>
-                  <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-md bg-blue-100 text-blue-500 flex items-center justify-center mr-3">
-                        <IdentificationIcon className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-700">
-                          Tenant's Valid ID
-                        </p>
-                        <Link
-                          href={tenant?.valid_id}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-500 hover:underline"
-                        >
-                          View Government ID
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-500 mb-4">No valid ID available</p>
-              )}
 
               {/* Lease Dates Update Section */}
               <div className="mb-6">

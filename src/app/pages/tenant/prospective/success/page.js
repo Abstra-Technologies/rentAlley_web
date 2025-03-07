@@ -26,7 +26,7 @@ const SuccessPage = () => {
         shortly.
       </p>
       <button
-        onClick={() => router.push("/pages/tenant/my-units")}
+        onClick={() => router.push("/pages/tenant/my-unit")}
         className="bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-2 px-6 rounded"
       >
         Finished

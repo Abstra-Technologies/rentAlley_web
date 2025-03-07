@@ -16,22 +16,22 @@ export default async function handler(req, res) {
   const { unit_id } = req.query;
 
   try {
-    // First, get the prospective_tenant_id using unit_id
-    const [prospectiveRows] = await connection.execute(
-      `SELECT id FROM ProspectiveTenant WHERE unit_id = ?`,
-      [unit_id]
+    // Step 1: Get the approved prospective tenant for the unit
+    const [prospectiveTenantResult] = await connection.execute(
+      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ?",
+      [Number(unit_id)]
     );
 
-    if (prospectiveRows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No prospective tenant found for this unit" });
+    if (prospectiveTenantResult.length === 0) {
+      return res.status(400).json({
+        error: "No approved prospective tenant found for this unit.",
+      });
     }
 
-    const prospectiveTenantId = prospectiveRows[0].id;
+    const tenant_id = prospectiveTenantResult[0].tenant_id;
 
-    let query = `SELECT * FROM LeaseAgreement WHERE prospective_tenant_id = ?`;
-    let params = [prospectiveTenantId];
+    let query = `SELECT * FROM LeaseAgreement WHERE tenant_id = ? AND unit_id = ?`;
+    let params = [tenant_id, unit_id];
 
     const [rows] = await connection.execute(query, params);
 

@@ -85,30 +85,32 @@ export default async function handler(req, res) {
       console.error("Error parsing form:", err);
       return res
         .status(500)
-        .json({ error: "File parsing error", message: err.message }); // Enhanced error message
+        .json({ error: "File parsing error", message: err.message });
     }
 
     const { unit_id } = fields;
 
+    console.log("Parsed Fields:", fields);
+    console.log("Parsed Files:", files);
+
     let connection;
     try {
-      // ✅ Get a transaction-safe connection
       connection = await db.getConnection();
-
       await connection.beginTransaction();
 
-      const [tenantResult] = await connection.execute(
-        "SELECT id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
+      // Step 1: Get the approved prospective tenant for the unit
+      const [prospectiveTenantResult] = await connection.execute(
+        "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ?",
         [Number(unit_id)]
       );
 
-      if (tenantResult.length === 0) {
+      if (prospectiveTenantResult.length === 0) {
         return res.status(400).json({
           error: "No approved prospective tenant found for this unit.",
         });
       }
 
-      const prospective_tenant_id = tenantResult[0].id;
+      const tenant_id = prospectiveTenantResult[0].tenant_id;
 
       const leaseAgreementFile = files.leaseFile?.[0] || null;
 
@@ -116,27 +118,31 @@ export default async function handler(req, res) {
         ? await uploadToS3(leaseAgreementFile, "leaseAgreement")
         : null;
 
-      const query =
-        "INSERT INTO LeaseAgreement (prospective_tenant_id, agreement_url, status, created_at, updated_at) VALUES (?, ?, 'Pending', NOW(), NOW())";
+      const query = `
+        INSERT INTO LeaseAgreement 
+        (tenant_id, unit_id, agreement_url, status, created_at, updated_at) 
+        VALUES (?, ?, ?, 'pending', NOW(), NOW())`;
 
       console.log("Inserting into MySQL with:", {
-        prospective_tenant_id,
+        tenant_id,
+        unit_id,
         agreementUrl,
       });
 
       await connection.execute(query, [
-        Number(prospective_tenant_id),
+        tenant_id,
+        Number(unit_id),
         agreementUrl,
       ]);
 
-      await connection.commit(); // ✅ Use connection.commit()
-      res
-        .status(201)
-        .json({ message: "Files uploaded and stored successfully" });
+      await connection.commit();
+      res.status(201).json({ message: "Lease agreement stored successfully." });
     } catch (error) {
-      if (connection) await connection.rollback(); // ✅ Use connection.rollback()
+      if (connection) await connection.rollback();
       console.error("Upload error:", error);
       res.status(500).json({ error: "Internal server error" });
+    } finally {
+      if (connection) connection.release();
     }
   });
 }
