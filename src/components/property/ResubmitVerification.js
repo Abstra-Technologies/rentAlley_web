@@ -56,40 +56,95 @@ export default function ResubmitVerification({ property_id }) {
     };
 
     return (
-        <div className="p-6 bg-white shadow-md rounded-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Occupancy Permit (PDF)</label>
-                    <input type="file" accept="application/pdf" onChange={(e) => handleFileChange(e, setOccPermit)} className="mt-1 block w-full" />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Mayor’s Permit (PDF)</label>
-                    <input type="file" accept="application/pdf" onChange={(e) => handleFileChange(e, setMayorPermit)} className="mt-1 block w-full" />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Government ID (Image/PDF)</label>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e) => handleFileChange(e, setGovID)} className="mt-1 block w-full" />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Indoor Property Photo</label>
-                    <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setIndoorPhoto)} className="mt-1 block w-full" />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Outdoor Property Photo</label>
-                    <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setOutdoorPhoto)} className="mt-1 block w-full" />
-                </div>
+        <div className="p-8 bg-white shadow-lg rounded-lg border border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">Document Verification</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Occupancy Permit (PDF)</label>
+              <input 
+                type="file" 
+                accept="application/pdf" 
+                onChange={(e) => handleFileChange(e, setOccPermit)} 
+                className="mt-1 block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100 cursor-pointer"
+              />
             </div>
-
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Mayor's Permit (PDF)</label>
+              <input 
+                type="file" 
+                accept="application/pdf" 
+                onChange={(e) => handleFileChange(e, setMayorPermit)} 
+                className="mt-1 block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100 cursor-pointer"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Government ID (Image/PDF)</label>
+              <input 
+                type="file" 
+                accept="image/*,application/pdf" 
+                onChange={(e) => handleFileChange(e, setGovID)} 
+                className="mt-1 block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100 cursor-pointer"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Indoor Property Photo</label>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => handleFileChange(e, setIndoorPhoto)} 
+                className="mt-1 block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100 cursor-pointer"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Outdoor Property Photo</label>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => handleFileChange(e, setOutdoorPhoto)} 
+                className="mt-1 block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100 cursor-pointer"
+              />
+            </div>
+          </div>
+          
+          <div className="mt-8 flex justify-end">
             <button
-                onClick={handleResubmit}
-                className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              onClick={handleResubmit}
+              className="px-6 py-2.5 bg-blue-600 text-white font-medium text-sm rounded-lg
+                shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg
+                focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-150 ease-in-out"
             >
-                Resubmit for Verification
+              Resubmit for Verification
             </button>
+          </div>
         </div>
-    );
+      );
 }
