@@ -8,6 +8,7 @@ import TenantLayout from "../../../../../components/navigation/sidebar-tenant";
 import { MAINTENANCE_CATEGORIES } from "../../../../../constant/maintenanceCategories";
 import Swal from "sweetalert2";
 import { z } from "zod";
+import { io } from "socket.io-client";
 
 export const maintenanceRequestSchema = z.object({
   category: z.string().min(1, "Category is required"),
@@ -24,6 +25,7 @@ export default function MaintenanceRequestPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
+  const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
   const handleFileChange = (e) => {
     setPhotos([...e.target.files]);
@@ -69,6 +71,7 @@ export default function MaintenanceRequestPage() {
       console.log("Maintenance Reqs: ", maintenanceRes);
 
       const requestId = maintenanceRes.data.request_id;
+      const landlordId = maintenanceRes.data.landlord_id;
 
       if (photos.length > 0) {
         const formData = new FormData();

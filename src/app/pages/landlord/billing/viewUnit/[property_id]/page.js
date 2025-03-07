@@ -46,6 +46,20 @@ export default function ViewUnits() {
     setBillingForm({ ...billingForm, [name]: value });
   };
 
+  const handleSaveBilling = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post("/api/landlord/billing/saveConcessionaireBilling", {
+        property_id,
+        ...billingForm,
+      });
+      console.log("Billing saved successfully:", response.data);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error saving billing:", error.response?.data || error.message);
+    }
+  };
+
   return (
     <LandlordLayout>
       <div className="p-6 max-w-6xl mx-auto">
@@ -112,7 +126,7 @@ export default function ViewUnits() {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 Property Utility
               </h2>
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleSaveBilling}>
                 {/* Billing Period */}
                 <div>
                   <label className="block text-gray-700 font-medium">

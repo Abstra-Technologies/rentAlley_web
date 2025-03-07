@@ -6,10 +6,8 @@ export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
-
-  let connection = await db.getConnection();
   try {
-    const [units] = await connection.execute(
+    const [units] = await db.execute(
       `SELECT * FROM Unit WHERE property_id = ?`,
       [property_id]
     );
