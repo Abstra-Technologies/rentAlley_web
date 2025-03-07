@@ -117,6 +117,7 @@ const LandlordPropertyChart = () => {
         labels: data.map((item) => item.category),
         title: { text: "Maintenance Request Categories", align: "center" },
     };
+    const chartSeriesMaintenance = data.map((item) => item.category);
 
     return (
         <div>
@@ -154,14 +155,16 @@ const LandlordPropertyChart = () => {
 
 
                 <div className="p-4 bg-white shadow rounded-lg">
-                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Maintenance Requests</h3>
-                    {loading ? (
-                        <p>Loading...</p>
-                    ) : data.length > 0 ? (
-                        <Chart options={chartOptionsMaintenanceCategories} series={chartSeries} type="pie" height={300} />
-                    ) : (
-                        <p>No data available</p>
-                    )}
+                    <div className="p-4 bg-white shadow rounded-lg">
+                        <h3 className="text-lg font-semibold text-gray-700 mb-3">Maintenance Requests</h3>
+                        {loading ? (
+                            <p>Loading...</p>
+                        ) : data.length > 0 ? (
+                            <Chart options={chartOptionsMaintenanceCategories} series={chartSeries} type="pie" height={300} />
+                        ) : (
+                            <p>No data available</p>
+                        )}
+                    </div>
                 </div>
 
             </div>

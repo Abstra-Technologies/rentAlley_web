@@ -1,4 +1,5 @@
 import  {db} from "../../../../lib/db";
+import {MAINTENANCE_CATEGORIES} from "../../../../constant/maintenanceCategories";
 
 
 export default async function GetMaintenanceCategories(req, res) {
@@ -13,7 +14,7 @@ export default async function GetMaintenanceCategories(req, res) {
     }
 
     try {
-        // Query to fetch maintenance request categories and their count
+        // Fetch maintenance request count for each category
         const result = await db.query(
             `
                 SELECT mr.category, COUNT(*) AS count
@@ -26,8 +27,20 @@ export default async function GetMaintenanceCategories(req, res) {
             [landlord_id]
         );
 
+        // Convert result to a dictionary for easy lookup
+        const categoryCountMap = {};
+        result.forEach(({ category, count }) => {
+            categoryCountMap[category] = count;
+        });
 
-        res.status(200).json({ categories: result });
+        // Include all predefined categories, even those with zero requests
+        const categories = MAINTENANCE_CATEGORIES.map((category) => ({
+            category: category.value,
+            label: category.label,
+            count: categoryCountMap[category.value] || 0, // Default to 0 if no requests exist
+        }));
+
+        res.status(200).json({ categories });
     } catch (error) {
         console.error("Error fetching maintenance categories:", error);
         res.status(500).json({ error: "Internal Server Error" });
