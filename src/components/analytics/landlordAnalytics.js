@@ -11,6 +11,7 @@ const LandlordPropertyChart = () => {
     const [occupancyRate, setOccupancyRate] = useState(null);
     const [loading, setLoading] = useState(true);
     const [totalUnits, setTotalUnits] = useState(0);
+    const [data, setData] = useState([]);
 
     useEffect(() => {
         if (!user) {
@@ -47,6 +48,19 @@ const LandlordPropertyChart = () => {
                 setLoading(false);
             });
 
+        fetch(`/api/analytics/landlord/getMaintenanceCategories?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((result) => {
+                if (result.categories) {
+                    setData(result.categories);
+                }
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching maintenance categories:", error);
+                setLoading(false);
+            });
+
     }, [fetchSession, user]);
 
 
@@ -76,42 +90,6 @@ const LandlordPropertyChart = () => {
         colors: ["#6A0DAD"],
     };
 
-    // const chartDataOccupancy = {
-    //     series: totalUnits > 0 ? [occupancyRate] : [0],
-    //     options: {
-    //         chart: {
-    //             type: "radialBar",
-    //             height: 350
-    //         },
-    //         plotOptions: {
-    //             radialBar: {
-    //                 hollow: {
-    //                     size: "70%",
-    //                 },
-    //                 dataLabels: {
-    //                     name: {
-    //                         show: false
-    //                     },
-    //                     value: {
-    //                         fontSize: "24px",
-    //                         formatter: (val) => (totalUnits > 0 ? `${val.toFixed(2)}%` : "0%")
-    //                     }
-    //                 }
-    //             }
-    //         },
-    //         labels: ["Occupancy Rate"],
-    //         title: {
-    //             text: totalUnits > 0 ? `Total Units: ${totalUnits}` : "No Data Available",
-    //             align: "center",
-    //             margin: 20,
-    //             style: {
-    //                 fontSize: "16px",
-    //                 fontWeight: "bold"
-    //             }
-    //         }
-    //     }
-    // };
-
     const chartOptionsOccupancy = {
         chart: {
             type: "radialBar",
@@ -133,6 +111,12 @@ const LandlordPropertyChart = () => {
         labels: ["Occupancy Rate of All Properties"],
     };
     const chartSeries = [occupancyRate];
+
+    const chartOptionsMaintenanceCategories = {
+        chart: { type: "pie" },
+        labels: data.map((item) => item.category),
+        title: { text: "Maintenance Request Categories", align: "center" },
+    };
 
     return (
         <div>
@@ -163,6 +147,18 @@ const LandlordPropertyChart = () => {
                         <p>Loading...</p>
                     ) : totalUnits > 0 ? (
                         <Chart options={chartOptionsOccupancy} series={chartSeries} type="radialBar" height={250} />
+                    ) : (
+                        <p>No data available</p>
+                    )}
+                </div>
+
+
+                <div className="p-4 bg-white shadow rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Maintenance Requests</h3>
+                    {loading ? (
+                        <p>Loading...</p>
+                    ) : data.length > 0 ? (
+                        <Chart options={chartOptionsMaintenanceCategories} series={chartSeries} type="pie" height={300} />
                     ) : (
                         <p>No data available</p>
                     )}
