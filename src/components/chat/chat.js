@@ -19,9 +19,9 @@ export default function ChatComponent() {
     useEffect(() => {
         const fetchChats = async () => {
             try {
-                console.log("📨 Fetching chats...");
+                console.log("Fetching chats...");
                 const response = await axios.get(`/api/chats/chat?userId=${userId}`);
-                console.log("✅ Chat List API Response:", response.data);
+                console.log("Chat List API Response:", response.data);
                 setChatList(response.data);
             } catch (error) {
                 console.error(" Error fetching chats:", error);
@@ -51,8 +51,8 @@ export default function ChatComponent() {
             return;
         }
 
-        console.log("✅ Joining Room:", selectedChat.chat_room);
-        console.log("✅ User ID:", userId, "User Type:", userType);
+        console.log(" Joining Room:", selectedChat.chat_room);
+        console.log(" User ID:", userId, "User Type:", userType);
 
         //  Connect to WebSocket
         const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
@@ -62,9 +62,9 @@ export default function ChatComponent() {
         //  Fetch past messages from API when joining a chat
         const fetchMessages = async () => {
             try {
-                console.log(`📨 Fetching messages for chat_room: ${selectedChat.chat_room}`);
+                console.log(`Fetching messages for chat_room: ${selectedChat.chat_room}`);
                 const response = await axios.get(`/api/chats/messages?chat_room=${selectedChat.chat_room}`);
-                console.log("✅ Messages Loaded:", response.data);
+                console.log("Messages Loaded:", response.data);
                 setMessages(response.data);
             } catch (error) {
                 console.error("Error fetching messages:", error);
@@ -75,13 +75,13 @@ export default function ChatComponent() {
 
         //  Handle loaded messages from WebSocket
         const handleLoadMessages = (loadedMessages) => {
-            console.log("📥 Received loadMessages event:", loadedMessages);
+            console.log("Received loadMessages event:", loadedMessages);
             setMessages(loadedMessages);
         };
 
         // Handle new messages received via WebSocket
         const handleReceiveMessage = (newMessage) => {
-            console.log("📥 New message received via WebSocket:", newMessage);
+            console.log("New message received via WebSocket:", newMessage);
             setMessages((prevMessages) => [...prevMessages, newMessage]);
         };
 
@@ -89,7 +89,7 @@ export default function ChatComponent() {
         socket.on("receiveMessage", handleReceiveMessage);
 
         return () => {
-            console.log("🔄 Cleaning up WebSocket listeners...");
+            console.log("Cleaning up WebSocket listeners...");
             socket.disconnect();
             socket.off("loadMessages", handleLoadMessages);
             socket.off("receiveMessage", handleReceiveMessage);
@@ -99,12 +99,12 @@ export default function ChatComponent() {
 
     const sendMessage = () => {
         if (!message.trim() || !selectedChat) {
-            console.error("❌ No message or chat selected!");
+            console.error("No message or chat selected!");
             return;
         }
 
         if (!user) {
-            console.error("❌ Error: User session not available.");
+            console.error(" Error: User session not available.");
             return;
         }
 
@@ -114,13 +114,13 @@ export default function ChatComponent() {
         console.log("🔹 User from Session:", user);
 
         if (!selectedChat.chat_room) {
-            console.error("❌ Chat room is undefined! Cannot send message.");
+            console.error(" Chat room is undefined! Cannot send message.");
             return;
         }
 
         // Ensure user has tenant_id or landlord_id before proceeding
         if (!user.tenant_id && !user.landlord_id) {
-            console.error("❌ Error: User does not have a valid tenant_id or landlord_id.");
+            console.error("Error: User does not have a valid tenant_id or landlord_id.");
             return;
         }
 
@@ -140,7 +140,7 @@ export default function ChatComponent() {
 
         // Ensure selectedChat has valid tenant_id and landlord_id
         // if (!selectedChat.tenant_id || !selectedChat.landlord_id) {
-        //     console.error("❌ Error: selectedChat is missing required user IDs:", selectedChat);
+        //     console.error("Error: selectedChat is missing required user IDs:", selectedChat);
         //     return;
         // }
 
@@ -148,12 +148,12 @@ export default function ChatComponent() {
         let receiverId = senderType === "tenant" ? selectedChat.landlord_id : selectedChat.tenant_id;
         const receiverType = senderType === "tenant" ? "landlord" : "tenant";
 
-        console.log(`🛠 Receiver Info: ID = ${receiverId}, Type = ${receiverType}`);
+        console.log(`Receiver Info: ID = ${receiverId}, Type = ${receiverType}`);
 
         // Double-check that sender and receiver are different
         // if (!receiverId || receiverId === senderId) {
-        //     console.error("❌ Error: Invalid receiver ID. Sender and receiver cannot be the same.");
-        //     console.log("🔎 Debug Values:", { senderId, receiverId, senderType, receiverType });
+        //     console.error("Error: Invalid receiver ID. Sender and receiver cannot be the same.");
+        //     console.log("Debug Values:", { senderId, receiverId, senderType, receiverType });
         //     return;
         // }
 
@@ -166,14 +166,14 @@ export default function ChatComponent() {
             chat_room: selectedChat.chat_room,
         };
 
-        console.log("📤 Preparing to send message:", newMessage);
+        console.log(" Preparing to send message:", newMessage);
 
         try {
             socket.emit("sendMessage", newMessage, (ack) => {
-                console.log("✅ Message sent successfully:", ack);
+                console.log(" Message sent successfully:", ack);
             });
         } catch (error) {
-            console.error("❌ Error sending message via WebSocket:", error);
+            console.error(" Error sending message via WebSocket:", error);
         }
 
         setMessage("");
@@ -183,7 +183,7 @@ export default function ChatComponent() {
 
     return (
         <div className="flex flex-col lg:flex-row bg-gray-100 h-screen w-full p-0">
-          {/* ✅ Chat List Section */}
+          {/* Chat List Section */}
           <div className="w-full lg:w-1/3 bg-white p-4 rounded-none lg:rounded-lg shadow-md overflow-y-auto h-full">
             <h1 className="text-xl font-semibold mb-4">Chats</h1>
             {chatList.length === 0 ? (
@@ -211,7 +211,7 @@ export default function ChatComponent() {
             )}
           </div>
       
-          {/* ✅ Chat Messages Section */}
+          {/* Chat Messages Section */}
           <div className="flex-1 bg-white p-4 lg:rounded-lg shadow-md flex flex-col h-full w-full">
             {selectedChat ? (
               <>
@@ -227,7 +227,7 @@ export default function ChatComponent() {
                       >
                         {msg.sender_id !== userId && (
                           <img
-                            src={msg.profilePicture || "/default-avatar.png"}
+                            src={msg.profilePicture}
                             alt="User profile"
                             className="w-10 h-10 rounded-full"
                           />
@@ -268,5 +268,4 @@ export default function ChatComponent() {
           </div>
         </div>
       );
-      
 }

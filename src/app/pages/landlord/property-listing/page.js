@@ -43,7 +43,7 @@ const PropertyListingPage = () => {
       axios
         .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
         .then((response) => {
-          console.log("✅ Fetched Verification Status:", response.data);
+          console.log("Fetched Verification Status:", response.data);
           setIsVerified(response.data.verification_status);
         })
         .catch((err) => {

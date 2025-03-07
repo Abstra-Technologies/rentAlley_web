@@ -1,6 +1,7 @@
 import { db } from "../../../lib/db";
+import {decryptData } from "../../../crypto/encrypt";
 
-export default async function handler(req, res) {
+export default async function getChatroomDetails(req, res) {
     if (req.method !== "GET") {
         return res.status(405).json({ message: "Method not allowed" });
     }

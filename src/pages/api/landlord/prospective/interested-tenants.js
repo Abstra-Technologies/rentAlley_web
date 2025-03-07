@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     const [tenants] = await db.query(
       `SELECT pt.id, pt.status, pt.message, pt.valid_id, pt.created_at,
               u.firstName, u.lastName, u.email, u.phoneNumber, u.profilePicture, u.birthDate,
-              t.address, t.occupation, t.employment_type, t.monthly_income
+              t.address, t.occupation, t.employment_type, t.monthly_income, t.tenant_id
        FROM ProspectiveTenant pt
        JOIN Tenant t ON pt.tenant_id = t.tenant_id
        JOIN User u ON t.user_id = u.user_id

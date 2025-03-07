@@ -29,7 +29,7 @@ const io = new Server(server, {
 //region ENCRYPT AND DECRYPT
 const encryptMessage = (message) => {
     if (!message || typeof message !== "string") {
-        console.error("❌ Encryption Error: Invalid message.");
+        console.error("Encryption Error: Invalid message.");
         return { encrypted: "", iv: "" }; // Return empty values to prevent errors
     }
 
@@ -37,7 +37,7 @@ const encryptMessage = (message) => {
     const secretKey = process.env.CHAT_ENCRYPTION_SECRET;
 
     if (!secretKey) {
-        console.error("❌ Missing CHAT_ENCRYPTION_SECRET in .env file");
+        console.error(" Missing CHAT_ENCRYPTION_SECRET in .env file");
         return { encrypted: "", iv: "" };
     }
 
@@ -51,7 +51,7 @@ const encryptMessage = (message) => {
 };
 const decryptMessage = (encryptedMessage, iv) => {
     if (!encryptedMessage || !iv) {
-        console.error("❌ Decryption Error: Missing encrypted message or IV.");
+        console.error("Decryption Error: Missing encrypted message or IV.");
         return "[Decryption Error]";
     }
 
@@ -62,19 +62,19 @@ const decryptMessage = (encryptedMessage, iv) => {
         decrypted += decipher.final("utf-8");
         return decrypted;
     } catch (error) {
-        console.error("❌ Decryption Failed:", error.message);
+        console.error("Decryption Failed:", error.message);
         return "[Decryption Error]";
     }
 };
 //endregion
 
 io.on("connection", (socket) => {
-    console.log(`✅ New client connected: ${socket.id}`);
+    console.log(` New client connected: ${socket.id}`);
 
     socket.on("joinRoom", async ({ chatRoom }) => {
         try {
             if (!chatRoom) {
-                console.error(`❌ Invalid chatRoom received. ${chatRoom}`);
+                console.error(` Invalid chatRoom received. ${chatRoom}`);
                 return;
             }
 
@@ -99,7 +99,7 @@ io.on("connection", (socket) => {
 
             io.to(chatRoom).emit("loadMessages", decryptedMessages);
         } catch (error) {
-            console.error("❌ Error loading messages:", error.message);
+            console.error("Error loading messages:", error.message);
         }
     });
 
@@ -109,7 +109,7 @@ io.on("connection", (socket) => {
 
             // Validate `chat_room` exists
             if (!chat_room) {
-                console.error("❌ Error: Chat room is undefined!");
+                console.error("Error: Chat room is undefined!");
                 return;
             }
 
@@ -121,13 +121,13 @@ io.on("connection", (socket) => {
             let [senderResult] = await pool.query(senderQuery, [sender_id]);
 
             if (senderResult.length === 0) {
-                console.error("❌ Error: Sender not found in database. Sender ID:", sender_id);
+                console.error("Error: Sender not found in database. Sender ID:", sender_id);
                 return;
             }
 
             const senderUserId = senderResult[0].user_id;
 
-            // ✅ Fetch receiver's `user_id` using their `tenant_id` or `landlord_id`
+            // Fetch receiver's `user_id` using their `tenant_id` or `landlord_id`
             let receiverQuery = receiver_type === 'tenant'
                 ? 'SELECT user_id FROM Tenant WHERE tenant_id = ?'
                 : 'SELECT user_id FROM Landlord WHERE landlord_id = ?';
@@ -135,39 +135,91 @@ io.on("connection", (socket) => {
             let [receiverResult] = await pool.query(receiverQuery, [receiver_id]);
 
             if (receiverResult.length === 0) {
-                console.error("❌ Error: Receiver not found in database. Receiver ID (tenant_id or landlord_id):", receiver_id);
+                console.error(" Error: Receiver not found in database. Receiver ID (tenant_id or landlord_id):", receiver_id);
                 return;
             }
 
-            // ✅ Convert `tenant_id` or `landlord_id` to `user_id`
+            // Convert `tenant_id` or `landlord_id` to `user_id`
             const receiverUserId = receiverResult[0].user_id;
 
-            console.log(`✅ Resolved IDs - Sender: ${sender_id} (user_id: ${senderUserId}), Receiver: ${receiver_id} (user_id: ${receiverUserId})`);
+            console.log(`Received Message IDs - Sender: ${sender_id} (user_id: ${senderUserId}), Receiver: ${receiver_id} (user_id: ${receiverUserId})`);
 
-            // ✅ Encrypt message before saving
+            //  Encrypt message before saving
             const { encrypted, iv } = encryptMessage(message);
 
-            // ✅ Store message in database with `user_id`
+            //  Store message in database with `user_id`
             await pool.query(
                 "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
                 [senderUserId, receiverUserId, encrypted, iv, chat_room]
             );
 
-            console.log(`✅ Message saved to DB: ChatRoom - ${chat_room}`);
+            console.log(`Message saved to DB: ChatRoom - ${chat_room}`);
 
-            // ✅ Send message to all users in the chat room
+            //  Send message to all users in the chat room
             io.to(chat_room).emit("receiveMessage", {
                 sender_id: senderUserId,
-                receiver_id: receiverUserId, // ✅ Now sending `user_id`
+                receiver_id: receiverUserId, // Now sending `user_id`
                 message,
                 timestamp: new Date(),
             });
+
+            //region AUTOMATED MESSAGE FOR NEW MAINTENANCE REQUEST ONLY
+
+            if (sender_type === "tenant" && message.toLowerCase().includes("maintenance request")){
+                console.log("Detected maintenance request. Sending auto-reply from landlord...");
+
+                const [landlordResult] = await pool.query(
+                    `SELECT p.landlord_id 
+                     FROM Unit u
+                     JOIN Property p ON u.property_id = p.property_id
+                     WHERE u.unit_id = ?`,
+                    [unit_id]
+                );
+
+                if (landlordResult.length > 0) {
+                    const landlordId = landlordResult[0].landlord_id;
+
+                    // Fetch landlord's `user_id`
+                    const [landlordUserResult] = await pool.query(
+                        `SELECT user_id FROM Landlord WHERE landlord_id = ?`,
+                        [landlordId]
+                    );
+
+                    if (landlordUserResult.length > 0) {
+                        const landlordUserId = landlordUserResult[0].user_id;
+
+                        // Define the automated response from the landlord
+                        const landlordMessage = `Hello! Your maintenance request has been received. I will review it and update you soon.`;
+
+                        // Encrypt message before saving
+                        const { encrypted: encryptedLandlordMessage, iv: landlordIv } = encryptMessage(landlordMessage);
+
+                        // Store landlord's automated response in the database
+                        await pool.query(
+                            "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
+                            [landlordUserId, senderUserId, encryptedLandlordMessage, landlordIv, chat_room]
+                        );
+
+                        io.to(chat_room).emit("receiveMessage", {
+                            sender_id: landlordUserId,
+                            receiver_id: senderUserId,
+                            message: landlordMessage,
+                            timestamp: new Date(),
+                        });
+
+                    }else{
+                        console.error("Error: Landlord user_id not found.");
+
+                    }
+                    }else{
+                    console.error("Error: Landlord not found for this unit.");
+                }
+                }
+            //endregion
         } catch (error) {
-            console.error("❌ Error sending message:", error);
+            console.error("Error sending message:", error);
         }
     });
-
-
     socket.on("disconnect", () => {
         console.log(`User disconnected: ${socket.id}`);
     });

@@ -6,6 +6,8 @@ import { Home, Bell, Wrench, CreditCard, Building } from "lucide-react";
 const menuItems = [
   { href: "/pages/tenant/dashboard", icon: Home, label: "Dashboard" },
   { href: "/pages/tenant/announcement", icon: Bell, label: "Announcements" },
+  { href: "/pages/tenant/chat", icon: Bell, label: "Chats" },
+
   {
     href: "/pages/tenant/maintenance",
     icon: Wrench,

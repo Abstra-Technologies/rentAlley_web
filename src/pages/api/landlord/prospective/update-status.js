@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { unitId, status, message } = req.body;
+    const { unitId, status, message, tenant_id } = req.body;
 
     console.log("Received Payload:", req.body);
 
@@ -30,26 +30,17 @@ export default async function handler(req, res) {
     `;
 
     if (status === "approved") {
-      const [prospective] = await db.query(
-        "SELECT id FROM ProspectiveTenant WHERE unit_id = ?",
-        [unitId]
-      );
-
-      if (!prospective.length) {
-        return res
-          .status(400)
-          .json({ message: "Prospective tenant not found" });
-      }
-
-      const prospectiveTenantId = prospective[0].id;
-
-      // Insert Lease Agreement
+      // const leaseQuery = `
+      //   INSERT INTO LeaseAgreement (prospective_tenant_id, start_date, end_date, status)
+      //   VALUES (?, 0, 0, 'active')
+      // `;
       const leaseQuery = `
-        INSERT INTO LeaseAgreement (prospective_tenant_id, start_date, end_date, status)
-        VALUES (?, 0, 0, 'active')
+        INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, status)
+        VALUES (?, ?, 0, 0, 'active')
       `;
 
-      await db.query(leaseQuery, [prospectiveTenantId]);
+      await db.query(leaseQuery, [tenant_id, unitId]);
+      // await db.query(leaseQuery, [prospectiveTenantId]);
     }
 
     const [result] = await db.query(query, [status, message || null, unitId]);
@@ -62,7 +53,7 @@ export default async function handler(req, res) {
       .status(200)
       .json({ message: `Tenant application ${status} successfully!` });
   } catch (error) {
-    console.error("❌ Error updating tenant status:", error);
+    console.error("Error updating tenant status:", error);
     res.status(500).json({ message: "Server Error" });
   }
 }

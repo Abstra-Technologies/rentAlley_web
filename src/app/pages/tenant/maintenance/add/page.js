@@ -10,10 +10,10 @@ import Swal from "sweetalert2";
 import { z } from "zod";
 
 export const maintenanceRequestSchema = z.object({
-  category: z.string().min(1, "Category is required"), // Ensures category is selected
-  subject: z.string().min(1, "Subject is required"), // Ensures subject is provided
-  description: z.string().min(1, "Description is required"), // Ensures description is provided
-  photos: z.array(z.instanceof(File)).min(1, "At least one photo is required"), // Ensures at least one photo is uploaded
+  category: z.string().min(1, "Category is required"),
+  subject: z.string().min(1, "Subject is required"),
+  description: z.string().min(1, "Description is required"),
+  photos: z.array(z.instanceof(File)).min(1, "At least one photo is required"),
 });
 
 export default function MaintenanceRequestPage() {
@@ -31,7 +31,6 @@ export default function MaintenanceRequestPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validate form data using Zod
     const formData = {
       category: selectedCategory,
       subject,
@@ -42,7 +41,6 @@ export default function MaintenanceRequestPage() {
     const validation = maintenanceRequestSchema.safeParse(formData);
 
     if (!validation.success) {
-      // Map validation errors
       const formattedErrors = validation.error.format();
       setErrors({
         category: formattedErrors.category?._errors[0],
@@ -61,7 +59,6 @@ export default function MaintenanceRequestPage() {
     }
 
     try {
-      // Step 1: Create Maintenance Request
       const maintenanceRes = await axios.post("/api/maintenance/create", {
         tenant_id: user.tenant_id,
         subject,
@@ -73,7 +70,6 @@ export default function MaintenanceRequestPage() {
 
       const requestId = maintenanceRes.data.request_id;
 
-      // Step 2: Upload Photos if any
       if (photos.length > 0) {
         const formData = new FormData();
         formData.append("request_id", requestId);
@@ -94,7 +90,7 @@ export default function MaintenanceRequestPage() {
         title: "Request Submitted",
         text: "Your maintenance request has been submitted successfully!",
       }).then(() => {
-        router.push("/pages/tenant/maintenance"); // Redirect after success
+        router.push("/pages/tenant/maintenance");
       });
     } catch (error) {
       console.error("Error submitting maintenance request:", error);

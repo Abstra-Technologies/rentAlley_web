@@ -6,8 +6,11 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const LandlordPropertyChart = () => {
     const [totalProperties, setTotalProperties] = useState(0);
-    const { user, fetchSession, loading } = useAuthStore();
+    const { user, fetchSession } = useAuthStore();
     const [monthlyVisits, setMonthlyVisits] = useState([]);
+    const [occupancyRate, setOccupancyRate] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [totalUnits, setTotalUnits] = useState(0);
 
     useEffect(() => {
         if (!user) {
@@ -28,9 +31,23 @@ const LandlordPropertyChart = () => {
             })
             .catch((error) => console.error("Error fetching visit data:", error));
 
+        fetch(`/api/analytics/landlord/getOccupancyRate?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("API Response:", data);
+                const total = data.occupancyRate?.total_units || 0;
+                const rate = total > 0 ? data.occupancyRate?.occupancy_rate || 0 : 0;
 
+                setTotalUnits(total);
+                setOccupancyRate(rate);
+                setLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error fetching occupancy rate data:", error);
+                setLoading(false);
+            });
 
-    }, [user]); // Runs when user data is available
+    }, [fetchSession, user]);
 
 
     const months = [
@@ -40,7 +57,7 @@ const LandlordPropertyChart = () => {
 
     // Ensure `monthlyVisits` is always an array before mapping
     const visitData = (monthlyVisits || []).map((item) => ({
-        month: months[item.month - 1], // Convert 1-12 to month names
+        month: months[item.month - 1],
         visitCount: item.visitCount
     }));
 
@@ -57,6 +74,42 @@ const LandlordPropertyChart = () => {
         xaxis: { categories: ["Your Properties"] },
         title: { text: "Total Number of Properties Listed" },
         colors: ["#6A0DAD"],
+    };
+
+    const chartDataOccupancy = {
+        series: totalUnits > 0 ? [occupancyRate] : [0],
+        options: {
+            chart: {
+                type: "radialBar",
+                height: 350
+            },
+            plotOptions: {
+                radialBar: {
+                    hollow: {
+                        size: "70%",
+                    },
+                    dataLabels: {
+                        name: {
+                            show: false
+                        },
+                        value: {
+                            fontSize: "24px",
+                            formatter: (val) => (totalUnits > 0 ? `${val.toFixed(2)}%` : "0%")
+                        }
+                    }
+                }
+            },
+            labels: ["Occupancy Rate"],
+            title: {
+                text: totalUnits > 0 ? `Total Units: ${totalUnits}` : "No Data Available",
+                align: "center",
+                margin: 20,
+                style: {
+                    fontSize: "16px",
+                    fontWeight: "bold"
+                }
+            }
+        }
     };
 
 
@@ -82,7 +135,11 @@ const LandlordPropertyChart = () => {
                     <p>Loading chart...</p>
                 )}
             </div>
+            <div>
+                    <h3>Overall Occupancy Rate</h3>
+                    <Chart options={chartDataOccupancy.options} series={chartDataOccupancy.series} type="radialBar" height={350} />
 
+            </div>
 
         </div>
     );

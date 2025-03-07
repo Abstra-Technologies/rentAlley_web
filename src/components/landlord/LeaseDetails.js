@@ -77,9 +77,9 @@ const LeaseDetails = ({ unitId }) => {
       console.log("API Response:", response.data); // Log the entire response
 
       if (response.data) {
-        setUnitName(response.data.unit?.unit_name || ""); // Safe access, default to empty string
-        setPropertyName(response.data.property?.property_name || ""); // Safe access, default to empty string
-        setUnitPhoto(response.data.photos?.[0] || ""); // Safe access to the first photo, default to empty string
+        setUnitName(response.data.unit?.unit_name || "");
+        setPropertyName(response.data.property?.property_name || "");
+        setUnitPhoto(response.data.photos?.[0] || "");
       }
     } catch (error) {
       console.error("Error fetching unit details:", error);
@@ -114,13 +114,14 @@ const LeaseDetails = ({ unitId }) => {
         showCancelButton: true,
       });
 
-      if (!value) return; // Ensure the user provided a reason
+      if (!value) return;
       disapprovalReason = value;
     }
 
     try {
       const payload = {
         unitId,
+        tenant_id: tenant?.tenant_id,
         status: newStatus,
         message: newStatus === "disapproved" ? disapprovalReason : null,
       };
@@ -171,7 +172,7 @@ const LeaseDetails = ({ unitId }) => {
       );
 
       if (response.data.length > 0) {
-        const leaseData = response.data[0]; // Access the first lease record
+        const leaseData = response.data[0];
         setLease(leaseData);
         setStartDate(leaseData.start_date || "");
         setEndDate(leaseData.end_date || "");
