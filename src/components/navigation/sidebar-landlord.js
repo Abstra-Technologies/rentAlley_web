@@ -24,14 +24,14 @@ const menuItems = [
     label: "Property Listing",
   },
   {
-    href: "/pages/landlord/property-listing",
-    icon: Building,
-    label: "My Tenants",
-  },
-  {
     href: "/pages/landlord/booking-appointment",
     icon: Calendar,
     label: "Visit Schedule",
+  },
+  {
+    href: "/pages/landlord/list_of_tenants",
+    icon: Calendar,
+    label: "My Tenants",
   },
   { href: "/pages/landlord/chat", icon: MessageSquareMore, label: "Chats" },
   {

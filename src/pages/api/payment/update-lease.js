@@ -36,7 +36,6 @@ export default async function updateLeasePayment(req, res) {
                 database: dbName,
             });
 
-            //  Ensure payment is not already recorded
             const [existingPayment] = await connection.execute(
                 `SELECT * FROM Payment WHERE receipt_reference = ? LIMIT 1`,
                 [requestReferenceNumber]
