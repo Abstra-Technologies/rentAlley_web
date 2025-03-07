@@ -3,6 +3,7 @@
 
 import {useParams, useSearchParams} from "next/navigation";
 import { useEffect, useState } from "react";
+import LandlordLayout from "../../../../../components/navigation/sidebar-landlord";
 
 export default function TenantDetails() {
     const params = useParams();
@@ -30,25 +31,70 @@ export default function TenantDetails() {
     if (!tenant) return <p>Tenant not found.</p>;
 
     return (
-        <div className="container mx-auto p-6">
-            <h1 className="text-2xl font-bold mb-4">Tenant Details</h1>
-            <div className="bg-white shadow-md rounded-lg p-6">
-                <p><strong>Name:</strong> {tenant.firstName} {tenant.lastName}</p>
-                <p><strong>Email:</strong> {tenant.email}</p>
-                <p><strong>Employment Type:</strong> {tenant.employment_type}</p>
-                <p><strong>Occupation:</strong> {tenant.occupation}</p>
-                <p><strong>Property:</strong> {tenant.property_name}</p>
-                <p><strong>Unit ID:</strong> {tenant.unit_id}</p>
-                <p><strong>Lease Start Date:</strong> {new Date(tenant.start_date).toLocaleDateString()}</p>
-                <p><strong>Lease End Date:</strong> {new Date(tenant.end_date).toLocaleDateString()}</p>
-
-                <button
-                    onClick={() => window.history.back()}
-                    className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                    Back to Tenants
-                </button>
+        <LandlordLayout>
+        <div className="container mx-auto p-6 max-w-3xl">
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div className="bg-blue-600 p-4 text-white">
+              <h1 className="text-2xl font-bold flex items-center">
+                <span>{tenant.firstName} {tenant.lastName}</span>
+                <span className="ml-2 text-sm bg-blue-500 py-1 px-2 rounded-full">Tenant</span>
+              </h1>
+              <p className="text-blue-100">{tenant.email}</p>
             </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">Personal Information</h2>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <span className="text-gray-500 w-32">Occupation:</span>
+                      <span className="font-medium">{tenant.occupation}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-500 w-32">Employment:</span>
+                      <span className="font-medium">{tenant.employment_type}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">Lease Information</h2>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <span className="text-gray-500 w-32">Property:</span>
+                      <span className="font-medium">{tenant.property_name}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-500 w-32">Unit ID:</span>
+                      <span className="font-medium">{tenant.unit_id}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-500 w-32">Start Date:</span>
+                      <span className="font-medium">{new Date(tenant.start_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-gray-500 w-32">End Date:</span>
+                      <span className="font-medium">{new Date(tenant.end_date).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 flex items-center justify-between">
+                <button
+                  onClick={() => window.history.back()}
+                  className="px-4 py-2 flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                  </svg>
+                  Back to Tenants
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+        </LandlordLayout>
+      );
 }
