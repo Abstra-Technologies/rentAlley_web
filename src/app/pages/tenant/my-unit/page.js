@@ -56,35 +56,53 @@ export default function MyUnit() {
   }, [user]);
 
   const handlePayment = async (type) => {
-    if (!unit) {
-      Swal.fire("Payment Error", "Unit details are not available.", "error");
-      return;
-    }
-  
     const isSecurity = type === "security_deposit";
     const title = isSecurity ? "Pay Security Deposit?" : "Pay Advance Rent?";
-    const amount = isSecurity ? unit?.sec_deposit : unit?.advanced_payment;
-  
+    const amount = isSecurity ? unit.sec_deposit : unit.advanced_payment;
+
     if (!amount || amount <= 0) {
       Swal.fire("Invalid Payment", "Payment amount is not set or is zero.", "error");
       return;
     }
-  
+
     const result = await Swal.fire({
       title,
       text: `Are you sure you want to pay ₱${amount.toLocaleString()} for ${isSecurity ? "Security Deposit" : "Advance Rent"}?`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, Proceed to Checkout",
+      confirmButtonText: "Yes, Pay Now",
       cancelButtonText: "Cancel",
     });
-  
+
     if (result.isConfirmed) {
-      // Redirect user to your custom checkout page
-      router.push(`/pages/tenant/my-unit/checkout?type=${type}&amount=${amount}&agreement_id=${unit?.agreement_id}`);
+      setLoadingPayment(true);
+
+      try {
+        const response = await axios.post("/api/tenant/RegPayment", {
+          agreement_id: unit.agreement_id,
+          amount,
+          payment_method_id: 1,
+          payment_type: type,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          redirectUrl: {
+            success:  "http://localhost:3000/pages/payment/secSuccess",
+            failure: `${window.location.origin}/payment-failure`,
+            cancel: `${window.location.origin}/payment-cancel`,
+          },
+        });
+
+        if (response.status === 200) {
+          window.location.href = response.data.checkoutUrl;
+        }
+      } catch (error) {
+        Swal.fire("Payment Failed", "An error occurred while processing your payment.", "error");
+      } finally {
+        setLoadingPayment(false);
+      }
     }
   };
-  
 
   const handleAccessRentPortal = () => {
     router.push("/pages/tenant/dashboard");
@@ -122,8 +140,8 @@ export default function MyUnit() {
   // Payment status indicators
   const PaymentStatus = ({ isPaid, label }) => (
     <div className="flex items-center gap-2 text-sm">
-      {isPaid ? 
-        <CheckCircleIcon className="h-5 w-5 text-green-500" /> : 
+      {isPaid ?
+        <CheckCircleIcon className="h-5 w-5 text-green-500" /> :
         <InformationCircleIcon className="h-5 w-5 text-amber-500" />
       }
       <span>{label}: {isPaid ? 'Paid' : 'Pending'}</span>
@@ -133,13 +151,13 @@ export default function MyUnit() {
   // Format complete address
   const formatAddress = () => {
     if (!unit) return "";
-    
+
     const addressParts = [
       unit.street,
       unit.brgy_district,
       unit.city,
     ].filter(Boolean);
-    
+
     return addressParts.join(", ");
   };
 
@@ -151,7 +169,7 @@ export default function MyUnit() {
           <h2 className="text-xl font-bold text-indigo-900">My Rental</h2>
           <p className="text-sm text-gray-500">Manage your rental property</p>
         </div>
-        
+
         <nav>
           <ul className="space-y-2">
             <li className="rounded-md bg-indigo-50">
@@ -180,9 +198,9 @@ export default function MyUnit() {
       <div className="flex-1 px-4 py-6 md:px-8 md:py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-indigo-900">My Unit</h1>
-          
-          <button 
-            onClick={handleContactLandlord} 
+
+          <button
+            onClick={handleContactLandlord}
             className="mt-3 sm:mt-0 flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors"
           >
             <ChatBubbleLeftRightIcon className="h-5 w-5" />
@@ -195,17 +213,17 @@ export default function MyUnit() {
             {/* Unit photo and header */}
             <div className="relative h-56 sm:h-72 w-full">
               {unit.unit_photos && unit.unit_photos.length > 0 ? (
-                <Image 
-                  src={unit.unit_photos[0]} 
-                  alt={`${unit.property_name} - Unit ${unit.unit_name}`} 
-                  layout="fill" 
-                  objectFit="cover" 
+                <Image
+                  src={unit.unit_photos[0]}
+                  alt={`${unit.property_name} - Unit ${unit.unit_name}`}
+                  layout="fill"
+                  objectFit="cover"
                   className="brightness-90"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-indigo-800"></div>
               )}
-              
+
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
                 <div className="absolute bottom-0 left-0 p-6 text-white">
                   <div className="flex items-center gap-2 mb-2">
@@ -259,7 +277,7 @@ export default function MyUnit() {
 
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment Details</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 transition-all hover:shadow-md">
                     <div className="flex items-center mb-2">
@@ -268,7 +286,7 @@ export default function MyUnit() {
                     </div>
                     <p className="text-xl font-bold text-indigo-600">₱{unit.rent_amount?.toLocaleString() || 0}</p>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 transition-all hover:shadow-md">
                     <div className="flex items-center mb-2">
                       <KeyIcon className="h-5 w-5 text-indigo-500 mr-2" />
@@ -279,7 +297,7 @@ export default function MyUnit() {
                       <PaymentStatus isPaid={isSecurityPaid} label="Security Deposit" />
                     )}
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 transition-all hover:shadow-md">
                     <div className="flex items-center mb-2">
                       <CreditCardIcon className="h-5 w-5 text-indigo-500 mr-2" />
@@ -296,11 +314,11 @@ export default function MyUnit() {
               {/* Payment action buttons */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
-                
+
                 {/* Only show security deposit payment if needed */}
                 {requiresSecurity && !isSecurityPaid && (
-                  <button 
-                    onClick={() => handlePayment("security_deposit")} 
+                  <button
+                    onClick={() => handlePayment("security_deposit")}
                     disabled={loadingPayment}
                     className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
                   >
@@ -317,11 +335,11 @@ export default function MyUnit() {
                     </div>
                   </button>
                 )}
-                
+
                 {/* Only show advance rent payment if needed */}
                 {requiresAdvanced && !isAdvancedPaid && (
-                  <button 
-                    onClick={() => handlePayment("advance_rent")} 
+                  <button
+                    onClick={() => handlePayment("advance_rent")}
                     disabled={loadingPayment}
                     className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
                   >
@@ -338,11 +356,11 @@ export default function MyUnit() {
                     </div>
                   </button>
                 )}
-                
+
                 {/* Show rent portal access when all payments are made */}
                 {allPaymentsMade && (
-                  <button 
-                    onClick={handleAccessRentPortal} 
+                  <button
+                    onClick={handleAccessRentPortal}
                     className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg shadow-md hover:from-green-700 hover:to-green-800 transition-all transform hover:scale-[1.01]"
                   >
                     <div className="flex items-center">
@@ -359,8 +377,8 @@ export default function MyUnit() {
 
               {/* Mobile contact landlord button */}
               <div className="mt-8 md:hidden">
-                <button 
-                  onClick={handleContactLandlord} 
+                <button
+                  onClick={handleContactLandlord}
                   className="w-full flex items-center justify-center gap-2 py-3 border border-indigo-200 rounded-lg text-indigo-600 hover:bg-indigo-50 transition-colors"
                 >
                   <ChatBubbleLeftRightIcon className="h-5 w-5" />
@@ -387,8 +405,8 @@ const ErrorScreen = ({ error }) => (
     <XCircleIcon className="h-16 w-16 text-red-500 mb-4" />
     <h2 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h2>
     <p className="text-red-500 mb-6">{error || "Failed to load unit details"}</p>
-    <button 
-      onClick={() => window.location.reload()} 
+    <button
+      onClick={() => window.location.reload()}
       className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
     >
       Try Again
