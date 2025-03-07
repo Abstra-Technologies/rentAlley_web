@@ -7,7 +7,6 @@ import CardWarning from "../../../../../components/devTeam";
 import {logEvent} from "../../../../../utils/gtag";
 import LoadingScreen from "../../../../../components/loadingScreen";
 
-// modify this part.
 const plans = [
     { 
         id: 1, 
@@ -210,6 +209,7 @@ const handleProceed = async () => {
                     plan_name: selectedPlan.name,
                 }),
             });
+
             if (response.status === 201) {
                 alert(`${selectedPlan.trialDays}-day free trial activated successfully!`);
                 router.push("/pages/landlord/dashboard");
@@ -234,6 +234,7 @@ const handleProceed = async () => {
             );
         }
     } catch (error) {
+        console.error("Error during trial activation:", error);
         alert("An error occurred. Please try again.", error);
     } finally {
         setProcessing(false);
