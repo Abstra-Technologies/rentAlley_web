@@ -5,6 +5,7 @@ import InquiryBooking from "../../../../../components/tenant/inquiry";
 import Image from "next/image";
 import useAuth from "../../../../../../hooks/useSession";
 import { IoArrowBackOutline } from "react-icons/io5";
+import ReviewsList from "../../../../../components/tenant/reviewList";
 
 export default function UnitDetailPage() {
   const router = useRouter();
@@ -161,6 +162,10 @@ export default function UnitDetailPage() {
             landlord_id={unit?.landlord_id}
           />
         </div>
+      </div>
+      {/* Reviews Section - Added Below Unit Details */}
+      <div className="bg-white p-6 shadow-md rounded-lg mt-6">
+        <ReviewsList unit_id={unit?.unit_id} landlord_id={user?.landlord_id} />
       </div>
     </div>
   );
