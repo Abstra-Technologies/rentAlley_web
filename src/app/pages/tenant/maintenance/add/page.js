@@ -31,6 +31,80 @@ export default function MaintenanceRequestPage() {
     setPhotos([...e.target.files]);
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   const formData = {
+  //     category: selectedCategory,
+  //     subject,
+  //     description,
+  //     photos,
+  //   };
+  //
+  //   const validation = maintenanceRequestSchema.safeParse(formData);
+  //
+  //   if (!validation.success) {
+  //     const formattedErrors = validation.error.format();
+  //     setErrors({
+  //       category: formattedErrors.category?._errors[0],
+  //       subject: formattedErrors.subject?._errors[0],
+  //       description: formattedErrors.description?._errors[0],
+  //       photos: formattedErrors.photos?._errors[0],
+  //     });
+  //
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Validation Error",
+  //       text: "Please fill in all required fields correctly.",
+  //     });
+  //
+  //     return;
+  //   }
+  //
+  //   try {
+  //     const maintenanceRes = await axios.post("/api/maintenance/create", {
+  //       tenant_id: user.tenant_id,
+  //       subject,
+  //       description,
+  //       category: selectedCategory,
+  //     });
+  //
+  //     console.log("Maintenance Reqs: ", maintenanceRes);
+  //
+  //     const requestId = maintenanceRes.data.request_id;
+  //     const landlordId = maintenanceRes.data.landlord_id;
+  //
+  //     if (photos.length > 0) {
+  //       const formData = new FormData();
+  //       formData.append("request_id", requestId);
+  //
+  //       console.log("Form Data Photos: ", photos);
+  //
+  //       photos.forEach((photo) => {
+  //         formData.append("photos", photo);
+  //       });
+  //
+  //       await axios.post("/api/maintenance/uploadPhotos", formData, {
+  //         headers: { "Content-Type": "multipart/form-data" },
+  //       });
+  //     }
+  //
+  //     Swal.fire({
+  //       icon: "success",
+  //       title: "Request Submitted",
+  //       text: "Your maintenance request has been submitted successfully!",
+  //     }).then(() => {
+  //       router.push("/pages/tenant/maintenance");
+  //     });
+  //   } catch (error) {
+  //     console.error("Error submitting maintenance request:", error);
+  //     Swal.fire({
+  //       icon: "error",
+  //       title: "Submission Failed",
+  //       text: "Something went wrong. Please try again later.",
+  //     });
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = {
@@ -61,6 +135,7 @@ export default function MaintenanceRequestPage() {
     }
 
     try {
+      // Submit maintenance request
       const maintenanceRes = await axios.post("/api/maintenance/create", {
         tenant_id: user.tenant_id,
         subject,
@@ -68,16 +143,17 @@ export default function MaintenanceRequestPage() {
         category: selectedCategory,
       });
 
-      console.log("Maintenance Reqs: ", maintenanceRes);
+      console.log("Maintenance Request Response:", maintenanceRes);
 
       const requestId = maintenanceRes.data.request_id;
       const landlordId = maintenanceRes.data.landlord_id;
 
+      // Upload photos if available
       if (photos.length > 0) {
         const formData = new FormData();
         formData.append("request_id", requestId);
 
-        console.log("Form Data Photos: ", photos);
+        console.log("Uploading Photos:", photos);
 
         photos.forEach((photo) => {
           formData.append("photos", photo);
@@ -104,6 +180,7 @@ export default function MaintenanceRequestPage() {
       });
     }
   };
+
 
   return (
     <TenantLayout>

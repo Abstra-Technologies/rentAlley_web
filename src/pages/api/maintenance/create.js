@@ -1,38 +1,113 @@
+// import { db } from "../../../lib/db";
+// import { Server } from "socket.io";
+//
+// export default async function CreateNewMaintenanceRequest(req, res) {
+//   if (req.method !== "POST") {
+//     return res.status(405).json({ error: "Method Not Allowed" });
+//   }
+//
+//   try {
+//     const { tenant_id, subject, description, category } = req.body;
+//
+//     console.log("Request Data:", req.body);
+//
+//     const [tenantRecord] = await db.query(
+//       "SELECT unit_id FROM LeaseAgreement WHERE tenant_id = ? AND status = 'active'",
+//       [tenant_id]
+//     );
+//
+//     if (!tenantRecord.length) {
+//       return res.status(404).json({ error: "No approved rental found" });
+//     }
+//
+//     const { unit_id } = tenantRecord[0];
+//
+//     const [result] = await db.query(
+//       `INSERT INTO MaintenanceRequest
+//             (tenant_id, unit_id, subject, description, category, status)
+//             VALUES (?, ?, ?, ?, ?, ?)`,
+//       [tenant_id, unit_id, subject, description, category, "Pending"]
+//     );
+//
+//     return res.status(201).json({
+//       success: true,
+//       message: "Maintenance request created successfully",
+//       request_id: result.insertId,
+//     });
+//   } catch (error) {
+//     console.error("Error creating maintenance request:", error);
+//     return res.status(500).json({ error: "Internal Server Error" });
+//   }
+// }
+
 import { db } from "../../../lib/db";
-import { Server } from "socket.io";
+import { io } from "socket.io-client";
 
 export default async function CreateNewMaintenanceRequest(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
-
+  const connection = await db.getConnection();
   try {
     const { tenant_id, subject, description, category } = req.body;
 
     console.log("Request Data:", req.body);
 
-    const [tenantRecord] = await db.query(
-      "SELECT unit_id FROM LeaseAgreement WHERE tenant_id = ? AND status = 'active'",
-      [tenant_id]
+    // Fetch the tenant's active unit and its associated property_id
+    const [tenantRecord] = await connection.query(
+        "SELECT unit_id, property_id FROM Unit WHERE unit_id IN (SELECT unit_id FROM LeaseAgreement WHERE tenant_id = ? AND status = 'active')",
+        [tenant_id]
     );
 
     if (!tenantRecord.length) {
       return res.status(404).json({ error: "No approved rental found" });
     }
 
-    const { unit_id } = tenantRecord[0];
+    const { unit_id, property_id } = tenantRecord[0];
 
-    const [result] = await db.query(
-      `INSERT INTO MaintenanceRequest
-            (tenant_id, unit_id, subject, description, category, status)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      [tenant_id, unit_id, subject, description, category, "Pending"]
+    // Fetch the landlord ID associated with the property
+    const [landlordRecord] = await connection.query(
+        "SELECT landlord_id FROM Property WHERE property_id = ?",
+        [property_id]
     );
+
+    if (!landlordRecord.length) {
+      return res.status(404).json({ error: "Landlord not found for this property" });
+    }
+
+    const { landlord_id } = landlordRecord[0];
+
+    // Insert the maintenance request into the database
+    const [result] = await connection.query(
+        `INSERT INTO MaintenanceRequest
+           (tenant_id, unit_id, subject, description, category, status)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [tenant_id, unit_id, subject, description, category, "Pending"]
+    );
+
+    const request_id = result.insertId;
+
+    // Emit an automated chat message from the landlord to the tenant
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
+
+    const chat_room = `chat_${[tenant_id, landlord_id].sort().join("_")}`;
+
+    const autoMessage = {
+      sender_id: landlord_id,
+      sender_type: "landlord",
+      receiver_id: tenant_id,
+      receiver_type: "tenant",
+      message: `I have received your maintenance request for "${subject}". We will look into it as soon as possible.`,
+      chat_room,
+    };
+
+    socket.emit("sendMessage", autoMessage);
 
     return res.status(201).json({
       success: true,
       message: "Maintenance request created successfully",
-      request_id: result.insertId,
+      request_id,
+      landlord_id, // Return landlord_id to the frontend for reference
     });
   } catch (error) {
     console.error("Error creating maintenance request:", error);

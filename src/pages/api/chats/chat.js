@@ -1,73 +1,16 @@
 import { db } from "../../../lib/db";
 import { decryptData } from "../../../crypto/encrypt";
 
-// export default async function handler(req, res) {
-//     if (req.method !== "GET") {
-//         return res.status(405).json({ message: "Method not allowed" });
-//     }
-//
-//     const { userId } = req.query;
-//     if (!userId) {
-//         return res.status(400).json({ message: "User ID is required" });
-//     }
-//
-//     try {
-//         const [chatList] = await db.query(
-//             `SELECT DISTINCT
-//                  m.chat_room,
-//                  u.firstName AS encryptedFirstName,
-//                  u.lastName AS encryptedLastName,
-//                  (SELECT encrypted_message FROM Message WHERE chat_room = m.chat_room ORDER BY timestamp DESC LIMIT 1) AS lastMessage,
-//                  u.user_id AS chatUserId
-//              FROM Message m
-//                       JOIN User u ON (m.receiver_id = u.user_id OR m.sender_id = u.user_id)
-//              WHERE (m.sender_id = ? OR m.receiver_id = ?)
-//                AND u.user_id != ?  -- Exclude the current user
-//              ORDER BY lastMessage DESC`,
-//             [userId, userId, userId]
-//         );
-//
-//         // 🔍 Log data for debugging
-//         console.log("✅ Chat List Raw Data:", chatList);
-//
-//         const decryptedChatList = chatList.map(chat => {
-//             let decryptedFirstName = "Unknown";
-//             let decryptedLastName = "Unknown";
-//
-//             try {
-//                 decryptedFirstName = decryptData(JSON.parse(chat.encryptedFirstName), process.env.ENCRYPTION_SECRET);
-//                 decryptedLastName = decryptData(JSON.parse(chat.encryptedLastName), process.env.ENCRYPTION_SECRET);
-//             } catch (error) {
-//                 console.error("❌ Decryption error:", error);
-//             }
-//
-//             return {
-//                 chat_room: chat.chat_room,
-//                 name: `${decryptedFirstName} ${decryptedLastName}`,
-//                 lastMessage: chat.lastMessage || "No messages yet",
-//                 chatUserId: chat.chatUserId,
-//             };
-//         });
-//
-//         console.log("✅ Decrypted Chat List:", decryptedChatList);
-//
-//         return res.status(200).json(decryptedChatList);
-//     } catch (error) {
-//         console.error("❌ Error fetching chats:", error);
-//         return res.status(500).json({ message: "Internal Server Error" });
-//     }
-// }
-//
-
 export default async function Chats(req, res) {
 
     const { userId } = req.query;
     if (!userId) {
         return res.status(400).json({ message: "User ID is required" });
     }
+    const connection = await db.getConnection();
 
     try {
-        const [chatList] = await db.query(
+        const [chatList] = await connection.query(
             `SELECT DISTINCT
                  m.chat_room,
                  u.firstName AS encryptedFirstName,
@@ -87,7 +30,7 @@ export default async function Chats(req, res) {
         );
 
 
-        console.log("✅ Chat List Raw Data:", chatList);
+        console.log("Chat List Raw Data:", chatList);
 
         const decryptedChatList = chatList.map(chat => {
             let decryptedFirstName = "Unknown";
@@ -110,11 +53,11 @@ export default async function Chats(req, res) {
             };
         });
 
-        console.log("✅ Decrypted Chat List:", decryptedChatList);
+        console.log("Decrypted Chat List:", decryptedChatList);
 
         return res.status(200).json(decryptedChatList);
     } catch (error) {
-        console.error("❌ Error fetching chats:", error);
+        console.error("Error fetching chats:", error);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }
