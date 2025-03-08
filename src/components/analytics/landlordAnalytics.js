@@ -13,6 +13,7 @@ const LandlordPropertyChart = () => {
     const [totalUnits, setTotalUnits] = useState(0);
     const [data, setData] = useState([]);
     const [paymentData, setPaymentData] = useState([]);
+    const [totalTenants, setTotalTenants] = useState(0);
 
     useEffect(() => {
         if (!user) {
@@ -69,6 +70,15 @@ const LandlordPropertyChart = () => {
                 setPaymentData(data);
             })
             .catch((error) => console.error("Error fetching payment data:", error));
+
+        fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Total Tenants:", data.total_tenants);
+                setTotalTenants(data.total_tenants);
+            })
+            .catch((error) => console.error("Error fetching total tenants:", error));
+
 
     }, [fetchSession, user]);
 
@@ -154,6 +164,10 @@ const LandlordPropertyChart = () => {
 
     return (
         <div>
+            <div>
+                <h3>Total Current Tenants</h3>
+                <p>{totalTenants}</p>
+            </div>
         <div>
             {totalProperties > 0 ? (
                 <Chart options={chartOptions} series={[{ name: "Properties", data: [totalProperties] }]} type="bar" height={350} />
