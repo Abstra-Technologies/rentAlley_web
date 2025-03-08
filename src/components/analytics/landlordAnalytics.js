@@ -5,8 +5,9 @@ import useAuthStore from "../../zustand/authStore"; // Zustand auth store
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const LandlordPropertyChart = () => {
-    const [totalProperties, setTotalProperties] = useState(0);
     const { user, fetchSession } = useAuthStore();
+
+    const [totalProperties, setTotalProperties] = useState(0);
     const [monthlyVisits, setMonthlyVisits] = useState([]);
     const [occupancyRate, setOccupancyRate] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -15,6 +16,8 @@ const LandlordPropertyChart = () => {
     const [paymentData, setPaymentData] = useState([]);
     const [totalTenants, setTotalTenants] = useState(0);
     const [totalRequests, setTotalRequests] = useState(0);
+    const [totalReceivables, setTotalReceivables] = useState(0);
+    const [utilityTrend, setUtilityTrend] = useState([]);
 
     useEffect(() => {
         if (!user) {
@@ -75,7 +78,7 @@ const LandlordPropertyChart = () => {
         fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${user.landlord_id}`)
             .then((res) => res.json())
             .then((data) => {
-                console.log("Total Tenants:", data.total_tenants);
+                console.log("Total Tenants:", data?.total_tenants);
                 setTotalTenants(data.total_tenants);
             })
             .catch((error) => console.error("Error fetching total tenants:", error));
@@ -83,10 +86,30 @@ const LandlordPropertyChart = () => {
         fetch(`/api/analytics/landlord/getNumberMaintenanceRequestsperMonth?landlord_id=${user.landlord_id}`)
             .then((res) => res.json())
             .then((data) => {
-                console.log("Total Maintenance Requests:", data.total_requests);
-                setTotalRequests(data.total_requests);
+                console.log("Total Maintenance Requests:", data?.total_requests);
+                setTotalRequests(data?.total_requests);
             })
             .catch((error) => console.error("Error fetching maintenance request count:", error));
+
+        fetch(`/api/analytics/landlord/getTotalReceivables?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Total Receivables:", data?.total_receivables);
+                setTotalReceivables(data?.total_receivables);
+            })
+            .catch((error) => console.error("Error fetching total receivables:", error));
+
+        fetch(`/api/analytics/landlord/getMonthlyUtilityTrend?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Utility Trend Data:", data);
+                setUtilityTrend(data);
+            })
+            .catch((error) => console.error("Error fetching utility trend:", error));
+
+
+
+
 
     }, [fetchSession, user]);
 
@@ -146,9 +169,28 @@ const LandlordPropertyChart = () => {
     };
     const chartSeriesMaintenance = data.map((item) => item.category);
 
+    // Monthly Utility Expense
+    const monthsUtility = [...new Set(utilityTrend.map((item) => item.month))];
+    const waterData = monthsUtility.map(
+        (month) =>
+            utilityTrend.find((item) => item.month === month && item.utility_type === "water")?.total_expense || 0
+    );
+    const electricityData = monthsUtility.map(
+        (month) =>
+            utilityTrend.find((item) => item.month === month && item.utility_type === "electricity")?.total_expense || 0
+    );
 
+    const chartOptionsUtilityTrends = {
+        chart: { type: "line" },
+        xaxis: { categories: monthsUtility },
+        title: { text: "Monthly Utility Expenses Trend", align: "center" },
+    };
+    const seriesUtilityTrends = [
+        { name: "Water", data: waterData },
+        { name: "Electricity", data: electricityData },
+    ];
 
-
+    // Total Payments recieved. per month.
     const chartOptionsPayment = {
         chart: {
             type: "bar",
@@ -161,7 +203,6 @@ const LandlordPropertyChart = () => {
             align: "center",
         },
     };
-
     const seriesPayment = [
         {
             name: "Total Payments Received",
@@ -172,6 +213,13 @@ const LandlordPropertyChart = () => {
 
     return (
         <div>
+            <div>
+                <Chart options={chartOptionsUtilityTrends} series={seriesUtilityTrends} type="line" height={350} />
+            </div>
+            <div>
+                <h3>Total Receivables</h3>
+                <p>₱{totalReceivables?.toLocaleString() || 0}</p>
+            </div>
             <div>
                 <h3>Total Maintenance Requests</h3>
                 <p>{totalRequests}</p>
