@@ -6,10 +6,12 @@ import mysql from "mysql2/promise";
 export default async function subscriptionCheckout(req, res) {
 
     const { amount, description, email, firstName, lastName, redirectUrl, landlord_id, plan_name } = req.body;
+
     if (!landlord_id) {
         return res.status(400).json({ error: "Missing landlord_id in request." });
     }
-    console.log("🔍 Debug - Incoming Request Data:", {
+
+    console.log("Incoming Request Data for subscription checkout:", {
         amount, description, email, firstName, lastName, redirectUrl, landlord_id, plan_name
     });
 
@@ -21,6 +23,7 @@ export default async function subscriptionCheckout(req, res) {
     const dbName = process.env.DB_NAME;
 
     let connection;
+
     try {
         connection = await mysql.createConnection({
             host: dbHost,
@@ -29,7 +32,7 @@ export default async function subscriptionCheckout(req, res) {
             database: dbName,
         });
 
-        // **Check if landlord has already used a trial (tracked at user level)**
+        // Check if trial has already been used (tracked at user level)
         const [landlordData] = await connection.execute(
             "SELECT is_trial_used FROM Landlord WHERE landlord_id = ? LIMIT 1",
             [landlord_id]
@@ -38,9 +41,9 @@ export default async function subscriptionCheckout(req, res) {
         const hasUsedTrial = landlordData.length > 0 && landlordData[0].is_trial_used;
         console.log("Debug - Has Used Trial Before?", hasUsedTrial);
 
-        //  **Determine Trial Days Based on Plan**
+        //  Determine Trial Days Based on Plan
         const start_date = new Date().toISOString().split("T")[0];
-        const trialDays = plan_name === "Standard" ? 10 : plan_name === "Premium" ? 14 : 0;
+        const trialDays = plan_name === "Standard" ? 10 : plan_name === "Premium" ? 10 : 14;
         const trialStartDate = new Date(start_date);
         const trialEndDate = new Date(trialStartDate);
         trialEndDate.setDate(trialStartDate.getDate() + trialDays);
@@ -50,9 +53,10 @@ export default async function subscriptionCheckout(req, res) {
         end_date.setMonth(end_date.getMonth() + 1);
         const formatted_end_date = end_date.toISOString().split("T")[0];
 
-        //  **If trial has NOT been used before, grant it**
+        //  **If trial has NOT been used before allow trial mode
+
         if (!hasUsedTrial && (plan_name === "Standard" || plan_name === "Premium")) {
-            console.log("🎉 Granting One-Time Free Trial!");
+            console.log("Granting One-Time Free Trial!");
 
             await connection.execute(
                 "UPDATE Landlord SET is_trial_used = 1 WHERE landlord_id = ?",
@@ -95,21 +99,14 @@ export default async function subscriptionCheckout(req, res) {
             });
         }
 
-        // **If the user has already used the trial, proceed to payment**
-        // check that the amount should be passed.
+        // If the user has already used the trial, proceed to payment
         if (!amount || isNaN(amount)) {
             return res.status(400).json({ error: "Invalid amount." });
         }
 
         const requestReferenceNumber = `REF-${Date.now()}`;
 
-        // Check if an existing subscription exists
-        const [existingSubscription] = await connection.execute(
-            "SELECT subscription_id FROM Subscription WHERE landlord_id = ? LIMIT 1",
-            [landlord_id]
-        );
-
-
+// maya
         const payload = {
             totalAmount: { value: amount, currency: "PHP" },
             buyer: { firstName, lastName, contact: { email } },

@@ -4,7 +4,7 @@ import { decryptData } from "../../../crypto/encrypt";
 // Encryption Secret
 const encryptionSecret = process.env.ENCRYPTION_SECRET;
 
-export default async function handler(req, res) {
+export default async function getLease(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -16,10 +16,9 @@ export default async function handler(req, res) {
   const { unit_id } = req.query;
 
   try {
-    // Step 1: Get the approved prospective tenant for the unit
     const [prospectiveTenantResult] = await connection.execute(
       "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ?",
-      [Number(unit_id)]
+      [unit_id]
     );
 
     if (prospectiveTenantResult.length === 0) {
@@ -35,7 +34,6 @@ export default async function handler(req, res) {
 
     const [rows] = await connection.execute(query, params);
 
-    // Decrypt the photo URLs before returning them
     const decryptedRows = rows.map((row) => {
       try {
         const encryptedData = JSON.parse(row.agreement_url);

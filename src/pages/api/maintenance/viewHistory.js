@@ -36,20 +36,19 @@ export default async function handler(req, res) {
       [tenant_id]
     );
 
-    // Process and decrypt maintenance photos
     const maintenanceHistory = history.map((request) => {
       return {
         ...request,
         maintenance_photos: request.maintenance_photos
           ? request.maintenance_photos.split(",").map((encryptedPhoto) => {
               try {
-                return decryptData(encryptedPhoto, SECRET_KEY); // Decrypt each photo
+                return decryptData(encryptedPhoto, SECRET_KEY);
               } catch (error) {
                 console.error("Failed to decrypt photo:", error);
                 return null;
               }
             })
-          : [], // Default to empty array if no photos
+          : [],
       };
     });
 

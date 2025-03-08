@@ -1,6 +1,6 @@
 import { db } from "../../../lib/db";
 
-export default async function handler(req, res) {
+export default async function getNotification(req, res) {
     if (req.method === "GET") {
         try {
             const { userId } = req.query;
@@ -9,9 +9,8 @@ export default async function handler(req, res) {
                 return res.status(400).json({ error: "User ID is required" });
             }
 
-            console.log("Fetching notifications for user:", userId); // Debugging log
+            console.log("Fetching notifications for user:", userId);
 
-            // ✅ Use userId directly, no need to decrypt
             const [notifications] = await db.query(
                 "SELECT id, title, body, is_read, created_at FROM Notification WHERE user_id = ? ORDER BY created_at DESC",
                 [userId]
@@ -31,7 +30,6 @@ export default async function handler(req, res) {
             if (!id) {
                 return res.status(400).json({ error: "Notification ID is required" });
             }
-
             await db.query("UPDATE Notification SET is_read = 1 WHERE id = ?", [id]);
 
             return res.status(200).json({ success: true });

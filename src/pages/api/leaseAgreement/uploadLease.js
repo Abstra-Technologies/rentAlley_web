@@ -6,16 +6,14 @@ import { db } from "../../../lib/db";
 
 export const config = {
   api: {
-    bodyParser: false, // Disable Next.js body parser to handle FormData with Formidable
+    bodyParser: false,
   },
 };
 
-// Encrypt data before storing in DB
 const encryptDataString = (data) => {
   return JSON.stringify(encryptData(data, process.env.ENCRYPTION_SECRET));
 };
 
-// Initialize S3 Client
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -25,16 +23,13 @@ const s3 = new S3Client({
 });
 
 function sanitizeFilename(filename) {
-  // Replace special characters with underscores and remove whitespaces
   const sanitized = filename
-    .replace(/[^a-zA-Z0-9.]/g, "_") // Replace non-alphanumeric chars with underscores
+    .replace(/[^a-zA-Z0-9.]/g, "_")
     .replace(/\s+/g, "_"); // Replace consecutive whitespaces with a single underscore
   return sanitized;
 }
 
-/**
- * Upload file to S3 and return encrypted URL.
- */
+
 const uploadToS3 = async (file, folder) => {
   if (!file || !file.filepath) {
     console.error("Filepath is missing:", file);
@@ -64,11 +59,8 @@ const uploadToS3 = async (file, folder) => {
   return encryptDataString(s3Url);
 };
 
-/**
- * API Handler to process file upload and save encrypted links to MySQL
- */
 
-export default async function handler(req, res) {
+export default async function saveUploadLease(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -76,8 +68,8 @@ export default async function handler(req, res) {
   const form = new IncomingForm({
     multiples: false,
     keepExtensions: true,
-    maxFileSize: 20 * 1024 * 1024, // 20MB limit
-    allowEmptyFiles: false, // Ensure files are actually uploaded
+    maxFileSize: 20 * 1024 * 1024,
+    allowEmptyFiles: false,
   });
 
   form.parse(req, async (err, fields, files) => {
@@ -101,7 +93,7 @@ export default async function handler(req, res) {
       // Step 1: Get the approved prospective tenant for the unit
       const [prospectiveTenantResult] = await connection.execute(
         "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ?",
-        [Number(unit_id)]
+        [unit_id]
       );
 
       if (prospectiveTenantResult.length === 0) {
@@ -134,12 +126,10 @@ export default async function handler(req, res) {
         Number(unit_id),
         agreementUrl,
       ]);
-
       await connection.commit();
       res.status(201).json({ message: "Lease agreement stored successfully." });
     } catch (error) {
       if (connection) await connection.rollback();
-      console.error("Upload error:", error);
       res.status(500).json({ error: "Internal server error" });
     } finally {
       if (connection) connection.release();

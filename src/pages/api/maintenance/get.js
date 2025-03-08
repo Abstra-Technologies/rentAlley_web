@@ -1,7 +1,7 @@
 import { db } from "../../../lib/db";
 import { decryptData } from "../../../crypto/encrypt";
 
-export default async function handler(req, res) {
+export default async function tenantAllMaintenanceRequest(req, res) {
   if (req.method !== "GET")
     return res.status(405).json({ message: "Method not allowed" });
 
@@ -11,7 +11,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: "Tenant ID is required" });
 
   try {
-    // Verify if tenant is approved
     const [approvedTenant] = await db.query(
       `SELECT * FROM ProspectiveTenant 
        WHERE tenant_id = ? AND status = 'approved'`,
@@ -35,12 +34,10 @@ export default async function handler(req, res) {
       [tenantId]
     );
 
-    // If no requests, return early
     if (maintenanceRequests.length === 0) {
       return res.status(200).json([]);
     }
 
-    // Process each request to fetch and decrypt photos
     for (const request of maintenanceRequests) {
       const [photos] = await db.query(
         `SELECT photo_url FROM MaintenancePhoto WHERE request_id = ?`,
@@ -52,20 +49,19 @@ export default async function handler(req, res) {
           ? photos
               .map((photo) => {
                 try {
-                  const parsedUrl = JSON.parse(photo.photo_url); // Ensure JSON parsing
-                  return decryptData(parsedUrl, process.env.ENCRYPTION_SECRET); // Decrypt after parsing
+                  const parsedUrl = JSON.parse(photo.photo_url);
+                  return decryptData(parsedUrl, process.env.ENCRYPTION_SECRET);
                 } catch (error) {
                   console.error(
                     "Error parsing or decrypting photo URL:",
                     error
                   );
-                  return null; // Return null for invalid entries
+                  return null;
                 }
               })
               .filter(Boolean) // Remove null values
           : [];
     }
-
     res.status(200).json(maintenanceRequests);
   } catch (error) {
     console.error("Error fetching maintenance requests:", error);

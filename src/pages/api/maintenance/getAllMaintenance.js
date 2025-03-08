@@ -1,7 +1,7 @@
 import { db } from "../../../lib/db";
 import { decryptData } from "../../../crypto/encrypt";
 
-export default async function handler(req, res) {
+export default async function getAllMaintenanceRequestsLandlord(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ message: "Method not allowed" });
   }
@@ -38,16 +38,15 @@ export default async function handler(req, res) {
 
     const [requests] = await db.query(query, [landlord_id]);
 
-    // Decrypt maintenance photos and tenant names
     const decryptedRequests = requests.map((req) => {
       let decryptedPhotos = [];
       let decryptedFirstName = req.tenant_first_name;
       let decryptedLastName = req.tenant_last_name;
 
-      // ✅ Properly handle photo_urls (Fix Grouped String Parsing)
+
       if (req.photo_urls && req.photo_urls !== "[]") {
         try {
-          const parsedPhotos = req.photo_urls.split("||"); // Use || as separator
+          const parsedPhotos = req.photo_urls.split("||");
           decryptedPhotos = parsedPhotos.map((photo) =>
             decryptData(JSON.parse(photo), process.env.ENCRYPTION_SECRET)
           );
@@ -56,7 +55,6 @@ export default async function handler(req, res) {
         }
       }
 
-      // Decrypt Tenant First & Last Name
       try {
         decryptedFirstName = decryptData(
           JSON.parse(req.tenant_first_name),
@@ -74,11 +72,12 @@ export default async function handler(req, res) {
         ...req,
         tenant_first_name: decryptedFirstName,
         tenant_last_name: decryptedLastName,
-        photo_urls: decryptedPhotos, // Array of decrypted photo URLs
+        photo_urls: decryptedPhotos,
       };
     });
 
     return res.status(200).json({ success: true, data: decryptedRequests });
+
   } catch (error) {
     console.error("Error fetching maintenance requests:", error);
     res.status(500).json({ message: "Internal server error" });

@@ -1,7 +1,7 @@
 
 import mysql from "mysql2/promise";
 
-export default async function paymentSuccess(req, res) {
+export default async function paymentSuccessSubscrition(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
@@ -40,30 +40,30 @@ export default async function paymentSuccess(req, res) {
         const formatted_end_date = end_date.toISOString().split("T")[0];
 
 
-        console.log("[DEBUG] Deactivating Previous Subscriptions...");
+        console.log("Deactivating Previous Subscriptions...");
         await connection.execute(
             "UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?",
             [landlord_id]
         );
-        console.log("[SUCCESS] Previous subscriptions deactivated for landlord:", landlord_id);
+        console.log("Previous subscriptions deactivated :", landlord_id);
 
-        console.log("[DEBUG] Inserting New Subscription...");
+        console.log("Inserting New Subscription...");
         await connection.execute(
             "INSERT INTO Subscription (landlord_id, plan_name, start_date, end_date, payment_status, created_at, request_reference_number, is_trial, amount_paid, is_active)" +
             " VALUES (?, ?, ?, ?, 'paid', NOW(), ?, 0, ?, 1)",
             [landlord_id, plan_name, start_date, formatted_end_date, requestReferenceNumber, amount]
         );
-        console.log("[SUCCESS] Subscription successfully inserted for landlord:", landlord_id);
+        console.log("Subscription successfully inserted:", landlord_id);
 
         await connection.end();
-        console.log("[DEBUG] Database connection closed.");
+        console.log("Database connection closed.");
 
         return res.status(200).json({ message: "Subscription activated successfully." });
     } catch (error) {
-        console.error("[ERROR] Failed to update subscription:", error.message);
+        console.error("Failed to update subscription:", error.message);
         if (connection) {
             await connection.end();
-            console.log("[DEBUG] Database connection closed after error.");
+            console.log("Database connection closed after error.");
         }
         return res.status(500).json({ error: "Failed to update subscription.", details: error.message });
     }

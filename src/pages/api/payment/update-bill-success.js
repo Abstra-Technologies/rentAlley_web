@@ -3,7 +3,7 @@
 
 import mysql from "mysql2/promise";
 
-export default async function billSuccessPayment(req, res) {
+export default async function billingSuccessPayment(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ message: "Method Not Allowed" });
     }
@@ -30,7 +30,7 @@ export default async function billSuccessPayment(req, res) {
                 database: dbName,
             });
 
-            // 🔹 Step 1: Fetch the Active Lease Agreement for the Tenant
+            //  Fetch  Active Lease Agreement of the Tenant
             const [activeLease] = await connection.execute(
                 `SELECT agreement_id FROM LeaseAgreement 
                  WHERE tenant_id = ? AND status = 'active' 
@@ -45,7 +45,7 @@ export default async function billSuccessPayment(req, res) {
 
             const { agreement_id } = activeLease[0];
 
-            // 🔹 Step 2: Check If Payment is Already Recorded
+            // Checking If Payment is Already Recorded
             const [existingPayment] = await connection.execute(
                 `SELECT * FROM Payment WHERE receipt_reference = ? LIMIT 1`,
                 [requestReferenceNumber]
@@ -56,7 +56,7 @@ export default async function billSuccessPayment(req, res) {
                 return res.status(400).json({ message: "Payment already recorded." });
             }
 
-            // 🔹 Step 3: Insert Payment Record
+            // Insert Payment Record
             await connection.execute(
                 `INSERT INTO Payment (agreement_id, payment_type, amount_paid, payment_method_id, payment_status, receipt_reference, created_at)
                  VALUES (?, ?, ?, ?, 'confirmed', ?, NOW())`,
@@ -80,13 +80,11 @@ export default async function billSuccessPayment(req, res) {
             });
 
         } catch (dbError) {
-            console.error("Database Error:", dbError);
             if (connection) await connection.end();
             return res.status(500).json({ message: "Database Error", error: dbError.message });
         }
 
     } catch (error) {
         console.error("Error processing payment success:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
     }
 }

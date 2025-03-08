@@ -10,7 +10,7 @@ const s3Client = new S3Client({
   },
 });
 
-export default async function handler(req, res) {
+export default async function deleteLease(req, res) {
   if (req.method !== "DELETE") {
     return res.status(405).json({ error: "Method not allowed" });
   }

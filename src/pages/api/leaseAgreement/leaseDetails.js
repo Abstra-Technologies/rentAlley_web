@@ -1,11 +1,10 @@
 import { db } from "../../../lib/db";
 
-export default async function handler(req, res) {
+export default async function leaseDetails(req, res) {
   const { unit_id } = req.query;
   let connection;
 
   try {
-    //Initialize DB Connection
     connection = await db.getConnection();
     if (req.method === "GET") {
       await handleGetRequest(req, res, connection, unit_id);
@@ -27,7 +26,6 @@ export default async function handler(req, res) {
   }
 }
 
-//Get Lease by ID or All
 async function handleGetRequest(req, res, connection, unit_id) {
   try {
     const [rows] = await connection.execute(
@@ -37,15 +35,10 @@ async function handleGetRequest(req, res, connection, unit_id) {
 
     res.status(200).json(rows);
   } catch (error) {
-    // Log the error message
     console.error("Error fetching property/unit listings:", error);
-
-    // Respond with an error message
-    res.status(500).json({ error: "Failed to fetch property/unit listings" });
   }
 }
 
-// Update Lease by  unit_id
 async function handlePutRequest(req, res, connection, unit_id) {
   try {
     const { start_date, end_date } = req.body;
@@ -80,7 +73,6 @@ async function handlePutRequest(req, res, connection, unit_id) {
   }
 }
 
-//Delete Lease by ID
 async function handleDeleteRequest(req, res, connection, unit_id) {
   try {
     await connection.beginTransaction();
@@ -99,10 +91,8 @@ async function handleDeleteRequest(req, res, connection, unit_id) {
     res.status(200).json({ message: "Lease Agreement deleted successfully" });
   } catch (error) {
     await connection.rollback();
-    // Log the error message
     console.error("Error deleting lease agreement:", error);
 
-    // Respond with an error message
     res.status(500).json({ error: "Failed to delete lease agreement" });
   }
 }

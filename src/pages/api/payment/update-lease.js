@@ -1,6 +1,6 @@
 import mysql from "mysql2/promise";
 
-export default async function updateLeasePayment(req, res) {
+export default async function updateLeasePaymentHandler(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ message: "Method Not Allowed" });
     }
@@ -45,14 +45,12 @@ export default async function updateLeasePayment(req, res) {
                 return res.status(400).json({ message: "Payment already recorded." });
             }
 
-            // Insert payment record into `Payment` table
             await connection.execute(
                 `INSERT INTO Payment (payment_type, amount_paid, payment_method_id, payment_status, receipt_reference, created_at, agreement_id)
                  VALUES (?, ?, ?, 'confirmed', ?, NOW(),?)`,
                 [payment_type, amount, 1, requestReferenceNumber,agreement_id]
             );
 
-            // Update `LeaseAgreement` payment status
             const [result] = await connection.execute(
                 `UPDATE LeaseAgreement 
                  SET ${fieldToUpdate} = 1, updated_at = CURRENT_TIMESTAMP
@@ -72,13 +70,11 @@ export default async function updateLeasePayment(req, res) {
             });
 
         } catch (dbError) {
-            console.error("Database Error:", dbError);
             if (connection) await connection.end();
             return res.status(500).json({ message: "Database Error", error: dbError.message });
         }
 
     } catch (error) {
-        console.error("Error updating lease payment:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+        return res.status(500).json({ message: `Internal Server Error: ${error}` });
     }
 }

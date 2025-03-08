@@ -19,7 +19,6 @@ const SearchParamsWrapper = ({ setActiveTab }) => {
   return null;
 };
 
-// Mock subscription data to handle missing API
 const SUBSCRIPTION_PLANS = {
   "Free Plan": { maxMaintenanceRequest: 5 },
   "Standard Plan": { maxMaintenanceRequest: 10 },
@@ -38,23 +37,18 @@ const MaintenanceRequestPage = () => {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hiddenRequestCount, setHiddenRequestCount] = useState(0);
-  const [selectedRequest, setSelectedRequest] = useState(null); // Holds the selected request details
-  const [showModal, setShowModal] = useState(false); // Controls modal visibility
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [sendAutoReply, setSendAutoReply] = useState(false); // Toggle for automated reply
-  const [autoReplyMessage, setAutoReplyMessage] = useState(""); // Message input
+  const [sendAutoReply, setSendAutoReply] = useState(false);
+  const [autoReplyMessage, setAutoReplyMessage] = useState("");
 
-  // Simulated subscription fetch - replace with real API when available
   useEffect(() => {
     const fetchSubscription = async () => {
       if (!user?.landlord_id) return;
       
       try {
-        // Since the actual API is returning 404, use a simulated response
-        // In a real scenario, this would be: await axios.get(`/api/getSubscription?landlord_id=${user.landlord_id}`);
-        
-        // For demo purposes: randomly assign a plan or use a fixed plan
-        // You can adjust this to use a specific plan for testing
+
         const plans = ["Free Plan", "Standard Plan", "Premium Plan"];
         const userPlan = plans[0]; // Set to first plan (Free) for testing
         
@@ -71,16 +65,14 @@ const MaintenanceRequestPage = () => {
     };
 
     fetchSubscription();
-  }, [user]);
 
-  // Fetch maintenance requests
-  useEffect(() => {
+
     const fetchRequests = async () => {
       if (!user?.landlord_id) return;
-      
+
       try {
         const response = await axios.get(
-          `/api/maintenance/getAllMaintenance?landlord_id=${user.landlord_id}`
+            `/api/maintenance/getAllMaintenance?landlord_id=${user.landlord_id}`
         );
 
         if (response.data.success) {
@@ -94,30 +86,26 @@ const MaintenanceRequestPage = () => {
     };
 
     fetchRequests();
+
   }, [user]);
 
-  // Process requests to determine visibility based on subscription limits
   useEffect(() => {
     if (!subscription || !allRequests.length) return;
 
-    // Process requests for the current tab
-    const filteredByTab = allRequests.filter(req => 
+    const filteredByTab = allRequests.filter(req =>
       req.status.toLowerCase() === activeTab
     );
     
-    // Get max request limit from subscription
-    const { maxMaintenanceRequest } = subscription.listingLimits || { 
-      maxMaintenanceRequest: 5 // Default to Free plan if missing
+    const { maxMaintenanceRequest } = subscription.listingLimits || {
+      maxMaintenanceRequest: 5
     };
     
-    // For completed requests, show all (no limit)
     if (activeTab === "completed") {
       setVisibleRequests(filteredByTab);
       setHiddenRequestCount(0);
       return;
     }
     
-    // For active requests (pending, scheduled, in progress)
     const completedRequests = allRequests.filter(
       request => request.status.toLowerCase() === "completed"
     );
@@ -137,12 +125,10 @@ const MaintenanceRequestPage = () => {
       activeRequests.length
     );
     
-    // Get the IDs of visible active requests
     const visibleActiveRequestIds = sortedActiveRequests
       .slice(0, visibleActiveCount)
       .map(req => req.request_id);
     
-    // Filter the current tab requests to only show those that are visible
     const visibleTabRequests = filteredByTab.filter(req => {
       // Completed requests are always visible
       if (req.status.toLowerCase() === "completed") return true;
@@ -152,8 +138,7 @@ const MaintenanceRequestPage = () => {
     
     setVisibleRequests(visibleTabRequests);
     
-    // Calculate hidden request count for the current tab
-    const hiddenTabRequests = activeTab !== "completed" ? 
+    const hiddenTabRequests = activeTab !== "completed" ?
       filteredByTab.length - visibleTabRequests.length : 0;
     
     setHiddenRequestCount(hiddenTabRequests);
@@ -167,7 +152,6 @@ const MaintenanceRequestPage = () => {
         ...additionalData,
       });
       
-      // Update the local state
       setAllRequests((prevRequests) =>
         prevRequests.map((req) =>
           req.request_id === request_id
@@ -196,7 +180,6 @@ const MaintenanceRequestPage = () => {
     }
   };
 
-  // Opens modal and sets selected request
   const handleViewDetails = (request) => {
     setSelectedRequest(request);
     setShowModal(true);
