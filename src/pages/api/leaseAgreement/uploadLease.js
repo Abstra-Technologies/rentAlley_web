@@ -12,7 +12,7 @@ export const config = {
 
 // Encrypt data before storing in DB
 const encryptDataString = (data) => {
-  return encryptData(data, process.env.ENCRYPTION_SECRET);
+  return JSON.stringify(encryptData(data, process.env.ENCRYPTION_SECRET));
 };
 
 // Initialize S3 Client
