@@ -14,6 +14,7 @@ const LandlordPropertyChart = () => {
     const [data, setData] = useState([]);
     const [paymentData, setPaymentData] = useState([]);
     const [totalTenants, setTotalTenants] = useState(0);
+    const [totalRequests, setTotalRequests] = useState(0);
 
     useEffect(() => {
         if (!user) {
@@ -79,6 +80,13 @@ const LandlordPropertyChart = () => {
             })
             .catch((error) => console.error("Error fetching total tenants:", error));
 
+        fetch(`/api/analytics/landlord/getNumberMaintenanceRequestsperMonth?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Total Maintenance Requests:", data.total_requests);
+                setTotalRequests(data.total_requests);
+            })
+            .catch((error) => console.error("Error fetching maintenance request count:", error));
 
     }, [fetchSession, user]);
 
@@ -164,6 +172,10 @@ const LandlordPropertyChart = () => {
 
     return (
         <div>
+            <div>
+                <h3>Total Maintenance Requests</h3>
+                <p>{totalRequests}</p>
+            </div>
             <div>
                 <h3>Total Current Tenants</h3>
                 <p>{totalTenants}</p>
