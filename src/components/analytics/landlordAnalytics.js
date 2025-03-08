@@ -18,6 +18,7 @@ const LandlordPropertyChart = () => {
     const [totalRequests, setTotalRequests] = useState(0);
     const [totalReceivables, setTotalReceivables] = useState(0);
     const [utilityTrend, setUtilityTrend] = useState([]);
+    const [utilityRates, setUtilityRates] = useState([]);
 
     useEffect(() => {
         if (!user) {
@@ -107,7 +108,13 @@ const LandlordPropertyChart = () => {
             })
             .catch((error) => console.error("Error fetching utility trend:", error));
 
-
+        fetch(`/api/analytics/landlord/getAverageUtilityRate?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Average Utility Rate Data:", data);
+                setUtilityRates(data);
+            })
+            .catch((error) => console.error("Error fetching utility rate data:", error));
 
 
 
@@ -210,9 +217,36 @@ const LandlordPropertyChart = () => {
         },
     ];
 
+    // utiity property rates
 
+    const propertyIds = [...new Set(utilityRates.map((item) => item.property_id))];
+
+    const waterRates = propertyIds.map(
+        (id) =>
+            utilityRates.find((item) => item.property_id === id && item.utility_type === "water")?.avg_rate_consumed ||
+            0
+    );
+    const electricityRates = propertyIds.map(
+        (id) =>
+            utilityRates.find((item) => item.property_id === id && item.utility_type === "electricity")
+                ?.avg_rate_consumed || 0
+    );
+
+    const chartOptionsPropertyUtilities = {
+        chart: { type: "bar" },
+        xaxis: { categories: propertyIds.map((id) => `Property ${id}`) },
+        title: { text: "Average Utility Rate per Property", align: "center" },
+    };
+
+    const seriesPropertyUtilities = [
+        { name: "Water (cu.m)", data: waterRates },
+        { name: "Electricity (kWh)", data: electricityRates },
+    ];
     return (
         <div>
+            <div>
+                <Chart options={chartOptionsPropertyUtilities} series={seriesPropertyUtilities} type="bar" height={350} />
+            </div>
             <div>
                 <Chart options={chartOptionsUtilityTrends} series={seriesUtilityTrends} type="line" height={350} />
             </div>
