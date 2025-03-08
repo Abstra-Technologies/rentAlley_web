@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
+import LoadingScreen from "../../../../../../components/loadingScreen";
 
 export default function ViewUnits() {
   const { property_id } = useParams();
 
   const [units, setUnits] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [billingForm, setBillingForm] = useState({
     billingPeriod: "",
     electricityTotal: "",
@@ -23,6 +25,8 @@ export default function ViewUnits() {
 
     async function fetchData() {
       try {
+        setLoading(true);
+
         const res = await axios.get(`/api/landlord/billing/getUnitDetails`, {
           params: { property_id },
         });
@@ -35,6 +39,8 @@ export default function ViewUnits() {
           "Failed to fetch units:",
           error.response?.data || error.message
         );
+      } finally {
+        setLoading(false); // Set loading to false after fetching
       }
     }
 
@@ -49,16 +55,26 @@ export default function ViewUnits() {
   const handleSaveBilling = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("/api/landlord/billing/saveConcessionaireBilling", {
-        property_id,
-        ...billingForm,
-      });
+      const response = await axios.post(
+        "/api/landlord/billing/saveConcessionaireBilling",
+        {
+          property_id,
+          ...billingForm,
+        }
+      );
       console.log("Billing saved successfully:", response.data);
       setIsModalOpen(false);
     } catch (error) {
-      console.error("Error saving billing:", error.response?.data || error.message);
+      console.error(
+        "Error saving billing:",
+        error.response?.data || error.message
+      );
     }
   };
+
+  if (loading) {
+    return <LoadingScreen />; // Show loading screen while fetching data
+  }
 
   return (
     <LandlordLayout>

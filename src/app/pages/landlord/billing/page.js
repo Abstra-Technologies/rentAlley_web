@@ -5,15 +5,18 @@ import useAuth from "../../../../../hooks/useSession";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import { useEffect } from "react";
 import axios from "axios";
+import LoadingScreen from "../../../../components/loadingScreen";
 
 const PropertyListPage = () => {
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProperties = async () => {
+      setLoading(true);
       try {
         const response = await axios.get(
           `/api/landlord/billing/getPropertyUnits?landlordId=${user?.landlord_id}`
@@ -27,6 +30,8 @@ const PropertyListPage = () => {
       } catch (error) {
         console.error("Error fetching properties:", error);
         setProperties([]); // Fallback to empty array in case of an error
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -41,6 +46,10 @@ const PropertyListPage = () => {
       property.property_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (filterStatus === "all" || property.status === filterStatus)
   );
+
+  if (loading) {
+    return <LoadingScreen />; // Show loading screen while fetching data
+  }
 
   return (
     <LandlordLayout>
