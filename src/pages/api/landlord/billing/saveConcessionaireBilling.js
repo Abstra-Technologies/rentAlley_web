@@ -27,7 +27,6 @@ export default async function savePropertyConciessionareBilling(req, res) {
                 );
             }
 
-            await db.end();
             return res.status(201).json({ message: "Billing records saved successfully" });
         } catch (error) {
             console.error("Error saving billing:", error);
@@ -43,19 +42,23 @@ export default async function savePropertyConciessionareBilling(req, res) {
                 return res.status(400).json({ error: "Property ID is required" });
             }
 
-            // Fetch billing data using raw SQL
             const [billings] = await db.execute(
-                "SELECT * FROM ConcessionaireBilling WHERE property_id = ? ORDER BY created_at DESC",
-                [property_id]
+                `SELECT utility_type, total_billed_amount, rate_consumed, billing_period, created_at
+                 FROM ConcessionaireBilling
+                 WHERE property_id = ?
+                   AND created_at = (SELECT MAX(created_at) FROM ConcessionaireBilling WHERE property_id = ? AND utility_type = ConcessionaireBilling.utility_type)`,
+                [property_id, property_id]
             );
 
-            await db.end();
-            return res.status(200).json(billings);
+            // Ensure response is always an array
+            return res.status(200).json(Array.isArray(billings) ? billings : []);
         } catch (error) {
             console.error("Error fetching billing:", error);
             return res.status(500).json({ error: "Internal Server Error" });
         }
     }
+
+
 
     return res.status(405).json({ error: "Method Not Allowed" });
 }

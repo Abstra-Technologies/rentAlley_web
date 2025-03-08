@@ -31,8 +31,10 @@ export default function CreateUnitBill() {
     lateFee: "",
     dueDate: "",
   });
-
-  // Fetch unit details and billing history
+  const [propertyRates, setPropertyRates] = useState({
+    waterRate: 0,
+    electricityRate: 0,
+  });
   useEffect(() => {
     if (!unit_id) return;
 
@@ -49,6 +51,34 @@ export default function CreateUnitBill() {
 
         setUnit(data.unit);
         setProperty(data.property);
+
+        const concessionaireRes = await axios.get(
+            `/api/landlord/billing/saveConcessionaireBilling?property_id=${data?.property?.property_id}`
+        );
+        let concessionaireData = concessionaireRes.data;
+
+        if (!Array.isArray(concessionaireData)) {
+          concessionaireData = [];
+        }
+        let waterRate = 0;
+        let electricityRate = 0;
+
+        concessionaireData.forEach((bill) => {
+          if (bill.utility_type === "water") {
+            waterRate = bill.rate_consumed;
+          } else if (bill.utility_type === "electricity") {
+            electricityRate = bill.rate_consumed;
+          }
+        });
+        setPropertyRates({ waterRate, electricityRate });
+
+
+        setForm((prevForm) => ({
+          ...prevForm,
+          waterRate,
+          electricityRate,
+        }));
+
         // setBillingHistory(data.billingHistory);
       } catch (error) {
         console.error("Error fetching unit data:", error);
@@ -59,44 +89,109 @@ export default function CreateUnitBill() {
   }, [unit_id]);
 
   const calculateUtilityBill = () => {
-    const electricityUsage =
-      form.electricityCurrentReading - form.electricityPrevReading;
-    const electricityCost = electricityUsage * form.electricityRate;
+    // Ensure readings are numbers, fallback to 0 if empty
+    const electricityPrevReading = parseFloat(form.electricityPrevReading) || 0;
+    const electricityCurrentReading = parseFloat(form.electricityCurrentReading) || 0;
+    const waterPrevReading = parseFloat(form.waterPrevReading) || 0;
+    const waterCurrentReading = parseFloat(form.waterCurrentReading) || 0;
 
-    const waterUsage = form.waterCurrentReading - form.waterPrevReading;
-    const waterCost = waterUsage * form.waterRate;
+    // Use property-wide rates (fetched from API and stored in `propertyRates`)
+    const electricityRate = parseFloat(propertyRates.electricityRate) || 0;
+    const waterRate = parseFloat(propertyRates.waterRate) || 0;
 
-    const rentAmount = parseFloat(form.rentAmount) || 0;
-    const associationDues = parseFloat(form.associationDues) || 0;
-    const lateFee = parseFloat(form.lateFee) || 0;
+    // Calculate usage
+    const electricityUsage = Math.max(0, electricityCurrentReading - electricityPrevReading);
+    const waterUsage = Math.max(0, waterCurrentReading - waterPrevReading);
 
-    const total =
-      electricityCost + waterCost + rentAmount + associationDues + lateFee;
+    // Calculate cost using fetched property-wide rates
+    const electricityCost = electricityUsage * electricityRate;
+    const waterCost = waterUsage * waterRate;
+
+    // Other costs
+    const rentAmount = parseFloat(unit?.rent_amount) || 0;
+    const associationDues = parseFloat(unit?.associationDues) || 0;
+    const lateFee = parseFloat(unit?.lateFee) || 0;
+
+    // Compute total bill
+    const total = electricityCost + waterCost + rentAmount + associationDues + lateFee;
 
     return {
-      electricity: { usage: electricityUsage, cost: electricityCost },
-      water: { usage: waterUsage, cost: waterCost },
-      rentAmount,
-      associationDues,
-      lateFee,
-      total,
+      electricity: {
+        usage: electricityUsage,
+        rate: electricityRate.toFixed(2),
+        cost: electricityCost.toFixed(2)
+      },
+      water: {
+        usage: waterUsage,
+        rate: waterRate.toFixed(2),
+        cost: waterCost.toFixed(2)
+      },
+      rentAmount: rentAmount.toFixed(2),
+      associationDues: associationDues.toFixed(2),
+      lateFee: lateFee.toFixed(2),
+      total: total.toFixed(2),
     };
   };
+
 
   if (!unit || !property) return <p>Loading...</p>;
 
   const handleNext = () => setStep(step + 1);
   const handlePrev = () => setStep(step - 1);
 
-  // Handle form input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleSubmit = async () => {
+    try {
+      const billingData = {
+        readingDate: form.readingDate,
+        totalWaterAmount: parseFloat(calculateUtilityBill().water.cost) || 0,
+        totalElectricityAmount: parseFloat(calculateUtilityBill().electricity.cost) || 0,
+        penaltyAmount: parseFloat(form.penaltyAmount) || 0,
+        discountAmount: parseFloat(form.discountAmount) || 0,
+        dueDate: form.dueDate,
+        unit_id: unit.unit_id,
+        waterPrevReading: form.waterPrevReading,
+        waterCurrentReading: form.waterCurrentReading,
+        electricityPrevReading: form.electricityPrevReading,
+        electricityCurrentReading: form.electricityCurrentReading,
+        total_amount_due: parseFloat(calculateUtilityBill().total)
+      };
+
+      const res = await axios.post("/api/billing/create", billingData);
+
+      if (res.status === 201) {
+        alert("Billing saved successfully!");
+        setForm({
+          readingDate: "",
+          waterPrevReading: "",
+          waterCurrentReading: "",
+          electricityPrevReading: "",
+          electricityCurrentReading: "",
+          totalWaterAmount: "",
+          totalElectricityAmount: "",
+          penaltyAmount: "",
+          discountAmount: "",
+          totalAmountDue: "",
+          rentAmount: "",
+          associationDues: "",
+          lateFee: "",
+          dueDate: "",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving billing:", error);
+      alert("Failed to save billing.");
+    }
+  };
+
+
   return (
     <LandlordLayout>
       <div className="p-6 max-w-2xl mx-auto">
-        <h1 className="text-xl font-bold">Unit {unit.unit_name} - Billing</h1>
+        <h1 className="text-xl font-bold">Unit {unit?.unit_name} - Billing</h1>
 
         {/* Show Billing History */}
         <div className="mt-4 p-4 border rounded-lg bg-gray-100">
@@ -112,6 +207,9 @@ export default function CreateUnitBill() {
             <p>No billing records found.</p>
           )}
         </div>
+
+        <p>Water Rate: ₱{propertyRates?.waterRate} per m³</p>
+        <p>Electricity Rate: ₱{propertyRates?.electricityRate} per kWh</p>
 
         {/* Step-by-step Billing Form */}
         <div className="mt-6 p-4 border rounded-lg bg-white">
@@ -182,7 +280,7 @@ export default function CreateUnitBill() {
                 </>
               )}
 
-              {property.utility_billing_type !== "provider" && (
+              {property.utility_billing_type === "provider" && (
                 <>
                   <input
                     type="number"
@@ -216,7 +314,7 @@ export default function CreateUnitBill() {
                   type="number"
                   name="rentAmount"
                   placeholder="Rent Amount"
-                  value={unit.rent_amount}
+                  value={unit?.rent_amount}
                   disabled
                   className="p-2 border rounded w-full bg-gray-100"
                 />
@@ -277,23 +375,31 @@ export default function CreateUnitBill() {
                 </p>
                 <p>
                   Electricity Cost: $
-                  {calculateUtilityBill().electricity.cost.toFixed(2)}
+                  {calculateUtilityBill().electricity.cost}
                 </p>
                 <p>Water Usage: {calculateUtilityBill().water.usage} m³</p>
                 <p>
-                  Water Cost: ${calculateUtilityBill().water.cost.toFixed(2)}
+                  Water Cost: ${calculateUtilityBill().water.cost}
                 </p>
                 <p>
-                  Rent Amount: ${calculateUtilityBill().rentAmount.toFixed(2)}
+                  Rent Amount: ${unit?.rent_amount}
                 </p>
                 <p>
                   Association Dues: $
-                  {calculateUtilityBill().associationDues.toFixed(2)}
+                  {calculateUtilityBill().associationDues}
                 </p>
-                <p>Late Fee: ${calculateUtilityBill().lateFee.toFixed(2)}</p>
+                <p>
+                 Water Rate this Month: $
+                  {propertyRates?.waterRate}
+                </p>
+                <p>
+                  Electricity Rate this Month: $
+                  {propertyRates?.electricityRate}
+                </p>
+                <p>Late Fee: ${calculateUtilityBill().lateFee}</p>
                 <hr className="my-2" />
                 <p className="text-lg font-bold">
-                  Total Amount Due: ${calculateUtilityBill().total.toFixed(2)}
+                  Total Amount Due: ${calculateUtilityBill().total}
                 </p>
               </div>
             </>
@@ -317,7 +423,7 @@ export default function CreateUnitBill() {
                 Next
               </button>
             ) : (
-              <button className="px-4 py-2 bg-green-500 text-white rounded">
+              <button className="px-4 py-2 bg-green-500 text-white rounded" onClick={handleSubmit}>
                 Submit
               </button>
             )}

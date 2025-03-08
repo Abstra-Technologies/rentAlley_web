@@ -6,13 +6,10 @@ export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
-
-  let connection;
   try {
-    connection = await db.getConnection();
 
     // Fetch Unit details
-    const [unitResult] = await connection.execute(
+    const [unitResult] = await db.execute(
       `SELECT * FROM Unit WHERE unit_id = ?`,
       [unit_id]
     );
@@ -24,7 +21,7 @@ export default async function handler(req, res) {
     const unit = unitResult[0];
 
     // Fetch Property details using unit's property_id
-    const [propertyResult] = await connection.execute(
+    const [propertyResult] = await db.execute(
       `SELECT * FROM Property WHERE property_id = ?`,
       [unit.property_id]
     );
@@ -35,7 +32,5 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Database error:", error);
     res.status(500).json({ error: "Internal Server Error" });
-  } finally {
-    if (connection) connection.release();
   }
 }
