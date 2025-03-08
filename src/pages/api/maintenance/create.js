@@ -51,13 +51,14 @@ export default async function CreateNewMaintenanceRequest(req, res) {
   try {
     const { tenant_id, subject, description, category } = req.body;
 
-    console.log("Request Data:", req.body);
-
-    // Fetch the tenant's active unit and its associated property_id
-    const [tenantRecord] = await connection.query(
-        "SELECT unit_id, property_id FROM Unit WHERE unit_id IN (SELECT unit_id FROM LeaseAgreement WHERE tenant_id = ? AND status = 'active')",
-        [tenant_id]
-    );
+    const tenantQuery = `
+      SELECT unit_id, property_id 
+      FROM Unit 
+      WHERE unit_id IN (
+        SELECT unit_id FROM LeaseAgreement WHERE tenant_id = ? AND status = 'active'
+      )
+    `;
+    const [tenantRecord] = await connection.execute(tenantQuery, [tenant_id]);
 
     if (!tenantRecord.length) {
       return res.status(404).json({ error: "No approved rental found" });
@@ -65,11 +66,11 @@ export default async function CreateNewMaintenanceRequest(req, res) {
 
     const { unit_id, property_id } = tenantRecord[0];
 
-    // Fetch the landlord ID associated with the property
-    const [landlordRecord] = await connection.query(
-        "SELECT landlord_id FROM Property WHERE property_id = ?",
-        [property_id]
-    );
+    // Fetch the landlord ID associated with the property using parameterized query
+    const landlordQuery = `
+      SELECT landlord_id FROM Property WHERE property_id = ?
+    `;
+    const [landlordRecord] = await connection.execute(landlordQuery, [property_id]);
 
     if (!landlordRecord.length) {
       return res.status(404).json({ error: "Landlord not found for this property" });
@@ -77,13 +78,20 @@ export default async function CreateNewMaintenanceRequest(req, res) {
 
     const { landlord_id } = landlordRecord[0];
 
-    // Insert the maintenance request into the database
-    const [result] = await connection.query(
-        `INSERT INTO MaintenanceRequest
-           (tenant_id, unit_id, subject, description, category, status)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [tenant_id, unit_id, subject, description, category, "Pending"]
-    );
+    // Insert the maintenance request into the database using parameterized query
+    const insertQuery = `
+      INSERT INTO MaintenanceRequest 
+        (tenant_id, unit_id, subject, description, category, status) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+    const [result] = await connection.execute(insertQuery, [
+      tenant_id,
+      unit_id,
+      subject,
+      description,
+      category,
+      "Pending",
+    ]);
 
     const request_id = result.insertId;
 
