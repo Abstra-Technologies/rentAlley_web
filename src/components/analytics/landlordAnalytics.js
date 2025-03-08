@@ -19,6 +19,7 @@ const LandlordPropertyChart = () => {
     const [totalReceivables, setTotalReceivables] = useState(0);
     const [utilityTrend, setUtilityTrend] = useState([]);
     const [utilityRates, setUtilityRates] = useState([]);
+    const [occupationData, setOccupationData] = useState([]);
 
     useEffect(() => {
         if (!user) {
@@ -116,9 +117,35 @@ const LandlordPropertyChart = () => {
             })
             .catch((error) => console.error("Error fetching utility rate data:", error));
 
-
+        fetch(`/api/analytics/landlord/getTenantOccupations?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Tenant Occupation Data:", data);
+                setOccupationData(data);
+            })
+            .catch((error) => console.error("Error fetching tenant occupation data:", error));
 
     }, [fetchSession, user]);
+
+    // tenant occupcations
+
+    const labelsOccupation = occupationData.map((item) => item.occupation);
+    const seriesOccupation = occupationData.map((item) => item.tenant_count);
+
+    const chartOptionsOccupation = {
+        chart: { type: "pie" },
+        labelsOccupation,
+        title: { text: "Tenant Occupation Distribution", align: "center" },
+        legend: { position: "bottom" },
+        tooltip: {
+            y: {
+                formatter: (val, opts) => {
+                    const occupationName = labelsOccupation[opts.seriesIndex];
+                    return `${occupationName}: ${val} Tenants`;
+                },
+            },
+        },
+    };
 
 
     const months = [
@@ -242,8 +269,15 @@ const LandlordPropertyChart = () => {
         { name: "Water (cu.m)", data: waterRates },
         { name: "Electricity (kWh)", data: electricityRates },
     ];
+
+
+
+
     return (
         <div>
+            <div>
+                <Chart options={chartOptionsOccupation} series={seriesOccupation} type="pie" height={350} />
+            </div>
             <div>
                 <Chart options={chartOptionsPropertyUtilities} series={seriesPropertyUtilities} type="bar" height={350} />
             </div>
