@@ -11,9 +11,9 @@ export default async function tenantPayment(req, res) {
         lastName,
         email,
         payment_method_id,
-        payment_type,  // security_deposit or advance_rent
+        payment_type,
         agreement_id,
-        redirectUrl
+        redirectUrl,
     } = req.body;
 
     console.log("Payment Request:", { amount, firstName, lastName, email, payment_method_id, payment_type, agreement_id, redirectUrl });
@@ -59,7 +59,7 @@ export default async function tenantPayment(req, res) {
 
         return res.status(200).json({
             checkoutUrl: response.data.redirectUrl,
-            requestReferenceNumber,
+            requestReferenceNumber
         });
 
     } catch (error) {

@@ -198,7 +198,7 @@ export default function CheckoutPage() {
 
     const handleCheckout = async () => {
         if (!planId || !planName || user.landlord_id === undefined) {
-            console.error("🚨 Error - Missing required checkout data");
+            console.error("Error - Missing required checkout data");
             alert("Error: Missing required details.");
             return;
         }

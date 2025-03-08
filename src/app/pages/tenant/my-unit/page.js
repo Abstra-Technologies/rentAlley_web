@@ -19,6 +19,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import Link from "next/link";
 
 export default function MyUnit() {
   const { user } = useAuth();
@@ -73,6 +74,8 @@ export default function MyUnit() {
       confirmButtonText: "Yes, Pay Now",
       cancelButtonText: "Cancel",
     });
+
+    const user_id = user?.user_id;
 
     if (result.isConfirmed) {
       setLoadingPayment(true);
@@ -185,10 +188,10 @@ export default function MyUnit() {
               </a>
             </li>
             <li>
-              <a href="#" className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100">
+              <Link href="/pages/tenant/paymentHistory" className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100">
                 <CreditCardIcon className="h-5 w-5" />
                 <span>Payment History</span>
-              </a>
+              </Link>
             </li>
           </ul>
         </nav>

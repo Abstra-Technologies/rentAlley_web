@@ -1,6 +1,5 @@
 import { db } from "../../../../lib/db";
 
-
 export default async function savePropertyConciessionareBilling(req, res) {
 
     if (req.method === "POST") {
@@ -11,7 +10,7 @@ export default async function savePropertyConciessionareBilling(req, res) {
                 return res.status(400).json({ error: "All fields are required" });
             }
 
-            // Insert Electricity Billing Record if provided
+            // To Inserrt Electricity Billing Record
             if (electricityTotal && electricityRate) {
                 await db.execute(
                     "INSERT INTO ConcessionaireBilling (property_id, billing_period, utility_type, total_billed_amount, rate_consumed, created_at) VALUES (?, ?, 'electricity', ?, ?, NOW())",
@@ -19,7 +18,7 @@ export default async function savePropertyConciessionareBilling(req, res) {
                 );
             }
 
-            // Insert Water Billing Record if provided
+            // To Insert Water Billing Record
             if (waterTotal && waterRate) {
                 await db.execute(
                     "INSERT INTO ConcessionaireBilling (property_id, billing_period, utility_type, total_billed_amount, rate_consumed, created_at) VALUES (?, ?, 'water', ?, ?, NOW())",
@@ -29,11 +28,11 @@ export default async function savePropertyConciessionareBilling(req, res) {
 
             return res.status(201).json({ message: "Billing records saved successfully" });
         } catch (error) {
-            console.error("Error saving billing:", error);
-            return res.status(500).json({ error: "Internal Server Error" });
+            return res.status(500).json({ error: `Database Server Error: ${error}` });
         }
     }
 
+    // to get latest billing view
     if (req.method === "GET") {
         try {
             const { property_id } = req.query;
@@ -49,16 +48,11 @@ export default async function savePropertyConciessionareBilling(req, res) {
                    AND created_at = (SELECT MAX(created_at) FROM ConcessionaireBilling WHERE property_id = ? AND utility_type = ConcessionaireBilling.utility_type)`,
                 [property_id, property_id]
             );
-
-            // Ensure response is always an array
             return res.status(200).json(Array.isArray(billings) ? billings : []);
         } catch (error) {
-            console.error("Error fetching billing:", error);
-            return res.status(500).json({ error: "Internal Server Error" });
+            return res.status(500).json({ error: `Database Server Error: ${error}` });
         }
     }
-
-
 
     return res.status(405).json({ error: "Method Not Allowed" });
 }

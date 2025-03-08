@@ -7,7 +7,6 @@ export default async function updateLeasePayment(req, res) {
 
     try {
         const { agreement_id, payment_type, requestReferenceNumber, amount } = req.body;
-
         if (!agreement_id || !payment_type || !requestReferenceNumber || !amount) {
             return res.status(400).json({ message: "Missing required fields." });
         }
@@ -48,9 +47,9 @@ export default async function updateLeasePayment(req, res) {
 
             // Insert payment record into `Payment` table
             await connection.execute(
-                `INSERT INTO Payment (payment_type, amount_paid, payment_method_id, payment_status, receipt_reference, created_at)
-                 VALUES (?, ?, ?, 'confirmed', ?, NOW())`,
-                [payment_type, amount, 1, requestReferenceNumber]
+                `INSERT INTO Payment (payment_type, amount_paid, payment_method_id, payment_status, receipt_reference, created_at, agreement_id)
+                 VALUES (?, ?, ?, 'confirmed', ?, NOW(),?)`,
+                [payment_type, amount, 1, requestReferenceNumber,agreement_id]
             );
 
             // Update `LeaseAgreement` payment status

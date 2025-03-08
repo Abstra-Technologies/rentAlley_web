@@ -5,6 +5,9 @@ import { useState } from "react";
 import { IoIosArrowBack, IoMdCloudUpload } from "react-icons/io";
 import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 
+
+//orignal layout.
+
 // const BillingPaymentPage = () => {
 //   const [isModalOpen, setIsModalOpen] = useState(false);
 //
@@ -176,13 +179,16 @@ import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 import { useEffect } from "react";
 import axios from "axios";
 import useAuth from "../../../../../hooks/useSession";
+import Swal from "sweetalert2";
 
 export default function TenantBilling({ tenantId }) {
   const [billingData, setBillingData] = useState([]);
   const [meterReadings, setMeterReadings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-const {user} = useAuth();
+  const [loadingPayment, setLoadingPayment] = useState(false);
+
+  const {user} = useAuth();
 const tenant_id = user?.tenant_id;
   useEffect(() => {
     if (!tenant_id) return;
@@ -202,13 +208,50 @@ const tenant_id = user?.tenant_id;
     fetchBillingData();
   }, [tenant_id]);
 
+  const handlePayment = async ( amount) => {
+
+
+    const result = await Swal.fire({
+      title: "Billing Payment",
+      text: `Are you sure you want to pay your current billing?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Pay Now",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed){
+      setLoadingPayment(true);
+      try {
+        const res = await axios.post("/api/payment/maya", {
+          amount,
+          tenantId,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+        });
+
+        if (res.data.checkoutUrl) {
+          window.location.href = res.data.checkoutUrl; // Redirect to Maya
+        }
+      } catch (error) {
+        console.error("Payment error:", error);
+        alert("Failed to process payment.");
+      }
+    }
+
+  };
+
+
   if (loading) return <p className="text-gray-500">Loading billing records...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
   if (billingData.length === 0) return <p className="text-gray-500">No billing records found.</p>;
 
+
+
   return (
       <div className="p-6 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Your Billing History</h1>
+        <h1 className="text-2xl font-bold mb-4">Your Current Billing</h1>
 
         {billingData.map((bill) => (
             <div key={bill.billing_id} className="p-4 border rounded-lg bg-white shadow-md mb-4">
@@ -238,8 +281,19 @@ const tenant_id = user?.tenant_id;
                         </div>
                     ))}
               </div>
+
+              <h2>Payment</h2>
+              {bill.status === "unpaid" && (
+                  <button
+                      onClick={() => handlePayment(bill.total_amount_due)}
+                      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    Pay Now
+                  </button>
+              )}
             </div>
         ))}
+
       </div>
   );
 }

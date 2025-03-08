@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import useAuth from "../../../../../hooks/useSession";
 
 function SecSuccess() {
     const router = useRouter();
@@ -22,9 +23,8 @@ function SecSuccess() {
                 console.warn(" Missing required payment details. Waiting...");
                 return;
             }
-
             try {
-                console.log("✅ Updating lease status with:", {
+                console.log("Updating lease status with:", {
                     agreement_id, payment_type, amount, requestReferenceNumber
                 });
 
@@ -34,11 +34,12 @@ function SecSuccess() {
                     payment_type,
                     amount,
                     requestReferenceNumber,
+
                 });
 
                 setMessage("Your payment was successful! Lease agreement updated.");
             } catch (error) {
-                setMessage("⚠Failed to update payment status.");
+                setMessage("Failed to update payment status.");
                 console.error(" Error updating lease agreement:", error.response?.data || error.message);
             } finally {
                 setLoading(false);

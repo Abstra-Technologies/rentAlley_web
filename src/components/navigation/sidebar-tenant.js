@@ -7,6 +7,7 @@ const menuItems = [
   { href: "/pages/tenant/dashboard", icon: Home, label: "Dashboard" },
   { href: "/pages/tenant/announcement", icon: Bell, label: "Announcements" },
   { href: "/pages/tenant/chat", icon: Bell, label: "Chats" },
+  { href: "/pages/tenant/paymentHistory/currentLeasePayment", icon: Bell, label: "Payment History" },
 
   {
     href: "/pages/tenant/maintenance",
