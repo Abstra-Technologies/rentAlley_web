@@ -1,9 +1,8 @@
 
 import axios from "axios";
+import crypto from "crypto";
 import { SignJWT } from "jose";
 import { db } from "../../../lib/db";
-import crypto from "crypto";
-import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
     const { code } = req.query;
@@ -23,6 +22,7 @@ export default async function handler(req, res) {
 
         console.log("[Google OAuth] Exchanging authorization code for tokens...");
 
+        // Exchange authorization code for tokens
         const tokenResponse = await axios.post(
             "https://oauth2.googleapis.com/token",
             new URLSearchParams({
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
         const { access_token } = tokenResponse.data;
         console.log("[Google OAuth] Token received.");
 
+        // Fetch user data from Google
         const userInfoResponse = await axios.get(
             "https://www.googleapis.com/oauth2/v3/userinfo",
             { headers: { Authorization: `Bearer ${access_token}` } }
@@ -46,20 +47,22 @@ export default async function handler(req, res) {
         const user = userInfoResponse.data;
         console.log("[Google OAuth] User Info:", user);
 
+        // Hash email for security
         const emailHash = crypto.createHash("sha256").update(user.email.trim().toLowerCase()).digest("hex");
 
-        const [rows] = await db.query(
+        // Fetch user securely using parameterized query
+        const [rows] = await db.execute(
             "SELECT user_id, email, userType, is_2fa_enabled, google_id FROM User WHERE emailHashed = ?",
             [emailHash]
         );
 
         console.log("[Google OAuth] Retrieved DB User:", rows);
 
+        // Validate user existence and Google ID
         if (rows.length === 0 || !rows[0].email || !rows[0].google_id) {
             console.error("[Google OAuth] User not found, email is missing, or Google ID not linked.");
             return res.status(400).json({ error: "User not registered or Google ID missing. Please register first." });
         }
-
 
         const dbUser = rows[0];
 
@@ -68,10 +71,11 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: "User email is missing. Please contact support." });
         }
 
+        // If 2FA is enabled, generate OTP and prompt verification
         if (dbUser.is_2fa_enabled) {
             const otp = Math.floor(100000 + Math.random() * 900000);
 
-            await db.query(
+            await db.execute(
                 `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
                  VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))
                  ON DUPLICATE KEY UPDATE
@@ -87,17 +91,10 @@ export default async function handler(req, res) {
             res.setHeader("Set-Cookie", `pending_2fa=true; Path=/; HttpOnly`);
 
             return res.redirect(`/pages/auth/verify-2fa?user_id=${dbUser.user_id}`);
-
-            return res.status(200).json({
-                message: "OTP sent. Please verify to continue.",
-                requires_otp: true,
-                user_id: dbUser.user_id,
-                userType: dbUser.userType,
-            });
         }
 
+        // Generate JWT Token
         const secret = new TextEncoder().encode(JWT_SECRET);
-
         const token = await new SignJWT({
             user_id: dbUser.user_id,
             email: dbUser.email,
@@ -109,6 +106,7 @@ export default async function handler(req, res) {
             .setSubject(dbUser.user_id.toString())
             .sign(secret);
 
+        // Set Secure Cookie
         res.setHeader(
             "Set-Cookie",
             `token=${token}; HttpOnly; Path=/; SameSite=Lax`
@@ -116,13 +114,15 @@ export default async function handler(req, res) {
 
         console.log("[Google OAuth] Login successful.");
 
-        if (dbUser.userType === "tenant") {
-            return res.redirect(302, "/pages/tenant/dashboard");
-        } else if (dbUser.userType === "landlord") {
-            return res.redirect(302, "/pages/landlord/dashboard");
-        } else {
-            return res.redirect(302, "/");
-        }
+        // Redirect user based on role
+        const redirectUrl =
+            dbUser.userType === "tenant"
+                ? "/pages/tenant/dashboard"
+                : dbUser.userType === "landlord"
+                    ? "/pages/landlord/dashboard"
+                    : "/";
+
+        return res.redirect(302, redirectUrl);
     } catch (error) {
         console.error("[Google OAuth] Error during authentication:", error);
         return res.status(500).json({ error: "Failed to authenticate" });

@@ -140,6 +140,7 @@ export default function MaintenanceRequestPage() {
         tenant_id: user.tenant_id,
         subject,
         description,
+        user_id: user?.user_id,
         category: selectedCategory,
       });
 

@@ -12,6 +12,7 @@ const LandlordPropertyChart = () => {
     const [loading, setLoading] = useState(true);
     const [totalUnits, setTotalUnits] = useState(0);
     const [data, setData] = useState([]);
+    const [paymentData, setPaymentData] = useState([]);
 
     useEffect(() => {
         if (!user) {
@@ -60,6 +61,14 @@ const LandlordPropertyChart = () => {
                 console.error("Error fetching maintenance categories:", error);
                 setLoading(false);
             });
+
+        fetch(`/api/analytics/landlord/getPaymentsPerMonth?landlord_id=${user.landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Payment Data:", data);
+                setPaymentData(data);
+            })
+            .catch((error) => console.error("Error fetching payment data:", error));
 
     }, [fetchSession, user]);
 
@@ -119,6 +128,30 @@ const LandlordPropertyChart = () => {
     };
     const chartSeriesMaintenance = data.map((item) => item.category);
 
+
+
+
+    const chartOptionsPayment = {
+        chart: {
+            type: "bar",
+        },
+        xaxis: {
+            categories: paymentData.map((item) => item.month),
+        },
+        title: {
+            text: "Monthly Payments Received",
+            align: "center",
+        },
+    };
+
+    const seriesPayment = [
+        {
+            name: "Total Payments Received",
+            data: paymentData.map((item) => item.total_received),
+        },
+    ];
+
+
     return (
         <div>
         <div>
@@ -165,6 +198,10 @@ const LandlordPropertyChart = () => {
                             <p>No data available</p>
                         )}
                     </div>
+                </div>
+
+                <div>
+                    <Chart options={chartOptionsPayment} series={seriesPayment} type="bar" height={350} />
                 </div>
 
             </div>

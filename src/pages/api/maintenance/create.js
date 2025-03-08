@@ -49,7 +49,7 @@ export default async function CreateNewMaintenanceRequest(req, res) {
   }
   const connection = await db.getConnection();
   try {
-    const { tenant_id, subject, description, category } = req.body;
+    const { tenant_id, subject, description, category, user_id } = req.body;
 
     const tenantQuery = `
       SELECT unit_id, property_id 
@@ -66,7 +66,6 @@ export default async function CreateNewMaintenanceRequest(req, res) {
 
     const { unit_id, property_id } = tenantRecord[0];
 
-    // Fetch the landlord ID associated with the property using parameterized query
     const landlordQuery = `
       SELECT landlord_id FROM Property WHERE property_id = ?
     `;
@@ -95,10 +94,9 @@ export default async function CreateNewMaintenanceRequest(req, res) {
 
     const request_id = result.insertId;
 
-    // Emit an automated chat message from the landlord to the tenant
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
-    const chat_room = `chat_${[tenant_id, landlord_id].sort().join("_")}`;
+    const chat_room = `chat_${[user_id, landlord_id].sort().join("_")}`;
 
     const autoMessage = {
       sender_id: landlord_id,

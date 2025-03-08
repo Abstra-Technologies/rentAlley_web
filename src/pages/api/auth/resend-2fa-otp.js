@@ -7,12 +7,13 @@ import { decryptData } from "../../../crypto/encrypt";
 export default async function resend2faOtp(req, res) {
     try {
         const { user_id } = req.body;
+
         if (!user_id) {
             return res.status(400).json({ error: "Missing user_id." });
         }
 
-        const [users] = await db.query(
-            `SELECT email FROM User WHERE user_id = ?`,
+        const [users] = await db.execute(
+            "SELECT email FROM User WHERE user_id = ?",
             [user_id]
         );
 
@@ -21,42 +22,32 @@ export default async function resend2faOtp(req, res) {
         }
 
         let email = users[0].email;
+
         try {
             email = await decryptData(JSON.parse(email), process.env.ENCRYPTION_SECRET);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             console.error("[Resend OTP] Decryption failed for email.");
+            return res.status(500).json({ error: "Failed to decrypt user email." });
         }
 
         const newOtp = crypto.randomInt(100000, 999999).toString();
-        const now = new Date();
-        const expiresAt = new Date(now.getTime() + 10 * 60 * 1000);
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const nowUTC8 = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const expiresAtUTC8 = new Date(expiresAt.toLocaleString("en-US", { timeZone: "Asia/Manila" }));
-        await db.query("SET time_zone = '+08:00'");
-
-        const [result] = await db.query(
-            `UPDATE UserToken
-             SET token = ?,
-                 created_at = CONVERT_TZ(NOW(), 'SYSTEM', 'Asia/Manila'),
-                 expires_at = CONVERT_TZ(DATE_ADD(NOW(), INTERVAL 10 MINUTE), 'SYSTEM', 'Asia/Manila')
+        await db.execute(
+            `UPDATE UserToken 
+             SET token = ?, 
+                 created_at = CONVERT_TZ(NOW(), 'SYSTEM', 'Asia/Manila'), 
+                 expires_at = CONVERT_TZ(DATE_ADD(NOW(), INTERVAL 10 MINUTE), 'SYSTEM', 'Asia/Manila') 
              WHERE user_id = ? AND token_type = '2fa'`,
-            [newOtp,user_id]
+            [newOtp, user_id]
         );
 
-        if (result.affectedRows === 0) {
-            return res.status(400).json({ error: "No OTP record found to update." });
-        }
-
         await sendOtpEmail(email, newOtp);
+
         return res.status(200).json({ message: "OTP resent successfully." });
 
     } catch (error) {
-
         console.error("Error during resend2faOtp:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
     }
 }
 

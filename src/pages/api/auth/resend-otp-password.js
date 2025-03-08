@@ -39,16 +39,15 @@ export default async function handler(req, res) {
         await db.query("SET time_zone = '+08:00'");
 
         await db.query(
-            "INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at) \n" +
-            "VALUES (?, 'password_reset', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))\n" +
-            "ON DUPLICATE KEY UPDATE \n" +
-            "  token = VALUES(token), \n" +
-            "  created_at = NOW(), \n" +
-            "  expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)",
+            `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
+    VALUES (?, 'password_reset', ?, ?, ?)
+    ON DUPLICATE KEY UPDATE 
+      token = VALUES(token), 
+      created_at = VALUES(created_at), 
+      expires_at = VALUES(expires_at)`,
             [userId, newOtp, nowUTC8, expiresAtUTC8]
         );
 
-        //Send OTP via email (implement this function in sendEmail.js)
         await sendOtpEmail(email, newOtp);
 
         return res.status(200).json({ message: "New OTP has been sent to your email." });

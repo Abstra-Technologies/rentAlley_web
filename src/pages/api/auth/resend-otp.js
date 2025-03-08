@@ -6,30 +6,47 @@ import { jwtVerify } from "jose";
 import { decryptData } from "../../../crypto/encrypt";
 
 export default async function resendOtp(req, res) {
-
     try {
         console.log("🔍 [Resend OTP] Request received.");
 
-        const token = await getCookie('token', { req, res });
+        // Retrieve token from cookies
+        const token = getCookie("token", { req, res });
 
         if (!token) {
             console.error("[Resend OTP] No valid token found.");
+            return res.status(401).json({ error: "Unauthorized. No valid session token found." });
         }
 
+        // Verify JWT token
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-        const { payload } = await jwtVerify(token, secret);
-        const user_id = payload.user_id;
+        let payload;
+
+        try {
+            const verifiedToken = await jwtVerify(token, secret);
+            payload = verifiedToken.payload;
+        } catch (err) {
+            console.error("[Resend OTP] Invalid JWT token.");
+            return res.status(401).json({ error: "Invalid token. Please log in again." });
+        }
+
+        const user_id = payload?.user_id;
 
         if (!user_id) {
             console.error("[Resend OTP] Invalid JWT payload.");
+            return res.status(400).json({ error: "Invalid session data." });
         }
 
         console.log(`[Resend OTP] User verified: ${user_id}`);
 
-        const [user] = await db.query(`SELECT email FROM User WHERE user_id = ?`, [user_id]);
+        // Fetch user email securely using parameterized query
+        const [user] = await db.execute(
+            "SELECT email FROM User WHERE user_id = ?",
+            [user_id]
+        );
 
         if (!user || user.length === 0) {
             console.error("[Resend OTP] User email not found.");
+            return res.status(404).json({ error: "User not found." });
         }
 
         let email = user[0].email;
@@ -38,13 +55,15 @@ export default async function resendOtp(req, res) {
             email = await decryptData(JSON.parse(email), process.env.ENCRYPTION_SECRET);
             console.log("🔓 [Resend OTP] Decrypted Email:", email);
         } catch (err) {
-            console.warn("⚠ [Resend OTP] Email is not encrypted or decryption failed, using stored value.", err);
+            console.warn("⚠ [Resend OTP] Email decryption failed, using stored value.", err);
+            return res.status(500).json({ error: "Email decryption failed. Please contact support." });
         }
 
+        // Generate a new OTP
         const newOtp = crypto.randomInt(100000, 999999).toString();
-        console.log(`🔑 [Resend OTP] New OTP: ${newOtp}`);
+        console.log(`[Resend OTP] New OTP: ${newOtp}`);
 
-        await db.query(
+        await db.execute(
             `INSERT INTO UserToken (user_id, token_type, token, expires_at)
              VALUES (?, 'email_verification', ?, NOW() + INTERVAL 10 MINUTE)
              ON DUPLICATE KEY UPDATE token = VALUES(token), expires_at = NOW() + INTERVAL 10 MINUTE`,
@@ -61,7 +80,7 @@ export default async function resendOtp(req, res) {
 
     } catch (error) {
         console.error("[Resend OTP] Error:", error);
-        res.status(500).json({ message: "Failed to resend OTP. Please try again." });
+        res.status(500).json({ error: "Failed to resend OTP. Please try again." });
     }
 }
 
