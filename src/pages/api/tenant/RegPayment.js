@@ -35,8 +35,8 @@ export default async function tenantPayment(req, res) {
             buyer: { firstName, lastName, contact: { email } },
             redirectUrl: {
                 success: encodeURI(`${redirectUrl.success}?agreement_id=${agreement_id}&payment_type=${payment_type}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
-                failure: `${redirectUrl.failure}?agreement_id=${agreement_id}`,
-                cancel: `${redirectUrl.cancel}?agreement_id=${agreement_id}`,
+                failure: encodeURI(`${redirectUrl.failure}?agreement_id=${agreement_id}&payment_type=${payment_type}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
+                cancel: encodeURI(`${redirectUrl.cancel}?agreement_id=${agreement_id}&payment_type=${payment_type}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
             },
             requestReferenceNumber,
             items: [{

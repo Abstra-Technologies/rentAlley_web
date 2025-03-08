@@ -1,11 +1,9 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+'use client'
+import {useRouter, useSearchParams} from "next/navigation";
+import {useEffect, useState} from "react";
 import axios from "axios";
-import useAuth from "../../../../../hooks/useSession";
 
-function SecSuccess() {
+function SecCancelled() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -16,7 +14,6 @@ function SecSuccess() {
 
     const [message, setMessage] = useState("Processing your payment...");
     const [loading, setLoading] = useState(true);
-
     useEffect(() => {
         async function updateLeaseStatus() {
             if (!agreement_id || !payment_type || !amount  || !requestReferenceNumber) {
@@ -29,7 +26,7 @@ function SecSuccess() {
                 });
 
                 // Update Lease Agreement Payment Status
-                await axios.post("/api/payment/update-lease", {
+                await axios.post("/api/payment/update-lease-cancelSecAdv", {
                     agreement_id,
                     payment_type,
                     amount,
@@ -37,7 +34,7 @@ function SecSuccess() {
 
                 });
 
-                setMessage("Your payment was successful! Lease agreement updated.");
+                setMessage("Your Cancellation was successful!");
             } catch (error) {
                 setMessage("Failed to update payment status.");
                 console.error(" Error updating lease agreement:", error.response?.data || error.message);
@@ -60,10 +57,7 @@ function SecSuccess() {
 
             {!loading && (
                 <div className="mt-4 p-4 border rounded bg-gray-100">
-                    <h3 className="text-lg font-bold">Payment Receipt Invoice</h3>
-                    <p><strong>Request Reference:</strong> {requestReferenceNumber}</p>
-                    <p><strong>Payment Type:</strong> {payment_type.replace("_", " ")}</p>
-                    <p><strong>Amount Paid:</strong> ₱{parseFloat(amount).toLocaleString()}</p>
+                    <h2>Payment Cancellation Successful.</h2>
                 </div>
             )}
 
@@ -77,4 +71,4 @@ function SecSuccess() {
     );
 }
 
-export default SecSuccess;
+export default SecCancelled;

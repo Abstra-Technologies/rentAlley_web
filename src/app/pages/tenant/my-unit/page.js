@@ -91,8 +91,8 @@ export default function MyUnit() {
           email: user.email,
           redirectUrl: {
             success:  "http://localhost:3000/pages/payment/secSuccess",
-            failure: `${window.location.origin}/payment-failure`,
-            cancel: `${window.location.origin}/payment-cancel`,
+            failure: "http://localhost:3000/pages/payment/secFailed",
+            cancel: "http://localhost:3000/pages/payment/secCancelled",
           },
         });
 
