@@ -11,11 +11,11 @@ export default async function DeleteAccount(req, res) {
         const { user_id, userType } = req.body;
 
         if (!user_id || !userType) {
-            return res.status(400).json({ error: "Missing user_id or userType in request." });
+            return res.status(400).json({ error: "Missing user_id or userType" });
         }
 
         if (userType === "landlord") {
-            console.log("Checking if user is a landlord...");
+            console.log("if user is a landlord...");
 
             const [landlordRows] = await db.query(
                 `SELECT landlord_id FROM Landlord WHERE user_id = ?`,
@@ -33,8 +33,7 @@ export default async function DeleteAccount(req, res) {
             const [leaseRows] = await db.query(
                 `SELECT COUNT(*) AS active_lease_count
                  FROM LeaseAgreement l
-                          JOIN ProspectiveTenant pt ON l.prospective_tenant_id = pt.id
-                          JOIN Unit u ON pt.unit_id = u.unit_id
+                          JOIN Unit u ON l.unit_id = u.unit_id
                           JOIN Property p ON u.property_id = p.property_id
                  WHERE p.landlord_id = ? AND l.status = 'active'`,
                 [landlordId]
@@ -47,6 +46,20 @@ export default async function DeleteAccount(req, res) {
                 console.error("Cannot deactivate account, active leases exist.");
                 return res.status(400).json({ error: "You cannot deactivate your account. You have active leases." });
             }
+
+            await db.query(
+                `UPDATE Property SET status = 'inactive' WHERE landlord_id = ?`,
+                [landlordId]
+            );
+
+            await db.query(
+                `UPDATE Unit u 
+                 JOIN Property p ON u.property_id = p.property_id
+                 SET u.status = 'inactive' 
+                 WHERE p.landlord_id = ?`,
+                [landlordId]
+            );
+            return res.status(200).json({ message: "Account deletion requested. Properties and units set to inactive." });
         }
 
         if (userType === "tenant") {
@@ -64,8 +77,7 @@ export default async function DeleteAccount(req, res) {
             const [tenantLeaseRows] = await db.query(
                 `SELECT COUNT(*) AS active_lease_count
                  FROM LeaseAgreement l
-                          JOIN ProspectiveTenant pt ON l.prospective_tenant_id = pt.id
-                 WHERE pt.tenant_id = ? AND l.status = 'active'`,
+                 WHERE l.tenant_id = ? AND l.status = 'active'`,
                 [tenantId]
             );
 

@@ -25,7 +25,7 @@ export default function DeleteAccountButton() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || "Failed to request account deletion.");
+                 new Error(data.error || "Failed to request account deletion.");
             }
 
             await Swal.fire({
@@ -71,7 +71,6 @@ export default function DeleteAccountButton() {
 
     return (
         <div className="flex flex-col items-center">
-            {/* Delete Account Button */}
             <button
                 className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
                 onClick={confirmDelete}
