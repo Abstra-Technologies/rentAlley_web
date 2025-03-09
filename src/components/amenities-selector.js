@@ -4,7 +4,7 @@ const AmenitiesSelector = ({ selectedAmenities, onAmenityChange }) => {
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4">Select Amenities</h3>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {AMENITIES_LIST.map(({ name, icon }) => {
           const isSelected = selectedAmenities.includes(name);
           return (
@@ -12,11 +12,12 @@ const AmenitiesSelector = ({ selectedAmenities, onAmenityChange }) => {
               type="button"
               key={name}
               onClick={() => onAmenityChange(name)}
-              className={`flex items-center justify-center gap-2 p-4 border rounded-lg
-                ${isSelected ? "bg-blue-500 text-white" : "bg-white"}`}
+              className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-lg text-sm
+                ${isSelected ? "bg-blue-500 text-white" : "bg-white"}
+                hover:bg-blue-100 transition`}
             >
               <div className="text-2xl">{icon}</div>
-              <span>{name}</span>
+              <span className="text-center">{name}</span>
             </button>
           );
         })}
