@@ -48,7 +48,7 @@ export default function InterestedTenants({ unitId, landlordId }) {
         } else {
           // Otherwise fetch it (fallback)
           const subscriptionResponse = await axios.get(
-            `/api/landlord/getSubscription?landlord_id=${landlordId}`
+            `/api/landlord/getCurrentPlan?landlord_id=${landlordId}`
           );
           const subscriptionData = subscriptionResponse.data;
           setSubscription(subscriptionData);

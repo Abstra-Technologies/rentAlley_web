@@ -75,7 +75,24 @@ export default function Login() {
 
   const handleGoogleSignin = async () => {
     logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1);
-    await router.push(`/api/auth/google-login`);
+    try {
+      const response = await fetch(`/api/auth/google-login`);
+      if (!response.ok) {
+        // If the API returns an error, redirect to the error page
+        router.push('/pages/auth/google-login-error');
+        return;
+      }
+      // If successful, the API should handle the redirection
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        router.push('/pages/auth/google-login-error');
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      router.push('/pages/auth/google-login-error');
+    }
   };
 
   const handleSubmit = async (e) => {
