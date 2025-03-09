@@ -2,7 +2,6 @@ import {db} from "../../../../lib/db";
 import {decryptData } from "../../../../crypto/encrypt";
 
 
-
 export default async function getLandlordVerificationData(req, res) {
     const { landlord_id } = req.query;
 
@@ -28,16 +27,26 @@ export default async function getLandlordVerificationData(req, res) {
             // Decrypt sensitive data in landlordData
             const decryptedLandlordData = {
                 ...landlordData[0],
-                address: landlordData[0].address ? decryptData(JSON.parse(landlordData[0].address), process.env.ENCRYPTION_SECRET) : null,
-                citizenship: landlordData[0].citizenship ? decryptData(JSON.parse(landlordData[0].citizenship), process.env.ENCRYPTION_SECRET) : null,
+                address: landlordData[0].address
+                    ? decryptData(JSON.parse(landlordData[0].address), process.env.ENCRYPTION_SECRET)
+                    : null,
+                citizenship: landlordData[0].citizenship
+                    ? decryptData(JSON.parse(landlordData[0].citizenship), process.env.ENCRYPTION_SECRET)
+                    : null,
             };
 
             // Decrypt verification data
-            const decryptedVerificationData = verificationData.length > 0 ? {
-                ...verificationData[0],
-                selfie_url: verificationData[0].selfie_url ? decryptData(JSON.parse(verificationData[0].selfie_url), process.env.ENCRYPTION_SECRET) : null,
-                document_url: verificationData[0].document_url ? decryptData(JSON.parse(verificationData[0].document_url), process.env.ENCRYPTION_SECRET) : null,
-            } : null;
+            const decryptedVerificationData = verificationData.length > 0
+                ? {
+                    ...verificationData[0],
+                    selfie_url: verificationData[0].selfie_url
+                        ? decryptData(JSON.parse(verificationData[0].selfie_url), process.env.ENCRYPTION_SECRET)
+                        : null,
+                    document_url: verificationData[0].document_url
+                        ? decryptData(JSON.parse(verificationData[0].document_url), process.env.ENCRYPTION_SECRET)
+                        : null,
+                }
+                : null;
 
             if (decryptedVerificationData?.selfie) {
                 try {
@@ -49,15 +58,22 @@ export default async function getLandlordVerificationData(req, res) {
             }
 
             if (decryptedVerificationData?.document_url) {
+                console.log("Raw decrypted document_url:", decryptedVerificationData.document_url); // Debugging line
+
                 try {
-                    decryptedVerificationData.document_url = JSON.parse(decryptedVerificationData.document_url);
+                    // Check if document_url is a JSON string or a plain URL
+                    if (
+                        typeof decryptedVerificationData.document_url === "string" &&
+                        decryptedVerificationData.document_url.trim().startsWith("{")
+                    ) {
+                        decryptedVerificationData.document_url = JSON.parse(decryptedVerificationData.document_url);
+                    }
                 } catch (error) {
                     console.error("Error parsing document_url data:", error);
                     decryptedVerificationData.document_url = null;
                 }
             }
 
-            // Return the decrypted data in the response
             res.status(200).json({
                 landlord: decryptedLandlordData,
                 verification: decryptedVerificationData,

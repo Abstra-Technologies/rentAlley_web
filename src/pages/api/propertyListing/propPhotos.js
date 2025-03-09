@@ -8,7 +8,6 @@ import fs from "fs";
 import { db } from "../../../lib/db";
 import { decryptData, encryptData } from "../../../crypto/encrypt";
 
-// AWS S3 Configuration
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -17,19 +16,15 @@ const s3Client = new S3Client({
   },
 });
 
-// Encryption Secret
 const encryptionSecret = process.env.ENCRYPTION_SECRET;
 
-// API Config to disable default body parsing (important for Formidable)
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Function to sanitize filenames, including special characters
 function sanitizeFilename(filename) {
-  // Replace special characters with underscores and remove whitespaces
   const sanitized = filename
     .replace(/[^a-zA-Z0-9.]/g, "_") // Replace non-alphanumeric chars with underscores
     .replace(/\s+/g, "_"); // Replace consecutive whitespaces with a single underscore
@@ -76,7 +71,6 @@ async function handlePostRequest(req, res, connection) {
       return res.status(400).json({ error: "Error parsing form data" });
     }
 
-    // For Debugging
     console.log("Error from form.parse:", err);
     console.log("Fields from form.parse:", fields);
     console.log("Files from form.parse:", files);
@@ -103,12 +97,10 @@ async function handlePostRequest(req, res, connection) {
         const fileStream = fs.createReadStream(filePath);
         const photoUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
-        // Encrypt the URL
         const encryptedUrl = JSON.stringify(
           encryptData(photoUrl, encryptionSecret)
         );
 
-        // Upload to S3
         const uploadParams = {
           Bucket: process.env.S3_BUCKET_NAME,
           Key: fileName,
@@ -121,7 +113,7 @@ async function handlePostRequest(req, res, connection) {
 
           return {
             property_id,
-            photo_url: encryptedUrl, // Store encrypted URL
+            photo_url: encryptedUrl,
           };
         } catch (uploadError) {
           console.error("Error uploading file to S3:", uploadError);
@@ -162,7 +154,6 @@ async function handlePostRequest(req, res, connection) {
   });
 }
 
-// Fetch property photos
 async function handleGetRequest(req, res, connection) {
   const { property_id } = req.query;
 
@@ -177,7 +168,6 @@ async function handleGetRequest(req, res, connection) {
 
     const [rows] = await connection.execute(query, params);
 
-    // Decrypt the photo URLs before returning them
     const decryptedRows = rows.map((row) => {
       try {
         const encryptedData = JSON.parse(row.photo_url);
@@ -205,7 +195,6 @@ async function handleGetRequest(req, res, connection) {
   }
 }
 
-// Delete property photo (Also delete from S3)
 async function handleDeleteRequest(req, res, connection) {
   const { photo_id } = req.query;
 

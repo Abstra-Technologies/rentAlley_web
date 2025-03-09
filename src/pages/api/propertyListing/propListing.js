@@ -5,7 +5,6 @@ export default async function handler(req, res) {
   let connection;
 
   try {
-    //Initialize DB Connection
     connection = await db.getConnection();
 
     if (req.method === "POST") {
@@ -31,7 +30,6 @@ export default async function handler(req, res) {
   }
 }
 
-//Create Properties
 async function handlePostRequest(req, res, connection) {
   const {
     propertyName,
@@ -88,10 +86,8 @@ async function handlePostRequest(req, res, connection) {
 
     console.log("Values array:", values);
 
-    // Start a new transaction
     await connection.beginTransaction();
 
-    // Execute the SQL query to insert a new property listing
     const [result] = await connection.execute(
       `
       INSERT INTO Property (
@@ -105,24 +101,18 @@ async function handlePostRequest(req, res, connection) {
       values
     );
 
-    // Commit the transaction
     await connection.commit();
 
-    // Respond with the newly created property ID and the request body
     res.status(201).json({ propertyID: result.insertId, ...req.body });
   } catch (error) {
-    // Rollback the transaction in case of an error
     await connection.rollback();
 
-    // Log the error message
     console.error("Error creating property listings:", error);
 
-    // Respond with an error message
     res.status(500).json({ error: "Failed to create property listing" });
   }
 }
 
-//Get Properties by ID or All
 // Get Properties by ID or All, including verification status
 async function handleGetRequest(req, res, connection, landlord_id, property_id) {
   try {
@@ -163,7 +153,6 @@ async function handleGetRequest(req, res, connection, landlord_id, property_id) 
   }
 }
 
-//Update Properties by ID
 async function handlePutRequest(req, res, connection, id) {
   try {
     // Check if the property exists
@@ -242,15 +231,12 @@ async function handlePutRequest(req, res, connection, id) {
     res.status(200).json({ propertyID: id, ...req.body });
   } catch (error) {
     await connection.rollback();
-    // Log the error message
     console.error("Error updating property listing:", error);
 
-    // Respond with an error message
     res.status(500).json({ error: "Failed to update property listing" });
   }
 }
 
-//Delete Properties by ID
 async function handleDeleteRequest(req, res, connection, id) {
   try {
     // Check if the property exists
@@ -272,10 +258,8 @@ async function handleDeleteRequest(req, res, connection, id) {
     res.status(200).json({ message: "Property listing deleted successfully" });
   } catch (error) {
     await connection.rollback();
-    // Log the error message
     console.error("Error deleting property listings:", error);
 
-    // Respond with an error message
     res.status(500).json({ error: "Failed to delete property listing" });
   }
 }

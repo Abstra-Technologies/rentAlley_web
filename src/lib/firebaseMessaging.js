@@ -5,7 +5,7 @@ import { getMessaging, getToken, onMessage, isSupported } from "firebase/messagi
 let messaging = null;
 
 if (typeof window !== "undefined") {
-    console.log("🔄 Checking browser compatibility...");
+    console.log("Checking browser compatibility...");
 
     isSupported().then((supported) => {
         if (!supported) {
@@ -15,7 +15,7 @@ if (typeof window !== "undefined") {
 
         console.log("Browser supports Firebase Cloud Messaging.");
 
-        // ✅ Initialize Firebase
+        // Initialize Firebase
         const firebaseConfig = {
             apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
             authDomain: process.env.NEXT_PUBLIC_FIREBASE_DOMAIN,
@@ -28,7 +28,7 @@ if (typeof window !== "undefined") {
 
         const app = initializeApp(firebaseConfig);
         messaging = getMessaging(app);
-        console.log("✅ Firebase Messaging Initialized:", messaging);
+        console.log("Firebase Messaging Initialized:", messaging);
 
         //Ensure Service Worker is registered only when browser is ready
         window.addEventListener("load", () => {
@@ -38,14 +38,14 @@ if (typeof window !== "undefined") {
                         console.log("✅ Service Worker Registered:", registration);
                     })
                     .catch((error) => {
-                        console.error("❌ Service Worker Registration Failed:", error);
+                        console.error(" Service Worker Registration Failed:", error);
                     });
             } else {
                 console.warn("⚠️ Service Workers not supported in this browser.");
             }
         });
 
-        // ✅ Handle Foreground Notifications
+        // Handle Foreground Notifications
         onMessage(messaging, (payload) => {
             console.log("📩 Foreground Notification:", payload);
             alert(`${payload.notification.title}\n${payload.notification.body}`);
@@ -55,7 +55,7 @@ if (typeof window !== "undefined") {
 
 export const requestNotificationPermission = async () => {
     if (!messaging) {
-        console.warn("⚠️ Messaging is not initialized (probably running on the server)");
+        console.warn("Messaging is not initialized (probably running on the server)");
         return null;
     }
 

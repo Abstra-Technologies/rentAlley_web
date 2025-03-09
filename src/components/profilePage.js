@@ -90,7 +90,7 @@ export default function ProfilePage() {
         ...prev,
         profilePicture: response.data.imageUrl,
       }));
-      console.log("✅ Image uploaded:", response.data.imageUrl);
+      console.log("Image uploaded:", response.data.imageUrl);
     } catch (error) {
       console.error("Upload failed:", error);
     }
@@ -237,7 +237,6 @@ export default function ProfilePage() {
                   className="w-32 h-32 rounded-full object-cover border border-gray-300 shadow-md"
                 />
 
-                {/* Hidden File Input */}
                 <input
                   type="file"
                   accept="image/*"
@@ -245,7 +244,6 @@ export default function ProfilePage() {
                   className="hidden"
                 />
 
-                {/* Change Picture Overlay */}
                 <div
                   className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0
                         group-hover:bg-opacity-50 rounded-full transition-all duration-300"
@@ -275,18 +273,18 @@ export default function ProfilePage() {
               ) : verificationStatus === "not verified" ? (
                 <div>
                   <p className="text-red-600 font-bold">
-                    ❌ Verification Rejected
+                    Not Yet Verified
                   </p>
                   <button
                     className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     onClick={() => router.push("/pages/landlord/verification")}
                   >
-                    Reapply for Verification
+                    Apply for Verification
                   </button>
                 </div>
               ) : verificationStatus === "not verified" ? (
                 <div>
-                  <p className="text-red-600 font-bold">❌ Not Verified</p>
+                  <p className="text-red-600 font-bold">Not Verified</p>
                   <button
                     className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     onClick={() => router.push("/pages/landlord/verification")}

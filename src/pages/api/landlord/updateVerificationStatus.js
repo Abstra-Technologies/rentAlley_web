@@ -1,7 +1,6 @@
 import { db } from "../../../lib/db";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
-import { sendFCMNotification } from "../../../lib/firebaseAdmin";
 import {deleteFromS3} from "../../../lib/s3";
 
 export default async function updateLandlordStatus(req, res) {
@@ -30,7 +29,6 @@ export default async function updateLandlordStatus(req, res) {
     const { landlord_id, status, message } = req.body;
 
     try {
-        // Fetch landlord verification data
         const [rows] = await db.execute(
             `SELECT lv.status AS verification_status,
                     lv.reviewed_by,
@@ -49,7 +47,7 @@ export default async function updateLandlordStatus(req, res) {
             return res.status(404).json({ success: false, message: "Landlord not found." });
         }
 
-        const { user_id, fcm_token, document_url, selfie_url } = rows[0];
+        const { user_id, document_url, selfie_url } = rows[0];
 
         if (status.toLowerCase() === "rejected") {
 
@@ -76,8 +74,6 @@ export default async function updateLandlordStatus(req, res) {
                 [user_id, notificationTitle, notificationBody]
             );
 
-            await sendFCMNotification(fcm_token, notificationTitle, notificationBody);
-
             return res.status(200).json({ message: "Verification rejected and data deleted successfully." });
         } else {
 
@@ -100,8 +96,6 @@ export default async function updateLandlordStatus(req, res) {
                 "INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())",
                 [user_id, notificationTitle, notificationBody]
             );
-
-            await sendFCMNotification(fcm_token, notificationTitle, notificationBody);
 
             return res.status(200).json({ message: `Verification ${status} successfully.` });
         }

@@ -15,21 +15,21 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// ✅ Handle Background Notifications
+// Handle Background Notifications
 messaging.onBackgroundMessage((payload) => {
     console.log("🔔 Background Notification Received:", payload);
 
     self.registration.showNotification(payload.notification.title, {
         body: payload.notification.body,
-        icon: "/logo.png", // Update with your logo
-        badge: "/badge-icon.png", // Small icon in notification bar
-        data: payload.data, // Extra data if needed
+        icon: "/logo.png",
+        badge: "/badge-icon.png",
+        data: payload.data,
     });
 });
 
-// ✅ Ensure Clicking Notifications Opens the App
+// Ensure Clicking Notifications Opens the App
 self.addEventListener("notificationclick", (event) => {
-    console.log("📌 Notification Clicked:", event);
+    console.log("Notification Clicked:", event);
     event.notification.close();
 
     event.waitUntil(

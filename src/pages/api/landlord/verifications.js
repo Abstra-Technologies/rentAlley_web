@@ -11,6 +11,7 @@ export default async function getVerificationLists(req, res) {
                     review_date,
                     message
                 FROM LandlordVerification
+                WHERE status = 'pending'
             `);
             res.status(200).json(rows);
         } catch (error) {

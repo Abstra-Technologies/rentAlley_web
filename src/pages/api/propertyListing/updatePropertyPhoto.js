@@ -5,10 +5,9 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
-import { encryptData, decryptData } from "../../../crypto/encrypt"; // Your encryption utility
-import { db } from "../../../lib/db"; // MySQL database connection
+import { encryptData, decryptData } from "../../../crypto/encrypt";
+import { db } from "../../../lib/db";
 
-// Initialize S3 Client
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -24,7 +23,6 @@ export const config = {
 };
 
 function sanitizeFilename(filename) {
-  // Replace special characters with underscores and remove whitespaces
   const sanitized = filename
     .replace(/[^a-zA-Z0-9.]/g, "_") // Replace non-alphanumeric chars with underscores
     .replace(/\s+/g, "_"); // Replace consecutive whitespaces with a single underscore
@@ -57,7 +55,6 @@ export default async function handler(req, res) {
   }
 }
 
-// 🔹 Get all property photos (DECRYPTED)
 async function getPropertyPhotos(req, res, connection) {
   const { property_id } = req.query;
 
@@ -90,7 +87,6 @@ async function getPropertyPhotos(req, res, connection) {
   }
 }
 
-// 🔹 Handle updating/uploading property photos
 async function handleUpdatePhotos(req, res, connection) {
   const form = new IncomingForm({
     multiples: true,
@@ -177,7 +173,6 @@ async function handleUpdatePhotos(req, res, connection) {
   });
 }
 
-// 🔹 Handle deleting a photo
 async function handleDeletePhoto(req, res, connection) {
   const { property_id, photo_url } = req.query;
 

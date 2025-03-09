@@ -75,7 +75,6 @@ export default async function handler(req, res) {
           "UPDATE User SET fcm_token = ? WHERE user_id = ?",
           [fcm_token, user.user_id]
       );
-      console.log("✅ FCM token updated for user:", user.user_id);
     }
 
     if(user.is_2fa_enabled){
@@ -117,9 +116,9 @@ export default async function handler(req, res) {
       [userID, action, timestamp]
     );
 
-    if (fcm_token) {
-      await sendFCMNotification(fcm_token, "Success Login FCM!", `Welcome back, ${firstName}!`);
-    }
+    // if (fcm_token) {
+    //   await sendFCMNotification(fcm_token, "Success Login FCM!", `Welcome back, ${firstName}!`);
+    // }
 
     return res.status(200).json({
       message: "Login successful",

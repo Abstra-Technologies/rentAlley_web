@@ -1,10 +1,8 @@
 import mysql from "mysql2/promise";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
-import { sendFCMNotification } from "../../../lib/firebaseAdmin";
 
 export default async function handler(req, res) {
-
 
 //region GET ADMIN ID
 
@@ -80,7 +78,6 @@ export default async function handler(req, res) {
                 [user_id, notificationTitle, notificationBody]
             );
 
-            await sendFCMNotification(fcm_token, notificationTitle, notificationBody);
         }
 
         let newAttempts = attempts;
@@ -109,10 +106,6 @@ export default async function handler(req, res) {
             `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
             [user_id, notificationTitle, notificationBody]
         );
-
-        //Send Push Notification via FCM
-        await sendFCMNotification(fcm_token, notificationTitle, notificationBody);
-
 
         await connection.end();
 

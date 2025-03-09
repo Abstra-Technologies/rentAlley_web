@@ -88,7 +88,6 @@ io.on("connection", (socket) => {
                 [chatRoom]
             );
 
-            // Decrypt messages
             const decryptedMessages = messages.map((msg) => ({
                 sender_id: msg.sender_id,
                 sender_name: msg.firstName,
@@ -220,6 +219,19 @@ io.on("connection", (socket) => {
             console.error("Error sending message:", error);
         }
     });
+
+    //  SEND REAL-TIME NOTIFICATIONS
+    socket.on("send-notification", ({ user_id, title, message }) => {
+        console.log(`📩 Sending notification to user ${user_id}: ${title}`);
+
+        // Emit notification to the specified user
+        io.to(user_id).emit("receive-notification", {
+            title,
+            message,
+            timestamp: new Date(),
+        });
+    });
+
     socket.on("disconnect", () => {
         console.log(`User disconnected: ${socket.id}`);
     });
