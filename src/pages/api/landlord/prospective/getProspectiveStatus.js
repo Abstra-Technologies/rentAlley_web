@@ -6,21 +6,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { unit_id } = req.query;
+    const { unit_id, tenant_id } = req.query;
 
     if (!unit_id) {
-      return res.status(400).json({ message: "Unit ID is required" });
+      return res.status(400).json({ message: "Tenant ID is required" });
     }
 
     // Query to get the prospective tenant's status for this unit
     const query = `
       SELECT status 
       FROM ProspectiveTenant 
-      WHERE unit_id = ? 
+      WHERE unit_id = ? AND tenant_id = ?
       ORDER BY updated_at DESC
     `;
 
-    const [rows] = await db.query(query, [unit_id]);
+    const [rows] = await db.query(query, [unit_id, tenant_id]);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "No prospective tenant found" });

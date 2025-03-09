@@ -32,7 +32,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const searchParams = useSearchParams();
-  const queryTenantId = tenantId || searchParams.get("tenant_id")
+  const queryTenantId = tenantId || searchParams.get("tenant_id");
 
   useEffect(() => {
     fetchLeaseDetails();
@@ -64,7 +64,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
   const fetchProspectiveStatus = async () => {
     try {
       const response = await axios.get(
-        `/api/landlord/prospective/getProspectiveStatus?unit_id=${unitId}`
+        `/api/landlord/prospective/getProspectiveStatus?unit_id=${unitId}&tenant_id=${tenantId}`
       );
       setProspectiveStatus(response.data.status);
     } catch (error) {
@@ -78,7 +78,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
         `/api/landlord/prospective/getUnitInfo?unit_id=${unitId}`
       );
 
-      console.log("API Response:", response.data); // Log the entire response
+      console.log("API Response:", response.data);
 
       if (response.data) {
         setUnitName(response.data.unit?.unit_name || "");
@@ -168,11 +168,12 @@ const LeaseDetails = ({ unitId, tenantId }) => {
       Swal.fire("Error", "Failed to update status", "error");
     }
   };
+
   // Fetch lease details
   const fetchLeaseDetails = async () => {
     try {
       const response = await axios.get(
-        `/api/leaseAgreement/getLease?unit_id=${unitId}`
+        `/api/leaseAgreement/getLease?unit_id=${unitId}&tenant_id=${tenantId}`
       );
 
       if (response.data.length > 0) {
@@ -193,17 +194,18 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     const formData = new FormData();
     formData.append("leaseFile", file);
     formData.append("unit_id", unitId);
+    formData.append("tenant_id", tenantId);
 
     try {
       await axios.post(
-        `/api/leaseAgreement/uploadLease?unit_id=${unitId}`,
+        `/api/leaseAgreement/uploadLease?unit_id=${unitId}&tenant_id=${tenantId}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
       Swal.fire("Success", "Lease agreement uploaded successfully", "success");
-      fetchLeaseDetails(); // Refresh lease details
+      fetchLeaseDetails();
     } catch (error) {
       console.error("Error uploading lease file:", error);
       Swal.fire("Error", "Failed to upload lease agreement", "error");
@@ -216,13 +218,17 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     try {
       if (queryTenantId) {
         // If we have a specific tenant ID, fetch just that tenant
-        const response = await axios.get(`/api/landlord/prospective/interested-tenants?tenant_id=${queryTenantId}`);
+        const response = await axios.get(
+          `/api/landlord/prospective/interested-tenants?tenant_id=${queryTenantId}`
+        );
         if (response.data) {
           setTenant(response.data);
         }
       } else {
         // Fallback to previous behavior if no tenant_id is provided
-        const response = await axios.get(`/api/landlord/prospective/interested-tenants?unitId=${unitId}`);
+        const response = await axios.get(
+          `/api/landlord/prospective/interested-tenants?unitId=${unitId}`
+        );
         if (response.data.length > 0) {
           setTenant(response.data[0]);
         }
@@ -248,10 +254,13 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
 
     try {
-      await axios.put(`/api/leaseAgreement/leaseDetails?unit_id=${unitId}`, {
-        start_date: startDate,
-        end_date: endDate,
-      });
+      await axios.put(
+        `/api/leaseAgreement/leaseDetails?unit_id=${unitId}&tenant_id=${tenantId}`,
+        {
+          start_date: startDate,
+          end_date: endDate,
+        }
+      );
       Swal.fire("Success", "Lease dates updated successfully", "success");
       fetchLeaseDetails(); // Refresh data
     } catch (error) {

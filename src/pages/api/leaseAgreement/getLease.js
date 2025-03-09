@@ -13,22 +13,9 @@ export default async function getLease(req, res) {
 
   connection = await db.getConnection();
 
-  const { unit_id } = req.query;
+  const { unit_id, tenant_id } = req.query;
 
   try {
-    const [prospectiveTenantResult] = await connection.execute(
-      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ?",
-      [unit_id]
-    );
-
-    if (prospectiveTenantResult.length === 0) {
-      return res.status(400).json({
-        error: "No approved prospective tenant found for this unit.",
-      });
-    }
-
-    const tenant_id = prospectiveTenantResult[0].tenant_id;
-
     let query = `SELECT * FROM LeaseAgreement WHERE tenant_id = ? AND unit_id = ?`;
     let params = [tenant_id, unit_id];
 

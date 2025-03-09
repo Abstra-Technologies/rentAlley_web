@@ -29,7 +29,6 @@ function sanitizeFilename(filename) {
   return sanitized;
 }
 
-
 const uploadToS3 = async (file, folder) => {
   if (!file || !file.filepath) {
     console.error("Filepath is missing:", file);
@@ -59,7 +58,6 @@ const uploadToS3 = async (file, folder) => {
   return encryptDataString(s3Url);
 };
 
-
 export default async function saveUploadLease(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -80,7 +78,7 @@ export default async function saveUploadLease(req, res) {
         .json({ error: "File parsing error", message: err.message });
     }
 
-    const { unit_id } = fields;
+    const { unit_id, tenant_id } = fields;
 
     console.log("Parsed Fields:", fields);
     console.log("Parsed Files:", files);
@@ -89,20 +87,6 @@ export default async function saveUploadLease(req, res) {
     try {
       connection = await db.getConnection();
       await connection.beginTransaction();
-
-      // Step 1: Get the approved prospective tenant for the unit
-      const [prospectiveTenantResult] = await connection.execute(
-        "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ?",
-        [unit_id]
-      );
-
-      if (prospectiveTenantResult.length === 0) {
-        return res.status(400).json({
-          error: "No approved prospective tenant found for this unit.",
-        });
-      }
-
-      const tenant_id = prospectiveTenantResult[0].tenant_id;
 
       const leaseAgreementFile = files.leaseFile?.[0] || null;
 
@@ -116,16 +100,21 @@ export default async function saveUploadLease(req, res) {
         VALUES (?, ?, ?, 'pending', NOW(), NOW())`;
 
       console.log("Inserting into MySQL with:", {
-        tenant_id,
-        unit_id,
+        tenant_id: tenant_id[0],
+        unit_id: unit_id[0],
         agreementUrl,
       });
 
-      await connection.execute(query, [
-        tenant_id,
-        Number(unit_id),
-        agreementUrl,
-      ]);
+      // Validate unit_id and tenant_id
+      if (!unit_id || !unit_id[0]) {
+        return res.status(400).json({ error: "unit_id is required" });
+      }
+
+      if (!tenant_id || !tenant_id[0]) {
+        return res.status(400).json({ error: "tenant_id is required" });
+      }
+
+      await connection.execute(query, [tenant_id[0], unit_id[0], agreementUrl]);
       await connection.commit();
       res.status(201).json({ message: "Lease agreement stored successfully." });
     } catch (error) {

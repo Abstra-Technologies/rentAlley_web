@@ -1,17 +1,17 @@
 import { db } from "../../../lib/db";
 
 export default async function leaseDetails(req, res) {
-  const { unit_id } = req.query;
+  const { unit_id, tenant_id } = req.query;
   let connection;
 
   try {
     connection = await db.getConnection();
     if (req.method === "GET") {
-      await handleGetRequest(req, res, connection, unit_id);
+      await handleGetRequest(req, res, connection, unit_id, tenant_id);
     } else if (req.method === "PUT") {
-      await handlePutRequest(req, res, connection, unit_id);
+      await handlePutRequest(req, res, connection, unit_id, tenant_id);
     } else if (req.method === "DELETE") {
-      await handleDeleteRequest(req, res, connection, unit_id);
+      await handleDeleteRequest(req, res, connection, unit_id, tenant_id);
     } else {
       res.setHeader("Allow", ["POST", "GET", "PUT", "DELETE"]);
       res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -26,11 +26,11 @@ export default async function leaseDetails(req, res) {
   }
 }
 
-async function handleGetRequest(req, res, connection, unit_id) {
+async function handleGetRequest(req, res, connection, unit_id, tenant_id) {
   try {
     const [rows] = await connection.execute(
-      "SELECT * FROM LeaseAgreement WHERE unit_id = ?",
-      [unit_id]
+      "SELECT * FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?",
+      [unit_id, tenant_id]
     );
 
     res.status(200).json(rows);
@@ -39,7 +39,7 @@ async function handleGetRequest(req, res, connection, unit_id) {
   }
 }
 
-async function handlePutRequest(req, res, connection, unit_id) {
+async function handlePutRequest(req, res, connection, unit_id, tenant_id) {
   try {
     const { start_date, end_date } = req.body;
 
@@ -52,8 +52,8 @@ async function handlePutRequest(req, res, connection, unit_id) {
     await connection.beginTransaction();
 
     const [result] = await connection.execute(
-      `UPDATE LeaseAgreement SET start_date = ?, end_date = ?, status = 'active' WHERE unit_id = ?`,
-      [start_date, end_date, unit_id]
+      `UPDATE LeaseAgreement SET start_date = ?, end_date = ?, status = 'active' WHERE unit_id = ? and tenant_id = ?`,
+      [start_date, end_date, unit_id, tenant_id]
     );
     await connection.commit();
 
@@ -73,13 +73,13 @@ async function handlePutRequest(req, res, connection, unit_id) {
   }
 }
 
-async function handleDeleteRequest(req, res, connection, unit_id) {
+async function handleDeleteRequest(req, res, connection, unit_id, tenant_id) {
   try {
     await connection.beginTransaction();
 
     const [deleteResult] = await connection.execute(
-      `DELETE FROM LeaseAgreement WHERE unit_id = ?`,
-      [unit_id]
+      `DELETE FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?`,
+      [unit_id, tenant_id]
     );
 
     await connection.commit();

@@ -15,7 +15,7 @@ export default async function deleteLease(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { unit_id } = req.query;
+  const { unit_id, tenant_id } = req.query;
 
   let connection;
 
@@ -25,8 +25,8 @@ export default async function deleteLease(req, res) {
 
     // Retrieve the lease agreement file URL
     const [leaseRows] = await connection.execute(
-      "SELECT agreement_url FROM LeaseAgreement WHERE unit_id = ?",
-      [unit_id]
+      "SELECT agreement_url FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?",
+      [unit_id, tenant_id]
     );
 
     if (leaseRows.length === 0) {
@@ -67,8 +67,8 @@ export default async function deleteLease(req, res) {
 
     // Delete lease record from the database
     const [deleteResult] = await connection.execute(
-      "DELETE FROM LeaseAgreement WHERE unit_id = ?",
-      [unit_id]
+      "DELETE FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?",
+      [unit_id, tenant_id]
     );
 
     if (deleteResult.affectedRows === 0) {
