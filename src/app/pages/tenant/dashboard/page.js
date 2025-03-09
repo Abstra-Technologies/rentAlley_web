@@ -8,11 +8,13 @@ import Announcements from "../../../../components/annoucemen/announcement";
 import LeaseAgreementWidget from "../../../../components/tenant/LeaseAgreementWidget";
 import TenantBillingTable from "../../../../components/tenant/TenantBillingTable";
 import TenantPendingPaymentWidget from "../../../../components/tenant/PendingPaymentWidget";
+import TenantPropertyChart from "../../../../components/analytics/tenantAnalytics";
 
 export default function TenantDashboard() {
   const { user, admin, fetchSession, loading } = useAuthStore();
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
+  const [billingHistory, setBillingHistory] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,7 +29,17 @@ export default function TenantDashboard() {
     };
 
     fetchData();
-  }, []);
+
+  }, [user?.tenant_id]);
+
+  const labelsBillingHistory = billingHistory.map((item) => item.month);
+  const seriesBillingHistory = [{ name: "Total Billing", data: billingHistory.map((item) => item.total_billed_amount) }];
+
+  const chartOptionsBilling = {
+    chart: { type: "line" },
+    xaxis: { categories: labelsBillingHistory },
+    title: { text: "Monthly Billing History", align: "center" },
+  };
 
   useEffect(() => {
     if (!loading && !user && !admin) {
@@ -64,6 +76,9 @@ export default function TenantDashboard() {
         {/* Other Tenant Dashboard Components */}
         <div className="mt-6">
           <Announcements userType={user?.userType} />
+        </div>
+        <div>
+        <TenantPropertyChart/>
         </div>
       </div>
     </TenantLayout>
