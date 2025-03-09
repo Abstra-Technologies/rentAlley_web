@@ -35,7 +35,7 @@ export default function TenantPendingPaymentWidget({ tenant_id }) {
       <h2 className="text-lg font-semibold text-gray-800">
         Total Pending Payments
       </h2>
-      <p className="text-xl font-bold text-red-600 mt-2">
+      <p className="text-3xl font-bold text-red-600 mt-2">
         ₱{Number(totalPending).toFixed(2)}
       </p>
     </div>
