@@ -35,7 +35,6 @@ export default async function updateLandlordStatus(req, res) {
                     lv.document_url,
                     lv.selfie_url,
                     l.user_id,
-                    u.fcm_token
              FROM LandlordVerification lv
              JOIN Landlord l ON lv.landlord_id = l.landlord_id
              JOIN User u ON l.user_id = u.user_id

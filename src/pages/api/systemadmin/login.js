@@ -8,7 +8,7 @@ export default async function admminLogin(req, res) {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    const { login, password, fcm_token } = req.body;
+    const { login, password } = req.body;
 
     if (!login || !password) {
         console.log("Missing credentials. Received data:", req.body);
@@ -69,9 +69,7 @@ export default async function admminLogin(req, res) {
             `token=${token}; HttpOnly; Path=/; ${isDev ? "" : "Secure;"} SameSite=Strict`
         );
 
-        if (fcm_token) {
-            await db.query("UPDATE Admin SET fcm_token = ? WHERE admin_id = ?", [fcm_token, user.admin_id]);
-        }
+
 
         console.log("Logging admin activity...");
         const action = "Admin logged in";

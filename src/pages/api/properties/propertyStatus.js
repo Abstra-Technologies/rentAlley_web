@@ -44,7 +44,7 @@ export default async function handler(req, res) {
         });
 
         const [rows] = await connection.execute(
-            `SELECT pv.status, pv.attempts, l.user_id, u.fcm_token
+            `SELECT pv.status, pv.attempts, l.user_id
              FROM PropertyVerification pv
                       JOIN Property p ON pv.property_id = p.property_id
                       JOIN Landlord l ON p.landlord_id = l.landlord_id
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: "Property not found" });
         }
 
-        const { status: currentStatus, attempts, user_id, fcm_token } = rows[0];
+        const { status: currentStatus, attempts, user_id } = rows[0];
 
         if (!user_id) {
             await connection.end();

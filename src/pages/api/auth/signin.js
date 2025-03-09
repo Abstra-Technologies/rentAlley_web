@@ -4,13 +4,10 @@ import { db } from "../../../lib/db";
 import {decryptData } from "../../../crypto/encrypt";
 import nodeCrypto from "crypto";
 import nodemailer from "nodemailer";
-import { sendFCMNotification } from "../../../lib/firebaseAdmin";
 
+export default async function Signin(req, res) {
 
-
-export default async function handler(req, res) {
-
-  const { email, password, fcm_token  } = req.body;
+  const { email, password  } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
@@ -70,13 +67,6 @@ export default async function handler(req, res) {
       } SameSite=Lax`
     );
 
-    if (fcm_token) {
-      await db.query(
-          "UPDATE User SET fcm_token = ? WHERE user_id = ?",
-          [fcm_token, user.user_id]
-      );
-    }
-
     if(user.is_2fa_enabled){
 
       const otp = Math.floor(100000 + Math.random() * 900000);
@@ -115,10 +105,6 @@ export default async function handler(req, res) {
       "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)",
       [userID, action, timestamp]
     );
-
-    // if (fcm_token) {
-    //   await sendFCMNotification(fcm_token, "Success Login FCM!", `Welcome back, ${firstName}!`);
-    // }
 
     return res.status(200).json({
       message: "Login successful",

@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import useAuthStore from "../../../../zustand/authStore";
 import { logEvent } from "../../../../utils/gtag";
-import { requestNotificationPermission } from "../../../../lib/firebaseMessaging";
 import Footer from "../../../../components/navigation/footer";
 import Image from "next/image";
 
@@ -103,13 +102,12 @@ export default function Login() {
       "User Submitted Login Form",
       1
     );
-    const fcm_token = await requestNotificationPermission();
     try {
       loginSchema.parse(formData);
       const response = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, fcm_token }),
+        body: JSON.stringify(formData),
         credentials: "include",
       });
 
