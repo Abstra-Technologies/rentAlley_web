@@ -63,7 +63,7 @@ export default function SplashScreen() {
 
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push(`/pages/find-rent?searchQuery=${searchQuery}&location=${selectedLocation}&type=${selectedType}`);
+    router.push(`/pages/find-rent?searchQuery=${searchQuery}`);
   };
 
   const navigateToFindRent = () => {

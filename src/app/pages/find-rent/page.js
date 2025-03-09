@@ -12,15 +12,14 @@ import {
 } from "react-icons/fa";
 
 export default function PropertySearch() {
-  const [allProperties, setAllProperties] = useState([]); // Store all fetched properties
-  const [filteredProperties, setFilteredProperties] = useState([]); // Store filtered results
+  const [allProperties, setAllProperties] = useState([]); 
+  const [filteredProperties, setFilteredProperties] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
-  const [priceRange, setPriceRange] = useState(""); // Price range filter
-  const [showPriceDropdown, setShowPriceDropdown] = useState(false); // Toggle price dropdown
-
-  // Define price range options
+  const [priceRange, setPriceRange] = useState(""); 
+  const [showPriceDropdown, setShowPriceDropdown] = useState(false); 
+  
   const priceRanges = [
     { label: "All Prices", min: "", max: "" },
     { label: "₱1,000 - ₱15,000", min: 1000, max: 15000 },
@@ -28,7 +27,7 @@ export default function PropertySearch() {
     { label: "Greater than ₱20,000", min: 20000, max: "" },
   ];
 
-  // Fetch all properties once on mount
+  
   useEffect(() => {
     async function fetchProperties() {
       try {
@@ -38,7 +37,7 @@ export default function PropertySearch() {
 
         const data = await res.json();
         setAllProperties(data);
-        setFilteredProperties(data); // Initialize filtered results
+        setFilteredProperties(data); 
       } catch (error) {
         console.error(error.message);
       } finally {
@@ -49,8 +48,17 @@ export default function PropertySearch() {
     fetchProperties();
   }, []);
 
-  // Filter properties in real-time
+ 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const queryParam = params.get('searchQuery');
+    const locationParam = params.get('location');
+    const typeParam = params.get('type');
+
+    if (queryParam) setSearchQuery(queryParam);
+    if (locationParam) setLocation(locationParam);
+    if (typeParam) setType(typeParam);
+    
     const filtered = allProperties.filter((property) => {
       const matchesSearch =
         searchQuery === "" ||
@@ -91,10 +99,10 @@ export default function PropertySearch() {
         </p>
       </div>
 
-      {/* Search Section */}
+
       <div className="bg-white rounded-lg shadow-md p-5 mb-8">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search Input */}
+
           <div className="flex-1">
             <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-500 transition-colors">
               <FaSearch className="text-gray-400 mx-3" />
@@ -116,7 +124,7 @@ export default function PropertySearch() {
             </div>
           </div>
 
-          {/* Price Range Dropdown */}
+
           <div className="relative md:w-64">
             <button
               onClick={() => setShowPriceDropdown(!showPriceDropdown)}
@@ -164,7 +172,7 @@ export default function PropertySearch() {
           </div>
         </div>
 
-        {/* Active filters */}
+
         {(searchQuery || priceRange) && (
           <div className="flex gap-2 mt-4 flex-wrap">
             {priceRange && priceRange !== "All Prices" && (
@@ -176,7 +184,7 @@ export default function PropertySearch() {
         )}
       </div>
 
-      {/* Loading State */}
+
       {loading ? (
         <div className="flex justify-center items-center py-12">
           <FaSpinner className="animate-spin text-blue-500 text-3xl" />
@@ -196,13 +204,13 @@ export default function PropertySearch() {
         </div>
       ) : (
         <>
-          {/* Results count */}
+
           <div className="mb-4 text-gray-600">
             Found {filteredProperties.length} propert
             {filteredProperties.length === 1 ? "y" : "ies"}
           </div>
 
-          {/* Property Grid */}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProperties.map((property) => {
               return (
@@ -213,7 +221,7 @@ export default function PropertySearch() {
                     router.push(`/pages/find-rent/${property.property_id}`)
                   }
                 >
-                  {/* Property Image */}
+
                   <div className="relative">
                     {property?.property_photo ? (
                       <div className="relative h-48">
@@ -233,9 +241,9 @@ export default function PropertySearch() {
                     )}
                   </div>
 
-                  {/* Property Details */}
+
                   <div className="p-4">
-                    {/* Name & Verified Badge Row */}
+
                     <div className="flex justify-between items-center mb-1">
                       <h2 className="text-lg font-semibold text-gray-900">
                         {property?.property_name}
@@ -248,7 +256,7 @@ export default function PropertySearch() {
                       </div>
                     </div>
 
-                    {/* Location */}
+
                     <div className="flex items-center text-gray-600 mt-2">
                       <FaMapMarkerAlt className="mr-1 text-gray-400" />
                       <p className="text-gray-800">
@@ -263,12 +271,12 @@ export default function PropertySearch() {
                       </p>
                     </div>
 
-                    {/* Rent Amount */}
+  
                     <p className="text-xl font-semibold text-blue-600 mt-1">
                       ₱{Math.round(property.rent_amount).toLocaleString()}
                     </p>
 
-                    {/* View Details Button */}
+
                     <button className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors">
                       View Details
                     </button>
