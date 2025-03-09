@@ -4,22 +4,16 @@ import { useState, useEffect } from "react";
 import useAuth from "../../../../../hooks/useSession";
 import NotificationList from "../../../../components/notification/NotificationList";
 
-export default function NotificationsPage() {
+export default function TenantNotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!user || !user.user_id) {
-      setError("User not authenticated");
-      setIsLoading(false);
-      return;
-    }
-
-    const userId = encodeURIComponent(user.user_id);
-
+    const userId = user ? encodeURIComponent(user.user_id) : null;
     setIsLoading(true);
+
     fetch(`/api/notification/get-notification?userId=${userId}`)
       .then((res) => {
         if (!res.ok) {
@@ -30,8 +24,7 @@ export default function NotificationsPage() {
         return res.json();
       })
       .then((data) => {
-        const notificationsArray = Array.isArray(data) ? data : [];
-        setNotifications(notificationsArray);
+        setNotifications(Array.isArray(data) ? data : []);
         setIsLoading(false);
       })
       .catch((err) => {
@@ -70,13 +63,13 @@ export default function NotificationsPage() {
       {isLoading && (
         <p className="text-center py-4">Loading notifications...</p>
       )}
+      {error && <p className="text-center py-4 text-red-500">{error}</p>}
       {!isLoading && !error && (
         <NotificationList
           notifications={notifications}
           markAsRead={markAsRead}
         />
       )}
-      {error && <p className="text-center py-4 text-red-500">{error}</p>}
     </div>
   );
 }
