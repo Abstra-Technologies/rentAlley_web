@@ -6,12 +6,17 @@ export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ message: "Method not allowed" });
   }
-  
+
   const { unitId, tenant_id } = req.query;
-  
+
   // Make sure at least one required parameter is provided
   if (!unitId && !tenant_id) {
-    return res.status(400).json({ message: "Missing required parameters: either unitId or tenant_id must be provided" });
+    return res
+      .status(400)
+      .json({
+        message:
+          "Missing required parameters: either unitId or tenant_id must be provided",
+      });
   }
 
   try {
@@ -23,9 +28,9 @@ export default async function handler(req, res) {
       JOIN Tenant t ON pt.tenant_id = t.tenant_id
       JOIN User u ON t.user_id = u.user_id
       WHERE `;
-    
+
     let params = [];
-    
+
     // If tenant_id is provided, use it for more specific querying
     if (tenant_id) {
       query += `pt.tenant_id = ?`;
@@ -35,17 +40,15 @@ export default async function handler(req, res) {
       query += `pt.unit_id = ?`;
       params.push(unitId);
     }
-    
-    query += ` ORDER BY pt.created_at DESC`;
-    
+
     // Log the query and parameters for debugging
     console.log("Query:", query);
     console.log("Parameters:", params);
-    
+
     const [tenants] = await db.query(query, params);
-    
+
     console.log("Database query results count:", tenants.length);
-    
+
     // Handle single tenant request differently
     if (tenant_id && tenants.length > 0) {
       // For single tenant request, return the object directly without array wrapping
@@ -68,10 +71,10 @@ export default async function handler(req, res) {
         monthly_income: tenant.monthly_income,
         birthDate: tenant.birthDate,
       };
-      
+
       return res.status(200).json(decryptedTenant);
     }
-    
+
     // For multiple tenants or when no specific tenant_id was provided
     const decryptedTenants = tenants.map((tenant) => ({
       ...tenant,
@@ -91,16 +94,17 @@ export default async function handler(req, res) {
       monthly_income: tenant.monthly_income,
       birthDate: tenant.birthDate,
     }));
-    
+
     // If no tenants found, return an empty array with a 200 status
     // This is better than returning an error since it's a valid empty result
     return res.status(200).json(decryptedTenants);
-    
   } catch (error) {
     console.error("Database error:", error);
     console.log("Tenant ID:", tenantId);
     console.log("Unit ID:", unitId);
-    console.log("API Response:", response.data)
-    return res.status(500).json({ message: "Database error", error: error.message });
+    console.log("API Response:", response.data);
+    return res
+      .status(500)
+      .json({ message: "Database error", error: error.message });
   }
 }
