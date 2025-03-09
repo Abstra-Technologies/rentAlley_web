@@ -28,6 +28,7 @@ const PropertyListingPage = () => {
   const [isFetchingVerification, setIsFetchingVerification] = useState(true);
   const [fetchingSubscription, setFetchingSubscription] = useState(true);
   const [subscription, setSubscription] = useState(null);
+  const [verificationAttempts, setVerificationAttempts] = useState({});
 
   useEffect(() => {
     if (user?.landlord_id) {
@@ -65,6 +66,24 @@ const PropertyListingPage = () => {
         .finally(() => setFetchingSubscription(false));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (properties.length > 0) {
+      properties.forEach((property) => {
+        axios
+          .get(`/api/propertyListing/propVerify?id=${property.property_id}`)
+          .then((response) => {
+            setVerificationAttempts((prev) => ({
+              ...prev,
+              [property.property_id]: response.data.attempts
+            }));
+          })
+          .catch((err) => {
+            console.error("Failed to fetch verification attempts:", err);
+          });
+      });
+    }
+  }, [properties]);
 
   const handleEdit = (propertyId, event) => {
     event.stopPropagation();
@@ -362,21 +381,39 @@ const PropertyListingPage = () => {
                                         : "bg-gray-100 text-gray-700"
                         }`}
                     >
-                            {property?.verification_status || "Not Submitted"}
+                        {property?.verification_status || "Not Submitted"}
                         </span>
 
-                    {property?.verification_status === "Rejected" && (
-                        <button
-                            className="px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
-                            onClick={() =>
-                                router.push(`/pages/landlord/property-listing/resubmit-verification/${property?.property_id}`)
-                            }
-                        >
-                          Resubmit
-                        </button>
-                    )}
+                        {property?.verification_status === "Rejected" && (
+                          <>
+                            {property.attempts < 4 ? (
+                              <button
+                                className="px-3 py-1 text-xs font-semibold bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                                onClick={() =>
+                                  router.push(
+                                    `/pages/landlord/property-listing/resubmit-verification/${property?.property_id}`
+                                  )
+                                }
+                              >
+                                Resubmit ({4 - property.attempts} attempts left)
+                              </button>
+                            ) : (
+                              <span className="px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded-md">
+                                Max attempts reached
+                              </span>
+                            )}
+                          </>
+                        )}
                   </div>
+                  {property?.verification_status === "Rejected" && property.attempts >= 4 && (
+                      <div className="mt-2 text-xs text-red-600">
+                        <p>This property has been rejected twice and cannot be resubmitted.</p>
+                        <p>Please delete this property and create a new one.</p>
+                      </div>
+                    )}
+                  
                 </div>
+                
 
                 {/* Action buttons at the bottom */}
                 <div className="mt-auto pt-4 border-t border-gray-100">

@@ -8,18 +8,45 @@
 //   return <InterestedTenants unitId={unitId} />;
 // }
 
+// "use client";
+// import { useParams } from "next/navigation";
+// import { useEffect, useState } from "react";
+// import InterestedTenants from "../../../../../../../components/landlord/InterestedTenants";
+// import LoadingScreen from "../../../../../../../components/loadingScreen";
+// import  useAuth  from "../../../../../../../../hooks/useSession"; 
+
+// export default function TenantRequest() {
+//   const { unitId } = useParams();
+//   const [loading, setLoading] = useState(true);
+//   const [landlordId, setLandlordId] = useState(null);
+//   const { user } = useAuth();
+
+//   useEffect(() => {
+//     // Get landlord ID from the authenticated user
+//     if (user) {
+//       setLandlordId(user.landlord_id); // Adjust this based on how your user object is structured
+//       setLoading(false);
+//     }
+//   }, [user]);
+
+//   if (loading) return <LoadingScreen />;
+
+//   return <InterestedTenants unitId={unitId} landlordId={landlordId} />;
+// }
+
+
 "use client";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import InterestedTenants from "../../../../../../../components/landlord/InterestedTenants";
 import LoadingScreen from "../../../../../../../components/loadingScreen";
-import  useAuth  from "../../../../../../../../hooks/useSession"; // Assuming you have an auth context
+import useAuth from "../../../../../../../../hooks/useSession";
 
 export default function TenantRequest() {
   const { unitId } = useParams();
   const [loading, setLoading] = useState(true);
   const [landlordId, setLandlordId] = useState(null);
-  const { user } = useAuth(); // Assuming you have an auth context that provides the user
+  const { user } = useAuth();
 
   useEffect(() => {
     // Get landlord ID from the authenticated user
@@ -31,5 +58,7 @@ export default function TenantRequest() {
 
   if (loading) return <LoadingScreen />;
 
-  return <InterestedTenants unitId={unitId} landlordId={landlordId} />;
+  return (
+    <InterestedTenants unitId={unitId} landlordId={landlordId} />
+  );
 }

@@ -68,8 +68,8 @@ export default function ViewUnits() {
     async function fetchBillingData() {
       try {
         const response = await axios.get(
-            `/api/landlord/billing/checkBillingStatus`,
-            { params: { property_id } }
+          `/api/landlord/billing/checkBillingStatus`,
+          { params: { property_id } }
         );
 
         if (response.data.billingData && response.data.billingData.length > 0) {
@@ -79,8 +79,8 @@ export default function ViewUnits() {
         }
       } catch (error) {
         console.error(
-            "Failed to fetch billing data:",
-            error.response?.data || error.message
+          "Failed to fetch billing data:",
+          error.response?.data || error.message
         );
       }
     }
@@ -98,11 +98,11 @@ export default function ViewUnits() {
     e.preventDefault();
     try {
       const response = await axios.post(
-          "/api/landlord/billing/saveConcessionaireBilling",
-          {
-            property_id,
-            ...billingForm,
-          }
+        "/api/landlord/billing/saveConcessionaireBilling",
+        {
+          property_id,
+          ...billingForm,
+        }
       );
 
       console.log("Billing saved successfully:", response.data);
@@ -117,7 +117,10 @@ export default function ViewUnits() {
 
       setIsModalOpen(false);
     } catch (error) {
-      console.error("Error saving billing:", error.response?.data || error.message);
+      console.error(
+        "Error saving billing:",
+        error.response?.data || error.message
+      );
 
       Swal.fire({
         icon: "error",
@@ -137,6 +140,7 @@ export default function ViewUnits() {
   return (
     <LandlordLayout>
       <div className="p-6 max-w-6xl mx-auto">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">
             Units in Property {property_id}
@@ -149,7 +153,6 @@ export default function ViewUnits() {
           </button>
         </div>
 
-        {/* Unit Cards */}
         {/* Unit Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {units.length > 0 ? (
@@ -195,14 +198,13 @@ export default function ViewUnits() {
                   </div>
               ))
           ) : (
-              <p className="text-gray-600 text-center col-span-full">
-                No units found.
-              </p>
+            <p className="text-gray-600 text-center col-span-full">
+              No units found.
+            </p>
           )}
         </div>
 
-
-        {/* For Concessionaire Billing input modal */}
+        {/* For Concessionaire Billing */}
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-h-screen overflow-y-auto">
@@ -228,6 +230,7 @@ export default function ViewUnits() {
               ) : (
                   <p className="text-gray-500">No billing data found for this month.</p>
               )}
+
 
               <form className="space-y-4" onSubmit={handleSaveBilling}>
                 {/* Billing Period */}

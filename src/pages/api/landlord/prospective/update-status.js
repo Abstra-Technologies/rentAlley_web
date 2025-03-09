@@ -26,34 +26,27 @@ export default async function handler(req, res) {
     const query = `
       UPDATE ProspectiveTenant 
       SET status = ?, message = ?, updated_at = CURRENT_TIMESTAMP 
-      WHERE unit_id = ?
+      WHERE unit_id = ? AND tenant_id = ?
     `;
 
-    if (status === "approved") {
-      // const leaseQuery = `
-      //   INSERT INTO LeaseAgreement (prospective_tenant_id, start_date, end_date, status)
-      //   VALUES (?, 0, 0, 'active')
-      // `;
+    const [result] = await db.query(query, [status, message || null, unitId, tenant_id]);
+
+     // If approved, create lease agreement
+     if (status === "approved") {
       const leaseQuery = `
         INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, status)
-        VALUES (?, ?, 0, 0, 'active')
+        VALUES (?, ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 1 YEAR), 'active')
       `;
 
       await db.query(leaseQuery, [tenant_id, unitId]);
-      // await db.query(leaseQuery, [prospectiveTenantId]);
     }
 
-    const [result] = await db.query(query, [status, message || null, unitId]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Application not found" });
-    }
-
-    res
-      .status(200)
-      .json({ message: `Tenant application ${status} successfully!` });
+    res.status(200).json({ message: `Tenant application ${status} successfully!` });
   } catch (error) {
     console.error("Error updating tenant status:", error);
     res.status(500).json({ message: "Server Error" });
   }
 }
+
+    
+
