@@ -1,14 +1,14 @@
 "use client";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Home, Bell, Wrench, CreditCard, Building } from "lucide-react";
+import { Home, Bell, MessageCircle, Wrench, CreditCard, Menu, X } from "lucide-react";
 
 const menuItems = [
   { href: "/pages/tenant/dashboard", icon: Home, label: "Dashboard" },
   { href: "/pages/tenant/announcement", icon: Bell, label: "Announcements" },
-  { href: "/pages/tenant/chat", icon: Bell, label: "Chats" },
+  { href: "/pages/tenant/chat", icon: MessageCircle, label: "Chats" },
   { href: "/pages/tenant/paymentHistory/currentLeasePayment", icon: Bell, label: "Payment History" },
-
   {
     href: "/pages/tenant/maintenance",
     icon: Wrench,
@@ -19,18 +19,34 @@ const menuItems = [
 
 const TenantLayout = ({ children }) => {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
-        {/* Logo and Title */}
-        <div className="p-6">
+    <div className="flex flex-col md:flex-row min-h-screen">
+      <div className="md:hidden p-4 bg-white shadow-sm flex justify-between items-center">
+        <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
+        <button 
+          onClick={toggleMobileMenu} 
+          className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      <div 
+        className={`${
+          isMobileMenuOpen ? 'block' : 'hidden'
+        } md:block w-full md:w-64 bg-white shadow-lg md:min-h-screen`}
+      >
+        <div className="hidden md:block p-6">
           <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="px-4">
+        <nav className="px-4 py-2 md:py-0">
           <ul className="space-y-2">
             {menuItems.map(({ href, icon: Icon, label }) => {
               const isActive = pathname === href;
@@ -46,6 +62,7 @@ const TenantLayout = ({ children }) => {
                           : "hover:bg-gray-100"
                       }
                     `}
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Icon
                       className={`w-5 h-5 mr-3 ${
@@ -64,8 +81,7 @@ const TenantLayout = ({ children }) => {
         </nav>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">{children}</div>
+      <div className="flex-1 p-4 md:p-8">{children}</div>
     </div>
   );
 };
