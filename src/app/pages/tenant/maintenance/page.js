@@ -12,7 +12,7 @@ const TenantMaintenance = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !user.user?.tenant_id) return; // Ensure user is loaded
+    if (!user || !user?.tenant_id) return;
 
     const fetchMaintenanceRequests = async () => {
       try {
@@ -22,20 +22,20 @@ const TenantMaintenance = () => {
 
         console.log("Fetched Maintenance Requests:", response.data);
         if (response.status === 200) {
-          setMaintenanceRequests(response.data || []); // Ensure it's an array
+          setMaintenanceRequests(response.data || []);
         }
 
         console.log("Fetched Maintenance Requests:", response.data);
       } catch (error) {
         console.error("Error fetching maintenance requests:", error);
-        setMaintenanceRequests([]); // Fallback to an empty array
+        setMaintenanceRequests([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMaintenanceRequests();
-  }, [user?.tenant_id]); // Avoids accessing `undefined`
+  }, [user?.tenant_id]);
 
   return (
     <TenantLayout>
@@ -46,14 +46,12 @@ const TenantMaintenance = () => {
             My Maintenance Requests
           </h2>
           <div className="flex space-x-2">
-            {/* Create Button */}
             <Link href="/pages/tenant/maintenance/add">
               <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
                 + Create
               </button>
             </Link>
 
-            {/* View History Button */}
             <Link href="/pages/tenant/maintenance/history">
               <button className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
                 View History
@@ -73,10 +71,9 @@ const TenantMaintenance = () => {
                 key={request.request_id}
                 className="flex items-center bg-white shadow-md rounded-lg p-4 space-x-4"
               >
-                {/* Maintenance Image */}
                 {request.photos && request.photos.length > 0 ? (
                   <img
-                    src={request.photos[0]} // Show first image
+                    src={request.photos[0]}
                     alt="Maintenance"
                     className="w-40 h-32 object-cover rounded-lg"
                   />
@@ -86,7 +83,6 @@ const TenantMaintenance = () => {
                   </div>
                 )}
 
-                {/* Maintenance Details */}
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-800">
                     {request.subject}
