@@ -15,7 +15,7 @@ const dbConfig = {
 };
 
 export default async function RegisterAnAccount(req, res) {
-    const { firstName, lastName, email, password, dob, mobileNumber, role } = req.body;
+    const { firstName, lastName, email, password, dob, mobileNumber, role, captchaToken  } = req.body;
 
     if (!firstName || !lastName || !email || !password || !dob || !mobileNumber || !role) {
         console.error("Missing fields in request body:", req.body);
@@ -33,7 +33,6 @@ export default async function RegisterAnAccount(req, res) {
         const phoneNumber = mobileNumber;
         const userType = role.toLowerCase();
 
-        // Check if the email already exists
         const [existingUser] = await db.execute(
             "SELECT user_id FROM User WHERE emailHashed = ?",
             [emailHash]
@@ -46,14 +45,12 @@ export default async function RegisterAnAccount(req, res) {
             console.error("An existing account is already in use.");
             return res.status(400).json({ error: "An account with this email already exists." });
         } else {
-            // Generate UUID for new user
             const [userIdResult] = await db.execute("SELECT UUID() AS uuid");
             user_id = userIdResult[0].uuid;
 
             const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            // Encrypt sensitive data
             const emailEncrypted = JSON.stringify(await encryptData(email, process.env.ENCRYPTION_SECRET));
             const fnameEncrypted = JSON.stringify(await encryptData(firstName, process.env.ENCRYPTION_SECRET));
             const lnameEncrypted = JSON.stringify(await encryptData(lastName, process.env.ENCRYPTION_SECRET));
@@ -61,7 +58,6 @@ export default async function RegisterAnAccount(req, res) {
 
             console.log("Inserting user into database...");
 
-            // Insert new user securely
             await db.execute(
                 `INSERT INTO User 
                 (user_id, firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, createdAt, updatedAt, emailVerified) 
@@ -80,7 +76,6 @@ export default async function RegisterAnAccount(req, res) {
                 ]
             );
 
-            // Insert into Tenant or Landlord table as needed
             if (role === "tenant") {
                 await db.execute(
                     `INSERT INTO Tenant (user_id) VALUES (?)`,
@@ -94,7 +89,6 @@ export default async function RegisterAnAccount(req, res) {
                 );
             }
 
-            // Log user registration activity
             await logAuditEvent(user_id, "User Registered", "User", user_id, ipAddress, "Success", `New user registered as ${role}`);
             console.log("Logging registration activity...");
             await db.execute(
@@ -103,13 +97,11 @@ export default async function RegisterAnAccount(req, res) {
                 [user_id, "User registered"]
             );
 
-            // Generate and store OTP for email verification
             const otp = generateOTP();
             await storeOTP(db, user_id, otp);
             await sendOtpEmail(email, otp);
         }
 
-        // Generate JWT Token
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const token = await new SignJWT({ user_id })
             .setProtectedHeader({ alg: "HS256" })
@@ -118,7 +110,6 @@ export default async function RegisterAnAccount(req, res) {
 
         console.log("Generated JWT Token for User ID:", user_id);
 
-        // Set Secure Cookie
         const isDev = process.env.NODE_ENV === "development";
         res.setHeader(
             "Set-Cookie",
@@ -139,7 +130,6 @@ export default async function RegisterAnAccount(req, res) {
     }
 }
 
-// Generate 6-digit OTP
 function generateOTP() {
     return crypto.randomInt(100000, 999999).toString();
 }

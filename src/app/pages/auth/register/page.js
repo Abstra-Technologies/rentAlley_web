@@ -10,27 +10,15 @@ import { logEvent } from "../../../../utils/gtag";
 import Footer from "../../../../components/navigation/footer";
 import Image from "next/image";
 
-
 const registerSchema = z
   .object({
-    // First Name validation - must not be empty
     firstName: z.string().nonempty("First Name is required"),
-
-    // Last Name validation - must not be empty
     lastName: z.string().nonempty("Last Name is required"),
-
-    // Date of Birth validation - must not be empty
     dob: z.string().nonempty("Date of Birth is required"),
-
-    // Mobile Number validation - must be exactly 12 digits
     mobileNumber: z
       .string()
       .regex(/^\d{11}$/, "Mobile Number must be 11 digits"),
-
-    // Email validation - must be a valid email address
     email: z.string().email("Invalid email address"),
-
-    // Password validation
     password: z
       .string()
       .min(6, "Password must be 6 characters long") // Password must be at least 6 characters
@@ -76,9 +64,7 @@ export default function Register() {
 
     router.push(`/api/auth/google?userType=${role}`);
   };
-
   useEffect(() => {
-    // Ensure the role is correctly set in formData even if reloaded will not return to null/"" n the db.
     setFormData((prevData) => ({
       ...prevData,
       role: role,
@@ -97,7 +83,6 @@ export default function Register() {
     setSuccessMessage("");
 
     try {
-      // Parse the form data using the registerSchema
       registerSchema.parse(formData);
 
       const res = await fetch("/api/auth/register", {
@@ -316,6 +301,10 @@ export default function Register() {
             <a className="text-blue-900">Terms of Service</a> and{" "}
             <a className="text-blue-900">Privacy Policy</a>
           </p>
+          {/*<HCaptcha*/}
+          {/*    sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}*/}
+          {/*    onVerify={setCaptchaToken}*/}
+          {/*/>*/}
           <button
             type="submit"
             className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
