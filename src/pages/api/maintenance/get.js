@@ -11,18 +11,6 @@ export default async function tenantAllMaintenanceRequest(req, res) {
     return res.status(400).json({ message: "Tenant ID is required" });
 
   try {
-    const [approvedTenant] = await db.query(
-      `SELECT * FROM ProspectiveTenant 
-       WHERE tenant_id = ? AND status = 'approved'`,
-      [tenantId]
-    );
-
-    if (approvedTenant.length === 0) {
-      return res
-        .status(403)
-        .json({ message: "Access denied. Tenant not approved." });
-    }
-
     // Fetch maintenance requests with the allowed statuses
     const [maintenanceRequests] = await db.query(
       `SELECT m.*, u.unit_name, p.property_name

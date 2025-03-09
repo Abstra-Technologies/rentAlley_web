@@ -7,7 +7,7 @@ import Link from "next/link";
 import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 
 const TenantMaintenance = () => {
-  const user = useAuth();
+  const { user } = useAuth();
   const [maintenanceRequests, setMaintenanceRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +17,7 @@ const TenantMaintenance = () => {
     const fetchMaintenanceRequests = async () => {
       try {
         const response = await axios.get(
-          `/api/maintenance/get?tenantId=${user.user?.tenant_id}`
+          `/api/maintenance/get?tenantId=${user?.tenant_id}`
         );
 
         console.log("Fetched Maintenance Requests:", response.data);
@@ -35,7 +35,7 @@ const TenantMaintenance = () => {
     };
 
     fetchMaintenanceRequests();
-  }, [user.user?.tenant_id]); // Avoids accessing `undefined`
+  }, [user?.tenant_id]); // Avoids accessing `undefined`
 
   return (
     <TenantLayout>
