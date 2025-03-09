@@ -3,13 +3,13 @@ importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"
 importScripts("https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js");
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBWAciEFsDOctZIEfoUf5VdtqhL2n0MBi4",
-    authDomain: "rentahan-3c6a9.firebaseapp.com",
-    projectId: "rentahan-3c6a9",
-    storageBucket: "rentahan-3c6a9.firebasestorage.app",
-    messagingSenderId: "345270510962",
-    appId: "1:345270510962:web:962d86d1b0816d9663e9eb",
-    measurementId: "G-1DBYWT2T33"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -17,11 +17,27 @@ const messaging = firebase.messaging();
 
 // ✅ Handle Background Notifications
 messaging.onBackgroundMessage((payload) => {
-    console.log("🔔 Background Notification:", payload);
+    console.log("🔔 Background Notification Received:", payload);
 
     self.registration.showNotification(payload.notification.title, {
         body: payload.notification.body,
-        icon: "/logo.png", // App logo
+        icon: "/logo.png", // Update with your logo
+        badge: "/badge-icon.png", // Small icon in notification bar
+        data: payload.data, // Extra data if needed
     });
 });
 
+// ✅ Ensure Clicking Notifications Opens the App
+self.addEventListener("notificationclick", (event) => {
+    console.log("📌 Notification Clicked:", event);
+    event.notification.close();
+
+    event.waitUntil(
+        clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+            if (clientList.length > 0) {
+                return clientList[0].focus();
+            }
+            return clients.openWindow("/"); // Change to your app’s URL
+        })
+    );
+});
