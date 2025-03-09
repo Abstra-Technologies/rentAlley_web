@@ -46,15 +46,13 @@ export default function ViewUnits() {
       } finally {
         setLoading(false);
       }
-
     }
-
 
     async function fetchBillingData() {
       try {
         const response = await axios.get(
-            `/api/landlord/billing/checkBillingStatus`,
-            { params: { property_id } }
+          `/api/landlord/billing/checkBillingStatus`,
+          { params: { property_id } }
         );
 
         if (response.data.billingData && response.data.billingData.length > 0) {
@@ -64,8 +62,8 @@ export default function ViewUnits() {
         }
       } catch (error) {
         console.error(
-            "Failed to fetch billing data:",
-            error.response?.data || error.message
+          "Failed to fetch billing data:",
+          error.response?.data || error.message
         );
       }
     }
@@ -83,11 +81,11 @@ export default function ViewUnits() {
     e.preventDefault();
     try {
       const response = await axios.post(
-          "/api/landlord/billing/saveConcessionaireBilling",
-          {
-            property_id,
-            ...billingForm,
-          }
+        "/api/landlord/billing/saveConcessionaireBilling",
+        {
+          property_id,
+          ...billingForm,
+        }
       );
 
       console.log("Billing saved successfully:", response.data);
@@ -102,7 +100,10 @@ export default function ViewUnits() {
 
       setIsModalOpen(false);
     } catch (error) {
-      console.error("Error saving billing:", error.response?.data || error.message);
+      console.error(
+        "Error saving billing:",
+        error.response?.data || error.message
+      );
 
       Swal.fire({
         icon: "error",
@@ -113,7 +114,6 @@ export default function ViewUnits() {
       });
     }
   };
-
 
   if (loading) {
     return <LoadingScreen />;
@@ -162,10 +162,10 @@ export default function ViewUnits() {
                     </button>
                   </Link>
                   <Link
-                    href={`/pages/landlord/billing/editUnitBill/${unit.unit_id}`}
+                    href={`/pages/landlord/billing/viewUnitBills/${unit.unit_id}`}
                   >
                     <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-yellow-700 transition">
-                      Edit Unit Bill
+                      View Unit Bills
                     </button>
                   </Link>
                 </div>
@@ -187,15 +187,24 @@ export default function ViewUnits() {
               </h2>
 
               {billingData ? (
-                  <div className="text-green-600 font-semibold mb-4">
-                    <p>Property Utility has been already set for this month:</p>
-                    <p>Electricity: ₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</p>
-                    <p>Water: ₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</p>
-                  </div>
+                <div className="text-green-600 font-semibold mb-4">
+                  <p>Property Utility has been already set for this month:</p>
+                  <p>
+                    Electricity: ₱
+                    {billingData.find((b) => b.utility_type === "electricity")
+                      ?.total_billed_amount || "N/A"}
+                  </p>
+                  <p>
+                    Water: ₱
+                    {billingData.find((b) => b.utility_type === "water")
+                      ?.total_billed_amount || "N/A"}
+                  </p>
+                </div>
               ) : (
-                  <p className="text-gray-500">No billing data found for this month.</p>
+                <p className="text-gray-500">
+                  No billing data found for this month.
+                </p>
               )}
-
 
               <form className="space-y-4" onSubmit={handleSaveBilling}>
                 {/* Billing Period */}
