@@ -32,15 +32,6 @@ export default function TenantDashboard() {
 
   }, [user?.tenant_id]);
 
-  const labelsBillingHistory = billingHistory.map((item) => item.month);
-  const seriesBillingHistory = [{ name: "Total Billing", data: billingHistory.map((item) => item.total_billed_amount) }];
-
-  const chartOptionsBilling = {
-    chart: { type: "line" },
-    xaxis: { categories: labelsBillingHistory },
-    title: { text: "Monthly Billing History", align: "center" },
-  };
-
   useEffect(() => {
     if (!loading && !user && !admin) {
     }
@@ -56,7 +47,7 @@ export default function TenantDashboard() {
   return (
     <TenantLayout>
       <div>
-        <h1>
+        <h1  className='text-3xl'>
           Welcome, {user?.firstName} {user?.lastName}!
         </h1>
 
