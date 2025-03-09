@@ -63,11 +63,20 @@ export default function AddNewProperty() {
     }
 
     if (step === 3) {
-      // Ensure at least one photo is uploaded
+      
       if (photos.length === 0) {
         Swal.fire(
           "No Photos",
-          "Please upload at least one property photo.",
+          "Please upload at least three property photo.",
+          "warning"
+        );
+        return false;
+      }
+
+      if (photos.length < 3) {
+        Swal.fire(
+          "Insufficient Photos",
+          "Please upload at least three property photo.",
           "warning"
         );
         return false;
@@ -81,6 +90,82 @@ export default function AddNewProperty() {
         );
         return false;
       }
+
+      if (!property.propDesc || property.propDesc.trim().length === 0) {
+        Swal.fire(
+          "Missing Description",
+          "Please enter the description of the property",
+          "error"
+        );
+        return false;
+      }
+
+      if (!property.floorArea || property.floorArea.trim().length === 0) {
+        Swal.fire(
+          "Missing floor area",
+          "Please enter the floor area of the property",
+          "error"
+        );
+        return false;
+      }
+
+      if (!property.propDesc || property.propDesc.trim().length === 0) {
+        Swal.fire("Missing Description"
+          , "Please enter a description."
+          , "error");
+        return false;
+      }
+    
+      if (!property.secDeposit || property.secDeposit <= 0) {
+        Swal.fire("Missing Security Deposit"
+          , "Please enter a valid security deposit amount."
+          , "error");
+        return false;
+      }
+    
+      if (!property.advancedPayment || property.advancedPayment <= 0) {
+        Swal.fire("Missing Advanced Payment"
+          , "Please enter a valid advanced payment amount."
+          , "error");
+        return false;
+      }
+    
+      if (!property.lateFee || property.lateFee < 0) {
+        Swal.fire("Missing Late Fee"
+          , "Please enter a valid late fee amount (0 or higher)."
+          , "error");
+        return false;
+      }
+    
+      if (!property.assocDues || property.assocDues < 0) {
+        Swal.fire("Missing Association Dues"
+          , "Please enter a valid association dues amount (0 or higher)."
+          , "error");
+        return false;
+      }
+    
+      if (!property.minStay || property.minStay <= 0) {
+        Swal.fire("Missing Minimum Stay"
+          , "Please enter the minimum stay duration (in months)."
+          , "error");
+        return false;
+      }
+    
+      if (!property.paymentFrequency || property.paymentFrequency.trim() === "") {
+        Swal.fire("Missing Payment Frequency"
+          , "Please select a payment frequency."
+          , "error");
+        return false;
+      }
+
+      if (!property.utilityBillingType || property.utilityBillingType.trim() === "") {
+        Swal.fire("Missing Utility Billing Type"
+          , "Please select a utility billing type."
+          , "error");
+        return false;
+      }
+
+
 
       // Validate that all uploaded files are images
       const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
