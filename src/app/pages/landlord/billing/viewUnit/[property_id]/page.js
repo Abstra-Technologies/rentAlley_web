@@ -37,7 +37,22 @@ export default function ViewUnits() {
 
         console.log("Fetched units:", res.data);
 
-        setUnits(res.data);
+        const unitBillingPromises = res.data.map(async (unit) => {
+          try {
+            const billingRes = await axios.get(`/api/landlord/billing/getUnitBillingStatus`, {
+              params: { unit_id: unit.unit_id },
+            });
+
+            return { ...unit, hasBillForThisMonth: billingRes.data.hasBillForThisMonth };
+          } catch (error) {
+            console.error(`Error fetching billing for unit ${unit.unit_id}:`, error);
+            return { ...unit, hasBillForThisMonth: false };
+          }
+        });
+
+        const unitsWithBillingStatus = await Promise.all(unitBillingPromises);
+
+        setUnits(unitsWithBillingStatus);
       } catch (error) {
         console.error(
           "Failed to fetch units:",
@@ -122,7 +137,6 @@ export default function ViewUnits() {
   return (
     <LandlordLayout>
       <div className="p-6 max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">
             Units in Property {property_id}
@@ -136,49 +150,59 @@ export default function ViewUnits() {
         </div>
 
         {/* Unit Cards */}
+        {/* Unit Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {units.length > 0 ? (
-            units.map((unit) => (
-              <div
-                key={unit.unit_id}
-                className="bg-white p-6 border rounded-lg shadow-lg"
-              >
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                  {unit.unit_name}
-                </h2>
-                <p className="text-gray-600">Size: {unit.unit_size} sqm</p>
-                <p className="text-gray-600">Rent: ₱{unit.rent_amount}</p>
-                <div className="mt-4 flex flex-col gap-3">
-                  <Link href={`/pages/landlord/billingbillingHistory`}>
-                    <button className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 transition">
-                      Billing History
-                    </button>
-                  </Link>
-                  <Link
-                    href={`/pages/landlord/billing/createUnitBill/${unit.unit_id}`}
+              units.map((unit) => (
+                  <div
+                      key={unit.unit_id}
+                      className="bg-white p-6 border rounded-lg shadow-lg"
                   >
-                    <button className="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition">
-                      Create Unit Bill
-                    </button>
-                  </Link>
-                  <Link
-                    href={`/pages/landlord/billing/editUnitBill/${unit.unit_id}`}
-                  >
-                    <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-yellow-700 transition">
-                      Edit Unit Bill
-                    </button>
-                  </Link>
-                </div>
-              </div>
-            ))
+                    <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                      {unit.unit_name}
+                    </h2>
+                    <p className="text-gray-600">Size: {unit.unit_size} sqm</p>
+                    <p className="text-gray-600">Rent: ₱{unit.rent_amount}</p>
+
+                    {/* Billing Status */}
+                    {unit.hasBillForThisMonth ? (
+                        <p className="text-green-600 font-semibold mt-2">
+                          ✅ Bill Generated for this month
+                        </p>
+                    ) : (
+                        <p className="text-red-600 font-semibold mt-2">
+                          ❌ No Bill for this month
+                        </p>
+                    )}
+
+                    <div className="mt-4 flex flex-col gap-3">
+                      <Link href={`/pages/landlord/billingbillingHistory`}>
+                        <button className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 transition">
+                          Billing History
+                        </button>
+                      </Link>
+                      <Link href={`/pages/landlord/billing/createUnitBill/${unit.unit_id}`}>
+                        <button className="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition">
+                          Create Unit Bill
+                        </button>
+                      </Link>
+                      <Link href={`/pages/landlord/billing/editUnitBill/${unit.unit_id}`}>
+                        <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-yellow-700 transition">
+                          Edit Unit Bill
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+              ))
           ) : (
-            <p className="text-gray-600 text-center col-span-full">
-              No units found.
-            </p>
+              <p className="text-gray-600 text-center col-span-full">
+                No units found.
+              </p>
           )}
         </div>
 
-        {/* For Concessionaire Billing */}
+
+        {/* For Concessionaire Billing input modal */}
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-h-screen overflow-y-auto">
@@ -188,14 +212,22 @@ export default function ViewUnits() {
 
               {billingData ? (
                   <div className="text-green-600 font-semibold mb-4">
-                    <p>Property Utility has been already set for this month:</p>
-                    <p>Electricity: ₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</p>
-                    <p>Water: ₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</p>
+                    <p>Billing already set for this month</p>
+                    <div className="mt-2">
+                      <h3 className="text-lg font-semibold text-gray-800">Electricity</h3>
+                      <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</span></p>
+                      <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "N/A"} kWh</span></p>
+                    </div>
+
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold text-gray-800">Water</h3>
+                      <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</span></p>
+                      <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "water")?.rate_consumed || "N/A"} cu. meters</span></p>
+                    </div>
                   </div>
               ) : (
                   <p className="text-gray-500">No billing data found for this month.</p>
               )}
-
 
               <form className="space-y-4" onSubmit={handleSaveBilling}>
                 {/* Billing Period */}
