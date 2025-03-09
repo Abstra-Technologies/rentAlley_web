@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, FormEvent, MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaSearch, FaChevronDown, FaMapMarkerAlt, FaBuilding, FaHome } from "react-icons/fa";
+import { FaSearch, FaChevronDown, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
 import { HiBadgeCheck } from "react-icons/hi";
 import Footer from "../components/navigation/footer";
 
@@ -14,10 +14,10 @@ interface Property {
   property_name: string;
   property_photo: string;
   city: string;
+  street: string;
   province: string;
-  rent_payment: number;
-  type: string;
-  rating: number;
+  rent_amount: number;
+  verification_status: string;
 }
 
 interface PropertyCardProps {
@@ -27,85 +27,41 @@ interface PropertyCardProps {
 export default function SplashScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [showLocationDropdown, setShowLocationDropdown] = useState<boolean>(false);
-  const [showTypeDropdown, setShowTypeDropdown] = useState<boolean>(false);
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("");
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
+  const [recentProperties, setRecentProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Sample locations and property types
-  const locations: string[] = ["Manila", "Cebu", "Davao", "Quezon City", "Makati"];
-  const propertyTypes: string[] = ["Apartment", "Townhouses", "House", "Dormitory", "Studio"];
 
-  // Featured properties data
-  const featuredProperties: Property[] = [
-    {
-      property_id: 1,
-      property_name: "RedDoors Apartment",
-      property_photo: "/images/Reddoorz.jpeg",
-      city: "Manila",
-      province: "Luzon",
-      rent_payment: 15000,
-      type: "property",
-      rating: 3.7
-    },
-    {
-      property_id: 2,
-      property_name: "Torre De Duplex",
-      property_photo: "/images/Torre.jpeg",
-      city: "Manila",
-      province: "Luzon",
-      rent_payment: 20000,
-      type: "unit",
-      rating: 4.6
-    },
-    {
-      property_id: 3,
-      property_name: "UP Residence",
-      property_photo: "/images/apartment.jpeg",
-      city: "Quezon City",
-      province: "Luzon",
-      rent_payment: 12000,
-      type: "property",
-      rating: 3.8
+  // Fetch properties from API
+  useEffect(() => {
+    async function fetchProperties() {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/properties/findRent");
+        if (!res.ok) throw new Error("Failed to fetch properties");
+
+        const data = await res.json();
+        setAllProperties(data);
+        
+
+        setFeaturedProperties(data.slice(0, 3));
+        
+
+        setRecentProperties(data.slice(0, 6));
+      } catch (error) {
+        console.error("Error fetching properties:", error);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
 
-  // Recently added properties
-  const recentProperties: Property[] = [
-    ...featuredProperties,
-    {
-      property_id: 4,
-      property_name: "RedDoors Apartment",
-      property_photo: "/images/Reddoorz.jpeg",
-      city: "Manila",
-      province: "Luzon",
-      rent_payment: 17000,
-      type: "property",
-      rating: 3.9
-    },
-    {
-      property_id: 5,
-      property_name: "Manila de Apartment",
-      property_photo: "/images/apt-img.jpg",
-      city: "Manila",
-      province: "Luzon",
-      rent_payment: 22000,
-      type: "unit",
-      rating: 4.2
-    },
-    {
-      property_id: 6,
-      property_name: "UP Student",
-      property_photo: "/images/apartment-building.jpeg",
-      city: "Quezon City",
-      province: "Luzon",
-      rent_payment: 10000,
-      type: "property",
-      rating: 3.6
-    }
-  ];
+    fetchProperties();
+  }, []);
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     router.push(`/pages/find-rent?searchQuery=${searchQuery}&location=${selectedLocation}&type=${selectedType}`);
   };
@@ -114,10 +70,8 @@ export default function SplashScreen() {
     router.push("/pages/find-rent");
   };
 
-  // Property card component to maintain consistency with your existing design
+
   const PropertyCard = ({ property }: PropertyCardProps) => {
-    const isUnitAverage = property.type === "unit";
-    
     return (
       <div 
         className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -139,44 +93,50 @@ export default function SplashScreen() {
               <span className="text-gray-400">No Image Available</span>
             </div>
           )}
-
-          {/* Price Badge with Type Indicator */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-2">
-            <div
-              className={`px-3 py-1 rounded-full font-medium shadow-sm ${
-                isUnitAverage ? "bg-green-600" : "bg-blue-600"
-              } text-white`}
-            >
-              ₱{Math.round(property.rent_payment).toLocaleString()}
-            </div>
-          </div>
         </div>
 
-        {/* Property Details */}
+
         <div className="p-4">
-          <div className="flex justify-between items-start">
-            <h2 className="text-lg font-semibold flex items-center gap-1 mb-1 text-gray-900">
-              {property.property_name}
-              <HiBadgeCheck className="text-blue-500" />
+
+          <div className="flex justify-between items-center mb-1">
+            <h2 className="text-lg font-semibold text-gray-900">
+              {property?.property_name}
             </h2>
-            <div className="flex items-center">
-              <span className="text-yellow-500">★</span>
-              <span className="text-sm text-gray-700 ml-1">{property.rating}</span>
+            <div className="flex items-center gap-1">
+              <HiBadgeCheck className="text-blue-500 text-lg" />
+              <span className="text-blue-600 font-medium text-sm">
+                Verified
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center text-gray-600 mb-2">
+
+          <div className="flex items-center text-gray-600 mt-2">
             <FaMapMarkerAlt className="mr-1 text-gray-400" />
-            <p>
-              {property.city}, {property.province}
+            <p className="text-gray-800">
+              {property?.city},{" "}
+              {property?.province
+                .split("_")
+                .map(
+                  (word) =>
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                )
+                .join(" ")}
             </p>
           </div>
 
-          <p className="text-sm text-gray-500 mb-3">
-            ₱{property.rent_payment.toLocaleString()} / Year
+
+          <p className="text-xl font-semibold text-blue-600 mt-1">
+            ₱{Math.round(property.rent_amount).toLocaleString()}
           </p>
 
-          <button className="mt-1 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors">
+          <button 
+            className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors"
+            onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              e.stopPropagation(); // Prevent event bubbling
+              router.push(`/pages/find-rent/${property.property_id}`);
+            }}
+          >
             View Details
           </button>
         </div>
@@ -186,7 +146,7 @@ export default function SplashScreen() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section with Background Image */}
+
       <div className="relative h-[500px]">
         <div className="absolute inset-0">
           <Image 
@@ -202,10 +162,38 @@ export default function SplashScreen() {
           <p className="text-xl md:text-2xl mb-8 max-w-2xl text-center">
             Enjoy a home that offers everything you've been searching for, all in one place.
           </p>
+
+
+          <form 
+            onSubmit={handleSearch}
+            className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-4 text-gray-800"
+          >
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Search Input */}
+              <div className="flex-1">
+                <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-500 transition-colors">
+                  <FaSearch className="text-gray-400 mx-3" />
+                  <input
+                    type="text"
+                    placeholder="Search by property name, city, street, or province..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full py-3 px-2 outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap"
+              >
+                Search
+              </button>
+            </div>
+          </form>
         </div>
       </div>
       
-      {/* Featured Properties Section */}
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="flex justify-between items-center mb-6">
@@ -214,13 +202,19 @@ export default function SplashScreen() {
               <p className="text-gray-600">Recommended Place to Live for You</p>
             </div>
             <div className="flex space-x-2">
-              <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center">
+              <button 
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
+                type="button"
+              >
                 <span className="sr-only">Previous</span>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
-              <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center">
+              <button 
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
+                type="button"
+              >
                 <span className="sr-only">Next</span>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -229,11 +223,26 @@ export default function SplashScreen() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProperties.map((property) => (
-              <PropertyCard key={property.property_id} property={property} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <FaSpinner className="animate-spin text-blue-500 text-3xl" />
+            </div>
+          ) : featuredProperties.length === 0 ? (
+            <div className="bg-gray-50 rounded-lg p-12 text-center">
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                No properties found
+              </h3>
+              <p className="text-gray-500">
+                Check back later for featured properties.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredProperties.map((property) => (
+                <PropertyCard key={property.property_id} property={property} />
+              ))}
+            </div>
+          )}
           
           <div className="flex justify-center mt-8">
             <Link 
@@ -246,42 +255,40 @@ export default function SplashScreen() {
         </div>
       </section>
       
-      {/* About Us Section */}
-      <section className="py-16 bg-gray-900 text-white relative overflow-hidden">
-  <div className="container mx-auto max-w-6xl px-4 flex flex-col lg:flex-row items-center">
-    <div className="lg:w-1/2 z-10 mb-10 lg:mb-0">
-      <h3 className="text-lg font-medium mb-2">About Us</h3>
-      <h2 className="text-3xl font-bold mb-4">
-        Search, Find, and Invest in Good Properties with Us
-      </h2>
-      <p className="mb-6 opacity-80">
-        Discover your perfect rental property with Rentahan. We provide a curated selection of quality homes, apartments, and condominiums across the Philippines, making property hunting simple and stress-free.
-      </p>
-      <Link 
-        href="/pages/about"
-        className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors"
-      >
-        Know More
-      </Link>
-    </div>
-    <div className="lg:w-1/2 relative">
-      <div className="w-full h-64 lg:h-80 relative">
-        <Image
-          src="/images/aboutrent.jpeg"
-          alt="Aerial view of properties"
-          fill
-          className="object-cover rounded-lg"
-        />
-        <h4 className="absolute bottom-4 right-4 bg-white bg-opacity-80 text-2xl font-bold text-blue-600 text-center px-4 py-2 rounded-lg shadow-lg">
-          Rentahan
-        </h4>
-      </div>
-    </div>
-  </div>
-</section>
 
+      <section className="py-16 bg-gray-900 text-white relative overflow-hidden">
+        <div className="container mx-auto max-w-6xl px-4 flex flex-col lg:flex-row items-center">
+          <div className="lg:w-1/2 z-10 mb-10 lg:mb-0">
+            <h3 className="text-lg font-medium mb-2">About Us</h3>
+            <h2 className="text-3xl font-bold mb-4">
+              Search, Find, and Invest in Good Properties with Us
+            </h2>
+            <p className="mb-6 opacity-80">
+              Discover your perfect rental property with Rentahan. We provide a curated selection of quality homes, apartments, and condominiums across the Philippines, making property hunting simple and stress-free.
+            </p>
+            <Link 
+              href="/pages/about"
+              className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors"
+            >
+              Know More
+            </Link>
+          </div>
+          <div className="lg:w-1/2 relative">
+            <div className="w-full h-64 lg:h-80 relative">
+              <Image
+                src="/images/aboutrent.jpeg"
+                alt="Aerial view of properties"
+                fill
+                className="object-cover rounded-lg"
+              />
+              <h4 className="absolute bottom-4 right-4 bg-white bg-opacity-80 text-2xl font-bold text-blue-600 text-center px-4 py-2 rounded-lg shadow-lg">
+                Rentahan
+              </h4>
+            </div>
+          </div>
+        </div>
+      </section>
       
-      {/* Recently Added Properties */}
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="flex justify-between items-center mb-6">
@@ -290,13 +297,19 @@ export default function SplashScreen() {
               <p className="text-gray-600">Find Properties that suits you</p>
             </div>
             <div className="flex space-x-2">
-              <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center">
+              <button 
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
+                type="button"
+              >
                 <span className="sr-only">Previous</span>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
-              <button className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center">
+              <button 
+                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
+                type="button"
+              >
                 <span className="sr-only">Next</span>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -305,11 +318,26 @@ export default function SplashScreen() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recentProperties.map((property) => (
-              <PropertyCard key={property.property_id} property={property} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <FaSpinner className="animate-spin text-blue-500 text-3xl" />
+            </div>
+          ) : recentProperties.length === 0 ? (
+            <div className="bg-gray-50 rounded-lg p-12 text-center">
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                No properties found
+              </h3>
+              <p className="text-gray-500">
+                Check back later for new properties.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recentProperties.map((property) => (
+                <PropertyCard key={property.property_id} property={property} />
+              ))}
+            </div>
+          )}
           
           <div className="flex justify-center mt-8">
             <Link 
@@ -322,7 +350,6 @@ export default function SplashScreen() {
         </div>
       </section>
       
-      {/* Newsletter Section */}
       <section className="py-10 px-4 bg-gray-700 text-white">
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between">
@@ -337,24 +364,17 @@ export default function SplashScreen() {
                 placeholder="Enter your email here" 
                 className="px-4 py-3 rounded-lg bg-gray-600 text-white placeholder-gray-400 border border-gray-500 focus:outline-none focus:border-blue-500 flex-grow"
               />
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap">
+              <button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap"
+                type="button"
+              >
                 Subscribe
               </button>
             </div>
           </div>
         </div>
       </section>
-      
-      {/* Comfort Section */}
-      <section className="relative py-16 bg-gray-900 text-white">
-        <div className="container mx-auto max-w-6xl px-4">
-          <h2 className="text-3xl font-bold text-center">Discover the Comfort of Your Life</h2>
-        </div>
-      </section>
-      
-      {/* Footer Section */}
-      <Footer/>
-
+      <Footer />
     </div>
   );
 }
