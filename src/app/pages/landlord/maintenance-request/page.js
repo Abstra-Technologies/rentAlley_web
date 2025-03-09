@@ -28,7 +28,7 @@ const SUBSCRIPTION_PLANS = {
 const MaintenanceRequestPage = () => {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("pending"); // Default state
+  const [activeTab, setActiveTab] = useState("pending");
   const [allRequests, setAllRequests] = useState([]);
   const [visibleRequests, setVisibleRequests] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -50,7 +50,7 @@ const MaintenanceRequestPage = () => {
       try {
 
         const plans = ["Free Plan", "Standard Plan", "Premium Plan"];
-        const userPlan = plans[0]; // Set to first plan (Free) for testing
+        const userPlan = plans[0];
         
         const mockSubscription = {
           plan_name: userPlan,
@@ -150,6 +150,8 @@ const MaintenanceRequestPage = () => {
         request_id,
         status: newStatus,
         ...additionalData,
+        user_id: user?.user_id,
+        landlord_id: user?.landlord_id,
       });
       
       setAllRequests((prevRequests) =>

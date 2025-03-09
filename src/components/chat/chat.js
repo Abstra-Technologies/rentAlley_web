@@ -17,6 +17,7 @@ export default function ChatComponent() {
     const userId = user?.user_id;
 
     useEffect(() => {
+
         const fetchChats = async () => {
             try {
                 console.log("Fetching chats...");
@@ -32,6 +33,8 @@ export default function ChatComponent() {
     }, [userId]);
 
     useEffect(() => {
+        const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
+
         if (!selectedChat || !selectedChat.chat_room) {
             console.error(" Missing chat_room!", { user, selectedChat });
             return;
@@ -54,8 +57,6 @@ export default function ChatComponent() {
         console.log(" Joining Room:", selectedChat.chat_room);
         console.log(" User ID:", userId, "User Type:", userType);
 
-        //  Connect to WebSocket
-        const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
         socket.emit("joinRoom", { chatRoom: selectedChat.chat_room });
 
@@ -73,13 +74,11 @@ export default function ChatComponent() {
 
         fetchMessages();
 
-        //  Handle loaded messages from WebSocket
         const handleLoadMessages = (loadedMessages) => {
             console.log("Received loadMessages event:", loadedMessages);
             setMessages(loadedMessages);
         };
 
-        // Handle new messages received via WebSocket
         const handleReceiveMessage = (newMessage) => {
             console.log("New message received via WebSocket:", newMessage);
             setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -124,7 +123,6 @@ export default function ChatComponent() {
             return;
         }
 
-        // Determine sender type and ID based on session user
         const senderType = user.tenant_id ? "tenant" : "landlord";
         let senderId;
 
@@ -138,11 +136,6 @@ export default function ChatComponent() {
 
         console.log(`🛠 Sender Info: ID = ${senderId}, Type = ${senderType}`);
 
-        // Ensure selectedChat has valid tenant_id and landlord_id
-        // if (!selectedChat.tenant_id || !selectedChat.landlord_id) {
-        //     console.error("Error: selectedChat is missing required user IDs:", selectedChat);
-        //     return;
-        // }
 
         // Determine receiver dynamically (opposite of sender)
         let receiverId = senderType === "tenant" ? selectedChat.landlord_id : selectedChat.tenant_id;
@@ -150,12 +143,6 @@ export default function ChatComponent() {
 
         console.log(`Receiver Info: ID = ${receiverId}, Type = ${receiverType}`);
 
-        // Double-check that sender and receiver are different
-        // if (!receiverId || receiverId === senderId) {
-        //     console.error("Error: Invalid receiver ID. Sender and receiver cannot be the same.");
-        //     console.log("Debug Values:", { senderId, receiverId, senderType, receiverType });
-        //     return;
-        // }
 
         const newMessage = {
             sender_id: senderId,

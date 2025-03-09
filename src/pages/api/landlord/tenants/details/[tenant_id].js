@@ -12,8 +12,6 @@ export default async function getTenantDetails(req, res) {
     }
 
     try {
-
-        // Query to fetch tenant details
         const [result] = await db.execute(
             `
       SELECT
@@ -44,6 +42,9 @@ export default async function getTenantDetails(req, res) {
         const tenant = {
             ...result[0],
             email: decryptData(JSON.parse(result[0].email), process.env.ENCRYPTION_SECRET),
+            firstName: decryptData(JSON.parse(result[0].firstName), process.env.ENCRYPTION_SECRET),
+            lastName: decryptData(JSON.parse(result[0].lastName), process.env.ENCRYPTION_SECRET),
+
         };
 
         res.status(200).json(tenant || []);

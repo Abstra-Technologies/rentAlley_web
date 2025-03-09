@@ -15,8 +15,7 @@ export default async function CreateNewMaintenanceRequest(req, res) {
       FROM Unit 
       WHERE unit_id IN (
         SELECT unit_id FROM LeaseAgreement WHERE tenant_id = ? AND status = 'active'
-      )
-    `;
+      )`;
     const [tenantRecord] = await connection.execute(tenantQuery, [tenant_id]);
 
     if (!tenantRecord.length) {

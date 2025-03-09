@@ -1,5 +1,5 @@
-// pages/tenant/[tenant_id].js
-"use client"; // Required for Next.js App Router
+
+"use client";
 
 import {useParams, useSearchParams} from "next/navigation";
 import { useEffect, useState } from "react";

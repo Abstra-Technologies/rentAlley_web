@@ -25,7 +25,16 @@ export default async function getChatroomDetails(req, res) {
         if (messages.length === 0) {
             return res.status(404).json({ error: "No messages found" });
         }
-        res.status(200).json(messages);
+
+
+        const decryptedMessages = messages.map((msg) => ({
+            ...msg,
+            profilePicture: msg.profilePicture
+                ? decryptData(JSON.parse(msg.profilePicture), process.env.ENCRYPTION_SECRET)
+                : "/ou.jpg",
+        }));
+
+        res.status(200).json(decryptedMessages || []);
 
     } catch (error) {
         console.error("Error fetching messages:", error);

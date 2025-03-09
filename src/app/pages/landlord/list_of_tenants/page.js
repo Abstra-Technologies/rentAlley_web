@@ -1,7 +1,6 @@
 'use client'
 
 
-import useAuthStore from "../../../../zustand/authStore";
 import useAuth from "../../../../../hooks/useSession";
 import TenantListLandlords from "../../../../components/landlord/listOfCurrentTenants";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
@@ -9,7 +8,6 @@ import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 
 export default function LandlordsTenantsListPage() {
     const { user } = useAuth();
-const landlordId = user?.landlord_id;
     return (
         <LandlordLayout>
         <div className="container mx-auto p-4">
