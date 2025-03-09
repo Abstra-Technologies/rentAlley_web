@@ -168,11 +168,12 @@ const LeaseDetails = ({ unitId, tenantId }) => {
       Swal.fire("Error", "Failed to update status", "error");
     }
   };
+
   // Fetch lease details
   const fetchLeaseDetails = async () => {
     try {
       const response = await axios.get(
-        `/api/leaseAgreement/getLease?unit_id=${unitId}`
+        `/api/leaseAgreement/getLease?unit_id=${unitId}&tenant_id=${tenantId}`
       );
 
       if (response.data.length > 0) {
@@ -253,10 +254,13 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
 
     try {
-      await axios.put(`/api/leaseAgreement/leaseDetails?unit_id=${unitId}`, {
-        start_date: startDate,
-        end_date: endDate,
-      });
+      await axios.put(
+        `/api/leaseAgreement/leaseDetails?unit_id=${unitId}&tenant_id=${tenantId}`,
+        {
+          start_date: startDate,
+          end_date: endDate,
+        }
+      );
       Swal.fire("Success", "Lease dates updated successfully", "success");
       fetchLeaseDetails(); // Refresh data
     } catch (error) {
