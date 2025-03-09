@@ -51,8 +51,8 @@ export default async function tenantPaymentBilling(req, res) {
             buyer: { firstName, lastName, contact: { email } },
             redirectUrl: {
                 success: encodeURI(`${redirectUrl.success}?&tenant_id=${tenant_id}&billing_id=${billing_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
-                failure: encodeURI(`${redirectUrl.failure}?&tenant_id=${tenant_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
-                cancel: encodeURI(`${redirectUrl.cancel}?&tenant_id=${tenant_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
+                failure: encodeURI(`${redirectUrl.success}?&tenant_id=${tenant_id}&billing_id=${billing_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
+                cancel: encodeURI(`${redirectUrl.success}?&tenant_id=${tenant_id}&billing_id=${billing_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
             },
             requestReferenceNumber,
             items: [{

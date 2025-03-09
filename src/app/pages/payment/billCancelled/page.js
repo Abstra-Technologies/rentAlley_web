@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 
-function billCancelled() {
+function billingCancelled() {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const router = useRouter();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const searchParams = useSearchParams();
 
     const amount = searchParams.get("amount");
@@ -12,20 +14,23 @@ function billCancelled() {
     const tenant_id = searchParams.get("tenant_id");
     const billing_id = searchParams.get("billing_id");
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const [message, setMessage] = useState("Processing your payment...");
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const [loading, setLoading] = useState(true);
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
         async function updateBillStatus() {
             try {
                 // Update Lease Agreement Payment Status
-                await axios.post("/api/payment/update-bill-cancel", {
+                await axios.post("/api/payment/update-bill-success", {
                     tenant_id,
                     billing_id,
                     amount,
                     requestReferenceNumber,
                 });
-                setMessage("Your payment was successful!Bill Update");
+                setMessage("Your payment Cancellation was Successful");
             } catch (error) {
                 setMessage(`Failed to update payment status. ${error}`);
             } finally {
@@ -63,4 +68,4 @@ function billCancelled() {
     );
 }
 
-export default billCancelled;
+export default billingCancelled;

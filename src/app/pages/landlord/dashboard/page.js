@@ -22,7 +22,7 @@ export default function LandlordDashboard() {
     return (
         <LandlordLayout>
             <div>
-                <NotificationComponent user_id={user?.user_id}/>
+                {/*<NotificationComponent user_id={user?.user_id}/>*/}
                 <LandlordPropertyChart />
             </div>
         </LandlordLayout>
