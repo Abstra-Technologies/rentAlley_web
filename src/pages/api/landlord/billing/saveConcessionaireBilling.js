@@ -10,7 +10,7 @@ export default async function savePropertyConciessionareBilling(req, res) {
                 return res.status(400).json({ error: "All fields are required" });
             }
 
-            // To Inserrt Electricity Billing Record
+            //  Inserrt Electricity Billing Record
             if (electricityTotal && electricityRate) {
                 await db.execute(
                     "INSERT INTO ConcessionaireBilling (property_id, billing_period, utility_type, total_billed_amount, rate_consumed, created_at) VALUES (?, ?, 'electricity', ?, ?, NOW())",
@@ -18,7 +18,7 @@ export default async function savePropertyConciessionareBilling(req, res) {
                 );
             }
 
-            // To Insert Water Billing Record
+            //  Insert Water Billing Record
             if (waterTotal && waterRate) {
                 await db.execute(
                     "INSERT INTO ConcessionaireBilling (property_id, billing_period, utility_type, total_billed_amount, rate_consumed, created_at) VALUES (?, ?, 'water', ?, ?, NOW())",

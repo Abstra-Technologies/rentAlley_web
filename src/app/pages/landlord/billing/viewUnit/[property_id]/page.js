@@ -12,6 +12,9 @@ export default function ViewUnits() {
   const [units, setUnits] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAlreadyFilled, setIsAlreadyFilled] = useState(false);
+  const [billingData, setBillingData] = useState(null);
+
   const [billingForm, setBillingForm] = useState({
     billingPeriod: "",
     electricityTotal: "",
@@ -29,6 +32,7 @@ export default function ViewUnits() {
 
         const res = await axios.get(`/api/landlord/billing/getUnitDetails`, {
           params: { property_id },
+          headers: { "Cache-Control": "no-cache" },
         });
 
         console.log("Fetched units:", res.data);
@@ -40,10 +44,33 @@ export default function ViewUnits() {
           error.response?.data || error.message
         );
       } finally {
-        setLoading(false); // Set loading to false after fetching
+        setLoading(false);
+      }
+
+    }
+
+
+    async function fetchBillingData() {
+      try {
+        const response = await axios.get(
+            `/api/landlord/billing/checkBillingStatus`,
+            { params: { property_id } }
+        );
+
+        if (response.data.billingData && response.data.billingData.length > 0) {
+          setBillingData(response.data.billingData);
+        } else {
+          setBillingData(null);
+        }
+      } catch (error) {
+        console.error(
+            "Failed to fetch billing data:",
+            error.response?.data || error.message
+        );
       }
     }
 
+    fetchBillingData();
     fetchData();
   }, [property_id]);
 
@@ -56,24 +83,40 @@ export default function ViewUnits() {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "/api/landlord/billing/saveConcessionaireBilling",
-        {
-          property_id,
-          ...billingForm,
-        }
+          "/api/landlord/billing/saveConcessionaireBilling",
+          {
+            property_id,
+            ...billingForm,
+          }
       );
+
       console.log("Billing saved successfully:", response.data);
+
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Billing information saved successfully.",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "OK",
+      });
+
       setIsModalOpen(false);
     } catch (error) {
-      console.error(
-        "Error saving billing:",
-        error.response?.data || error.message
-      );
+      console.error("Error saving billing:", error.response?.data || error.message);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Failed to save billing. Please try again.",
+        confirmButtonColor: "#d33",
+        confirmButtonText: "OK",
+      });
     }
   };
 
+
   if (loading) {
-    return <LoadingScreen />; // Show loading screen while fetching data
+    return <LoadingScreen />;
   }
 
   return (
@@ -142,6 +185,18 @@ export default function ViewUnits() {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 Property Utility
               </h2>
+
+              {billingData ? (
+                  <div className="text-green-600 font-semibold mb-4">
+                    <p>Property Utility has been already set for this month:</p>
+                    <p>Electricity: ₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</p>
+                    <p>Water: ₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</p>
+                  </div>
+              ) : (
+                  <p className="text-gray-500">No billing data found for this month.</p>
+              )}
+
+
               <form className="space-y-4" onSubmit={handleSaveBilling}>
                 {/* Billing Period */}
                 <div>
