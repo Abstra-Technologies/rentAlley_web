@@ -83,6 +83,10 @@ export default function InterestedTenants({ unitId, landlordId }) {
     fetchData();
   }, [unitId, landlordId, user]);
 
+  const handleTenantClick = (tenant) => {
+    router.push(`/pages/landlord/property-listing/view-unit/view-tenant/${unitId}?tenant_id=${tenant.tenant_id}`);
+  };
+
   const handleUpgradeClick = () => {
     Swal.fire({
       title: 'Upgrade Your Plan',
@@ -228,11 +232,7 @@ export default function InterestedTenants({ unitId, landlordId }) {
                     </td>
                     <td
                       className="px-6 py-4 whitespace-nowrap cursor-pointer"
-                      onClick={() => {
-                        router.push(
-                          `/pages/landlord/property-listing/view-unit/view-tenant/${unitId}`
-                        );
-                      }}
+                      onClick={() => handleTenantClick(tenant)}
                     >
                       <div className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors">
                         {tenant?.firstName} {tenant?.lastName}

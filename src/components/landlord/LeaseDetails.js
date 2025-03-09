@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Swal from "sweetalert2";
 import { FaArrowLeft } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   DocumentTextIcon,
   EnvelopeIcon,
@@ -16,7 +16,7 @@ import { PhoneIcon } from "lucide-react";
 import { MapPinIcon } from "lucide-react";
 import { UserIcon } from "lucide-react";
 
-const LeaseDetails = ({ unitId }) => {
+const LeaseDetails = ({ unitId, tenantId }) => {
   const router = useRouter();
   const [lease, setLease] = useState(null);
   const [tenant, setTenant] = useState(null);
@@ -29,6 +29,10 @@ const LeaseDetails = ({ unitId }) => {
   const [activeTab, setActiveTab] = useState("details");
   const [prospectiveStatus, setProspectiveStatus] = useState("pending");
   const [reason, setReason] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const searchParams = useSearchParams();
+  const queryTenantId = tenantId || searchParams.get("tenant_id")
 
   useEffect(() => {
     fetchLeaseDetails();
@@ -36,7 +40,7 @@ const LeaseDetails = ({ unitId }) => {
     fetchStatus();
     fetchUnitDetails();
     fetchProspectiveStatus();
-  }, []);
+  }, [queryTenantId]);
 
   const formatDate = (dateString) => {
     if (!dateString) {
@@ -208,16 +212,26 @@ const LeaseDetails = ({ unitId }) => {
 
   // Fetch tenant details
   const fetchTenantDetails = async () => {
+    setIsLoading(true);
     try {
-      const response = await axios.get(
-        `/api/landlord/prospective/interested-tenants?unitId=${unitId}`
-      );
-
-      if (response.data.length > 0) {
-        setTenant(response.data[0]); // Assuming the first tenant is the one leasing
+      if (queryTenantId) {
+        // If we have a specific tenant ID, fetch just that tenant
+        const response = await axios.get(`/api/landlord/prospective/interested-tenants?tenant_id=${queryTenantId}`);
+        if (response.data) {
+          setTenant(response.data);
+        }
+      } else {
+        // Fallback to previous behavior if no tenant_id is provided
+        const response = await axios.get(`/api/landlord/prospective/interested-tenants?unitId=${unitId}`);
+        if (response.data.length > 0) {
+          setTenant(response.data[0]);
+        }
       }
     } catch (error) {
       console.error("Error fetching tenant details:", error);
+      setError("Failed to load tenant information");
+    } finally {
+      setIsLoading(false);
     }
   };
 
