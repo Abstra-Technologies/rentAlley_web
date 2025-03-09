@@ -13,7 +13,7 @@ const BookingAppointment = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   
-  // Modals
+
   const [showDisapprovalModal, setShowDisapprovalModal] = useState(false);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   
@@ -21,7 +21,6 @@ const BookingAppointment = () => {
   const [disapprovalReason, setDisapprovalReason] = useState("");
   const [cancellationReason, setCancellationReason] = useState("");
 
-  // Fetch all visits when component mounts
   useEffect(() => {
     if (user?.landlord_id) {
       fetchVisits();
@@ -52,7 +51,7 @@ const BookingAppointment = () => {
         status: "approved"
       });
       
-      // Update local state
+
       setVisits(visits.map(visit => 
         visit.visit_id === visitId ? { ...visit, status: "approved" } : visit
       ));
@@ -74,14 +73,14 @@ const BookingAppointment = () => {
         reason: disapprovalReason
       });
       
-      // Update local state
+
       setVisits(visits.map(visit => 
         visit.visit_id === selectedVisitId ? 
         { ...visit, status: "disapproved", disapproval_reason: disapprovalReason } : 
         visit
       ));
       
-      // Close modal and reset state
+
       setShowDisapprovalModal(false);
       setDisapprovalReason("");
       setSelectedVisitId(null);
@@ -102,14 +101,14 @@ const BookingAppointment = () => {
         status: "cancelled"
       });
       
-      // Update local state
+
       setVisits(visits.map(visit => 
         visit.visit_id === selectedVisitId ? 
         { ...visit, status: "cancelled" } : 
         visit
       ));
       
-      // Close modal and reset state
+
       setShowCancellationModal(false);
       setCancellationReason("");
       setSelectedVisitId(null);
@@ -121,12 +120,12 @@ const BookingAppointment = () => {
   const prevMonth = () => setCurrentMonth(currentMonth.subtract(1, 'month'));
   const nextMonth = () => setCurrentMonth(currentMonth.add(1, 'month'));
   
-  // Format date for calendar display
+ 
   const formatVisitDate = (dateString) => {
     return dayjs(dateString.split('T')[0]);
   };
 
-  // Group visits by date for the calendar view
+ 
   const visitsByDate = visits.reduce((acc, visit) => {
     const dateKey = formatVisitDate(visit.visit_date).format('YYYY-MM-DD');
     if (!acc[dateKey]) {
@@ -149,9 +148,7 @@ const BookingAppointment = () => {
   return (
     <LandlordLayout>
       <div className="flex flex-col lg:flex-row min-h-screen p-6 bg-gray-100 gap-6">
-        {/* Left Sidebar with Visit Sections */}
         <div className="w-full lg:w-1/3 bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Pending Visits Section */}
           <div className="px-4 py-3 bg-blue-50">
             <h3 className="text-md font-bold text-blue-800 mb-2 flex items-center">
               <Clock className="w-4 h-4 mr-2" /> Pending for Approval
@@ -198,7 +195,6 @@ const BookingAppointment = () => {
             )}
           </div>
 
-          {/* Approved Visits Section */}
           <div className="px-4 py-3 mt-3">
             <h3 className="text-md font-bold text-green-700 mb-2 flex items-center">
               <Calendar className="w-4 h-4 mr-2" /> Upcoming Visits
@@ -234,7 +230,6 @@ const BookingAppointment = () => {
             )}
           </div>
 
-          {/* Cancelled Visits Section */}
           <div className="px-4 py-3 mt-3">
             <h3 className="text-md font-bold text-red-700 mb-2 flex items-center">
               <XCircle className="w-4 h-4 mr-2" /> Cancelled Visits
@@ -263,7 +258,6 @@ const BookingAppointment = () => {
             )}
           </div>
 
-          {/* Disapproved Visits Section */}
           <div className="px-4 py-3 mt-3">
             <h3 className="text-md font-bold text-orange-700 mb-2 flex items-center">
               <AlertTriangle className="w-4 h-4 mr-2" /> Disapproved Visits
@@ -295,7 +289,6 @@ const BookingAppointment = () => {
         </div>
         
 
-        {/* Calendar Section */}
         <div className="w-full lg:w-2/3 bg-white p-6 rounded-lg shadow-lg">
           <div className="flex justify-between items-center mb-6">
             <button onClick={prevMonth} className="text-gray-700 hover:bg-gray-100 p-2 rounded-full">
@@ -316,12 +309,10 @@ const BookingAppointment = () => {
           </div>
 
           <div className="grid grid-cols-7 gap-2">
-            {/* Empty cells for days before the first day of month */}
             {Array.from({ length: (currentMonth.startOf('month').day() || 7) - 1 }).map((_, i) => (
               <div key={`empty-start-${i}`} className="p-2 h-24"></div>
             ))}
             
-            {/* Calendar days */}
             {Array.from({ length: currentMonth.daysInMonth() }).map((_, i) => {
               const date = currentMonth.date(i + 1);
               const dateKey = date.format('YYYY-MM-DD');
@@ -381,7 +372,6 @@ const BookingAppointment = () => {
               );
             })}
             
-            {/* Empty cells for days after the last day of month */}
             {Array.from({ 
               length: 7 - ((currentMonth.startOf('month').day() || 7) - 1 + currentMonth.daysInMonth()) % 7 
             }).map((_, i) => (
@@ -389,7 +379,6 @@ const BookingAppointment = () => {
             ))}
           </div>
 
-          {/* Selected Date Details */}
           {selectedDate && (
             <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <h3 className="text-lg font-bold mb-3">
@@ -460,7 +449,6 @@ const BookingAppointment = () => {
           )}
         </div>
 
-        {/* Cancellation Confirmation Modal */}
         {showCancellationModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-w-full mx-4">
@@ -486,7 +474,6 @@ const BookingAppointment = () => {
           </div>
         )}
 
-        {/* Disapproval Modal */}
         {showDisapprovalModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-w-full mx-4">
