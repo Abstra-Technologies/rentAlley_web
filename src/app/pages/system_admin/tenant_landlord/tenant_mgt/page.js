@@ -20,7 +20,7 @@ export default function TenantList() {
                 const response = await fetch("/api/tenant/list");
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch tenants.');
+                    new Error('Failed to fetch tenants.');
                 }
                 const data = await response.json();
                 setTenants(data.tenants);
@@ -56,7 +56,6 @@ export default function TenantList() {
                         <table className="min-w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">#</th>
                                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Tenant ID</th>
                                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">User ID</th>
                                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Date Registered</th>
@@ -68,7 +67,6 @@ export default function TenantList() {
                                     tenants.map((tenant, index) => (
                                         <tr key={tenant.tenant_id} className="hover:bg-gray-50 border-b">
                                             <td className="px-6 py-4 text-blue-600">{index + 1}</td>
-                                            <td className="px-6 py-4">{tenant.tenant_id}</td>
                                             <td className="px-6 py-4">{tenant.user_id}</td>
                                             <td className="px-6 py-4">{new Date(tenant.createdAt).toLocaleDateString()}</td>
                                             <td className="px-6 py-4">
@@ -82,12 +80,7 @@ export default function TenantList() {
                                                     >
                                                         <Eye className="w-4 h-4 mr-1" /> View
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleDelete(tenant.tenant_id)}
-                                                        className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-1" /> Delete
-                                                    </button>
+
                                                 </div>
                                             </td>
                                         </tr>

@@ -28,7 +28,6 @@ export default async function handler(req, res) {
                 p.street,
                 p.city,
                 p.province,
-                p.rent_payment,
                 p.status
             FROM Property p
             INNER JOIN Landlord l ON p.landlord_id = l.landlord_id
@@ -41,7 +40,5 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error("Database Error:", error);
         return res.status(500).json({ error: "Internal Server Error" });
-    } finally {
-        if (db) await db.end();
     }
 }

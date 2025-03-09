@@ -56,7 +56,6 @@ export default function LandlordList() {
                         <table className="min-w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">#</th>
                                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Landlord ID</th>
                                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">User ID</th>
                                     <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Verified</th>
@@ -69,8 +68,7 @@ export default function LandlordList() {
                                     landlords.map((landlord, index) => (
                                         <tr key={landlord.landlord_id} className="hover:bg-gray-50 border-b">
                                             <td className="px-6 py-4 text-blue-600">{index + 1}</td>
-                                            <td className="px-6 py-4">{landlord.landlord_id}</td>
-                                            <td className="px-6 py-4 text-blue-600 hover:underline cursor-pointer" 
+                                            <td className="px-6 py-4 text-blue-600 hover:underline cursor-pointer"
                                                 onClick={() => router.push(`./viewProfile/landlord/${landlord.user_id}`)}>
                                                 {landlord.user_id}
                                             </td>
@@ -92,12 +90,7 @@ export default function LandlordList() {
                                                     >
                                                         <Eye className="w-4 h-4 mr-1" /> View
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleDelete(landlord.landlord_id)}
-                                                        className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 mr-1" /> Delete
-                                                    </button>
+
                                                 </div>
                                             </td>
                                         </tr>

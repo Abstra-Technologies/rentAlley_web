@@ -12,9 +12,8 @@ export default function LandlordSubscriptionCurrent({ user_id }) {
         const fetchSubscriptions = async () => {
             try {
                 const response = await fetch(`/api/subscription/by-user?user_id=${user_id}`);
-                if (!response.ok) throw new Error("Failed to fetch subscription details.");
+                if (!response.ok) new Error("Failed to fetch subscription details.");
                 const data = await response.json();
-
                 setSubscriptions(data);
             } catch (error) {
                 setError(error.message);

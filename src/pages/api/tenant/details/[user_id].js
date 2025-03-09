@@ -26,6 +26,7 @@ export default async function handler(req, res) {
                 u.phoneNumber,
                 u.birthDate,
                 u.userType,
+                u.is_active,
                 u.emailVerified,
                 t.tenant_id,
                 u.profilePicture,
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
 
         await db.end();
 
-        console.log("🔒 Encrypted Tenant Data:", tenantResults[0]);
+        console.log("Encrypted Tenant Data:", tenantResults[0]);
 
         const decryptField = (value, fieldName) => {
             if (!value) return value;
@@ -60,15 +61,15 @@ export default async function handler(req, res) {
 
                 if (!encryptedObject.iv || !encryptedObject.data || !encryptedObject.authTag) {
                     console.warn(`Invalid encrypted object format for ${fieldName}:`, encryptedObject);
-                    return "DECRYPTION_ERROR";
+                    return "Error Decrypting Data";
                 }
 
                 const decrypted = decryptData(encryptedObject, encryptionKey);
-                console.log(`✅ Decrypted ${fieldName}:`, decrypted);
+                console.log(` Decrypted ${fieldName}:`, decrypted);
                 return decrypted;
             } catch (error) {
                 console.error(`Error decrypting ${fieldName}:`, error);
-                return "DECRYPTION_ERROR";
+                return "Error Decrypting Data";
             }
         };
 
@@ -84,17 +85,18 @@ export default async function handler(req, res) {
             emailVerified: tenantResults[0].emailVerified ? true : false,
             profilePicture: tenantResults[0].profilePicture,
             tenantCreatedAt: tenantResults[0].tenantCreatedAt,
+            is_active: tenantResults[0].is_active,
             activityLogs: activityLogs.map(log => ({
                 action: log.action,
                 timestamp: log.timestamp
             }))
         };
 
-        console.log("🚀 Final Response:", tenantDetails);
+        console.log("Tenant Data Response:", tenantDetails);
 
         return res.status(200).json(tenantDetails);
     } catch (error) {
-        console.error("🔥 Database Error:", error);
+        console.error("Database Error:", error);
         return res.status(500).json({ error: "Internal Server Error" });
     }
 }

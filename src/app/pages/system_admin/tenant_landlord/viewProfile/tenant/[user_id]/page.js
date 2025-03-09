@@ -157,6 +157,12 @@ export default function TenantDetails() {
                                 </p>
                             </div>
                         </div>
+                        <div className="flex items-start">
+                            <div className='bg-blue-100 p-2 rounded-lg mr-3'>
+                                <p className="text-sm text-gray-500">Account Status</p>
+                                {tenantInfo?.is_active ? "Active" : "De-activated"}
+                            </div>
+                        </div>
                     </div>
                     
                     {/* Activity Logs */}

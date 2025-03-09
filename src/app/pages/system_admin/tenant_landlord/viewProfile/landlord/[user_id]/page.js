@@ -66,12 +66,10 @@ export default function LandlordDetails() {
             </button>
             
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                {/* Header */}
                 <div className="bg-blue-600 text-white p-4">
                     <h2 className="text-2xl font-semibold">Landlord Details</h2>
                 </div>
                 
-                {/* Profile Section */}
                 <div className="flex flex-col items-center p-6 border-b border-gray-200 bg-gray-50">
                     <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-blue-100 shadow-md mb-4">
                         <img
@@ -88,7 +86,6 @@ export default function LandlordDetails() {
                     </p>
                 </div>
                 
-                {/* Landlord Information */}
                 <div className="p-6">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Personal Information</h3>
                     
@@ -161,7 +158,6 @@ export default function LandlordDetails() {
                         </div>
                     </div>
                     
-                    {/* Subscription Information */}
                     <div className="mt-8">
                         <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Subscription Information</h3>
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -169,7 +165,6 @@ export default function LandlordDetails() {
                         </div>
                     </div>
                     
-                    {/* Property List */}
                     <div className="mt-8">
                         <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Properties</h3>
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
