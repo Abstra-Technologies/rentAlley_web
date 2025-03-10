@@ -34,7 +34,7 @@ export default function MyUnit() {
   useEffect(() => {
     const fetchUnitData = async () => {
       try {
-        // ✅ Fetch lease details for the tenant
+
         const { data } = await axios.get(
             `/api/tenant/approved-tenant-property?tenantId=${user.tenant_id}`
         );
@@ -166,7 +166,7 @@ export default function MyUnit() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
+
       <div className="hidden w-64 border-r border-gray-200 bg-white py-6 px-4 md:block">
         <div className="mb-8">
           <h2 className="text-xl font-bold text-indigo-900">My Rental</h2>
@@ -197,7 +197,7 @@ export default function MyUnit() {
         </nav>
       </div>
 
-      {/* Main Content */}
+
       <div className="flex-1 px-4 py-6 md:px-8 md:py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-indigo-900">My Unit</h1>
@@ -213,7 +213,7 @@ export default function MyUnit() {
 
         {unit && (
           <div className="overflow-hidden rounded-xl bg-white shadow-md">
-            {/* Unit photo and header */}
+
             <div className="relative h-56 sm:h-72 w-full">
               {unit.unit_photos && unit.unit_photos.length > 0 ? (
                 <Image
@@ -249,9 +249,7 @@ export default function MyUnit() {
               </div>
             </div>
 
-            {/* Payment progress card */}
             <div className="p-6">
-              {/* Unit details card */}
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Unit Details</h3>
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
@@ -314,53 +312,65 @@ export default function MyUnit() {
                 </div>
               </div>
 
-              {/* Payment action buttons */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Actions</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Pay through Maya</h3>
 
-                {/* Only show security deposit payment if needed */}
-                {requiresSecurity && !isSecurityPaid && (
-                  <button
-                    onClick={() => handlePayment("security_deposit")}
-                    disabled={loadingPayment}
-                    className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
-                  >
-                    <div className="flex items-center">
-                      <KeyIcon className="h-6 w-6 mr-3" />
-                      <div>
-                        <p className="font-medium">Pay Security Deposit</p>
-                        <p className="text-xs text-indigo-200">Required to secure your unit</p>
-                      </div>
+              {requiresSecurity && !isSecurityPaid && (
+                <button
+                  onClick={() => handlePayment("security_deposit")}
+                  disabled={loadingPayment}
+                  className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
+                >
+                  <div className="flex items-center">
+                    <KeyIcon className="h-6 w-6 mr-3" />
+                    <div>
+                      <p className="font-medium">Pay Security Deposit</p>
+                      <p className="text-xs text-indigo-200">Required to secure your unit</p>
                     </div>
-                    <div className="flex items-center">
-                      <span className="font-bold mr-2">₱{unit.sec_deposit?.toLocaleString()}</span>
-                      <ArrowRightIcon className="h-4 w-4" />
-                    </div>
-                  </button>
-                )}
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-bold mr-2">₱{unit.sec_deposit?.toLocaleString()}</span>
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </div>
+                </button>
+              )}
 
-                {/* Only show advance rent payment if needed */}
-                {requiresAdvanced && !isAdvancedPaid && (
-                  <button
-                    onClick={() => handlePayment("advance_rent")}
-                    disabled={loadingPayment}
-                    className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
-                  >
-                    <div className="flex items-center">
-                      <CurrencyDollarIcon className="h-6 w-6 mr-3" />
-                      <div>
-                        <p className="font-medium">Pay Advance Rent</p>
-                        <p className="text-xs text-indigo-200">Required before move-in</p>
-                      </div>
+              {requiresAdvanced && !isAdvancedPaid && (
+                <button
+                  onClick={() => handlePayment("advance_rent")}
+                  disabled={loadingPayment}
+                  className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
+                >
+                  <div className="flex items-center">
+                    <CurrencyDollarIcon className="h-6 w-6 mr-3" />
+                    <div>
+                      <p className="font-medium">Pay Advance Rent</p>
+                      <p className="text-xs text-indigo-200">Required before move-in</p>
                     </div>
-                    <div className="flex items-center">
-                      <span className="font-bold mr-2">₱{unit.advanced_payment?.toLocaleString()}</span>
-                      <ArrowRightIcon className="h-4 w-4" />
-                    </div>
-                  </button>
-                )}
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-bold mr-2">₱{unit.advanced_payment?.toLocaleString()}</span>
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </div>
+                </button>
+              )}
 
-                {/* Show rent portal access when all payments are made */}
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Other Payment Option</h3>
+              <button
+                onClick={() => router.push("/pages/payment/other-options")}
+                className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
+              >
+                <div className="flex items-center">
+                  <CreditCardIcon className="h-6 w-6 mr-3" />
+                  <div>
+                    <p className="font-medium">Proof of Payment</p>
+                    <p className="text-xs text-indigo-200">cash, pdc, bank transfer</p>
+                  </div>
+                </div>
+              </button>
+
+
+
                 {allPaymentsMade && (
                   <button
                     onClick={handleAccessRentPortal}
@@ -378,7 +388,6 @@ export default function MyUnit() {
                 )}
               </div>
 
-              {/* Mobile contact landlord button */}
               <div className="mt-8 md:hidden">
                 <button
                   onClick={handleContactLandlord}
