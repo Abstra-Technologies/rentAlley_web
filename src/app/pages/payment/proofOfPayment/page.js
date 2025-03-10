@@ -1,8 +1,17 @@
 "use client";
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import {useState, useEffect, Suspense} from "react";
 import { useDropzone } from "react-dropzone";
 import { useRouter } from "next/navigation";
+
+
+export default function PaymentFormPage() {
+  return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <PaymentForm />
+      </Suspense>
+  );
+}
 
 const PaymentForm = () => {
   const router = useRouter();
@@ -220,4 +229,3 @@ const PaymentForm = () => {
   );
 };
 
-export default PaymentForm;

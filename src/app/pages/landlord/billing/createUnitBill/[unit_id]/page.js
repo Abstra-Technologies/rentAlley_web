@@ -89,7 +89,7 @@ export default function CreateUnitBill() {
     const waterPrevReading = parseFloat(form.waterPrevReading) || 0;
     const waterCurrentReading = parseFloat(form.waterCurrentReading) || 0;
 
-    // Use property-wide rates
+    //  property-wide rates
     const electricityRate = parseFloat(propertyRates.electricityRate) || 0;
     const waterRate = parseFloat(propertyRates.waterRate) || 0;
 
@@ -109,11 +109,9 @@ export default function CreateUnitBill() {
     const associationDues = parseFloat(property?.assoc_dues) || 0;
     const lateFee = parseFloat(property?.late_fee) || 0;
 
-    // Penalty and Discount (new)
     const penaltyAmount = parseFloat(form.penaltyAmount) || 0;
     const discountAmount = parseFloat(form.discountAmount) || 0;
 
-    // Compute subtotal
     const subtotal = electricityCost + waterCost + rentAmount + associationDues;
 
     // Compute total with late fee, penalty, and discount

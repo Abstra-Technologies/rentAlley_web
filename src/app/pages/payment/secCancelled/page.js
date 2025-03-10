@@ -1,7 +1,16 @@
 'use client'
 import {useRouter, useSearchParams} from "next/navigation";
-import {useEffect, useState} from "react";
+import {Suspense, useEffect, useState} from "react";
 import axios from "axios";
+
+export default function SecCancelledPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SecCancelled />
+        </Suspense>
+    );
+}
+
 
 function SecCancelled() {
     const router = useRouter();
@@ -71,4 +80,3 @@ function SecCancelled() {
     );
 }
 
-export default SecCancelled;

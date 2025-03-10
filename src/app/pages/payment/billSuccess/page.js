@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {Suspense, useEffect, useState} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+
+export default function SecSucceedPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SecSuccess />
+        </Suspense>
+    );
+}
 
 function SecSuccess() {
     const router = useRouter();
@@ -64,4 +72,3 @@ function SecSuccess() {
     );
 }
 
-export default SecSuccess;

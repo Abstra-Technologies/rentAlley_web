@@ -1,7 +1,17 @@
 'use client'
-import { useEffect, useState } from "react";
+import {Suspense, useEffect, useState} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+
+export default function billCancelledPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <billingCancelled />
+        </Suspense>
+    );
+}
+
+
 
 function billingCancelled() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -68,4 +78,3 @@ function billingCancelled() {
     );
 }
 
-export default billingCancelled;

@@ -14,6 +14,7 @@ export default function ViewUnits() {
   const [loading, setLoading] = useState(true);
   const [isAlreadyFilled, setIsAlreadyFilled] = useState(false);
   const [billingData, setBillingData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const [billingForm, setBillingForm] = useState({
     billingPeriod: "",
@@ -67,21 +68,26 @@ export default function ViewUnits() {
 
     async function fetchBillingData() {
       try {
-        const response = await axios.get(
-          `/api/landlord/billing/checkBillingStatus`,
-          { params: { property_id } }
-        );
+        const response = await axios.get(`/api/landlord/billing/checkBillingStatus`, {
+          params: { property_id },
+        });
 
         if (response.data.billingData && response.data.billingData.length > 0) {
           setBillingData(response.data.billingData);
+          setIsEditing(true);
+          setBillingForm({
+            billingPeriod: response.data.billingData[0]?.billing_period || "",
+            electricityTotal: response.data.billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "",
+            electricityRate: response.data.billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "",
+            waterTotal: response.data.billingData.find(b => b.utility_type === "water")?.total_billed_amount || "",
+            waterRate: response.data.billingData.find(b => b.utility_type === "water")?.rate_consumed || "",
+          });
         } else {
           setBillingData(null);
+          setIsEditing(false);
         }
       } catch (error) {
-        console.error(
-          "Failed to fetch billing data:",
-          error.response?.data || error.message
-        );
+        console.error("Failed to fetch billing data:", error.response?.data || error.message);
       }
     }
 
@@ -210,127 +216,116 @@ export default function ViewUnits() {
         </div>
 
         {/* For Concessionaire Billing */}
+
         {isModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-h-screen overflow-y-auto">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Property Utility
-              </h2>
 
-              {billingData ? (
-                  <div className="text-green-600 font-semibold mb-4">
-                    <p>Billing already set for this month</p>
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-96 max-h-screen overflow-y-auto">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                  Property Utility
+                </h2>
+                {billingData ? (
+                    <div className="text-green-600 font-semibold mb-4">
+                      <p>Billing already set for this month</p>
+                      {/*<div className="mt-2">*/}
+                      {/*  <h3 className="text-lg font-semibold text-gray-800">Electricity</h3>*/}
+                      {/*  <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</span></p>*/}
+                      {/*  <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "N/A"} kWh</span></p>*/}
+                      {/*</div>*/}
+
+                      {/*<div className="mt-4">*/}
+                      {/*  <h3 className="text-lg font-semibold text-gray-800">Water</h3>*/}
+                      {/*  <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</span></p>*/}
+                      {/*  <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "water")?.rate_consumed || "N/A"} cu. meters</span></p>*/}
+                      {/*</div>*/}
+                    </div>
+                ) : (
+                    <p className="text-gray-500">No billing data found for this month.</p>
+                )}
+
+
+
+                <form className="space-y-4" onSubmit={handleSaveBilling}>
+                  <div>
+                    <label className="block text-gray-700 font-medium">
+                      Billing Period (Date)
+                    </label>
+                    <input
+                        type="date"
+                        name="billingPeriod"
+                        value={billingForm.billingPeriod}
+                        onChange={handleInputChange}
+                        className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
+                    />
+                  </div>
+
+                  <div className="p-4 border rounded-lg shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-700">
+                      Electricity
+                    </h3>
                     <div className="mt-2">
-                      <h3 className="text-lg font-semibold text-gray-800">Electricity</h3>
-                      <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</span></p>
-                      <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "N/A"} kWh</span></p>
+                      <label className="block text-gray-700 font-medium">
+                        Total Amount Billed
+                      </label>
+                      <input
+                          type="number"
+                          name="electricityTotal"
+                          value={billingForm.electricityTotal}
+                          onChange={handleInputChange}
+                          className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
+                      />
                     </div>
-
-                    <div className="mt-4">
-                      <h3 className="text-lg font-semibold text-gray-800">Water</h3>
-                      <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</span></p>
-                      <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "water")?.rate_consumed || "N/A"} cu. meters</span></p>
+                    <div className="mt-2">
+                      <label className="block text-gray-700 font-medium">
+                        Rate this month
+                      </label>
+                      <input
+                          type="number"
+                          name="electricityRate"
+                          value={billingForm.electricityRate}
+                          onChange={handleInputChange}
+                          className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
+                      />
                     </div>
                   </div>
-              ) : (
-                  <p className="text-gray-500">No billing data found for this month.</p>
-              )}
 
-
-              <form className="space-y-4" onSubmit={handleSaveBilling}>
-                {/* Billing Period */}
-                <div>
-                  <label className="block text-gray-700 font-medium">
-                    Billing Period (Date)
-                  </label>
-                  <input
-                    type="date"
-                    name="billingPeriod"
-                    value={billingForm.billingPeriod}
-                    onChange={handleInputChange}
-                    className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
-                  />
-                </div>
-
-                {/* Electricity Section */}
-                <div className="p-4 border rounded-lg shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-700">
-                    Electricity
-                  </h3>
-                  <div className="mt-2">
-                    <label className="block text-gray-700 font-medium">
-                      Total Amount Billed
-                    </label>
-                    <input
-                      type="number"
-                      name="electricityTotal"
-                      value={billingForm.electricityTotal}
-                      onChange={handleInputChange}
-                      className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
-                    />
+                  <div className="p-4 border rounded-lg shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-700">Water</h3>
+                    <div className="mt-2">
+                      <label className="block text-gray-700 font-medium">
+                        Total Amount Billed
+                      </label>
+                      <input
+                          type="number"
+                          name="waterTotal"
+                          value={billingForm.waterTotal}
+                          onChange={handleInputChange}
+                          className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
+                      />
+                    </div>
+                    <div className="mt-2">
+                      <label className="block text-gray-700 font-medium">
+                        Rate this month
+                      </label>
+                      <input
+                          type="number"
+                          name="waterRate"
+                          value={billingForm.waterRate}
+                          onChange={handleInputChange}
+                          className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
+                      />
+                    </div>
                   </div>
-                  <div className="mt-2">
-                    <label className="block text-gray-700 font-medium">
-                      Rate per Unit
-                    </label>
-                    <input
-                      type="number"
-                      name="electricityRate"
-                      value={billingForm.electricityRate}
-                      onChange={handleInputChange}
-                      className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
-                    />
-                  </div>
-                </div>
 
-                {/* Water Section */}
-                <div className="p-4 border rounded-lg shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-700">Water</h3>
-                  <div className="mt-2">
-                    <label className="block text-gray-700 font-medium">
-                      Total Amount Billed
-                    </label>
-                    <input
-                      type="number"
-                      name="waterTotal"
-                      value={billingForm.waterTotal}
-                      onChange={handleInputChange}
-                      className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
-                    />
+                  <div className="flex justify-between mt-4">
+                    <button onClick={() => setIsModalOpen(false)} className="bg-gray-400 text-white px-4 py-2 rounded-lg">Cancel</button>
+                    <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                      {isEditing ? "Edit Utility Info" : "Save Utility Info"}
+                    </button>
                   </div>
-                  <div className="mt-2">
-                    <label className="block text-gray-700 font-medium">
-                      Rate per Unit
-                    </label>
-                    <input
-                      type="number"
-                      name="waterRate"
-                      value={billingForm.waterRate}
-                      onChange={handleInputChange}
-                      className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
-                    />
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex justify-between mt-4">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-400 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-500 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition"
-                  >
-                    Save Utility Info
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
-          </div>
         )}
       </div>
     </LandlordLayout>

@@ -10,7 +10,7 @@ import Swal from "sweetalert2";
 import { z } from "zod";
 import { io } from "socket.io-client";
 
-export const maintenanceRequestSchema = z.object({
+const maintenanceRequestSchema = z.object({
   category: z.string().min(1, "Category is required"),
   subject: z.string().min(1, "Subject is required"),
   description: z.string().min(1, "Description is required"),
