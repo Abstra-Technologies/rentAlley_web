@@ -1,17 +1,18 @@
 import { db } from "../../../../lib/db";
 
-export default async function updateCurrentBilling(req, res) {
+export default async function updateBill(req, res) {
     if (req.method !== "PUT") {
         return res.status(405).json({ error: "Method not allowed" });
     }
 
     const {
         billing_id,
-        reading_date,
-        water_current_reading,
-        electricity_current_reading,
+        waterCurrentReading,
+        electricityCurrentReading,
         total_water_amount,
         total_electricity_amount,
+        penalty_amount,
+        discount_amount,
         total_amount_due
     } = req.body;
 
@@ -20,7 +21,6 @@ export default async function updateCurrentBilling(req, res) {
     }
 
     try {
-        // Get unit_id from the billing record
         const [billingRecord] = await db.query(
             `SELECT unit_id FROM Billing WHERE billing_id = ?`,
             [billing_id]
@@ -32,21 +32,22 @@ export default async function updateCurrentBilling(req, res) {
 
         const unit_id = billingRecord[0].unit_id;
 
-        // Update the billing record
         const [updateResult] = await db.query(
             `
-            UPDATE Billing 
-            SET 
-                billing_period = ?, 
-                total_water_amount = ?, 
-                total_electricity_amount = ?, 
-                total_amount_due = ?
-            WHERE billing_id = ?
+                UPDATE Billing
+                SET
+                    total_water_amount = ?,
+                    total_electricity_amount = ?,
+                    penalty_amount = ?,
+                    discount_amount = ?,
+                    total_amount_due = ?
+                WHERE billing_id = ?
             `,
             [
-                reading_date,
                 total_water_amount,
                 total_electricity_amount,
+                penalty_amount,
+                discount_amount,
                 total_amount_due,
                 billing_id
             ]
@@ -56,8 +57,7 @@ export default async function updateCurrentBilling(req, res) {
             return res.status(404).json({ error: "No changes made or billing record not found" });
         }
 
-        // Update the latest water meter reading for the corresponding unit
-        if (water_current_reading !== undefined) {
+        if (waterCurrentReading !== undefined) {
             await db.query(
                 `
                     UPDATE MeterReading
@@ -67,22 +67,21 @@ export default async function updateCurrentBilling(req, res) {
                     ORDER BY reading_date DESC
                     LIMIT 1
                 `,
-                [water_current_reading, unit_id]
+                [waterCurrentReading, unit_id]
             );
         }
 
-        // Update the latest electricity meter reading for the corresponding unit
-        if (electricity_current_reading !== undefined) {
+        if (electricityCurrentReading !== undefined) {
             await db.query(
                 `
-                UPDATE MeterReading 
-                SET current_reading = ? 
-                WHERE unit_id = ? 
-                AND utility_type = 'electricity'
-                ORDER BY reading_date DESC
-                LIMIT 1
+                    UPDATE MeterReading
+                    SET current_reading = ?
+                    WHERE unit_id = ?
+                      AND utility_type = 'electricity'
+                    ORDER BY reading_date DESC
+                    LIMIT 1
                 `,
-                [electricity_current_reading, unit_id]
+                [electricityCurrentReading, unit_id]
             );
         }
 

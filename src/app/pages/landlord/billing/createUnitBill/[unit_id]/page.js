@@ -74,8 +74,6 @@ export default function CreateUnitBill() {
           waterRate,
           electricityRate,
         }));
-
-        // setBillingHistory(data.billingHistory);
       } catch (error) {
         console.error("Error fetching unit data:", error);
       }
@@ -333,7 +331,7 @@ export default function CreateUnitBill() {
             <>
               <div className="mt-2">
                 <label className="block text-gray-700 font-medium">
-                  Billing Due Date
+                  Due Date
                 </label>
                 <input
                     type="date"
