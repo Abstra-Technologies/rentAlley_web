@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { logEvent } from "../../../../utils/gtag";
 import Footer from "../../../../components/navigation/footer";
 import Image from "next/image";
-import Swal from "sweetalert2";
 
 const registerSchema = z
   .object({
@@ -22,9 +21,9 @@ const registerSchema = z
     email: z.string().email("Invalid email address"),
     password: z
       .string()
-      .min(6, "Password must be 6 characters long") 
+      .min(6, "Password must be 6 characters long") // Password must be at least 6 characters
       .refine(
-        (value) => /^[a-zA-Z0-9]+$/.test(value), 
+        (value) => /^[a-zA-Z0-9]+$/.test(value), // Password must be alphanumeric (letters and numbers only)
         "Password must contain only letters and numbers"
       ),
 
@@ -42,7 +41,6 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -80,38 +78,35 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setErrors({});
-
-    for (const key in formData) {
-      if (!formData[key].trim()) {
-        Swal.fire("Error", "All fields are required", "error");
-        setLoading(false);
-        return;
-      }
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      Swal.fire("Error", "Passwords do not match", "error");
-      setLoading(false);
-      return;
-    }
+    setError("");
+    setSuccessMessage("");
 
     try {
       registerSchema.parse(formData);
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+        },
         body: JSON.stringify(formData),
       });
+
       const data = await res.json();
 
       if (res.ok) {
-        Swal.fire("Success", "Account successfully registered!", "success");
+        console.log("Registration Data: ", formData);
+        setSuccessMessage("Account successfully registered! Redirecting...");
         logEvent("Register", "Authentication", "Register Successful", 1);
-        setTimeout(() => router.push("/pages/auth/verify-email"), 1500);
+
+        setTimeout(() => {
+          router.push("/pages/auth/verify-email");
+        }, 1000); // Redirect after 2 seconds
+      } else if (data.error && data.error.includes("already registered")) {
+        setError("This email is already registered. Please admin_login.");
       } else {
-        Swal.fire("Error", data.error || "Registration failed", "error");
+        setError(data.error || "Registration failed. Please try again.");
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -121,10 +116,9 @@ export default function Register() {
         }, {});
         setErrors(errorObj);
       } else {
-        Swal.fire("Error", "An unexpected error occurred", "error");
+        console.error("Error during API call:", err);
+        setError("An unexpected error occurred. Please try again.");
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -157,7 +151,7 @@ export default function Register() {
           </div>
         )}
 
-        
+        {/* Registration Form */}
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label
@@ -174,7 +168,9 @@ export default function Register() {
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Juan"
             />
-            
+            {errors.firstName && (
+              <p className="text-red-500 text-sm">{errors.firstName}</p>
+            )}
           </div>
 
           <div>
@@ -192,7 +188,9 @@ export default function Register() {
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Tamad"
             />
-            
+            {errors.lastName && (
+              <p className="text-red-500 text-sm">{errors.lastName}</p>
+            )}
           </div>
 
           <div>
@@ -211,7 +209,7 @@ export default function Register() {
               placeholder="MM/DD/YYYY"
             />
 
-            
+            {errors.dob && <p className="text-red-500 text-sm">{errors.dob}</p>}
           </div>
 
           <div>
@@ -228,12 +226,14 @@ export default function Register() {
               onChange={handleChange}
               onInput={(event) => {
                 event.target.value = event.target.value.replace(/[^0-9]/g, "");
-                handleChange(event); 
+                handleChange(event); //ensure the change of value is still set using the handleChange function
               }}
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="09XXXXXXXXX"
             />
-            
+            {errors.mobileNumber && (
+              <p className="text-red-500 text-sm">{errors.mobileNumber}</p>
+            )}
           </div>
 
           <div>
@@ -251,7 +251,9 @@ export default function Register() {
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="juantamad@email.com"
             />
-            
+            {errors.email && (
+              <p className="text-red-500 text-sm">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -269,7 +271,9 @@ export default function Register() {
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
             />
-            
+            {errors.password && (
+              <p className="text-red-500 text-sm">{errors.password}</p>
+            )}
           </div>
 
           <div>
@@ -287,7 +291,9 @@ export default function Register() {
               className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
             />
-            
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm">{errors.confirmPassword}</p>
+            )}
           </div>
 
           <p className="text-black">
@@ -295,7 +301,10 @@ export default function Register() {
             <a className="text-blue-900">Terms of Service</a> and{" "}
             <a className="text-blue-900">Privacy Policy</a>
           </p>
-          
+          {/*<HCaptcha*/}
+          {/*    sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY}*/}
+          {/*    onVerify={setCaptchaToken}*/}
+          {/*/>*/}
           <button
             type="submit"
             className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
@@ -304,13 +313,13 @@ export default function Register() {
           </button>
         </form>
 
-        
+        {/* Divider */}
         <div className="flex items-center my-6">
           <div className="border-t border-gray-300 flex-grow"></div>
           <span className="mx-3 text-gray-500 font-medium">or</span>
           <div className="border-t border-gray-300 flex-grow"></div>
         </div>
-        
+        {/* Sign up with Google */}
         <button
           type="button"
           onClick={handleGoogleSignup}
@@ -320,7 +329,7 @@ export default function Register() {
           <span className="font-medium text-gray-700">Sign up with Google</span>
         </button>
 
-        
+        {/* Login Link */}
         <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{" "}
           <Link
@@ -334,7 +343,7 @@ export default function Register() {
     </div>
      
 
-   
+   {/* Footer Section */}
    <Footer />
  </>
   );
