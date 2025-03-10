@@ -4,11 +4,10 @@ import { useState, useEffect, FormEvent, MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaSearch, FaChevronDown, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
+import { FaSearch, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
 import { HiBadgeCheck } from "react-icons/hi";
 import Footer from "../components/navigation/footer";
 
-// Define TypeScript interfaces for the data structures
 interface Property {
   property_id: number;
   property_name: string;
@@ -34,8 +33,6 @@ export default function SplashScreen() {
   const [recentProperties, setRecentProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-
-  // Fetch properties from API
   useEffect(() => {
     async function fetchProperties() {
       try {
@@ -45,10 +42,8 @@ export default function SplashScreen() {
 
         const data = await res.json();
         setAllProperties(data);
-        
 
         setFeaturedProperties(data.slice(0, 3));
-        
 
         setRecentProperties(data.slice(0, 6));
       } catch (error) {
@@ -70,10 +65,9 @@ export default function SplashScreen() {
     router.push("/pages/find-rent");
   };
 
-
   const PropertyCard = ({ property }: PropertyCardProps) => {
     return (
-      <div 
+      <div
         className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
         onClick={() => router.push(`/pages/find-rent/${property.property_id}`)}
       >
@@ -95,9 +89,7 @@ export default function SplashScreen() {
           )}
         </div>
 
-
         <div className="p-4">
-
           <div className="flex justify-between items-center mb-1">
             <h2 className="text-lg font-semibold text-gray-900">
               {property?.property_name}
@@ -110,27 +102,22 @@ export default function SplashScreen() {
             </div>
           </div>
 
-
           <div className="flex items-center text-gray-600 mt-2">
             <FaMapMarkerAlt className="mr-1 text-gray-400" />
             <p className="text-gray-800">
               {property?.city},{" "}
               {property?.province
                 .split("_")
-                .map(
-                  (word) =>
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                )
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(" ")}
             </p>
           </div>
-
 
           <p className="text-xl font-semibold text-blue-600 mt-1">
             ₱{Math.round(property.rent_amount).toLocaleString()}
           </p>
 
-          <button 
+          <button
             className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors"
             onClick={(e: MouseEvent<HTMLButtonElement>) => {
               e.stopPropagation(); // Prevent event bubbling
@@ -146,25 +133,26 @@ export default function SplashScreen() {
 
   return (
     <div className="flex flex-col min-h-screen">
-
       <div className="relative h-[500px]">
         <div className="absolute inset-0">
-          <Image 
-            src="/images/hero-section.jpeg" 
-            alt="Cityscape view of high-rise buildings" 
+          <Image
+            src="/images/hero-section.jpeg"
+            alt="Cityscape view of high-rise buildings"
             fill
             className="object-cover brightness-75"
             priority
           />
         </div>
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">Rent with No Compromises</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
+            Rent with No Compromises
+          </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-2xl text-center">
-            Enjoy a home that offers everything you've been searching for, all in one place.
+            Enjoy a home that offers everything you've been searching for, all
+            in one place.
           </p>
 
-
-          <form 
+          <form
             onSubmit={handleSearch}
             className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-4 text-gray-800"
           >
@@ -193,36 +181,60 @@ export default function SplashScreen() {
           </form>
         </div>
       </div>
-      
+
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">Featured Property</h2>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Featured Property
+              </h2>
               <p className="text-gray-600">Recommended Place to Live for You</p>
             </div>
             <div className="flex space-x-2">
-              <button 
+              <button
                 className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
                 type="button"
               >
                 <span className="sr-only">Previous</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 19.5L8.25 12l7.5-7.5"
+                  />
                 </svg>
               </button>
-              <button 
+              <button
                 className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
                 type="button"
               >
                 <span className="sr-only">Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                  />
                 </svg>
               </button>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <FaSpinner className="animate-spin text-blue-500 text-3xl" />
@@ -243,9 +255,9 @@ export default function SplashScreen() {
               ))}
             </div>
           )}
-          
+
           <div className="flex justify-center mt-8">
-            <Link 
+            <Link
               href="/pages/find-rent"
               className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-3 rounded-lg font-medium transition-colors"
             >
@@ -254,7 +266,6 @@ export default function SplashScreen() {
           </div>
         </div>
       </section>
-      
 
       <section className="py-16 bg-gray-900 text-white relative overflow-hidden">
         <div className="container mx-auto max-w-6xl px-4 flex flex-col lg:flex-row items-center">
@@ -264,9 +275,12 @@ export default function SplashScreen() {
               Search, Find, and Invest in Good Properties with Us
             </h2>
             <p className="mb-6 opacity-80">
-              Discover your perfect rental property with Rentahan. We provide a curated selection of quality homes, apartments, and condominiums across the Philippines, making property hunting simple and stress-free.
+              Discover your perfect rental property with Rentahan. We provide a
+              curated selection of quality homes, apartments, and condominiums
+              across the Philippines, making property hunting simple and
+              stress-free.
             </p>
-            <Link 
+            <Link
               href="/pages/about"
               className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors"
             >
@@ -288,36 +302,60 @@ export default function SplashScreen() {
           </div>
         </div>
       </section>
-      
+
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">Recently Added Property</h2>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Recently Added Property
+              </h2>
               <p className="text-gray-600">Find Properties that suits you</p>
             </div>
             <div className="flex space-x-2">
-              <button 
+              <button
                 className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
                 type="button"
               >
                 <span className="sr-only">Previous</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15.75 19.5L8.25 12l7.5-7.5"
+                  />
                 </svg>
               </button>
-              <button 
+              <button
                 className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
                 type="button"
               >
                 <span className="sr-only">Next</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                  />
                 </svg>
               </button>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <FaSpinner className="animate-spin text-blue-500 text-3xl" />
@@ -338,9 +376,9 @@ export default function SplashScreen() {
               ))}
             </div>
           )}
-          
+
           <div className="flex justify-center mt-8">
-            <Link 
+            <Link
               href="/pages/find-rent"
               className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-3 rounded-lg font-medium transition-colors"
             >
@@ -349,22 +387,26 @@ export default function SplashScreen() {
           </div>
         </div>
       </section>
-      
-      <section className="py-10 px-4 bg-gray-700 text-white">
+
+      {/* <section className="py-10 px-4 bg-gray-700 text-white">
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between">
             <div className="mb-6 lg:mb-0">
               <h3 className="text-lg font-medium mb-2">Join Us</h3>
-              <h2 className="text-2xl font-bold">Get Property Insights and Listings Directly to Your Email</h2>
-              <p className="mt-2 text-gray-300">Subscribe to get newsletter about property information.</p>
+              <h2 className="text-2xl font-bold">
+                Get Property Insights and Listings Directly to Your Email
+              </h2>
+              <p className="mt-2 text-gray-300">
+                Subscribe to get newsletter about property information.
+              </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 lg:w-2/5">
-              <input 
-                type="email" 
-                placeholder="Enter your email here" 
+              <input
+                type="email"
+                placeholder="Enter your email here"
                 className="px-4 py-3 rounded-lg bg-gray-600 text-white placeholder-gray-400 border border-gray-500 focus:outline-none focus:border-blue-500 flex-grow"
               />
-              <button 
+              <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap"
                 type="button"
               >
@@ -373,7 +415,7 @@ export default function SplashScreen() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
       <Footer />
     </div>
   );
