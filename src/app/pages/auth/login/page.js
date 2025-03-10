@@ -20,7 +20,7 @@ export default function Login() {
   const [message] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
-  const { user, admin } = useAuthStore();
+  const { user, admin, fetchSession } = useAuthStore();
 
   useEffect(() => {
     sessionStorage.removeItem("pending2FA");
@@ -43,7 +43,7 @@ export default function Login() {
 
         switch (data.userType) {
           case "tenant":
-            return router.replace("/pages/tenant/dashboard");
+            return router.replace("/");
           case "landlord":
             return router.replace("/pages/landlord/dashboard");
           case "admin":
@@ -77,20 +77,19 @@ export default function Login() {
     try {
       const response = await fetch(`/api/auth/google-login`);
       if (!response.ok) {
-        // If the API returns an error, redirect to the error page
-        router.push('/pages/auth/google-login-error');
+        router.push("/pages/auth/google-login-error");
         return;
       }
-      // If successful, the API should handle the redirection
+      
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        router.push('/pages/auth/google-login-error');
+        router.push("/pages/auth/google-login-error");
       }
     } catch (error) {
       console.error("Google login error:", error);
-      router.push('/pages/auth/google-login-error');
+      router.push("/pages/auth/google-login-error");
     }
   };
 
@@ -129,6 +128,7 @@ export default function Login() {
         } else {
           Swal.fire("Success", "Login successful!", "success");
 
+          await fetchSession();
           return await redirectBasedOnUserType();
         }
       } else {
@@ -152,116 +152,114 @@ export default function Login() {
 
   return (
     <>
-    <div className="relative flex justify-center items-center h-screen bg-gray-100 overflow-hidden">
-      <Image 
-                  src="/images/hero-section.jpeg" 
-                  alt="Cityscape view of high-rise buildings" 
-                  fill
-                  className="object-cover brightness-75 z-0"
-                  priority
-                />
-      <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">
-          Rentahan
-        </h1>
+      <div className="relative flex justify-center items-center h-screen bg-gray-100 overflow-hidden">
+        <Image
+          src="/images/hero-section.jpeg"
+          alt="Cityscape view of high-rise buildings"
+          fill
+          className="object-cover brightness-75 z-0"
+          priority
+        />
+        <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
+          <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">
+            Rentahan
+          </h1>
 
-        
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="juantamad@email.com"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm">{errors.email}</p>
+              )}
+            </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="juantamad@email.com"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email}</p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password}</p>
-            )}
-          </div>
-          <p className="text-center">
-            <Link
-              href="./forgot-password"
-              className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm">{errors.password}</p>
+              )}
+            </div>
+            <p className="text-center">
+              <Link
+                href="./forgot-password"
+                className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
+                onClick={() =>
+                  logEvent(
+                    "Forgot Password Click",
+                    "User Interaction",
+                    "Clicked Forgot Password",
+                    1
+                  )
+                }
+              >
+                Forgot Password?
+              </Link>
+            </p>
+            <button
+              type="submit"
               onClick={() =>
-                logEvent(
-                  "Forgot Password Click",
-                  "User Interaction",
-                  "Clicked Forgot Password",
-                  1
-                )
+                logEvent("Button Click", "User Interaction", "User Login", 1)
               }
+              className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
             >
-              Forgot Password?
+              Login
+            </button>
+          </form>
+
+          <div className="flex items-center my-6">
+            <div className="border-t border-gray-300 flex-grow"></div>
+            <span className="mx-3 text-gray-500 font-medium">or</span>
+            <div className="border-t border-gray-300 flex-grow"></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignin}
+            className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
+          >
+            <GoogleLogo />
+            <span className="font-medium text-gray-700">Login with Google</span>
+          </button>
+
+          <p className="mt-6 text-center text-sm text-gray-500">
+            Don&#39;t have an account?{" "}
+            <Link
+              href="../auth/selectRole"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Create Now
             </Link>
           </p>
-          <button
-            type="submit"
-            onClick={() =>
-              logEvent("Button Click", "User Interaction", "User Login", 1)
-            }
-            className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
-          >
-            Login
-          </button>
-        </form>
-
-        <div className="flex items-center my-6">
-          <div className="border-t border-gray-300 flex-grow"></div>
-          <span className="mx-3 text-gray-500 font-medium">or</span>
-          <div className="border-t border-gray-300 flex-grow"></div>
         </div>
-
-        <button
-          type="button"
-          onClick={handleGoogleSignin}
-          className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
-        >
-          <GoogleLogo />
-          <span className="font-medium text-gray-700">Login with Google</span>
-        </button>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Don&#39;t have an account?{" "}
-          <Link
-            href="../auth/selectRole"
-            className="text-blue-600 hover:underline font-medium"
-          >
-            Create Now
-          </Link>
-        </p>
       </div>
-    </div>
-    {/* Footer Section */}
-   <Footer />
-   </>
+      
+      <Footer />
+    </>
   );
 }
