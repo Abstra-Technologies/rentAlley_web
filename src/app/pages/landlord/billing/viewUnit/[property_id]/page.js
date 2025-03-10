@@ -179,12 +179,16 @@ export default function ViewUnits() {
                     )}
 
                     <div className="mt-4 flex flex-col gap-3">
-                      <Link href={`/pages/landlord/billingbillingHistory`}>
+                      <p>Unit ID: {unit?.unit_id}</p>
+
+                      <Link  href={`/pages/landlord/billing/billingHistory/${unit.unit_id}`}>
                         <button className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 transition">
                           Billing History
                         </button>
                       </Link>
-                      <Link href={`/pages/landlord/billing/createUnitBill/${unit.unit_id}`}>
+                      <Link
+                          href={`/pages/landlord/billing/createUnitBill/${unit.unit_id}`}
+                      >
                         <button className="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition">
                           Create Unit Bill
                         </button>

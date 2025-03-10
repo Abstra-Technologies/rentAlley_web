@@ -19,17 +19,32 @@ export default function TenantBilling({ }) {
 
   const {user} = useAuth();
 const tenant_id = user?.tenant_id;
+
+
   useEffect(() => {
     if (!tenant_id) return;
 
     const fetchBillingData = async () => {
       try {
         const res = await axios.get(`/api/tenant/billing/view?tenant_id=${tenant_id}`);
-        setBillingData(res.data.billings || []);
-        setMeterReadings(res.data.meterReadings || []);
+        const billings = res.data.billings || [];
+        const meterReadings = res.data.meterReadings || [];
+
+        // Get the current year and month
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1; // Months are 0-based in JS
+
+        // Filter billing data for the current month
+        const filteredBillings = billings.filter((bill) => {
+          const billDate = new Date(bill.billing_period);
+          return billDate.getFullYear() === currentYear && billDate.getMonth() + 1 === currentMonth;
+        });
+
+        setBillingData(filteredBillings);
+        setMeterReadings(meterReadings);
         setLoading(false);
       } catch (err) {
-        setError("Failed to fetch billing records.");
+        setError("No Billing Records Found.");
         setLoading(false);
       }
     };
@@ -116,7 +131,6 @@ const tenant_id = user?.tenant_id;
                     ))}
               </div>
 
-              <h2>Payment</h2>
               {bill.status === "unpaid" && (
                   <button
                       onClick={() => handlePayment(bill?.total_amount_due, bill?.billing_id)}

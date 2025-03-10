@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 import Swal from "sweetalert2";
+import useAuth from "../../../../../../../hooks/useSession";
 
 export default function CreateUnitBill() {
   const { unit_id } = useParams();
@@ -42,7 +43,7 @@ export default function CreateUnitBill() {
         const data = res.data;
 
         if (!data.unit || !data.property) {
-          throw new Error("Missing unit or property data");
+          new Error("Missing unit or property data");
         }
 
         setUnit(data.unit);
@@ -257,6 +258,9 @@ export default function CreateUnitBill() {
 
               {property.utility_billing_type === "submetered" && (
                 <>
+                  <label className="block text-gray-700 font-medium">
+                   Previous Water Meter Reading
+                  </label>
                   <input
                     type="number"
                     name="waterPrevReading"
@@ -265,6 +269,9 @@ export default function CreateUnitBill() {
                     onChange={handleChange}
                     className="mt-2 p-2 border rounded w-full"
                   />
+                  <label className="block text-gray-700 font-medium">
+                    Current Water Meter Reading
+                  </label>
                   <input
                     type="number"
                     name="waterCurrentReading"
@@ -273,6 +280,9 @@ export default function CreateUnitBill() {
                     onChange={handleChange}
                     className="mt-2 p-2 border rounded w-full"
                   />
+                  <label className="block text-gray-700 font-medium">
+                   Previous Electricity Meter Reading
+                  </label>
                   <input
                     type="number"
                     name="electricityPrevReading"
@@ -281,6 +291,9 @@ export default function CreateUnitBill() {
                     onChange={handleChange}
                     className="mt-2 p-2 border rounded w-full"
                   />
+                  <label className="block text-gray-700 font-medium">
+                    Current Electricity Meter Reading
+                  </label>
                   <input
                     type="number"
                     name="electricityCurrentReading"
@@ -318,6 +331,19 @@ export default function CreateUnitBill() {
           {/* Step 2: Rent, Late Fees, and Dues */}
           {step === 2 && (
             <>
+              <div className="mt-2">
+                <label className="block text-gray-700 font-medium">
+                  Billing Due Date
+                </label>
+                <input
+                    type="date"
+                    name="dueDate"
+                    placeholder="Due Date"
+                    value={form.dueDate}
+                    onChange={handleChange}
+                    className="p-2 border rounded w-full"
+                />
+              </div>
               <div className="mt-2">
                 <label className="block text-gray-700 font-medium">
                   Rent Amount
@@ -388,19 +414,6 @@ export default function CreateUnitBill() {
                 />
               </div>
 
-              <div className="mt-2">
-                <label className="block text-gray-700 font-medium">
-                  Due Date
-                </label>
-                <input
-                  type="date"
-                  name="dueDate"
-                  placeholder="Due Date"
-                  value={form.dueDate}
-                  onChange={handleChange}
-                  className="p-2 border rounded w-full"
-                />
-              </div>
             </>
           )}
 
