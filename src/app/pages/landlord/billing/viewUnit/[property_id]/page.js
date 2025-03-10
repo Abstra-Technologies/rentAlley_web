@@ -186,18 +186,19 @@ export default function ViewUnits() {
                           Billing History
                         </button>
                       </Link>
-                      <Link
-                          href={`/pages/landlord/billing/createUnitBill/${unit.unit_id}`}
-                      >
-                        <button className="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition">
-                          Create Unit Bill
-                        </button>
-                      </Link>
-                      <Link href={`/pages/landlord/billing/editUnitBill/${unit.unit_id}`}>
-                        <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-yellow-700 transition">
-                          Edit Unit Bill
-                        </button>
-                      </Link>
+                      {unit.hasBillForThisMonth ? (
+                          <Link href={`/pages/landlord/billing/editUnitBill/${unit.unit_id}`}>
+                            <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-yellow-700 transition">
+                              Edit Unit Bill
+                            </button>
+                          </Link>
+                      ) : (
+                          <Link href={`/pages/landlord/billing/createUnitBill/${unit.unit_id}`}>
+                            <button className="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition">
+                              Create Unit Bill
+                            </button>
+                          </Link>
+                      )}
                     </div>
                   </div>
               ))
