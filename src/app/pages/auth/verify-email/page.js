@@ -1,14 +1,14 @@
-'use client';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+"use client";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TIMER_DURATION = 10 * 60; // 10 minutes in seconds
 
 export default function VerifyOTP() {
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const router = useRouter();
@@ -16,7 +16,9 @@ export default function VerifyOTP() {
   useEffect(() => {
     const storedExpiry = sessionStorage.getItem("otp_timer_expiry");
     if (storedExpiry) {
-      const remainingTime = Math.floor((parseInt(storedExpiry) - Date.now()) / 1000);
+      const remainingTime = Math.floor(
+        (parseInt(storedExpiry) - Date.now()) / 1000
+      );
       if (remainingTime > 0) {
         setTimeLeft(remainingTime);
         return;
@@ -42,7 +44,10 @@ export default function VerifyOTP() {
 
   const resetTimer = () => {
     setTimeLeft(TIMER_DURATION);
-    sessionStorage.setItem("otp_timer_expiry", Date.now() + TIMER_DURATION * 1000);
+    sessionStorage.setItem(
+      "otp_timer_expiry",
+      Date.now() + TIMER_DURATION * 1000
+    );
   };
 
   const formatTime = (seconds) => {
@@ -58,18 +63,22 @@ export default function VerifyOTP() {
     }
     setLoading(true);
     try {
-      const response = await axios.post('/api/auth/verify-otp', { otp }, { withCredentials: true });
+      const response = await axios.post(
+        "/api/auth/verify-otp",
+        { otp },
+        { withCredentials: true }
+      );
       toast.success(response.data.message);
       const userType = response.data.userType;
       setTimeout(() => {
         if (userType === "tenant") {
-          router.push('/pages/tenant/dashboard');
+          router.push("/");
         } else if (userType === "landlord") {
-          router.push('/pages/landlord/dashboard');
+          router.push("/pages/landlord/dashboard");
         }
       }, 2000);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'OTP verification failed');
+      toast.error(error.response?.data?.message || "OTP verification failed");
     }
     setLoading(false);
   };
@@ -78,53 +87,59 @@ export default function VerifyOTP() {
     if (timeLeft > 0) return;
     setLoading(true);
     try {
-      await axios.post('/api/auth/resend-otp');
+      await axios.post("/api/auth/resend-otp");
       toast.info("New OTP sent. Check your email.");
       resetTimer();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to resend OTP');
+      toast.error(error.response?.data?.message || "Failed to resend OTP");
     }
     setLoading(false);
   };
 
   return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <ToastContainer />
-        <div className="bg-white p-6 rounded-lg shadow-md w-96">
-          <h2 className="text-2xl font-bold mb-4 text-center">Verify Your Email</h2>
-          <p className="text-gray-600 text-sm text-center mb-4">
-            Enter the 6-digit OTP sent to your email.
+    <div className="flex justify-center items-center h-screen bg-gray-100">
+      <ToastContainer />
+      <div className="bg-white p-6 rounded-lg shadow-md w-96">
+        <h2 className="text-2xl font-bold mb-4 text-center">
+          Verify Your Email
+        </h2>
+        <p className="text-gray-600 text-sm text-center mb-4">
+          Enter the 6-digit OTP sent to your email.
+        </p>
+        <input
+          type="text"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          placeholder="Enter OTP"
+          className="w-full p-2 border rounded-md mb-2 text-center"
+          maxLength="6"
+          required
+        />
+        <button
+          onClick={handleVerify}
+          className="w-full p-2 bg-blue-600 text-white rounded-md"
+          disabled={loading}
+        >
+          {loading ? "Verifying..." : "Verify OTP"}
+        </button>
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600">Didn't receive the OTP?</p>
+          <p className="text-sm text-gray-600 mb-2">
+            Resend available in: {formatTime(timeLeft)}
           </p>
-          <input
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="Enter OTP"
-              className="w-full p-2 border rounded-md mb-2 text-center"
-              maxLength="6"
-              required
-          />
           <button
-              onClick={handleVerify}
-              className="w-full p-2 bg-blue-600 text-white rounded-md"
-              disabled={loading}
+            onClick={handleResendOTP}
+            className={`text-sm text-white p-2 rounded-md ${
+              loading || timeLeft > 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
+            disabled={loading || timeLeft > 0}
           >
-            {loading ? 'Verifying...' : 'Verify OTP'}
+            {loading ? "Resending..." : "Resend OTP"}
           </button>
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">Didn't receive the OTP?</p>
-            <p className="text-sm text-gray-600 mb-2">Resend available in: {formatTime(timeLeft)}</p>
-            <button
-                onClick={handleResendOTP}
-                className={`text-sm text-white p-2 rounded-md ${
-                  loading || timeLeft > 0 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
-                }`}
-                disabled={loading || timeLeft > 0}
-            >
-              {loading ? 'Resending...' : 'Resend OTP'}
-            </button>
-          </div>
         </div>
       </div>
+    </div>
   );
 }
