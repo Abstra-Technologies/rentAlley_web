@@ -27,9 +27,7 @@ export default function Login() {
     window.history.pushState(null, "", "/pages/auth/login");
     window.history.replaceState(null, "", "/pages/auth/login");
     if (user || admin) {
-      router.replace(
-        user ? "/pages/tenant/dashboard" : "/pages/admin/dashboard"
-      );
+      router.replace(user ? "/" : "/pages/admin/dashboard");
     }
   }, [user, admin]);
 
@@ -80,7 +78,7 @@ export default function Login() {
         router.push("/pages/auth/google-login-error");
         return;
       }
-      
+
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
@@ -258,7 +256,7 @@ export default function Login() {
           </p>
         </div>
       </div>
-      
+
       <Footer />
     </>
   );
