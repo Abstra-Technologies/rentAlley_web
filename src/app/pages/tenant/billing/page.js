@@ -11,7 +11,7 @@ import useAuth from "../../../../../hooks/useSession";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 
-export default function TenantBilling({ }) {
+export default function TenantBilling({}) {
   const [billingData, setBillingData] = useState([]);
   const [meterReadings, setMeterReadings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +27,9 @@ export default function TenantBilling({ }) {
 
     const fetchBillingData = async () => {
       try {
-        const res = await axios.get(`/api/tenant/billing/view?tenant_id=${tenant_id}`);
+        const res = await axios.get(
+          `/api/tenant/billing/view?tenant_id=${tenant_id}`
+        );
         const billings = res.data.billings || [];
         const meterReadings = res.data.meterReadings || [];
 
@@ -36,7 +38,10 @@ export default function TenantBilling({ }) {
 
         const filteredBillings = billings.filter((bill) => {
           const billDate = new Date(bill.billing_period);
-          return billDate.getFullYear() === currentYear && billDate.getMonth() + 1 === currentMonth;
+          return (
+            billDate.getFullYear() === currentYear &&
+            billDate.getMonth() + 1 === currentMonth
+          );
         });
 
         setBillingData(filteredBillings);
@@ -90,24 +95,34 @@ export default function TenantBilling({ }) {
   };
 
   const handlePaymentOptions = () => {
-    router.push("/pages/payment/selectPaymentMethod");
+    router.push("/pages/payment/proofOfPayment");
   };
 
-  if (loading) return <p className="text-gray-500">Loading billing records...</p>;
+  if (loading)
+    return <p className="text-gray-500">Loading billing records...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
-  if (billingData.length === 0) return <p className="text-gray-500">No billing records found.</p>;
+  if (billingData.length === 0)
+    return <p className="text-gray-500">No billing records found.</p>;
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Your Current Billing</h1>
       {billingData.map((bill) => (
-        <div key={bill.billing_id} className="p-4 border rounded-lg bg-white shadow-md mb-4">
+        <div
+          key={bill.billing_id}
+          className="p-4 border rounded-lg bg-white shadow-md mb-4"
+        >
           <p>Billing DATA: {bill?.billing_id}</p>
           <h2 className="text-lg font-semibold">
             {bill.unit_name} - {bill.billing_period}
           </h2>
-          <p className="text-gray-600">Status: <span className="font-bold">{bill.status}</span></p>
-          <p className="text-gray-600">Total Amount Due: <span className="font-bold">₱{bill.total_amount_due}</span></p>
+          <p className="text-gray-600">
+            Status: <span className="font-bold">{bill.status}</span>
+          </p>
+          <p className="text-gray-600">
+            Total Amount Due:{" "}
+            <span className="font-bold">₱{bill.total_amount_due}</span>
+          </p>
           <p className="text-gray-600">Due Date: {bill.due_date}</p>
           {bill.paid_at ? (
             <p className="text-green-600">Paid on: {bill.paid_at}</p>
@@ -120,8 +135,13 @@ export default function TenantBilling({ }) {
             {meterReadings
               .filter((reading) => reading.unit_id === bill.unit_id)
               .map((reading, index) => (
-                <div key={index} className="mt-2 p-2 border bg-gray-100 rounded-lg">
-                  <p className="text-gray-700">Utility: {reading.utility_type.toUpperCase()}</p>
+                <div
+                  key={index}
+                  className="mt-2 p-2 border bg-gray-100 rounded-lg"
+                >
+                  <p className="text-gray-700">
+                    Utility: {reading.utility_type.toUpperCase()}
+                  </p>
                   <p>Previous Reading: {reading.previous_reading}</p>
                   <p>Current Reading: {reading.current_reading}</p>
                   <p>Reading Date: {reading.reading_date}</p>
@@ -132,7 +152,9 @@ export default function TenantBilling({ }) {
           {bill.status === "unpaid" && (
             <div className="mt-4 space-y-2">
               <button
-                onClick={() => handleMayaPayment(bill?.total_amount_due, bill?.billing_id)}
+                onClick={() =>
+                  handleMayaPayment(bill?.total_amount_due, bill?.billing_id)
+                }
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 Pay Now via Maya
