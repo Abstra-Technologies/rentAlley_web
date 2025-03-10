@@ -17,7 +17,12 @@ export default function ProfilePage() {
   const { user, loading, error } = useAuthStore();
   const router = useRouter();
 
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState({
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    email: "",
+  });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedFile, setSelectedFile] = useState(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -272,9 +277,7 @@ export default function ProfilePage() {
                 <p className="text-green-600 font-bold">✅ Verified</p>
               ) : verificationStatus === "not verified" ? (
                 <div>
-                  <p className="text-red-600 font-bold">
-                    Not Yet Verified
-                  </p>
+                  <p className="text-red-600 font-bold">Not Yet Verified</p>
                   <button
                     className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     onClick={() => router.push("/pages/landlord/verification")}
@@ -316,6 +319,7 @@ export default function ProfilePage() {
                   type="text"
                   value={profileData?.firstName}
                   className="text-gray-400 w-full p-2 border rounded-md"
+                  readOnly
                 />
               )}
             </div>
@@ -336,6 +340,7 @@ export default function ProfilePage() {
                   type="text"
                   value={profileData?.lastName}
                   className="text-gray-400 w-full p-2 border rounded-md"
+                  readOnly
                 />
               )}
             </div>
@@ -347,6 +352,7 @@ export default function ProfilePage() {
                 type="text"
                 value={profileData?.email}
                 className="text-gray-400 w-full p-2 border rounded-md"
+                readOnly
               />
             </div>
             <div>
@@ -360,6 +366,7 @@ export default function ProfilePage() {
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   className="w-full p-2 border rounded-md"
+                  readOnly
                 />
               ) : (
                 <input
@@ -367,6 +374,7 @@ export default function ProfilePage() {
                   name="phoneNumber"
                   value={profileData?.phoneNumber || "Not provided"}
                   className="text-gray-400 w-full p-2 border rounded-md"
+                  readOnly
                 />
               )}
             </div>
@@ -378,6 +386,7 @@ export default function ProfilePage() {
                 type="text"
                 value={user.userType}
                 className="text-gray-400 w-full p-2 border rounded-md"
+                readOnly
               />
             </div>
           </div>
