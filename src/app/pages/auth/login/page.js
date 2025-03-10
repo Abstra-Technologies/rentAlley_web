@@ -80,7 +80,7 @@ export default function Login() {
         router.push("/pages/auth/google-login-error");
         return;
       }
-      // If successful, the API should handle the redirection
+      
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
@@ -258,7 +258,7 @@ export default function Login() {
           </p>
         </div>
       </div>
-      {/* Footer Section */}
+      
       <Footer />
     </>
   );
