@@ -152,15 +152,17 @@ export default function UnitDetailPage() {
 
         {/* Right: Inquiry Booking, and Sending Message */}
         <div className="bg-white p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Book This Unit
-          </h3>
-          <InquiryBooking
-            tenant_id={user?.tenant_id}
-            unit_id={unit?.unit_id}
-            rent_amount={unit?.rent_amount}
-            landlord_id={unit?.landlord_id}
-          />
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Book This Unit</h3>
+          {user && user.tenant_id ? (
+            <InquiryBooking
+              tenant_id={user.tenant_id}
+              unit_id={unit?.unit_id}
+              rent_amount={unit?.rent_amount}
+              landlord_id={unit?.landlord_id}
+            />
+          ) : (
+            <p className="text-red-500">You must be logged in as a tenant to book this unit.</p>
+          )}
         </div>
       </div>
       {/* Reviews Section - Added Below Unit Details */}
