@@ -5,6 +5,7 @@ import Link from "next/link";
 import axios from "axios";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 import LoadingScreen from "../../../../../../components/loadingScreen";
+import Swal from "sweetalert2";
 
 export default function ViewUnits() {
   const { property_id } = useParams();
@@ -12,9 +13,9 @@ export default function ViewUnits() {
   const [units, setUnits] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isAlreadyFilled, setIsAlreadyFilled] = useState(false);
   const [billingData, setBillingData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [hasBillingForMonth, setHasBillingForMonth] = useState(false);
 
   const [billingForm, setBillingForm] = useState({
     billingPeriod: "",
@@ -74,23 +75,26 @@ export default function ViewUnits() {
 
         if (response.data.billingData && response.data.billingData.length > 0) {
           setBillingData(response.data.billingData);
-          setIsEditing(true);
+          setHasBillingForMonth(true);
           setBillingForm({
             billingPeriod: response.data.billingData[0]?.billing_period || "",
-            electricityTotal: response.data.billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "",
-            electricityRate: response.data.billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "",
-            waterTotal: response.data.billingData.find(b => b.utility_type === "water")?.total_billed_amount || "",
-            waterRate: response.data.billingData.find(b => b.utility_type === "water")?.rate_consumed || "",
+            electricityTotal:
+                response.data.billingData.find((b) => b.utility_type === "electricity")?.total_billed_amount || "",
+            electricityRate:
+                response.data.billingData.find((b) => b.utility_type === "electricity")?.rate_consumed || "",
+            waterTotal:
+                response.data.billingData.find((b) => b.utility_type === "water")?.total_billed_amount || "",
+            waterRate:
+                response.data.billingData.find((b) => b.utility_type === "water")?.rate_consumed || "",
           });
         } else {
           setBillingData(null);
-          setIsEditing(false);
+          setHasBillingForMonth(false);
         }
       } catch (error) {
         console.error("Failed to fetch billing data:", error.response?.data || error.message);
       }
     }
-
     fetchBillingData();
     fetchData();
   }, [property_id]);
@@ -100,34 +104,36 @@ export default function ViewUnits() {
     setBillingForm({ ...billingForm, [name]: value });
   };
 
-  const handleSaveBilling = async (e) => {
+  const handleSaveOrUpdateBilling = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        "/api/landlord/billing/saveConcessionaireBilling",
-        {
+      const url = hasBillingForMonth
+          ? "/api/landlord/billing/updateConcessionaireBilling"
+          : "/api/landlord/billing/saveConcessionaireBilling";
+
+      const response = await axios({
+        method: hasBillingForMonth ? "PUT" : "POST",
+        url: url,
+        data: {
           property_id,
           ...billingForm,
-        }
-      );
+        },
+      });
 
-      console.log("Billing saved successfully:", response.data);
-
-      Swal.fire({
+      await Swal.fire({
         icon: "success",
         title: "Success!",
-        text: "Billing information saved successfully.",
+        text: hasBillingForMonth
+            ? "Billing information updated successfully."
+            : "Billing information saved successfully.",
         confirmButtonColor: "#3085d6",
         confirmButtonText: "OK",
       });
 
+      setIsEditing(false);
       setIsModalOpen(false);
     } catch (error) {
-      console.error(
-        "Error saving billing:",
-        error.response?.data || error.message
-      );
-
+      console.error("Error saving billing:", error.response?.data || error.message);
       Swal.fire({
         icon: "error",
         title: "Error!",
@@ -245,16 +251,16 @@ export default function ViewUnits() {
 
 
 
-                <form className="space-y-4" onSubmit={handleSaveBilling}>
+                <form className="space-y-4" onSubmit={handleSaveOrUpdateBilling}>
                   <div>
                     <label className="block text-gray-700 font-medium">
                       Billing Period (Date)
                     </label>
                     <input
-                        type="date"
                         name="billingPeriod"
                         value={billingForm.billingPeriod}
                         onChange={handleInputChange}
+                        disabled
                         className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
                     />
                   </div>

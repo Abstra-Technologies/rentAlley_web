@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import useAuthStore from "../../zustand/authStore"; // Zustand auth store
+import useAuthStore from "../../zustand/authStore";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
