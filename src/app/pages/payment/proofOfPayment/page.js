@@ -1,12 +1,23 @@
 "use client";
+import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 
 const PaymentForm = () => {
+  const searchParams = useSearchParams();
+  const agreement_id = searchParams.get("agreement_id");
+  const queryAmount = searchParams.get("amountPaid");
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [amountPaid, setAmountPaid] = useState("");
+  const [amountPaid, setAmountPaid] = useState(queryAmount);
   const [file, setFile] = useState(null);
+  const [paymentType, setPaymentType] = useState("");
+
+  useEffect(() => {
+    if (queryAmount) {
+      setAmountPaid(queryAmount);
+    }
+  }, [queryAmount]);
 
   useEffect(() => {
     const fetchPaymentMethods = async () => {
@@ -15,7 +26,10 @@ const PaymentForm = () => {
         const data = await response.json();
         console.log("Fetched Payment Methods:", data);
         if (data.success) {
-          setPaymentMethods(data.paymentMethods);
+          const filteredMethods = data.paymentMethods.filter(
+            (method) => method.method_name.toLowerCase() !== "maya"
+          );
+          setPaymentMethods(filteredMethods);
         }
       } catch (error) {
         console.error("Failed to fetch payment methods:", error);
@@ -39,6 +53,8 @@ const PaymentForm = () => {
     const formData = new FormData();
     formData.append("paymentMethod", paymentMethod);
     formData.append("amountPaid", amountPaid);
+    formData.append("agreement_id", agreement_id);
+    formData.append("paymentType", paymentType);
 
     if (file) {
       formData.append("proof", file);
@@ -63,6 +79,23 @@ const PaymentForm = () => {
       className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md space-y-4"
     >
       <label className="block text-sm font-medium text-gray-700">
+        Payment Type:
+      </label>
+      <select
+        value={paymentType}
+        onChange={(e) => setPaymentType(e.target.value)}
+        required
+        className="w-full border border-gray-300 p-2 rounded-lg focus:ring focus:ring-blue-200"
+      >
+        <option value="" disabled>
+          Select payment type
+        </option>
+        <option value="billing">Billing</option>
+        <option value="security_deposit">Security Deposit</option>
+        <option value="advance_rent">Advance Rent</option>
+      </select>
+
+      <label className="block text-sm font-medium text-gray-700">
         Payment Method:
       </label>
       <select
@@ -71,7 +104,9 @@ const PaymentForm = () => {
         required
         className="w-full border border-gray-300 p-2 rounded-lg focus:ring focus:ring-blue-200"
       >
-        <option value="">Select a method</option>
+        <option value="" disabled>
+          Select a method
+        </option>
         {paymentMethods.map((method, index) => (
           <option key={method.method_id || index} value={method.method_id}>
             {method.method_name}
@@ -79,16 +114,14 @@ const PaymentForm = () => {
         ))}
       </select>
 
-      <label className="block text-sm font-medium text-gray-700">
-        Amount Paid:
-      </label>
-      <input
-        type="number"
-        value={amountPaid}
-        onChange={(e) => setAmountPaid(e.target.value)}
-        required
-        className="w-full border border-gray-300 p-2 rounded-lg focus:ring focus:ring-blue-200"
-      />
+      <div className="flex justify-between items-center border border-gray-300 p-2 rounded-lg">
+        <label className="text-sm font-medium text-gray-700">
+          Amount Paid:
+        </label>
+        <span className="text-gray-900 font-semibold">
+          {amountPaid || "0.00"}
+        </span>
+      </div>
 
       {["2", "3", "4"].includes(paymentMethod) && (
         <div

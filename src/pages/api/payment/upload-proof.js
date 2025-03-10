@@ -13,8 +13,8 @@ export const config = {
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   },
 });
 
@@ -68,10 +68,19 @@ export default async function handler(req, res) {
         .json({ error: "File parsing error", message: err.message });
     }
 
-    const { agreement_id, paymentMethod, amountPaid } = fields;
+    const { agreement_id, paymentMethod, amountPaid, paymentType } = fields;
 
-    if (!agreement_id || !paymentMethod || !amountPaid) {
+    console.log("Fields", fields);
+
+    // Validate input
+    if (!agreement_id || !paymentMethod || !amountPaid || !paymentType) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (
+      !["billing", "security_deposit", "advance_rent"].includes(paymentType)
+    ) {
+      return res.status(400).json({ error: "Invalid payment type" });
     }
 
     let connection;
@@ -82,7 +91,8 @@ export default async function handler(req, res) {
       const proofFile = files.proof || null;
       let proofUrl = null;
 
-      // Only require proof for payment methods 2, 3, 4
+      const requestReferenceNumber = `PAY-${Date.now()}-${paymentType.toUpperCase()}`;
+
       if (["2", "3", "4"].includes(paymentMethod)) {
         if (!proofFile) {
           return res
@@ -95,13 +105,15 @@ export default async function handler(req, res) {
       const query = `
         INSERT INTO Payment 
         (agreement_id, payment_type, amount_paid, payment_method_id, payment_status, proof_of_payment, created_at, updated_at) 
-        VALUES (?, 'billing', ?, ?, 'pending', ?, NOW(), NOW())`;
+        VALUES (?, ?, ?, ?, 'pending', ?, NOW(), NOW())`;
 
       await connection.execute(query, [
         agreement_id,
+        paymentType,
         amountPaid,
         paymentMethod,
         proofUrl,
+        requestReferenceNumber,
       ]);
       await connection.commit();
 
