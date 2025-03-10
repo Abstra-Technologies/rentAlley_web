@@ -357,7 +357,7 @@ export default function MyUnit() {
 
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Other Payment Option</h3>
               <button
-                onClick={() => router.push("/pages/payment/other-options")}
+                onClick={() => router.push(`/pages/payment/proofOfPayment?agreement_id=${unit.agreement_id}`)}
                 className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
               >
                 <div className="flex items-center">

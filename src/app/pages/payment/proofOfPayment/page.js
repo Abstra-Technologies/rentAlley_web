@@ -2,16 +2,22 @@
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
+import { useRouter } from "next/navigation";
 
 const PaymentForm = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const agreement_id = searchParams.get("agreement_id");
-  const queryAmount = searchParams.get("amountPaid");
+  const agreement_id = searchParams.get("agreement_id") || "";
+  const queryAmount = searchParams.get("amountPaid") || "";
+  
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [amountPaid, setAmountPaid] = useState(queryAmount);
+  const [amountPaid, setAmountPaid] = useState(queryAmount || "");
   const [file, setFile] = useState(null);
   const [paymentType, setPaymentType] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     if (queryAmount) {
@@ -33,6 +39,7 @@ const PaymentForm = () => {
         }
       } catch (error) {
         console.error("Failed to fetch payment methods:", error);
+        setError("Failed to load payment methods");
       }
     };
     fetchPaymentMethods();
@@ -44,32 +51,76 @@ const PaymentForm = () => {
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
-    accept: "image/*",
+    accept: {
+      'image/*': []
+    },
+    maxSize: 10485760, // 10MB
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+    setSuccessMessage("");
+  
+    if (!agreement_id) {
+      setError("Missing agreement ID. Please go back and try again.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!amountPaid || amountPaid === "null" || amountPaid === "") {
+      setError("Please enter a valid payment amount");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate payment type
+    if (!["billing", "security_deposit", "advance_rent"].includes(paymentType)) {
+      setError("Invalid payment type");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate proof file for certain payment methods
+    if (["2", "3", "4"].includes(paymentMethod) && !file) {
+      setError("Proof of payment is required for this method");
+      setIsSubmitting(false);
+      return;
+    }
 
     const formData = new FormData();
+    formData.append("agreement_id", agreement_id);
     formData.append("paymentMethod", paymentMethod);
     formData.append("amountPaid", amountPaid);
-    formData.append("agreement_id", agreement_id);
     formData.append("paymentType", paymentType);
 
     if (file) {
       formData.append("proof", file);
     }
 
-    const response = await fetch("/api/payment/upload-proof", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("/api/payment/upload-proof", {
+        method: "POST",
+        body: formData,
+      });
 
-    const data = await response.json();
-    if (response.ok) {
-      alert("Payment proof uploaded successfully!");
-    } else {
-      alert(`Error: ${data.error || "Failed to upload proof"}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setSuccessMessage("Payment proof uploaded successfully!");
+        // Redirect after success
+        setTimeout(() => {
+          router.push("/pages/tenant/my-unit");
+        }, 2000);
+      } else {
+        setError(`Error: ${data.error || "Failed to upload proof"}`);
+      }
+    } catch (error) {
+      setError("An unexpected error occurred");
+      console.error("Error submitting payment:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -78,6 +129,18 @@ const PaymentForm = () => {
       onSubmit={handleSubmit}
       className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md space-y-4"
     >
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+          <p>{error}</p>
+        </div>
+      )}
+      
+      {successMessage && (
+        <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
+          <p>{successMessage}</p>
+        </div>
+      )}
+
       <label className="block text-sm font-medium text-gray-700">
         Payment Type:
       </label>
@@ -114,13 +177,18 @@ const PaymentForm = () => {
         ))}
       </select>
 
-      <div className="flex justify-between items-center border border-gray-300 p-2 rounded-lg">
-        <label className="text-sm font-medium text-gray-700">
+        <div className="space-y-1">
+        <label className="block text-sm font-medium text-gray-700">
           Amount Paid:
         </label>
-        <span className="text-gray-900 font-semibold">
-          {amountPaid || "0.00"}
-        </span>
+        <input
+          type="number"
+          value={amountPaid}
+          onChange={(e) => setAmountPaid(e.target.value)}
+          required
+          placeholder="Enter amount"
+          className="w-full border border-gray-300 p-2 rounded-lg focus:ring focus:ring-blue-200"
+        />
       </div>
 
       {["2", "3", "4"].includes(paymentMethod) && (
@@ -141,9 +209,12 @@ const PaymentForm = () => {
 
       <button
         type="submit"
-        className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
+        disabled={isSubmitting}
+        className={`w-full ${
+          isSubmitting ? "bg-gray-400" : "bg-blue-500 hover:bg-blue-600"
+        } text-white py-2 rounded-lg transition`}
       >
-        Submit Payment
+        {isSubmitting ? "Submitting..." : "Submit Payment"}
       </button>
     </form>
   );

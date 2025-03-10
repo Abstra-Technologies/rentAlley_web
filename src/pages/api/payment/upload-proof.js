@@ -68,19 +68,29 @@ export default async function handler(req, res) {
         .json({ error: "File parsing error", message: err.message });
     }
 
-    const { agreement_id, paymentMethod, amountPaid, paymentType } = fields;
+    // Formidable returns fields as arrays, so extract the first element
+    const agreement_id = fields.agreement_id?.[0];
+    const paymentMethod = fields.paymentMethod?.[0];
+    const amountPaid = fields.amountPaid?.[0];
+    const paymentType = fields.paymentType?.[0];
 
-    console.log("Fields", fields);
+    console.log("Received fields:", { agreement_id, paymentMethod, amountPaid, paymentType });
 
     // Validate input
     if (!agreement_id || !paymentMethod || !amountPaid || !paymentType) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({ 
+        error: "Missing required fields",
+        received: { agreement_id, paymentMethod, amountPaid, paymentType }
+      });
     }
 
-    if (
-      !["billing", "security_deposit", "advance_rent"].includes(paymentType)
-    ) {
-      return res.status(400).json({ error: "Invalid payment type" });
+    // Validate payment type against database enum
+    if (!["billing", "security_deposit", "advance_rent"].includes(paymentType)) {
+      return res.status(400).json({ 
+        error: "Invalid payment type", 
+        received: paymentType,
+        allowed: ["billing", "security_deposit", "advance_rent"]
+      });
     }
 
     let connection;
@@ -88,11 +98,13 @@ export default async function handler(req, res) {
       connection = await db.getConnection();
       await connection.beginTransaction();
 
-      const proofFile = files.proof || null;
+      const proofFile = files.proof?.[0] || null;
       let proofUrl = null;
 
-      const requestReferenceNumber = `PAY-${Date.now()}-${paymentType.toUpperCase()}`;
+      // Generate receipt reference number
+      const receiptReferenceNumber = `PAY-${Date.now()}-${paymentType.toUpperCase()}`;
 
+      // Check if proof is required for this payment method
       if (["2", "3", "4"].includes(paymentMethod)) {
         if (!proofFile) {
           return res
@@ -102,24 +114,34 @@ export default async function handler(req, res) {
         proofUrl = await uploadToS3(proofFile, "proofOfPayment");
       }
 
+      // SQL query for inserting payment
       const query = `
         INSERT INTO Payment 
-        (agreement_id, payment_type, amount_paid, payment_method_id, payment_status, proof_of_payment, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, 'pending', ?, NOW(), NOW())`;
+        (agreement_id, payment_type, amount_paid, payment_method_id, 
+         payment_status, proof_of_payment, receipt_reference, 
+         created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'pending', ?, ?, NOW(), NOW())`;
 
-      await connection.execute(query, [
+      const result = await connection.execute(query, [
         agreement_id,
         paymentType,
         amountPaid,
         paymentMethod,
         proofUrl,
-        requestReferenceNumber,
+        receiptReferenceNumber
       ]);
+
       await connection.commit();
 
-      res.status(201).json({ message: "Payment proof uploaded successfully." });
+      console.log("Payment inserted successfully:", result);
+      
+      res.status(201).json({ 
+        message: "Payment proof uploaded successfully.",
+        receiptReference: receiptReferenceNumber 
+      });
     } catch (error) {
       if (connection) await connection.rollback();
+      console.error("Database error:", error);
       res
         .status(500)
         .json({ error: "Internal server error", message: error.message });
