@@ -29,7 +29,6 @@ export default function TenantDashboard() {
     };
 
     fetchData();
-
   }, [user?.tenant_id]);
 
   useEffect(() => {
@@ -47,7 +46,7 @@ export default function TenantDashboard() {
   return (
     <TenantLayout>
       <div>
-        <h1  className='text-3xl'>
+        <h1 className="text-3xl">
           Welcome, {user?.firstName} {user?.lastName}!
         </h1>
 
@@ -66,10 +65,10 @@ export default function TenantDashboard() {
 
         {/* Other Tenant Dashboard Components */}
         <div className="mt-6">
-          <Announcements userType={user?.userType} />
+          <Announcements />
         </div>
         <div>
-        <TenantPropertyChart/>
+          <TenantPropertyChart />
         </div>
       </div>
     </TenantLayout>

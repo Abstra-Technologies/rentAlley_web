@@ -53,16 +53,6 @@ export default function LeaseAgreementWidget({ tenant_id }) {
           {lease?.status.toUpperCase() || "N/A"}
         </span>
       </p>
-      {lease?.agreement_url && (
-        <a
-          href={lease?.agreement_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 underline mt-2 block"
-        >
-          View Lease Agreement
-        </a>
-      )}
     </div>
   );
 }
