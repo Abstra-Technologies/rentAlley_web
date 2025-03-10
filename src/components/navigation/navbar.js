@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CiBellOn } from "react-icons/ci";
 import useAuth from "../../../hooks/useSession";
+import axios from "axios";
 
 const Navbar = () => {
   const { user, admin, loading, signOut, signOutAdmin } = useAuth();
@@ -12,17 +13,35 @@ const Navbar = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasLease, setHasLease] = useState(null);
 
-  // Refs for detecting clicks outside
+
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
-  // Fetch notifications function
-  const fetchNotifications = async () => {
-    if (!user && !admin) return; // Don't fetch if no user/admin
+  useEffect(() => {
+    if (user?.userType === "tenant" && user?.tenant_id) {
+      const fetchLeaseStatus = async () => {
+        try {
+          const res = await axios.get(`/api/leaseAgreement/checkLease?tenant_id=${user.tenant_id}`);
+          setHasLease(res.data.hasLease);
+        } catch (error) {
+          console.error("Error fetching lease status:", error);
+          setHasLease(false);
+        }
+      };
+  
+      fetchLeaseStatus();
+    }
+  }, [user?.tenant_id]); 
+  
+  
 
-    const userId = user?.user_id || admin?.admin_id; // Use optional chaining
+  const fetchNotifications = async () => {
+    if (!user && !admin) return; 
+
+    const userId = user?.user_id || admin?.admin_id; 
     if (!userId) return;
 
     try {
@@ -40,30 +59,30 @@ const Navbar = () => {
     }
   };
 
-  //to fetch notifications on component mount and set interval
+ 
   useEffect(() => {
     fetchNotifications();
 
-    const intervalId = setInterval(fetchNotifications, 5000); // 5 seconds
+    const intervalId = setInterval(fetchNotifications, 5000); 
 
     return () => clearInterval(intervalId);
   }, [user, admin]);
 
-  //to calculate unread count whenever notifications change
+
   useEffect(() => {
     const count = notifications.filter((notif) => !notif.is_read).length;
     setUnreadCount(count);
   }, [notifications]);
 
-  // Close dropdowns when clicking outside
+ 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Close profile dropdown if clicked outside
+
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
 
-      // Close notifications if clicked outside
+
       if (
         notificationRef.current &&
         !notificationRef.current.contains(event.target)
@@ -71,7 +90,7 @@ const Navbar = () => {
         setNotifOpen(false);
       }
 
-      // Close mobile menu if clicked outside
+
       if (
         mobileMenuRef.current &&
         !mobileMenuRef.current.contains(event.target) &&
@@ -106,7 +125,7 @@ const Navbar = () => {
     setDropdownOpen(false);
   };
 
-  // Function to determine navigation links based on user type
+
   const getNavigationLinks = () => {
     if (admin) {
       return [{ href: "/pages/system_admin/dashboard", label: "Dashboard" }];
@@ -142,7 +161,7 @@ const Navbar = () => {
   const navigationLinks = getNavigationLinks();
 
   const markAllAsRead = async () => {
-    // Mark all notifications as read in the database
+
     for (const notification of notifications) {
       if (!notification.is_read) {
         try {
@@ -174,7 +193,7 @@ const Navbar = () => {
     <nav className="bg-gradient-to-r from-blue-700 to-blue-500 text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+
           <Link
             href={
               user?.userType === "tenant"
@@ -189,7 +208,7 @@ const Navbar = () => {
             <span>Rentahan</span>
           </Link>
 
-          {/* Desktop Navigation Links */}
+
           <div className="hidden md:flex space-x-6 ml-auto mr-6">
             {navigationLinks.map((link) => (
               <Link
@@ -203,7 +222,7 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Authentication Section */}
+
           {loading ? (
             <div className="flex items-center justify-center w-14 h-8">
               <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
@@ -225,7 +244,7 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="hidden md:flex items-center space-x-4">
-              {/* Notification Bell */}
+
               <div className="relative" ref={notificationRef}>
                 <button
                   onClick={toggleNotifications}
@@ -296,7 +315,7 @@ const Navbar = () => {
                 )}
               </div>
 
-              {/* Profile Dropdown */}
+
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={toggleDropdown}
@@ -350,10 +369,30 @@ const Navbar = () => {
                       </p>
                     </div>
 
+                    {user?.userType === "tenant" && !hasLease ? (
+                    <div
+                      className="flex items-center px-4 py-2 text-gray-400 cursor-not-allowed"
+                      title="You need an active lease to access the dashboard"
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                        ></path>
+                      </svg>
+                      Dashboard (Restricted)
+                    </div>
+                  ) : (
                     <Link
-                      href={`/pages/${
-                        user?.userType || "system_admin"
-                      }/dashboard`}
+                      href={`/pages/${user?.userType || "system_admin"}/dashboard`}
                       className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
                     >
                       <svg
@@ -372,6 +411,7 @@ const Navbar = () => {
                       </svg>
                       Dashboard
                     </Link>
+                  )}
 
                     {user && (
                       <Link
@@ -447,9 +487,9 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* Mobile Menu Button */}
+
           <div className="md:hidden flex items-center space-x-2">
-            {/* Mobile Notification Bell */}
+
             {(user || admin) && (
               <div className="relative" ref={notificationRef}>
                 <button
@@ -492,7 +532,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+
       {menuOpen && (
         <div
           ref={mobileMenuRef}
@@ -647,7 +687,7 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* Mobile Notifications Panel */}
+     
       {notifOpen && (
         <div className="md:hidden bg-white text-black px-4 py-2 shadow-lg absolute w-full z-20 transition-all duration-300 transform origin-top">
           <div className="flex justify-between items-center border-b pb-2">
