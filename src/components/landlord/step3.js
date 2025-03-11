@@ -352,7 +352,7 @@ export function StepThree() {
           Add some photos of your place
         </h2>
         <p className="text-gray-500 mb-4">
-          You’ll need 5 photos to get started. You can make changes later.
+          You’ll need 3 photos to get started. You can make changes later.
         </p>
         <div
           {...getRootProps()}

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import LandlordLayout from "../../../../../components/navigation/sidebar-landlord"; // Layout
+import LandlordLayout from "../../../../../components/navigation/sidebar-landlord";
 import { useRouter } from "next/navigation";
 import StepCounter from "../../../../../components/step-counter";
 import { StepOne } from "../../../../../components/landlord/step1";
@@ -16,10 +16,8 @@ import Swal from "sweetalert2";
 export default function AddNewProperty() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  // Get user_id from useAuth hook
   const { user } = useAuth();
 
-  // Access Zustand store
   const {
     property,
     photos,
@@ -51,7 +49,7 @@ export default function AddNewProperty() {
       }
 
       // Validate ZIP code (must be exactly 4 digits)
-      const zipCodePattern = /^\d{4}$/; // Regex: Ensures exactly 4 digits
+      const zipCodePattern = /^\d{4}$/;
       if (!zipCodePattern.test(property.zipCode)) {
         Swal.fire(
           "Invalid ZIP Code",
@@ -63,7 +61,6 @@ export default function AddNewProperty() {
     }
 
     if (step === 3) {
-      
       if (photos.length === 0) {
         Swal.fire(
           "No Photos",
@@ -110,62 +107,82 @@ export default function AddNewProperty() {
       }
 
       if (!property.propDesc || property.propDesc.trim().length === 0) {
-        Swal.fire("Missing Description"
-          , "Please enter a description."
-          , "error");
+        Swal.fire(
+          "Missing Description",
+          "Please enter a description.",
+          "error"
+        );
         return false;
       }
-    
+
       if (!property.secDeposit || property.secDeposit <= 0) {
-        Swal.fire("Missing Security Deposit"
-          , "Please enter a valid security deposit amount."
-          , "error");
+        Swal.fire(
+          "Missing Security Deposit",
+          "Please enter a valid security deposit amount.",
+          "error"
+        );
         return false;
       }
-    
+
       if (!property.advancedPayment || property.advancedPayment <= 0) {
-        Swal.fire("Missing Advanced Payment"
-          , "Please enter a valid advanced payment amount."
-          , "error");
+        Swal.fire(
+          "Missing Advanced Payment",
+          "Please enter a valid advanced payment amount.",
+          "error"
+        );
         return false;
       }
-    
+
       if (!property.lateFee || property.lateFee < 0) {
-        Swal.fire("Missing Late Fee"
-          , "Please enter a valid late fee amount (0 or higher)."
-          , "error");
+        Swal.fire(
+          "Missing Late Fee",
+          "Please enter a valid late fee amount (0 or higher).",
+          "error"
+        );
         return false;
       }
-    
+
       if (!property.assocDues || property.assocDues < 0) {
-        Swal.fire("Missing Association Dues"
-          , "Please enter a valid association dues amount (0 or higher)."
-          , "error");
+        Swal.fire(
+          "Missing Association Dues",
+          "Please enter a valid association dues amount (0 or higher).",
+          "error"
+        );
         return false;
       }
-    
+
       if (!property.minStay || property.minStay <= 0) {
-        Swal.fire("Missing Minimum Stay"
-          , "Please enter the minimum stay duration (in months)."
-          , "error");
-        return false;
-      }
-    
-      if (!property.paymentFrequency || property.paymentFrequency.trim() === "") {
-        Swal.fire("Missing Payment Frequency"
-          , "Please select a payment frequency."
-          , "error");
+        Swal.fire(
+          "Missing Minimum Stay",
+          "Please enter the minimum stay duration (in months).",
+          "error"
+        );
         return false;
       }
 
-      if (!property.utilityBillingType || property.utilityBillingType.trim() === "") {
-        Swal.fire("Missing Utility Billing Type"
-          , "Please select a utility billing type."
-          , "error");
+      if (
+        !property.paymentFrequency ||
+        property.paymentFrequency.trim() === ""
+      ) {
+        Swal.fire(
+          "Missing Payment Frequency",
+          "Please select a payment frequency.",
+          "error"
+        );
         return false;
       }
 
-
+      if (
+        !property.utilityBillingType ||
+        property.utilityBillingType.trim() === ""
+      ) {
+        Swal.fire(
+          "Missing Utility Billing Type",
+          "Please select a utility billing type.",
+          "error"
+        );
+        return false;
+      }
 
       // Validate that all uploaded files are images
       const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -183,7 +200,6 @@ export default function AddNewProperty() {
     }
 
     if (step === 4) {
-      // Ensure required documents are uploaded
       if (
         !occPermit?.file ||
         !mayorPermit?.file ||
@@ -198,7 +214,6 @@ export default function AddNewProperty() {
         );
         return false;
       }
-      // Validate PDF files (Mayor Permit & Occupancy Permit)
       const isPDF = (file) => file && file.type === "application/pdf";
       if (!isPDF(mayorPermit?.file)) {
         Swal.fire(
@@ -298,11 +313,11 @@ export default function AddNewProperty() {
     formData.append("indoor", indoorPhoto);
     formData.append("outdoor", outdoorPhoto);
 
-    console.log("occPermit Type:", occPermit); // Debug
-    console.log("mayorPermit Type:", mayorPermit); // Debug
-    console.log("Indoor Photo Type:", indoorPhoto); // Debug
-    console.log("Outdoor Photo Type:", outdoorPhoto); // Debug
-    console.log("Government ID:", govID); // Debug
+    console.log("occPermit Type:", occPermit);
+    console.log("mayorPermit Type:", mayorPermit);
+    console.log("Indoor Photo Type:", indoorPhoto);
+    console.log("Outdoor Photo Type:", outdoorPhoto);
+    console.log("Government ID:", govID);
 
     try {
       const { data } = await axios.post(
@@ -414,7 +429,9 @@ export default function AddNewProperty() {
                 {step > 1 && (
                   <button
                     onClick={prevStep}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                    disabled={isMutating}
+                    className={`px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 
+      ${isMutating ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     Back
                   </button>
@@ -422,7 +439,9 @@ export default function AddNewProperty() {
                 {step < 4 ? (
                   <button
                     onClick={nextStep}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 
+                      ${isMutating ? "opacity-50 cursor-not-allowed" : ""}`}
+                    disabled={isMutating}
                   >
                     Next
                   </button>
@@ -430,7 +449,10 @@ export default function AddNewProperty() {
                   <button
                     onClick={handleSubmit}
                     disabled={isMutating}
-                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50"
+                    className={`px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 
+                      disabled:opacity-50 ${
+                        isMutating ? "cursor-not-allowed" : ""
+                      }`}
                   >
                     {isMutating ? "Submitting..." : "Submit"}
                   </button>

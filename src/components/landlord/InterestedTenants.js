@@ -2,20 +2,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import {
-  AiOutlineArrowLeft,
-  AiOutlineCheck,
-  AiOutlineClose,
-  AiOutlineLock,
-} from "react-icons/ai";
+import { AiOutlineArrowLeft } from "react-icons/ai";
 import Swal from "sweetalert2";
 import LoadingScreen from "../../components/loadingScreen";
 import Image from "next/image";
-import useAuth from "@/hooks/useSession"; // Added import
+import useAuth from "../../../hooks/useSession";
 
 export default function InterestedTenants({ unitId, landlordId }) {
   const router = useRouter();
-  const { user } = useAuth(); // Get user from auth context
+  const { user } = useAuth();
   const [tenants, setTenants] = useState([]);
   const [visibleTenants, setVisibleTenants] = useState([]);
   const [hiddenTenants, setHiddenTenants] = useState([]);
@@ -23,20 +18,16 @@ export default function InterestedTenants({ unitId, landlordId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch subscription data and tenants from the API
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
-      if (!landlordId) {
-        console.error("Missing landlordId");
-        setError("Missing landlord ID. Please try again later.");
-        setLoading(false);
-        return;
-      }
+      if (!unitId || !landlordId) return;
 
       try {
         setLoading(true);
-        // Get subscription from user data if available
-        if (user && user.subscription) {
+
+        if (!subscription && user?.subscription) {
           setSubscription({
             ...user.subscription,
             plan_name: user.subscription.plan_name || "Free Plan",
@@ -45,44 +36,42 @@ export default function InterestedTenants({ unitId, landlordId }) {
                 user.subscription.plan_name === "Premium Plan" ? Infinity : 3,
             },
           });
-        } else {
-          // Otherwise fetch it (fallback)
-          const subscriptionResponse = await axios.get(
-            `/api/landlord/getCurrentPlan?landlord_id=${landlordId}`
-          );
-          const subscriptionData = subscriptionResponse.data;
-          setSubscription(subscriptionData);
         }
 
-        // Fetch tenants data
-        const tenantsResponse = await axios.get(
-          `/api/landlord/prospective/interested-tenants?unitId=${unitId}`
-        );
-        const tenantsData = tenantsResponse.data;
-        setTenants(tenantsData);
+        if (tenants.length === 0) {
+          const tenantsResponse = await axios.get(
+            `/api/landlord/prospective/interested-tenants?unitId=${unitId}`
+          );
 
-        // Apply subscription limits
-        const maxProspects = subscription?.listingLimits?.maxProspect || 3;
+          if (isMounted) {
+            const tenantsData = tenantsResponse.data;
+            setTenants(tenantsData);
 
-        if (maxProspects === Infinity) {
-          // Premium plan - show all tenants
-          setVisibleTenants(tenantsData);
-          setHiddenTenants([]);
-        } else {
-          // Free or Standard plan - limit the number of visible tenants
-          setVisibleTenants(tenantsData.slice(0, maxProspects));
-          setHiddenTenants(tenantsData.slice(maxProspects));
+            const maxProspects = subscription?.listingLimits?.maxProspect || 3;
+            setVisibleTenants(
+              maxProspects === Infinity
+                ? tenantsData
+                : tenantsData.slice(0, maxProspects)
+            );
+            setHiddenTenants(
+              maxProspects === Infinity ? [] : tenantsData.slice(maxProspects)
+            );
+          }
         }
       } catch (err) {
-        console.error("Error fetching data:", err);
-        setError(err.response?.data?.error || "Failed to load data.");
+        if (isMounted)
+          setError(err.response?.data?.error || "Failed to load data.");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchData();
-  }, [unitId, landlordId, user]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [unitId, landlordId]);
 
   const handleTenantClick = (tenant) => {
     router.push(
@@ -232,7 +221,7 @@ export default function InterestedTenants({ unitId, landlordId }) {
                       <Image
                         src={
                           tenant?.profilePicture ||
-                          "https://via.placeholder.com/48"
+                          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
                         }
                         alt="Profile"
                         width={48}
