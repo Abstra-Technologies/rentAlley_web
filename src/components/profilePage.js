@@ -127,74 +127,7 @@ const userType = user?.userType;
   if (loading) return <p>Loading profile...</p>;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="w-64 bg-white border-r border-gray-200 py-4 px-6">
-        <h2 className="text-2xl font-semibold text-blue-600 mb-6">Menu</h2>
-        <nav>
-          <ul>
-            <li
-              className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() =>
-                logEvent(
-                  "Navigation",
-                  "User Interaction",
-                  "Clicked Profile Link",
-                  1
-                )
-              }
-            >
-              <a
-                href={`/pages/${user?.userType}/profile/${user?.user_id}`}
-                className="flex items-center space-x-2 text-gray-700"
-              >
-                <UserIcon className="h-5 w-5" />
-                <span>Profile</span>
-              </a>
-            </li>
-
-            <li
-              className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() =>
-                logEvent(
-                  "Navigation",
-                  "User Interaction",
-                  "Clicked Security & Privacy Link",
-                  1
-                )
-              }
-            >
-              <a
-                href={`/pages/${user?.userType}/securityPrivacy/${user?.user_id}`}
-                className="flex items-center space-x-2 text-gray-700"
-              >
-                <ShieldCheckIcon className="h-5 w-5" />
-                <span>Security</span>
-              </a>
-            </li>
-
-            {user?.userType === "landlord" && (
-              <li
-                className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-                onClick={() =>
-                  logEvent(
-                    "Navigation",
-                    "User Interaction",
-                    "Clicked View Subscription Link",
-                    1
-                  )
-                }
-              >
-                <a
-                  href="/pages/landlord/subsciption_plan"
-                  className="flex items-center space-x-2 text-gray-700"
-                >
-                  <span>View Subscription</span>
-                </a>
-              </li>
-            )}
-          </ul>
-        </nav>
-      </div>
+    
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-semibold text-blue-600 mb-8">Profile</h1>
         <div className="max-w-2xl mx-auto">
@@ -395,6 +328,6 @@ const userType = user?.userType;
           </div>
         </div>
       </div>
-    </div>
+   
   );
 }
