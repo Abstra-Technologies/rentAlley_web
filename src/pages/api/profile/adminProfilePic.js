@@ -29,7 +29,7 @@ export default async function adminProfilePic(req, res) {
         const token = await getCookie("token", { req, res });
 
         if (!token) {
-            console.error("❌ [Profile Upload] No valid token found.");
+            console.error("[Profile Upload] No valid token found.");
             return res.status(401).json({ error: "Unauthorized" });
         }
 
@@ -38,13 +38,12 @@ export default async function adminProfilePic(req, res) {
         const userId = payload.admin_id;
 
         if (!userId) {
-            console.error("❌ [Profile Upload] Invalid JWT payload.");
+            console.error("[Profile Upload] Invalid JWT payload.");
             return res.status(400).json({ error: "Invalid user session." });
         }
 
-        console.log(`✅ [Profile Upload] Authenticated User ID: ${userId}`);
+        console.log(`[Profile Upload] Authenticated User ID: ${userId}`);
 
-        // Parse the uploaded file
         const form = formidable({
             multiples: false,
             keepExtensions: true,
@@ -59,7 +58,6 @@ export default async function adminProfilePic(req, res) {
         const fileBuffer = await fs.readFile(file.filepath);
         const fileName = `admin-profile/${Date.now()}-${path.basename(file.originalFilename)}`;
 
-        // Upload to S3
         const uploadParams = {
             Bucket: process.env.S3_BUCKET_NAME,
             Key: fileName,
@@ -71,13 +69,13 @@ export default async function adminProfilePic(req, res) {
 
         // Generate the S3 file URL
         const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-        console.log(`✅ [Profile Upload] File Uploaded to S3: ${imageUrl}`);
+        console.log(`[Profile Upload] File Uploaded to S3: ${imageUrl}`);
 
         await db.query("UPDATE Admin SET profile_picture = ? WHERE admin_id = ?", [imageUrl, userId]);
 
         res.status(200).json({ message: "Profile picture updated successfully!", imageUrl });
     } catch (error) {
-        console.error("❌ [Profile Upload] Error:", error);
+        console.error(" [Profile Upload] Error:", error);
         res.status(500).json({ message: "Failed to upload image" });
     }
 }

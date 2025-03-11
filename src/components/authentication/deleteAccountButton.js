@@ -8,50 +8,6 @@ export default function DeleteAccountButton({ user_id, userType }) {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const [deleting, setDeleting] = useState(false);
-    // const handleDeleteAccount = async () => {
-    //     setLoading(true);
-    //
-    //     try {
-    //         const response = await fetch("/api/auth/deleteAccount", {
-    //             method: "POST",
-    //             headers: { "Content-Type": "application/json" },
-    //             body: JSON.stringify({ user_id, userType }),
-    //             credentials:"include"
-    //         });
-    //
-    //         const data = await response.json();
-    //
-    //         if (!response.ok) {
-    //             throw new Error(data.error || "Failed to request account deletion.");
-    //         }
-    //
-    //         console.log("Account deletion requested successfully:", data);
-    //
-    //         await Swal.fire({
-    //             title: "Account Deletion Requested",
-    //             text: "Your account will be deleted in 30 days unless you cancel.",
-    //             icon: "success",
-    //             confirmButtonText: "OK",
-    //         });
-    //
-    //
-    //         setTimeout(() => {
-    //             router.push("/pages/auth/login");
-    //             window.location.reload();
-    //         }, 1000);
-    //
-    //     } catch (error) {
-    //         console.error("Error deleting account:", error);
-    //         await Swal.fire({
-    //             title: "Error",
-    //             text: error.message,
-    //             icon: "error",
-    //             confirmButtonText: "OK",
-    //         });
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
 
     const handleDeleteAccount = async () => {
         const confirmDelete = window.confirm(
