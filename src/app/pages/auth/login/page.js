@@ -155,114 +155,95 @@ export default function Login() {
 
   return (
     <>
-      <div className="relative flex justify-center items-center h-screen bg-gray-100 overflow-hidden">
+      <div className="relative flex justify-center items-center min-h-screen bg-gray-100 overflow-hidden">
         <Image
           src="/images/hero-section.jpeg"
           alt="Cityscape view of high-rise buildings"
           fill
-          className="object-cover brightness-75 z-0"
+          className="absolute inset-0 object-cover brightness-75"
           priority
         />
-        <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
-          <h1 className="text-2xl font-bold text-center text-blue-600 mb-6">
+        
+        <div className="relative z-10 bg-white p-10 rounded-2xl shadow-lg w-full max-w-lg">
+          <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">
             Rentahan
           </h1>
-
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email Address
               </label>
               <input
                 type="email"
                 id="email"
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="juantamad@email.com"
               />
-              {errors.email && (
-                <p className="text-red-500 text-sm">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
-
+  
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <input
                 type="password"
                 id="password"
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
               />
-              {errors.password && (
-                <p className="text-red-500 text-sm">{errors.password}</p>
-              )}
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
-            <p className="text-center">
+  
+            <p className="text-center text-sm">
               <Link
                 href="./forgot-password"
-                className="text-blue-600 hover:text-blue-900 hover:cursor-pointer hover:underline"
-                onClick={() =>
-                  logEvent(
-                    "Forgot Password Click",
-                    "User Interaction",
-                    "Clicked Forgot Password",
-                    1
-                  )
-                }
+                className="text-blue-600 hover:text-blue-800 hover:underline"
+                onClick={() => logEvent("Forgot Password Click", "User Interaction", "Clicked Forgot Password", 1)}
               >
                 Forgot Password?
               </Link>
             </p>
+  
             <button
               type="submit"
-              onClick={() =>
-                logEvent("Button Click", "User Interaction", "User Login", 1)
-              }
-              className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition"
+              onClick={() => logEvent("Button Click", "User Interaction", "User Login", 1)}
+              className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all"
             >
               Login
             </button>
           </form>
-
+  
           <div className="flex items-center my-6">
             <div className="border-t border-gray-300 flex-grow"></div>
             <span className="mx-3 text-gray-500 font-medium">or</span>
             <div className="border-t border-gray-300 flex-grow"></div>
           </div>
-
+  
           <button
             type="button"
             onClick={handleGoogleSignin}
-            className="w-full py-2 px-4 border border-gray-300 rounded-md flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition"
+            className="w-full py-3 px-4 border border-gray-300 rounded-lg flex items-center justify-center bg-white shadow-md hover:bg-gray-50 transition-all"
           >
-            <GoogleLogo />
+            <GoogleLogo className="mr-2" />
             <span className="font-medium text-gray-700">Login with Google</span>
           </button>
-
+  
           <p className="mt-6 text-center text-sm text-gray-500">
-            Don&#39;t have an account?{" "}
-            <Link
-              href="../auth/selectRole"
-              className="text-blue-600 hover:underline font-medium"
-            >
+            Don&#39;t have an account? 
+            <Link href="../auth/selectRole" className="text-blue-600 hover:underline font-medium ml-1">
               Create Now
             </Link>
           </p>
         </div>
       </div>
-
       <Footer />
     </>
   );
+  
 }

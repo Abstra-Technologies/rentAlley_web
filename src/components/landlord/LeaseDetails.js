@@ -28,7 +28,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
   const [unitPhoto, setUnitPhoto] = useState("");
   const [activeTab, setActiveTab] = useState("details");
   const [prospectiveStatus, setProspectiveStatus] = useState("pending");
-  const [reason, setReason] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const searchParams = useSearchParams();
@@ -197,7 +196,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     formData.append("tenant_id", tenantId);
 
     try {
-      await axios.post(
+      await axios.put(
         `/api/leaseAgreement/uploadLease?unit_id=${unitId}&tenant_id=${tenantId}`,
         formData,
         {
@@ -282,7 +281,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
       if (result.isConfirmed) {
         try {
           await axios.delete(
-            `/api/leaseAgreement/deleteLease?unit_id=${unitId}`
+            `/api/leaseAgreement/deleteLease?unit_id=${unitId}&tenant_id=${tenantId}`
           );
           Swal.fire("Deleted!", "Lease agreement has been deleted.", "success");
           setLease(null); // Remove lease from state
@@ -308,13 +307,12 @@ const LeaseDetails = ({ unitId, tenantId }) => {
       {/* Property Header */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
         <div className="h-48 bg-gray-200 relative">
-          {/* Display Unit Photo if Available */}
           {unitPhoto ? (
             <Image
               src={unitPhoto}
               alt="Unit Photo"
-              layout="fill" // Makes the image fill the container
-              objectFit="cover" // Ensures the image covers the container without distortion
+              layout="fill"
+              objectFit="cover"
               className="rounded-t-lg"
             />
           ) : (
@@ -588,42 +586,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             Maintenance Request History
           </h2>
-          {/* {maintenanceRequests && maintenanceRequests.length > 0 ? (
-            <div className="divide-y">
-              {maintenanceRequests.map((request) => (
-                <div key={request.id} className="py-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-gray-800">
-                        {request.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {request.description}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                        request.status === "Completed"
-                          ? "bg-green-100 text-green-800"
-                          : request.status === "Pending"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {request.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Requested on: {request.date}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-6">
-              No maintenance requests found
-            </p>
-          )} */}
           <p className="text-gray-500 text-center py-6">
             No maintenance requests found
           </p>

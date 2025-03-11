@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
-import { Menu, X } from "lucide-react";
+import { Menu, X, History } from "lucide-react";
 import useAuthStore from "../../zustand/authStore";
 import { logEvent } from "../../utils/gtag";
 
@@ -39,6 +39,16 @@ export default function SideNavProfile() {
         onClick: () => {}
       }
     ] : []),
+    ...(user?.userType === "tenant"
+      ? [
+          {
+            href: "/pages/tenant/visit-history",
+            icon: History,
+            label: "Scheduled visits",
+            onClick: () => {}
+          }
+        ]
+      : []),
     {
       href: "#",
       icon: ArrowRightOnRectangleIcon,

@@ -59,7 +59,7 @@ const uploadToS3 = async (file, folder) => {
 };
 
 export default async function saveUploadLease(req, res) {
-  if (req.method !== "POST") {
+  if (req.method !== "PUT") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -80,6 +80,14 @@ export default async function saveUploadLease(req, res) {
 
     const { unit_id, tenant_id } = fields;
 
+    if (!unit_id || !unit_id[0]) {
+      return res.status(400).json({ error: "unit_id is required" });
+    }
+
+    if (!tenant_id || !tenant_id[0]) {
+      return res.status(400).json({ error: "tenant_id is required" });
+    }
+
     console.log("Parsed Fields:", fields);
     console.log("Parsed Files:", files);
 
@@ -88,6 +96,15 @@ export default async function saveUploadLease(req, res) {
       connection = await db.getConnection();
       await connection.beginTransaction();
 
+      const [existingLease] = await connection.execute(
+        `SELECT agreement_id FROM LeaseAgreement WHERE tenant_id = ? AND unit_id = ?`,
+        [tenant_id[0], unit_id[0]]
+      );
+
+      if (existingLease.length === 0) {
+        return res.status(404).json({ error: "Lease agreement not found" });
+      }
+
       const leaseAgreementFile = files.leaseFile?.[0] || null;
 
       const agreementUrl = leaseAgreementFile
@@ -95,9 +112,10 @@ export default async function saveUploadLease(req, res) {
         : null;
 
       const query = `
-        INSERT INTO LeaseAgreement 
-        (tenant_id, unit_id, agreement_url, status, created_at, updated_at) 
-        VALUES (?, ?, ?, 'pending', NOW(), NOW())`;
+        UPDATE LeaseAgreement 
+        SET agreement_url = ?, updated_at = NOW() 
+        WHERE agreement_id = ?
+      `;
 
       console.log("Inserting into MySQL with:", {
         tenant_id: tenant_id[0],
@@ -114,7 +132,10 @@ export default async function saveUploadLease(req, res) {
         return res.status(400).json({ error: "tenant_id is required" });
       }
 
-      await connection.execute(query, [tenant_id[0], unit_id[0], agreementUrl]);
+      await connection.execute(query, [
+        agreementUrl,
+        existingLease[0].agreement_id,
+      ]);
       await connection.commit();
       res.status(201).json({ message: "Lease agreement stored successfully." });
     } catch (error) {

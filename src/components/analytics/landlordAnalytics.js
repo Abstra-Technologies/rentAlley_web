@@ -280,94 +280,125 @@ const LandlordPropertyChart = () => {
 
 
     return (
-        <div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+        <div className="p-6 bg-gray-50 rounded-lg">
+            {/* Header Section */}
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Property Management Dashboard</h1>
+            <p className="text-gray-600 mb-6">Overview of your property portfolio</p>
+    
+            {/* Key Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
                 {/* Total Receivables */}
-                <div className="p-6 bg-blue-100 shadow-md rounded-lg text-center border border-blue-300">
-                    <h3 className="text-lg font-semibold text-blue-700">Total Receivables</h3>
-                    <p className="text-2xl font-bold text-blue-800 mt-2">₱{totalReceivables?.toLocaleString() || 0}</p>
+                <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-blue-500 transition-all hover:shadow-md">
+                    <h3 className="text-sm font-medium text-gray-500">Total Receivables</h3>
+                    <p className="text-2xl font-bold text-gray-800 mt-2">₱{totalReceivables?.toLocaleString() || 0}</p>
                 </div>
-
+    
                 {/* Total Maintenance Requests */}
-                <div className="p-6 bg-blue-100 shadow-md rounded-lg text-center border border-blue-300">
-                    <h3 className="text-lg font-semibold text-blue-700">Total Maintenance Requests</h3>
-                    <p className="text-2xl font-bold text-blue-800 mt-2">{totalRequests || 0}</p>
+                <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-red-500 transition-all hover:shadow-md">
+                    <h3 className="text-sm font-medium text-gray-500">Total Maintenance Requests</h3>
+                    <p className="text-2xl font-bold text-gray-800 mt-2">{totalRequests || 0}</p>
                 </div>
-
+    
                 {/* Total Current Tenants */}
-                <div className="p-6 bg-blue-100 shadow-md rounded-lg text-center border border-blue-300">
-                    <h3 className="text-lg font-semibold text-blue-700">Total Current Tenants</h3>
-                    <p className="text-2xl font-bold text-blue-800 mt-2">{totalTenants || 0}</p>
+                <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-green-500 transition-all hover:shadow-md">
+                    <h3 className="text-sm font-medium text-gray-500">Total Current Tenants</h3>
+                    <p className="text-2xl font-bold text-gray-800 mt-2">{totalTenants || 0}</p>
                 </div>
             </div>
-
-
-            <div>
-                <Chart options={chartOptionsOccupation} series={seriesOccupation} type="pie" height={350} />
+    
+            {/* Charts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Tenant Occupation */}
+                <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Tenant Occupation</h3>
+                    <Chart options={chartOptionsOccupation} series={seriesOccupation} type="pie" height={350} />
+                </div>
+    
+                {/* Property Utilities */}
+                <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Property Utilities</h3>
+                    <Chart options={chartOptionsPropertyUtilities} series={seriesPropertyUtilities} type="bar" height={350} />
+                </div>
             </div>
-            <div>
-                <Chart options={chartOptionsPropertyUtilities} series={seriesPropertyUtilities} type="bar" height={350} />
+    
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Utility Trends */}
+                <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Utility Trends</h3>
+                    <Chart options={chartOptionsUtilityTrends} series={seriesUtilityTrends} type="line" height={350} />
+                </div>
+    
+                {/* Properties Overview */}
+                <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Properties Overview</h3>
+                    {totalProperties > 0 ? (
+                        <Chart options={chartOptions} series={[{ name: "Properties", data: [totalProperties] }]} type="bar" height={350} />
+                    ) : (
+                        <div className="flex justify-center items-center h-64">
+                            <p className="text-gray-500">No properties data available</p>
+                        </div>
+                    )}
+                </div>
             </div>
-            <div>
-                <Chart options={chartOptionsUtilityTrends} series={seriesUtilityTrends} type="line" height={350} />
-            </div>
-            <div>
-            {totalProperties > 0 ? (
-                <Chart options={chartOptions} series={[{ name: "Properties", data: [totalProperties] }]} type="bar" height={350} />
-            ) : (
-                <Chart options={chartOptions} series={[{ name: "Properties", data: [totalProperties] }]} type="bar" height={350} />
-            )}
-        </div>
-
-            <div>
-                {visitData.length > 0 ? (
-                    <Chart
-                        options={chartOptionsVisits}
-                        series={[{ name: "Visits", data: visitData.map((item) => item.visitCount) }]}
-                        type="bar"
-                        height={350}
-                    />
-                ) : (
-                    <Chart
-                        options={chartOptionsVisits}
-                        series={[{ name: "Visits", data: visitData.map((item) => item.visitCount) }]}
-                        type="bar"
-                        height={350}
-                    />
-                )}
-            </div>
-            <div>
-                <div className="p-4 bg-white shadow rounded-lg">
+    
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Property Visits */}
+                <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Property Visits</h3>
+                    {visitData.length > 0 ? (
+                        <Chart
+                            options={chartOptionsVisits}
+                            series={[{ name: "Visits", data: visitData.map((item) => item.visitCount) }]}
+                            type="bar"
+                            height={350}
+                        />
+                    ) : (
+                        <div className="flex justify-center items-center h-64">
+                            <p className="text-gray-500">No visit data available</p>
+                        </div>
+                    )}
+                </div>
+    
+                {/* Occupancy Rate */}
+                <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
                     <h3 className="text-lg font-semibold text-gray-700 mb-3">Occupancy Rate Overall Property</h3>
                     {loading ? (
-                        <p>Loading...</p>
+                        <div className="flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                        </div>
                     ) : totalUnits > 0 ? (
                         <Chart options={chartOptionsOccupancy} series={chartSeries} type="radialBar" height={250} />
                     ) : (
-                        <Chart options={chartOptionsOccupancy} series={chartSeries} type="radialBar" height={250} />
+                        <div className="flex justify-center items-center h-64">
+                            <p className="text-gray-500">No occupancy data available</p>
+                        </div>
                     )}
                 </div>
-
-
-                <div className="p-4 bg-white shadow rounded-lg">
-                    <div className="p-4 bg-white shadow rounded-lg">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-3">Maintenance Requests</h3>
-                        {loading ? (
-                            <p>Loading...</p>
-                        ) : data.length > 0 ? (
-                            <Chart options={chartOptionsMaintenanceCategories} series={chartSeries} type="pie" height={300} />
-                        ) : (
-                            <Chart options={chartOptionsMaintenanceCategories} series={chartSeries} type="pie" height={300} />
-                        )}
-                    </div>
+            </div>
+    
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Maintenance Requests */}
+                <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Maintenance Requests</h3>
+                    {loading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                        </div>
+                    ) : data.length > 0 ? (
+                        <Chart options={chartOptionsMaintenanceCategories} series={chartSeries} type="pie" height={300} />
+                    ) : (
+                        <div className="flex justify-center items-center h-64">
+                            <p className="text-gray-500">No maintenance data available</p>
+                        </div>
+                    )}
                 </div>
-
-                <div>
+    
+                {/* Payment Analysis */}
+                <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3">Payment Analysis</h3>
                     <Chart options={chartOptionsPayment} series={seriesPayment} type="bar" height={350} />
                 </div>
-
             </div>
-
         </div>
     );
 };

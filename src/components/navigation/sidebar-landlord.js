@@ -13,7 +13,6 @@ import {
   MessageSquareMore,
   Menu,
   X,
-  LogOut,
 } from "lucide-react";
 
 const menuItems = [
@@ -57,18 +56,22 @@ const LandlordLayout = ({ children }) => {
       {/* Mobile Menu Button */}
       <div className="md:hidden p-4 bg-white shadow-sm flex justify-between items-center">
         <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
-        <button 
-          onClick={toggleMobileMenu} 
+        <button
+          onClick={toggleMobileMenu}
           className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
         >
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
         </button>
       </div>
 
       {/* Sidebar - hidden on mobile unless toggled */}
-      <div 
+      <div
         className={`${
-          isMobileMenuOpen ? 'block' : 'hidden'
+          isMobileMenuOpen ? "block" : "hidden"
         } md:block w-full md:w-64 bg-white shadow-lg md:min-h-screen`}
       >
         {/* Logo and Title - hidden on mobile */}

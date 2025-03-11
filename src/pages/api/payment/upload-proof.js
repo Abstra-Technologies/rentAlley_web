@@ -68,28 +68,32 @@ export default async function handler(req, res) {
         .json({ error: "File parsing error", message: err.message });
     }
 
-    // Formidable returns fields as arrays, so extract the first element
     const agreement_id = fields.agreement_id?.[0];
     const paymentMethod = fields.paymentMethod?.[0];
     const amountPaid = fields.amountPaid?.[0];
     const paymentType = fields.paymentType?.[0];
 
-    console.log("Received fields:", { agreement_id, paymentMethod, amountPaid, paymentType });
+    console.log("Received fields:", {
+      agreement_id,
+      paymentMethod,
+      amountPaid,
+      paymentType,
+    });
 
-    // Validate input
     if (!agreement_id || !paymentMethod || !amountPaid || !paymentType) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Missing required fields",
-        received: { agreement_id, paymentMethod, amountPaid, paymentType }
+        received: { agreement_id, paymentMethod, amountPaid, paymentType },
       });
     }
 
-    // Validate payment type against database enum
-    if (!["billing", "security_deposit", "advance_rent"].includes(paymentType)) {
-      return res.status(400).json({ 
-        error: "Invalid payment type", 
+    if (
+      !["billing", "security_deposit", "advance_rent"].includes(paymentType)
+    ) {
+      return res.status(400).json({
+        error: "Invalid payment type",
         received: paymentType,
-        allowed: ["billing", "security_deposit", "advance_rent"]
+        allowed: ["billing", "security_deposit", "advance_rent"],
       });
     }
 
@@ -101,10 +105,8 @@ export default async function handler(req, res) {
       const proofFile = files.proof?.[0] || null;
       let proofUrl = null;
 
-      // Generate receipt reference number
       const receiptReferenceNumber = `PAY-${Date.now()}-${paymentType.toUpperCase()}`;
 
-      // Check if proof is required for this payment method
       if (["2", "3", "4"].includes(paymentMethod)) {
         if (!proofFile) {
           return res
@@ -128,16 +130,16 @@ export default async function handler(req, res) {
         amountPaid,
         paymentMethod,
         proofUrl,
-        receiptReferenceNumber
+        receiptReferenceNumber,
       ]);
 
       await connection.commit();
 
       console.log("Payment inserted successfully:", result);
-      
-      res.status(201).json({ 
+
+      res.status(201).json({
         message: "Payment proof uploaded successfully.",
-        receiptReference: receiptReferenceNumber 
+        receiptReference: receiptReferenceNumber,
       });
     } catch (error) {
       if (connection) await connection.rollback();

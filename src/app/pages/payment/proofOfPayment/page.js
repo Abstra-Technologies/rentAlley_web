@@ -1,15 +1,14 @@
 "use client";
 import { useSearchParams } from "next/navigation";
-import {useState, useEffect, Suspense} from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useDropzone } from "react-dropzone";
 import { useRouter } from "next/navigation";
 
-
 export default function PaymentFormPage() {
   return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <PaymentForm />
-      </Suspense>
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentForm />
+    </Suspense>
   );
 }
 
@@ -18,7 +17,7 @@ const PaymentForm = () => {
   const searchParams = useSearchParams();
   const agreement_id = searchParams.get("agreement_id") || "";
   const queryAmount = searchParams.get("amountPaid") || "";
-  
+
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [amountPaid, setAmountPaid] = useState(queryAmount || "");
@@ -61,9 +60,9 @@ const PaymentForm = () => {
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     accept: {
-      'image/*': []
+      "image/*": [],
     },
-    maxSize: 10485760, // 10MB
+    maxSize: 10485760,
   });
 
   const handleSubmit = async (e) => {
@@ -71,7 +70,7 @@ const PaymentForm = () => {
     setIsSubmitting(true);
     setError("");
     setSuccessMessage("");
-  
+
     if (!agreement_id) {
       setError("Missing agreement ID. Please go back and try again.");
       setIsSubmitting(false);
@@ -85,7 +84,9 @@ const PaymentForm = () => {
     }
 
     // Validate payment type
-    if (!["billing", "security_deposit", "advance_rent"].includes(paymentType)) {
+    if (
+      !["billing", "security_deposit", "advance_rent"].includes(paymentType)
+    ) {
       setError("Invalid payment type");
       setIsSubmitting(false);
       return;
@@ -115,10 +116,9 @@ const PaymentForm = () => {
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         setSuccessMessage("Payment proof uploaded successfully!");
-        // Redirect after success
         setTimeout(() => {
           router.push("/pages/tenant/my-unit");
         }, 2000);
@@ -143,7 +143,7 @@ const PaymentForm = () => {
           <p>{error}</p>
         </div>
       )}
-      
+
       {successMessage && (
         <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
           <p>{successMessage}</p>
@@ -186,7 +186,7 @@ const PaymentForm = () => {
         ))}
       </select>
 
-        <div className="space-y-1">
+      <div className="space-y-1">
         <label className="block text-sm font-medium text-gray-700">
           Amount Paid:
         </label>
@@ -228,4 +228,3 @@ const PaymentForm = () => {
     </form>
   );
 };
-
