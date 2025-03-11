@@ -166,109 +166,113 @@ export default function ForgotPassword() {
 
   return (
     <>
-      <div className="relative flex justify-center items-center h-screen bg-gray-100 overflow-hidden">
+      <div className="relative flex justify-center items-center min-h-screen bg-gray-100 overflow-hidden">
         <ToastContainer />
         <Image 
-            src="/images/hero-section.jpeg" 
-            alt="Cityscape view of high-rise buildings" 
-            fill
-            className="object-cover brightness-75 z-0"
-            priority
-          />
-        <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
-          <h2 className="text-2xl font-bold mb-4 text-center">Forgot Password</h2>
-
+          src="/images/hero-section.jpeg" 
+          alt="Cityscape view of high-rise buildings" 
+          fill
+          className="absolute inset-0 object-cover brightness-75"
+          priority
+        />
+        
+        <div className="relative z-10 bg-white p-10 rounded-2xl shadow-lg w-full max-w-lg">
+          <h2 className="text-3xl font-bold mb-6 text-center">Forgot Password</h2>
+  
           {step === 1 && (
-              <>
-                <p className="text-gray-600 text-sm text-center mb-4">
-                  Enter your email to receive an OTP.
-                </p>
-                <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter email"
-                    className="w-full p-2 border rounded-md mb-2 text-center"
-                    required
-                />
-                <button
-                    onClick={handleEmailSubmit}
-                    className="w-full p-2 bg-blue-600 text-white rounded-md"
-                    disabled={loading}
-                >
-                  {loading ? "Sending OTP..." : "Next"}
-                </button>
-              </>
+            <>
+              <p className="text-gray-600 text-sm text-center mb-5">
+                Enter your email to receive an OTP.
+              </p>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email"
+                className="w-full p-3 border border-gray-300 rounded-lg text-center shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+              <button
+                onClick={handleEmailSubmit}
+                className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all mt-4"
+                disabled={loading}
+              >
+                {loading ? "Sending OTP..." : "Next"}
+              </button>
+            </>
           )}
-
-          {/* Step 2 - OTP */}
+  
           {step === 2 && (
             <>
-              <h3 className="text-lg font-semibold mt-4 text-center">Enter OTP</h3>
-              <p className="text-gray-600 text-sm text-center mb-4">
+              <h3 className="text-lg font-semibold mt-6 text-center">Enter OTP</h3>
+              <p className="text-gray-600 text-sm text-center mb-5">
                 A 6-digit OTP has been sent to your email.
               </p>
-
+  
               <input
                 type="text"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 placeholder="Enter OTP"
-                className="w-full p-2 border rounded-md mb-2 text-center"
+                className="w-full p-3 border border-gray-300 rounded-lg text-center shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 maxLength="6"
                 required
               />
-
+  
               <button
                 onClick={handleVerifyOTP}
-                className="w-full p-2 bg-green-600 text-white rounded-md"
+                className="w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all mt-4"
                 disabled={loading}
               >
                 {loading ? "Verifying..." : "Verify OTP"}
               </button>
-
-              <p className="text-center text-sm text-gray-500 mt-3">
+  
+              <p className="text-center text-sm text-gray-500 mt-4">
                 {timer > 0
                   ? `Resend available in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}`
-                  : (<>Didn't receive an OTP? <button onClick={handleResendOTP} className="text-blue-600 font-medium hover:underline">Resend OTP</button></>)}
+                  : (<>
+                      Didn’t receive an OTP? 
+                      <button onClick={handleResendOTP} className="text-blue-600 font-medium hover:underline">Resend OTP</button>
+                    </>)}
               </p>
             </>
           )}
-
+  
           {step === 3 && (
-              <>
-                <h3 className="text-lg font-semibold mt-4 text-center">Set New Password</h3>
-                <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="w-full p-2 border rounded-md mb-2 text-center"
-                    required
-                />
-
-                <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full p-2 border rounded-md mb-2 text-center"
-                    required
-                />
-
-                <button
-                    onClick={handleResetPassword}
-                    className="w-full p-2 bg-green-600 text-white rounded-md"
-                    disabled={loading}
-                >
-                  {loading ? "Resetting..." : "Reset Password"}
-                </button>
-              </>
+            <>
+              <h3 className="text-lg font-semibold mt-6 text-center">Set New Password</h3>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="w-full p-3 border border-gray-300 rounded-lg text-center shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-4"
+                required
+              />
+  
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="w-full p-3 border border-gray-300 rounded-lg text-center shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
+                required
+              />
+  
+              <button
+                onClick={handleResetPassword}
+                className="w-full py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all mt-4"
+                disabled={loading}
+              >
+                {loading ? "Resetting..." : "Reset Password"}
+              </button>
+            </>
           )}
         </div>
       </div>
-      {/* Footer Section */}
+      
       <Footer />
-           </>
+    </>
   );
+  
 }
