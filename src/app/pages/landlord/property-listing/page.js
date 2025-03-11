@@ -254,15 +254,13 @@ const PropertyListingPage = () => {
 
               <button
                 className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
-                  isFetchingVerification || fetchingSubscription
+                  isFetchingVerification ||
+                  fetchingSubscription ||
+                  !isVerified ||
+                  !subscription ||
+                  subscription?.is_active !== 1
                     ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : !subscription
-                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : subscription?.is_active !== 1
-                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : isVerified
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-gray-400 text-gray-700 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
                 onClick={handleAddProperty}
                 disabled={

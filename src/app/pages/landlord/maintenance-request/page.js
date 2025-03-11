@@ -42,36 +42,28 @@ const MaintenanceRequestPage = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [sendAutoReply, setSendAutoReply] = useState(false);
   const [autoReplyMessage, setAutoReplyMessage] = useState("");
-  const [subscriptionLoaded, setSubscriptionLoaded] = useState(false);
 
-  // Fetch subscription and maintenance requests
   useEffect(() => {
     const fetchSubscription = async () => {
       if (!user?.landlord_id) return;
 
       try {
-        console.log("Fetching subscription for landlord_id:", user.landlord_id);
-        const response = await axios.get(
-          `/api/subscription/getCurrentPlan/${user.landlord_id}`
-        );
+        const plans = ["Free Plan", "Standard Plan", "Premium Plan"];
+        const userPlan = plans[0];
 
-        console.log("API Response:", response.data);
+        const mockSubscription = {
+          plan_name: userPlan,
+          is_active: 1,
+          listingLimits: SUBSCRIPTION_PLANS[userPlan],
+        };
 
-        if (!response.data) {
-          throw new Error("No subscription data received");
-        }
-
-        if (response.data.success) {
-          setSubscription(response.data.subscription);
-        } else {
-          console.error("Error fetching subscription:", response.data.message);
-        }
+        setSubscription(mockSubscription);
       } catch (error) {
         console.error("Error fetching subscription:", error);
-      } finally {
-        setSubscriptionLoaded(true);
       }
     };
+
+    fetchSubscription();
 
     const fetchRequests = async () => {
       if (!user?.landlord_id) return;
@@ -84,17 +76,16 @@ const MaintenanceRequestPage = () => {
         if (response.data.success) {
           setAllRequests(response.data.data);
         }
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching maintenance requests:", error);
-      } finally {
         setLoading(false);
       }
     };
-    fetchSubscription();
+
     fetchRequests();
   }, [user]);
 
-  // Filter requests based on subscription limits
   useEffect(() => {
     if (!subscription || !allRequests.length) return;
 
@@ -102,7 +93,9 @@ const MaintenanceRequestPage = () => {
       (req) => req.status.toLowerCase() === activeTab
     );
 
-    const  maxMaintenanceRequest  = subscription.max_maintenance_requests || 5 ;
+    const { maxMaintenanceRequest } = subscription.listingLimits || {
+      maxMaintenanceRequest: 5,
+    };
 
     if (activeTab === "completed") {
       setVisibleRequests(filteredByTab);
@@ -150,15 +143,7 @@ const MaintenanceRequestPage = () => {
         : 0;
 
     setHiddenRequestCount(hiddenTabRequests);
-  }, [allRequests, subscription, activeTab, subscriptionLoaded]);
-
-  // Separate useEffect for logging (not nested)
-  useEffect(() => {
-    if (subscriptionLoaded) {
-      console.log("Current subscription data:", subscription);
-      console.log("Maintenance request limit:", subscription?.listingLimits?.maxMaintenanceRequest);
-    }
-  }, [subscription, subscriptionLoaded]);
+  }, [allRequests, subscription, activeTab]);
 
   const updateStatus = async (request_id, newStatus, additionalData = {}) => {
     try {
@@ -239,20 +224,20 @@ const MaintenanceRequestPage = () => {
           </h1>
           <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200">
             <span className="font-medium">Subscription:</span>{" "}
-            {subscription?.plan_name || "Loading..."}
+            {planDetails.name}
             <span className="mx-2">|</span>
             <span className="font-medium">Request Limit:</span>{" "}
-            {subscription?.max_maintenance_requests || "Loading..."}
+            {planDetails.limit}
           </div>
         </div>
 
         {hiddenRequestCount > 0 && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700">
-          <strong>Note:</strong> {hiddenRequestCount} maintenance request
-          {hiddenRequestCount !== 1 ? "s" : ""}{" "}
-          {hiddenRequestCount !== 1 ? "are" : "is"} hidden due to your plan
-          limit. Complete some active requests to view these or upgrade your
-          plan.
+            <strong>Note:</strong> {hiddenRequestCount} maintenance request
+            {hiddenRequestCount !== 1 ? "s" : ""}{" "}
+            {hiddenRequestCount !== 1 ? "are" : "is"} hidden due to your plan
+            limit. Complete some active requests to view these or upgrade your
+            plan.
           </div>
         )}
 
