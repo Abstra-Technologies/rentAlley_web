@@ -27,6 +27,9 @@ export default function MaintenanceRequestPage() {
   const [errors, setErrors] = useState({});
   const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
+
+  
+
   const handleFileChange = (e) => {
     setPhotos([...e.target.files]);
   };
@@ -73,6 +76,11 @@ export default function MaintenanceRequestPage() {
 
       const requestId = maintenanceRes.data.request_id;
       const landlordId = maintenanceRes.data.landlord_id;
+
+      // Notify the landlord
+    await axios.post("/api/maintenance/notify-landlord", {
+      request_id: requestId,
+    });
 
       // Upload photos if available
       if (photos.length > 0) {
