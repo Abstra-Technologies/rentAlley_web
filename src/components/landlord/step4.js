@@ -20,7 +20,7 @@ export function StepFour() {
   } = usePropertyStore();
   // State to control the camera
   const [showCamera, setShowCamera] = useState(false);
-  const [photoType, setPhotoType] = useState(""); // "indoor" or "outdoor"
+  const [photoType, setPhotoType] = useState("");
 
   // Local states for file previews
   const [indoorPreview, setIndoorPreview] = useState(null);
@@ -31,25 +31,21 @@ export function StepFour() {
 
   useEffect(() => {
     if (indoorPhoto) {
-      // Create a local URL for the indoor photo if it exists in Zustand
       setIndoorPreview(URL.createObjectURL(indoorPhoto));
     }
-  }, [indoorPhoto]); // Run when indoorPhoto changes
+  }, [indoorPhoto]);
 
   useEffect(() => {
     if (outdoorPhoto) {
-      // Create a local URL for the outdoor photo if it exists in Zustand
       setOutdoorPreview(URL.createObjectURL(outdoorPhoto));
     }
-  }, [outdoorPhoto]); // Run when outdoorPhoto changes
+  }, [outdoorPhoto]);
 
-  // Open camera for a specific type of photo
   const handleOpenCamera = (type) => {
     setPhotoType(type);
     setShowCamera(true);
   };
 
-  // Handle image capture
   const handleCapture = (image) => {
     if (photoType === "indoor") {
       fetch(image)
@@ -69,7 +65,7 @@ export function StepFour() {
     setShowCamera(false);
   };
 
-  const validateFile = (file, setFile) => {
+  const validateFile = (file, setFile, allowAnyType = false) => {
     if (!file) return true;
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -78,12 +74,12 @@ export function StepFour() {
         `File size exceeds ${MAX_FILE_SIZE_MB}MB. Please upload a smaller file.`,
         "warning"
       );
-      setFile(null); // Clear the file
+      setFile(null);
       return false;
     }
 
-    // Ensure only PDF files are allowed
-    if (file.type !== "application/pdf") {
+    // Only restrict file type for Mayor's and Occupancy Permit
+    if (!allowAnyType && file.type !== "application/pdf") {
       Swal.fire(
         "Invalid File Type",
         "Only PDF file types are allowed.",
@@ -109,7 +105,7 @@ export function StepFour() {
   };
 
   const handleGovIDChange = (file) => {
-    if (validateFile(file?.file, setGovID)) {
+    if (validateFile(file?.file, setGovID, true)) {
       setGovID(file);
     }
   };

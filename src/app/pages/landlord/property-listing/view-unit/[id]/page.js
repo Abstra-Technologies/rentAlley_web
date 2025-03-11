@@ -12,8 +12,8 @@ import {
   ClipboardDocumentListIcon,
   PencilSquareIcon,
   TrashIcon,
-  ExclamationCircleIcon
-} from '@heroicons/react/24/outline';
+  ExclamationCircleIcon,
+} from "@heroicons/react/24/outline";
 import useAuth from "../../../../../../../hooks/useSession";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
@@ -22,23 +22,23 @@ const ViewUnitPage = () => {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useAuth();
-const landlord_id = user?.landlord_id;
+  const landlord_id = user?.landlord_id;
   // Fetch property details
   const { data: property } = useSWR(
     id ? `/api/propertyListing/property/${id}` : null,
     fetcher
   );
   const { data: subscription, isLoading: loadingSubscription } = useSWR(
-      `/api/subscription/getCurrentPlan/${landlord_id}`,
-      fetcher
-  );
-
-
-  // Fetch units for the specific property
-  const { data: units, error, isLoading } = useSWR(
-    id ? `/api/unitListing/unit?property_id=${id}` : null,
+    `/api/subscription/getCurrentPlan/${landlord_id}`,
     fetcher
   );
+
+  // Fetch units for the specific property
+  const {
+    data: units,
+    error,
+    isLoading,
+  } = useSWR(id ? `/api/unitListing/unit?property_id=${id}` : null, fetcher);
 
   const handleEditUnit = (unitId) => {
     router.push(
@@ -49,28 +49,24 @@ const landlord_id = user?.landlord_id;
   const handleAddUnitClick = () => {
     if (!subscription) {
       Swal.fire(
-          "Subscription Required",
-          "You need an active subscription to add a unit. Please subscribe to continue.",
-          "warning"
+        "Subscription Required",
+        "You need an active subscription to add a unit. Please subscribe to continue.",
+        "warning"
       );
       return;
     }
 
     if (units.length >= subscription.listingLimits.maxUnits) {
       Swal.fire(
-          "Unit Limit Reached",
-          `You have reached the maximum unit limit (${subscription.listingLimits.maxUnits}) for your plan.`,
-          "error"
+        "Unit Limit Reached",
+        `You have reached the maximum unit limit (${subscription.listingLimits.maxUnits}) for your plan.`,
+        "error"
       );
       return;
     }
 
-    router.push(`/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`);
-  };
-
-  const handleViewUnit = (unitId) => {
     router.push(
-      `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unitId}`
+      `/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`
     );
   };
 
@@ -104,15 +100,18 @@ const landlord_id = user?.landlord_id;
     }
   };
 
-  if (error) return (
-    <LandlordLayout>
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <p className="text-red-500 text-center">Failed to load units. Please try again later.</p>
+  if (error)
+    return (
+      <LandlordLayout>
+        <div className="min-h-screen bg-gray-50 p-6">
+          <div className="bg-white p-8 rounded-lg shadow-md">
+            <p className="text-red-500 text-center">
+              Failed to load units. Please try again later.
+            </p>
+          </div>
         </div>
-      </div>
-    </LandlordLayout>
-  );
+      </LandlordLayout>
+    );
 
   return (
     <LandlordLayout>
@@ -122,48 +121,59 @@ const landlord_id = user?.landlord_id;
           <div className="flex items-center space-x-2 mb-2">
             <BuildingOffice2Icon className="h-6 w-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-blue-600">
-              {isLoading ? "Loading..." : property?.property_name || "Property Details"}
+              {isLoading
+                ? "Loading..."
+                : property?.property_name || "Property Details"}
             </h1>
           </div>
-          <p className="text-gray-600 mb-4">
-            Manage units for this property
-          </p>
+          <p className="text-gray-600 mb-4">Manage units for this property</p>
           {subscription && (
-              <p className="text-gray-600 text-sm mb-2">
-                <span className="font-medium">{units?.length}/{subscription.listingLimits.maxUnits}</span> units used
-              </p>
+            <p className="text-gray-600 text-sm mb-2">
+              <span className="font-medium">
+                {units?.length}/{subscription.listingLimits.maxUnits}
+              </span>{" "}
+              units used
+            </p>
           )}
           <button
-              className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
-                  loadingSubscription || !subscription || (units?.length >= subscription?.listingLimits?.maxUnits)
-                      ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-              onClick={handleAddUnitClick}
-              disabled={loadingSubscription || !subscription || (units?.length >= subscription?.listingLimits?.maxUnits)}
+            className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
+              loadingSubscription ||
+              !subscription ||
+              units?.length >= subscription?.listingLimits?.maxUnits
+                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
+            onClick={handleAddUnitClick}
+            disabled={
+              loadingSubscription ||
+              !subscription ||
+              units?.length >= subscription?.listingLimits?.maxUnits
+            }
           >
             <PlusCircleIcon className="h-5 w-5 mr-2" />
             Add New Unit
           </button>
-          {subscription && units?.length >= subscription.listingLimits.maxUnits && (
+          {subscription &&
+            units?.length >= subscription.listingLimits.maxUnits && (
               <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                 <div className="flex items-center">
                   <ExclamationCircleIcon className="h-6 w-6 text-red-600 mr-2" />
                   <p className="font-semibold">
-                    You have reached your unit limit. Upgrade your plan to add more.
+                    You have reached your unit limit. Upgrade your plan to add
+                    more.
                   </p>
                 </div>
               </div>
-          )}
+            )}
         </div>
 
         {/* Units Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <HomeIcon className="h-5 w-5 mr-2 text-blue-600" /> 
+            <HomeIcon className="h-5 w-5 mr-2 text-blue-600" />
             Available Units
           </h2>
-          
+
           {isLoading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-pulse flex space-x-4">
@@ -184,20 +194,22 @@ const landlord_id = user?.landlord_id;
                   key={unit?.unit_id}
                   className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                 >
-                  <div 
-                    className="h-32 bg-blue-50 flex items-center justify-center cursor-pointer"
-                    onClick={() => handleViewUnit(unit.unit_id)}
-                  >
+                  <div className="h-32 bg-blue-50 flex items-center justify-center">
                     <div className="text-center">
                       <HomeIcon className="h-12 w-12 text-blue-600 mx-auto" />
-                      <h3 className="text-xl font-bold text-gray-800">Unit {unit?.unit_name}</h3>
+                      <h3 className="text-xl font-bold text-gray-800">
+                        Unit {unit?.unit_name}
+                      </h3>
                     </div>
                   </div>
-                  
+
                   <div className="p-4">
                     <div className="flex justify-between items-center mb-3">
                       <p className="text-sm text-gray-600">
-                        Size: <span className="font-medium">{unit?.unit_size} sqm</span>
+                        Size:{" "}
+                        <span className="font-medium">
+                          {unit?.unit_size} sqm
+                        </span>
                       </p>
                       <span
                         className={`px-3 py-1 text-xs font-semibold rounded-full ${
@@ -212,9 +224,9 @@ const landlord_id = user?.landlord_id;
                           unit?.status.slice(1)}
                       </span>
                     </div>
-                    
+
                     <hr className="my-3" />
-                    
+
                     <div className="flex justify-between items-center">
                       <button
                         className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
@@ -251,8 +263,12 @@ const landlord_id = user?.landlord_id;
           ) : (
             <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
               <HomeIcon className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-gray-500 text-lg font-medium mb-2">No Units Available</p>
-              <p className="text-gray-400 text-sm mb-4">Add your first unit to get started</p>
+              <p className="text-gray-500 text-lg font-medium mb-2">
+                No Units Available
+              </p>
+              <p className="text-gray-400 text-sm mb-4">
+                Add your first unit to get started
+              </p>
               <button
                 className="px-4 py-2 text-sm text-blue-600 bg-white border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
                 onClick={handleAddUnitClick}

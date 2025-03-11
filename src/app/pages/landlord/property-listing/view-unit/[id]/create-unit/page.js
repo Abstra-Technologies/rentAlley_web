@@ -64,7 +64,7 @@ export default function UnitListingForm() {
     const result = unitSchema.safeParse({ ...parsedFormData, photos });
 
     if (!result.success) {
-      console.log("Validation Errors:", result.error.errors); // Log detailed errors
+      console.log("Validation Errors:", result.error.errors);
 
       Swal.fire({
         title: "Validation Error",
@@ -95,9 +95,8 @@ export default function UnitListingForm() {
     try {
       const unitResponse = await axios.post("/api/unitListing/unit", formData);
 
-      const unitId = unitResponse.data.unitId; // Get the unitId from the response
+      const unitId = unitResponse.data.unitId;
 
-      // 2. Upload Photos (POST to unitPhoto.js)
       if (photos.length > 0) {
         const photoFormData = new FormData();
         photos.forEach((photo) => {
@@ -113,7 +112,6 @@ export default function UnitListingForm() {
         console.log("Photos uploaded:", photoResponse.data);
       }
 
-      // Success alert
       Swal.fire({
         title: "Success!",
         text: "Unit created successfully!",

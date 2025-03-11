@@ -88,7 +88,7 @@ export const StepOne = () => {
         {/* Other Address Fields */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Barangay / District
+            Barangay No. / District No.
           </label>
           <input
             type="number"

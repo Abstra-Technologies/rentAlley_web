@@ -9,7 +9,6 @@ export default async function handler(req, res) {
 
   const { unitId, tenant_id } = req.query;
 
-  // Make sure at least one required parameter is provided
   if (!unitId && !tenant_id) {
     return res.status(400).json({
       message:
@@ -29,17 +28,14 @@ export default async function handler(req, res) {
 
     let params = [];
 
-    // If tenant_id is provided, use it for more specific querying
     if (tenant_id) {
       query += `pt.tenant_id = ?`;
       params.push(tenant_id);
     } else {
-      // Otherwise, use unitId
       query += `pt.unit_id = ?`;
       params.push(unitId);
     }
 
-    // Log the query and parameters for debugging
     console.log("Query:", query);
     console.log("Parameters:", params);
 
@@ -47,9 +43,7 @@ export default async function handler(req, res) {
 
     console.log("Database query results count:", tenants.length);
 
-    // Handle single tenant request differently
     if (tenant_id && tenants.length > 0) {
-      // For single tenant request, return the object directly without array wrapping
       const tenant = tenants[0];
       const decryptedTenant = {
         ...tenant,
@@ -75,7 +69,6 @@ export default async function handler(req, res) {
       return res.status(200).json(decryptedTenant);
     }
 
-    // For multiple tenants or when no specific tenant_id was provided
     const decryptedTenants = tenants.map((tenant) => ({
       ...tenant,
       firstName: decryptData(JSON.parse(tenant.firstName), SECRET_KEY),
@@ -92,11 +85,11 @@ export default async function handler(req, res) {
       occupation: tenant.occupation,
       employment_type: tenant.employment_type,
       monthly_income: tenant.monthly_income,
-      birthDate: tenant.birthDate,
+      birthDate: tenant.birthDate
+        ? decryptData(JSON.parse(tenant.birthDate), SECRET_KEY)
+        : null,
     }));
 
-    // If no tenants found, return an empty array with a 200 status
-    // This is better than returning an error since it's a valid empty result
     return res.status(200).json(decryptedTenants);
   } catch (error) {
     console.error("Database error:", error);
