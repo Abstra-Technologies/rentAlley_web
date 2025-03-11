@@ -412,10 +412,11 @@ export default function MyUnit() {
                     </div>
                   </button>
                 )}
-
+                
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Other Payment Option
                 </h3>
+                {requiresAdvanced && !isAdvancedPaid && requiresSecurity && !isSecurityPaid && (
                 <button
                   onClick={() =>
                     router.push(
@@ -434,7 +435,7 @@ export default function MyUnit() {
                     </div>
                   </div>
                 </button>
-
+                )}
                 {allPaymentsMade && (
                   <button
                     onClick={handleAccessRentPortal}
