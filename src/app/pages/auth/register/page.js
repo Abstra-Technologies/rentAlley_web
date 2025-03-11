@@ -152,7 +152,7 @@ export default function Register() {
             </div>
           )}
   
-          {/* Registration Form */}
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             {[
               { id: "firstName", label: "First Name", placeholder: "Juan" },
@@ -191,14 +191,14 @@ export default function Register() {
             </button>
           </form>
   
-          {/* Divider */}
+         
           <div className="flex items-center my-6">
             <div className="border-t border-gray-300 flex-grow"></div>
             <span className="mx-3 text-gray-500 font-medium">or</span>
             <div className="border-t border-gray-300 flex-grow"></div>
           </div>
   
-          {/* Sign up with Google */}
+        
           <button
             type="button"
             onClick={handleGoogleSignup}
@@ -208,14 +208,12 @@ export default function Register() {
             <span className="ml-2 font-medium text-gray-700">Sign up with Google</span>
           </button>
   
-          {/* Login Link */}
+         
           <p className="mt-6 text-center text-sm text-gray-500">
             Already have an account? <Link href="../auth/login" className="text-blue-600 hover:underline font-medium">Login here</Link>
           </p>
         </div>
       </div>
-  
-      {/* Footer Section */}
       <Footer />
     </>
   );

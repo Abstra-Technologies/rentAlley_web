@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 import useAuth from "../../../../../hooks/useSession";
 import Swal from "sweetalert2";
+import SideNavProfile from "../../../../components/navigation/sidebar-profile";
 
 const PropertyVisits = () => {
   const { user } = useAuth();
@@ -46,7 +46,7 @@ const PropertyVisits = () => {
           visit_id: visitId,
         });
 
-        // Update the UI by changing status to 'cancelled'
+        
         setVisits((prevVisits) =>
           prevVisits.map((visit) =>
             visit.visit_id === visitId
@@ -73,8 +73,9 @@ const PropertyVisits = () => {
   };
 
   return (
-    <TenantLayout>
-      <div className="container mx-auto px-4 py-6">
+    <div className="flex flex-col md:flex-row min-h-screen">
+      <SideNavProfile />
+      <div className="flex-grow p-6 md:pl-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-blue-600 mb-2">
             Scheduled Property Visits
@@ -83,7 +84,7 @@ const PropertyVisits = () => {
             View and manage your scheduled property visits.
           </p>
         </div>
-
+  
         {loading ? (
           <p className="text-gray-500">Loading scheduled visits...</p>
         ) : visits.length === 0 ? (
@@ -111,7 +112,7 @@ const PropertyVisits = () => {
                   )}
                   <p className="text-gray-500">Status: {visit?.status}</p>
                 </div>
-
+  
                 {visit?.status === "pending" && (
                   <button
                     onClick={() => handleCancelVisit(visit?.visit_id)}
@@ -125,7 +126,7 @@ const PropertyVisits = () => {
           </div>
         )}
       </div>
-    </TenantLayout>
+    </div>
   );
 };
 
