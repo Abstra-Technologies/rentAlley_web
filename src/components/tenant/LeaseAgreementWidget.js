@@ -30,29 +30,34 @@ export default function LeaseAgreementWidget({ tenant_id }) {
   if (!lease) return <p>No active lease agreement found.</p>;
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-4 border">
-      <h2 className="text-lg font-semibold text-gray-800">Lease Agreement</h2>
-      <p>
-        <strong>Start Date:</strong>{" "}
-        {new Date(lease?.start_date).toLocaleDateString() || "N/A"}
-      </p>
-      <p>
-        <strong>End Date:</strong>{" "}
-        {new Date(lease?.end_date).toLocaleDateString() || "N/A"}
-      </p>
-      <p>
-        <strong>Duration:</strong> {lease?.duration} days
-      </p>
-      <p>
-        <strong>Status:</strong>{" "}
-        <span
-          className={`text-${
-            lease?.status === "active" ? "green" : "red"
-          }-600 font-bold`}
-        >
-          {lease?.status.toUpperCase() || "N/A"}
-        </span>
-      </p>
+    <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200">
+      <h2 className="text-xl font-semibold text-gray-700 mb-4">Lease Agreement</h2>
+      <div className="space-y-2 text-gray-600">
+        <p>
+          <strong className="text-gray-800">Start Date:</strong>{" "}
+          {lease?.start_date
+            ? new Date(lease.start_date).toLocaleDateString()
+            : "N/A"}
+        </p>
+        <p>
+          <strong className="text-gray-800">End Date:</strong>{" "}
+          {lease?.end_date ? new Date(lease.end_date).toLocaleDateString() : "N/A"}
+        </p>
+        <p>
+          <strong className="text-gray-800">Duration:</strong> {lease?.duration || "N/A"} days
+        </p>
+        <p>
+          <strong className="text-gray-800">Status:</strong>{" "}
+          <span
+            className={`font-bold ${
+              lease?.status === "active" ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {lease?.status?.toUpperCase() || "N/A"}
+          </span>
+        </p>
+      </div>
     </div>
   );
+  
 }

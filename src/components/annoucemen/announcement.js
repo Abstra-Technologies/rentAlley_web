@@ -30,20 +30,22 @@ export default function Announcements() {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h1 className="text-xl font-bold mb-4">Announcements</h1>
+    <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full">
+      <h2 className="text-xl font-semibold text-gray-700 mb-4">Announcements</h2>
       {announcements.length === 0 ? (
-        <p>No announcements available.</p>
+        <p className="text-gray-600">No announcements available.</p>
       ) : (
         <ul className="space-y-4">
           {announcements.map((announcement) => (
             <li
               key={announcement.announcement_id}
-              className="p-4 border rounded-lg shadow"
+              className="p-5 border border-gray-200 rounded-xl shadow-sm bg-gray-50 hover:bg-gray-100 transition"
             >
-              <h2 className="font-semibold text-lg">{announcement.title}</h2>
-              <p className="text-gray-700">{announcement.message}</p>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {announcement.title}
+              </h2>
+              <p className="text-gray-700 mt-1">{announcement.message}</p>
+              <p className="text-sm text-gray-500 mt-2">
                 {new Date(announcement.created_at).toLocaleString()}
               </p>
             </li>
@@ -52,4 +54,5 @@ export default function Announcements() {
       )}
     </div>
   );
+  
 }

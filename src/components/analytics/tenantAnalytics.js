@@ -94,13 +94,48 @@ const TenantPropertyChart = () =>
         title: { text: "Monthly Billing History", align: "center" },
     };
 
-return(
-    <div>
-        <Chart options={chartOptionsBilling} series={seriesBillingHistory} type="line" height={350} />
-        <Chart options={chartOptionsBillingStatus} series={seriesBillStatus} type="bar" height={350} />
-        <Chart options={chartOptionsUsage} series={seriesUsage} type="line" height={350} />
-    </div>
-)
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6 bg-white shadow-md rounded-2xl border border-gray-200">
+          <div className="bg-gray-50 p-3 md:p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Billing History</h2>
+            <div className="h-[250px] md:h-[300px] lg:h-[350px]">
+              <Chart 
+                options={chartOptionsBilling} 
+                series={seriesBillingHistory} 
+                type="line" 
+                height="100%" 
+                width="100%" 
+              />
+            </div>
+          </div>
+      
+          <div className="bg-gray-50 p-3 md:p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Billing Status</h2>
+            <div className="h-[250px] md:h-[300px] lg:h-[350px]">
+              <Chart 
+                options={chartOptionsBillingStatus} 
+                series={seriesBillStatus} 
+                type="bar" 
+                height="100%" 
+                width="100%" 
+              />
+            </div>
+          </div>
+      
+          <div className="bg-gray-50 p-3 md:p-4 rounded-lg shadow-sm lg:col-span-2">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Usage Trends</h2>
+            <div className="h-[250px] md:h-[300px] lg:h-[350px]">
+              <Chart 
+                options={chartOptionsUsage} 
+                series={seriesUsage} 
+                type="line" 
+                height="100%" 
+                width="100%" 
+              />
+            </div>
+          </div>
+        </div>
+      );
 }
 
 export default TenantPropertyChart;

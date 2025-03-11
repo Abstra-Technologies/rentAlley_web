@@ -45,32 +45,24 @@ export default function TenantDashboard() {
   }
   return (
     <TenantLayout>
-      <div>
-        <h1 className="text-3xl">
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <h1 className="text-3xl font-bold text-gray-800">
           Welcome, {user?.firstName} {user?.lastName}!
         </h1>
-
-        {/* Pending Payment Widget */}
-        <TenantPendingPaymentWidget tenant_id={user?.tenant_id} />
-
-        {/* Lease Agreement Widget */}
-        <div className="mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <TenantPendingPaymentWidget tenant_id={user?.tenant_id} />
           <LeaseAgreementWidget tenant_id={user?.tenant_id} />
-        </div>
-
-        {/* Billing Table */}
-        <div className="mt-6">
-          <TenantBillingTable tenant_id={user?.tenant_id} />
-        </div>
-
-        {/* Other Tenant Dashboard Components */}
-        <div className="mt-6">
-          <Announcements />
-        </div>
-        <div>
-          <TenantPropertyChart />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:col-span-2">
+            <TenantBillingTable tenant_id={user?.tenant_id} />
+            <Announcements />
+          </div>
+          <div className="lg:col-span-2">
+            <TenantPropertyChart />
+          </div>
         </div>
       </div>
     </TenantLayout>
   );
+  
+  
 }
