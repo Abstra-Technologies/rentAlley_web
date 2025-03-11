@@ -69,7 +69,7 @@ export async function middleware(req) {
 
     // ✅ Only check permissions for system_admin pages
     if (pathname.startsWith("/pages/system_admin")) {
-      if (role !== "super-admin" && role !== "co-admin") {
+      if (role !== "super-admin" && role !== "co-admin" && role !== "superadmin") {
         return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
       }
 

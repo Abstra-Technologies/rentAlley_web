@@ -157,7 +157,12 @@ export default function LandlordDetails() {
                             </div>
                         </div>
                     </div>
-                    
+                    <div className="flex items-start">
+                        <div className='bg-blue-100 p-2 rounded-lg mr-3'>
+                            <p className="text-sm text-gray-500">Account Status</p>
+                            {landlordInfo?.is_active ? "Active" : "De-activated"}
+                        </div>
+                    </div>
                     <div className="mt-8">
                         <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">Subscription Information</h3>
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">

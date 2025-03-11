@@ -22,6 +22,7 @@ export default async function handler(req, res) {
                 u.firstName,
                 u.lastName,
                 u.email,
+                u.is_active,
                 u.phoneNumber,
                 u.birthDate,
                 u.userType,
