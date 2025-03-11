@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import useRoleStore from "../../../../zustand/store";
-import { useRouter } from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import { logEvent } from "../../../../utils/gtag";
 import Footer from "../../../../components/navigation/footer";
 import Image from "next/image";
@@ -42,7 +42,8 @@ export default function Register() {
   const [successMessage, setSuccessMessage] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -207,10 +208,11 @@ export default function Register() {
             <GoogleLogo />
             <span className="ml-2 font-medium text-gray-700">Sign up with Google</span>
           </button>
-  
-         
+          {error && <p className="text-red-600 text-sm">{decodeURIComponent(error)}</p>}
+
+
           <p className="mt-6 text-center text-sm text-gray-500">
-            Already have an account? <Link href="../auth/login" className="text-blue-600 hover:underline font-medium">Login here</Link>
+            Already have an account? <Link href="/pages/auth/login" className="text-blue-600 hover:underline font-medium">Login here</Link>
           </p>
         </div>
       </div>

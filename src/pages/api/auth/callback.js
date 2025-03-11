@@ -82,7 +82,7 @@ export default async function handler(req, res) {
         );
 
         if (existingUsers.length > 0) {
-            return res.status(400).json({ message: "An account with this email or Google ID already exists." });
+            return res.redirect(`/pages/auth/register?error=${encodeURIComponent("User already registered with Google. Signin instead.")}`);
         }
 
 
