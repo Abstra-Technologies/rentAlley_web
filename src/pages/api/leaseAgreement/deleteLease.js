@@ -25,7 +25,7 @@ export default async function deleteLease(req, res) {
 
     // Retrieve the lease agreement file URL
     const [leaseRows] = await connection.execute(
-      "SELECT agreement_url FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?",
+      "SELECT agreement_url, agreement_id FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?",
       [unit_id, tenant_id]
     );
 
@@ -47,10 +47,8 @@ export default async function deleteLease(req, res) {
         .json({ error: "Failed to decrypt lease file URL." });
     }
 
-    // Extract S3 key from the URL
     const key = new URL(leaseFileUrl).pathname.substring(1);
 
-    // Delete the lease file from S3
     try {
       await s3Client.send(
         new DeleteObjectCommand({
@@ -65,15 +63,24 @@ export default async function deleteLease(req, res) {
         .json({ error: "Failed to delete lease file from S3." });
     }
 
-    // Delete lease record from the database
     const [deleteResult] = await connection.execute(
-      "DELETE FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?",
-      [unit_id, tenant_id]
+      "DELETE FROM LeaseAgreement WHERE agreement_id = ?",
+      [leaseRows[0].agreement_id]
     );
 
     if (deleteResult.affectedRows === 0) {
       return res.status(404).json({ error: "Lease not found" });
     }
+
+    await connection.execute(
+      "UPDATE ProspectiveTenant SET status = 'pending' WHERE tenant_id = ? AND unit_id = ?",
+      [tenant_id, unit_id]
+    );
+
+    await connection.execute(
+      "UPDATE Unit SET status = 'unoccupied' WHERE unit_id = ?",
+      [unit_id]
+    );
 
     await connection.commit();
     res.status(200).json({

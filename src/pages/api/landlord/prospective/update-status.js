@@ -29,10 +29,10 @@ export default async function handler(req, res) {
       WHERE unit_id = ? AND tenant_id = ?
     `;
 
-    const [result] = await db.query(query, [status, message || null, unitId, tenant_id]);
+    await db.query(query, [status, message || null, unitId, tenant_id]);
 
-     // If approved, create lease agreement
-     if (status === "approved") {
+    // If approved, create lease agreement
+    if (status === "approved") {
       const leaseQuery = `
         INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, status)
         VALUES (?, ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 1 YEAR), 'active')
@@ -41,12 +41,11 @@ export default async function handler(req, res) {
       await db.query(leaseQuery, [tenant_id, unitId]);
     }
 
-    res.status(200).json({ message: `Tenant application ${status} successfully!` });
+    res
+      .status(200)
+      .json({ message: `Tenant application ${status} successfully!` });
   } catch (error) {
     console.error("Error updating tenant status:", error);
     res.status(500).json({ message: "Server Error" });
   }
 }
-
-    
-
