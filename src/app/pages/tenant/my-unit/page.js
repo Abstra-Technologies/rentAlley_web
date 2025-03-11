@@ -429,7 +429,7 @@ export default function MyUnit() {
                     <div>
                       <p className="font-medium">Proof of Payment</p>
                       <p className="text-xs text-indigo-200">
-                        cash, pdc, bank transfer
+                        Gcash, PDC, Bank Transfer
                       </p>
                     </div>
                   </div>
