@@ -70,25 +70,30 @@ export default function Login() {
     }
   };
 
+  // const handleGoogleSignin = async () => {
+  //   logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1);
+  //   try {
+  //     const response = await fetch(`/api/auth/google-login`);
+  //     if (!response.ok) {
+  //       router.push("/pages/auth/google-login-error");
+  //       return;
+  //     }
+
+  //     const data = await response.json();
+  //     if (data.url) {
+  //       window.location.href = data.url;
+  //     } else {
+  //       router.push("/pages/auth/google-login-error");
+  //     }
+  //   } catch (error) {
+  //     console.error("Google login error:", error);
+  //     router.push("/pages/auth/google-login-error");
+  //   }
+  // };
+
   const handleGoogleSignin = async () => {
     logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1);
-    try {
-      const response = await fetch(`/api/auth/google-login`);
-      if (!response.ok) {
-        router.push("/pages/auth/google-login-error");
-        return;
-      }
-
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        router.push("/pages/auth/google-login-error");
-      }
-    } catch (error) {
-      console.error("Google login error:", error);
-      router.push("/pages/auth/google-login-error");
-    }
+    await router.push(`/api/auth/google-login`);
   };
 
   const handleSubmit = async (e) => {
