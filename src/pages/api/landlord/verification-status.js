@@ -25,7 +25,6 @@ export default async function VerificationStatusLandlord(req, res) {
 
         const { is_verified } = rows[0];
 
-        // Map boolean (or integer) to readable statuses
         const verificationStatus = is_verified ? "verified" : "not verified";
 
         await db.end();

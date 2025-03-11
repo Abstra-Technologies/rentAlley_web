@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import {router, useRouter} from "next/navigation";
+import { useRouter} from "next/navigation";
+import SideNavAdmin from "../../../../components/navigation/sidebar-admin";
 
 const STATUS_OPTIONS = ["Pending", "In Progress", "Resolved", "Closed"];
 
@@ -32,7 +33,10 @@ export default function AdminSupportList() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+        <div className="flex">
+            <SideNavAdmin />
+
+            <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Support Requests</h2>
         {/*<button  className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition">*/}
         {/*   <a href='https://mail.google.com/mail/u/4/?ogbl#inbox' target='_blank'>*/}
@@ -77,6 +81,7 @@ export default function AdminSupportList() {
                     </table>
                 </div>
             )}
+        </div>
         </div>
     );
 }

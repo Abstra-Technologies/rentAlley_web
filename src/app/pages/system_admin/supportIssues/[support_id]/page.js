@@ -3,15 +3,16 @@
 import { useState, useEffect, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 
 const STATUS_OPTIONS = ["Pending", "In Progress", "Resolved", "Closed"];
 
 export default function SupportDetails() {
     const router = useRouter();
-    const { support_id } = useParams(); // ✅ Get support_id from the dynamic route
+    const { support_id } = useParams();
     const [supportRequest, setSupportRequest] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState(""); // ✅ Message field
+    const [message, setMessage] = useState("");
 
     useEffect(() => {
         if (!support_id) return;
@@ -21,18 +22,17 @@ export default function SupportDetails() {
     const fetchSupportRequest = async () => {
         setLoading(true);
         try {
-            console.log(`Fetching support request with ID: ${support_id}`); // ✅ Debugging log
+            console.log(`Fetching support request with ID: ${support_id}`);
 
             const response = await fetch(`/api/support/${support_id}`);
-            if (!response.ok) throw new Error(`Failed to fetch request: ${response.statusText}`);
+            if (!response.ok)  new Error(`Failed to fetch request: ${response.statusText}`);
 
             const data = await response.json();
-            console.log("API Response Data:", data); // ✅ Debugging log
+            console.log("API Response Data:", data);
 
             if (!data || Object.keys(data).length === 0) {
-                throw new Error("Support request not found.");
+                 new Error("Support request not found.");
             }
-
             setSupportRequest(data);
         } catch (error) {
             console.error("Fetch Error:", error);
@@ -87,6 +87,9 @@ export default function SupportDetails() {
 
     return (
         <Suspense fallback={<p>Loading support request...</p>}>
+            <div className="flex">
+                <SideNavAdmin />
+
             <div className="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
                 <h2 className="text-2xl font-semibold text-gray-800 mb-4">Support Request Details</h2>
 
@@ -127,6 +130,7 @@ export default function SupportDetails() {
                 ) : (
                     <p className="text-gray-600">Support request not found.</p>
                 )}
+            </div>
             </div>
         </Suspense>
     );
