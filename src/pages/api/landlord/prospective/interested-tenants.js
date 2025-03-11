@@ -11,12 +11,10 @@ export default async function handler(req, res) {
 
   // Make sure at least one required parameter is provided
   if (!unitId && !tenant_id) {
-    return res
-      .status(400)
-      .json({
-        message:
-          "Missing required parameters: either unitId or tenant_id must be provided",
-      });
+    return res.status(400).json({
+      message:
+        "Missing required parameters: either unitId or tenant_id must be provided",
+    });
   }
 
   try {
@@ -69,7 +67,9 @@ export default async function handler(req, res) {
         occupation: tenant.occupation,
         employment_type: tenant.employment_type,
         monthly_income: tenant.monthly_income,
-        birthDate: tenant.birthDate,
+        birthDate: tenant.birthDate
+          ? decryptData(JSON.parse(tenant.birthDate), SECRET_KEY)
+          : null,
       };
 
       return res.status(200).json(decryptedTenant);
