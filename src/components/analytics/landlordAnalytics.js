@@ -129,8 +129,14 @@ const LandlordPropertyChart = () => {
 
     // tenant occupcations
 
-    const labelsOccupation = occupationData.map((item) => item.occupation);
-    const seriesOccupation = occupationData.map((item) => item.tenant_count);
+
+    const labelsOccupation = occupationData.length > 0
+        ? occupationData.map((item) => item.occupation)
+        : ["No Data"];
+
+    const seriesOccupation = occupationData.length > 0
+        ? occupationData.map((item) => item.tenant_count)
+        : [0];
 
     const chartOptionsOccupation = {
         chart: { type: "pie" },
@@ -275,6 +281,27 @@ const LandlordPropertyChart = () => {
 
     return (
         <div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                {/* Total Receivables */}
+                <div className="p-6 bg-blue-100 shadow-md rounded-lg text-center border border-blue-300">
+                    <h3 className="text-lg font-semibold text-blue-700">Total Receivables</h3>
+                    <p className="text-2xl font-bold text-blue-800 mt-2">₱{totalReceivables?.toLocaleString() || 0}</p>
+                </div>
+
+                {/* Total Maintenance Requests */}
+                <div className="p-6 bg-blue-100 shadow-md rounded-lg text-center border border-blue-300">
+                    <h3 className="text-lg font-semibold text-blue-700">Total Maintenance Requests</h3>
+                    <p className="text-2xl font-bold text-blue-800 mt-2">{totalRequests || 0}</p>
+                </div>
+
+                {/* Total Current Tenants */}
+                <div className="p-6 bg-blue-100 shadow-md rounded-lg text-center border border-blue-300">
+                    <h3 className="text-lg font-semibold text-blue-700">Total Current Tenants</h3>
+                    <p className="text-2xl font-bold text-blue-800 mt-2">{totalTenants || 0}</p>
+                </div>
+            </div>
+
+
             <div>
                 <Chart options={chartOptionsOccupation} series={seriesOccupation} type="pie" height={350} />
             </div>
@@ -285,22 +312,10 @@ const LandlordPropertyChart = () => {
                 <Chart options={chartOptionsUtilityTrends} series={seriesUtilityTrends} type="line" height={350} />
             </div>
             <div>
-                <h3>Total Receivables</h3>
-                <p>₱{totalReceivables?.toLocaleString() || 0}</p>
-            </div>
-            <div>
-                <h3>Total Maintenance Requests</h3>
-                <p>{totalRequests}</p>
-            </div>
-            <div>
-                <h3>Total Current Tenants</h3>
-                <p>{totalTenants}</p>
-            </div>
-        <div>
             {totalProperties > 0 ? (
                 <Chart options={chartOptions} series={[{ name: "Properties", data: [totalProperties] }]} type="bar" height={350} />
             ) : (
-                <p>Loading chart...</p>
+                <Chart options={chartOptions} series={[{ name: "Properties", data: [totalProperties] }]} type="bar" height={350} />
             )}
         </div>
 
@@ -313,7 +328,12 @@ const LandlordPropertyChart = () => {
                         height={350}
                     />
                 ) : (
-                    <p>Loading chart...</p>
+                    <Chart
+                        options={chartOptionsVisits}
+                        series={[{ name: "Visits", data: visitData.map((item) => item.visitCount) }]}
+                        type="bar"
+                        height={350}
+                    />
                 )}
             </div>
             <div>
@@ -324,7 +344,7 @@ const LandlordPropertyChart = () => {
                     ) : totalUnits > 0 ? (
                         <Chart options={chartOptionsOccupancy} series={chartSeries} type="radialBar" height={250} />
                     ) : (
-                        <p>No data available</p>
+                        <Chart options={chartOptionsOccupancy} series={chartSeries} type="radialBar" height={250} />
                     )}
                 </div>
 
@@ -337,7 +357,7 @@ const LandlordPropertyChart = () => {
                         ) : data.length > 0 ? (
                             <Chart options={chartOptionsMaintenanceCategories} series={chartSeries} type="pie" height={300} />
                         ) : (
-                            <p>No data available</p>
+                            <Chart options={chartOptionsMaintenanceCategories} series={chartSeries} type="pie" height={300} />
                         )}
                     </div>
                 </div>
