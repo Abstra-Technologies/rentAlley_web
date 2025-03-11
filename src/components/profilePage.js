@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuth from "../../hooks/useSession";
+import  Link from "next/link";
+
 import {
   UserIcon,
   ShieldCheckIcon,
@@ -120,8 +122,6 @@ export default function ProfilePage() {
   };
 
   if (loading) return <p>Loading profile...</p>;
-  if (!user) return <p>User not found. Please log in.</p>;
-  if (error) return <p>Error: {error}</p>;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -141,7 +141,7 @@ export default function ProfilePage() {
               }
             >
               <a
-                href={`/pages/${user.userType}/profile/${user.user_id}`}
+                href={`/pages/${user?.userType}/profile/${user.user_id}`}
                 className="flex items-center space-x-2 text-gray-700"
               >
                 <UserIcon className="h-5 w-5" />
@@ -161,11 +161,11 @@ export default function ProfilePage() {
               }
             >
               <a
-                href={`/pages/${user.userType}/securityPrivacy/${user.user_id}`}
+                href={`/pages/${user?.userType}/securityPrivacy/${user.user_id}`}
                 className="flex items-center space-x-2 text-gray-700"
               >
                 <ShieldCheckIcon className="h-5 w-5" />
-                <span>Security & Privacy</span>
+                <span>Security</span>
               </a>
             </li>
 
@@ -189,41 +189,6 @@ export default function ProfilePage() {
                 </a>
               </li>
             )}
-            <li
-              className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() =>
-                logEvent(
-                  "Navigation",
-                  "User Interaction",
-                  "Clicked Notification Link",
-                  1
-                )
-              }
-            >
-              <a
-                href={`/pages/${user.userType}/notificationSettings`}
-                className="flex items-center space-x-2 text-gray-700"
-              >
-                <ShieldCheckIcon className="h-5 w-5" />
-                <span>Notification Settings</span>
-              </a>
-            </li>
-            <li
-              className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() =>
-                logEvent(
-                  "Navigation",
-                  "User Interaction",
-                  "Clicked Logout Link",
-                  1
-                )
-              }
-            >
-              <a href="#" className="flex items-center space-x-2 text-gray-700">
-                <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                <span>Logout</span>
-              </a>
-            </li>
           </ul>
         </nav>
       </div>
@@ -366,7 +331,7 @@ export default function ProfilePage() {
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   className="w-full p-2 border rounded-md"
-                  readOnly
+
                 />
               ) : (
                 <input
@@ -384,7 +349,7 @@ export default function ProfilePage() {
               </label>
               <input
                 type="text"
-                value={user.userType}
+                value={user?.userType}
                 className="text-gray-400 w-full p-2 border rounded-md"
                 readOnly
               />

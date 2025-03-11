@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
       "lh3.googleusercontent.com",
       "encrypted-tbn0.gstatic.com",
       "mir-s3-cdn-cf.behance.net",
+
     ],
     remotePatterns: [
       {

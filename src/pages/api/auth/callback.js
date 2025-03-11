@@ -65,7 +65,7 @@ export default async function handler(req, res) {
         const lnameEncrypted = lastName ? JSON.stringify(await encryptData(lastName, ENCRYPTION_SECRET)) : null;
         const phoneEncrypted = phoneNumber ? JSON.stringify(await encryptData(phoneNumber, ENCRYPTION_SECRET)) : null;
         const photoEncrypted = profilePicture ? JSON.stringify(await encryptData(profilePicture, ENCRYPTION_SECRET)) : null;
-
+        const birthDateEncrypted =  birthDate ? JSON.stringify(await encryptData(birthDate, ENCRYPTION_SECRET)) : null;
         console.log("Inserting User:", {
             firstName: fnameEncrypted,
             lastName: lnameEncrypted,
@@ -104,7 +104,7 @@ export default async function handler(req, res) {
                     emailEncrypted || null,
                     emailHash || null,
                     " ",
-                    birthDate || null,
+                    birthDateEncrypted || null,
                     phoneEncrypted || 0,
                     finalUserType || "tenant",
                     googleId || null,

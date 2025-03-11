@@ -21,9 +21,9 @@ const registerSchema = z
     email: z.string().email("Invalid email address"),
     password: z
       .string()
-      .min(6, "Password must be 6 characters long") // Password must be at least 6 characters
+      .min(6, "Password must be 6 characters long")
       .refine(
-        (value) => /^[a-zA-Z0-9]+$/.test(value), // Password must be alphanumeric (letters and numbers only)
+        (value) => /^[a-zA-Z0-9]+$/.test(value),
         "Password must contain only letters and numbers"
       ),
 

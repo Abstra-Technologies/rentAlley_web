@@ -15,7 +15,7 @@ const dbConfig = {
 };
 
 export default async function RegisterAnAccount(req, res) {
-    const { firstName, lastName, email, password, dob, mobileNumber, role, captchaToken  } = req.body;
+    const { firstName, lastName, email, password, dob, mobileNumber, role  } = req.body;
 
     if (!firstName || !lastName || !email || !password || !dob || !mobileNumber || !role) {
         console.error("Missing fields in request body:", req.body);
@@ -55,6 +55,9 @@ export default async function RegisterAnAccount(req, res) {
             const fnameEncrypted = JSON.stringify(await encryptData(firstName, process.env.ENCRYPTION_SECRET));
             const lnameEncrypted = JSON.stringify(await encryptData(lastName, process.env.ENCRYPTION_SECRET));
             const phoneEncrypted = JSON.stringify(await encryptData(phoneNumber, process.env.ENCRYPTION_SECRET));
+            const birthDateEncrypted = JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET));
+
+
 
             console.log("Inserting user into database...");
 
@@ -69,10 +72,11 @@ export default async function RegisterAnAccount(req, res) {
                     emailEncrypted,
                     emailHash,
                     hashedPassword,
-                    birthDate,
+                    birthDateEncrypted,
                     phoneEncrypted,
                     userType,
                     0,
+
                 ]
             );
 

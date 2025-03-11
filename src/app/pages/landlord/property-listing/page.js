@@ -112,6 +112,15 @@ const PropertyListingPage = () => {
       return;
     }
 
+    if (!isVerified) {
+      Swal.fire(
+          "Verification Required",
+          "You need to be a verified Landlord first.",
+          "warning"
+      );
+      return;
+    }
+
     if (!subscription.listingLimits || !subscription.listingLimits.maxProperties) {
       Swal.fire(
           "Error",
@@ -130,7 +139,6 @@ const PropertyListingPage = () => {
       return;
     }
 
-    // Proceed to add a property if the criteria above are satisfied.
     router.push(`/pages/landlord/property-listing/create-property`);
   };
 
