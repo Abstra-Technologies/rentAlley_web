@@ -14,6 +14,7 @@ import axios from "axios";
 import { logEvent } from "../utils/gtag";
 import DeleteAccountButton from "./authentication/deleteAccountButton";
 import useAuthStore from "../zustand/authStore";
+import SideNavProfile from "./navigation/sidebar-profile";
 
 export default function ProfilePage() {
   const { user, loading, error } = useAuthStore();
@@ -252,7 +253,7 @@ export default function ProfilePage() {
                 </div>
               ) : verificationStatus === "not verified" ? (
                 <div>
-                  <p className="text-red-600 font-bold">Not Verified</p>
+                  <p className="text-red-600 font-bold">❌ Not Verified</p>
                   <button
                     className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     onClick={() => router.push("/pages/landlord/verification")}

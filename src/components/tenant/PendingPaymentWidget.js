@@ -31,13 +31,12 @@ export default function TenantPendingPaymentWidget({ tenant_id }) {
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
-    <div className="bg-white shadow-lg rounded-lg p-4 border mt-6">
-      <h2 className="text-lg font-semibold text-gray-800">
-        Total Pending Payments
-      </h2>
-      <p className="text-3xl font-bold text-red-600 mt-2">
-        ₱{Number(totalPending).toFixed(2)}
-      </p>
-    </div>
+    <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 mt-6">
+    <h2 className="text-xl font-semibold text-gray-700">Total Pending Payments</h2>
+    <p className="text-4xl font-extrabold text-red-500 mt-3">
+      ₱{Number(totalPending).toFixed(2)}
+  </p>
+</div>
+
   );
 }
