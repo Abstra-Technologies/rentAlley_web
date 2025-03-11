@@ -3,7 +3,7 @@ import { getCookie } from "cookies-next";
 import { jwtVerify } from "jose";
 import { encryptData } from "../../../crypto/encrypt";
 
-export default async function handler(req, res) {
+export default async function updateProfile(req, res) {
     try {
         const token = await getCookie("token", { req, res });
         if (!token) return res.status(401).json({ error: "Unauthorized" });

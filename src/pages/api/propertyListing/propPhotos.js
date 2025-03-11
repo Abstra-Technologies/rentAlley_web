@@ -31,7 +31,7 @@ function sanitizeFilename(filename) {
   return sanitized;
 }
 
-export default async function handler(req, res) {
+export default async function propPhotos(req, res) {
   let connection;
 
   try {

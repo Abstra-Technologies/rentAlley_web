@@ -12,7 +12,6 @@ export default async function getSubscriptionLandlord(req, res) {
     }
 
     try {
-        // Fetch subscription details
         const [rows] = await db.query(
             "SELECT plan_name, start_date, end_date, payment_status, is_trial FROM Subscription WHERE landlord_id = ? AND is_active = 1",
             [landlord_id]

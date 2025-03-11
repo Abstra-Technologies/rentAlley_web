@@ -1,6 +1,6 @@
 import { db } from "../../../lib/db";
 
-export default async function handler(req, res) {
+export default async function submitReview(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -12,7 +12,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch the unit_id based on tenant_id from ProspectiveTenant
     const [rows] = await db.execute(
       `SELECT unit_id FROM ProspectiveTenant WHERE tenant_id = ?`,
       [tenant_id]
@@ -26,7 +25,6 @@ export default async function handler(req, res) {
 
     const unit_id = rows[0].unit_id;
 
-    // Insert the review
     await db.execute(
       `INSERT INTO Review (tenant_id, unit_id, rating, review_text, created_at, updated_at)
       VALUES (?, ?, ?, ?, NOW(), NOW())`,

@@ -3,7 +3,7 @@ import { decryptData } from "../../../crypto/encrypt";
 
 const SECRET_KEY = process.env.ENCRYPTION_SECRET;
 
-export default async function handler(req, res) {
+export default async function GetReviews(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -29,9 +29,9 @@ export default async function handler(req, res) {
         LEFT JOIN Unit u ON r.unit_id = u.unit_id
         LEFT JOIN Property p ON u.property_id = p.property_id
         LEFT JOIN Landlord l ON p.landlord_id = l.landlord_id
-        LEFT JOIN User ul ON l.user_id = ul.user_id -- Landlord's user data
-        LEFT JOIN Tenant t ON r.tenant_id = t.tenant_id -- Link Review to Tenant
-        LEFT JOIN User ut ON t.user_id = ut.user_id -- Tenant's user data
+        LEFT JOIN User ul ON l.user_id = ul.user_id 
+        LEFT JOIN Tenant t ON r.tenant_id = t.tenant_id 
+        LEFT JOIN User ut ON t.user_id = ut.user_id 
         WHERE r.unit_id = ?
         ORDER BY r.created_at DESC`;
 

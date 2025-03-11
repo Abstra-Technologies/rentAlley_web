@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
     if (req.method === "GET") {
         try {
-            console.log(`Fetching support request from DB with ID: ${support_id}`); // Debugging log
+            console.log(`Fetching support request from DB with ID: ${support_id}`);
 
             const [results] = await db.query("SELECT * FROM SupportRequest WHERE support_id = ?", [support_id]);
 
@@ -14,8 +14,7 @@ export default async function handler(req, res) {
                 return res.status(404).json({ error: "Support request not found." });
             }
 
-            console.log("Database Response:", results[0]); // Log API response
-            return res.status(200).json(results[0]); // Return only the object
+            return res.status(200).json(results[0]);
 
         } catch (error) {
             console.error("API Error:", error);

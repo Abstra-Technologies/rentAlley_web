@@ -11,7 +11,7 @@ const db = mysql.createPool({
     database: process.env.DB_NAME,
 });
 
-export default async function handler(req, res) {
+export default async function changePassword(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method not allowed" });
     }

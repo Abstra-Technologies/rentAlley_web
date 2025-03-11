@@ -9,7 +9,6 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcrypt";
 
-// Setup multer storage (saving files to 'public/uploads' directory)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadsDir = "./public/uploads";
@@ -94,38 +93,35 @@ export default async function handler(req, res) {
         }
       }
 
-      // Construct the response object with user details and the profile picture
       await res.status(200).json({
         firstName: decryptData(JSON.parse(user.firstName), process.env.ENCRYPTION_SECRET),
         lastName: decryptData(JSON.parse(user.lastName), process.env.ENCRYPTION_SECRET),
         email: decryptData(JSON.parse(user.email), process.env.ENCRYPTION_SECRET),
         phoneNumber: decryptData(user.phoneNumber),
         birthDate: user.birthDate,
-        profilePicture: profilePicturePath || null, // Include the profile picture or null if not found
+        profilePicture: profilePicturePath || null,
         landlordId: landlordId || null,
         verificationStatus: verificationStatus,
       });
     } catch (error) {
-      console.error(error); // Log the error for better debugging
+      console.error(error);
       res.status(500).json({ error: "Internal server error" });
     }
   } else if (req.method === "PUT") {
     upload.single("profilePicture")(req, res, async (err) => {
       if (err) {
-        console.error(err); // Log the error for better debugging
+        console.error(err);
         return res.status(400).json({ error: err.message });
       }
 
       const { firstName, lastName, email, phoneNumber, birthDate, password } =
         req.body;
 
-      // Validate required fields
       if (!firstName || !lastName || !email || !phoneNumber || !birthDate) {
         return res.status(400).json({ error: "All fields are required" });
       }
 
       try {
-        // Check for duplicate email
         const [existingUser] = await db.execute(
           "SELECT user_id FROM User WHERE email = ? AND User.user_id != ?",
           [encryptEmail(email), id]
@@ -138,7 +134,6 @@ export default async function handler(req, res) {
           ? await bcrypt.hash(password, 10)
           : null;
 
-        // Process the uploaded profile picture (if any)
         let profilePicturePath = null;
         if (req.file) {
           const originalFilePath = req.file.path;
@@ -148,7 +143,6 @@ export default async function handler(req, res) {
             resizedFileName
           );
 
-          // Resize the image
           await sharp(originalFilePath)
             .resize(256, 256)
             .toFormat("jpeg")
@@ -161,7 +155,6 @@ export default async function handler(req, res) {
           fs.unlinkSync(originalFilePath);
         }
 
-        // Update User table
         await db.execute(
           `UPDATE User SET 
           firstName = ?, lastName = ?, email = ?, phoneNumber = ?, birthDate = ?, password = COALESCE(?, password)
@@ -177,7 +170,6 @@ export default async function handler(req, res) {
           ]
         );
 
-        // Determine user type and details profile picture in the respective table
         const [userRows] = await db.execute(
           "SELECT userType FROM User WHERE user_id = ?",
           [id]
@@ -203,7 +195,6 @@ export default async function handler(req, res) {
       }
     });
   } else {
-    // Handle unsupported methods
     res.status(405).json({ error: "Method not allowed" });
   }
 }

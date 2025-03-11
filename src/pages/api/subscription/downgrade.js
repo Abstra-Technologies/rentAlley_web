@@ -1,5 +1,5 @@
 import mysql from "mysql2/promise";
-
+// THIS IS A CRON JOB.
 export default async function handler(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed. ONLY POST" });

@@ -13,7 +13,6 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: "Missing required fields." });
         }
 
-        // Fetch user email based on support_id
         const [results] = await db.query("SELECT email, issue FROM SupportRequest WHERE support_id = ?", [support_id]);
 
         if (!results || results.length === 0) {
@@ -22,7 +21,6 @@ export default async function handler(req, res) {
 
         const { email, issue } = results[0];
 
-        // Configure Nodemailer SMTP transporter
         const transporter = nodemailer.createTransport({
             service: "Gmail",
             auth: {
@@ -41,7 +39,6 @@ export default async function handler(req, res) {
             text: `Hello ${email},\n${message}\n\nThank you,\nSupport Team`,
         };
 
-        // Send the email
         await transporter.sendMail(mailOptions);
 
         return res.status(200).json({ message: "Support status updated and email sent successfully." });
