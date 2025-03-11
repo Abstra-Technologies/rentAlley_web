@@ -9,6 +9,7 @@ import EditModal from "../../../../../components/systemAdmin/editAdmin";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { logEvent } from "../../../../../utils/gtag";
 import LoadingScreen from "../../../../../components/loadingScreen";
+import {decryptData} from "../../../../../crypto/encrypt";
 
 export default function CoAdminDashboard() {
   const [admins, setAdmins] = useState([]);
@@ -43,14 +44,31 @@ export default function CoAdminDashboard() {
     try {
       const res = await fetch(`/api/systemadmin/co_admin/details/${admin_id}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to fetch admin details");
+
+      if (!res.ok)  new Error(data.message || "Failed to fetch admin details");
+
+      console.log("✅ Admin Data (Fetched):", data.admin);
+
+      const encryptionKey = process.env.ENCRYPTION_SECRET;
+      const decryptedEmail = data.admin.email.startsWith("{") && data.admin.email.endsWith("}")
+          ? decryptData(JSON.parse(data.admin.email), encryptionKey)
+          : data.admin.email;
+
       setSelectedAdmin(admin_id);
-      setFormData({ username: data.admin.username, email: data.admin.email, role: data.admin.role, status: data.admin.status, password: "" });
+      setFormData({
+        username: data.admin.username,
+        email: decryptedEmail,
+        role: data.admin.role,
+        status: data.admin.status,
+        password: ""
+      });
+
       setEditModal(true);
     } catch (err) {
       alert(err.message);
     }
   };
+
 
   const handleDelete = async (admin_id) => {
     if (!confirm("Are you sure you want to delete this co-admin?")) return;
@@ -129,8 +147,8 @@ export default function CoAdminDashboard() {
                   admins.map((admin, index) => (
                     <tr key={admin.admin_id} className="hover:bg-gray-50 border-b">
                       <td className="px-6 py-4">{index + 1}</td>
-                      <td className="px-6 py-4">{admin.username}</td>
-                      <td className="px-6 py-4">{admin.email}</td>
+                      <td className="px-6 py-4">{admin?.username}</td>
+                      <td className="px-6 py-4">{admin?.email}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           admin.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -184,8 +202,8 @@ export default function CoAdminDashboard() {
           handleChange={(e) => setFormData({ ...formData, [e.target.name]: e.target.value })} 
           handleUpdate={async () => {
             try {
-              const res = await fetch(`/api/systemadmin/co_admin/${selectedAdmin}`, {
-                method: "PUT",
+              const res = await fetch(`/api/systemadmin/co_admin/details/${selectedAdmin}`, {
+                method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
                 credentials: "include"
@@ -195,7 +213,7 @@ export default function CoAdminDashboard() {
               
               setAdmins(prev => prev.map(admin => 
                 admin.admin_id === selectedAdmin 
-                  ? {...admin, username: formData.username, email: formData.email, role: formData.role, status: formData.status} 
+                  ? {...admin, username: formData.username, email: formData.admin?.email, role: formData.role, status: formData.status}
                   : admin
               ));
               

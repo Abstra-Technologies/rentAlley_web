@@ -24,7 +24,7 @@ export default async function addAdmin(req, res) {
         } catch (err) {
             return res.status(401).json({ success: false, message: err });
         }
-        endregion
+        //endregion
 
         const { email, username, password, role, first_name, last_name, permissions } = req.body;
 

@@ -71,49 +71,6 @@ export default function SubscriptionPlans() {
     const [proratedAmount, setProratedAmount] = useState(null);
     const [dataLoading, setDataLoading] = useState(true);
 
-    // useEffect(() => {
-    //     async function checkTrialStatus() {
-    //         if (!user) return;
-    //         try {
-    //             setDataLoading(true);
-    //             const response = await fetch("/api/payment/stats", {
-    //                 method: "POST",
-    //                 headers: { "Content-Type": "application/json" },
-    //                 body: JSON.stringify({ landlord_id: user.landlord_id }),
-    //             });
-    //             const data = await response.json();
-    //             setTrialUsed(data.is_trial_used);
-    //         } catch (error) {
-    //             console.error("Error checking trial status:", error);
-    //         } finally {
-    //             setDataLoading(false);
-    //         }
-    //     }
-    //     if (user) checkTrialStatus();
-    // }, [user]);
-    //
-    // useEffect(() => {
-    //     async function fetchCurrentSubscription() {
-    //         if (!user) return;
-    //         setDataLoading(true);
-    //
-    //         try {
-    //             const response = await fetch(`/api/landlord/subscription/${user.landlord_id}`);
-    //             if (!response.ok) throw new Error("No active subscription found.");
-    //
-    //             const data = await response.json();
-    //             setCurrentSubscription(data);
-    //         } catch (error) {
-    //             console.error("Error fetching current subscription:", error);
-    //             setCurrentSubscription(null);
-    //         }finally {
-    //             setDataLoading(false);
-    //
-    //         }
-    //     }
-    //     if (user) fetchCurrentSubscription();
-    // }, [user]);
-
 useEffect(() => {
     async function fetchData() {
         if (!user) return;

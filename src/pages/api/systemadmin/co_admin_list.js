@@ -1,6 +1,7 @@
 import { db } from "../../../lib/db";
 import {parse} from "cookie";
 import {jwtVerify} from "jose";
+import {decryptData} from "../../../crypto/encrypt";
 
 export default async function handler(req, res) {
     if (req.method !== "GET") {
@@ -30,8 +31,10 @@ export default async function handler(req, res) {
             return res.status(401).json({ success: false, message: "Invalid Token Data" });
         }
 
-        const currentadmin_id = decoded.admin_id; // Extract logged-in admin's ID
+        const currentadmin_id = decoded.admin_id;
 //endregion
+
+        const encryptionKey = process.env.ENCRYPTION_SECRET;
 
         // Fetch all admins except the logged-in one
         const [admins] = await db.query(
@@ -42,6 +45,7 @@ export default async function handler(req, res) {
         if (!admins || admins.length === 0) {
             return res.status(200).json({ success: false, message: "No record found" });
         }
+
 
         console.log("Admins fetched:", admins);
         return res.status(200).json({ admins });
