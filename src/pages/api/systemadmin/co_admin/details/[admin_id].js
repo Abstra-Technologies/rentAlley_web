@@ -2,6 +2,7 @@ import { db } from "../../../../../lib/db";
 import bcrypt from "bcrypt";
 import {jwtVerify} from "jose";
 import {parse} from "cookie";
+import {decryptData} from "../../../../../crypto/encrypt";
 
 export default async function updateAdminDetails(req, res) {
     const { admin_id } = req.query;
@@ -24,15 +25,40 @@ export default async function updateAdminDetails(req, res) {
 
     if (req.method === "GET") {
         try {
-            const [admins] = await db.query("SELECT admin_id, username, email, role, status FROM Admin WHERE admin_id = ?", [admin_id]);
+            const [admins] = await db.query(
+                "SELECT admin_id, username, email, role, status FROM Admin WHERE admin_id = ?",
+                [admin_id]
+            );
+            const encryptionKey = process.env.ENCRYPTION_SECRET;
+
             if (admins.length === 0) {
                 return res.status(404).json({ success: false, message: "Co-admin not found" });
             }
-            await db.query(
-                "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
-                [loggedAdminId, `Viewed Co-Admins: ${admins[0].username}`]
+
+            const admin = admins.map(admins => ({
+                ...admins,
+                email: decryptData(JSON.parse(admins.email), encryptionKey),
+                status: admins.status
+            }));
+
+            const [activityLog] = await db.query(
+                "SELECT action, timestamp FROM ActivityLog WHERE admin_id = ? ORDER BY timestamp DESC",
+                [admin_id]
             );
-            return res.status(200).json({ success: true, admin: admins[0] });
+
+            if (loggedAdminId) {
+                await db.query(
+                    "INSERT INTO ActivityLog (admin_id, action, timestamp) VALUES (?, ?, NOW())",
+                    [loggedAdminId, `Viewed Co-Admin: ${admins[0].username}`]
+                );
+            }
+
+            return res.status(200).json({
+                success: true,
+                admin: admin[0],
+                activityLog,
+            });
+
         } catch (error) {
             console.error("Error fetching admin details:", error);
             return res.status(500).json({ success: false, message: "Internal Server Error" });

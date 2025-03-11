@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaTrash, FaEdit } from "react-icons/fa";
+import {FaTrash, FaEdit, FaEye} from "react-icons/fa";
 import { MdPersonAddDisabled } from "react-icons/md";
 import useAuth from "../../../../../../hooks/useSession";
 import EditModal from "../../../../../components/systemAdmin/editAdmin";
@@ -80,6 +80,10 @@ export default function CoAdminDashboard() {
     } catch (err) {
       alert(err.message);
     }
+  };
+
+  const handleViewDetails = (admin_id) => {
+    router.push(`/pages/system_admin/co_admin/details/${admin_id}`);
   };
 
   const handleStatusChange = async (admin_id, newStatus) => {
@@ -174,6 +178,12 @@ export default function CoAdminDashboard() {
                           >
                             <MdPersonAddDisabled className="w-4 h-4 mr-1" />
                             {admin.status === "active" ? "Disable" : "Enable"}
+                          </button>
+                          <button
+                              className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center"
+                              onClick={() => handleViewDetails(admin.admin_id)}
+                          >
+                            <FaEye className="w-4 h-4 mr-1" /> View Details
                           </button>
                           <button 
                             className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center" 

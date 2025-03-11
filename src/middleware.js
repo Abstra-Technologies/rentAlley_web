@@ -13,7 +13,6 @@ async function verifyToken(token) {
   }
 }
 
-// Define permission mapping for system_admin routes
 const permissionMapping = {
   "/pages/system_admin/co_admin": "manage_users",
   "/pages/system_admin/propertyManagement": "approve_properties",
@@ -58,7 +57,6 @@ export async function middleware(req) {
     const { userType, role, permissions } = decoded;
     const pathname = req.nextUrl.pathname;
 
-    // Redirect based on role
     if (pathname.startsWith("/pages/tenant") && userType !== "tenant") {
       return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
     }
@@ -67,24 +65,20 @@ export async function middleware(req) {
       return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
     }
 
-    // ✅ Only check permissions for system_admin pages
     if (pathname.startsWith("/pages/system_admin")) {
       if (role !== "super-admin" && role !== "co-admin" && role !== "superadmin") {
         return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
       }
 
-      // Allow access to pages that do not require permission checks
       if (excludePages.some(page => pathname.startsWith(page))) {
         return NextResponse.next();
       }
 
-      // Ensure permissions exist before checking
       if (!permissions || !Array.isArray(permissions)) {
         console.error("Permissions are missing or invalid for admin:", decoded);
         return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
       }
 
-      // Get required permission for this route
       const requiredPermissionKey = Object.keys(permissionMapping).find(key =>
           pathname.startsWith(key)
       );

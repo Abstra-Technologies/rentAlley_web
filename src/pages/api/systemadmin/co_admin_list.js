@@ -37,15 +37,20 @@ export default async function handler(req, res) {
         const encryptionKey = process.env.ENCRYPTION_SECRET;
 
         // Fetch all admins except the logged-in one
-        const [admins] = await db.query(
+        const [decryptedAdmins] = await db.query(
             "SELECT admin_id, username, email, status FROM Admin WHERE admin_id != ?",
             [currentadmin_id]
         );
 
-        if (!admins || admins.length === 0) {
+        if (!decryptedAdmins || decryptedAdmins.length === 0) {
             return res.status(200).json({ success: false, message: "No record found" });
         }
 
+        const admins = decryptedAdmins.map(decryptedAdmins => ({
+            ...decryptedAdmins,
+            email: decryptData(JSON.parse(decryptedAdmins.email), encryptionKey),
+            status: decryptedAdmins.status
+        }));
 
         console.log("Admins fetched:", admins);
         return res.status(200).json({ admins });
