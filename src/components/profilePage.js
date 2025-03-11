@@ -19,6 +19,8 @@ import SideNavProfile from "./navigation/sidebar-profile";
 export default function ProfilePage() {
   const { user, loading, error } = useAuthStore();
   const router = useRouter();
+const user_id = user?.user_id;
+const userType = user?.userType;
 
   const [profileData, setProfileData] = useState({
     firstName: "",
@@ -56,7 +58,7 @@ export default function ProfilePage() {
   }, [user]);
 
   useEffect(() => {
-    if (user && user.userType === "landlord") {
+    if (user && user?.userType === "landlord") {
       axios
         .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
         .then((response) => {
@@ -142,11 +144,11 @@ export default function ProfilePage() {
               }
             >
               <a
-                href={`/pages/${user?.userType}/profile/${user.user_id}`}
+                href={`/pages/${user?.userType}/profile/${user?.user_id}`}
                 className="flex items-center space-x-2 text-gray-700"
               >
                 <UserIcon className="h-5 w-5" />
-                <span>Profile</span>
+                <span>Profile ${user?.user_id}</span>
               </a>
             </li>
 
@@ -162,7 +164,7 @@ export default function ProfilePage() {
               }
             >
               <a
-                href={`/pages/${user?.userType}/securityPrivacy/${user.user_id}`}
+                href={`/pages/${user?.userType}/securityPrivacy/${user?.user_id}`}
                 className="flex items-center space-x-2 text-gray-700"
               >
                 <ShieldCheckIcon className="h-5 w-5" />
@@ -233,7 +235,7 @@ export default function ProfilePage() {
           <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">
             Welcome, {user?.firstName}!
           </h2>
-          {user.userType === "landlord" && (
+          {user?.userType === "landlord" && (
             <div className="mt-4">
               {verificationStatus === "1" ? (
                 <p className="text-yellow-600 font-bold">
@@ -358,7 +360,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex justify-between mt-4">
-            <DeleteAccountButton />
+            <DeleteAccountButton user_id={user_id} userType={userType}/>
             {editing ? (
               <button
                 onClick={() => {

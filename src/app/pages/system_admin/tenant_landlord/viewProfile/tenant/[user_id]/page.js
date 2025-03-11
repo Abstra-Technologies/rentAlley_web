@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import LoadingScreen from "../../../../../../../components/loadingScreen";
 import { FaArrowLeft, FaUser, FaEnvelope, FaPhone, FaIdCard, FaCalendarAlt, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import SideNavAdmin from "../../../../../../../components/navigation/sidebar-admin";
 
 export default function TenantDetails() {
     const params = useParams();
@@ -55,6 +56,9 @@ export default function TenantDetails() {
     );
     
     return (
+        <div className="flex">
+            <SideNavAdmin />
+
         <div className="max-w-3xl mx-auto p-6 bg-gray-50 min-h-screen">
             <button 
                 onClick={handleGoBack}
@@ -196,6 +200,7 @@ export default function TenantDetails() {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 }

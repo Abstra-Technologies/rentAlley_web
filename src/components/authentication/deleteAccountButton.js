@@ -1,61 +1,87 @@
 import { useState } from "react";
-import { useRouter} from "next/navigation";
-import useAuthStore from "../../zustand/authStore";
-
+import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import useAuthStore from "../../zustand/authStore";
+import axios from "axios"; // Import zustand store
 
-export default function DeleteAccountButton() {
+export default function DeleteAccountButton({ user_id, userType }) {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-    const { user } = useAuthStore();
-    const user_id = user?.user_id;
-    const userType = user?.userType;
+    const [deleting, setDeleting] = useState(false);
+    // const handleDeleteAccount = async () => {
+    //     setLoading(true);
+    //
+    //     try {
+    //         const response = await fetch("/api/auth/deleteAccount", {
+    //             method: "POST",
+    //             headers: { "Content-Type": "application/json" },
+    //             body: JSON.stringify({ user_id, userType }),
+    //             credentials:"include"
+    //         });
+    //
+    //         const data = await response.json();
+    //
+    //         if (!response.ok) {
+    //             throw new Error(data.error || "Failed to request account deletion.");
+    //         }
+    //
+    //         console.log("Account deletion requested successfully:", data);
+    //
+    //         await Swal.fire({
+    //             title: "Account Deletion Requested",
+    //             text: "Your account will be deleted in 30 days unless you cancel.",
+    //             icon: "success",
+    //             confirmButtonText: "OK",
+    //         });
+    //
+    //
+    //         setTimeout(() => {
+    //             router.push("/pages/auth/login");
+    //             window.location.reload();
+    //         }, 1000);
+    //
+    //     } catch (error) {
+    //         console.error("Error deleting account:", error);
+    //         await Swal.fire({
+    //             title: "Error",
+    //             text: error.message,
+    //             icon: "error",
+    //             confirmButtonText: "OK",
+    //         });
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
 
     const handleDeleteAccount = async () => {
-        setLoading(true);
+        const confirmDelete = window.confirm(
+            "Are you sure you want to delete your account? This action is irreversible."
+        );
+        if (!confirmDelete) return;
+
+        setDeleting(true);
 
         try {
-            const response = await fetch("/api/auth/deleteAccount", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ user_id, userType }),
-                credentials: "include",
+            await axios.delete(`/api/auth/deleteAccount`, {
+                data: {user_id, userType},
+                headers: {"Content-Type": "application/json"},
+                withCredentials: true,
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                 new Error(data.error || "Failed to request account deletion.");
-            }
-
-            await Swal.fire({
-                title: "Account Deletion Requested",
-                text: "Your account will be deleted in 30 days unless you cancel.",
-                icon: "success",
-                confirmButtonText: "OK",
-            });
-
-            setTimeout(() => {
-                router.push("/pages/auth/login");
-                window.location.reload();
-            }, 1000);
-
+            alert("Account deleted successfully.");
+            router.push("/pages/auth/login");
         } catch (error) {
-            await Swal.fire({
-                title: "Error",
-                text: error.message,
-                icon: "error",
-                confirmButtonText: "OK",
-            });
-        } finally {
-            setLoading(false);
+            console.error("Account deletion failed:", error);
+            alert("Failed to delete account. Please try again later.");
         }
-    };
+
+        setDeleting(false);
+    }
 
     const confirmDelete = () => {
         Swal.fire({
             title: "Are you sure?",
-            text: "This action will start a 30-day grace period before permanent deletion.",
+            text: "This action will start a 30-day grace period before archiving your account.",
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",

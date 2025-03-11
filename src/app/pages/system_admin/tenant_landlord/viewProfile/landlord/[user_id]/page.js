@@ -6,6 +6,7 @@ import LandlordSubscriptionCurrent from "../../../../../../../components/landlor
 import PropertyListUser from "../../../../../../../components/landlord/PropertyLists";
 import LoadingScreen from "../../../../../../../components/loadingScreen";
 import { FaArrowLeft, FaUser, FaEnvelope, FaPhone, FaIdCard, FaCalendarAlt, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import SideNavAdmin from "../../../../../../../components/navigation/sidebar-admin";
 
 export default function LandlordDetails() {
     const params = useParams();
@@ -57,6 +58,9 @@ export default function LandlordDetails() {
     );
     
     return (
+        <div className="flex">
+            <SideNavAdmin />
+
         <div className="max-w-3xl mx-auto p-6 bg-gray-50 min-h-screen">
             <button 
                 onClick={handleGoBack}
@@ -208,6 +212,7 @@ export default function LandlordDetails() {
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     );
 }

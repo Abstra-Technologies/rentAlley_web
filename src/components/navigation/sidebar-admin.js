@@ -16,6 +16,7 @@ export default function SideNavAdmin({ admin }) {
     { href: '/pages/system_admin/propertyManagement/list', icon: Building2, label: 'Property Verification' },
     { href: '/pages/system_admin/annoucement', icon: ScrollText, label: 'Announcements' },
     { href: '/pages/system_admin/bug_report/list', icon: Bug, label: 'Bug Reports' },
+    { href: '/pages/system_admin/deactivatedAccounts', icon: Bug, label: 'DeActivated Account' },
     { href: '/pages/system_admin/supportIssues', icon: ScrollText, label: 'Support' },
   ];
 
