@@ -66,11 +66,16 @@ export default async function CreateNewMaintenanceRequest(req, res) {
 
     socket.emit("sendMessage", autoMessage);
 
+    await db.query(
+        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+        [user_id, `Created Maintenance Request ${subject - description}`]
+    );
+
     return res.status(201).json({
       success: true,
       message: "Maintenance request created successfully",
       request_id,
-      landlord_id, // Return landlord_id to the frontend for reference
+      landlord_id,
     });
   } catch (error) {
     console.error("Error creating maintenance request:", error);

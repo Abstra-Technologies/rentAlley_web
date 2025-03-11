@@ -148,7 +148,7 @@ const userType = user?.userType;
                 className="flex items-center space-x-2 text-gray-700"
               >
                 <UserIcon className="h-5 w-5" />
-                <span>Profile ${user?.user_id}</span>
+                <span>Profile</span>
               </a>
             </li>
 

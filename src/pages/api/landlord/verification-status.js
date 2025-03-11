@@ -25,7 +25,7 @@ export default async function VerificationStatusLandlord(req, res) {
 
         const { is_verified } = rows[0];
 
-        const verificationStatus = is_verified ? "verified" : "not verified";
+        const verificationStatus = is_verified === 1 ? "verified" : "not verified";
 
         await db.end();
         return res.status(200).json({

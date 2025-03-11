@@ -46,8 +46,7 @@ const PropertyListingPage = () => {
           .then((response) => {
             console.log("Fetched Verification Status:", response.data);
 
-            // Convert 1 (true) or 0 (false) into a boolean
-            setIsVerified(response.data.verification_status === 1);
+            setIsVerified(response.data.verification_status === "verified");
           })
           .catch((err) => {
             console.error("Failed to fetch landlord verification status:", err);

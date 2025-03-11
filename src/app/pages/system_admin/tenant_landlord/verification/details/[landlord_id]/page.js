@@ -132,7 +132,7 @@ export default function LandlordDetails() {
             )}
 
             <button
-                onClick={() => router.push("/")}
+                onClick={() => router.push("/pages/system_admin/tenant_landlord/verification")}
                 className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
             >
                 Back to List

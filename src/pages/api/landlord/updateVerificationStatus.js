@@ -34,7 +34,7 @@ export default async function updateLandlordStatus(req, res) {
                     lv.reviewed_by,
                     lv.document_url,
                     lv.selfie_url,
-                    l.user_id,
+                    l.user_id
              FROM LandlordVerification lv
              JOIN Landlord l ON lv.landlord_id = l.landlord_id
              JOIN User u ON l.user_id = u.user_id
@@ -50,14 +50,13 @@ export default async function updateLandlordStatus(req, res) {
 
         if (status.toLowerCase() === "rejected") {
 
-            // Delete files from S3
             if (document_url) {
                 await deleteFromS3(document_url);
-                console.log("📂 Deleted document from S3:", document_url);
+                console.log(" Deleted document from S3:", document_url);
             }
             if (selfie_url) {
                 await deleteFromS3(selfie_url);
-                console.log("📂 Deleted selfie from S3:", selfie_url);
+                console.log("Deleted selfie from S3:", selfie_url);
             }
 
             await db.execute("DELETE FROM LandlordVerification WHERE landlord_id = ?", [landlord_id]);
