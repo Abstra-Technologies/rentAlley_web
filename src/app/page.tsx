@@ -281,7 +281,7 @@ export default function SplashScreen() {
               stress-free.
             </p>
             <Link
-              href="/pages/about"
+              href="/pages/about-us"
               className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors"
             >
               Know More
