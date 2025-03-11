@@ -2,13 +2,13 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Home, Bell, MessageCircle, Wrench, CreditCard, Menu, X } from "lucide-react";
+import { Home, Bell, MessageCircle, Wrench, CreditCard, Menu, X, ReceiptText } from "lucide-react";
 
 const menuItems = [
   { href: "/pages/tenant/dashboard", icon: Home, label: "Dashboard" },
   { href: "/pages/tenant/announcement", icon: Bell, label: "Announcements" },
   { href: "/pages/tenant/chat", icon: MessageCircle, label: "Chats" },
-  { href: "/pages/tenant/paymentHistory/currentLeasePayment", icon: Bell, label: "Payment History" },
+  { href: "/pages/tenant/paymentHistory/currentLeasePayment", icon: ReceiptText, label: "Payment History" },
   {
     href: "/pages/tenant/maintenance",
     icon: Wrench,
