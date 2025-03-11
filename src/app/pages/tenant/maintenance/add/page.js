@@ -25,10 +25,10 @@ export default function MaintenanceRequestPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
-  const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
-
-
-  
+  const socket = io(
+    process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000",
+    { autoConnect: true }
+  );
 
   const handleFileChange = (e) => {
     setPhotos([...e.target.files]);
@@ -78,9 +78,9 @@ export default function MaintenanceRequestPage() {
       const landlordId = maintenanceRes.data.landlord_id;
 
       // Notify the landlord
-    await axios.post("/api/maintenance/notify-landlord", {
-      request_id: requestId,
-    });
+      await axios.post("/api/maintenance/notify-landlord", {
+        request_id: requestId,
+      });
 
       // Upload photos if available
       if (photos.length > 0) {
@@ -114,7 +114,6 @@ export default function MaintenanceRequestPage() {
       });
     }
   };
-
 
   return (
     <TenantLayout>
