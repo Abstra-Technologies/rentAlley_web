@@ -10,6 +10,7 @@ import {
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
+import SideNavProfile from "./navigation/sidebar-profile";
 
 export default function SecurityPage() {
   const { user, loading, error } = useAuth();
@@ -17,7 +18,7 @@ export default function SecurityPage() {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    oldPassword: "",
+    currentPassword: "",  
     newPassword: "",
     confirmPassword: "",
   });
@@ -28,7 +29,7 @@ export default function SecurityPage() {
   };
 
   const handle2FAToggle = async () => {
-    const newStatus = !user.is_2fa_enabled; // Use `user.is_2fa_enabled`
+    const newStatus = !user.is_2fa_enabled;
     logEvent("2FA Enable", "User Interaction", "User Updated 2FA", 1);
 
     try {
@@ -86,14 +87,14 @@ export default function SecurityPage() {
     }
 
     try {
-      const res = await fetch("/api/auth/change-password", {
+      const res = await fetch("/api/profile/changePassword", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: user?.user_id,
-          oldPassword: formData.oldPassword,
+          currentPassword: formData.currentPassword,
           newPassword: formData.newPassword,
         }),
+        credentials: "include"
       });
 
       if (res.ok) {
@@ -102,6 +103,14 @@ export default function SecurityPage() {
           title: "Password Updated!",
           text: "Your password has been changed successfully.",
         });
+        
+    
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: ""
+        }));
       } else {
         const data = await res.json();
         Swal.fire({
@@ -125,53 +134,6 @@ export default function SecurityPage() {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 py-4 px-6">
-        <h2 className="text-2xl font-semibold text-blue-600 mb-6">Menu</h2>
-        <nav>
-          <ul>
-            <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
-              <a
-                href={`/pages/${user.userType}/profile/${user.user_id}`}
-                className="flex items-center space-x-2 text-gray-700"
-              >
-                <UserIcon className="h-5 w-5" />
-                <span>Profile</span>
-              </a>
-            </li>
-            <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
-              <a
-                href={`/pages/${user.userType}/securityPrivacy/${user.user_id}`}
-                className="flex items-center space-x-2 text-gray-700"
-              >
-                <ShieldCheckIcon className="h-5 w-5" />
-                <span>Security & Privacy</span>
-              </a>
-            </li>
-
-            {user?.userType === "landlord" && (
-              <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
-                <a
-                  href="/pages/landlord/subscription"
-                  className="flex items-center space-x-2 text-gray-700"
-                >
-                  <span>View Subscription</span>
-                </a>
-              </li>
-            )}
-
-            <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">
-              <a href="#" className="flex items-center space-x-2 text-gray-700">
-                <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                <span>Logout</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
-
-      {/* Main Content */}
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-semibold text-blue-600 mb-8">
           Security & Privacy
@@ -183,12 +145,12 @@ export default function SecurityPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Old Password
+                Current Password
               </label>
               <input
                 type="password"
-                name="oldPassword"
-                value={formData.oldPassword}
+                name="currentPassword"
+                value={formData.currentPassword}
                 onChange={handleChange}
                 className="w-full p-2 border rounded-md"
                 required
@@ -243,6 +205,5 @@ export default function SecurityPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }

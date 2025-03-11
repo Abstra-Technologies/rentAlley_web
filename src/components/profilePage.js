@@ -12,6 +12,7 @@ import axios from "axios";
 import { logEvent } from "../utils/gtag";
 import DeleteAccountButton from "./authentication/deleteAccountButton";
 import useAuthStore from "../zustand/authStore";
+import SideNavProfile from "./navigation/sidebar-profile";
 
 export default function ProfilePage() {
   const { user, loading, error } = useAuthStore();
@@ -95,7 +96,7 @@ export default function ProfilePage() {
         ...prev,
         profilePicture: response.data.imageUrl,
       }));
-      console.log("Image uploaded:", response.data.imageUrl);
+      console.log("✅ Image uploaded:", response.data.imageUrl);
     } catch (error) {
       console.error("Upload failed:", error);
     }
@@ -124,109 +125,6 @@ export default function ProfilePage() {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="w-64 bg-white border-r border-gray-200 py-4 px-6">
-        <h2 className="text-2xl font-semibold text-blue-600 mb-6">Menu</h2>
-        <nav>
-          <ul>
-            <li
-              className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() =>
-                logEvent(
-                  "Navigation",
-                  "User Interaction",
-                  "Clicked Profile Link",
-                  1
-                )
-              }
-            >
-              <a
-                href={`/pages/${user.userType}/profile/${user.user_id}`}
-                className="flex items-center space-x-2 text-gray-700"
-              >
-                <UserIcon className="h-5 w-5" />
-                <span>Profile</span>
-              </a>
-            </li>
-
-            <li
-              className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() =>
-                logEvent(
-                  "Navigation",
-                  "User Interaction",
-                  "Clicked Security & Privacy Link",
-                  1
-                )
-              }
-            >
-              <a
-                href={`/pages/${user.userType}/securityPrivacy/${user.user_id}`}
-                className="flex items-center space-x-2 text-gray-700"
-              >
-                <ShieldCheckIcon className="h-5 w-5" />
-                <span>Security & Privacy</span>
-              </a>
-            </li>
-
-            {user?.userType === "landlord" && (
-              <li
-                className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-                onClick={() =>
-                  logEvent(
-                    "Navigation",
-                    "User Interaction",
-                    "Clicked View Subscription Link",
-                    1
-                  )
-                }
-              >
-                <a
-                  href="/pages/landlord/subsciption_plan"
-                  className="flex items-center space-x-2 text-gray-700"
-                >
-                  <span>View Subscription</span>
-                </a>
-              </li>
-            )}
-            <li
-              className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() =>
-                logEvent(
-                  "Navigation",
-                  "User Interaction",
-                  "Clicked Notification Link",
-                  1
-                )
-              }
-            >
-              <a
-                href={`/pages/${user.userType}/notificationSettings`}
-                className="flex items-center space-x-2 text-gray-700"
-              >
-                <ShieldCheckIcon className="h-5 w-5" />
-                <span>Notification Settings</span>
-              </a>
-            </li>
-            <li
-              className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() =>
-                logEvent(
-                  "Navigation",
-                  "User Interaction",
-                  "Clicked Logout Link",
-                  1
-                )
-              }
-            >
-              <a href="#" className="flex items-center space-x-2 text-gray-700">
-                <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                <span>Logout</span>
-              </a>
-            </li>
-          </ul>
-        </nav>
-      </div>
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-semibold text-blue-600 mb-8">Profile</h1>
         <div className="max-w-2xl mx-auto">
@@ -242,6 +140,7 @@ export default function ProfilePage() {
                   className="w-32 h-32 rounded-full object-cover border border-gray-300 shadow-md"
                 />
 
+                {/* Hidden File Input */}
                 <input
                   type="file"
                   accept="image/*"
@@ -249,6 +148,7 @@ export default function ProfilePage() {
                   className="hidden"
                 />
 
+                {/* Change Picture Overlay */}
                 <div
                   className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0
                         group-hover:bg-opacity-50 rounded-full transition-all duration-300"
@@ -282,12 +182,12 @@ export default function ProfilePage() {
                     className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     onClick={() => router.push("/pages/landlord/verification")}
                   >
-                    Apply for Verification
+                    Reapply for Verification
                   </button>
                 </div>
               ) : verificationStatus === "not verified" ? (
                 <div>
-                  <p className="text-red-600 font-bold">Not Verified</p>
+                  <p className="text-red-600 font-bold">❌ Not Verified</p>
                   <button
                     className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     onClick={() => router.push("/pages/landlord/verification")}
@@ -427,6 +327,7 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </div>
+    
+    
   );
 }
