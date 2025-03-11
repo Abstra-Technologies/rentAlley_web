@@ -16,39 +16,40 @@ export default function RegisterAs() {
   };
 
   return (
-    <div className="relative flex justify-center items-center h-screen bg-gray-100 overflow-hidden">
+    <div className="relative flex justify-center items-center min-h-screen bg-gray-100 overflow-hidden">
       <Image 
-                  src="/images/hero-section.jpeg" 
-                  alt="Cityscape view of high-rise buildings" 
-                  fill
-                  className="object-cover brightness-75 z-0"
-                  priority
-                />
-      <div className="relative z-10 bg-white p-6 rounded-lg shadow-md w-96">
+        src="/images/hero-section.jpeg" 
+        alt="Cityscape view of high-rise buildings" 
+        fill
+        className="absolute inset-0 object-cover brightness-75"
+        priority
+      />
+      
+      <div className="relative z-10 bg-white p-10 rounded-2xl shadow-lg w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <div className="text-2xl font-bold text-blue-600">Rentahan</div>
+          <div className="text-3xl font-bold text-blue-600">Rentahan</div>
         </div>
-
+  
         {/* "Register As" Heading */}
-        <h2 className="text-center text-xl font-semibold text-gray-800 mb-6">
+        <h2 className="text-center text-2xl font-semibold text-gray-800 mb-6">
           Register As
         </h2>
-
+  
         {/* Buttons */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Tenant Button */}
           <button
-            className="w-full bg-blue-600 text-white py-3 rounded-md shadow-md hover:bg-blue-700 transition duration-300 mb-4"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all"
             type="button"
             onClick={() => handleSelectRole("tenant")}
           >
             Tenant
           </button>
-
+  
           {/* Landlord Button */}
           <button
-            className="w-full bg-blue-600 text-white py-3 rounded-md shadow-md hover:bg-blue-700 transition duration-300"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all"
             type="button"
             onClick={() => handleSelectRole("landlord")}
           >
@@ -58,4 +59,5 @@ export default function RegisterAs() {
       </div>
     </div>
   );
+  
 }
