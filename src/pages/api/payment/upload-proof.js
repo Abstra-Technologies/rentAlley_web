@@ -107,7 +107,7 @@ export default async function handler(req, res) {
 
       const receiptReferenceNumber = `PAY-${Date.now()}-${paymentType.toUpperCase()}`;
 
-      if (["1", "2", "3"].includes(paymentMethod)) {
+      if (["2", "3", "4"].includes(paymentMethod)) {
         if (!proofFile) {
           return res
             .status(400)

@@ -62,7 +62,7 @@ const PaymentForm = () => {
     accept: {
       "image/*": [],
     },
-    maxSize: 10485760, // 10MB
+    maxSize: 10485760,
   });
 
   const handleSubmit = async (e) => {
@@ -119,7 +119,6 @@ const PaymentForm = () => {
 
       if (response.ok) {
         setSuccessMessage("Payment proof uploaded successfully!");
-        // Redirect after success
         setTimeout(() => {
           router.push("/pages/tenant/my-unit");
         }, 2000);
@@ -201,7 +200,7 @@ const PaymentForm = () => {
         />
       </div>
 
-      {["1", "2", "3"].includes(paymentMethod) && (
+      {["2", "3", "4"].includes(paymentMethod) && (
         <div
           {...getRootProps()}
           className="border-2 border-dashed border-gray-300 p-6 text-center cursor-pointer rounded-lg hover:bg-gray-100"
