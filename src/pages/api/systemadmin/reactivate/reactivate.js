@@ -1,10 +1,14 @@
+import { db } from "../../../../lib/db";
 
-import { db } from "../../../lib/db";
-export default async function DeleteAccount(req, res) {
+export default async function ReactivateAccount(req, res){
+
+    if (req.method !== "POST") {
+        return res.status(405).json({ message: "Method Not Allowed" });
+    }
     try {
         console.log("Received request contents:", req.body);
 
-        if (req.method !== "DELETE") {
+        if (req.method !== "POST") {
             return res.status(405).json({ error: "Method Not Allowed. Use DELETE." });
         }
 
@@ -30,38 +34,18 @@ export default async function DeleteAccount(req, res) {
             const landlordId = landlordRows[0].landlord_id;
             console.log("Landlord found:", landlordId);
 
-            const [leaseRows] = await db.query(
-                `SELECT COUNT(*) AS active_lease_count
-                 FROM LeaseAgreement l
-                 JOIN Unit u ON l.unit_id = u.unit_id
-                 JOIN Property p ON u.property_id = p.property_id
-                 WHERE p.landlord_id = ? AND l.status = 'active'`,
-                [landlordId]
-            );
-
-            const activeLeaseCount = leaseRows[0]?.active_lease_count || 0;
-            console.log("Active Lease Count:", activeLeaseCount);
-
-            if (activeLeaseCount > 0) {
-                console.error("Cannot deactivate account, active leases exist.");
-                return res.status(400).json({ error: "You cannot deactivate your account. You have active leases." });
-            }
-
-            await db.query(`UPDATE Property SET status = 'inactive' WHERE landlord_id = ?`, [landlordId]);
+            await db.query(`UPDATE Property SET status = 'active' WHERE landlord_id = ?`, [landlordId]);
             await db.query(
                 `UPDATE Unit u 
                  JOIN Property p ON u.property_id = p.property_id
-                 SET u.status = 'inactive' 
+                 SET u.status = 'active' 
                  WHERE p.landlord_id = ?`,
                 [landlordId]
             );
 
-            console.log("Properties and units set to inactive.");
-            await db.query(`UPDATE User SET is_active = 0 WHERE user_id = ?`, [user_id]);
-            res.setHeader("Set-Cookie", "token=; Path=/; HttpOnly; Max-Age=0; SameSite=Strict");
-            return res.status(200).json({ message: "Your account has been deactivated." });
-
-
+            console.log("Properties and units set to active.");
+            await db.query(`UPDATE User SET is_active = 1 WHERE user_id = ?`, [user_id]);
+            return res.status(200).json({ success: true, message: "Landlord account reactivated successfully." });
         }
 
         if (userType === "tenant") {
@@ -89,8 +73,8 @@ export default async function DeleteAccount(req, res) {
 
             console.log("Deactivating user account...");
             await db.query(`UPDATE User SET is_active = 0 WHERE user_id = ?`, [user_id]);
-            res.setHeader("Set-Cookie", "token=; Path=/; HttpOnly; Max-Age=0; SameSite=Strict");
-            return res.status(200).json({ message: "Your account has been deactivated." });
+            return res.status(200).json({ success: true, message: "Landlord account reactivated successfully." });
+
         }
 
 

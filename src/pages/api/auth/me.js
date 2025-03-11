@@ -14,8 +14,8 @@ export default async function handler(req, res) {
     const token = req.cookies.token;
 
     if (!token) {
-        console.error("[User Fetch] Token not found in cookies.");
-        return res.status(401).json({ error: "Unauthorized" });
+        console.warn("[User Fetch] No token found in cookies. Returning guest session.");
+        return res.status(200).json({ user: null }); // Return a default guest user object
     }
 
     try {

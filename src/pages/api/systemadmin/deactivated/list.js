@@ -1,5 +1,6 @@
 
 import { db } from "../../../../lib/db";
+import {decryptData} from "../../../../crypto/encrypt";
 
 export default async function listOfDeactivatedAccounts(req, res) {
     if (req.method !== 'GET') {
@@ -13,7 +14,15 @@ export default async function listOfDeactivatedAccounts(req, res) {
             WHERE is_active = 0`
         );
 
-        return res.status(200).json(rows);
+        const row = rows.map(rows => ({
+            ...rows,
+            email: decryptData(JSON.parse(rows.email), process.env.ENCRYPTION_SECRET),
+            firstName: decryptData(JSON.parse(rows.firstName), process.env.ENCRYPTION_SECRET),
+            lastName: decryptData(JSON.parse(rows.lastName), process.env.ENCRYPTION_SECRET),
+        }));
+
+
+        return res.status(200).json(row);
     } catch (error) {
         return res.status(500).json({ message: `Database Server Error ${error}` });
     }
