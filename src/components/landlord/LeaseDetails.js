@@ -43,23 +43,22 @@ const LeaseDetails = ({ unitId, tenantId }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) {
-      return "N/A"; // Or handle the case where the date is not available
+      return "N/A";
     }
 
     try {
       const date = new Date(dateString);
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+      const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
 
       return `${year}-${month}-${day}`;
     } catch (error) {
       console.error("Error formatting date:", error);
-      return "Invalid Date"; // Handle invalid date strings
+      return "Invalid Date";
     }
   };
 
-  // Fetch prospective tenant status (pending/approved/disapproved)
   const fetchProspectiveStatus = async () => {
     try {
       const response = await axios.get(
@@ -168,7 +167,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  // Fetch lease details
   const fetchLeaseDetails = async () => {
     try {
       const response = await axios.get(
@@ -188,7 +186,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  // Handle file upload
   const handleFileUpload = async (file) => {
     const formData = new FormData();
     formData.append("leaseFile", file);
@@ -211,12 +208,10 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  // Fetch tenant details
   const fetchTenantDetails = async () => {
     setIsLoading(true);
     try {
       if (queryTenantId) {
-        // If we have a specific tenant ID, fetch just that tenant
         const response = await axios.get(
           `/api/landlord/prospective/interested-tenants?tenant_id=${queryTenantId}`
         );
@@ -240,7 +235,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  // Handle lease date update
   const handleUpdateLease = async () => {
     if (!startDate || !endDate) {
       Swal.fire({
@@ -249,7 +243,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
         icon: "error",
         confirmButtonText: "OK",
       });
-      return; // Stop execution if validation fails
+      return;
     }
 
     try {
@@ -261,7 +255,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
         }
       );
       Swal.fire("Success", "Lease dates updated successfully", "success");
-      fetchLeaseDetails(); // Refresh data
+      fetchLeaseDetails();
     } catch (error) {
       console.error("Error updating lease:", error);
       Swal.fire("Error", "Failed to update lease dates", "error");
@@ -411,6 +405,36 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                     <p className="text-sm text-gray-500">Mobile Number:</p>
                     <p className="text-gray-800 font-medium">
                       {tenant?.phoneNumber}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <PhoneIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500">Occupation:</p>
+                    <p className="text-gray-800 font-medium">
+                      {tenant?.occupation}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <PhoneIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500">Monthly Income:</p>
+                    <p className="text-gray-800 font-medium">
+                      {tenant?.monthly_income}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <PhoneIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-gray-500">Employment Status:</p>
+                    <p className="text-gray-800 font-medium">
+                      {tenant?.employment_type}
                     </p>
                   </div>
                 </div>
