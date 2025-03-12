@@ -1,7 +1,7 @@
 "use client";
 import GoogleLogo from "../../../../components/google-logo";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import {useState, useEffect, Suspense} from "react";
 import { z } from "zod";
 import {useRouter, useSearchParams} from "next/navigation";
 import Swal from "sweetalert2";
@@ -14,7 +14,16 @@ const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
 
-export default function Login() {
+export default function LoginPage() {
+  return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <Login />
+      </Suspense>
+  );
+}
+
+
+ function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const router = useRouter();
   const [message] = useState(null);

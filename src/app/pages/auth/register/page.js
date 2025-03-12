@@ -2,7 +2,7 @@
 
 import GoogleLogo from "../../../../components/google-logo";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import {useState, useEffect, Suspense} from "react";
 import { z } from "zod";
 import useRoleStore from "../../../../zustand/store";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -35,8 +35,15 @@ const registerSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+export default function RegisterPage() {
+  return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <Register />
+      </Suspense>
+  );
+}
 
-export default function Register() {
+function Register() {
   const role = useRoleStore((state) => state.role);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState(false);

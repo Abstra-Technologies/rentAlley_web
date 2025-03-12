@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
-  const { minPrice, maxPrice, searchQuery } = req.query; // Get price range from query params
+  const { minPrice, maxPrice, searchQuery } = req.query;
 
   try {
     let query = `
@@ -29,7 +29,6 @@ export default async function handler(req, res) {
 
     const queryParams = [];
 
-    // ✅ Apply price range filter correctly
     if (minPrice || maxPrice) {
       query += ` AND u.rent_amount >= ?`;
       queryParams.push(minPrice || 0);
@@ -40,7 +39,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // ✅ Search by Multiple Fields
     if (searchQuery) {
       query += ` AND (p.property_name LIKE ? OR p.city LIKE ? OR p.street LIKE ? OR p.province LIKE ?)`;
       const likeQuery = `%${searchQuery}%`;
@@ -51,7 +49,6 @@ export default async function handler(req, res) {
 
     const [properties] = await db.execute(query, queryParams);
 
-    // 🔓 Decrypt property photos before sending response
     const decryptedProperties = properties.map((property) => ({
       ...property,
       property_photo: property.encrypted_property_photo
