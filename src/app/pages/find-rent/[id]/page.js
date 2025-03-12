@@ -267,7 +267,12 @@ export default function PropertyDetails() {
                   Property Description
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
-                  {property.description}
+                  {property.description.split('\n').map((line, index) => (
+                    <span key={index}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
                 </p>
               </div>
             )}
