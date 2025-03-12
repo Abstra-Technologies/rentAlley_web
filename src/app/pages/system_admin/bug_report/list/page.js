@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation";
 import useAuth from "../../../../../../hooks/useSession";
 import useSWR from "swr";
-import LoadingScreen from "@/src/components/loadingScreen";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { FaBug, FaSearch, FaFilter, FaExclamationTriangle, FaCheckCircle, FaClock } from "react-icons/fa";
 import { useState } from "react";
+import LoadingScreen from "../../../../../components/loadingScreen";
 
 // Fetch function for SWR
 const fetcher = async (url) => {
