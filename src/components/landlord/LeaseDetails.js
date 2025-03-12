@@ -12,6 +12,11 @@ import {
   EnvelopeIcon,
   IdentificationIcon,
 } from "@heroicons/react/24/outline";
+import {
+  HiOutlineBriefcase,
+  HiOutlineCurrencyDollar,
+  HiOutlineUser,
+} from "react-icons/hi";
 import { PhoneIcon } from "lucide-react";
 import { MapPinIcon } from "lucide-react";
 import { UserIcon } from "lucide-react";
@@ -368,7 +373,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                 <div className="w-16 h-16 rounded-full bg-gray-200 mr-4 overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {tenant?.profilePicture ? (
                     <Image
-                      src={tenant.profilePicture}
+                      src={tenant?.profilePicture}
                       alt="Profile"
                       width={64}
                       height={64}
@@ -410,7 +415,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                 </div>
 
                 <div className="flex items-start">
-                  <PhoneIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <HiOutlineBriefcase className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-500">Occupation:</p>
                     <p className="text-gray-800 font-medium">
@@ -420,17 +425,17 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                 </div>
 
                 <div className="flex items-start">
-                  <PhoneIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <HiOutlineCurrencyDollar className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-500">Monthly Income:</p>
                     <p className="text-gray-800 font-medium">
-                      {tenant?.monthly_income}
+                      {tenant?.monthly_income?.replace("_", "-")}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
-                  <PhoneIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
+                  <HiOutlineUser className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-500">Employment Status:</p>
                     <p className="text-gray-800 font-medium">
@@ -561,7 +566,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
 
               {/* Lease Agreement Upload/View/Delete Section */}
               {lease?.agreement_url ? (
-                // If a lease agreement exists
                 <div>
                   <p className="text-sm text-gray-500 mb-2">Lease Agreement:</p>
                   <div className="p-3 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between">
@@ -597,7 +601,19 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                   <p className="text-sm text-gray-500 mb-2">
                     Upload Lease Agreement:
                   </p>
-                  <LeaseUpload onFileUpload={handleFileUpload} />
+                  {tenant?.status === "approved" ? (
+                    <LeaseUpload onFileUpload={handleFileUpload} />
+                  ) : (
+                    <div
+                      className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative"
+                      role="alert"
+                    >
+                      <span className="block sm:inline">
+                        Tenant must be approved before uploading a lease
+                        agreement.
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

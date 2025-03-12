@@ -218,8 +218,8 @@ const MaintenanceRequestPage = () => {
     <Suspense fallback={<div>Loading...</div>}>
       <SearchParamsWrapper setActiveTab={setActiveTab} />
       <div className="p-6 w-full bg-gray-50">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-blue-900">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-blue-900 mb-2 sm:mb-0">
             Maintenance Requests
           </h1>
           <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200">
@@ -264,113 +264,115 @@ const MaintenanceRequestPage = () => {
             No {activeTab} maintenance requests found.
           </div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
-            <thead className="bg-gray-50">
-              <tr>
-                {[
-                  "Name",
-                  "Property / Unit",
-                  "Category",
-                  "Date",
-                  "Photo",
-                  "Status",
-                  "Action",
-                  "View",
-                ].map((header) => (
-                  <th
-                    key={header}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {visibleRequests.map((request) => (
-                <tr key={request.request_id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    {request.tenant_first_name} {request.tenant_last_name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {request.property_name} / {request.unit_name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {request.category}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(request.created_at).toISOString().split("T")[0]}
-                  </td>
-                  <td className="px-6 py-4">
-                    {request.photo_urls && request.photo_urls.length > 0 ? (
-                      <a
-                        href={request.photo_urls[0]}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <img
-                          src={request.photo_urls[0]}
-                          alt="Maintenance Photo"
-                          className="h-10 w-10 rounded"
-                        />
-                      </a>
-                    ) : (
-                      "No Photos"
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full bg-gray-200`}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+              <thead className="bg-gray-50">
+                <tr>
+                  {[
+                    "Name",
+                    "Property / Unit",
+                    "Category",
+                    "Date",
+                    "Photo",
+                    "Status",
+                    "Action",
+                    "View",
+                  ].map((header) => (
+                    <th
+                      key={header}
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      {request.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {activeTab === "pending" && (
-                      <button
-                        onClick={() =>
-                          updateStatus(request.request_id, "scheduled")
-                        }
-                        className="px-2 py-1 bg-green-500 text-white rounded-md"
-                      >
-                        Approve
-                      </button>
-                    )}
-                    {activeTab === "scheduled" && (
-                      <button
-                        onClick={() => handleStartClick(request.request_id)}
-                        className="px-2 py-1 bg-yellow-500 text-white rounded-md"
-                      >
-                        Start
-                      </button>
-                    )}
-                    {activeTab === "in-progress" && (
-                      <button
-                        onClick={() =>
-                          updateStatus(request.request_id, "completed", {
-                            completion_date: new Date()
-                              .toISOString()
-                              .split("T")[0],
-                          })
-                        }
-                        className="px-2 py-1 bg-blue-500 text-white rounded-md"
-                      >
-                        Complete
-                      </button>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleViewDetails(request)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <EyeIcon className="h-5 w-5" />
-                    </button>
-                  </td>
+                      {header}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {visibleRequests.map((request) => (
+                  <tr key={request.request_id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      {request.tenant_first_name} {request.tenant_last_name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {request.property_name} / {request.unit_name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {request.category}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {new Date(request.created_at).toISOString().split("T")[0]}
+                    </td>
+                    <td className="px-6 py-4">
+                      {request.photo_urls && request.photo_urls.length > 0 ? (
+                        <a
+                          href={request.photo_urls[0]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={request.photo_urls[0]}
+                            alt="Maintenance Photo"
+                            className="h-10 w-10 rounded"
+                          />
+                        </a>
+                      ) : (
+                        "No Photos"
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full bg-gray-200`}
+                      >
+                        {request.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {activeTab === "pending" && (
+                        <button
+                          onClick={() =>
+                            updateStatus(request.request_id, "scheduled")
+                          }
+                          className="px-2 py-1 bg-green-500 text-white rounded-md"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {activeTab === "scheduled" && (
+                        <button
+                          onClick={() => handleStartClick(request.request_id)}
+                          className="px-2 py-1 bg-yellow-500 text-white rounded-md"
+                        >
+                          Start
+                        </button>
+                      )}
+                      {activeTab === "in-progress" && (
+                        <button
+                          onClick={() =>
+                            updateStatus(request.request_id, "completed", {
+                              completion_date: new Date()
+                                .toISOString()
+                                .split("T")[0],
+                            })
+                          }
+                          className="px-2 py-1 bg-blue-500 text-white rounded-md"
+                        >
+                          Complete
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => handleViewDetails(request)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <EyeIcon className="h-5 w-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {showCalendar && (

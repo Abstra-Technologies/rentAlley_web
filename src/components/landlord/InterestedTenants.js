@@ -29,11 +29,11 @@ export default function InterestedTenants({ unitId, landlordId }) {
 
         if (!subscription && user?.subscription) {
           setSubscription({
-            ...user.subscription,
-            plan_name: user.subscription.plan_name || "Free Plan",
+            ...user?.subscription,
+            plan_name: user?.subscription.plan_name || "Free Plan",
             listingLimits: {
               maxProspect:
-                user.subscription.plan_name === "Premium Plan" ? Infinity : 3,
+                user?.subscription.plan_name === "Premium Plan" ? Infinity : 3,
             },
           });
         }
@@ -128,9 +128,9 @@ export default function InterestedTenants({ unitId, landlordId }) {
             <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
               <div>
                 <p className="font-medium">
-                  {subscription.plan_name === "Premium Plan"
+                  {subscription?.plan_name === "Premium Plan"
                     ? "Premium Plan: Unlimited prospective tenants"
-                    : `${subscription.plan_name}: ${subscription.listingLimits.maxProspect} prospective tenants`}
+                    : `${subscription?.plan_name}: ${subscription?.listingLimits.maxProspect} prospective tenants`}
                 </p>
                 {hiddenTenants.length > 0 && (
                   <p className="text-sm text-gray-600">
