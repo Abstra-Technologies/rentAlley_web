@@ -6,7 +6,8 @@ import { BUG_REPORT_STATUSES } from "../../../../../constant/bugStatus";
 import useAuth from "../../../../../../hooks/useSession";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { FaBug, FaUser, FaCalendarAlt, FaExclamationTriangle, FaCheckCircle, FaClock, FaArrowLeft } from "react-icons/fa";
-import LoadingScreen from "@/src/components/loadingScreen";
+import LoadingScreen from "../../../../../components/loadingScreen";
+
 
 const maskUserID = (userID) => {
   if (!userID || typeof userID !== 'string' || userID.length < 8) return "Anonymous";

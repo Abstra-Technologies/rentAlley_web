@@ -97,7 +97,7 @@ export default async function handler(req, res) {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [result] = await db.execute(
                 `INSERT INTO User (user_id, firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, createdAt, updatedAt, google_id, emailVerified, profilePicture, is_active)
-                 VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?)`,
+                 VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?,?)`,
                 [
                     fnameEncrypted || null,
                     lnameEncrypted || null,

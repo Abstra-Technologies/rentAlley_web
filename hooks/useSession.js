@@ -3,7 +3,7 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import useAuthStore from "@/src/zustand/authStore";
+import useAuthStore from "../src/zustand/authStore";
 
 export default function useAuth() {
   const { user, admin, loading, fetchSession, logout } = useAuthStore();
