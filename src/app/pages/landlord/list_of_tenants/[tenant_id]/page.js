@@ -1,14 +1,14 @@
 
 "use client";
 
-import {useParams, useSearchParams} from "next/navigation";
+import {useParams} from "next/navigation";
 import { useEffect, useState } from "react";
 import LandlordLayout from "../../../../../components/navigation/sidebar-landlord";
 
 export default function TenantDetails() {
     const params = useParams();
     const tenant_id = params?.tenant_id;
-
+    const [paymentHistory, setPaymentHistory] = useState([]);
     const [tenant, setTenant] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -18,7 +18,8 @@ export default function TenantDetails() {
         fetch(`/api/landlord/tenants/details/${tenant_id}`)
             .then((res) => res.json())
             .then((data) => {
-                setTenant(data);
+                setTenant(data.tenant);
+                setPaymentHistory(data.paymentHistory);
                 setLoading(false);
             })
             .catch((error) => {
@@ -79,6 +80,49 @@ export default function TenantDetails() {
                     </div>
                   </div>
                 </div>
+
+                  {/* Payment History List */}
+                  <div className="mt-4">
+                      <h3 className="text-md font-semibold text-gray-700 border-b pb-2">Transaction Records</h3>
+                      {paymentHistory.length === 0 ? (
+                          <p className="text-gray-500">No payment records found.</p>
+                      ) : (
+                          <div className="overflow-x-auto">
+                              <table className="w-full border-collapse border border-gray-300 mt-2">
+                                  <thead>
+                                  <tr className="bg-gray-100 text-gray-700">
+                                      <th className="border p-2">Date</th>
+                                      <th className="border p-2">Type</th>
+                                      <th className="border p-2">Amount</th>
+                                      <th className="border p-2">Status</th>
+                                      <th className="border p-2">Receipt</th>
+                                  </tr>
+                                  </thead>
+                                  <tbody>
+                                  {paymentHistory.map((payment) => (
+                                      <tr key={payment.payment_id} className="text-gray-600 text-center">
+                                          <td className="border p-2">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                                          <td className="border p-2">{payment.payment_type}</td>
+                                          <td className="border p-2">₱{payment.amount_paid.toFixed(2)}</td>
+                                          <td className={`border p-2 font-semibold ${payment.payment_status === "confirmed" ? "text-green-600" : "text-red-600"}`}>
+                                              {payment.payment_status}
+                                          </td>
+                                          <td className="border p-2">
+                                              {payment.receipt_reference ? (
+                                                  <a href={payment.receipt_reference} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                                                      View Receipt
+                                                  </a>
+                                              ) : (
+                                                  "N/A"
+                                              )}
+                                          </td>
+                                      </tr>
+                                  ))}
+                                  </tbody>
+                              </table>
+                          </div>
+                      )}
+              </div>
               </div>
               
               <div className="mt-8 flex items-center justify-between">

@@ -5,7 +5,7 @@ import {router, useRouter} from "next/navigation";
 import LandlordLayout from "../navigation/sidebar-landlord";
 
 export default function TenantList({ landlord_id }) {
-    const [tenants, setTenants] = useState([]); // Ensure tenants is always an array
+    const [tenants, setTenants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const router = useRouter();
@@ -20,7 +20,7 @@ export default function TenantList({ landlord_id }) {
                 if (Array.isArray(data)) {
                     setTenants(data);
                 } else {
-                    setTenants([]); // Ensure it's always an array
+                    setTenants([]);
                 }
                 setLoading(false);
             })
