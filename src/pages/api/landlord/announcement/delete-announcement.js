@@ -6,6 +6,9 @@ export default async function handler(req, res) {
   if (req.method !== "DELETE") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
+
+  //region GET CURRENT USER
+
   const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
   if (!cookies || !cookies.token) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -14,6 +17,8 @@ export default async function handler(req, res) {
   const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
   const { payload } = await jwtVerify(cookies.token, secretKey);
   let loggedUser = payload.user_id;
+  //endregion
+
   try {
     const { id } = req.query;
 
