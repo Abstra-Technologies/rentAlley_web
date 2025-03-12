@@ -265,17 +265,18 @@ export default function ViewUnits() {
               {billingData ? (
                 <div className="text-green-600 font-semibold mb-4">
                   <p>Billing already set for this month</p>
-                  {/*<div className="mt-2">*/}
-                  {/*  <h3 className="text-lg font-semibold text-gray-800">Electricity</h3>*/}
-                  {/*  <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</span></p>*/}
-                  {/*  <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "N/A"} kWh</span></p>*/}
-                  {/*</div>*/}
+                  <p>Billing Period: {billingForm?.billingPeriod} </p>
+                  <div className="mt-2">
+                    <h3 className="text-lg font-semibold text-gray-800">Electricity</h3>
+                    <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</span></p>
+                    <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "N/A"} kWh</span></p>
+                  </div>
 
-                  {/*<div className="mt-4">*/}
-                  {/*  <h3 className="text-lg font-semibold text-gray-800">Water</h3>*/}
-                  {/*  <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</span></p>*/}
-                  {/*  <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "water")?.rate_consumed || "N/A"} cu. meters</span></p>*/}
-                  {/*</div>*/}
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold text-gray-800">Water</h3>
+                    <p>Total Billed: <span className="text-gray-700">₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</span></p>
+                    <p>Rate per Unit: <span className="text-gray-700">{billingData.find(b => b.utility_type === "water")?.rate_consumed || "N/A"} cu. meters</span></p>
+                  </div>
                 </div>
               ) : (
                 <p className="text-gray-500">
@@ -292,7 +293,7 @@ export default function ViewUnits() {
                     name="billingPeriod"
                     value={billingForm.billingPeriod}
                     onChange={handleInputChange}
-                    disabled
+                    type='date'
                     className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300"
                   />
                 </div>
