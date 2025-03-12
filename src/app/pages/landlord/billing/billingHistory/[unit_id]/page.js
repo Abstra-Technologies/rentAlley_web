@@ -43,7 +43,7 @@ export default function BillingHistory() {
   return (
     <LandlordLayout>
       <div className="p-6 max-w-5xl mx-auto">
-        {/* Back Button */}
+        
         <button
           onClick={() => router.back()}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors duration-200"

@@ -34,7 +34,11 @@ export default function CreateAnnouncement() {
         setProperties(data);
       } catch (error) {
         console.error("Error fetching properties:", error);
-        alert("Failed to load properties. Please try again.");
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Failed to load properties. Please try again.",
+        });
       }
     }
 
@@ -44,7 +48,11 @@ export default function CreateAnnouncement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.property || !formData.subject || !formData.description) {
-      alert("Please fill in all fields.");
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Fields",
+        text: "Please fill in all fields before submitting.",
+      });
       return;
     }
 
@@ -79,11 +87,19 @@ export default function CreateAnnouncement() {
 
         router.push('/pages/landlord/announcement');
       } else {
-        alert(data.message || "Failed to create announcement");
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: data.message || "Failed to create announcement",
+        });
       }
     } catch (error) {
       console.error("Error creating announcement:", error);
-      alert("Failed to create announcement. Please try again.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to create announcement. Please try again.",
+      });
     }
   };
 

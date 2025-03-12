@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import LandlordLayout from '../../../../../components/navigation/sidebar-landlord';
 import useAuth from '../../../../../../hooks/useSession';
+import Swal from "sweetalert2";
 
 export default function ViewAnnouncement() {
   const router = useRouter();
@@ -26,7 +27,11 @@ export default function ViewAnnouncement() {
         setAnnouncement(data);
       } catch (error) {
         console.error("Error fetching announcement:", error);
-        alert("Failed to load announcement.");
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Failed to load announcement. Please try again.",
+        });
       } finally {
         setLoading(false);
       }
@@ -59,7 +64,11 @@ export default function ViewAnnouncement() {
       router.push('/pages/landlord/announcement');
     } catch (error) {
       console.error('Error deleting announcement:', error);
-      alert('Failed to delete announcement. Please try again.');
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to delete announcement. Please try again.",
+      });
     } finally {
       setIsDeleting(false);
     }

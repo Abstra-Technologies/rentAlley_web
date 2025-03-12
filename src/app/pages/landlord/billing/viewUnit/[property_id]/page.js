@@ -173,7 +173,6 @@ export default function ViewUnits() {
   return (
     <LandlordLayout>
       <div className="p-6 max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
             Units in Property {property_id}
@@ -254,7 +253,6 @@ export default function ViewUnits() {
           )}
         </div>
   
-        {/* Modal - Property Utility */}
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
