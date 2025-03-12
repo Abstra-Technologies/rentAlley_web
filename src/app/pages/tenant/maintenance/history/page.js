@@ -45,25 +45,27 @@ export default function MaintenanceHistoryPage() {
           <div className="flex flex-col space-y-4">
             {history.map((request) => (
               <div
-                key={request.request_id}
+                key={request?.request_id}
                 className="bg-white shadow-md rounded-lg p-4 space-y-4"
               >
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800">
-                    {request.subject}
+                    {request?.subject}
                   </h3>
-                  <p className="text-gray-600">{request.description}</p>
+                  <p className="text-gray-600">{request?.description}</p>
                   <p className="text-sm text-gray-500">
                     Property:{" "}
-                    <span className="font-medium">{request.property_name}</span>
+                    <span className="font-medium">
+                      {request?.property_name}
+                    </span>
                   </p>
                   <p className="text-sm text-gray-500">
                     Unit:{" "}
-                    <span className="font-medium">{request.unit_name}</span>
+                    <span className="font-medium">{request?.unit_name}</span>
                   </p>
                   <p className="text-sm text-gray-500">
                     Category:{" "}
-                    <span className="font-medium">{request.category}</span>
+                    <span className="font-medium">{request?.category}</span>
                   </p>
                   <p className="text-sm text-gray-500">
                     Status:{" "}
@@ -74,9 +76,9 @@ export default function MaintenanceHistoryPage() {
                 </div>
 
                 {/* Display maintenance images */}
-                {request.maintenance_photos.length > 0 ? (
+                {request?.maintenance_photos.length > 0 ? (
                   <div className="flex space-x-2 overflow-x-auto">
-                    {request.maintenance_photos.map((photo, index) =>
+                    {request?.maintenance_photos.map((photo, index) =>
                       photo ? (
                         <Image
                           key={index}

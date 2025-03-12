@@ -40,8 +40,6 @@ const MaintenanceRequestPage = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [sendAutoReply, setSendAutoReply] = useState(false);
-  const [autoReplyMessage, setAutoReplyMessage] = useState("");
 
   useEffect(() => {
     const fetchSubscription = async () => {
@@ -382,33 +380,6 @@ const MaintenanceRequestPage = () => {
 
               {/* Calendar Picker */}
               <Calendar onChange={setSelectedDate} value={selectedDate} />
-
-              {/* Toggle for Automated Reply */}
-              <div className="mt-4 flex items-center">
-                <label
-                  htmlFor="auto-reply"
-                  className="text-sm font-medium text-gray-700 mr-2"
-                >
-                  Send Automated Reply?
-                </label>
-                <input
-                  type="checkbox"
-                  id="auto-reply"
-                  checked={sendAutoReply}
-                  onChange={() => setSendAutoReply(!sendAutoReply)}
-                  className="cursor-pointer h-5 w-5"
-                />
-              </div>
-
-              {/* Reply Message Input (Only visible if enabled) */}
-              {sendAutoReply && (
-                <textarea
-                  className="w-full mt-2 p-2 border rounded text-sm"
-                  placeholder="Enter your message to the tenant..."
-                  value={autoReplyMessage}
-                  onChange={(e) => setAutoReplyMessage(e.target.value)}
-                />
-              )}
 
               {/* Buttons */}
               <div className="mt-4 flex justify-end">

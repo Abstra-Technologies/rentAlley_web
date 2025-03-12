@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         maintenance_photos: request.maintenance_photos
           ? request.maintenance_photos.split(",").map((encryptedPhoto) => {
               try {
-                return decryptData(encryptedPhoto, SECRET_KEY);
+                return decryptData(JSON.parse(encryptedPhoto), SECRET_KEY);
               } catch (error) {
                 console.error("Failed to decrypt photo:", error);
                 return null;
