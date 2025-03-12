@@ -3,11 +3,11 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm install -g tailwindcss
-        - npm ci
+        - npm install tailwindcss postcss autoprefixer --save-dev
+          - npm ci
     build:
       commands:
-        - node_modules/.bin/tailwindcss -i ./src/app/globals.css -o ./public/output.css
+        - npx tailwindcss -i ./src/app/globals.css -o ./public/output.css
           - npm run build
   artifacts:
     baseDirectory: .next
