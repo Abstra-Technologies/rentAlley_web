@@ -7,8 +7,8 @@ frontend:
         - npm ci
     build:
       commands:
-        - npx tailwindcss -i ./src/app/globals.css -o ./public/output.css
-        - npm run build
+        - node_modules/.bin/tailwindcss -i ./src/app/globals.css -o ./public/output.css
+          - npm run build
   artifacts:
     baseDirectory: .next
     files:
