@@ -275,7 +275,7 @@ export default function ChatComponent() {
     const userId = user?.user_id;
 
     useEffect(() => {
-        // Fetch chat list only when userId is available
+        
         const fetchChats = async () => {
             try {
                 console.log("Fetching chats...");
@@ -366,7 +366,7 @@ export default function ChatComponent() {
 
         const handleLoadMessages = (loadedMessages) => {
             console.log("📩 Received messages via WebSocket:", loadedMessages);
-            setMessages(loadedMessages); // ✅ Now messages come from WebSocket, not API
+            setMessages(loadedMessages);
         };
 
         const handleReceiveMessage = (newMessage) => {
@@ -427,25 +427,24 @@ export default function ChatComponent() {
 
     return (
         <div className="flex flex-col lg:flex-row bg-gray-100 h-screen w-full p-0">
-            {/* Chat List Section */}
-            <div className="w-full lg:w-1/3 bg-white p-4 rounded-none lg:rounded-lg shadow-md overflow-y-auto h-full">
+            <div className="w-full lg:w-1/3 bg-white p-4 rounded-none lg:rounded-lg shadow-md overflow-y-auto h-[40vh] lg:h-full border-r">
                 <h1 className="text-xl font-semibold mb-4">Chats</h1>
                 {chatList.length === 0 ? (
                     <p className="text-center text-gray-500">No chats available</p>
                 ) : (
-                    <ul>
+                    <ul className="space-y-1">
                         {chatList.map((chat) => (
                             <li
                                 key={chat.chat_room}
                                 className={`p-3 rounded-lg cursor-pointer transition-all duration-200 flex justify-between items-center ${
                                     selectedChat?.chat_room === chat.chat_room
-                                        ? "bg-blue-100 font-semibold"
-                                        : "hover:bg-gray-200"
+                                        ? "bg-blue-500 text-white font-semibold"
+                                        : "hover:bg-gray-100"
                                 }`}
                                 onClick={() => setSelectedChat(chat)}
                             >
-                                <div>
-                                    <p className="font-semibold text-gray-800">{chat.name}</p>
+                                <div className="truncate">
+                                    <p className="font-semibold">{chat.name}</p>
                                     <p className="text-sm text-gray-500 truncate w-40">
                                         {chat.lastMessage || "No messages yet"}
                                     </p>
@@ -456,12 +455,14 @@ export default function ChatComponent() {
                     </ul>
                 )}
             </div>
-
-            {/* Chat Messages Section */}
-            <div className="flex-1 bg-white p-4 lg:rounded-lg shadow-md flex flex-col h-full w-full">
+    
+            <div className="flex-1 bg-white p-4 lg:rounded-lg shadow-md flex flex-col h-[60vh] lg:h-full w-full">
                 {selectedChat ? (
                     <>
-                        <h2 className="text-lg font-semibold mb-3 border-b pb-2">Chat with {selectedChat.name}</h2>
+                        <h2 className="text-lg font-semibold mb-3 border-b pb-2">
+                            Chat with {selectedChat.name}
+                        </h2>
+    
                         <div className="flex-1 overflow-y-auto p-2 space-y-3">
                             {messages.length === 0 ? (
                                 <p className="text-center text-gray-500">No messages yet</p>
@@ -477,11 +478,11 @@ export default function ChatComponent() {
                                             <img
                                                 src={msg.profilePicture}
                                                 alt="User profile"
-                                                className="w-10 h-10 rounded-full"
+                                                className="w-8 h-8 lg:w-10 lg:h-10 rounded-full"
                                             />
                                         )}
                                         <div
-                                            className={`px-4 py-2 max-w-xs text-white rounded-lg shadow-md relative text-sm ${
+                                            className={`px-4 py-2 max-w-[75%] lg:max-w-xs text-white rounded-lg shadow-md relative text-sm ${
                                                 msg.sender_id === userId ? "bg-blue-500" : "bg-gray-700"
                                             }`}
                                         >
@@ -494,6 +495,7 @@ export default function ChatComponent() {
                                 ))
                             )}
                         </div>
+    
                         <div className="p-2 flex items-center gap-2 border-t mt-2 bg-white sticky bottom-0 w-full">
                             <input
                                 type="text"
@@ -518,4 +520,5 @@ export default function ChatComponent() {
             </div>
         </div>
     );
+    
 }
