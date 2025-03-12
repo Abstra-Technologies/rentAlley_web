@@ -291,51 +291,86 @@ export default function ChatComponent() {
         if (userId) fetchChats();
     }, [userId]);
 
-    // Handle socket events when a chat is selected
+    //version 1 from api
+    // Handle socket events when a chat is selected vIA API
+
+    // useEffect(() => {
+    //     if (!selectedChat || !selectedChat.chat_room) {
+    //         console.log("Waiting for user to select a chat...");
+    //         return;
+    //     }
+    //
+    //     if (!user) {
+    //         console.error("User is undefined!");
+    //         return;
+    //     }
+    //
+    //     const userType = user.tenant_id ? "tenant" : "landlord";
+    //     const senderId = user.tenant_id || user.landlord_id;
+    //
+    //     if (!senderId) {
+    //         console.error("Error: User ID is missing.");
+    //         return;
+    //     }
+    //
+    //     console.log("Joining Room:", selectedChat.chat_room);
+    //     socket.emit("joinRoom", { chatRoom: selectedChat.chat_room });
+    //
+    //     // Fetch past messages when joining a chat
+    //     const fetchMessages = async () => {
+    //         try {
+    //             console.log(`Fetching messages for chat_room: ${selectedChat.chat_room}`);
+    //             const response = await axios.get(`/api/chats/messages?chat_room=${selectedChat.chat_room}`);
+    //             console.log("Messages Loaded:", response.data);
+    //             setMessages(response.data);
+    //         } catch (error) {
+    //             console.error("Error fetching messages:", error);
+    //         }
+    //     };
+    //
+    //     fetchMessages();
+    //
+    //     // Handle incoming messages
+    //     const handleLoadMessages = (loadedMessages) => {
+    //         console.log("Received loadMessages event:", loadedMessages);
+    //         setMessages(loadedMessages);
+    //     };
+    //
+    //     const handleReceiveMessage = (newMessage) => {
+    //         console.log("New message received via WebSocket:", newMessage);
+    //         setMessages((prevMessages) => [...prevMessages, newMessage]);
+    //     };
+    //
+    //     socket.on("loadMessages", handleLoadMessages);
+    //     socket.on("receiveMessage", handleReceiveMessage);
+    //
+    //     return () => {
+    //         console.log("Leaving chat room and cleaning up listeners...");
+    //         socket.emit("leaveRoom", { chatRoom: selectedChat.chat_room });
+    //         socket.off("loadMessages", handleLoadMessages);
+    //         socket.off("receiveMessage", handleReceiveMessage);
+    //     };
+    // }, [user, selectedChat]);
+
+
+    // version 2 using websocket
+
     useEffect(() => {
         if (!selectedChat || !selectedChat.chat_room) {
             console.log("Waiting for user to select a chat...");
             return;
         }
 
-        if (!user) {
-            console.error("User is undefined!");
-            return;
-        }
-
-        const userType = user.tenant_id ? "tenant" : "landlord";
-        const senderId = user.tenant_id || user.landlord_id;
-
-        if (!senderId) {
-            console.error("Error: User ID is missing.");
-            return;
-        }
-
-        console.log("Joining Room:", selectedChat.chat_room);
+        console.log("Joining chat room:", selectedChat.chat_room);
         socket.emit("joinRoom", { chatRoom: selectedChat.chat_room });
 
-        // Fetch past messages when joining a chat
-        const fetchMessages = async () => {
-            try {
-                console.log(`Fetching messages for chat_room: ${selectedChat.chat_room}`);
-                const response = await axios.get(`/api/chats/messages?chat_room=${selectedChat.chat_room}`);
-                console.log("Messages Loaded:", response.data);
-                setMessages(response.data);
-            } catch (error) {
-                console.error("Error fetching messages:", error);
-            }
-        };
-
-        fetchMessages();
-
-        // Handle incoming messages
         const handleLoadMessages = (loadedMessages) => {
-            console.log("Received loadMessages event:", loadedMessages);
-            setMessages(loadedMessages);
+            console.log("📩 Received messages via WebSocket:", loadedMessages);
+            setMessages(loadedMessages); // ✅ Now messages come from WebSocket, not API
         };
 
         const handleReceiveMessage = (newMessage) => {
-            console.log("New message received via WebSocket:", newMessage);
+            console.log("📩 New message received:", newMessage);
             setMessages((prevMessages) => [...prevMessages, newMessage]);
         };
 
@@ -343,12 +378,14 @@ export default function ChatComponent() {
         socket.on("receiveMessage", handleReceiveMessage);
 
         return () => {
-            console.log("Leaving chat room and cleaning up listeners...");
+            console.log("Leaving chat room...");
             socket.emit("leaveRoom", { chatRoom: selectedChat.chat_room });
             socket.off("loadMessages", handleLoadMessages);
             socket.off("receiveMessage", handleReceiveMessage);
         };
-    }, [user, selectedChat]);
+    }, [selectedChat]);
+
+
 
     const sendMessage = () => {
         if (!message.trim() || !selectedChat) {
