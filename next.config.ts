@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  optimizeFonts: true,
   env: {
     ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
   },
