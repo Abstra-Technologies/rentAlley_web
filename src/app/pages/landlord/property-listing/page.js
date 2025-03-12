@@ -154,6 +154,55 @@ const PropertyListingPage = () => {
     router.push(`/pages/landlord/property-listing/create-property`);
   };
 
+  // const handleDelete = useCallback(async (propertyId, event) => {
+  //   event.stopPropagation();
+  //
+  //   const result = await Swal.fire({
+  //     title: "Are you sure?",
+  //     text: "You won't be able to recover this!",
+  //     icon: "warning",
+  //     showCancelButton: true,
+  //     confirmButtonColor: "#d33",
+  //     cancelButtonColor: "#3085d6",
+  //     confirmButtonText: "Yes, delete it!",
+  //   });
+  //
+  //   if (!result.isConfirmed) return;
+  //
+  //   try {
+  //     const response = await fetch(
+  //       `/api/propertyListing/propListing?id=${propertyId}`,
+  //       {
+  //         method: "DELETE",
+  //       }
+  //     );
+  //
+  //     if (response.ok) {
+  //       Swal.fire({
+  //         title: "Deleted!",
+  //         text: "Property has been deleted.",
+  //         icon: "success",
+  //         showConfirmButton: true,
+  //         confirmButtonText: "Close",
+  //       }).then(() => {
+  //         fetchAllProperties(user.landlord_id);
+  //       });
+  //     } else {
+  //       Swal.fire({
+  //         title: "Error!",
+  //         text: "Failed to delete property.",
+  //         icon: "error",
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting property:", error);
+  //     Swal.fire({
+  //       title: "Error!",
+  //       text: "An error occurred while deleting the property.",
+  //       icon: "error",
+  //     });
+  //   }
+  // });
   const handleDelete = useCallback(async (propertyId, event) => {
     event.stopPropagation();
 
@@ -170,17 +219,16 @@ const PropertyListingPage = () => {
     if (!result.isConfirmed) return;
 
     try {
-      const response = await fetch(
-        `/api/propertyListing/propListing?id=${propertyId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`/api/propertyListing/propListing?id=${propertyId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
 
       if (response.ok) {
         Swal.fire({
           title: "Deleted!",
-          text: "Property has been deleted.",
+          text: "Property has been deleted successfully.",
           icon: "success",
           showConfirmButton: true,
           confirmButtonText: "Close",
@@ -188,9 +236,15 @@ const PropertyListingPage = () => {
           fetchAllProperties(user.landlord_id);
         });
       } else {
-        Swal.fire({
+        let errorMessage = "Failed to delete property.";
+
+        if (data?.error === "Cannot delete property with active leases") {
+          errorMessage = "This property cannot be deleted because it has active leases.";
+        }
+
+        await Swal.fire({
           title: "Error!",
-          text: "Failed to delete property.",
+          text: errorMessage,
           icon: "error",
         });
       }
@@ -202,7 +256,7 @@ const PropertyListingPage = () => {
         icon: "error",
       });
     }
-  });
+  }, [user.landlord_id, fetchAllProperties]);
 
   if (errorMsg) {
     return (

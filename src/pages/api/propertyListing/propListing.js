@@ -239,27 +239,40 @@ async function handlePutRequest(req, res, connection, id) {
 
 async function handleDeleteRequest(req, res, connection, id) {
   try {
-    // Check if the property exists
     const [rows] = await connection.execute(
-      `SELECT * FROM Property WHERE property_id = ?`,
-      [id]
+        `SELECT * FROM Property WHERE property_id = ?`,
+        [id]
     );
+
     if (rows.length === 0) {
       throw new Error("Property not found");
     }
 
+    // Check if any unit within the property has an active lease
+    const [activeLeases] = await connection.execute(
+        `SELECT la.agreement_id 
+     FROM LeaseAgreement la
+     JOIN Unit u ON la.unit_id = u.unit_id
+     WHERE u.property_id = ? AND la.status = 'active'`,
+        [id]
+    );
+
+    if (activeLeases.length > 0) {
+      return res.status(400).json({ error: "Cannot delete property with active leases" });
+    }
+
     await connection.beginTransaction();
 
-    await connection.execute(`DELETE FROM Property WHERE property_id = ?`, [
-      id,
-    ]);
+    await connection.execute(`DELETE FROM Property WHERE property_id = ?`, [id]);
 
     await connection.commit();
     res.status(200).json({ message: "Property listing deleted successfully" });
+
   } catch (error) {
     await connection.rollback();
-    console.error("Error deleting property listings:", error);
+    console.error("Error deleting property listing:", error);
 
     res.status(500).json({ error: "Failed to delete property listing" });
   }
+
 }
