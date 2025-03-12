@@ -182,84 +182,95 @@ export default function InquiryBooking({
   };
 
   return (
-    <div className="max-w-sm mx-auto p-4 border rounded-lg shadow-md bg-white">
+    <div className="max-w-sm mx-auto p-6 border rounded-lg shadow-lg bg-white">
       {/* Custom Calendar Styles */}
       <style>{customCalendarStyles}</style>
-
+  
       {/* View Toggle Buttons */}
-      <div className="flex space-x-2 mb-4">
+      <div className="flex mb-6">
         <button
-          className={`flex-1 py-2 font-semibold rounded transition-colors ${
+          className={`flex-1 py-3 font-semibold rounded-l-lg transition-colors ${
             view === "inquire" 
               ? "bg-blue-900 text-white" 
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
           onClick={() => setView("inquire")}
         >
           Inquire
         </button>
         <button
-          className={`flex-1 py-2 font-semibold rounded transition-colors ${
+          className={`flex-1 py-3 font-semibold rounded-r-lg transition-colors ${
             view === "schedule" 
               ? "bg-blue-900 text-white" 
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }`}
           onClick={() => setView("schedule")}
         >
           Schedule a Visit
         </button>
       </div>
-
+  
       {view === "inquire" && (
         <div className="space-y-4">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-blue-900">₱{rent_amount}</p>
+          <div className="text-center p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-600 mb-1">Monthly Rent</p>
+            <p className="text-3xl font-bold text-blue-900">₱{rent_amount}</p>
           </div>
           <ChatInquiry landlord_id={landlord_id} />
         </div>
       )}
-
+  
       {view === "schedule" && (
-        <div className="space-y-4">
-          <p className="text-sm text-blue-900 text-center">
-            Select a date and time to schedule a visit
-          </p>
+        <div className="space-y-5">
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm font-medium text-blue-900">
+              Select a date and time to schedule a visit
+            </p>
+          </div>
           
           <Calendar
             onChange={setSelectedDate}
             value={selectedDate}
             tileDisabled={isTileDisabled}
-            className="w-full border rounded-md custom-calendar"
+            className="w-full border rounded-md custom-calendar shadow-sm"
             minDetail="month"
             minDate={new Date()}
           />
-
+  
           {selectedDate && (
-            <div className="space-y-2">
+            <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
               <label className="block text-sm font-semibold text-gray-700">
                 Select Time:
               </label>
-              <input
-                type="time"
-                value={selectedTime}
-                onChange={handleTimeChange}
-                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-900"
-                min="08:00"
-                max="17:00"
-              />
+              
+              <div className="flex space-x-2">
+                <select
+                  value={selectedTime}
+                  onChange={handleTimeChange}
+                  className="w-full p-3 border rounded-md focus:ring-2 focus:ring-blue-900 focus:border-blue-900 bg-white"
+                >
+                  <option value="">Select a time</option>
+                  {Array.from({ length: 19 }, (_, i) => {
+                    const hour = Math.floor(i / 2) + 8;
+                    const minute = i % 2 === 0 ? "00" : "30";
+                    const time = `${hour.toString().padStart(2, '0')}:${minute}`;
+                    return <option key={time} value={time}>{time}</option>;
+                  })}
+                </select>
+              </div>
+  
+              {selectedTime && (
+                <div className="mt-2 p-3 bg-blue-100 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900">
+                    Selected: {getCombinedDateTime()}
+                  </p>
+                </div>
+              )}
             </div>
           )}
-
-          {selectedDate && selectedTime && (
-            <div className="p-3 bg-blue-50 rounded-lg shadow-inner">
-              <p className="text-sm font-semibold text-blue-900">
-                Selected: {getCombinedDateTime()}
-              </p>
-            </div>
-          )}
-
+  
           <button
-            className={`w-full py-2 rounded transition-colors ${
+            className={`w-full py-3 rounded-lg transition-colors text-lg font-medium ${
               selectedDate && selectedTime
                 ? "bg-blue-900 text-white hover:bg-blue-800"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
@@ -271,32 +282,32 @@ export default function InquiryBooking({
           </button>
         </div>
       )}
-
+  
       {/* Modal for Confirmation */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-96 space-y-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-96 space-y-5">
             <h2 className="text-xl font-bold text-center text-blue-900">
               Proceed with Rental Application?
             </h2>
-
+  
             <div className="space-y-3">
               <button
-                className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                 onClick={handleApplyAsTenant}
               >
                 Yes, I want to apply
               </button>
-
+  
               <button
-                className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 onClick={handleJustSchedule}
               >
                 Just schedule a visit
               </button>
-
+  
               <button
-                className="w-full py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                className="w-full py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
