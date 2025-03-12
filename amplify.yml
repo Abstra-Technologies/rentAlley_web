@@ -3,6 +3,7 @@ frontend:
   phases:
     preBuild:
       commands:
+        - -npm install
         - npm install tailwindcss postcss autoprefixer --save-dev
           - npm ci
     build:
