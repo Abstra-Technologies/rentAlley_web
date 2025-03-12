@@ -10,7 +10,7 @@ export default async function Chats(req, res) {
     const connection = await db.getConnection();
 
     try {
-        const [chatList] = await connection.query(
+        const [chatList] = await db.query(
             `SELECT DISTINCT
                  m.chat_room,
                  u.firstName AS encryptedFirstName,

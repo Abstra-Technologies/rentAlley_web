@@ -33,7 +33,6 @@ const ViewUnitPage = () => {
     fetcher
   );
 
-  // Fetch units for the specific property
   const {
     data: units,
     error,
@@ -70,6 +69,35 @@ const ViewUnitPage = () => {
     );
   };
 
+  // const handleDeleteUnit = async (unitId) => {
+  //   const result = await Swal.fire({
+  //     title: "Are you sure?",
+  //     text: "This action cannot be undone!",
+  //     icon: "warning",
+  //     showCancelButton: true,
+  //     confirmButtonColor: "#d33",
+  //     cancelButtonColor: "#3085d6",
+  //     confirmButtonText: "Yes, delete it!",
+  //   });
+  //
+  //   if (!result.isConfirmed) return;
+  //
+  //   try {
+  //     await axios.delete(`/api/unitListing/unit?id=${unitId}`);
+  //
+  //     mutate(`/api/propertyListing/property/${id}`);
+  //     mutate(`/api/unitListing/unit?property_id=${id}`);
+  //     Swal.fire("Deleted!", "Unit has been deleted.", "success");
+  //   } catch (error) {
+  //     console.error("Error deleting unit:", error);
+  //     Swal.fire(
+  //       "Error",
+  //       "Failed to delete the unit. Please try again.",
+  //       "error"
+  //     );
+  //   }
+  // };
+
   const handleDeleteUnit = async (unitId) => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -84,21 +112,30 @@ const ViewUnitPage = () => {
     if (!result.isConfirmed) return;
 
     try {
-      await axios.delete(`/api/unitListing/unit?id=${unitId}`);
+      const response = await axios.delete(`/api/unitListing/unit?id=${unitId}`);
 
-      // Update the UI by revalidating the SWR cache
-      mutate(`/api/propertyListing/property/${id}`);
-      mutate(`/api/unitListing/unit?property_id=${id}`);
-      Swal.fire("Deleted!", "Unit has been deleted.", "success");
+      if (response.status === 200) {
+        Swal.fire("Deleted!", "Unit has been deleted.", "success");
+        mutate(`/api/propertyListing/property/${id}`);
+        mutate(`/api/unitListing/unit?property_id=${id}`);
+      } else {
+        Swal.fire("Error", "Failed to delete the unit. Please try again.", "error");
+      }
     } catch (error) {
       console.error("Error deleting unit:", error);
-      Swal.fire(
-        "Error",
-        "Failed to delete the unit. Please try again.",
-        "error"
-      );
+
+      let errorMessage = "Failed to delete the unit. Please try again.";
+
+      if (error.response && error.response.data?.error) {
+        if (error.response.data.error === "Cannot delete unit with active lease agreement") {
+          errorMessage = "This unit cannot be deleted because it has an active lease.";
+        }
+      }
+
+      Swal.fire("Error", errorMessage, "error");
     }
   };
+
 
   if (error)
     return (

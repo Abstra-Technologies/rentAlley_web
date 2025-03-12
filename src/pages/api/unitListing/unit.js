@@ -5,9 +5,7 @@ export default async function handler(req, res) {
   let connection;
 
   try {
-    //Initialize DB Connection
     connection = await db.getConnection();
-
     if (req.method === "POST") {
       await handlePostRequest(req, res, connection);
     } else if (req.method === "GET") {
@@ -193,33 +191,40 @@ async function handlePutRequest(req, res, connection, id) {
 //Delete Units by ID
 async function handleDeleteRequest(req, res, connection, id) {
   try {
-    console.log("Deleting unit with ID:", id); // Debugging log
+    console.log("Deleting unit with ID:", id);
 
     if (!id) {
       return res.status(400).json({ error: "Unit ID is required" });
     }
 
-    // Check if the property exists
     const [rows] = await connection.execute(
-      `SELECT * FROM Unit WHERE unit_id = ?`,
-      [id]
+        `SELECT * FROM Unit WHERE unit_id = ?`,
+        [id]
     );
+
     if (rows.length === 0) {
-      throw new Error("Unit not found");
+      return res.status(404).json({ error: "Unit not found" });
+    }
+
+    const [activeLeases] = await connection.execute(
+        `SELECT agreement_id FROM LeaseAgreement WHERE unit_id = ? AND status = 'active'`,
+        [id]
+    );
+
+    if (activeLeases.length > 0) {
+      return res.status(400).json({
+        error: "Cannot delete unit with active lease agreement",
+      });
     }
 
     await connection.beginTransaction();
-
     await connection.execute(`DELETE FROM Unit WHERE unit_id = ?`, [id]);
-
     await connection.commit();
     res.status(200).json({ message: "Unit listing deleted successfully" });
   } catch (error) {
     await connection.rollback();
-    // Log the error message
-    console.error("Error deleting unit listings:", error);
-
-    // Respond with an error message
+    console.error("Error deleting unit listing:", error);
     res.status(500).json({ error: "Failed to delete unit listing" });
   }
 }
+

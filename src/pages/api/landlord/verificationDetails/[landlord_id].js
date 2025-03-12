@@ -7,24 +7,20 @@ export default async function getLandlordVerificationData(req, res) {
 
     if (req.method === "GET") {
         try {
-            // Query to fetch landlord data
             const [landlordData] = await db.query(
                 `SELECT * FROM Landlord WHERE landlord_id = ?`,
                 [landlord_id]
             );
 
-            // Query to fetch landlord verification data
             const [verificationData] = await db.query(
                 `SELECT * FROM LandlordVerification WHERE landlord_id = ?`,
                 [landlord_id]
             );
 
-            // If no landlord is found, return an error
             if (landlordData.length === 0) {
                 return res.status(404).json({ message: "Landlord not found" });
             }
 
-            // Decrypt sensitive data in landlordData
             const decryptedLandlordData = {
                 ...landlordData[0],
                 address: landlordData[0].address

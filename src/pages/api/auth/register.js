@@ -56,7 +56,8 @@ export default async function RegisterAnAccount(req, res) {
             const lnameEncrypted = JSON.stringify(await encryptData(lastName, process.env.ENCRYPTION_SECRET));
             const phoneEncrypted = JSON.stringify(await encryptData(phoneNumber, process.env.ENCRYPTION_SECRET));
             const birthDateEncrypted = JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET));
-
+const photoEncrypted =JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET));
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
 
 
             console.log("Inserting user into database...");

@@ -233,7 +233,7 @@ const PropertyListingPage = () => {
           showConfirmButton: true,
           confirmButtonText: "Close",
         }).then(() => {
-          fetchAllProperties(user.landlord_id);
+          fetchAllProperties(user?.landlord_id);
         });
       } else {
         let errorMessage = "Failed to delete property.";
@@ -256,7 +256,7 @@ const PropertyListingPage = () => {
         icon: "error",
       });
     }
-  }, [user.landlord_id, fetchAllProperties]);
+  }, [user?.landlord_id, fetchAllProperties]);
 
   if (errorMsg) {
     return (

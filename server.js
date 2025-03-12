@@ -96,6 +96,20 @@ io.on("connection", (socket) => {
                 timestamp: msg.timestamp,
             }));
 
+            // const decryptedMessages = messages.map((msg) => {
+            //     const decryptedText = decryptMessage(msg.encrypted_message, msg.iv);
+            //     console.log(`🔓 Decrypting message: ${msg.encrypted_message} -> ${decryptedText}`);
+            //
+            //     return {
+            //         sender_id: msg.sender_id,
+            //         sender_name: msg.firstName,
+            //         receiver_id: msg.receiver_id,
+            //         message: decryptedText || "[Decryption Error]",
+            //         timestamp: msg.timestamp,
+            //     };
+            // });
+
+
             io.to(chatRoom).emit("loadMessages", decryptedMessages);
         } catch (error) {
             console.error("Error loading messages:", error.message);
