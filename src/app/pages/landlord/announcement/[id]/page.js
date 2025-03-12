@@ -1,9 +1,9 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
-import LandlordLayout from '../../../../../components/navigation/sidebar-landlord';
-import useAuth from '../../../../../../hooks/useSession';
+"use client";
+import React, { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
+import LandlordLayout from "../../../../../components/navigation/sidebar-landlord";
+import useAuth from "../../../../../../hooks/useSession";
 import Swal from "sweetalert2";
 
 export default function ViewAnnouncement() {
@@ -19,9 +19,16 @@ export default function ViewAnnouncement() {
       if (!user?.landlord_id || !id) return;
 
       try {
-        console.log("Fetching announcement with ID:", id, "for Landlord ID:", user.landlord_id);
-        const response = await fetch(`/api/landlord/announcement/view-announcement?id=${id}`);
-        if (!response.ok) throw new Error('Failed to fetch announcement');
+        console.log(
+          "Fetching announcement with ID:",
+          id,
+          "for Landlord ID:",
+          user.landlord_id
+        );
+        const response = await fetch(
+          `/api/landlord/announcement/view-announcement?id=${id}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch announcement");
         const data = await response.json();
         console.log("Fetched Announcement:", data);
         setAnnouncement(data);
@@ -47,23 +54,36 @@ export default function ViewAnnouncement() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this announcement?')) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/landlord/announcement/delete-announcement?id=${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/landlord/announcement/delete-announcement?id=${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to delete announcement');
+        throw new Error("Failed to delete announcement");
       }
 
-      router.push('/pages/landlord/announcement');
+      router.push("/pages/landlord/announcement");
     } catch (error) {
-      console.error('Error deleting announcement:', error);
+      console.error("Error deleting announcement:", error);
       Swal.fire({
         icon: "error",
         title: "Oops...",
@@ -99,9 +119,23 @@ export default function ViewAnnouncement() {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-3xl mx-auto p-6">
           <div className="flex justify-between items-center mb-6">
-            <Link href="/pages/landlord/announcement" className="flex items-center text-gray-600 hover:text-gray-900">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <Link
+              href="/pages/landlord/announcement"
+              className="flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Back to Announcements
             </Link>
@@ -117,7 +151,7 @@ export default function ViewAnnouncement() {
                 disabled={isDeleting}
                 className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:bg-red-300"
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
@@ -127,7 +161,9 @@ export default function ViewAnnouncement() {
             <div className="text-sm text-gray-500 mb-6">
               Posted on {new Date(announcement.created_at).toLocaleDateString()}
             </div>
-            <div className="text-gray-700 whitespace-pre-wrap">{announcement.description}</div>
+            <div className="text-gray-700 whitespace-pre-wrap">
+              {announcement.description}
+            </div>
           </div>
         </div>
       </div>
