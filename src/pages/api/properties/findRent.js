@@ -1,7 +1,7 @@
 import { db } from "../../../lib/db";
 import { decryptData } from "../../../crypto/encrypt";
 
-const SECRET_KEY = process.env.ENCRYPTION_SECRET; // Store in .env
+const SECRET_KEY = process.env.ENCRYPTION_SECRET;
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
