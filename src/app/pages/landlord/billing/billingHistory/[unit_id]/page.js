@@ -42,58 +42,58 @@ export default function BillingHistory() {
 
   return (
     <LandlordLayout>
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6 max-w-5xl mx-auto">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors duration-200"
         >
-          ← Back
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+          </svg>
+          Back
         </button>
-        <h1 className="text-2xl font-bold mb-4">Billing History</h1>
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border p-2">Billing Period</th>
-              <th className="border p-2">Total Amount</th>
-              <th className="border p-2">Status</th>
-              <th className="border p-2">Due Date</th>
-              <th className="border p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {billingHistory.map((bill) => (
-              <tr key={bill.billing_id} className="hover:bg-gray-100">
-                <td className="border p-2">
-                  {new Date(bill.billing_period).toISOString().split("T")[0]}
-                </td>
-                <td className="border p-2">₱{bill.total_amount_due}</td>
-                <td
-                  className={`border p-2 ${
-                    bill.status === "paid" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
-                </td>
-                <td className="border p-2">
-                  {new Date(bill.due_date).toISOString().split("T")[0]}
-                </td>
-                <td className="border p-2">
-                  <button
-                    onClick={() =>
-                      router.push(
-                        `/pages/landlord/billing/edit/${bill.billing_id}`
-                      )
-                    }
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Edit
-                  </button>
-                </td>
+  
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-800">Billing History</h1>
+        </div>
+  
+        <div className="overflow-hidden shadow-md rounded-lg border border-gray-200">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 text-left text-gray-700">
+                <th className="px-4 py-3 font-medium">Billing Period</th>
+                <th className="px-4 py-3 font-medium">Total Amount</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Due Date</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {billingHistory.map((bill) => (
+                <tr key={bill.billing_id} className="hover:bg-gray-50 transition-colors duration-150">
+                  <td className="px-4 py-3">
+                    {new Date(bill.billing_period).toISOString().split("T")[0]}
+                  </td>
+                  <td className="px-4 py-3 font-medium">₱{bill.total_amount_due}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        bill.status === "paid" 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {new Date(bill.due_date).toISOString().split("T")[0]}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </LandlordLayout>
   );

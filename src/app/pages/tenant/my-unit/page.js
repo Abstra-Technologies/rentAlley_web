@@ -416,27 +416,26 @@ export default function MyUnit() {
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Other Payment Option
                 </h3>
-                {(requiresAdvanced && !isAdvancedPaid) ||
-                  (requiresSecurity && !isSecurityPaid && (
-                    <button
-                      onClick={() =>
-                        router.push(
-                          `/pages/payment/proofOfPayment?agreement_id=${unit.agreement_id}`
-                        )
-                      }
-                      className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
-                    >
-                      <div className="flex items-center">
-                        <CreditCardIcon className="h-6 w-6 mr-3" />
-                        <div>
-                          <p className="font-medium">Proof of Payment</p>
-                          <p className="text-xs text-indigo-200">
-                            Gcash, PDC, Bank Transfer
-                          </p>
-                        </div>
+                {(requiresAdvanced && !isAdvancedPaid) || (requiresSecurity && !isSecurityPaid) ? (
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/pages/payment/proofOfPayment?agreement_id=${unit.agreement_id}`
+                      )
+                    }
+                    className="w-full flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg shadow-md hover:from-indigo-700 hover:to-indigo-800 transition-all transform hover:scale-[1.01]"
+                  >
+                    <div className="flex items-center">
+                      <CreditCardIcon className="h-6 w-6 mr-3" />
+                      <div>
+                        <p className="font-medium">Proof of Payment</p>
+                        <p className="text-xs text-indigo-200">
+                          Gcash, PDC, Bank Transfer
+                        </p>
                       </div>
-                    </button>
-                  ))}
+                    </div>
+                  </button>
+                ) : null}
                 {allPaymentsMade && (
                   <button
                     onClick={handleAccessRentPortal}
