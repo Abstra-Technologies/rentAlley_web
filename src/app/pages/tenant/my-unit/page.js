@@ -482,19 +482,43 @@ const LoadingScreen = () => (
 );
 
 const ErrorScreen = ({ error }) => (
-  <div className="flex flex-col items-center justify-center h-screen px-4 text-center">
-    <XCircleIcon className="h-16 w-16 text-red-500 mb-4" />
-    <h2 className="text-2xl font-bold text-gray-800 mb-2">
-      Something went wrong
-    </h2>
-    <p className="text-red-500 mb-6">
-      {error || "Failed to load unit details"}
-    </p>
-    <button
-      onClick={() => window.location.reload()}
-      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-    >
-      Try Again
-    </button>
+  <div className="flex flex-col items-center justify-center h-screen px-6 bg-gray-50">
+    <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
+      <div className="flex flex-col items-center">
+        <div className="bg-red-50 p-4 rounded-full mb-6">
+          <XCircleIcon className="h-16 w-16 text-red-500" />
+        </div>
+        
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">
+          No Active Lease Agreement
+        </h2>
+        
+        <p className="text-gray-600 mb-2 text-center">
+          You don't currently have an active lease agreement with any unit.
+        </p>
+        
+        <div className="bg-red-50 p-3 rounded-lg w-full mb-6 mt-2">
+          <p className="text-red-600 text-sm font-medium">
+            {error || "Please complete the application process to establish a lease"}
+          </p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium flex-1 flex items-center justify-center"
+          >
+            Go Back
+          </button>
+          
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex-1 flex items-center justify-center"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 );
