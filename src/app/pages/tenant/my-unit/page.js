@@ -505,13 +505,6 @@ const ErrorScreen = ({ error }) => (
         
         <div className="flex flex-col sm:flex-row gap-3 w-full">
           <button
-            onClick={() => window.history.back()}
-            className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium flex-1 flex items-center justify-center"
-          >
-            Go Back
-          </button>
-          
-          <button
             onClick={() => window.location.reload()}
             className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex-1 flex items-center justify-center"
           >
