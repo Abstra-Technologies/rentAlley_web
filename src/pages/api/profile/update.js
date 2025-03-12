@@ -27,6 +27,11 @@ export default async function updateProfile(req, res) {
             [fnameEncrypted, lnameEncrypted, phoneEncrypted, userId]
         );
 
+        await db.query(
+            "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+            [userId, "Updated Profile"]
+        );
+
         res.status(200).json({ message: "Profile updated successfully" });
     } catch (error) {
         console.error("[Profile Update] Error:", error);

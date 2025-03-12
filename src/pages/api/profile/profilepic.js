@@ -70,14 +70,16 @@ export default async function profilepictureHandler(req, res) {
 
         await s3Client.send(new PutObjectCommand(uploadParams));
 
-        // Generate the S3 file URL
         const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
         const encryptImage = imageUrl ? JSON.stringify(encryptData(imageUrl, process.env.ENCRYPTION_SECRET)) : null;
 
-        console.log(` [Profile Upload] File Uploaded to S3: ${imageUrl}`);
-
-        // Store image URL in database
+        console.log(`[Profile Upload] File Uploaded to S3: ${imageUrl}`);
         await db.query("UPDATE User SET profilePicture = ? WHERE user_id = ?", [encryptImage, userId]);
+
+        await db.query(
+            "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+            [userId, "Uploaded Profile Picture"]
+        );
 
         console.log(` [Profile Upload] Profile picture updated in DB for User ID: ${userId}`);
 

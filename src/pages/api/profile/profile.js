@@ -1,14 +1,7 @@
 import { jwtVerify } from "jose";
-import mysql from "mysql2/promise";
 import {decryptData} from "../../../crypto/encrypt";
+import {db} from "../../../lib/db";
 
-
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-});
 
 export default async function viewProfile(req, res) {
     if (req.method !== "GET") {
@@ -77,6 +70,7 @@ export default async function viewProfile(req, res) {
             }
         }
 
+        //region  FOR SYSTEM ADMIN PROFILE
         if (payload.admin_id) {
             const adminId = payload.admin_id;
             const [adminRows] = await db.execute(
@@ -106,6 +100,8 @@ export default async function viewProfile(req, res) {
                 };
             }
         }
+
+        //endregion
 
         if (!userData) {
             return res.status(404).json({ error: "User not found" });
