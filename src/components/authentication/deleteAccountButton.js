@@ -19,18 +19,27 @@ export default function DeleteAccountButton({ user_id, userType }) {
 
         try {
             await axios.delete(`/api/auth/deleteAccount`, {
-                data: {user_id, userType},
-                headers: {"Content-Type": "application/json"},
-                withCredentials: true,
+              data: { user_id, userType },
+              headers: { "Content-Type": "application/json" },
+              withCredentials: true,
             });
-
-            alert("Account deleted successfully.");
-            router.push("/pages/auth/login");
-            window.location.reload();
-        } catch (error) {
+          
+            Swal.fire({
+              icon: "success",
+              title: "Account Deleted",
+              text: "Your account has been deleted successfully.",
+            }).then(() => {
+              router.push("/pages/auth/login");
+              window.location.reload();
+            });
+          } catch (error) {
             console.error("Account deletion failed:", error);
-            alert("Failed to delete account. Please try again later.");
-        }
+            Swal.fire({
+              icon: "error",
+              title: "Deletion Failed",
+              text: "Failed to delete account. Please try again later.",
+            });
+          }
 
         setDeleting(false);
     }

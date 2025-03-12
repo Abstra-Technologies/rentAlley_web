@@ -181,11 +181,11 @@ const TenantApplicationForm = () => {
               console.log("✅ Requirements submitted successfully!");
             } else {
               console.error("Failed to submit requirements:", reqResponse.data);
-              alert(
-                `Submission failed: ${
-                  reqResponse.data.message || "Unknown error"
-                }`
-              );
+              Swal.fire({
+                icon: "error",
+                title: "Submission Failed",
+                text: `Submission failed: ${reqResponse.data.message || "Unknown error"}`,
+              });
             }
           } catch (reqError) {
             console.error("Error submitting requirements:", reqError);
@@ -210,11 +210,11 @@ const TenantApplicationForm = () => {
           "Failed to save tenant info:",
           infoResponse.data || infoResponse.status
         );
-        alert(
-          `Submission failed: ${
-            infoResponse.data?.message || "Failed to save tenant info."
-          }`
-        );
+        Swal.fire({
+          icon: "error",
+          title: "Submission Failed",
+          text: `Submission failed: ${infoResponse.data?.message || "Failed to save tenant info."}`,
+        });
       }
     } catch (infoError) {
       Swal.fire(

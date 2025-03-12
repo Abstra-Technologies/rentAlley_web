@@ -196,7 +196,11 @@ export default function CreateUnitBill() {
       }
     } catch (error) {
       console.error("Error saving billing:", error);
-      alert("Failed to save billing.");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to save billing.",
+      });
     }
   };
 

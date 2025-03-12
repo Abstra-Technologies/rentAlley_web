@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuth from "../../hooks/useSession";
 import  Link from "next/link";
+import Swal from "sweetalert2";
 
 import {
   UserIcon,
@@ -115,12 +116,23 @@ const userType = user?.userType;
         headers: { "Content-Type": "application/json" },
         withCredentials: true,
       });
-      alert("Profile updated successfully!");
+    
+      Swal.fire({
+        icon: "success",
+        title: "Profile Updated!",
+        text: "Your profile has been updated successfully.",
+      });
+    
       setProfileData((prev) => ({ ...prev, ...formData }));
       setEditing(false);
     } catch (error) {
       console.error("Profile update failed:", error);
-      alert("Failed to update profile. Try again.");
+    
+      Swal.fire({
+        icon: "error",
+        title: "Update Failed",
+        text: "Failed to update profile. Please try again.",
+      });
     }
   };
 

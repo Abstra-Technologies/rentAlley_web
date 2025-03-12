@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { FaEdit, FaTrash, FaBullhorn, FaSearch, FaFilter } from "react-icons/fa";
 import EditAnnoucementModal from "../../../../../components/systemAdmin/editAnnoucement";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
-
+import Swal from "sweetalert2";
 
 export default function AnnouncementsList() {
     const [announcements, setAnnouncements] = useState([]);
@@ -29,10 +29,15 @@ export default function AnnouncementsList() {
                 });
 
                 if (res.status === 401) {
-                    alert("Session expired. Please log in again.");
-                    router.push("/pages/system_admin/login");
+                    Swal.fire({
+                      icon: "warning",
+                      title: "Session Expired",
+                      text: "Please log in again.",
+                    }).then(() => {
+                      router.push("/pages/system_admin/login");
+                    });
                     return;
-                }
+                  }
 
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message || "Failed to fetch announcements");
@@ -49,24 +54,43 @@ export default function AnnouncementsList() {
     }, []);
 
     const handleDelete = async (id) => {
-        if (!confirm("Are you sure you want to delete this announcement?")) return;
-
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "You won't be able to undo this action!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, delete it!",
+        });
+      
+        if (!result.isConfirmed) return;
+      
         try {
-            const res = await fetch(`/api/systemadmin/annoucement/${id}`, {
-                method: "DELETE",
-                credentials: "include",
-            });
-
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Failed to delete announcement");
-
-            // Remove from state
-            setAnnouncements((prev) => prev.filter((announcement) => announcement.id !== id));
-            alert("Announcement deleted successfully!");
+          const res = await fetch(`/api/systemadmin/announcement/${id}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
+      
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "Failed to delete announcement");
+      
+          
+          setAnnouncements((prev) => prev.filter((announcement) => announcement.id !== id));
+      
+          Swal.fire({
+            icon: "success",
+            title: "Deleted!",
+            text: "Announcement deleted successfully!",
+          });
         } catch (error) {
-            alert(error.message);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message,
+          });
         }
-    };
+      };
 
     const handleEdit = async (id) => {
         try {
@@ -83,7 +107,11 @@ export default function AnnouncementsList() {
 
             setEditModal(true);
         } catch (err) {
-            alert(`Error: ${err.message}`);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: `Error: ${err.message}`,
+              });
         }
     };
 
@@ -120,10 +148,18 @@ export default function AnnouncementsList() {
                 )
             );
 
-            alert("Announcement updated successfully!");
+            Swal.fire({
+                icon: "success",
+                title: "Success!",
+                text: "Announcement updated successfully!",
+              });
             setEditModal(false);
         } catch (err) {
-            alert(err.message);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: err.message,
+              });
         }
     };
 

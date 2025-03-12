@@ -93,7 +93,11 @@ export default function EditAnnouncement() {
       router.push(`/pages/landlord/announcement/${id}`);
     } catch (error) {
       console.error("Error updating announcement:", error);
-      alert("Failed to update announcement.");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Failed to update announcement.",
+      });
     }
   };
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 export default function ScheduleVisitForm({ tenant_id, property_id, unit_id }) {
   const [visitDate, setVisitDate] = useState("");
@@ -49,8 +50,13 @@ export default function ScheduleVisitForm({ tenant_id, property_id, unit_id }) {
       });
 
       if (response.status === 200) {
-        alert("Visit scheduled successfully!");
-        router.push(`/pages/find-rent/${property_id}`);
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Visit scheduled successfully!",
+        }).then(() => {
+          router.push(`/pages/find-rent/${property_id}`);
+        });
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);

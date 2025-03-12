@@ -1,6 +1,7 @@
 "use client";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 export default function EditUnitBill() {
   const router = useRouter();
@@ -123,10 +124,19 @@ export default function EditUnitBill() {
       });
 
       if (response.ok) {
-        alert("Billing updated successfully!");
-        router.push(`/pages/landlord/billing`);
+        Swal.fire({
+          icon: "success",
+          title: "Success!",
+          text: "Billing updated successfully!",
+        }).then(() => {
+          router.push(`/pages/landlord/billing`);
+        });
       } else {
-        alert("Failed to update billing.");
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Failed to update billing.",
+        });
       }
     } catch (error) {
       console.error("Error updating bill:", error);

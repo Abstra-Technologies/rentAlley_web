@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
+import Swal from "sweetalert2";
 
 export default function PaymentManagement() {
   const router = useRouter();
@@ -59,10 +60,18 @@ export default function PaymentManagement() {
           )
         );
       } else {
-        alert(data.message);
+        Swal.fire({
+          icon: "info",
+          title: "Notice",
+          text: data.message,
+        });
       }
     } catch {
-      alert("Error updating payment.");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error updating payment.",
+      });
     }
   };
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { io } from "socket.io-client";
 import useAuth from "../../../hooks/useSession";
+import Swal from "sweetalert2";
 
 const ChatInquiry = ({ landlord_id }) => {
     const { user } = useAuth();
@@ -14,7 +15,11 @@ const ChatInquiry = ({ landlord_id }) => {
     console.log("Chatroom Generated: ", chat_room);
     const sendMessageToChat = () => {
         if (!user || !landlord_id || message.trim() === "" || !agreementChecked) {
-            alert("Please enter a message and agree to the terms.");
+            Swal.fire({
+                icon: "warning",
+                title: "Incomplete Submission",
+                text: "Please enter a message and agree to the terms.",
+              });
             return;
         }
 
@@ -28,7 +33,11 @@ const ChatInquiry = ({ landlord_id }) => {
         });
 
         setMessage("");
-        alert("Message sent to landlord!");
+        Swal.fire({
+            icon: "success",
+            title: "Message Sent!",
+            text: "Your message has been sent to the landlord.",
+          });
     };
 
     return (

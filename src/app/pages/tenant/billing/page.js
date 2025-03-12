@@ -89,7 +89,11 @@ export default function TenantBilling({}) {
         }
       } catch (error) {
         console.error("Payment error:", error);
-        alert("Failed to process payment.");
+        Swal.fire({
+          icon: "error",
+          title: "Payment Failed",
+          text: "Failed to process payment. Please try again.",
+        });
       }
     }
   };

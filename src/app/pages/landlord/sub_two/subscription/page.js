@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import useAuth from "../../../../../../hooks/useSession";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "../../../../../components/loadingScreen";
+import Swal from "sweetalert2";
 
 const plans = [
   {
@@ -136,7 +137,11 @@ export default function SubscriptionPlans() {
 
   const handleProceed = async () => {
     if (!selectedPlan) {
-      alert("Please select a plan to proceed.");
+      Swal.fire({
+        icon: "warning",
+        title: "Plan Required",
+        text: "Please select a plan to proceed.",
+      });
       return;
     }
 
@@ -156,10 +161,19 @@ export default function SubscriptionPlans() {
         });
 
         if (response.status === 201) {
-          alert("Free Plan activated successfully!");
-          router.push("/pages/landlord/dashboard");
+          Swal.fire({
+            icon: "success",
+            title: "Success!",
+            text: "Free Plan activated successfully!",
+          }).then(() => {
+            router.push("/pages/landlord/dashboard");
+          });
         } else {
-          alert("Failed to activate Free Plan.");
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Failed to activate Free Plan.",
+          });
         }
       } else if (!trialUsed && selectedPlan.trialDays > 0) {
         // Start free trial
@@ -173,12 +187,19 @@ export default function SubscriptionPlans() {
         });
 
         if (response.status === 201) {
-          alert(
-            `${selectedPlan.trialDays}-day free trial activated successfully!`
-          );
-          router.push("/pages/landlord/dashboard");
+          Swal.fire({
+            icon: "success",
+            title: "Success!",
+            text: `${selectedPlan.trialDays}-day free trial activated successfully!`,
+          }).then(() => {
+            router.push("/pages/landlord/dashboard");
+          });
         } else {
-          alert("Failed to activate free trial.");
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Failed to activate free trial.",
+          });
         }
       } else {
         // Determine the amount for checkout
@@ -203,7 +224,11 @@ export default function SubscriptionPlans() {
       }
     } catch (error) {
       console.error("Error during trial activation:", error);
-      alert("An error occurred. Please try again.", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "An error occurred. Please try again.",
+      });
     } finally {
       setProcessing(false);
     }
