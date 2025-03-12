@@ -1,5 +1,5 @@
-import { db } from "../../lib/db";
-import { decryptData } from "../../crypto/encrypt";
+import { db } from "../../../../lib/db";
+import { decryptData } from "../../../../crypto/encrypt";
 
 export default async function getListOfPayments(req, res) {
     if (req.method !== 'GET') {
