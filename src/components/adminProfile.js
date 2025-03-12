@@ -17,7 +17,7 @@ export default function ProfilePageAdmin() {
     const [uploading, setUploading] = useState(false);
     const [profilePicture, setProfilePicture] = useState("");
     const [editing, setEditing] = useState(false);
-    const [hydrated, setHydrated] = useState(false); //  Prevent SSR mismatch
+    const [hydrated, setHydrated] = useState(false); //  This is a fix for hydration errors in pages.
 
     const [formData, setFormData] = useState({
         username: "",

@@ -8,7 +8,6 @@ const steps = [
   { id: 4, label: "Requirements" },
 ];
 
-// StepCounter component
 const StepCounter = ({ currentStep }) => {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-4 rounded-xl shadow-md">

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { HomeIcon } from "lucide-react"; // Importing Home icon from Lucide
+import { HomeIcon } from "lucide-react";
 
 const LoadingScreen = () => {
     return (

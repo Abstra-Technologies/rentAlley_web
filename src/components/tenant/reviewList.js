@@ -5,7 +5,6 @@ const ReviewsList = ({ unit_id, landlord_id }) => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Function to fetch the latest reviews
   const fetchReviews = async () => {
     setLoading(true);
     try {

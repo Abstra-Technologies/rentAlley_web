@@ -96,20 +96,6 @@ io.on("connection", (socket) => {
                 timestamp: msg.timestamp,
             }));
 
-            // const decryptedMessages = messages.map((msg) => {
-            //     const decryptedText = decryptMessage(msg.encrypted_message, msg.iv);
-            //     console.log(`🔓 Decrypting message: ${msg.encrypted_message} -> ${decryptedText}`);
-            //
-            //     return {
-            //         sender_id: msg.sender_id,
-            //         sender_name: msg.firstName,
-            //         receiver_id: msg.receiver_id,
-            //         message: decryptedText || "[Decryption Error]",
-            //         timestamp: msg.timestamp,
-            //     };
-            // });
-
-
             io.to(chatRoom).emit("loadMessages", decryptedMessages);
         } catch (error) {
             console.error("Error loading messages:", error.message);
@@ -157,10 +143,8 @@ io.on("connection", (socket) => {
 
             console.log(`Received Message IDs - Sender: ${sender_id} (user_id: ${senderUserId}), Receiver: ${receiver_id} (user_id: ${receiverUserId})`);
 
-            //  Encrypt message before saving
             const { encrypted, iv } = encryptMessage(message);
 
-            //  Store message in database with `user_id`
             await pool.query(
                 "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
                 [senderUserId, receiverUserId, encrypted, iv, chat_room]
@@ -168,16 +152,14 @@ io.on("connection", (socket) => {
 
             console.log(`Message saved to DB: ChatRoom - ${chat_room}`);
 
-            //  Send message to all users in the chat room
             io.to(chat_room).emit("receiveMessage", {
                 sender_id: senderUserId,
-                receiver_id: receiverUserId, // Now sending `user_id`
+                receiver_id: receiverUserId,
                 message,
                 timestamp: new Date(),
             });
 
             //region AUTOMATED MESSAGE FOR NEW MAINTENANCE REQUEST ONLY
-
             if (sender_type === "tenant" && message.toLowerCase().includes("maintenance request")){
                 console.log("Detected maintenance request. Sending auto-reply from landlord...");
 
@@ -204,7 +186,6 @@ io.on("connection", (socket) => {
                         // Define the automated response from the landlord
                         const landlordMessage = `Hello! Your maintenance request has been received. I will review it and update you soon.`;
 
-                        // Encrypt message before saving
                         const { encrypted: encryptedLandlordMessage, iv: landlordIv } = encryptMessage(landlordMessage);
 
                         // Store landlord's automated response in the database
@@ -233,19 +214,6 @@ io.on("connection", (socket) => {
             console.error("Error sending message:", error);
         }
     });
-
-    //  SEND REAL-TIME NOTIFICATIONS
-    socket.on("send-notification", ({ user_id, title, message }) => {
-        console.log(`📩 Sending notification to user ${user_id}: ${title}`);
-
-        // Emit notification to the specified user
-        io.to(user_id).emit("receive-notification", {
-            title,
-            message,
-            timestamp: new Date(),
-        });
-    });
-
     socket.on("disconnect", () => {
         console.log(`User disconnected: ${socket.id}`);
     });

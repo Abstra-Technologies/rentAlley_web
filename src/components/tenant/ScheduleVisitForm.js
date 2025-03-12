@@ -9,17 +9,14 @@ export default function ScheduleVisitForm({ tenant_id, property_id, unit_id }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Handle date change
   const handleDateChange = (e) => {
     setVisitDate(e.target.value);
   };
 
-  // Handle time change
   const handleTimeChange = (e) => {
     setVisitTime(e.target.value);
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!visitDate || !visitTime) {
@@ -43,7 +40,6 @@ export default function ScheduleVisitForm({ tenant_id, property_id, unit_id }) {
         visit_time: formattedTime.toString(),
       });
 
-      // Send a request to the backend to schedule the visit
       const response = await axios.post("/api/tenant/visits/schedule-visit", {
         tenant_id,
         property_id,
@@ -54,8 +50,7 @@ export default function ScheduleVisitForm({ tenant_id, property_id, unit_id }) {
 
       if (response.status === 200) {
         alert("Visit scheduled successfully!");
-        // If the visit is successfully scheduled, redirect or show a success message
-        router.push(`/pages/find-rent/${property_id}`); // Redirect back to the property details page (or wherever needed)
+        router.push(`/pages/find-rent/${property_id}`);
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);

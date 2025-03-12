@@ -10,7 +10,6 @@ const ChatInquiry = ({ landlord_id }) => {
     const [agreementChecked, setAgreementChecked] = useState(false);
     const [socket, setSocket] = useState(() => io("http://localhost:4000", { autoConnect: true }));
 
-    // Define chat room dynamically
     const chat_room = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
     console.log("Chatroom Generated: ", chat_room);
     const sendMessageToChat = () => {
@@ -28,7 +27,7 @@ const ChatInquiry = ({ landlord_id }) => {
             chat_room
         });
 
-        setMessage(""); // Clear input after sending
+        setMessage("");
         alert("Message sent to landlord!");
     };
 

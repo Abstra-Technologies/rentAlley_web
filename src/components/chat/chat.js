@@ -263,7 +263,6 @@ import { io } from "socket.io-client";
 import axios from "axios";
 import useAuthStore from "../../zustand/authStore";
 
-// Initialize socket globally (outside useEffect)
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
 export default function ChatComponent() {
@@ -293,6 +292,7 @@ export default function ChatComponent() {
 
     //version 1 from api
     // Handle socket events when a chat is selected vIA API
+    // Cons of this no real time receiing need to load server.js
 
     // useEffect(() => {
     //     if (!selectedChat || !selectedChat.chat_room) {
@@ -353,7 +353,7 @@ export default function ChatComponent() {
     // }, [user, selectedChat]);
 
 
-    // version 2 using websocket
+    // version 2 using websocket real time.
 
     useEffect(() => {
         if (!selectedChat || !selectedChat.chat_room) {

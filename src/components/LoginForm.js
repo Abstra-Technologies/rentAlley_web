@@ -8,7 +8,7 @@ function LoginForm({
   errors,
   showGoogleSignIn = true,
   showRegisterLink = true,
-  isSystemAdmin = false, // Check if it's a system admin admin_login page
+  isSystemAdmin = false,
   message,
 }) {
   return (
@@ -71,7 +71,7 @@ function LoginForm({
             )}
           </div>
 
-          {/* Show "Forgot Password" only if it's not the System Admin */}
+          {/*  "Forgot Password" only if it's not the System Admin */}
           {!isSystemAdmin && (
             <p className="text-center">
               <Link
@@ -113,7 +113,6 @@ function LoginForm({
           </>
         )}
 
-        {/* Register Link */}
         {showRegisterLink && !isSystemAdmin && (
           <p className="mt-6 text-center text-sm text-gray-500">
             Don&#39;t have an account?{" "}

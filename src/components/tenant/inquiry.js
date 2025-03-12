@@ -8,7 +8,6 @@ import "react-calendar/dist/Calendar.css";
 import ChatInquiry from "./chatInquiry";
 import useAuth from "../../../hooks/useSession";
 
-// Custom CSS for calendar to improve disabled date styling
 const customCalendarStyles = `
   .react-calendar__tile--disabled {
     background-color: #f0f0f0 !important;
@@ -47,7 +46,6 @@ export default function InquiryBooking({
     fetchBookedDates();
   }, []);
 
-  // Enhanced function to disable booked dates
   const isTileDisabled = ({ date, view }) => {
     if (view !== 'month') return false;
   
@@ -172,7 +170,7 @@ export default function InquiryBooking({
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);
-      Swal.fire({
+      await Swal.fire({
         icon: 'error',
         title: 'Scheduling Error',
         text: 'Failed to schedule visit. Please try again.',

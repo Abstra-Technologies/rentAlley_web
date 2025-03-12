@@ -35,7 +35,7 @@ const DropzoneUploader = ({
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     accept,
-    multiple: false, // Allow only one file
+    multiple: false, // 1 file only.
   });
 
   return (
