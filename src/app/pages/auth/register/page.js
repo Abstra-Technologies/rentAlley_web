@@ -43,7 +43,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const error = searchParams.get("error");
+  const error_2 = searchParams.get("error");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -208,7 +208,7 @@ export default function Register() {
             <GoogleLogo />
             <span className="ml-2 font-medium text-gray-700">Sign up with Google</span>
           </button>
-          {error && <p className="text-red-600 text-sm">{decodeURIComponent(error)}</p>}
+          {error_2 && <p className="text-red-600 text-sm">{decodeURIComponent(error)}</p>}
 
 
           <p className="mt-6 text-center text-sm text-gray-500">

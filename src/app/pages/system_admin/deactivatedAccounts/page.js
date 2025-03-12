@@ -71,6 +71,7 @@ export default function DeactivatedAccounts() {
                                 <TableCell><strong>Last Name</strong></TableCell>
                                 <TableCell><strong>Email</strong></TableCell>
                                 <TableCell><strong>User Type</strong></TableCell>
+                                <TableCell><strong>Date Deleted</strong></TableCell>
                                 <TableCell><strong>Action</strong></TableCell>
 
                             </TableRow>
@@ -83,6 +84,8 @@ export default function DeactivatedAccounts() {
                                         <TableCell>{account?.lastName}</TableCell>
                                         <TableCell>{account?.email}</TableCell>
                                         <TableCell>{account?.userType}</TableCell>
+                                        <TableCell>{account?.updatedAt}</TableCell>
+
                                         <TableCell>
                                             <Button
                                                 variant="contained"

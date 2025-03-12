@@ -40,6 +40,8 @@ const menuItems = [
   },
   { href: "/pages/landlord/announcement", icon: Bell, label: "Announcements" },
   { href: "/pages/landlord/billing", icon: CreditCard, label: "Billing" },
+  { href: "/pages/landlord/payments", icon: CreditCard, label: "Payment History" },
+
   { href: "/pages/commons/bug-report", icon: Bug, label: "Report a Bug" },
 ];
 

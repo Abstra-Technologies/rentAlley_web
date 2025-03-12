@@ -10,7 +10,7 @@ const dbConfig = {
     database: process.env.DB_NAME,
 };
 
-export default async function handler(req, res) {
+export default async function VerifyOtpCode(req, res) {
 
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method Not Allowed' });
@@ -73,7 +73,6 @@ export default async function handler(req, res) {
         await connection.execute("UPDATE User SET emailVerified = 1 WHERE user_id = ?", [user_id]);
 
 
-        // ✅ Get user details from the database
         const [userResult] = await connection.execute(
             "SELECT firstName, lastName, userType FROM User WHERE user_id = ?",
             [user_id]
@@ -83,7 +82,6 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'User not found.' });
         }
 
-        // ✅ Decrypt firstName & lastName before sending
         const encryptedFirstName = JSON.parse(userResult[0].firstName);
         const encryptedLastName = JSON.parse(userResult[0].lastName);
 
@@ -93,13 +91,11 @@ export default async function handler(req, res) {
         const userType = userResult[0].userType;
         console.log("Decrypted User Data:", { firstName, lastName, userType }); // ✅ Debugging step
 
-        // ✅ Issue a new JWT token with user_id, userType, firstName, and lastName
         const newToken = await new SignJWT({ user_id, userType, firstName, lastName })
             .setProtectedHeader({ alg: 'HS256' })
             .setExpirationTime('1h')  // Token expires in 1 hour
             .sign(secret);
 
-        // ✅ Store the new token in an HTTP-only cookie
         const isDev = process.env.NODE_ENV === "development";
         res.setHeader(
             "Set-Cookie",
@@ -113,7 +109,7 @@ export default async function handler(req, res) {
             message: "OTP verified successfully!",
             userType,
             firstName,
-            lastName// ✅ Send userType to frontend
+            lastName
         });
 
     } catch (error) {

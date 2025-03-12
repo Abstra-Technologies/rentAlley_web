@@ -9,7 +9,7 @@ export default async function listOfDeactivatedAccounts(req, res) {
 
     try {
         const [rows] = await db.query(
-            `SELECT user_id, firstName, lastName, email, phoneNumber, userType, createdAt 
+            `SELECT user_id, firstName, lastName, email, phoneNumber, userType, createdAt, updatedAt
             FROM User 
             WHERE is_active = 0`
         );

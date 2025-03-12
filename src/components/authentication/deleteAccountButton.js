@@ -26,6 +26,7 @@ export default function DeleteAccountButton({ user_id, userType }) {
 
             alert("Account deleted successfully.");
             router.push("/pages/auth/login");
+            window.location.reload();
         } catch (error) {
             console.error("Account deletion failed:", error);
             alert("Failed to delete account. Please try again later.");

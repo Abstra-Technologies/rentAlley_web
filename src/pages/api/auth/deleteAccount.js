@@ -56,8 +56,11 @@ export default async function DeleteAccount(req, res) {
                 [landlordId]
             );
 
+            await db.query(`UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?`, [landlordId]);
+
+
             console.log("Properties and units set to inactive.");
-            await db.query(`UPDATE User SET is_active = 0 WHERE user_id = ?`, [user_id]);
+            await db.query(`UPDATE User SET is_active = 0, updatedAt = NOW() WHERE user_id = ?`, [user_id]);
             res.setHeader("Set-Cookie", "token=; Path=/; HttpOnly; Max-Age=0; SameSite=Strict");
             return res.status(200).json({ message: "Your account has been deactivated." });
 
@@ -88,7 +91,7 @@ export default async function DeleteAccount(req, res) {
             }
 
             console.log("Deactivating user account...");
-            await db.query(`UPDATE User SET is_active = 0 WHERE user_id = ?`, [user_id]);
+            await db.query(`UPDATE User SET is_active = 0, updatedAt = NOW() WHERE user_id = ?`, [user_id]);
             res.setHeader("Set-Cookie", "token=; Path=/; HttpOnly; Max-Age=0; SameSite=Strict");
             return res.status(200).json({ message: "Your account has been deactivated." });
         }

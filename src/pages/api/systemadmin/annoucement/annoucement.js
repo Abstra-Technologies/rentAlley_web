@@ -46,6 +46,23 @@ export default async function addNewAnnouncement(req, res) {
             [decoded.admin_id, `Created an announcement: ${title}`]
         );
 
+        let query = '';
+
+        if (target_audience === "all") {
+            query = "SELECT user_id FROM User";
+        } else if (target_audience === "tenant") {
+            query = "SELECT user_id FROM User WHERE userType = 'tenant'";
+        } else if (target_audience === "landlord") {
+            query = "SELECT user_id FROM User WHERE userType = 'landlord'";
+        }
+
+        const [users] = await db.query(query);
+        if (users.length > 0) {
+            const notificationValues = users.map(user => `('${user.user_id}', '${title}', '${message}', 0, NOW())`).join(",");
+            await db.query(`INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES ${notificationValues}`);
+        }
+
+
         await logAuditEvent(
             decoded.admin_id,
             "Created Announcement",

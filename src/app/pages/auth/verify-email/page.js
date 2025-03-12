@@ -76,6 +76,7 @@ export default function VerifyOTP() {
         } else if (userType === "landlord") {
           router.push("/pages/landlord/dashboard");
         }
+        window.location.reload();
       }, 2000);
     } catch (error) {
       toast.error(error.response?.data?.message || "OTP verification failed");

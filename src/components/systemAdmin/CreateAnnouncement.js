@@ -12,7 +12,7 @@ import useAnnouncementStore from "../../zustand/annoucementAdminStore";
 
 export default function CreateAnnouncement() {
     const router = useRouter();
-    const pathname = usePathname(); // Detects page changes in Next.js App Router
+    const pathname = usePathname();
 
     const { title, message, targetAudience, setTitle, setMessage, setTargetAudience, resetForm } =
         useAnnouncementStore();
@@ -23,12 +23,10 @@ export default function CreateAnnouncement() {
     const [isDirty, setIsDirty] = useState(false);
 
     useEffect(() => {
-        // Mark form as dirty when inputs change
         if (title || message || targetAudience) {
             setIsDirty(true);
         }
 
-        // Warn on page refresh or tab close
         const handleBeforeUnload = (event) => {
             if (isDirty) {
                 event.preventDefault();
@@ -36,12 +34,11 @@ export default function CreateAnnouncement() {
             }
         };
 
-        // Detect browser back button click
         const handlePopState = () => {
             if (isDirty && !window.confirm("You have unsaved changes. Do you really want to leave?")) {
-                router.replace(pathname); // Stay on the page
+                router.replace(pathname);
             } else {
-                resetForm(); // Reset the form before leaving
+                resetForm();
             }
         };
 
@@ -59,7 +56,7 @@ export default function CreateAnnouncement() {
             if (isDirty && !window.confirm("You have unsaved changes. Do you really want to leave?")) {
                 throw "Navigation prevented"; // Prevent route change
             } else {
-                resetForm(); // Reset form if confirmed
+                resetForm();
             }
         };
 
