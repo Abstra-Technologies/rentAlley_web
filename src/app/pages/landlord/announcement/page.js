@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import LandlordLayout from '../../../../components/navigation/sidebar-landlord';
 import useAuth from '../../../../../hooks/useSession';
+import Swal from "sweetalert2";
 
 export default function AnnouncementsList() {
   const router = useRouter();
@@ -24,7 +25,11 @@ export default function AnnouncementsList() {
         setAnnouncements(data);
       } catch (error) {
         console.error("Error fetching announcements:", error);
-        alert("Failed to load announcements. Please try again.");
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Failed to load announcements. Please try again.",
+        });
       } finally {
         setLoading(false);
       }
