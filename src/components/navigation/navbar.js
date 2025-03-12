@@ -24,9 +24,9 @@ const Navbar = () => {
       const fetchLeaseStatus = async () => {
         try {
           const res = await axios.get(
-            `/api/leaseAgreement/checkLease?tenant_id=${user.tenant_id}`
+            `/api/leaseAgreement/checkLease?tenant_id=${user?.tenant_id}`
           );
-          setHasLease(res.data.hasLease);
+          setHasLease(res?.data?.hasLease);
         } catch (error) {
           console.error("Error fetching lease status:", error);
           setHasLease(false);
@@ -67,7 +67,7 @@ const Navbar = () => {
   }, [user, admin]);
 
   useEffect(() => {
-    const count = notifications.filter((notif) => !notif.is_read).length;
+    const count = notifications.filter((notif) => !notif?.is_read).length;
     setUnreadCount(count);
   }, [notifications]);
 
@@ -131,7 +131,7 @@ const Navbar = () => {
       ];
     }
 
-    if (user.userType === "tenant") {
+    if (user?.userType === "tenant") {
       return [
         { href: "/pages/tenant/my-unit", label: "My Unit" },
         { href: "/pages/tenant/inbox", label: "Inbox" },
@@ -140,7 +140,7 @@ const Navbar = () => {
       ];
     }
 
-    if (user.userType === "landlord") {
+    if (user?.userType === "landlord") {
       return [
         { href: "/pages/landlord/inbox", label: "Inbox" },
         { href: "/pages/landlord/dashboard", label: "Dashboard" },
@@ -154,17 +154,17 @@ const Navbar = () => {
 
   const markAllAsRead = async () => {
     for (const notification of notifications) {
-      if (!notification.is_read) {
+      if (!notification?.is_read) {
         try {
           const res = await fetch("/api/notification/get-notification", {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ id: notification.id }),
+            body: JSON.stringify({ id: notification?.id }),
           });
 
-          console.log(`Marking notification ${notification.id} as read...`);
+          console.log(`Marking notification ${notification?.id} as read...`);
 
           if (!res.ok) {
             console.error("Failed to mark notification as read:", res.status);
@@ -269,15 +269,15 @@ const Navbar = () => {
                       ) : (
                         notifications.map((notif) => (
                           <div
-                            key={notif.id}
+                            key={notif?.id}
                             className="border-b hover:bg-gray-50 cursor-pointer transition-colors duration-200"
                           >
                             <div className="px-4 py-3">
                               <p className="font-semibold text-gray-800">
-                                {notif.title}
+                                {notif?.title}
                               </p>
                               <p className="text-sm text-gray-600 mt-1">
-                                {notif.body}
+                                {notif?.body}
                               </p>
                               <p className="text-xs text-gray-400 mt-1">
                                 Just now
@@ -695,12 +695,14 @@ const Navbar = () => {
             ) : (
               notifications.map((notif) => (
                 <div
-                  key={notif.id}
+                  key={notif?.id}
                   className="border-b hover:bg-gray-50 cursor-pointer transition-colors duration-200"
                 >
                   <div className="py-3">
-                    <p className="font-semibold text-gray-800">{notif.title}</p>
-                    <p className="text-sm text-gray-600 mt-1">{notif.body}</p>
+                    <p className="font-semibold text-gray-800">
+                      {notif?.title}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">{notif?.body}</p>
                     <p className="text-xs text-gray-400 mt-1">Just now</p>
                   </div>
                 </div>

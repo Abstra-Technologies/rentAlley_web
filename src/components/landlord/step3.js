@@ -34,15 +34,24 @@ export function StepThree() {
     const { name, type, checked, value } = e.target;
     let newValue = type === "checkbox" ? (checked ? 1 : 0) : value;
 
-    // Ensure totalUnits is at least 1
+    //totalUnits should be at least 1
     if (name === "totalUnits") {
-      // Allow clearing the input field
       if (value === "") {
         newValue = "";
       } else if (Number(value) === 0) {
-        newValue = 1; // Set to 1 if the user types 0
+        newValue = 1;
       } else {
-        newValue = Number(value); // Convert to number for valid input
+        newValue = Number(value);
+      }
+    }
+
+    // Limit description to 3 paragraphs
+    if (name === "propDesc") {
+      const paragraphCount = value
+        .split("\n")
+        .filter((p) => p.trim() !== "").length;
+      if (paragraphCount > 3) {
+        return;
       }
     }
 
@@ -51,7 +60,7 @@ export function StepThree() {
 
   // Remove image from preview
   const removeImage = (index) => {
-    setPhotos(photos.filter((_, i) => i !== index)); // Filter out the photo at the given index
+    setPhotos(photos.filter((_, i) => i !== index));
   };
 
   return (
@@ -89,7 +98,7 @@ export function StepThree() {
           {/* Property Description */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">
-              Description
+              Description (Max 3 paragraphs)
             </label>
             <textarea
               name="propDesc"
@@ -201,14 +210,14 @@ export function StepThree() {
                 htmlFor="advancedPayment"
                 className="block text-sm font-medium text-gray-700"
               >
-                Advanced Payment
+                Advanced Payment (Amount)
               </label>
               <input
                 type="number"
                 id="advancedPayment"
                 min="0"
                 value={property.advancedPayment || ""}
-                placeholder="1"
+                placeholder="1000"
                 onChange={(e) =>
                   setProperty({
                     ...property,

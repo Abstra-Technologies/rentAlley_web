@@ -369,7 +369,7 @@ export default function AddNewProperty() {
       await Promise.all([photoUploadPromise, verificationUploadPromise]);
 
       reset(); // Clear form
-      router.push("/pages/landlord/property-listing/review-listing"); // Redirect after success
+      router.push("/pages/landlord/property-listing/review-listing");
     } catch (error) {
       console.error("Property listing failed:", error.response?.data);
 
@@ -381,15 +381,15 @@ export default function AddNewProperty() {
             "Your property verification was rejected. You have one more attempt.",
             "warning"
           );
-          setVerificationAttempts((prev) => prev + 1); // Increase attempt count
-          setStep(4); // Redirect user to verification step
+          setVerificationAttempts((prev) => prev + 1);
+          setStep(4);
         } else {
           Swal.fire(
             "Verification Failed",
             "Your property listing has been rejected twice. Please contact support.",
             "error"
           );
-          router.push("/pages/landlord/property-listing"); // Redirect to listing page
+          router.push("/pages/landlord/property-listing");
         }
       } else {
         Swal.fire("Error", `Something went wrong: ${error.message}`, "error");

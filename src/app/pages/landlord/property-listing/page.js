@@ -29,12 +29,23 @@ const PropertyListingPage = () => {
   const [subscription, setSubscription] = useState(null);
   const [verificationAttempts, setVerificationAttempts] = useState({});
   const [errorMsg, setErrorMsg] = useState(null);
+  const [pendingApproval, setPendingApproval] = useState(false);
 
   useEffect(() => {
     if (user?.landlord_id) {
-      fetchAllProperties(user.landlord_id);
+      fetchAllProperties(user?.landlord_id);
     }
   }, [user?.landlord_id]);
+
+  useEffect(() => {
+    if (properties.length > 0) {
+      const hasUnverifiedProperties = properties.some(
+        (property) =>
+          property?.verification_status?.toLowerCase() !== "verified"
+      );
+      setPendingApproval(hasUnverifiedProperties);
+    }
+  }, [properties, isVerified]);
 
   useEffect(() => {
     if (user?.userType === "landlord") {
@@ -42,7 +53,7 @@ const PropertyListingPage = () => {
       setIsFetchingVerification(true);
 
       axios
-        .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
+        .get(`/api/landlord/verification-status?user_id=${user?.user_id}`)
         .then((response) => {
           console.log("Fetched Verification Status:", response.data);
 
@@ -57,7 +68,7 @@ const PropertyListingPage = () => {
 
       setFetchingSubscription(true);
       axios
-        .get(`/api/subscription/getCurrentPlan/${user.landlord_id}`)
+        .get(`/api/subscription/getCurrentPlan/${user?.landlord_id}`)
         .then((response) => {
           setSubscription(response.data);
         })
@@ -76,23 +87,23 @@ const PropertyListingPage = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (properties.length > 0) {
-      properties.forEach((property) => {
-        axios
-          .get(`/api/propertyListing/propVerify?id=${property.property_id}`)
-          .then((response) => {
-            setVerificationAttempts((prev) => ({
-              ...prev,
-              [property.property_id]: response.data.attempts,
-            }));
-          })
-          .catch((err) => {
-            console.error("Failed to fetch verification attempts:", err);
-          });
-      });
-    }
-  }, [properties]);
+  // useEffect(() => {
+  //   if (properties.length > 0) {
+  //     properties.forEach((property) => {
+  //       axios
+  //         .get(`/api/propertyListing/propVerify?id=${property?.property_id}`)
+  //         .then((response) => {
+  //           setVerificationAttempts((prev) => ({
+  //             ...prev,
+  //             [property?.property_id]: response.data.attempts,
+  //           }));
+  //         })
+  //         .catch((err) => {
+  //           console.error("Failed to fetch verification attempts:", err);
+  //         });
+  //     });
+  //   }
+  // }, [properties]);
 
   const handleEdit = (propertyId, event) => {
     event.stopPropagation();
@@ -203,60 +214,67 @@ const PropertyListingPage = () => {
   //     });
   //   }
   // });
-  const handleDelete = useCallback(async (propertyId, event) => {
-    event.stopPropagation();
+  const handleDelete = useCallback(
+    async (propertyId, event) => {
+      event.stopPropagation();
 
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to recover this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    });
-
-    if (!result.isConfirmed) return;
-
-    try {
-      const response = await fetch(`/api/propertyListing/propListing?id=${propertyId}`, {
-        method: "DELETE",
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to recover this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
       });
 
-      const data = await response.json();
+      if (!result.isConfirmed) return;
 
-      if (response.ok) {
-        Swal.fire({
-          title: "Deleted!",
-          text: "Property has been deleted successfully.",
-          icon: "success",
-          showConfirmButton: true,
-          confirmButtonText: "Close",
-        }).then(() => {
-          fetchAllProperties(user?.landlord_id);
-        });
-      } else {
-        let errorMessage = "Failed to delete property.";
+      try {
+        const response = await fetch(
+          `/api/propertyListing/propListing?id=${propertyId}`,
+          {
+            method: "DELETE",
+          }
+        );
 
-        if (data?.error === "Cannot delete property with active leases") {
-          errorMessage = "This property cannot be deleted because it has active leases.";
+        const data = await response.json();
+
+        if (response.ok) {
+          Swal.fire({
+            title: "Deleted!",
+            text: "Property has been deleted successfully.",
+            icon: "success",
+            showConfirmButton: true,
+            confirmButtonText: "Close",
+          }).then(() => {
+            fetchAllProperties(user?.landlord_id);
+          });
+        } else {
+          let errorMessage = "Failed to delete property.";
+
+          if (data?.error === "Cannot delete property with active leases") {
+            errorMessage =
+              "This property cannot be deleted because it has active leases.";
+          }
+
+          await Swal.fire({
+            title: "Error!",
+            text: errorMessage,
+            icon: "error",
+          });
         }
-
-        await Swal.fire({
+      } catch (error) {
+        console.error("Error deleting property:", error);
+        Swal.fire({
           title: "Error!",
-          text: errorMessage,
+          text: "An error occurred while deleting the property.",
           icon: "error",
         });
       }
-    } catch (error) {
-      console.error("Error deleting property:", error);
-      Swal.fire({
-        title: "Error!",
-        text: "An error occurred while deleting the property.",
-        icon: "error",
-      });
-    }
-  }, [user?.landlord_id, fetchAllProperties]);
+    },
+    [user?.landlord_id, fetchAllProperties]
+  );
 
   if (errorMsg) {
     return (
@@ -370,6 +388,13 @@ const PropertyListingPage = () => {
             Manage your property listings and units
           </p>
         </div>
+
+        {pendingApproval && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg mb-4">
+            <strong>Pending Approval:</strong> Some of your properties are under
+            review. You cannot add units until they are verified.
+          </div>
+        )}
 
         {/* Alerts Section */}
         {subscription &&
@@ -556,13 +581,21 @@ const PropertyListingPage = () => {
                       <div className="mt-auto pt-4 border-t border-gray-100">
                         <div className="flex justify-between">
                           <button
-                            className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                            className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
+                              property?.verification_status !== "Verified"
+                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                            }`}
                             onClick={
-                              !isDisabled
+                              !isDisabled &&
+                              property?.verification_status === "Verified"
                                 ? (event) => handleView(property, event)
                                 : undefined
                             }
-                            disabled={isDisabled}
+                            disabled={
+                              isDisabled ||
+                              property?.verification_status !== "Verified"
+                            }
                           >
                             <HomeIcon className="h-4 w-4 mr-1" />
                             View Units

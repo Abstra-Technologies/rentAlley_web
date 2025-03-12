@@ -119,7 +119,11 @@ const ViewUnitPage = () => {
         mutate(`/api/propertyListing/property/${id}`);
         mutate(`/api/unitListing/unit?property_id=${id}`);
       } else {
-        Swal.fire("Error", "Failed to delete the unit. Please try again.", "error");
+        Swal.fire(
+          "Error",
+          "Failed to delete the unit. Please try again.",
+          "error"
+        );
       }
     } catch (error) {
       console.error("Error deleting unit:", error);
@@ -127,15 +131,18 @@ const ViewUnitPage = () => {
       let errorMessage = "Failed to delete the unit. Please try again.";
 
       if (error.response && error.response.data?.error) {
-        if (error.response.data.error === "Cannot delete unit with active lease agreement") {
-          errorMessage = "This unit cannot be deleted because it has an active lease.";
+        if (
+          error.response.data.error ===
+          "Cannot delete unit with active lease agreement"
+        ) {
+          errorMessage =
+            "This unit cannot be deleted because it has an active lease.";
         }
       }
 
       Swal.fire("Error", errorMessage, "error");
     }
   };
-
 
   if (error)
     return (
