@@ -104,9 +104,8 @@ io.on("connection", (socket) => {
 
     socket.on("sendMessage", async ({ sender_id, sender_type, receiver_id, receiver_type, message, chat_room }) => {
         try {
-            console.log(`🔹 Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chat_room });
+            console.log(`Received message data:`, { sender_id, sender_type, receiver_id, receiver_type, message, chat_room });
 
-            // Validate `chat_room` exists
             if (!chat_room) {
                 console.error("Error: Chat room is undefined!");
                 return;
@@ -141,9 +140,18 @@ io.on("connection", (socket) => {
             // Convert `tenant_id` or `landlord_id` to `user_id`
             const receiverUserId = receiverResult[0].user_id;
 
+// this is a check if the tenant has no message hostry yet.
+            const [existingMessages] = await pool.query(
+                "SELECT COUNT(*) AS messageCount FROM Message WHERE chat_room = ? AND sender_id = ? AND receiver_id = ?",
+                [chat_room, senderUserId, receiverUserId]
+            );
+
+            const isFirstChat = existingMessages[0].messageCount === 0;
+
             console.log(`Received Message IDs - Sender: ${sender_id} (user_id: ${senderUserId}), Receiver: ${receiver_id} (user_id: ${receiverUserId})`);
 
             const { encrypted, iv } = encryptMessage(message);
+
 
             await pool.query(
                 "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
@@ -210,6 +218,31 @@ io.on("connection", (socket) => {
                 }
                 }
             //endregion
+
+            //region ONLY FIRST TIME CHAT PRE-SET RESPONSE
+            if (isFirstChat && sender_type === "tenant" && receiver_type === "landlord") {
+                console.log("🟢 First chat detected from tenant to landlord. Sending auto-reply...");
+
+                const autoMessage = `Hello! Thank you for reaching out. I will respond to your inquiry as soon as possible. Let me know how I can assist you.`;
+
+                const { encrypted: encryptedAutoMessage, iv: autoIv } = encryptMessage(autoMessage);
+
+                await pool.query(
+                    "INSERT INTO Message (sender_id, receiver_id, encrypted_message, iv, chat_room) VALUES (?, ?, ?, ?, ?)",
+                    [receiverUserId, senderUserId, encryptedAutoMessage, autoIv, chat_room]
+                );
+
+                io.to(chat_room).emit("receiveMessage", {
+                    sender_id: receiverUserId,
+                    receiver_id: senderUserId,
+                    message: autoMessage,
+                    timestamp: new Date(),
+                });
+
+                console.log("Auto-message sent from landlord.");
+            }
+            //endregion
+
         } catch (error) {
             console.error("Error sending message:", error);
         }
