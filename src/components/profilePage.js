@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import useAuth from "../../hooks/useSession";
-import  Link from "next/link";
 import Swal from "sweetalert2";
 
 import {
@@ -15,7 +13,7 @@ import axios from "axios";
 import { logEvent } from "../utils/gtag";
 import DeleteAccountButton from "./authentication/deleteAccountButton";
 import useAuthStore from "../zustand/authStore";
-import SideNavProfile from "./navigation/sidebar-profile";
+
 
 export default function ProfilePage() {
   const { user, loading, error } = useAuthStore();
@@ -37,6 +35,7 @@ const userType = user?.userType;
   const [editing, setEditing] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState(null);
+
 
   const [formData, setFormData] = useState({
     firstName: "",

@@ -34,10 +34,10 @@ export default function DeleteAccountButton({ user_id, userType }) {
             });
           } catch (error) {
             console.error("Account deletion failed:", error);
-            Swal.fire({
-              icon: "error",
-              title: "Deletion Failed",
-              text: "Failed to delete account. Please try again later.",
+            await Swal.fire({
+                icon: "error",
+                title: "Deletion Failed",
+                text: "Failed to delete account. You still have active lease in your account.",
             });
           }
 
