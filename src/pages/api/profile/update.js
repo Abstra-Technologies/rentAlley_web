@@ -18,6 +18,10 @@ export default async function updateProfile(req, res) {
 
         const { firstName, lastName, phoneNumber } = req.body;
 
+        if(!firstName || !lastName){
+            return res.status(400).json({ error: "Must have first name or last name" });
+        }
+
         const fnameEncrypted = firstName ? JSON.stringify(await encryptData(firstName, process.env.ENCRYPTION_SECRET)) : null;
         const lnameEncrypted = lastName ? JSON.stringify(await encryptData(lastName, process.env.ENCRYPTION_SECRET)) : null;
         const phoneEncrypted = phoneNumber ? JSON.stringify(await encryptData(phoneNumber, process.env.ENCRYPTION_SECRET)) : null;
