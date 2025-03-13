@@ -11,6 +11,7 @@ import {
   DocumentTextIcon,
   EnvelopeIcon,
   IdentificationIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import {
   HiOutlineBriefcase,
@@ -35,6 +36,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
   const [prospectiveStatus, setProspectiveStatus] = useState("pending");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const searchParams = useSearchParams();
   const queryTenantId = tenantId || searchParams.get("tenant_id");
 
@@ -93,7 +95,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  // Fetch current status of  unit
+  // Fetch current status of unit
   const fetchStatus = async () => {
     try {
       const response = await axios.get(
@@ -156,6 +158,9 @@ const LeaseDetails = ({ unitId, tenantId }) => {
 
   // Handle unit occupancy status update
   const toggleUnitStatus = async () => {
+    if (isUpdatingStatus) return; // Prevent multiple clicks
+    
+    setIsUpdatingStatus(true);
     const newStatus = status === "occupied" ? "unoccupied" : "occupied";
 
     try {
@@ -169,6 +174,8 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     } catch (error) {
       console.error("Error updating status:", error);
       Swal.fire("Error", "Failed to update status", "error");
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -291,6 +298,8 @@ const LeaseDetails = ({ unitId, tenantId }) => {
       }
     });
   };
+
+  const isTenantApproved = prospectiveStatus === "approved" || status === "occupied";
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -495,126 +504,143 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                 Lease Agreement
               </h2>
 
-              {/* Lease Dates Update Section */}
-              <div className="mb-6">
-                <p className="text-md text-gray-500 mb-2">Lease Dates:</p>
-                {/* Display Start and End Dates */}
-                {lease?.start_date && lease?.end_date && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
-                    <p className="text-gray-700 text-md mb-2">
-                      Start Date: {formatDate(lease.start_date)}
-                    </p>
-                    <p className="text-gray-700 text-md">
-                      End Date: {formatDate(lease.end_date)}
-                    </p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="startDate"
-                      className="block text-gray-700 text-sm font-bold mb-2"
-                    >
-                      Start Date:
-                    </label>
-                    <input
-                      type="date"
-                      id="startDate"
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      disabled={!lease?.agreement_url} // Disable if no lease agreement
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="endDate"
-                      className="block text-gray-700 text-sm font-bold mb-2"
-                    >
-                      End Date:
-                    </label>
-                    <input
-                      type="date"
-                      id="endDate"
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      disabled={!lease?.agreement_url} // Disable if no lease agreement
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={handleUpdateLease}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
-                  disabled={!lease?.agreement_url} // Disable if no lease agreement
-                >
-                  Update Lease Dates
-                </button>
-                {!lease?.agreement_url && (
-                  <div
-                    className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mt-2"
-                    role="alert"
-                  >
-                    <span className="block sm:inline">
-                      {" "}
-                      Please upload a lease agreement to update lease dates.
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Lease Agreement Upload/View/Delete Section */}
-              {lease?.agreement_url ? (
-                <div>
-                  <p className="text-sm text-gray-500 mb-2">Lease Agreement:</p>
-                  <div className="p-3 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-md bg-green-100 text-green-500 flex items-center justify-center mr-3">
-                        <DocumentTextIcon className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">
-                          Current Lease Agreement
-                        </p>
-                        <Link
-                          href={lease.agreement_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-500 hover:underline"
-                        >
-                          View Lease Agreement
-                        </Link>
-                      </div>
+              {!isTenantApproved ? (
+                <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                      <LockClosedIcon className="h-8 w-8 text-gray-500" />
                     </div>
-                    <button
-                      onClick={handleDeleteLease}
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    >
-                      Delete Lease
-                    </button>
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">Lease Agreement Locked</h3>
+                    <p className="text-gray-600 mb-4">
+                      You must approve this tenant before managing their lease agreement.
+                    </p>
+                    <div className="flex gap-3 mt-2">
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg shadow-sm hover:bg-green-700 transition duration-300"
+                        onClick={() => updateTenantStatus("approved")}
+                      >
+                        Approve Tenant
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg shadow-sm hover:bg-red-700 transition duration-300"
+                        onClick={() => updateTenantStatus("disapproved")}
+                      >
+                        Disapprove
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
-                // If no lease agreement exists
-                <div>
-                  <p className="text-sm text-gray-500 mb-2">
-                    Upload Lease Agreement:
-                  </p>
-                  {tenant?.status === "approved" ? (
-                    <LeaseUpload onFileUpload={handleFileUpload} />
-                  ) : (
-                    <div
-                      className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative"
-                      role="alert"
+                <>
+                  {/* Lease Dates Update Section */}
+                  <div className="mb-6">
+                    <p className="text-md text-gray-500 mb-2">Lease Dates:</p>
+                    {/* Display Start and End Dates */}
+                    {lease?.start_date && lease?.end_date && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                        <p className="text-gray-700 text-md mb-2">
+                          Start Date: {formatDate(lease.start_date)}
+                        </p>
+                        <p className="text-gray-700 text-md">
+                          End Date: {formatDate(lease.end_date)}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          htmlFor="startDate"
+                          className="block text-gray-700 text-sm font-bold mb-2"
+                        >
+                          Start Date:
+                        </label>
+                        <input
+                          type="date"
+                          id="startDate"
+                          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="endDate"
+                          className="block text-gray-700 text-sm font-bold mb-2"
+                        >
+                          End Date:
+                        </label>
+                        <input
+                          type="date"
+                          id="endDate"
+                          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleUpdateLease}
+                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
                     >
-                      <span className="block sm:inline">
-                        Tenant must be approved before uploading a lease
-                        agreement.
-                      </span>
+                      Update Lease Dates
+                    </button>
+                  </div>
+
+                  {/* Lease Agreement Upload/View/Delete Section */}
+                  {lease?.agreement_url ? (
+                    <div>
+                      <p className="text-sm text-gray-500 mb-2">Lease Agreement:</p>
+                      <div className="p-3 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-md bg-green-100 text-green-500 flex items-center justify-center mr-3">
+                            <DocumentTextIcon className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">
+                              Current Lease Agreement
+                            </p>
+                            <Link
+                              href={lease.agreement_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-500 hover:underline"
+                            >
+                              View Lease Agreement
+                            </Link>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleDeleteLease}
+                          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        >
+                          Delete Lease
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm text-gray-500 mb-2">
+                        Upload Lease Agreement:
+                      </p>
+                      <LeaseUpload onFileUpload={handleFileUpload} />
                     </div>
                   )}
-                </div>
+                  
+                  {/* Mark as Unoccupied button - moved inside the lease agreement card */}
+                  {status === "occupied" && (
+                    <div className="mt-6 border-t pt-4">
+                      <p className="text-sm text-gray-500 mb-2">Unit Status:</p>
+                      <button
+                        className="px-4 py-2 bg-yellow-500 text-white font-medium rounded-lg shadow-md hover:bg-yellow-600 transition duration-300 disabled:opacity-50"
+                        onClick={toggleUnitStatus}
+                        disabled={isUpdatingStatus}
+                      >
+                        {isUpdatingStatus ? "Updating..." : "Mark as Unoccupied"}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -642,30 +668,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
           </p>
         </div>
       )}
-      {/* Approve/Disapprove Buttons */}
-      {status === "unoccupied" && prospectiveStatus === "pending" ? (
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            className="px-6 py-2 bg-green-600 text-white font-medium rounded-lg shadow-md hover:bg-green-700 transition duration-300"
-            onClick={() => updateTenantStatus("approved")}
-          >
-            Approve
-          </button>
-          <button
-            className="px-6 py-2 bg-red-600 text-white font-medium rounded-lg shadow-md hover:bg-red-700 transition duration-300"
-            onClick={() => updateTenantStatus("disapproved")}
-          >
-            Disapprove
-          </button>
-        </div>
-      ) : status === "occupied" ? (
-        <button
-          className="px-6 py-2 bg-yellow-500 text-white font-medium rounded-lg shadow-md hover:bg-yellow-600 transition duration-300 mt-6"
-          onClick={toggleUnitStatus}
-        >
-          Mark as Unoccupied
-        </button>
-      ) : null}
     </div>
   );
 };
