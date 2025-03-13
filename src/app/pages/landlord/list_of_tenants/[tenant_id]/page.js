@@ -124,7 +124,7 @@ export default function TenantDetails() {
                               {payment?.payment_type}
                             </td>
                             <td className="border p-2">
-                              ₱{payment?.amount_paid.toFixed(2)}
+                            ₱{isNaN(payment?.amount_paid) ? "0.00" : Number(payment.amount_paid).toFixed(2)}
                             </td>
                             <td
                               className={`border p-2 font-semibold ${
