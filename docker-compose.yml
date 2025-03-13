@@ -1,0 +1,23 @@
+
+version: "3.8"
+
+services:
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - chatserver
+    environment:
+      - NODE_ENV=production
+
+  chatserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.chat
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production

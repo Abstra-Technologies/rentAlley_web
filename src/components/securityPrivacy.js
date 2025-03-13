@@ -14,7 +14,6 @@ import SideNavProfile from "./navigation/sidebar-profile";
 
 export default function SecurityPage() {
   const { user, loading, error } = useAuth();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -111,6 +110,10 @@ export default function SecurityPage() {
           newPassword: "",
           confirmPassword: ""
         }));
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+
       } else {
         const data = await res.json();
         Swal.fire({
