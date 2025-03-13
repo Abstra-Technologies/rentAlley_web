@@ -26,10 +26,9 @@ export default function Chat() {
     const [newMessage, setNewMessage] = useState("");
     const [landlordName, setLandlordName] = useState("Landlord");
 
-    const chatRoom = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
+    const chat_room = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
-    // Fetch landlord name
     useEffect(() => {
         if (!landlord_id) return;
 
@@ -86,7 +85,7 @@ export default function Chat() {
             receiver_id: landlord_id,
             receiver_type: "landlord",
             message: newMessage,
-            chatRoom,
+            chat_room,
         };
 
         socket.emit("sendMessage", newMsg);

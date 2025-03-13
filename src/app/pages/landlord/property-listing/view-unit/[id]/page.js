@@ -23,7 +23,7 @@ const ViewUnitPage = () => {
   const router = useRouter();
   const { user } = useAuth();
   const landlord_id = user?.landlord_id;
-  // Fetch property details
+
   const { data: property } = useSWR(
     id ? `/api/propertyListing/property/${id}` : null,
     fetcher
@@ -69,35 +69,6 @@ const ViewUnitPage = () => {
     );
   };
 
-  // const handleDeleteUnit = async (unitId) => {
-  //   const result = await Swal.fire({
-  //     title: "Are you sure?",
-  //     text: "This action cannot be undone!",
-  //     icon: "warning",
-  //     showCancelButton: true,
-  //     confirmButtonColor: "#d33",
-  //     cancelButtonColor: "#3085d6",
-  //     confirmButtonText: "Yes, delete it!",
-  //   });
-  //
-  //   if (!result.isConfirmed) return;
-  //
-  //   try {
-  //     await axios.delete(`/api/unitListing/unit?id=${unitId}`);
-  //
-  //     mutate(`/api/propertyListing/property/${id}`);
-  //     mutate(`/api/unitListing/unit?property_id=${id}`);
-  //     Swal.fire("Deleted!", "Unit has been deleted.", "success");
-  //   } catch (error) {
-  //     console.error("Error deleting unit:", error);
-  //     Swal.fire(
-  //       "Error",
-  //       "Failed to delete the unit. Please try again.",
-  //       "error"
-  //     );
-  //   }
-  // };
-
   const handleDeleteUnit = async (unitId) => {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -140,7 +111,7 @@ const ViewUnitPage = () => {
         }
       }
 
-      Swal.fire("Error", errorMessage, "error");
+      await Swal.fire("Error", errorMessage, "error");
     }
   };
 
