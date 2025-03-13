@@ -1,4 +1,5 @@
 import { db } from "../../../lib/db";
+import {decryptData} from "../../../crypto/encrypt";
 
 export default async function handler(req, res) {
     const { support_id } = req.query;
@@ -14,7 +15,12 @@ export default async function handler(req, res) {
                 return res.status(404).json({ error: "Support request not found." });
             }
 
-            return res.status(200).json(results[0]);
+            const supportRequests = results.map(results => ({
+                ...results,
+                email: decryptData(JSON.parse(results.email), process.env.ENCRYPTION_SECRET),
+            }));
+
+            return res.status(200).json(supportRequests[0]);
 
         } catch (error) {
             console.error("API Error:", error);

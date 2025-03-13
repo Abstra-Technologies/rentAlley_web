@@ -34,7 +34,7 @@ function SecFailed() {
                 });
 
                 // Update Lease Agreement Payment Status
-                await axios.post("/api/payment/update-lease-cancelSecAdv", {
+                await axios.post("/api/payment/update-lease-failedSecAdv", {
                     agreement_id,
                     payment_type,
                     amount,

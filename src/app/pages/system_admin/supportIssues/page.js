@@ -38,11 +38,6 @@ export default function AdminSupportList() {
 
             <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Support Requests</h2>
-        {/*<button  className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition">*/}
-        {/*   <a href='https://mail.google.com/mail/u/4/?ogbl#inbox' target='_blank'>*/}
-        {/*       View Emails*/}
-        {/*   </a>*/}
-        {/*</button>*/}
 
             {loading ? <p>Loading support requests...</p> : null}
 

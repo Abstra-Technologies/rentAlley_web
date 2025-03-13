@@ -1,4 +1,5 @@
 import { db } from "../../../lib/db";
+import {encryptData} from "../../../crypto/encrypt";
 
 export default async function SendSupport(req, res) {
     if (req.method !== "POST") {
@@ -13,10 +14,11 @@ export default async function SendSupport(req, res) {
         }
 
         console.log("Received support request:", { email, selectedIssue, message });
+        const emailEncrypted = JSON.stringify( encryptData(email, process.env.ENCRYPTION_SECRET));
 
         await db.query(
             `INSERT INTO SupportRequest (email, issue, message, status) VALUES (?, ?, ?, 'Pending')`,
-            [email, selectedIssue, message]
+            [emailEncrypted, selectedIssue, message]
         );
 
         return res.status(200).json({ message: "Support request submitted successfully." });

@@ -18,7 +18,6 @@ export default async function tenantPayment(req, res) {
 
     console.log("Payment Request:", { amount, firstName, lastName, email, payment_method_id, payment_type, agreement_id, redirectUrl });
 
-    // Check Required Fields
     if (!amount || isNaN(amount) || !payment_type || !payment_method_id || !agreement_id || !firstName || !lastName || !email) {
         return res.status(400).json({ error: "Invalid request parameters. Check required fields." });
     }
@@ -27,7 +26,6 @@ export default async function tenantPayment(req, res) {
     const secretKey = process.env.MAYA_SECRET_KEY;
 
     try {
-        //  Generate Unique Receipt Reference
         const requestReferenceNumber = `PAY-${Date.now()}-${payment_type.toUpperCase()}`;
 
         const payload = {
@@ -48,12 +46,13 @@ export default async function tenantPayment(req, res) {
 
         console.log("Sending Payload to Maya:", JSON.stringify(payload, null, 2));
 
-        // Send Request to Maya
+        //region MAYA PAYMENT GATWATY
         const response = await axios.post(
             "https://pg-sandbox.paymaya.com/checkout/v1/checkouts",
             payload,
             { headers: { "Content-Type": "application/json", Authorization: `Basic ${Buffer.from(`${publicKey}:${secretKey}`).toString("base64")}` } }
         );
+        //endregion
 
         console.log("Maya Response:", response.data);
 
