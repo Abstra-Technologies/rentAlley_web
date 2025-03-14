@@ -82,11 +82,11 @@ export default function InterestedTenants({ unitId, landlordId }) {
       didOpen: () => {
         Swal.showLoading();
       },
-    }).then(() => {
-      router.push(
-        `/pages/landlord/property-listing/view-unit/view-tenant/${unitId}?tenant_id=${tenant.tenant_id}`
-      );
     });
+    router.push(
+      `/pages/landlord/property-listing/view-unit/view-tenant/${unitId}?tenant_id=${tenant.tenant_id}`
+    );
+    Swal.close();
   };
   
   
