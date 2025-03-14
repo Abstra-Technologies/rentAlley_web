@@ -92,6 +92,16 @@ function Register() {
     try {
       registerSchema.parse(formData);
 
+      Swal.fire({
+        title: "Registering...",
+        text: "Please wait while we process your registration.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
@@ -214,8 +224,20 @@ function Register() {
 
             <p className="text-sm text-gray-700 text-center">
               By signing up, you agree to our{" "}
-              <a className="text-blue-600">Terms of Service</a> and{" "}
-              <a className="text-blue-600">Privacy Policy</a>.
+              <Link
+                href="/pages/terms-conditions"
+                className="text-blue-600 hover:underline"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/pages/terms-conditions"
+                className="text-blue-600 hover:underline"
+              >
+                Privacy Policy
+              </Link>
+              .
             </p>
 
             <button
