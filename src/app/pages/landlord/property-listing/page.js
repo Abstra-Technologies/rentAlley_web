@@ -482,10 +482,10 @@ const PropertyListingPage = () => {
                           : undefined
                       }
                     >
-                      {property.photos.length > 0 ? (
+                      {property?.photos.length > 0 ? (
                         <Image
-                          src={property.photos[0].photo_url}
-                          alt={property.property_name}
+                          src={property?.photos[0]?.photo_url}
+                          alt={property?.property_name}
                           width={400}
                           height={250}
                           className="w-full h-full object-cover"

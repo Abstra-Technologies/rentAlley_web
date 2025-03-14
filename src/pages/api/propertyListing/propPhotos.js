@@ -162,7 +162,7 @@ async function handleGetRequest(req, res, connection) {
     let params = [];
 
     if (property_id) {
-      query += ` WHERE property_id = ? ORDER BY property_id ASC`;
+      query += ` WHERE property_id = ?`;
       params.push(property_id);
     }
 
