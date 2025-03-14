@@ -16,12 +16,10 @@ import LandlordLayout from "../../../../../../components/navigation/sidebar-land
 const EditProperty = () => {
   const router = useRouter();
   const params = useParams();
-  const { id } = params; // Property ID from URL
+  const { id } = params;
 
-  // Zustand State
   const { updateProperty, setProperty } = usePropertyStore();
 
-  // Local State for Form Inputs
   const [formData, setFormData] = useState({
     propertyName: "",
     street: "",
@@ -30,7 +28,7 @@ const EditProperty = () => {
     province: "",
     zipCode: "",
     propertyType: "",
-    amenities: [], // Ensure it's an array
+    amenities: [],
     propDesc: "",
     floorArea: "",
     totalUnits: "",
@@ -45,17 +43,15 @@ const EditProperty = () => {
     availBeds: "",
     assocDues: "",
   });
-  const [photos, setPhotos] = useState([]); // For uploaded photos
+  const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch Property Details on Load
   useEffect(() => {
     const fetchProperty = async () => {
       try {
         const response = await axios.get(
           `/api/propertyListing/propListing?property_id=${id}`
         );
-        // Debugging
         console.log("Fetched Property Data:", response.data);
         const propertyData = response.data[0];
 
@@ -122,7 +118,6 @@ const EditProperty = () => {
     fetchPhotos();
   }, [id]);
 
-  // Handle Amenities Change
   const handleAmenityChange = (amenity) => {
     const currentAmenities = Array.isArray(formData.amenities)
       ? formData.amenities
@@ -132,7 +127,6 @@ const EditProperty = () => {
     let newAmenities;
 
     if (amenityIndex > -1) {
-      // Amenity already exists, so remove it
       newAmenities = [
         ...currentAmenities.slice(0, amenityIndex),
         ...currentAmenities.slice(amenityIndex + 1),
@@ -142,11 +136,10 @@ const EditProperty = () => {
       newAmenities = [...currentAmenities, amenity];
     }
 
-    setFormData((prev) => ({ ...prev, amenities: newAmenities })); // Update local form data
-    setProperty({ amenities: newAmenities }); // Update the zustand store
+    setFormData((prev) => ({ ...prev, amenities: newAmenities }));
+    setProperty({ amenities: newAmenities });
   };
 
-  // Handle Input Change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -155,21 +148,18 @@ const EditProperty = () => {
     }));
   };
 
-  // Handle File Upload for New or Replacing Photos
   const handleFileChange = (e) => {
     const uploadedFiles = Array.from(e.target.files);
 
-    // Generate preview URLs for the new images
     const newPhotos = uploadedFiles.map((file) => ({
-      photo_id: null, // No ID since it's a new upload
-      photo_url: URL.createObjectURL(file), // Create a preview URL
-      file: file, // Store the actual file for upload
+      photo_id: null,
+      photo_url: URL.createObjectURL(file),
+      file: file,
     }));
 
-    setPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]); // Update state
+    setPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
   };
 
-  // Handle Photo Deletion
   const handleDeletePhoto = async (photoId) => {
     Swal.fire({
       title: "Are you sure?",
@@ -195,7 +185,6 @@ const EditProperty = () => {
     });
   };
 
-  // Submit Form (Update Property)
   const handleSubmit = async (e) => {
     e.preventDefault();
     Swal.fire({
@@ -247,9 +236,8 @@ const EditProperty = () => {
     });
   };
 
-  // Cancel Edit
   const handleCancel = () => {
-    router.push("/pages/landlord/property-listing"); // Redirect to property list
+    router.push("/pages/landlord/property-listing");
   };
 
   return (

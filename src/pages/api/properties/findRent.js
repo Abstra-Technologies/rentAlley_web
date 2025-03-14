@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       FROM Property p
       JOIN PropertyVerification pv ON p.property_id = pv.property_id
       LEFT JOIN Unit u ON p.property_id = u.property_id
-      WHERE pv.status = 'Verified'
+      WHERE pv.status = 'Verified' AND p.status = 'active'
     `;
 
     const queryParams = [];

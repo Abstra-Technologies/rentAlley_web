@@ -24,8 +24,8 @@ export const config = {
 
 function sanitizeFilename(filename) {
   const sanitized = filename
-    .replace(/[^a-zA-Z0-9.]/g, "_") // Replace non-alphanumeric chars with underscores
-    .replace(/\s+/g, "_"); // Replace consecutive whitespaces with a single underscore
+    .replace(/[^a-zA-Z0-9.]/g, "_")
+    .replace(/\s+/g, "_");
   return sanitized;
 }
 
@@ -63,10 +63,15 @@ async function getPropertyPhotos(req, res, connection) {
   }
 
   try {
+    // const [result] = await connection.query(
+    //   `SELECT photo_url FROM Property WHERE property_id = ?`,
+    //   [property_id]
+    // );
     const [result] = await connection.query(
-      `SELECT photo_url FROM Property WHERE property_id = ?`,
-      [property_id]
+        `SELECT photo_url FROM PropertyPhoto WHERE property_id = ?`,
+        [property_id]
     );
+
 
     let photos = [];
     if (result.length > 0 && result[0].photo_url) {
@@ -116,7 +121,7 @@ async function handleUpdatePhotos(req, res, connection) {
       await connection.beginTransaction();
 
       const [existingProperty] = await connection.query(
-        `SELECT photo_url FROM Property WHERE property_id = ?`,
+        `SELECT photo_url FROM PropertyPhoto WHERE property_id = ?`,
         [property_id]
       );
 
@@ -155,7 +160,7 @@ async function handleUpdatePhotos(req, res, connection) {
       const updatedPhotos = [...existingPhotos, ...newPhotoUrls];
 
       await connection.query(
-        `UPDATE Property SET photo_url = ?, updated_at = ? WHERE property_id = ?`,
+        `UPDATE PropertyPhoto SET photo_url = ?, updated_at = ? WHERE property_id = ?`,
         [JSON.stringify(updatedPhotos), new Date(), property_id]
       );
 
@@ -184,7 +189,7 @@ async function handleDeletePhoto(req, res, connection) {
     await connection.beginTransaction();
 
     const [existingProperty] = await connection.query(
-      `SELECT photo_url FROM Property WHERE property_id = ?`,
+      `SELECT photo_url FROM PropertyPhoto WHERE property_id = ?`,
       [property_id]
     );
 
@@ -210,7 +215,7 @@ async function handleDeletePhoto(req, res, connection) {
     );
 
     await connection.query(
-      `UPDATE Property SET photo_url = ? WHERE property_id = ?`,
+      `UPDATE PropertyPhoto SET photo_url = ? WHERE property_id = ?`,
       [JSON.stringify(updatedPhotos), property_id]
     );
 

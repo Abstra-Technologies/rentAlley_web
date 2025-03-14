@@ -155,7 +155,6 @@ async function handleGetRequest(req, res, connection, landlord_id, property_id) 
 
 async function handlePutRequest(req, res, connection, id) {
   try {
-    // Check if the property exists
     const [rows] = await connection.execute(
       `SELECT * FROM Property WHERE property_id = ?`,
       [id]
