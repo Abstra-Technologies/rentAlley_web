@@ -14,12 +14,11 @@ import { logEvent } from "../utils/gtag";
 import DeleteAccountButton from "./authentication/deleteAccountButton";
 import useAuthStore from "../zustand/authStore";
 
-
 export default function ProfilePage() {
   const { user, loading, error } = useAuthStore();
   const router = useRouter();
-const user_id = user?.user_id;
-const userType = user?.userType;
+  const user_id = user?.user_id;
+  const userType = user?.userType;
 
   const [profileData, setProfileData] = useState({
     firstName: "",
@@ -35,7 +34,6 @@ const userType = user?.userType;
   const [editing, setEditing] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState(null);
-
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -115,18 +113,18 @@ const userType = user?.userType;
         headers: { "Content-Type": "application/json" },
         withCredentials: true,
       });
-    
+
       Swal.fire({
         icon: "success",
         title: "Profile Updated!",
         text: "Your profile has been updated successfully.",
       });
-    
+
       setProfileData((prev) => ({ ...prev, ...formData }));
       setEditing(false);
     } catch (error) {
       console.error("Profile update failed:", error);
-    
+
       Swal.fire({
         icon: "error",
         title: "Update Failed",
@@ -138,207 +136,214 @@ const userType = user?.userType;
   if (loading) return <p>Loading profile...</p>;
 
   return (
-    
-      <div className="flex-1 p-8">
-        <h1 className="text-3xl font-semibold text-blue-600 mb-8">Profile</h1>
-        <div className="max-w-2xl mx-auto">
-          <div className="flex flex-col items-center">
-            <div className="flex flex-col items-center relative">
-              <label className="relative cursor-pointer group">
-                <img
-                  src={
-                    profilePicture ||
-                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                  }
-                  alt="Profile"
-                  className="w-32 h-32 rounded-full object-cover border border-gray-300 shadow-md"
-                />
+    <div className="flex-1 p-8">
+      <h1 className="text-3xl font-semibold text-blue-600 mb-8">Profile</h1>
+      <div className="max-w-2xl mx-auto">
+        <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center relative">
+            <label className="relative cursor-pointer group">
+              <img
+                src={
+                  profilePicture ||
+                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                }
+                alt="Profile"
+                className="w-32 h-32 rounded-full object-cover border border-gray-300 shadow-md"
+              />
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
 
-                <div
-                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0
+              <div
+                className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0
                         group-hover:bg-opacity-50 rounded-full transition-all duration-300"
-                >
-                  <span
-                    className="text-white text-sm font-medium opacity-0 group-hover:opacity-100
+              >
+                <span
+                  className="text-white text-sm font-medium opacity-0 group-hover:opacity-100
                            transition-opacity duration-300"
-                  >
-                    Change Picture
-                  </span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">
-            Welcome, {user?.firstName}!
-          </h2>
-          {user?.userType === "landlord" && (
-            <div className="mt-4">
-              {verificationStatus === "1" ? (
-                <p className="text-yellow-600 font-bold">
-                  ⏳ Verification Pending
-                </p>
-              ) : verificationStatus === "verified" ? (
-                <p className="text-green-600 font-bold">✅ Verified</p>
-              ) : verificationStatus === "not verified" ? (
-                <div>
-                  <p className="text-red-600 font-bold">Not Yet Verified</p>
-                  <button
-                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    onClick={() => router.push("/pages/landlord/verification")}
-                  >
-                    Apply for Verification
-                  </button>
-                </div>
-              ) : verificationStatus === "not verified" ? (
-                <div>
-                  <p className="text-red-600 font-bold">❌ Not Verified</p>
-                  <button
-                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    onClick={() => router.push("/pages/landlord/verification")}
-                  >
-                    Verify Now
-                  </button>
-                </div>
-              ) : (
-                <p className="text-gray-600 font-bold">Unknown Status</p>
-              )}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                First Name
-              </label>
-              {editing ? (
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-md"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={profileData?.firstName}
-                  className="text-gray-400 w-full p-2 border rounded-md"
-                  readOnly
-                />
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Last Name
-              </label>
-              {editing ? (
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-md"
-                />
-              ) : (
-                <input
-                  type="text"
-                  value={profileData?.lastName}
-                  className="text-gray-400 w-full p-2 border rounded-md"
-                  readOnly
-                />
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Email (Read-Only)
-              </label>
-              <input
-                type="text"
-                value={profileData?.email}
-                className="text-gray-400 w-full p-2 border rounded-md"
-                readOnly
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              {editing ? (
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded-md"
-
-                />
-              ) : (
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  value={profileData?.phoneNumber || "Not provided"}
-                  className="text-gray-400 w-full p-2 border rounded-md"
-                  readOnly
-                />
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                User Type (Read-Only)
-              </label>
-              <input
-                type="text"
-                value={user?.userType}
-                className="text-gray-400 w-full p-2 border rounded-md"
-                readOnly
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-between mt-4">
-            <DeleteAccountButton user_id={user_id} userType={userType}/>
-            {editing ? (
-              <button
-                onClick={() => {
-                  logEvent(
-                    "Profile Update",
-                    "User Interaction",
-                    "Clicked Save Changes",
-                    1
-                  );
-                  handleUpdateProfile();
-                }}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-              >
-                Save Changes
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  logEvent(
-                    "Profile Edit",
-                    "User Interaction",
-                    "Clicked Edit Profile",
-                    1
-                  );
-                  setEditing(true);
-                }}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-              >
-                Edit Profile
-              </button>
-            )}
+                >
+                  Change Picture
+                </span>
+              </div>
+            </label>
           </div>
         </div>
+
+        <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4">
+          Welcome, {user?.firstName}!
+        </h2>
+        {user?.userType === "landlord" && (
+          <div className="mt-4">
+            {verificationStatus === "1" ? (
+              <p className="text-yellow-600 font-bold">
+                ⏳ Verification Pending
+              </p>
+            ) : verificationStatus === "verified" ? (
+              <p className="text-green-600 font-bold">✅ Verified</p>
+            ) : verificationStatus === "not verified" ? (
+              <div>
+                <p className="text-red-600 font-bold">Not Yet Verified</p>
+                <button
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  onClick={() => router.push("/pages/landlord/verification")}
+                >
+                  Apply for Verification
+                </button>
+              </div>
+            ) : verificationStatus === "not verified" ? (
+              <div>
+                <p className="text-red-600 font-bold">❌ Not Verified</p>
+                <button
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  onClick={() => router.push("/pages/landlord/verification")}
+                >
+                  Verify Now
+                </button>
+              </div>
+            ) : (
+              <p className="text-gray-600 font-bold">Unknown Status</p>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              First Name
+            </label>
+            {editing ? (
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+              />
+            ) : (
+              <input
+                type="text"
+                value={profileData?.firstName}
+                className="text-gray-400 w-full p-2 border rounded-md"
+                readOnly
+                tabIndex="-1"
+                onMouseDown={(e) => e.preventDefault()}
+              />
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Last Name
+            </label>
+            {editing ? (
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+              />
+            ) : (
+              <input
+                type="text"
+                value={profileData?.lastName}
+                className="text-gray-400 w-full p-2 border rounded-md"
+                readOnly
+                tabIndex="-1"
+                onMouseDown={(e) => e.preventDefault()}
+              />
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Email (Read-Only)
+            </label>
+            <input
+              type="text"
+              value={profileData?.email}
+              className="text-gray-400 w-full p-2 border rounded-md"
+              readOnly
+              tabIndex="-1"
+              onMouseDown={(e) => e.preventDefault()}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Phone Number
+            </label>
+            {editing ? (
+              <input
+                type="text"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+              />
+            ) : (
+              <input
+                type="text"
+                name="phoneNumber"
+                value={profileData?.phoneNumber || "Not provided"}
+                className="text-gray-400 w-full p-2 border rounded-md"
+                readOnly
+                tabIndex="-1"
+                onMouseDown={(e) => e.preventDefault()}
+              />
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              User Type (Read-Only)
+            </label>
+            <input
+              type="text"
+              value={user?.userType}
+              className="text-gray-400 w-full p-2 border rounded-md"
+              readOnly
+              tabIndex="-1"
+              onMouseDown={(e) => e.preventDefault()}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between mt-4">
+          <DeleteAccountButton user_id={user_id} userType={userType} />
+          {editing ? (
+            <button
+              onClick={() => {
+                logEvent(
+                  "Profile Update",
+                  "User Interaction",
+                  "Clicked Save Changes",
+                  1
+                );
+                handleUpdateProfile();
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              Save Changes
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                logEvent(
+                  "Profile Edit",
+                  "User Interaction",
+                  "Clicked Edit Profile",
+                  1
+                );
+                setEditing(true);
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              Edit Profile
+            </button>
+          )}
+        </div>
       </div>
-   
+    </div>
   );
 }
