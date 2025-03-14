@@ -60,7 +60,7 @@ const useAuthStore = create(
 
             decryptAdminData: (data) => {
                 try {
-                    const encryptionKey = process.env.ENCRYPTION_SECRET;
+                    const encryptionKey = secrets.ENCRYPTION_SECRET;
                     if (!encryptionKey) {
                         console.error("[AuthStore] Missing ENCRYPTION_SECRET in environment variables.");
                         return data;

@@ -115,7 +115,7 @@ const photoEncrypted =JSON.stringify(await encryptData(birthDate, process.env.EN
 
         console.log("Generated JWT Token for User ID:", user_id);
 
-        const isDev = process.env.NODE_ENV === "development";
+        const isDev = process.env.NODE_ENV === "production";
         res.setHeader(
             "Set-Cookie",
             `token=${token}; HttpOnly; Path=/; ${isDev ? "" : "Secure;"} SameSite=Strict`

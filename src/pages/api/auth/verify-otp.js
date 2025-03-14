@@ -96,7 +96,7 @@ export default async function VerifyOtpCode(req, res) {
             .setExpirationTime('1h')  // Token expires in 1 hour
             .sign(secret);
 
-        const isDev = process.env.NODE_ENV === "development";
+        const isDev = process.env.NODE_ENV === "production";
         res.setHeader(
             "Set-Cookie",
             `token=${newToken}; HttpOnly; Path=/; ${

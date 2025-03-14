@@ -59,7 +59,7 @@ export default async function Signin(req, res) {
       .setSubject(user.user_id)
       .sign(secret);
 
-    const isDev = process.env.NODE_ENV === "development";
+    const isDev = process.env.NODE_ENV === "production";
     res.setHeader(
       "Set-Cookie",
       `token=${token}; HttpOnly; Path=/; ${

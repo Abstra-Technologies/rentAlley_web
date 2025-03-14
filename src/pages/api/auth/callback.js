@@ -165,7 +165,7 @@ export default async function handler(req, res) {
             .setSubject(userId.toString())
             .sign(secret);
 
-        const isDev = process.env.NODE_ENV === "development";
+        const isDev = process.env.NODE_ENV === "production";
         res.setHeader(
             "Set-Cookie",
             `token=${token}; HttpOnly; Path=/; ${isDev ? "" : "Secure;"} SameSite=Strict`

@@ -31,7 +31,6 @@ export default function AddNewProperty() {
 
   const validateStep = () => {
     if (step === 1) {
-      // Ensure property details are filled
       if (
         !property.propertyName ||
         !property.street ||
@@ -48,7 +47,6 @@ export default function AddNewProperty() {
         return false;
       }
 
-      // Validate ZIP code (must be exactly 4 digits)
       const zipCodePattern = /^\d{4}$/;
       if (!zipCodePattern.test(property.zipCode)) {
         Swal.fire(
@@ -184,7 +182,6 @@ export default function AddNewProperty() {
         return false;
       }
 
-      // Validate that all uploaded files are images
       const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
       for (let photo of photos) {
@@ -233,22 +230,21 @@ export default function AddNewProperty() {
       }
     }
 
-    return true; // If all validations pass
+    return true;
   };
 
   const nextStep = () => {
     if (validateStep()) {
-      setStep((prev) => Math.min(prev + 1, 4)); // Prevent going past step 4
+      setStep((prev) => Math.min(prev + 1, 4));
     }
   };
 
   const prevStep = () => {
-    setStep((prev) => Math.max(prev - 1, 1)); // Prevent going below step 1
+    setStep((prev) => Math.max(prev - 1, 1));
   };
 
   const axiosInstance = axios.create({});
 
-  // SWR Mutation for property creation
   const sendPropertyData = async (url, { arg }) => {
     console.log("Property Data: ", arg);
     return axiosInstance
@@ -260,11 +256,10 @@ export default function AddNewProperty() {
     sendPropertyData
   );
 
-  // Upload photos
   const uploadPhotos = async (propertyID) => {
     const formData = new FormData();
 
-    formData.append("property_id", propertyID); // ✅ Fix: Add property_id to FormData
+    formData.append("property_id", propertyID);
 
     console.log("Uploading files:", photos);
     photos.forEach((photo, index) => {
@@ -274,7 +269,7 @@ export default function AddNewProperty() {
       } else {
         console.warn(`Skipping invalid file:`, photo);
       }
-    }); // Ensure it's a File object;
+    });
 
     // Debugging FormData contents before sending
     for (let pair of formData.entries()) {
@@ -286,7 +281,7 @@ export default function AddNewProperty() {
         `/api/propertyListing/propPhotos`,
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" }, // Ensures proper handling
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
 
@@ -294,15 +289,15 @@ export default function AddNewProperty() {
         console.log(pair[0], pair[1]);
       }
 
-      console.log("Photo upload response:", data); // Log response from server
+      console.log("Photo upload response:", data);
       return data;
     } catch (error) {
       console.error("Photo upload failed:", error);
-      console.error("Response:", error.response?.data); // Log error response
+      console.error("Response:", error.response?.data);
       throw error;
     }
   };
-  // Upload Property Requirements
+
   const uploadPropertyRequirements = async (propertyID) => {
     const formData = new FormData();
     formData.append("property_id", propertyID);
@@ -352,13 +347,21 @@ export default function AddNewProperty() {
       return;
     }
 
+    Swal.fire({
+      title: "Submitting...",
+      text: "Please wait while we submit your property listing.",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
     try {
-      // Step 1: Submit property details first
       const propertyData = { ...property, landlord_id: user?.landlord_id };
       const createdProperty = await trigger(propertyData);
       const propertyID = createdProperty.propertyID;
 
-      // Create promises for photo and verification file uploads (if any)
       const photoUploadPromise =
         photos.length > 0 ? await uploadPhotos(propertyID) : Promise.resolve();
       const verificationUploadPromise =
@@ -368,12 +371,20 @@ export default function AddNewProperty() {
 
       await Promise.all([photoUploadPromise, verificationUploadPromise]);
 
-      reset(); // Clear form
-      router.push("/pages/landlord/property-listing/review-listing");
+      reset();
+
+      Swal.fire({
+        title: "Success!",
+        text: "Your property listing has been successfully submitted.",
+        icon: "success",
+      }).then(() => {
+        router.push("/pages/landlord/property-listing/review-listing");
+      });
+
+      // router.push("/pages/landlord/property-listing/review-listing");
     } catch (error) {
       console.error("Property listing failed:", error.response?.data);
 
-      // Check if rejection was due to verification failure
       if (error.response?.data?.status === "rejected") {
         if (verificationAttempts < 2) {
           Swal.fire(

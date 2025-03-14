@@ -63,7 +63,7 @@ export default async function admminLogin(req, res) {
             .setSubject(user.admin_id.toString())
             .sign(secret);
 
-        const isDev = process.env.NODE_ENV === "development";
+        const isDev = process.env.NODE_ENV === "production";
         res.setHeader(
             "Set-Cookie",
             `token=${token}; HttpOnly; Path=/; ${isDev ? "" : "Secure;"} SameSite=Strict`

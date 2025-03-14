@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jwtVerify } from "jose"; // Ensure you have 'jose' installed: npm install jose
+import { jwtVerify } from "jose";
 
 
 async function verifyToken(token) {
@@ -32,6 +32,38 @@ const excludePages = [
 
 export async function middleware(req) {
   const token = req.cookies.get("token")?.value;
+  // const secrets = await getSecrets();
+  //
+  // process.env.DB_HOST = secrets.DB_HOST;
+  // process.env.DB_USER = secrets.DB_USER;
+  // process.env.DB_PASSWORD = secrets.DB_PASSWORD;
+  // process.env.DB_NAME = secrets.DB_NAME;
+  // process.env.DB_PORT = secrets.DB_PORT;
+  // process.env.GOOGLE_CLIENT_ID = secrets.GOOGLE_CLIENT_ID;
+  // process.env.GOOGLE_CLIENT_SECRET = secrets.GOOGLE_CLIENT_SECRET;
+  // process.env.NEXTAUTH_URL = secrets.NEXTAUTH_URL;
+  // process.env.NEXTAUTH_SECRET = secrets.NEXTAUTH_SECRET;
+  // process.env.EMAIL_USER = secrets.EMAIL_USER;
+  // process.env.EMAIL_PASS = secrets.EMAIL_PASS;
+  // process.env.JWT_SECRET = secrets.JWT_SECRET;
+  // process.env.NODE_ENV = secrets.NODE_ENV;
+  // process.env.Public_Key = secrets.Public_Key;
+  // process.env.Private_Key = secrets.Private_Key;
+  // process.env.RESET_TOKEN_SECRET = secrets.RESET_TOKEN_SECRET;
+  // process.env.REDIRECT_URI = secrets.REDIRECT_URI;
+  // process.env.REDIRECT_URI_SIGNIN = secrets.REDIRECT_URI_SIGNIN;
+  // process.env.AWS_ACCESS_KEY_ID = secrets.AWS_ACCESS_KEY_ID;
+  // process.env.AWS_SECRET_ACCESS_KEY = secrets.AWS_SECRET_ACCESS_KEY;
+  // process.env.S3_BUCKET_NAME = secrets.S3_BUCKET_NAME;
+  // process.env.AWS_REGION = secrets.AWS_REGION;
+  // process.env.ENCRYPTION_SECRET = secrets.ENCRYPTION_SECRET;
+  // process.env.MAYA_PUBLIC_KEY = secrets.MAYA_PUBLIC_KEY;
+  // process.env.MAYA_SECRET_KEY = secrets.MAYA_SECRET_KEY;
+  // process.env.CHAT_ENCRYPTION_SECRET = secrets.CHAT_ENCRYPTION_SECRET;
+  // process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  // process.env.GOOGLE_ANALYTICS_CLIENT_EMAIL = secrets.GOOGLE_ANALYTICS_CLIENT_EMAIL;
+  // process.env.GOOGLE_ANALYTICS_PRIVATE_KEY = secrets.GOOGLE_ANALYTICS_PRIVATE_KEY;
+  // process.env.GOOGLE_ANALYTICS_PROPERTY_ID = secrets.GOOGLE_ANALYTICS_PROPERTY_ID;
 
   if (!token) {
     if (req.nextUrl.pathname.startsWith("/pages/system_admin") || req.nextUrl.pathname.startsWith("/pages/admin_login")) {
