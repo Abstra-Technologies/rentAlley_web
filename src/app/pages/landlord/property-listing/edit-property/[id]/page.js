@@ -205,17 +205,16 @@ const EditProperty = () => {
           });
           updateProperty(id, formData);
 
-          if (
-            photos.length > 0 &&
-            photos.some((photo) => photo instanceof File)
-          ) {
+          const newPhotos = photos.filter(photo => photo.isNew && photo.file);
+          
+          if (newPhotos.length > 0) {
             const formDataPhotos = new FormData();
             formDataPhotos.append("property_id", id);
-            photos.forEach((photo) => {
-              if (photo instanceof File) {
-                formDataPhotos.append("photos", photo);
-              }
+            
+            newPhotos.forEach(photo => {
+              formDataPhotos.append("photos", photo.file);
             });
+      
             await axios.post(
               "/api/propertyListing/propPhotos",
               formDataPhotos,
