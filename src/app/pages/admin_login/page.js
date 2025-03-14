@@ -11,6 +11,7 @@ export default function LoginAdmin() {
   const [isLocked, setIsLocked] = useState(false);
   const [unlockTime, setUnlockTime] = useState(null);
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const storedLockTime = localStorage.getItem("lockUntil");
@@ -49,16 +50,20 @@ export default function LoginAdmin() {
     e.preventDefault();
 
     if (isLocked) {
-      logEvent(
-        "Login Attempt",
-        "Security",
-        "Locked Out - Too Many Attempts",
-        1
-      );
+      logEvent("Login Attempt", "Security", "Locked Out - Too Many Attempts", 1);
       await Swal.fire("Too many attempts", "Please try again later.", "error");
       return;
     }
-    logEvent("Login Attempt", "User Interaction", "Admin Attempted Login", 1);
+
+    // Show loading Swal
+    Swal.fire({
+      title: "Logging in...",
+      text: "Please wait while we verify your credentials.",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
 
     try {
       const res = await fetch("/api/systemadmin/login", {
@@ -73,6 +78,14 @@ export default function LoginAdmin() {
       if (res.ok) {
         logEvent("Login Success", "Authentication", "Admin Logged In", 1);
 
+        Swal.fire({
+          title: "Login Successful",
+          text: "Redirecting to dashboard...",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
         setMessage("Login successful!");
         setAttempts(0);
         localStorage.removeItem("lockUntil");
@@ -81,12 +94,13 @@ export default function LoginAdmin() {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
         setMessage(data.error || "Invalid credentials.");
-        logEvent(
-          "Login Failed",
-          "Authentication",
-          "Admin Login Failed",
-          newAttempts
-        );
+        logEvent("Login Failed", "Authentication", "Admin Login Failed", newAttempts);
+
+        Swal.fire({
+          title: "Login Failed",
+          text: data.error || "Invalid credentials. Please try again.",
+          icon: "error",
+        });
 
         if (newAttempts >= 3) {
           const lockDuration = 60000;
@@ -95,20 +109,27 @@ export default function LoginAdmin() {
           setIsLocked(true);
           setUnlockTime(lockUntil);
           localStorage.setItem("lockUntil", lockUntil);
-
           setMessage("Too many failed attempts. Please try again later.");
           startUnlockCountdown(lockUntil);
-          logEvent(
-            "Account Locked",
-            "Security",
-            "Admin Account Temporarily Locked",
-            1
-          );
+
+          Swal.fire({
+            title: "Too Many Attempts",
+            text: "Your account is temporarily locked. Please try again later.",
+            icon: "warning",
+          });
+
+          logEvent("Account Locked", "Security", "Admin Account Temporarily Locked", 1);
         }
       }
     } catch (error) {
       console.error("Error:", error);
       setMessage("Something went wrong. Please try again.");
+
+      Swal.fire({
+        title: "Error",
+        text: "Something went wrong. Please try again later.",
+        icon: "error",
+      });
     }
   };
 
