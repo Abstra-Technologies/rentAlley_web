@@ -135,8 +135,12 @@ const useAuthStore = create(
                     set({ user: null, admin: null, loading: false });
                 }
             },
-        })
-    )
+        }),
+{
+    name: "auth-storage",
+        getStorage: () => localStorage,
+})
+
 );
 
 export default useAuthStore;

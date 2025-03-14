@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import {useEffect} from "react";
 import {initGA, logPageView} from "@/src/utils/gtag";
 import Script from "next/script";
+import useAuthStore from "@/src/zustand/authStore";
 
 
 const geistSans = Geist({
@@ -59,6 +60,11 @@ const geistMono = Geist_Mono({
 // }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+
+    const { fetchSession } = useAuthStore();
+    useEffect(() => {
+        fetchSession();
+    }, []);
     return (
         <html lang="en">
         <body className="antialiased">
