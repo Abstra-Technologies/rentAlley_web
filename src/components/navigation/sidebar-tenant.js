@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
+import {router, usePathname, useRouter} from "next/navigation";
 import { Home, Bell, MessageCircle, Wrench, CreditCard, Menu, X, ReceiptText } from "lucide-react";
+import Swal from "sweetalert2";
 
 const menuItems = [
   { href: "/pages/tenant/dashboard", icon: Home, label: "Dashboard" },
@@ -17,13 +17,49 @@ const menuItems = [
   { href: "/pages/tenant/billing", icon: CreditCard, label: "Billing Payment" },
 ];
 
+
+const handleNavigation = (href) => {
+  Swal.fire({
+    title: "Loading...",
+    text: "Redirecting to " + href,
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  setTimeout(() => {
+    router.push(href);
+    Swal.close();
+  }, 1000);
+};
+
 const TenantLayout = ({ children }) => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const handleNavigation = (href) => {
+    Swal.fire({
+      title: "Loading...",
+      text: "Redirecting to " + href,
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    setTimeout(() => {
+      router.push(href);
+      Swal.close();
+    }, 1000);
+  };
+
+
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
@@ -51,30 +87,19 @@ const TenantLayout = ({ children }) => {
             {menuItems.map(({ href, icon: Icon, label }) => {
               const isActive = pathname === href;
               return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    className={`
-                      flex items-center px-4 py-3 rounded-lg text-gray-700 transition-all duration-200
-                      ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 font-bold"
-                          : "hover:bg-gray-100"
-                      }
+                  <li key={href}>
+                    <button
+                        onClick={() => handleNavigation(href)}
+                        className={`
+                      flex items-center w-full px-4 py-3 rounded-lg text-gray-700 transition-all duration-200
+                      ${isActive ? "bg-blue-50 text-blue-700 font-bold" : "hover:bg-gray-100"}
                     `}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Icon
-                      className={`w-5 h-5 mr-3 ${
-                        isActive ? "text-blue-700" : "text-gray-500"
-                      }`}
-                    />
-                    <span>{label}</span>
-                    {isActive && (
-                      <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>
-                    )}
-                  </Link>
-                </li>
+                    >
+                      <Icon className={`w-5 h-5 mr-3 ${isActive ? "text-blue-700" : "text-gray-500"}`}/>
+                      <span>{label}</span>
+                      {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>}
+                    </button>
+                  </li>
               );
             })}
           </ul>
