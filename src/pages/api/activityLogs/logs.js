@@ -2,7 +2,7 @@ import { db } from "../../../lib/db";
 
 export default async function viewActivityLogs(req, res) {
 
-    if (req.method !== "POST") {
+    if (req.method !== "GET") {
         return res.status(405).json({ error: "Method Not Allowed, ONLY creaetion of logs is allowed." });
     }
 
