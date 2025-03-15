@@ -4,18 +4,15 @@ import { useRouter, useParams } from "next/navigation";
 import useAuth from "../../../../../../../../hooks/useSession";
 import LoadingScreen from "../../../../../../../components/loadingScreen";
 
-
 export default function LandlordDetails() {
     const router = useRouter();
     const params = useParams();
     const landlord_id = params.landlord_id;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const {admin} = useAuth();
+    const { admin } = useAuth();
     const [landlord, setLandlord] = useState(null);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
-
 
     useEffect(() => {
         if (landlord_id) {
@@ -33,14 +30,14 @@ export default function LandlordDetails() {
     }, [landlord_id]);
 
     const handleVerification = async (status) => {
-
         if (status === "rejected" && message.trim() === "") {
             alert("Please provide a reason for rejection.");
             return;
         }
-        setIsSubmitting(true);
 
-        try{
+        setIsSubmitting(true); // Show loading state
+
+        try {
             const res = await fetch("/api/landlord/updateVerificationStatus", {
                 method: "POST",
                 headers: {
@@ -55,19 +52,23 @@ export default function LandlordDetails() {
                 }),
                 credentials: "include",
             });
+
             const data = await res.json();
             if (res.ok) {
                 alert(`Verification ${status} successfully.`);
+                router.push("/pages/system_admin/tenant_landlord/verification"); // Redirect after action
             } else {
                 alert(data.error || "Something went wrong.");
             }
-        }catch (error) {
+        } catch (error) {
             console.error("Error updating verification status:", error);
+            alert("Failed to update verification status.");
         }
-        setIsSubmitting(true);
-    }
 
-    if (loading) return  <LoadingScreen />;
+        setIsSubmitting(false); // Hide loading state
+    };
+
+    if (loading) return <LoadingScreen />;
     if (!landlord) return <p className="text-center text-red-500">Landlord not found.</p>;
 
     return (
@@ -111,17 +112,17 @@ export default function LandlordDetails() {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleVerification("approved")}
-                                    className="px-4 py-2 bg-green-600 text-white rounded"
+                                    className={`px-4 py-2 bg-green-600 text-white rounded ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                                     disabled={isSubmitting}
                                 >
-                                    Approve
+                                    {isSubmitting ? "Approving..." : "Approve"}
                                 </button>
                                 <button
                                     onClick={() => handleVerification("rejected")}
-                                    className="px-4 py-2 bg-red-600 text-white rounded"
+                                    className={`px-4 py-2 bg-red-600 text-white rounded ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                                     disabled={isSubmitting}
                                 >
-                                    Reject
+                                    {isSubmitting ? "Rejecting..." : "Reject"}
                                 </button>
                             </div>
                         </div>

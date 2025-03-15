@@ -30,7 +30,7 @@ const PropertyListingPage = () => {
   const [verificationAttempts, setVerificationAttempts] = useState({});
   const [errorMsg, setErrorMsg] = useState(null);
   const [pendingApproval, setPendingApproval] = useState(false);
-
+  const [isNavigating, setIsNavigating] = useState(false);
   useEffect(() => {
     if (user?.landlord_id) {
       fetchAllProperties(user?.landlord_id);
@@ -86,24 +86,6 @@ const PropertyListingPage = () => {
         .finally(() => setFetchingSubscription(false));
     }
   }, [user]);
-
-  // useEffect(() => {
-  //   if (properties.length > 0) {
-  //     properties.forEach((property) => {
-  //       axios
-  //         .get(`/api/propertyListing/propVerify?id=${property?.property_id}`)
-  //         .then((response) => {
-  //           setVerificationAttempts((prev) => ({
-  //             ...prev,
-  //             [property?.property_id]: response.data.attempts,
-  //           }));
-  //         })
-  //         .catch((err) => {
-  //           console.error("Failed to fetch verification attempts:", err);
-  //         });
-  //     });
-  //   }
-  // }, [properties]);
 
   const handleEdit = (propertyId, event) => {
     event.stopPropagation();
@@ -161,59 +143,10 @@ const PropertyListingPage = () => {
       );
       return;
     }
-
+    setIsNavigating(true);
     router.push(`/pages/landlord/property-listing/create-property`);
   };
 
-  // const handleDelete = useCallback(async (propertyId, event) => {
-  //   event.stopPropagation();
-  //
-  //   const result = await Swal.fire({
-  //     title: "Are you sure?",
-  //     text: "You won't be able to recover this!",
-  //     icon: "warning",
-  //     showCancelButton: true,
-  //     confirmButtonColor: "#d33",
-  //     cancelButtonColor: "#3085d6",
-  //     confirmButtonText: "Yes, delete it!",
-  //   });
-  //
-  //   if (!result.isConfirmed) return;
-  //
-  //   try {
-  //     const response = await fetch(
-  //       `/api/propertyListing/propListing?id=${propertyId}`,
-  //       {
-  //         method: "DELETE",
-  //       }
-  //     );
-  //
-  //     if (response.ok) {
-  //       Swal.fire({
-  //         title: "Deleted!",
-  //         text: "Property has been deleted.",
-  //         icon: "success",
-  //         showConfirmButton: true,
-  //         confirmButtonText: "Close",
-  //       }).then(() => {
-  //         fetchAllProperties(user.landlord_id);
-  //       });
-  //     } else {
-  //       Swal.fire({
-  //         title: "Error!",
-  //         text: "Failed to delete property.",
-  //         icon: "error",
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error("Error deleting property:", error);
-  //     Swal.fire({
-  //       title: "Error!",
-  //       text: "An error occurred while deleting the property.",
-  //       icon: "error",
-  //     });
-  //   }
-  // });
   const handleDelete = useCallback(
     async (propertyId, event) => {
       event.stopPropagation();
@@ -326,53 +259,55 @@ const PropertyListingPage = () => {
               )}
 
               <button
-                className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
-                  isFetchingVerification ||
-                  fetchingSubscription ||
-                  !isVerified ||
-                  !subscription ||
-                  subscription?.is_active !== 1
-                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-                onClick={handleAddProperty}
-                disabled={
-                  isFetchingVerification ||
-                  fetchingSubscription ||
-                  !isVerified ||
-                  !subscription ||
-                  subscription?.is_active !== 1
-                }
+                  className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
+                      isFetchingVerification ||
+                      fetchingSubscription ||
+                      !isVerified ||
+                      !subscription ||
+                      subscription?.is_active !== 1 ||
+                      isNavigating
+                          ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+                  onClick={handleAddProperty}
+                  disabled={
+                      isFetchingVerification ||
+                      fetchingSubscription ||
+                      !isVerified ||
+                      !subscription ||
+                      subscription?.is_active !== 1 ||
+                      isNavigating
+                  }
               >
-                {isFetchingVerification || fetchingSubscription ? (
-                  <span className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Checking...
-                  </span>
+                {isFetchingVerification || fetchingSubscription || isNavigating ? (
+                    <span className="flex items-center">
+          <svg
+              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+          >
+            <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+            ></circle>
+            <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+                      {isNavigating ? "Redirecting..." : "Checking..."}
+        </span>
                 ) : (
-                  <>
-                    <PlusCircleIcon className="h-5 w-5 mr-2" />
-                    Add New Property
-                  </>
+                    <>
+                      <PlusCircleIcon className="h-5 w-5 mr-2" />
+                      Add New Property
+                    </>
                 )}
               </button>
 
