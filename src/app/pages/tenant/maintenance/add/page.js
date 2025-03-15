@@ -36,6 +36,7 @@ export default function MaintenanceRequestPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const formData = {
       category: selectedCategory,
       subject,
@@ -63,6 +64,16 @@ export default function MaintenanceRequestPage() {
       return;
     }
 
+    Swal.fire({
+      title: "Submitting Request...",
+      text: "Please wait while we process your maintenance request.",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
     try {
       const maintenanceRes = await axios.post("/api/maintenance/create", {
         tenant_id: user.tenant_id,
@@ -75,7 +86,6 @@ export default function MaintenanceRequestPage() {
       console.log("Maintenance Request Response:", maintenanceRes);
 
       const requestId = maintenanceRes.data.request_id;
-      const landlordId = maintenanceRes.data.landlord_id;
 
       // Notify the landlord
       await axios.post("/api/maintenance/notify-landlord", {
@@ -102,6 +112,7 @@ export default function MaintenanceRequestPage() {
         icon: "success",
         title: "Request Submitted",
         text: "Your maintenance request has been submitted successfully!",
+        confirmButtonColor: "#3085d6",
       }).then(() => {
         router.push("/pages/tenant/maintenance");
       });
