@@ -78,6 +78,7 @@ export default async function handler(req, res) {
             email:decryptField(landlordResults[0].email, "email"),
             phoneNumber: decryptField(landlordResults[0].phoneNumber, "phoneNumber"),
             birthDate: landlordResults[0].birthDate,
+            is_active: landlordResults[0].is_active,
             userType: landlordResults[0].userType,
             emailVerified: landlordResults[0].emailVerified ? true : false,
             profilePicture: landlordResults[0].profilePicture,

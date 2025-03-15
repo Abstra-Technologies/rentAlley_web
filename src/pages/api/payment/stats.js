@@ -85,7 +85,7 @@ export default async function grantingFreeTrialHandler(req, res) {
             await connection.execute(
                 "INSERT INTO " +
                 "Subscription (landlord_id, plan_name, start_date, end_date, payment_status, is_trial, created_at, request_reference_number, is_active)" +
-                " VALUES (?, ?, ?, ?, 'pending', 1, NOW(), 0, 1)",
+                " VALUES (?, ?, ?, ?, 'paid', 1, NOW(), 0, 1)",
                 [landlord_id, plan_name, startDate, formattedTrialEndDate]
             );
 

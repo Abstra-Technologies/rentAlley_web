@@ -48,8 +48,8 @@ export default function LandlordSubscriptionCurrent({ user_id }) {
                         <tr key={index} style={{ backgroundColor: subscription.status === "active" ? "#e8f5e9" : "white" }}>
                             <td style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>{subscription.plan_name}</td>
                             <td style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>
-                                {subscription.status === "active" ? "✅ Active" :
-                                    subscription.status === "expired" ? "❌ Expired" :
+                                {subscription?.is_active === 1 ? "✅ Active" :
+                                    subscription?.is_active === 0 ? "❌ Expired" :
                                         subscription.status === "pending" ? "⏳ Pending" : "❔ Unknown"}
                             </td>
                             <td style={{ padding: "10px", borderBottom: "1px solid #ddd" }}>{new Date(subscription.start_date).toLocaleDateString()}</td>
