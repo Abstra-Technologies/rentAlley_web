@@ -10,6 +10,7 @@ import {
   FaMapMarkerAlt,
   FaSpinner,
 } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 export default function PropertySearch() {
   const [allProperties, setAllProperties] = useState([]); 
@@ -48,7 +49,23 @@ export default function PropertySearch() {
     fetchProperties();
   }, []);
 
- 
+  const handleViewDetails = (propertyId) => {
+    Swal.fire({
+      title: "Loading...",
+      text: "Redirecting to property details...",
+      allowOutsideClick: true,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    // Simulate delay before redirecting
+    setTimeout(() => {
+      Swal.close();
+      router.push(`/pages/find-rent/${propertyId}`);
+    }, 1500); // 1.5 seconds delay
+  };
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const queryParam = params.get('searchQuery');
@@ -214,77 +231,71 @@ export default function PropertySearch() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProperties.map((property) => {
               return (
-                <div
-                  key={property.property_id}
-                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                  onClick={() =>
-                    router.push(`/pages/find-rent/${property.property_id}`)
-                  }
-                >
-
-                  <div className="relative">
-                    {property?.property_photo ? (
-                      <div className="relative h-48">
-                        <Image
-                          src={property?.property_photo}
-                          alt={property?.property_name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-400">
-                          No Image Available
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-
-                  <div className="p-4">
-
-                    <div className="flex justify-between items-center mb-1">
-                      <h2 className="text-lg font-semibold text-gray-900">
-                        {property?.property_name}
-                      </h2>
-                      <div className="flex items-center gap-1">
-                        <HiBadgeCheck className="text-blue-500 text-lg" />
-                        <span className="text-blue-600 font-medium text-sm">
-                          Verified
-                        </span>
-                      </div>
+                  <div
+                      key={property.property_id}
+                      className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => handleViewDetails(property.property_id)}
+                  >
+                    <div className="relative">
+                      {property?.property_photo ? (
+                          <div className="relative h-48">
+                            <Image
+                                src={property?.property_photo}
+                                alt={property?.property_name}
+                                fill
+                                className="object-cover"
+                            />
+                          </div>
+                      ) : (
+                          <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-400">No Image Available</span>
+                          </div>
+                      )}
                     </div>
 
+                    <div className="p-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          {property?.property_name}
+                        </h2>
+                        <div className="flex items-center gap-1">
+                          <HiBadgeCheck className="text-blue-500 text-lg" />
+                          <span className="text-blue-600 font-medium text-sm">
+                    Verified
+                  </span>
+                        </div>
+                      </div>
 
-                    <div className="flex items-center text-gray-600 mt-2">
-                      <FaMapMarkerAlt className="mr-1 text-gray-400" />
-                      <p className="text-gray-800">
-                        {property?.city},{" "}
-                        {property?.province
-                          .split("_")
-                          .map(
-                            (word) =>
-                              word.charAt(0).toUpperCase() + word.slice(1)
-                          )
-                          .join(" ")}
+                      <div className="flex items-center text-gray-600 mt-2">
+                        <FaMapMarkerAlt className="mr-1 text-gray-400" />
+                        <p className="text-gray-800">
+                          {property?.city},{" "}
+                          {property?.province
+                              .split("_")
+                              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                              .join(" ")}
+                        </p>
+                      </div>
+
+                      <p className="text-xl font-semibold text-blue-600 mt-1">
+                        ₱{Math.round(property.rent_amount).toLocaleString()}
                       </p>
+
+                      <button
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering parent click event
+                            handleViewDetails(property.property_id);
+                          }}
+                          className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors"
+                      >
+                        View Details
+                      </button>
                     </div>
-
-  
-                    <p className="text-xl font-semibold text-blue-600 mt-1">
-                      ₱{Math.round(property.rent_amount).toLocaleString()}
-                    </p>
-
-
-                    <button className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors">
-                      View Details
-                    </button>
                   </div>
-                </div>
               );
             })}
           </div>
+          );
         </>
       )}
     </div>
