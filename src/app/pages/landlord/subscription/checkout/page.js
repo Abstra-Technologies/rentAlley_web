@@ -104,7 +104,6 @@ export default function CheckoutPage() {
             return;
         }
 
-        // Paid plan handling
         try {
             const response = await axios.post("/api/payment/checkout", {
                 amount,
@@ -115,10 +114,11 @@ export default function CheckoutPage() {
                 landlord_id: user.landlord_id,
                 plan_name: planName,
                 redirectUrl: {
-                    success: "http://localhost:3000/pages/payment/success",
-                    failure: "http://localhost:3000/pages/payment/failure",
-                    cancel: "http://localhost:3000/pages/payment/cancelled",
+                    success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/success`,
+                    failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/failure`,
+                    cancel: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/cancelled`,
                 },
+
             });
 
             console.log("✅ Debug - Checkout Response:", response.data);

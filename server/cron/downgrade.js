@@ -8,7 +8,7 @@ cron.schedule("0 13 * * *", async () => {
     console.log(" Running scheduled check for expired subscriptions...");
 
     try {
-        const response = await axios.post("http://localhost:3000/api/subscription/downgrade");
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription/downgrade`);
         console.log("Downgrade API Response:", response.data);
     } catch (error) {
         console.error("Failed to downgrade expired subscriptions:");

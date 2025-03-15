@@ -151,6 +151,7 @@ export default function ViewUnits() {
 
       setIsEditing(false);
       setIsModalOpen(false);
+      window.location.reload();
     } catch (error) {
       console.error(
         "Error saving billing:",

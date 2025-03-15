@@ -94,9 +94,9 @@ export default function TenantBilling({}) {
           lastName: user.lastName,
           email: user.email,
           redirectUrl: {
-            success: "http://localhost:3000/pages/payment/billSuccess",
-            failure: "http://localhost:3000/pages/payment/billFailed",
-            cancel: "http://localhost:3000/pages/payment/billCancelled",
+            success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billSuccess`,
+            failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billFailed`,
+            cancel: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billCancelled`,
           },
         });
 

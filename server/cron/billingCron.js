@@ -8,7 +8,7 @@ cron.schedule("0 13 * * *", async () => {
     console.log(" Running scheduled check for Billing Notification...");
 
     try {
-        const response = await axios.post("http://localhost:3000/utils/billingCron");
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/utils/billingCron`);
         console.log("Downgrade API Response:", response.data);
     } catch (error) {
         console.error("Failed to send Billing");

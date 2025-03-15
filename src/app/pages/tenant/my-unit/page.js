@@ -95,9 +95,9 @@ export default function MyUnit() {
           lastName: user.lastName,
           email: user.email,
           redirectUrl: {
-            success: "http://localhost:3000/pages/payment/secSuccess",
-            failure: "http://localhost:3000/pages/payment/secFailed",
-            cancel: "http://localhost:3000/pages/payment/secCancelled",
+            success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/secSuccess`,
+            failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/secFailed`,
+            cancel: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/secCancelled`,
           },
         });
 
@@ -126,12 +126,10 @@ export default function MyUnit() {
         Swal.showLoading();
       },
     });
-
-    // Simulate delay before redirection
     setTimeout(() => {
       Swal.close();
       router.push("/pages/tenant/dashboard");
-    }, 1500); // 1.5 seconds delay for smoother transition
+    }, 1500);
   };
 
 
