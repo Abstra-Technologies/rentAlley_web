@@ -1,15 +1,31 @@
-'use client'
+"use client";
 import { useEffect, useState } from "react";
-import useAuth from "../../../../../../hooks/useSession";
 import { useRouter } from "next/navigation";
+import useAuth from "../../../../../../hooks/useSession";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
-import { Eye, Trash2 } from "lucide-react";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    TextField,
+    TableSortLabel,
+    CircularProgress,
+    Button,
+} from "@mui/material";
+import { Eye } from "lucide-react";
 import LoadingScreen from "../../../../../components/loadingScreen";
 
 export default function TenantList() {
     const [tenants, setTenants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+
     const { admin } = useAuth();
     const router = useRouter();
 
@@ -20,7 +36,7 @@ export default function TenantList() {
                 const response = await fetch("/api/tenant/list");
 
                 if (!response.ok) {
-                    new Error('Failed to fetch tenants.');
+                    throw new Error("Failed to fetch tenants.");
                 }
                 const data = await response.json();
                 setTenants(data.tenants);
@@ -33,6 +49,37 @@ export default function TenantList() {
 
         fetchTenants();
     }, []);
+
+    // Sorting Function
+    const requestSort = (key) => {
+        let direction = "asc";
+        if (sortConfig.key === key && sortConfig.direction === "asc") {
+            direction = "desc";
+        }
+        setSortConfig({ key, direction });
+    };
+
+    // Filter and Sort Tenants
+    const filteredAndSortedTenants = tenants
+        .filter(
+            (tenant) =>
+                tenant.user_id.toString().includes(searchTerm) ||
+                new Date(tenant.createdAt).toLocaleDateString().includes(searchTerm)
+        )
+        .sort((a, b) => {
+            if (!sortConfig.key) return 0;
+
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            if (aValue < bValue) {
+                return sortConfig.direction === "asc" ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
 
     if (error) return <p className="text-red-500 p-6">Error: {error}</p>;
 
@@ -51,51 +98,77 @@ export default function TenantList() {
             <div className="flex-1 p-6 max-w-6xl mx-auto">
                 <h1 className="text-2xl font-semibold text-blue-600 mb-6">Tenants List</h1>
 
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Tenant ID</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">User ID</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Date Registered</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {tenants.length > 0 ? (
-                                    tenants.map((tenant, index) => (
-                                        <tr key={tenant.tenant_id} className="hover:bg-gray-50 border-b">
-                                            <td className="px-6 py-4 text-blue-600">{index + 1}</td>
-                                            <td className="px-6 py-4">{tenant.user_id}</td>
-                                            <td className="px-6 py-4">{new Date(tenant.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex space-x-4">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            router.push(`./viewProfile/tenant/${tenant.user_id}`);
-                                                        }}
-                                                        className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center"
-                                                    >
-                                                        <Eye className="w-4 h-4 mr-1" /> View
-                                                    </button>
+                {/* Search Bar */}
+                <TextField
+                    label="Search tenants..."
+                    variant="outlined"
+                    fullWidth
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="mb-4"
+                />
 
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                <Paper>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    {[
+                                        { key: "tenant_id", label: "ID" },
+                                        { key: "user_id", label: "User ID" },
+                                        { key: "createdAt", label: "Date Registered" },
+                                        { key: "actions", label: "Actions" },
+                                    ].map((column) => (
+                                        <TableCell key={column.key} align="center">
+                                            {column.key !== "actions" ? (
+                                                <TableSortLabel
+                                                    active={sortConfig.key === column.key}
+                                                    direction={sortConfig.key === column.key ? sortConfig.direction : "asc"}
+                                                    onClick={() => requestSort(column.key)}
+                                                >
+                                                    {column.label}
+                                                </TableSortLabel>
+                                            ) : (
+                                                column.label
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            </TableHead>
+
+                            <TableBody>
+                                {filteredAndSortedTenants.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">
+                                            No tenants found.
+                                        </TableCell>
+                                    </TableRow>
                                 ) : (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
-                                            <p>No tenants found</p>
-                                        </td>
-                                    </tr>
+                                    filteredAndSortedTenants.map((tenant, index) => (
+                                        <TableRow key={tenant.tenant_id} hover>
+                                            <TableCell align="center">{index + 1}</TableCell>
+                                            <TableCell align="center">{tenant.user_id}</TableCell>
+                                            <TableCell align="center">
+                                                {new Date(tenant.createdAt).toLocaleDateString()}
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    size="small"
+                                                    onClick={() => router.push(`./viewProfile/tenant/${tenant.user_id}`)}
+                                                    startIcon={<Eye size={16} />}
+                                                >
+                                                    View
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
                                 )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Paper>
             </div>
         </div>
     );
