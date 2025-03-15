@@ -22,7 +22,7 @@ const registerSchema = z
     email: z.string().email("Invalid email address"),
     password: z
       .string()
-      .min(6, "Password must be 6 characters long")
+      .min(8, "Password must be 8 characters long")
       .refine(
         (value) => /^[a-zA-Z0-9]+$/.test(value),
         "Password must contain only letters and numbers"
@@ -30,7 +30,7 @@ const registerSchema = z
 
     confirmPassword: z
       .string()
-      .min(6, "Confirm Password must be 6 characters long"),
+      .min(6, "Confirm Password must be the same."),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -72,6 +72,7 @@ function Register() {
 
     router.push(`/api/auth/google?userType=${role}`);
   };
+
   useEffect(() => {
     setFormData((prevData) => ({
       ...prevData,
@@ -84,10 +85,82 @@ function Register() {
     setFormData((prevData) => ({ ...prevData, [id]: value }));
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setErrors({});
+  //   setError("");
+  //
+  //   await Swal.fire({
+  //     title: "Registering...",
+  //     text: "Please wait while we create your account.",
+  //     allowOutsideClick: false,
+  //     didOpen: () => {
+  //       Swal.showLoading();
+  //     },
+  //   });
+  //
+  //   try {
+  //     registerSchema.parse(formData);
+  //
+  //     const res = await fetch("/api/auth/register", {
+  //       method: "POST",
+  //       headers: {
+  //         "content-type": "application/json",
+  //       },
+  //       body: JSON.stringify(formData),
+  //     });
+  //
+  //     const data = await res.json();
+  //
+  //     if (res.ok) {
+  //       console.log("Registration Data: ", formData);
+  //       logEvent("Register", "Authentication", "Register Successful", 1);
+  //
+  //       Swal.fire({
+  //         title: "Success!",
+  //         text: "Account successfully registered! Redirecting...",
+  //         icon: "success",
+  //         confirmButtonText: "OK",
+  //       }).then(() => {
+  //         router.push("/pages/auth/verify-email");
+  //       });
+  //
+  //       setTimeout(() => {
+  //         router.push("/pages/auth/verify-email");
+  //       }, 1000);
+  //     } else if (data.error && data.error.includes("already registered")) {
+  //       setError("This email is already registered. Please admin_login.");
+  //     } else {
+  //       setError(data.error || "Registration failed. Please try again.");
+  //     }
+  //   } catch (err) {
+  //     if (err instanceof z.ZodError) {
+  //       const errorObj = err.errors.reduce((acc, curr) => {
+  //         acc[curr.path[0]] = curr.message;
+  //         return acc;
+  //       }, {});
+  //       setErrors(errorObj);
+  //     } else {
+  //       console.error("Error during API call:", err);
+  //       setError("An unexpected error occurred. Please try again.");
+  //     }
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setError("");
+
+    // Show a loading Swal before making the API request
+    Swal.fire({
+      title: "Registering...",
+      text: "Please wait while we create your account.",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
 
     try {
       registerSchema.parse(formData);
@@ -119,9 +192,17 @@ function Register() {
           router.push("/pages/auth/verify-email");
         }, 1000);
       } else if (data.error && data.error.includes("already registered")) {
-        setError("This email is already registered. Please admin_login.");
+        Swal.fire({
+          icon: "error",
+          title: "Error!",
+          text: "This email is already registered. Please log in.",
+        });
       } else {
-        setError(data.error || "Registration failed. Please try again.");
+        Swal.fire({
+          icon: "error",
+          title: "Registration Failed!",
+          text: data.error || "Please try again.",
+        });
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -130,12 +211,22 @@ function Register() {
           return acc;
         }, {});
         setErrors(errorObj);
+        Swal.fire({
+          icon: "error",
+          title: "Validation Error!",
+          text: "Please check your input fields.",
+        });
       } else {
         console.error("Error during API call:", err);
-        setError("An unexpected error occurred. Please try again.");
+        Swal.fire({
+          icon: "error",
+          title: "Unexpected Error!",
+          text: "An unexpected error occurred. Please try again.",
+        });
       }
     }
   };
+
 
   return (
     <>

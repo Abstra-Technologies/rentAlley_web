@@ -76,8 +76,19 @@ export default function SecurityPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+
+    if (formData.newPassword.length < 8) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Password too short!",
+        text: "Password must be at least 8 characters long.",
+      });
+      return;
+    }
+
     if (formData.newPassword !== formData.confirmPassword) {
-      Swal.fire({
+      await Swal.fire({
         icon: "warning",
         title: "Passwords do not match!",
         text: "Please make sure the new passwords are identical.",
@@ -192,6 +203,10 @@ export default function SecurityPage() {
               Update Password
             </button>
           </form>
+
+
+
+
           <div className="mt-6 p-4 border rounded-md">
             <h2 className="text-xl font-semibold">Two-Factor Authentication</h2>
             <p className="text-sm text-gray-600">
