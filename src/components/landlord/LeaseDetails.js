@@ -95,7 +95,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  // Fetch current status of unit
   const fetchStatus = async () => {
     try {
       const response = await axios.get(

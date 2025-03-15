@@ -117,8 +117,23 @@ export default function MyUnit() {
   };
 
   const handleAccessRentPortal = () => {
-    router.push("/pages/tenant/dashboard");
+    Swal.fire({
+      title: "Redirecting...",
+      text: "Taking you to your dashboard...",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    // Simulate delay before redirection
+    setTimeout(() => {
+      Swal.close();
+      router.push("/pages/tenant/dashboard");
+    }, 1500); // 1.5 seconds delay for smoother transition
   };
+
 
   const handleContactLandlord = () => {
     if (!unit?.landlord_id) {
