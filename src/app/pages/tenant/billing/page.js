@@ -125,8 +125,6 @@ export default function TenantBilling({}) {
       });
       return;
     }
-    
-    // Pass billing_id as a query parameter to handle this specific billing
     router.push(`/pages/payment/proofOfPayment?agreement_id=${agreementId}&amountPaid=${amount}&billingId=${billing_id}`);
   };
 

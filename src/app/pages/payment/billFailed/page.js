@@ -3,17 +3,17 @@ import {Suspense, useEffect, useState} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 
-export default function billCancelledPage() {
+export default function billFailedPage() {
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <billingCancelled />
+            <billFailed />
         </Suspense>
     );
 }
 
 
 
-function billingCancelled() {
+function billFailed() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const router = useRouter();
     // eslint-disable-next-line react-hooks/rules-of-hooks

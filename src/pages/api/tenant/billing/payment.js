@@ -21,7 +21,6 @@ export default async function tenantPaymentBilling(req, res) {
 
     console.log("Payment Request Received:", { tenant_id, amount, firstName, lastName, email, payment_method_id, redirectUrl });
 
-    // 🔹 Step 1: Fetch the Active Lease Agreement for the Tenant
     const [activeLease] = await db.execute(
         `SELECT agreement_id FROM LeaseAgreement 
          WHERE tenant_id = ? AND status = 'active' 
@@ -51,8 +50,8 @@ export default async function tenantPaymentBilling(req, res) {
             buyer: { firstName, lastName, contact: { email } },
             redirectUrl: {
                 success: encodeURI(`${redirectUrl.success}?&tenant_id=${tenant_id}&billing_id=${billing_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
-                failure: encodeURI(`${redirectUrl.success}?&tenant_id=${tenant_id}&billing_id=${billing_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
-                cancel: encodeURI(`${redirectUrl.success}?&tenant_id=${tenant_id}&billing_id=${billing_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
+                failure: encodeURI(`${redirectUrl.failure}?&tenant_id=${tenant_id}&billing_id=${billing_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
+                cancel: encodeURI(`${redirectUrl.cancel}?&tenant_id=${tenant_id}&billing_id=${billing_id}&amount=${amount}&requestReferenceNumber=${requestReferenceNumber}`),
             },
             requestReferenceNumber,
             items: [{
