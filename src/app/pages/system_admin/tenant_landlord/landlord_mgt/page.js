@@ -1,15 +1,31 @@
-'use client'
+"use client";
 import { useEffect, useState } from "react";
-import useAuth from "../../../../../../hooks/useSession";
 import { useRouter } from "next/navigation";
+import useAuth from "../../../../../../hooks/useSession";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
-import { Eye, Trash2 } from "lucide-react";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+    TextField,
+    TableSortLabel,
+    CircularProgress,
+    Button,
+} from "@mui/material";
+import { Eye } from "lucide-react";
 import LoadingScreen from "../../../../../components/loadingScreen";
 
 export default function LandlordList() {
     const [landlords, setLandlords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+
     const { admin } = useAuth();
     const router = useRouter();
 
@@ -20,7 +36,7 @@ export default function LandlordList() {
                 const response = await fetch("/api/landlord/list");
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch landlords.');
+                    throw new Error("Failed to fetch landlords.");
                 }
                 const data = await response.json();
                 setLandlords(data.landlords);
@@ -33,6 +49,38 @@ export default function LandlordList() {
 
         fetchLandlords();
     }, []);
+
+    // Sorting Function
+    const requestSort = (key) => {
+        let direction = "asc";
+        if (sortConfig.key === key && sortConfig.direction === "asc") {
+            direction = "desc";
+        }
+        setSortConfig({ key, direction });
+    };
+
+    // Filter and Sort Landlords
+    const filteredAndSortedLandlords = landlords
+        .filter(
+            (landlord) =>
+                landlord.user_id.toString().includes(searchTerm) ||
+                landlord.is_verified.toString().includes(searchTerm) ||
+                new Date(landlord.createdAt).toLocaleDateString().includes(searchTerm)
+        )
+        .sort((a, b) => {
+            if (!sortConfig.key) return 0;
+
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            if (aValue < bValue) {
+                return sortConfig.direction === "asc" ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
 
     if (error) return <p className="text-red-500 p-6">Error: {error}</p>;
 
@@ -51,61 +99,95 @@ export default function LandlordList() {
             <div className="flex-1 p-6 max-w-6xl mx-auto">
                 <h1 className="text-2xl font-semibold text-blue-600 mb-6">Landlords List</h1>
 
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Landlord ID</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">User ID</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Verified</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Created At</th>
-                                    <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {landlords.length > 0 ? (
-                                    landlords.map((landlord, index) => (
-                                        <tr key={landlord.landlord_id} className="hover:bg-gray-50 border-b">
-                                            <td className="px-6 py-4 text-blue-600">{index + 1}</td>
-                                            <td className="px-6 py-4 text-blue-600 hover:underline cursor-pointer"
-                                                onClick={() => router.push(`./viewProfile/landlord/${landlord.user_id}`)}>
-                                                {landlord.user_id}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {landlord.is_verified ? 
-                                                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">✅ Yes</span> : 
-                                                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">❌ No</span>
-                                                }
-                                            </td>
-                                            <td className="px-6 py-4">{new Date(landlord.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex space-x-4">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            router.push(`./viewProfile/landlord/${landlord.user_id}`);
-                                                        }}
-                                                        className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center"
-                                                    >
-                                                        <Eye className="w-4 h-4 mr-1" /> View
-                                                    </button>
+                {/* Search Bar */}
+                <TextField
+                    label="Search landlords..."
+                    variant="outlined"
+                    fullWidth
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="mb-4"
+                />
 
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                <Paper>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    {[
+                                        { key: "landlord_id", label: "ID" },
+                                        { key: "user_id", label: "User ID" },
+                                        { key: "is_verified", label: "Verified" },
+                                        { key: "createdAt", label: "Created At" },
+                                        { key: "actions", label: "Actions" },
+                                    ].map((column) => (
+                                        <TableCell key={column.key} align="center">
+                                            {column.key !== "actions" ? (
+                                                <TableSortLabel
+                                                    active={sortConfig.key === column.key}
+                                                    direction={sortConfig.key === column.key ? sortConfig.direction : "asc"}
+                                                    onClick={() => requestSort(column.key)}
+                                                >
+                                                    {column.label}
+                                                </TableSortLabel>
+                                            ) : (
+                                                column.label
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            </TableHead>
+
+                            <TableBody>
+                                {filteredAndSortedLandlords.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} align="center">
+                                            No landlords found.
+                                        </TableCell>
+                                    </TableRow>
                                 ) : (
-                                    <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
-                                            <p>No landlords found</p>
-                                        </td>
-                                    </tr>
+                                    filteredAndSortedLandlords.map((landlord, index) => (
+                                        <TableRow key={landlord.landlord_id} hover>
+                                            <TableCell align="center">{index + 1}</TableCell>
+                                            <TableCell
+                                                align="center"
+                                                className="text-blue-600 hover:underline cursor-pointer"
+                                                onClick={() => router.push(`./viewProfile/landlord/${landlord.user_id}`)}
+                                            >
+                                                {landlord.user_id}
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                {landlord.is_verified ? (
+                                                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                            ✅ Yes
+                          </span>
+                                                ) : (
+                                                    <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                            ❌ No
+                          </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                {new Date(landlord.createdAt).toLocaleDateString()}
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    size="small"
+                                                    onClick={() => router.push(`./viewProfile/landlord/${landlord.user_id}`)}
+                                                    startIcon={<Eye size={16} />}
+                                                >
+                                                    View
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
                                 )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Paper>
             </div>
         </div>
     );
