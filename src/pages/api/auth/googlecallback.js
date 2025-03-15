@@ -21,7 +21,6 @@ export default async function handler(req, res) {
 
     console.log("[Google OAuth] Exchanging authorization code for tokens...");
 
-    // Exchange authorization code for tokens
     const tokenResponse = await axios.post(
       "https://oauth2.googleapis.com/token",
       new URLSearchParams({
@@ -55,7 +54,7 @@ export default async function handler(req, res) {
       [emailHash]
     );
 
-    console.log("[Google OAuth] Retrieved DB User:", rows);
+    console.log("Google OAuth Retrieved DB User:", rows);
 
     if (rows.length === 0 || !rows[0].email || !rows[0].google_id) {
       console.error(
