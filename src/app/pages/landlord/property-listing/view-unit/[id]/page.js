@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, {useState} from "react";
 import { useRouter, useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
@@ -23,6 +23,8 @@ const ViewUnitPage = () => {
   const router = useRouter();
   const { user } = useAuth();
   const landlord_id = user?.landlord_id;
+  const [isNavigating, setIsNavigating] = useState(false);
+
 
   const { data: property } = useSWR(
     id ? `/api/propertyListing/property/${id}` : null,
@@ -47,27 +49,44 @@ const ViewUnitPage = () => {
 
   const handleAddUnitClick = () => {
     if (!subscription) {
-      Swal.fire(
-        "Subscription Required",
-        "You need an active subscription to add a unit. Please subscribe to continue.",
-        "warning"
-      );
+      Swal.fire({
+        title: "Subscription Required",
+        text: "You need an active subscription to add a unit. Please subscribe to continue.",
+        icon: "warning",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
     if (units.length >= subscription.listingLimits.maxUnits) {
-      Swal.fire(
-        "Unit Limit Reached",
-        `You have reached the maximum unit limit (${subscription.listingLimits.maxUnits}) for your plan.`,
-        "error"
-      );
+      Swal.fire({
+        title: "Unit Limit Reached",
+        text: `You have reached the maximum unit limit (${subscription.listingLimits.maxUnits}) for your plan.`,
+        icon: "error",
+        confirmButtonText: "OK",
+      });
       return;
     }
 
-    router.push(
-      `/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`
-    );
+    Swal.fire({
+      title: "Loading...",
+      text: "Redirecting to add unit page...",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    // Simulate a short delay before navigation
+    setTimeout(() => {
+      Swal.close();
+      router.push(
+          `/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`
+      );
+    }, 1500); // 1.5 seconds delay
   };
+
 
   const handleDeleteUnit = async (unitId) => {
     const result = await Swal.fire({
@@ -168,6 +187,8 @@ const ViewUnitPage = () => {
             <PlusCircleIcon className="h-5 w-5 mr-2" />
             Add New Unit
           </button>
+
+
           {subscription &&
             units?.length >= subscription.listingLimits.maxUnits && (
               <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
