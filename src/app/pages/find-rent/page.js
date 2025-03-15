@@ -13,14 +13,14 @@ import {
 import Swal from "sweetalert2";
 
 export default function PropertySearch() {
-  const [allProperties, setAllProperties] = useState([]); 
-  const [filteredProperties, setFilteredProperties] = useState([]); 
+  const [allProperties, setAllProperties] = useState([]);
+  const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
-  const [priceRange, setPriceRange] = useState(""); 
-  const [showPriceDropdown, setShowPriceDropdown] = useState(false); 
-  
+  const [priceRange, setPriceRange] = useState("");
+  const [showPriceDropdown, setShowPriceDropdown] = useState(false);
+
   const priceRanges = [
     { label: "All Prices", min: "", max: "" },
     { label: "₱1,000 - ₱15,000", min: 1000, max: 15000 },
@@ -28,7 +28,6 @@ export default function PropertySearch() {
     { label: "Greater than ₱20,000", min: 20000, max: "" },
   ];
 
-  
   useEffect(() => {
     async function fetchProperties() {
       try {
@@ -38,7 +37,7 @@ export default function PropertySearch() {
 
         const data = await res.json();
         setAllProperties(data);
-        setFilteredProperties(data); 
+        setFilteredProperties(data);
       } catch (error) {
         console.error(error.message);
       } finally {
@@ -68,14 +67,14 @@ export default function PropertySearch() {
   };
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const queryParam = params.get('searchQuery');
-    const locationParam = params.get('location');
-    const typeParam = params.get('type');
+    const queryParam = params.get("searchQuery");
+    const locationParam = params.get("location");
+    const typeParam = params.get("type");
 
     if (queryParam) setSearchQuery(queryParam);
     if (locationParam) setLocation(locationParam);
     if (typeParam) setType(typeParam);
-    
+
     const filtered = allProperties.filter((property) => {
       const matchesSearch =
         searchQuery === "" ||
@@ -116,10 +115,8 @@ export default function PropertySearch() {
         </p>
       </div>
 
-
       <div className="bg-white rounded-lg shadow-md p-5 mb-8">
         <div className="flex flex-col md:flex-row gap-4">
-
           <div className="flex-1">
             <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-500 transition-colors">
               <FaSearch className="text-gray-400 mx-3" />
@@ -140,7 +137,6 @@ export default function PropertySearch() {
               )}
             </div>
           </div>
-
 
           <div className="relative md:w-64">
             <button
@@ -189,7 +185,6 @@ export default function PropertySearch() {
           </div>
         </div>
 
-
         {(searchQuery || priceRange) && (
           <div className="flex gap-2 mt-4 flex-wrap">
             {priceRange && priceRange !== "All Prices" && (
@@ -200,7 +195,6 @@ export default function PropertySearch() {
           </div>
         )}
       </div>
-
 
       {loading ? (
         <div className="flex justify-center items-center py-12">
@@ -221,81 +215,83 @@ export default function PropertySearch() {
         </div>
       ) : (
         <>
-
           <div className="mb-4 text-gray-600">
             Found {filteredProperties.length} propert
             {filteredProperties.length === 1 ? "y" : "ies"}
           </div>
 
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProperties.map((property) => {
               return (
-                  <div
-                      key={property.property_id}
-                      className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => handleViewDetails(property.property_id)}
-                  >
-                    <div className="relative">
-                      {property?.property_photo ? (
-                          <div className="relative h-48">
-                            <Image
-                                src={property?.property_photo}
-                                alt={property?.property_name}
-                                fill
-                                className="object-cover"
-                            />
-                          </div>
-                      ) : (
-                          <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-400">No Image Available</span>
-                          </div>
-                      )}
-                    </div>
-
-                    <div className="p-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          {property?.property_name}
-                        </h2>
-                        <div className="flex items-center gap-1">
-                          <HiBadgeCheck className="text-blue-500 text-lg" />
-                          <span className="text-blue-600 font-medium text-sm">
-                    Verified
-                  </span>
-                        </div>
+                <div
+                  key={property.property_id}
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => handleViewDetails(property.property_id)}
+                >
+                  <div className="relative">
+                    {property?.property_photo ? (
+                      <div className="relative h-48">
+                        <Image
+                          src={property?.property_photo}
+                          alt={property?.property_name}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
-
-                      <div className="flex items-center text-gray-600 mt-2">
-                        <FaMapMarkerAlt className="mr-1 text-gray-400" />
-                        <p className="text-gray-800">
-                          {property?.city},{" "}
-                          {property?.province
-                              .split("_")
-                              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                              .join(" ")}
-                        </p>
+                    ) : (
+                      <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">
+                          No Image Available
+                        </span>
                       </div>
-
-                      <p className="text-xl font-semibold text-blue-600 mt-1">
-                        ₱{Math.round(property.rent_amount).toLocaleString()}
-                      </p>
-
-                      <button
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent triggering parent click event
-                            handleViewDetails(property.property_id);
-                          }}
-                          className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors"
-                      >
-                        View Details
-                      </button>
-                    </div>
+                    )}
                   </div>
+
+                  <div className="p-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {property?.property_name}
+                      </h2>
+                      <div className="flex items-center gap-1">
+                        <HiBadgeCheck className="text-blue-500 text-lg" />
+                        <span className="text-blue-600 font-medium text-sm">
+                          Verified
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center text-gray-600 mt-2">
+                      <FaMapMarkerAlt className="mr-1 text-gray-400" />
+                      <p className="text-gray-800">
+                        {property?.city},{" "}
+                        {property?.province
+                          .split("_")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1)
+                          )
+                          .join(" ")}
+                      </p>
+                    </div>
+
+                    <p className="text-xl font-semibold text-blue-600 mt-1">
+                      ₱{Math.round(property.rent_amount).toLocaleString()}
+                    </p>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent triggering parent click event
+                        handleViewDetails(property.property_id);
+                      }}
+                      className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>
-          );
         </>
       )}
     </div>
