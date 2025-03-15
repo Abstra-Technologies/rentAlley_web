@@ -1,10 +1,4 @@
-/**
- *
- * To ADD:
- * 1. Resend Email Confirmation
- *
- *
- */
+
 import {db} from "../../../lib/db"
 
 export default async function handler(req, res) {
@@ -14,7 +8,6 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: "Invalid or missing token" });
         }
         try {
-            // Validate the token
             const [user] = await db.query(
                 "SELECT userID, verificationToken, emailVerified, tokenExpiresAt FROM User WHERE verificationToken = ?",
                 [token]
@@ -23,7 +16,6 @@ export default async function handler(req, res) {
             if (user.length === 0 ) {
                 return res.status(400).json({ error: "Invalid token" });
             }
-            //  scene: If the email is alrady ver.
             if (user[0].emailVerified) {
                 return res.status(400).json({
                     error: "This email is already verified. No further action is needed.",

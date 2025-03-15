@@ -32,7 +32,7 @@ export default async function subscriptionCheckout(req, res) {
             database: dbName,
         });
 
-        // Check if trial has already been used (tracked at user level)
+        // Check if trial has already been used (tracked at user level) efined.
         const [landlordData] = await connection.execute(
             "SELECT is_trial_used FROM Landlord WHERE landlord_id = ? LIMIT 1",
             [landlord_id]
@@ -74,7 +74,6 @@ export default async function subscriptionCheckout(req, res) {
                     [plan_name, start_date, formattedTrialEndDate, formattedTrialEndDate, landlord_id]
                 );
             } else {
-                // Insert new subscription (if landlord never had one)
                 await connection.execute(
                     "INSERT INTO Subscription (landlord_id, plan_name, status, start_date, end_date, payment_status, created_at, request_reference_number, is_trial, trial_end_date) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)",
                     [

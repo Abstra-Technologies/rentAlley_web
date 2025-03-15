@@ -32,7 +32,6 @@ export default async function updateMaintenanceRequestStatusLandlord(req, res) {
 
     await db.query(query, values);
 
-    // Fetch tenant_id, user_id (tenant's user_id), unit_id, and subject for auto-message
     const [maintenanceRequest] = await db.execute(
       `SELECT mr.tenant_id, t.user_id AS tenant_user_id, mr.subject
          FROM MaintenanceRequest mr

@@ -139,7 +139,6 @@ function generateOTP() {
     return crypto.randomInt(100000, 999999).toString();
 }
 
-// Store OTP securely
 async function storeOTP(connection, user_id, otp) {
     console.log(`Storing OTP for User ID: ${user_id}, OTP: ${otp}`);
 

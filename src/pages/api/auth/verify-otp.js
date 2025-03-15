@@ -62,14 +62,12 @@ export default async function VerifyOtpCode(req, res) {
             return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
 
-        // Delete OTP
-        // await connection.execute("UPDATE UserToken SET used_at = NOW() WHERE user_id = ? AND token = ?", [user_id, otp]);
+
         await connection.execute(
             "DELETE FROM UserToken WHERE user_id = ? AND token = ?",
             [user_id, otp]
         );
 
-        // Update email_verified status
         await connection.execute("UPDATE User SET emailVerified = 1 WHERE user_id = ?", [user_id]);
 
 
@@ -93,7 +91,7 @@ export default async function VerifyOtpCode(req, res) {
 
         const newToken = await new SignJWT({ user_id, userType, firstName, lastName })
             .setProtectedHeader({ alg: 'HS256' })
-            .setExpirationTime('1h')  // Token expires in 1 hour
+            .setExpirationTime('2h')
             .sign(secret);
 
         const isDev = process.env.NODE_ENV === "production";

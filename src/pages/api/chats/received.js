@@ -27,7 +27,6 @@ export default async function handler(req, res) {
             [landlordId]
         );
 
-        // Decrypt messages before sending response
         const decryptedMessages = messages.map(msg => {
             let decryptedMessage = "Unknown";
             let decryptedSenderFirstName = "Unknown";

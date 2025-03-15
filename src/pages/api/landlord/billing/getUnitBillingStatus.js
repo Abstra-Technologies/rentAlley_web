@@ -12,7 +12,6 @@ export default async function CheckUnitBillingStatus(req, res) {
     }
 
     try {
-        // Query to check if a bill exists for the unit in the current month
         const [billingData] = await db.query(
             `SELECT COUNT(*) AS bill_count
              FROM Billing
@@ -21,12 +20,10 @@ export default async function CheckUnitBillingStatus(req, res) {
             [unit_id]
         );
 
-        // Determine if a bill exists
         const hasBillForThisMonth = billingData[0]?.bill_count > 0;
 
         res.json({ unit_id, hasBillForThisMonth });
     } catch (error) {
-        console.error("Error fetching unit billing status:", error);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ error: "Database server error" });
     }
 }

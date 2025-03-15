@@ -37,7 +37,6 @@ export default async function handler(req, res) {
     const { access_token } = tokenResponse.data;
     console.log("[Google OAuth] Token received.");
 
-    // Fetch user data from Google
     const userInfoResponse = await axios.get(
       "https://www.googleapis.com/oauth2/v3/userinfo",
       { headers: { Authorization: `Bearer ${access_token}` } }
@@ -74,7 +73,6 @@ export default async function handler(req, res) {
         .json({ error: "User email is missing. Please contact support." });
     }
 
-    // If 2FA is enabled, generate OTP and prompt verification
     if (dbUser.is_2fa_enabled) {
       const otp = Math.floor(100000 + Math.random() * 900000);
 
@@ -88,7 +86,7 @@ export default async function handler(req, res) {
         [dbUser.user_id, otp]
       );
 
-      console.log("✅ [Google OAuth] Sending OTP to:", dbUser.email);
+      console.log(" Sending OTP to:", dbUser.email);
       await sendOtpEmail(user.email, otp);
 
       res.setHeader("Set-Cookie", `pending_2fa=true; Path=/; HttpOnly`);
@@ -96,7 +94,6 @@ export default async function handler(req, res) {
       return res.redirect(`/pages/auth/verify-2fa?user_id=${dbUser.user_id}`);
     }
 
-    // Generate JWT Token
     const secret = new TextEncoder().encode(JWT_SECRET);
     const token = await new SignJWT({
       user_id: dbUser.user_id,
@@ -109,7 +106,6 @@ export default async function handler(req, res) {
       .setSubject(dbUser.user_id.toString())
       .sign(secret);
 
-    // Set Secure Cookie
     res.setHeader(
       "Set-Cookie",
       `token=${token}; HttpOnly; Path=/; SameSite=Lax`
@@ -117,7 +113,6 @@ export default async function handler(req, res) {
 
     console.log("[Google OAuth] Login successful.");
 
-    // Redirect user based on role
     const redirectUrl =
       dbUser.userType === "tenant"
         ? "/"
@@ -158,9 +153,9 @@ async function sendOtpEmail(email, otp) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✅ [Google OAuth] OTP sent to ${email}`);
+    console.log(`[Google OAuth] OTP sent to ${email}`);
   } catch (error) {
-    console.error("❌ [Google OAuth] Error sending OTP email:", error);
+    console.error("[Google OAuth] Error sending OTP email:", error);
     throw new Error("Failed to send OTP email.");
   }
 }

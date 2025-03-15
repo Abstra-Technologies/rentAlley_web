@@ -7,7 +7,6 @@ export default async function Chats(req, res) {
     if (!userId) {
         return res.status(400).json({ message: "User ID is required" });
     }
-    const connection = await db.getConnection();
 
     try {
         const [chatList] = await db.query(
@@ -24,7 +23,7 @@ export default async function Chats(req, res) {
              LEFT JOIN Tenant t ON u.user_id = t.user_id
              LEFT JOIN Landlord l ON u.user_id = l.user_id
              WHERE (m.sender_id = ? OR m.receiver_id = ?)
-               AND u.user_id != ? -- do not show the current user messages
+               AND u.user_id != ? 
              ORDER BY lastMessage DESC`,
             [userId, userId, userId]
         );

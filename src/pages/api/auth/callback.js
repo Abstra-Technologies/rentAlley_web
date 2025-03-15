@@ -93,7 +93,6 @@ export default async function handler(req, res) {
             dbUser = existingUsers[0];
             userId = dbUser.user_id;
         } else {
-            // Insert new user
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [result] = await db.execute(
                 `INSERT INTO User (user_id, firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, createdAt, updatedAt, google_id, emailVerified, profilePicture, is_active)

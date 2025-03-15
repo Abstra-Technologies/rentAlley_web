@@ -1,7 +1,7 @@
 
 // checking fi trial
 
-import mysql from "mysql2/promise"; // MySQL connection
+import mysql from "mysql2/promise";
 
 export default async function grantingFreeTrialHandler(req, res) {
     if (req.method !== "POST") {

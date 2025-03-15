@@ -14,9 +14,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        // compare the hash value.
         const emailHash = crypto.createHash("sha256").update(email).digest("hex");
-        // Lookup user using hashed email
         const [users] = await db.query("SELECT user_id, email, google_id FROM User WHERE emailHashed = ?", [emailHash]);
 
         const user = users[0];
@@ -66,7 +64,7 @@ async function sendOtpEmail(toEmail, otp) {
         service: 'gmail',
         auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
         tls: {
-            rejectUnauthorized: false, // Disable certificate validation (not recommended for production)
+            rejectUnauthorized: false,
         },
     });
     await transporter.sendMail({ from: process.env.EMAIL_USER, to: toEmail, subject: "Rentahan: Reset Password OTP", text: `Your OTP is: ${otp}` });

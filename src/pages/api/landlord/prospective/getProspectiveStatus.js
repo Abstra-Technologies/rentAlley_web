@@ -1,4 +1,4 @@
-import { db } from "../../../../lib/db"; // Import your database connection
+import { db } from "../../../../lib/db";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -12,7 +12,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "Tenant ID is required" });
     }
 
-    // Query to get the prospective tenant's status for this unit
     const query = `
       SELECT status 
       FROM ProspectiveTenant 
@@ -29,6 +28,5 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: rows[0].status });
   } catch (error) {
     console.error("Error fetching prospective tenant status:", error);
-    return res.status(500).json({ message: "Server Error" });
   }
 }

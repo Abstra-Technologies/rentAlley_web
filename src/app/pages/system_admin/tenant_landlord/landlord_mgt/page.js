@@ -180,6 +180,7 @@ export default function LandlordList() {
                                                 >
                                                     View
                                                 </Button>
+
                                             </TableCell>
                                         </TableRow>
                                     ))

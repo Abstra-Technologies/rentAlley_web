@@ -26,7 +26,6 @@ export default async function handler(req, res) {
 
         const userId = user[0].user_id;
 
-        //Delete old OTPs to prevent multiple valid OTPs
         await db.query("DELETE FROM UserToken WHERE user_id = ? AND token_type = 'password_reset'", [userId]);
 
         const newOtp = Math.floor(100000 + Math.random() * 900000).toString();

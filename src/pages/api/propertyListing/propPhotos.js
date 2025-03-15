@@ -26,8 +26,8 @@ export const config = {
 
 function sanitizeFilename(filename) {
   const sanitized = filename
-    .replace(/[^a-zA-Z0-9.]/g, "_") // Replace non-alphanumeric chars with underscores
-    .replace(/\s+/g, "_"); // Replace consecutive whitespaces with a single underscore
+    .replace(/[^a-zA-Z0-9.]/g, "_")
+    .replace(/\s+/g, "_");
   return sanitized;
 }
 
@@ -57,34 +57,33 @@ export default async function propPhotos(req, res) {
   }
 }
 
-// Handle file upload and save to S3
 async function handlePostRequest(req, res, connection) {
   const form = new IncomingForm({
-    multiples: true, // Allows multiple file uploads
-    keepExtensions: true, // Keeps file extensions
-    maxFileSize: 10 * 1024 * 1024, // 5MB limit per file
+    multiples: true,
+    keepExtensions: true,
+    maxFileSize: 10 * 1024 * 1024,
   });
 
-  form.parse(req, async (err, fields, files) => {
+  await form.parse(req, async (err, fields, files) => {
     if (err) {
       console.error("Error parsing form:", err);
-      return res.status(400).json({ error: "Error parsing form data" });
+      return res.status(400).json({error: "Error parsing form data"});
     }
 
     console.log("Error from form.parse:", err);
     console.log("Fields from form.parse:", fields);
     console.log("Files from form.parse:", files);
 
-    const { property_id } = fields;
+    const {property_id} = fields;
     if (!property_id) {
-      return res.status(400).json({ error: "Missing property_id" });
+      return res.status(400).json({error: "Missing property_id"});
     }
 
     const uploadedFiles = Object.values(files).flat();
-    console.log("📂 Reformatted Uploaded Files:", uploadedFiles);
+    console.log("Reformatted Uploaded Files:", uploadedFiles);
 
     if (!uploadedFiles.length) {
-      return res.status(400).json({ error: "No files uploaded" });
+      return res.status(400).json({error: "No files uploaded"});
     }
 
     try {
@@ -98,7 +97,7 @@ async function handlePostRequest(req, res, connection) {
         const photoUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
         const encryptedUrl = JSON.stringify(
-          encryptData(photoUrl, encryptionSecret)
+            encryptData(photoUrl, encryptionSecret)
         );
 
         const uploadParams = {
@@ -118,7 +117,7 @@ async function handlePostRequest(req, res, connection) {
         } catch (uploadError) {
           console.error("Error uploading file to S3:", uploadError);
           throw new Error(
-            `Failed to upload ${file.originalFilename}: ${uploadError.message}`
+              `Failed to upload ${file.originalFilename}: ${uploadError.message}`
           );
         }
       });
@@ -133,8 +132,9 @@ async function handlePostRequest(req, res, connection) {
       ]);
 
       const [result] = await connection.query(
-        `INSERT INTO PropertyPhoto (property_id, photo_url, created_at, updated_at) VALUES ?`,
-        [values]
+          `INSERT INTO PropertyPhoto (property_id, photo_url, created_at, updated_at)
+           VALUES ?`,
+          [values]
       );
 
       await connection.commit();
@@ -148,8 +148,8 @@ async function handlePostRequest(req, res, connection) {
       await connection.rollback();
       console.error("Error saving property photos:", error);
       res
-        .status(500)
-        .json({ error: "Failed to add property photos: " + error.message });
+          .status(500)
+          .json({error: "Failed to add property photos: " + error.message});
     }
   });
 }

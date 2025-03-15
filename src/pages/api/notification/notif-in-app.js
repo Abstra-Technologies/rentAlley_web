@@ -8,7 +8,6 @@ export default async function getNotificationsInApp(req, res) {
     }
 
     try {
-        // Fetch unread notifications from the database
         const [notifications] = await db.execute(
             "SELECT id, title, body, created_at FROM Notification WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC",
             [user_id]

@@ -63,10 +63,6 @@ async function getPropertyPhotos(req, res, connection) {
   }
 
   try {
-    // const [result] = await connection.query(
-    //   `SELECT photo_url FROM Property WHERE property_id = ?`,
-    //   [property_id]
-    // );
     const [result] = await connection.query(
         `SELECT photo_url FROM PropertyPhoto WHERE property_id = ?`,
         [property_id]

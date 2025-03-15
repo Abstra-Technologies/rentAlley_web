@@ -19,7 +19,6 @@ export default async function updateConcessionaireBillingfortheMonth(req, res) {
     }
 
     try {
-        // Update Electricity Billing if it exists
         const [electricityBill] = await db.query(
             `SELECT bill_id FROM ConcessionaireBilling
              WHERE property_id = ? AND billing_period = ? AND utility_type = 'electricity'`,
@@ -37,7 +36,6 @@ export default async function updateConcessionaireBillingfortheMonth(req, res) {
             return res.status(404).json({ error: "No electricity billing record found for this period" });
         }
 
-        // Update Water Billing if it exists
         const [waterBill] = await db.query(
             `SELECT bill_id FROM ConcessionaireBilling 
        WHERE property_id = ? AND billing_period = ? AND utility_type = 'water'`,
@@ -58,6 +56,5 @@ export default async function updateConcessionaireBillingfortheMonth(req, res) {
         return res.status(200).json({ message: "Concessionaire billing updated successfully" });
     } catch (error) {
         console.error("Database Error:", error);
-        return res.status(500).json({ error: "Internal server error" });
     }
 }

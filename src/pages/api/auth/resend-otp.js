@@ -9,7 +9,6 @@ export default async function resendOtp(req, res) {
     try {
         console.log("🔍 [Resend OTP] Request received.");
 
-        // Retrieve token from cookies
         const token = getCookie("token", { req, res });
 
         if (!token) {
@@ -17,7 +16,6 @@ export default async function resendOtp(req, res) {
             return res.status(401).json({ error: "Unauthorized. No valid session token found." });
         }
 
-        // Verify JWT token
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         let payload;
 
@@ -38,7 +36,6 @@ export default async function resendOtp(req, res) {
 
         console.log(`[Resend OTP] User verified: ${user_id}`);
 
-        // Fetch user email securely using parameterized query
         const [user] = await db.execute(
             "SELECT email FROM User WHERE user_id = ?",
             [user_id]
@@ -59,7 +56,6 @@ export default async function resendOtp(req, res) {
             return res.status(500).json({ error: "Email decryption failed. Please contact support." });
         }
 
-        // Generate a new OTP
         const newOtp = crypto.randomInt(100000, 999999).toString();
         console.log(`[Resend OTP] New OTP: ${newOtp}`);
 

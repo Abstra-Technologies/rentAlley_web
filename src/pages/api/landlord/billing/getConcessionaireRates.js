@@ -31,7 +31,6 @@ export default async function handler(req, res) {
         currentMonthEnd.setMonth(currentMonthEnd.getMonth() + 1, 0);
         currentMonthEnd.setHours(23, 59, 59, 999);
 
-        // ✅ Fetch the latest water & electricity rates from `ConcessionaireBilling` for the current month
         const [rates] = await db.query(
             `SELECT utility_type, rate_consumed 
              FROM ConcessionaireBilling 

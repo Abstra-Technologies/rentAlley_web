@@ -15,7 +15,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Unit ID is required" });
     }
 
-    // Fetch unit details
     const [unitRows] = await db.query("SELECT * FROM Unit WHERE unit_id = ?", [
       unit_id,
     ]);
@@ -24,20 +23,17 @@ export default async function handler(req, res) {
     }
     const unit = unitRows[0];
 
-    // Fetch associated property details
     const [propertyRows] = await db.query(
       "SELECT * FROM Property WHERE property_id = ?",
       [unit.property_id]
     );
     const property = propertyRows.length > 0 ? propertyRows[0] : null;
 
-    // Fetch unit photos
     const [photoRows] = await db.query(
       "SELECT * FROM UnitPhoto WHERE unit_id = ?",
       [unit_id]
     );
 
-    // Decrypt photo URLs
     const decryptedPhotos = photoRows
       .map((photo) => {
         try {
@@ -49,13 +45,12 @@ export default async function handler(req, res) {
       })
       .filter((photo) => photo !== null); // Filter out failed decryptions
 
-    // Construct response
+    // for repsonse of data.
     const response = {
       unit,
       property,
       photos: decryptedPhotos,
     };
-
     return res.status(200).json(response);
   } catch (error) {
     console.error("Error fetching unit details:", error);

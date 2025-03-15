@@ -1,11 +1,5 @@
     "use client";
-/**
- *  TODO:
- *  1. Error on the useEffect.
- *  When i navigate back using the web browser for the first time it triggers.
- *  But when i navigate back again and click on the back it does not trigger anymore.
- *
- */
+
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import useAnnouncementStore from "../../zustand/annoucementAdminStore"; 
@@ -54,7 +48,7 @@ export default function CreateAnnouncement() {
     useEffect(() => {
         const handleRouteChange = () => {
             if (isDirty && !window.confirm("You have unsaved changes. Do you really want to leave?")) {
-                throw "Navigation prevented"; // Prevent route change
+                throw "Navigation prevented";
             } else {
                 resetForm();
             }

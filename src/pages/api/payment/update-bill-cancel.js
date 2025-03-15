@@ -27,7 +27,6 @@ export default async function billingCancelPayment(req, res) {
                 database: dbName,
             });
 
-            //  Fetch  Active Lease Agreement of the Tenant
             const [activeLease] = await connection.execute(
                 `SELECT agreement_id FROM LeaseAgreement 
                  WHERE tenant_id = ? AND status = 'active' 
@@ -42,7 +41,6 @@ export default async function billingCancelPayment(req, res) {
 
             const { agreement_id } = activeLease[0];
 
-            // Checking If Payment is Already Recorded
             const [existingPayment] = await connection.execute(
                 `SELECT * FROM Payment WHERE receipt_reference = ? LIMIT 1`,
                 [requestReferenceNumber]
@@ -53,7 +51,6 @@ export default async function billingCancelPayment(req, res) {
                 return res.status(400).json({ message: "Payment already recorded." });
             }
 
-            // Insert Payment Record
             await connection.execute(
                 `INSERT INTO Payment (agreement_id, payment_type, amount_paid, payment_method_id, payment_status, receipt_reference, created_at)
                  VALUES (?, ?, ?, ?, 'cancelled', ?, NOW())`,

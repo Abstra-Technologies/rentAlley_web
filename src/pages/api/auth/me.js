@@ -1,7 +1,6 @@
 import { jwtVerify } from "jose";
 import mysql from "mysql2/promise";
 
-//  this is use to fetch the currently authenticated user's data/  session-based authentication.
 
 const db = mysql.createPool({
     host: process.env.DB_HOST,
@@ -15,7 +14,7 @@ export default async function handler(req, res) {
 
     if (!token) {
         console.warn("[User Fetch] No token found in cookies. Returning guest session.");
-        return res.status(200).json({ user: null }); // Return a default guest user object
+        return res.status(200).json({ user: null });
     }
 
     try {

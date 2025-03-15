@@ -17,9 +17,6 @@ export default function LandlordChatPage() {
     return (
         <LandlordLayout>
         <div className="h-screen flex flex-col bg-gray-100 p-4">
-
-            {/* <p>{user?.user_id}</p>
-            <h1 className="text-2xl font-semibold mb-4">Chat List</h1> */}
             <ChatComponent userId={userId}/>
         </div>
         </LandlordLayout>

@@ -39,7 +39,6 @@ export default async function verify2faOtp(req, res) {
             [user_id]
         );
 
-        // ✅ Generate new JWT token
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const token = await new SignJWT({ user_id, userType: user.userType })
             .setProtectedHeader({ alg: "HS256" })

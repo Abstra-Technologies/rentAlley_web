@@ -33,6 +33,5 @@ export default async function handler(req, res) {
     res.status(200).json(billingRecords);
   } catch (error) {
     console.error("Error fetching unit billing:", error);
-    res.status(500).json({ message: "Internal Server Error" });
   }
 }

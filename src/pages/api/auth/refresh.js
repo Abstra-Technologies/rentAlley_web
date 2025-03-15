@@ -15,7 +15,6 @@ export default async function handler(req, res) {
         const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const { payload } = await jwtVerify(refreshToken, secret);
 
-        // Generate new access token
         const newAccessToken = await new SignJWT({ user: payload.user })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("15m") // 15 minutes validity

@@ -33,7 +33,6 @@ export default async function saveBillandMeterReading(req, res) {
                 dueDate
             );
 
-            // Insert billing record
             const [billingResult] = await db.execute(
                 `INSERT INTO Billing (unit_id, billing_period, total_water_amount, total_electricity_amount,
                                       penalty_amount, discount_amount, due_date, total_amount_due)
@@ -52,7 +51,6 @@ export default async function saveBillandMeterReading(req, res) {
 
             const billingId = billingResult.insertId;
 
-            // Insert water meter reading
             if (waterPrevReading !== null && waterCurrentReading !== null) {
                 await db.execute(
                     `INSERT INTO MeterReading (unit_id, utility_type, reading_date, previous_reading, current_reading)
@@ -61,7 +59,6 @@ export default async function saveBillandMeterReading(req, res) {
                 );
             }
 
-            // Insert electricity meter reading
             if (electricityPrevReading !== null && electricityCurrentReading !== null) {
                 await db.execute(
                     `INSERT INTO MeterReading (unit_id, utility_type, reading_date, previous_reading, current_reading)

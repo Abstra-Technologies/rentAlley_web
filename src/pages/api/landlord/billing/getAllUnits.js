@@ -1,14 +1,13 @@
 import { db } from "../../../../lib/db";
 
 export default async function handler(req, res) {
-  const { unit_id } = req.query; // Get unitId from URL
+  const { unit_id } = req.query;
 
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
   try {
 
-    // Fetch Unit details
     const [unitResult] = await db.execute(
       `SELECT * FROM Unit WHERE unit_id = ?`,
       [unit_id]
@@ -20,7 +19,6 @@ export default async function handler(req, res) {
 
     const unit = unitResult[0];
 
-    // Fetch Property details using unit's property_id
     const [propertyResult] = await db.execute(
       `SELECT * FROM Property WHERE property_id = ?`,
       [unit.property_id]

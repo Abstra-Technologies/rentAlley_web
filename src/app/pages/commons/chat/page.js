@@ -28,7 +28,6 @@ export default function Chat() {
     const chat_room = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
-    // Fetch Landlord's Name
     useEffect(() => {
         if (!landlord_id) return;
         axios.get(`/api/chat/getLandlordName?landlord_id=${landlord_id}`)
@@ -40,7 +39,6 @@ export default function Chat() {
             .catch((error) => console.error("Fetch error:", error));
     }, [landlord_id]);
 
-    // Load Messages & Listen for New Messages
     useEffect(() => {
         if (!user || !landlord_id) return;
 
@@ -49,7 +47,7 @@ export default function Chat() {
                 const response = await axios.get(`/api/chats/messages?chat_room=${chat_room}`);
                 setMessages(response.data.map(msg => ({
                     ...msg,
-                    isSender: msg.sender_id === user.user_id,  // Fix sender detection
+                    isSender: msg.sender_id === user.user_id,
                 })));
             } catch (error) {
                 console.error("Error fetching messages:", error);
@@ -84,7 +82,6 @@ export default function Chat() {
         };
     }, [user, landlord_id, chat_room]);
 
-    // Send Message Function
     const sendMessage = () => {
         if (!user || !landlord_id || newMessage.trim() === "") return;
 
@@ -97,7 +94,6 @@ export default function Chat() {
             chat_room,
         };
 
-        // Update local state first for instant UI update
         setMessages((prevMessages) => [...prevMessages, { ...newMsg, isSender: true }]);
 
         socket.emit("sendMessage", newMsg);

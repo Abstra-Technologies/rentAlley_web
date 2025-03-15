@@ -129,7 +129,6 @@ async function handlePostRequest(req, res, connection) {
     res.status(500).json({ error: "Failed to create property listing" });
   }
 }
-// Get Properties by ID or All, including verification status
 async function handleGetRequest(req, res, connection, landlord_id, property_id) {
   try {
     let query = `
@@ -168,7 +167,6 @@ async function handleGetRequest(req, res, connection, landlord_id, property_id) 
     res.status(500).json({ error: "Failed to fetch property listings" });
   }
 }
-
 async function handlePutRequest(req, res, connection, id) {
   try {
     const [rows] = await connection.execute(
@@ -265,7 +263,6 @@ async function handlePutRequest(req, res, connection, id) {
     res.status(500).json({ error: "Failed to update property listing" });
   }
 }
-
 async function handleDeleteRequest(req, res, connection, id) {
   try {
     const [rows] = await connection.execute(

@@ -29,7 +29,6 @@ export default async function handler(req, res) {
     const [announcements] = await db.execute(query, [landlord_id]);
     console.log("Raw announcements:", announcements);
 
-    // Decrypt the encrypted fields safely
     const decryptedAnnouncements = announcements.map(announcement => {
       try {
         return {
@@ -61,7 +60,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Helper function to validate JSON
 function isValidJson(str) {
   try {
     JSON.parse(str);

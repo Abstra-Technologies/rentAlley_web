@@ -12,7 +12,6 @@ export default async function CheckBillingStatusfortheMonth(req, res) {
     }
 
     try {
-        // Ensure only records from the current month are retrieved
         const [billingData] = await db.query(
             `SELECT * FROM ConcessionaireBilling 
        WHERE property_id = ? 
@@ -23,6 +22,5 @@ export default async function CheckBillingStatusfortheMonth(req, res) {
         res.json({ billingData });
     } catch (error) {
         console.error("Error fetching billing data:", error);
-        res.status(500).json({ error: "Internal server error" });
     }
 }

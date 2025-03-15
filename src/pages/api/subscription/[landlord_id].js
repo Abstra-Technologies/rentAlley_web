@@ -29,7 +29,7 @@ export default async function getSubscriptionLandlord(req, res) {
         // If the subscription has expired, mark it as inactive
         if (subscriptionEndDate && subscriptionEndDate < currentDate && subscription.is_active === 1) {
             await db.query("UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?", [landlord_id]);
-            subscription.is_active = 0; // Update the response immediately
+            subscription.is_active = 0;
         }
 
         return res.status(200).json(subscription);

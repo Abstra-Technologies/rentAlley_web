@@ -6,16 +6,14 @@ import { IncomingForm } from "formidable";
 
 export const config = {
   api: {
-    bodyParser: false, // Disable Next.js body parser for FormData handling
+    bodyParser: false,
   },
 };
 
-// Sanitize file names while preserving extension
 function sanitizeInput(filename) {
   return filename.replace(/[^a-zA-Z0-9.]/g, "_").replace(/\s+/g, "_");
 }
 
-// Initialize S3 client
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -24,7 +22,6 @@ const s3 = new S3Client({
   },
 });
 
-// Helper to parse form data with formidable as a promise
 const parseForm = (req) =>
   new Promise((resolve, reject) => {
     const form = new IncomingForm({
@@ -44,7 +41,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parse the incoming form
     const { fields, files } = await parseForm(req);
     console.log("Parsed Fields:", fields);
     console.log("Parsed Files:", files);
@@ -61,18 +57,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "Missing tenant_id or unit_id." });
     }
 
-    // Retrieve the file. Ensure the form field name is 'file'
     const file = Array.isArray(files.file) ? files.file[0] : files.file;
     if (!file) {
       return res.status(400).json({ message: "Valid ID file is required." });
     }
 
-    // Read file buffer
     const fileBuffer = await fs.readFile(file.filepath);
     const sanitizedFilename = sanitizeInput(file.originalFilename);
     const fileName = `validId/${Date.now()}-${sanitizedFilename}`;
 
-    // Prepare S3 upload parameters
     const uploadParams = {
       Bucket: process.env.S3_BUCKET_NAME,
       Key: fileName,
@@ -80,16 +73,13 @@ export default async function handler(req, res) {
       ContentType: file.mimetype,
     };
 
-    // Upload file to S3
     await s3.send(new PutObjectCommand(uploadParams));
 
-    // Generate S3 URL and encrypt it
     const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
     const encryptedS3Url = JSON.stringify(
       encryptData(s3Url, process.env.ENCRYPTION_SECRET)
     );
 
-    // Insert the Prospective Tenant record
     const [result] = await db.query(
       "INSERT INTO ProspectiveTenant (tenant_id, unit_id, valid_id, status, created_at, updated_at) VALUES (?, ?, ?, 'pending', NOW(), NOW())",
       [tenant_id, unit_id, encryptedS3Url]
@@ -100,7 +90,7 @@ export default async function handler(req, res) {
       prospectiveTenantId: result.insertId,
     });
   } catch (error) {
-    console.error("❌ [Submit Requirements] Error:", error);
+    console.error("[Submit Requirements] Error:", error);
     res
       .status(500)
       .json({ message: "Failed to submit requirements", error: error.message });

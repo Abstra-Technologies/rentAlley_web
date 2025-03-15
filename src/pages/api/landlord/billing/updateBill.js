@@ -88,6 +88,5 @@ export default async function updateBill(req, res) {
         return res.status(200).json({ message: "Billing and meter readings updated successfully" });
     } catch (error) {
         console.error("Database Error:", error);
-        return res.status(500).json({ error: "Internal server error" });
     }
 }

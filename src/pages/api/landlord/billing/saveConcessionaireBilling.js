@@ -10,7 +10,6 @@ export default async function savePropertyConciessionareBilling(req, res) {
                 return res.status(400).json({ error: "All fields are required" });
             }
 
-            //  Inserrt Electricity Billing Record
             if (electricityTotal && electricityRate) {
                 await db.execute(
                     "INSERT INTO ConcessionaireBilling (property_id, billing_period, utility_type, total_billed_amount, rate_consumed, created_at) VALUES (?, ?, 'electricity', ?, ?, NOW())",
@@ -18,7 +17,6 @@ export default async function savePropertyConciessionareBilling(req, res) {
                 );
             }
 
-            //  Insert Water Billing Record
             if (waterTotal && waterRate) {
                 await db.execute(
                     "INSERT INTO ConcessionaireBilling (property_id, billing_period, utility_type, total_billed_amount, rate_consumed, created_at) VALUES (?, ?, 'water', ?, ?, NOW())",
@@ -32,7 +30,6 @@ export default async function savePropertyConciessionareBilling(req, res) {
         }
     }
 
-    // to get latest billing view
     if (req.method === "GET") {
         try {
             const { property_id } = req.query;
@@ -40,7 +37,6 @@ export default async function savePropertyConciessionareBilling(req, res) {
             if (!property_id) {
                 return res.status(400).json({ error: "Property ID is required" });
             }
-
             const [billings] = await db.execute(
                 `SELECT utility_type, total_billed_amount, rate_consumed, billing_period, created_at
                  FROM ConcessionaireBilling
@@ -53,6 +49,5 @@ export default async function savePropertyConciessionareBilling(req, res) {
             return res.status(500).json({ error: `Database Server Error: ${error}` });
         }
     }
-
     return res.status(405).json({ error: "Method Not Allowed" });
 }

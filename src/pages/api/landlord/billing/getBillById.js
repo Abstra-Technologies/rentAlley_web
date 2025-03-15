@@ -15,7 +15,6 @@ export default async function getCurrentMonthBillingByUnit(req, res) {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
 
-    //Fetch Billing Data for the Current Month
     const [bill] = await db.query(
         `
           SELECT * FROM Billing
@@ -34,7 +33,6 @@ export default async function getCurrentMonthBillingByUnit(req, res) {
 
     const billingRecord = bill[0];
 
-    // 🔹 Fetch the latest Water Meter Reading
     const [waterReading] = await db.query(
         `
           SELECT previous_reading, current_reading, reading_date
@@ -46,7 +44,6 @@ export default async function getCurrentMonthBillingByUnit(req, res) {
         [unit_id]
     );
 
-    // 🔹 Fetch the latest Electricity Meter Reading
     const [electricityReading] = await db.query(
         `
           SELECT previous_reading, current_reading, reading_date
@@ -58,7 +55,6 @@ export default async function getCurrentMonthBillingByUnit(req, res) {
         [unit_id]
     );
 
-    // Fetch Rent Amount from the Unit Table
     const [unitData] = await db.query(
         `
         SELECT rent_amount, property_id
@@ -74,7 +70,6 @@ export default async function getCurrentMonthBillingByUnit(req, res) {
 
     const { rent_amount, property_id } = unitData[0];
 
-    // Fetch Association Dues & Late Fees from the Property Table
     const [propertyData] = await db.query(
         `
         SELECT assoc_dues, late_fee
@@ -90,7 +85,6 @@ export default async function getCurrentMonthBillingByUnit(req, res) {
 
     const { assoc_dues, late_fee } = propertyData[0];
 
-    // 🔹 Return Combined Data
     res.status(200).json({
       ...billingRecord,
       water_prev_reading: waterReading.length > 0 ? waterReading[0].previous_reading : null,
