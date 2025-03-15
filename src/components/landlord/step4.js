@@ -5,18 +5,19 @@ import Camera from "../lib/camera";
 import Swal from "sweetalert2";
 
 export function StepFour() {
-  // Access the property data and actions from Zustand store
   const {
     setMayorPermit,
     setOccPermit,
     setIndoorPhoto,
     setOutdoorPhoto,
     setGovID,
+    setPropTitle,
     indoorPhoto,
     outdoorPhoto,
     occPermit,
     mayorPermit,
     govID,
+    propTitle,
   } = usePropertyStore();
   // State to control the camera
   const [showCamera, setShowCamera] = useState(false);
@@ -110,6 +111,12 @@ export function StepFour() {
     }
   };
 
+  const handlePropTitleChange = (file) => {
+    if (validateFile(file?.file, setPropTitle, true)) {
+      setPropTitle(file);
+    }
+  };
+
   return (
     <div>
       {/* Requirements Section */}
@@ -120,7 +127,8 @@ export function StepFour() {
           Please upload a business or mayor&#39;s permit of the property in PDF
           format.
         </li>
-        <li>Please upload a valid government ID in PDF format.</li>
+        <li>Please upload a valid property title in PDF format.</li>
+        <li>Please upload a valid government ID.</li>
       </ol>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -147,6 +155,15 @@ export function StepFour() {
           label="Government ID"
           file={govID}
           setFile={handleGovIDChange}
+          accept="application/pdf"
+          multiple={false}
+        />
+
+        {/* Property Title Upload */}
+        <DropzoneUploader
+          label="Property Title (PDF)"
+          file={propTitle}
+          setFile={handlePropTitleChange}
           accept="application/pdf"
           multiple={false}
         />

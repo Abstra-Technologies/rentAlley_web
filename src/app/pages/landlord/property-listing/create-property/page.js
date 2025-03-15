@@ -27,6 +27,7 @@ export default function AddNewProperty() {
     indoorPhoto,
     outdoorPhoto,
     govID,
+    propTitle,
   } = usePropertyStore();
 
   const validateStep = () => {
@@ -228,6 +229,22 @@ export default function AddNewProperty() {
         );
         return false;
       }
+      if (!isPDF(occPermit?.file)) {
+        Swal.fire(
+          "Invalid File",
+          "Occupancy Permit must be a PDF file.",
+          "error"
+        );
+        return false;
+      }
+      if (!isPDF(propTitle?.file)) {
+        Swal.fire(
+          "Invalid File",
+          "Property Title must be a PDF file.",
+          "error"
+        );
+        return false;
+      }
     }
 
     return true;
@@ -305,11 +322,13 @@ export default function AddNewProperty() {
     formData.append("occPermit", occPermit?.file);
     formData.append("mayorPermit", mayorPermit?.file);
     formData.append("govID", govID?.file);
+    formData.append("propTitle", propTitle?.file);
     formData.append("indoor", indoorPhoto);
     formData.append("outdoor", outdoorPhoto);
 
     console.log("occPermit Type:", occPermit);
     console.log("mayorPermit Type:", mayorPermit);
+    console.log("propTitle Type:", propTitle);
     console.log("Indoor Photo Type:", indoorPhoto);
     console.log("Outdoor Photo Type:", outdoorPhoto);
     console.log("Government ID:", govID);
@@ -365,7 +384,7 @@ export default function AddNewProperty() {
       const photoUploadPromise =
         photos.length > 0 ? await uploadPhotos(propertyID) : Promise.resolve();
       const verificationUploadPromise =
-        occPermit && mayorPermit && indoorPhoto && outdoorPhoto
+        occPermit && mayorPermit && indoorPhoto && outdoorPhoto && propTitle
           ? await uploadPropertyRequirements(propertyID)
           : Promise.resolve();
 

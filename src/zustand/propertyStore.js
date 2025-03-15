@@ -37,6 +37,7 @@ const usePropertyStore = create((set) => ({
   occPermit: null,
   indoorPhoto: null,
   outdoorPhoto: null,
+  propTitle: null,
   selectedProperty: null,
   properties: [],
   loading: false,
@@ -82,8 +83,8 @@ const usePropertyStore = create((set) => ({
     try {
       // Fetch all properties and only the first photo for each property
       const [propertiesRes, photosRes] = await Promise.all([
-        axios.get(`/api/propertyListing/propListing?landlord_id=${landlordId}`), // Fetch properties
-        axios.get("/api/propertyListing/propPhotos"), // Fetch first property photos
+        axios.get(`/api/propertyListing/propListing?landlord_id=${landlordId}`),
+        axios.get("/api/propertyListing/propPhotos"),
       ]);
 
       // Ensure each property gets its correct first photo
@@ -119,6 +120,7 @@ const usePropertyStore = create((set) => ({
   // Set Outdoor Photo File
   setOutdoorPhoto: (file) => set({ outdoorPhoto: file }),
   setGovID: (file) => set({ govID: file }),
+  setPropTitle: (file) => set({ propTitle: file }),
   setSelectedProperty: (property) => set({ selectedProperty: property }),
   // Reset state
   reset: () =>
@@ -158,6 +160,7 @@ const usePropertyStore = create((set) => ({
       indoorPhoto: null,
       outdoorPhoto: null,
       govID: null,
+      propTitle: null,
     })),
 }));
 

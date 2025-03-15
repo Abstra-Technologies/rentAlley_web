@@ -24,11 +24,10 @@ const s3 = new S3Client({
 
 function sanitizeFilename(filename) {
   const sanitized = filename
-    .replace(/[^a-zA-Z0-9.]/g, "_") // Replace non-alphanumeric chars with underscores
-    .replace(/\s+/g, "_"); // Replace consecutive whitespaces with a single underscore
+    .replace(/[^a-zA-Z0-9.]/g, "_")
+    .replace(/\s+/g, "_");
   return sanitized;
 }
-
 
 const uploadToS3 = async (file, folder) => {
   if (!file || !file.filepath) {
@@ -51,8 +50,6 @@ const uploadToS3 = async (file, folder) => {
 
   return encryptDataString(s3Url);
 };
-
-
 
 export default async function uploadPropertyVerification(req, res) {
   if (req.method !== "POST") {
@@ -104,42 +101,47 @@ export default async function uploadPropertyVerification(req, res) {
       const indoorFile = files.indoor?.[0] || null;
       const outdoorFile = files.outdoor?.[0] || null;
       const govIdFile = files.govID?.[0] || null;
+      const propTitleFile = files.propTitle?.[0] || null;
 
       const occPermitUrl = occPermitFile
-        ? await uploadToS3(occPermitFile, "property-docs")
+        ? await uploadToS3(occPermitFile, "property-doc")
         : null;
       const mayorPermitUrl = mayorPermitFile
-        ? await uploadToS3(mayorPermitFile, "property-docs")
+        ? await uploadToS3(mayorPermitFile, "property-doc")
         : null;
       const indoorPhoto = indoorFile
-        ? await uploadToS3(indoorFile, "property-photos/indoor")
+        ? await uploadToS3(indoorFile, "property-photo/indoor")
         : null;
       const outdoorPhoto = outdoorFile
-        ? await uploadToS3(outdoorFile, "property-photos/outdoor")
+        ? await uploadToS3(outdoorFile, "property-photo/outdoor")
         : null;
       const govID = govIdFile
-        ? await uploadToS3(govIdFile, "property-photos/govId")
+        ? await uploadToS3(govIdFile, "property-photo/govId")
+        : null;
+      const propTitle = propTitleFile
+        ? await uploadToS3(propTitleFile, "property-doc")
         : null;
 
-
       const query =
-        "INSERT INTO PropertyVerification (property_id, occ_permit, mayor_permit, gov_id, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts)\n" +
-          "VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)\n" +
-          "ON DUPLICATE KEY UPDATE \n" +
-          "  occ_permit = VALUES(occ_permit), \n" +
-          "  mayor_permit = VALUES(mayor_permit), \n" +
-          "  gov_id = VALUES(gov_id), \n" +
-          "  indoor_photo = VALUES(indoor_photo), \n" +
-          "  outdoor_photo = VALUES(outdoor_photo), \n" +
-          "  status = 'Pending', \n" +
-          "  updated_at = NOW(), \n" +
-          "  attempts = attempts + 1;\n";
+        "INSERT INTO PropertyVerification (property_id, occ_permit, mayor_permit, gov_id, property_title, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts)\n" +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)\n" +
+        "ON DUPLICATE KEY UPDATE \n" +
+        "  occ_permit = VALUES(occ_permit), \n" +
+        "  mayor_permit = VALUES(mayor_permit), \n" +
+        "  gov_id = VALUES(gov_id), \n" +
+        "  property_title = VALUES(property_title), \n" +
+        "  indoor_photo = VALUES(indoor_photo), \n" +
+        "  outdoor_photo = VALUES(outdoor_photo), \n" +
+        "  status = 'Pending', \n" +
+        "  updated_at = NOW(), \n" +
+        "  attempts = attempts + 1;\n";
 
       console.log("Inserting into MySQL with:", {
         property_id,
         occPermitUrl,
         mayorPermitUrl,
         govID,
+        propTitle,
         indoorPhoto,
         outdoorPhoto,
       });
@@ -149,6 +151,7 @@ export default async function uploadPropertyVerification(req, res) {
         occPermitUrl,
         mayorPermitUrl,
         govID,
+        propTitle,
         indoorPhoto,
         outdoorPhoto,
       ]);

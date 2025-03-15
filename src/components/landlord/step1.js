@@ -97,8 +97,12 @@ export const StepOne = () => {
             onChange={handleChange}
             placeholder="Enter barangay or district number"
             min={0}
-            className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 mb-3"
           />
+
+          <div className="p-3 mb-2 bg-blue-100 border-l-4 border-blue-500 text-blue-700 text-sm rounded">
+            <p>Barangay No. / District No. must be a number.</p>
+          </div>
         </div>
 
         <div>
