@@ -74,10 +74,22 @@ export default function InterestedTenants({ unitId, landlordId }) {
   }, [unitId, landlordId]);
 
   const handleTenantClick = (tenant) => {
+    Swal.fire({
+      title: "Loading...",
+      text: "Redirecting to tenant details...",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
     router.push(
       `/pages/landlord/property-listing/view-unit/view-tenant/${unitId}?tenant_id=${tenant.tenant_id}`
     );
+    Swal.close();
   };
+  
+  
 
   const handleUpgradeClick = () => {
     Swal.fire({

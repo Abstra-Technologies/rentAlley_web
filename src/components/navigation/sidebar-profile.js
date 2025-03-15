@@ -1,62 +1,75 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { UserIcon, ShieldCheckIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
+import {
+  UserIcon,
+  ShieldCheckIcon,
+  ArrowRightOnRectangleIcon,
+  CreditCardIcon,
+} from "@heroicons/react/24/outline";
 import { Menu, X, History } from "lucide-react";
 import useAuthStore from "../../zustand/authStore";
 import { logEvent } from "../../utils/gtag";
 
 export default function SideNavProfile() {
   const { user } = useAuthStore();
-  const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
-  
+
   const menuItems = [
     {
       href: `/pages/${user?.userType}/profile/${user?.user_id}`,
       icon: UserIcon,
       label: "Profile",
-      onClick: () => logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1)
+      onClick: () =>
+        logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1),
     },
     {
       href: `/pages/${user?.userType}/securityPrivacy/${user?.user_id}`,
       icon: ShieldCheckIcon,
       label: "Security & Privacy",
-      onClick: () => logEvent("Navigation", "User Interaction", "Clicked Security & Privacy Link", 1)
+      onClick: () =>
+        logEvent(
+          "Navigation",
+          "User Interaction",
+          "Clicked Security & Privacy Link",
+          1
+        ),
     },
-    ...(user?.userType === "landlord" ? [
-      {
-        href: "/pages/landlord/subsciption_plan",
-        icon: () => null,
-        label: "View Subscription",
-        onClick: () => {}
-      }
-    ] : []),
+    ...(user?.userType === "landlord"
+      ? [
+          {
+            href: "/pages/landlord/subsciption_plan",
+            icon: CreditCardIcon,
+            label: "View Subscription",
+            onClick: () => {},
+          },
+        ]
+      : []),
     ...(user?.userType === "tenant"
       ? [
           {
             href: "/pages/tenant/visit-history",
             icon: History,
             label: "Scheduled visits",
-            onClick: () => {}
-          }
+            onClick: () => {},
+          },
         ]
       : []),
     {
       href: "#",
       icon: ArrowRightOnRectangleIcon,
       label: "Logout",
-      onClick: () => {}
-    }
+      onClick: () => {},
+    },
   ];
-  
+
   return (
     <div className="flex-shrink-0">
       {/* Mobile Header and Dropdown */}
@@ -67,10 +80,14 @@ export default function SideNavProfile() {
             onClick={toggleMobileMenu}
             className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
-        
+
         {/* Mobile Dropdown Menu */}
         {isMobileMenuOpen && (
           <div className="absolute w-full bg-white shadow-lg z-30">
@@ -113,7 +130,7 @@ export default function SideNavProfile() {
           </div>
         )}
       </div>
-      
+
       {/* Overlay for Mobile */}
       {isMobileMenuOpen && (
         <div
@@ -121,13 +138,13 @@ export default function SideNavProfile() {
           onClick={toggleMobileMenu}
         ></div>
       )}
-      
+
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white shadow-lg min-h-screen">
         <div className="p-6">
           <h1 className="text-xl font-bold text-blue-600 mb-6">Menu</h1>
         </div>
-        
+
         <nav className="px-4">
           <ul className="space-y-2">
             {menuItems.map(({ href, icon: Icon, label, onClick }) => {

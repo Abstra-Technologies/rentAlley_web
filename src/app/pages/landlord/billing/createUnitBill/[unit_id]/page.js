@@ -4,7 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 import Swal from "sweetalert2";
-import useAuth from "../../../../../../../hooks/useSession";
 
 export default function CreateUnitBill() {
   const { unit_id } = useParams();
@@ -147,6 +146,15 @@ export default function CreateUnitBill() {
   };
 
   const handleSubmit = async () => {
+    if (!form.dueDate) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Due Date",
+        text: "Please select a due date before submitting.",
+      });
+      return;
+    }
+
     try {
       const billingData = {
         readingDate: form.readingDate,
@@ -207,8 +215,10 @@ export default function CreateUnitBill() {
   return (
     <LandlordLayout>
       <div className="p-6 max-w-3xl mx-auto bg-white rounded-xl shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Unit {unit?.unit_name} - Billing</h1>
-  
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+          Unit {unit?.unit_name} - Billing
+        </h1>
+
         {/* Show Billing History */}
         <div className="mb-6 p-5 border border-gray-200 rounded-lg bg-gray-50 shadow-sm">
           <h2 className="text-lg font-semibold flex justify-between items-center mb-3 text-gray-700">
@@ -223,39 +233,75 @@ export default function CreateUnitBill() {
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center space-x-2">
               <span className="text-blue-500">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
                 </svg>
               </span>
-              <p className="text-gray-600">Water Rate: <span className="font-medium text-gray-800">₱{propertyRates?.waterRate}</span> per m³</p>
+              <p className="text-gray-600">
+                Water Rate:{" "}
+                <span className="font-medium text-gray-800">
+                  ₱{propertyRates?.waterRate}
+                </span>{" "}
+                per m³
+              </p>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-yellow-500">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
                 </svg>
               </span>
-              <p className="text-gray-600">Electricity Rate: <span className="font-medium text-gray-800">₱{propertyRates?.electricityRate}</span> per kWh</p>
+              <p className="text-gray-600">
+                Electricity Rate:{" "}
+                <span className="font-medium text-gray-800">
+                  ₱{propertyRates?.electricityRate}
+                </span>{" "}
+                per kWh
+              </p>
             </div>
           </div>
         </div>
-  
+
         {/* Step-by-step Billing Form */}
         <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
           <div className="border-b border-gray-200 px-5 py-4">
             <h2 className="text-lg font-semibold text-gray-800">
               Create New Bill
-              <span className="ml-2 text-sm font-medium text-gray-500">Step {step} of 3</span>
+              <span className="ml-2 text-sm font-medium text-gray-500">
+                Step {step} of 3
+              </span>
             </h2>
             {/* Progress bar */}
             <div className="w-full bg-gray-200 rounded-full h-1.5 mt-3">
-              <div 
-                className="bg-blue-500 h-1.5 rounded-full transition-all duration-300 ease-in-out" 
+              <div
+                className="bg-blue-500 h-1.5 rounded-full transition-all duration-300 ease-in-out"
                 style={{ width: `${(step / 3) * 100}%` }}
               ></div>
             </div>
           </div>
-          
+
           <div className="p-5">
             {/* Step 1: Meter Readings */}
             {step === 1 && (
@@ -267,7 +313,7 @@ export default function CreateUnitBill() {
                     ? "Utility costs are included in rent. Only total amounts are needed."
                     : "No meter readings needed for this billing type."}
                 </div>
-  
+
                 {/* Reading Date Input */}
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -282,14 +328,16 @@ export default function CreateUnitBill() {
                     className="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
-  
+
                 {property.utility_billing_type === "submetered" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div className="space-y-4 p-4 rounded-lg border border-blue-100 bg-blue-50">
-                      <h3 className="font-medium text-blue-800">Water Meter Readings</h3>
+                      <h3 className="font-medium text-blue-800">
+                        Water Meter Readings
+                      </h3>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                         Previous Water Meter Reading
+                          Previous Water Meter Reading
                         </label>
                         <input
                           type="number"
@@ -314,12 +362,14 @@ export default function CreateUnitBill() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4 p-4 rounded-lg border border-yellow-100 bg-yellow-50">
-                      <h3 className="font-medium text-yellow-800">Electricity Meter Readings</h3>
+                      <h3 className="font-medium text-yellow-800">
+                        Electricity Meter Readings
+                      </h3>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                         Previous Electricity Meter Reading
+                          Previous Electricity Meter Reading
                         </label>
                         <input
                           type="number"
@@ -346,7 +396,7 @@ export default function CreateUnitBill() {
                     </div>
                   </div>
                 )}
-  
+
                 {property.utility_billing_type === "provider" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
@@ -379,28 +429,28 @@ export default function CreateUnitBill() {
                 )}
               </div>
             )}
-  
+
             {/* Step 2: Rent, Late Fees, and Dues */}
             {step === 2 && (
               <div className="space-y-4">
                 <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700 border border-blue-100">
                   Enter payment due date and review additional charges.
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Due Date
                   </label>
                   <input
-                      type="date"
-                      name="dueDate"
-                      placeholder="Due Date"
-                      value={form.dueDate}
-                      onChange={handleChange}
-                      className="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    type="date"
+                    name="dueDate"
+                    placeholder="Due Date"
+                    value={form.dueDate}
+                    onChange={handleChange}
+                    className="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
                     <h3 className="font-medium text-gray-800">Fixed Charges</h3>
@@ -444,7 +494,7 @@ export default function CreateUnitBill() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
                     <h3 className="font-medium text-gray-800">Adjustments</h3>
                     <div>
@@ -477,101 +527,172 @@ export default function CreateUnitBill() {
                 </div>
               </div>
             )}
-  
+
             {/* Step 3: Final Computation */}
             {step === 3 && (
               <div>
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Invoice Summary</h3>
-  
+                <h3 className="text-xl font-bold text-gray-800 mb-4">
+                  Invoice Summary
+                </h3>
+
                 <div className="rounded-lg overflow-hidden shadow-md">
                   <div className="bg-blue-600 text-white py-4 px-6">
                     <div className="flex justify-between items-center">
                       <h4 className="font-medium">Reading Date:</h4>
-                      <p className="font-semibold">{form.readingDate || "N/A"}</p>
+                      <p className="font-semibold">
+                        {form.readingDate || "N/A"}
+                      </p>
                     </div>
                     <div className="flex justify-between items-center mt-2">
                       <h4 className="font-medium">Due Date:</h4>
                       <p className="font-semibold">{form.dueDate || "N/A"}</p>
                     </div>
                   </div>
-                  
+
                   <div className="divide-y divide-gray-200">
                     {/* Electricity */}
                     <div className="p-5 bg-white">
                       <div className="flex items-center mb-3">
                         <span className="text-yellow-500 mr-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                            />
                           </svg>
                         </span>
-                        <h4 className="text-lg font-semibold text-gray-800">Electricity Charges</h4>
+                        <h4 className="text-lg font-semibold text-gray-800">
+                          Electricity Charges
+                        </h4>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <p className="text-gray-600">Usage:</p>
-                        <p className="text-right font-medium">{calculateUtilityBill().electricity.usage} kWh</p>
+                        <p className="text-right font-medium">
+                          {calculateUtilityBill().electricity.usage} kWh
+                        </p>
                         <p className="text-gray-600">Rate per kWh:</p>
-                        <p className="text-right font-medium">₱{calculateUtilityBill().electricity.rate}</p>
-                        <p className="text-gray-800 font-semibold">Total Cost:</p>
-                        <p className="text-right font-bold text-yellow-600">₱{calculateUtilityBill().electricity.cost}</p>
+                        <p className="text-right font-medium">
+                          ₱{calculateUtilityBill().electricity.rate}
+                        </p>
+                        <p className="text-gray-800 font-semibold">
+                          Total Cost:
+                        </p>
+                        <p className="text-right font-bold text-yellow-600">
+                          ₱{calculateUtilityBill().electricity.cost}
+                        </p>
                       </div>
                     </div>
-  
+
                     {/* Water */}
                     <div className="p-5 bg-white">
                       <div className="flex items-center mb-3">
                         <span className="text-blue-500 mr-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                            />
                           </svg>
                         </span>
-                        <h4 className="text-lg font-semibold text-gray-800">Water Charges</h4>
+                        <h4 className="text-lg font-semibold text-gray-800">
+                          Water Charges
+                        </h4>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <p className="text-gray-600">Usage:</p>
-                        <p className="text-right font-medium">{calculateUtilityBill().water.usage} m³</p>
+                        <p className="text-right font-medium">
+                          {calculateUtilityBill().water.usage} m³
+                        </p>
                         <p className="text-gray-600">Rate per m³:</p>
-                        <p className="text-right font-medium">₱{calculateUtilityBill().water.rate}</p>
-                        <p className="text-gray-800 font-semibold">Total Cost:</p>
-                        <p className="text-right font-bold text-blue-600">₱{calculateUtilityBill().water.cost}</p>
+                        <p className="text-right font-medium">
+                          ₱{calculateUtilityBill().water.rate}
+                        </p>
+                        <p className="text-gray-800 font-semibold">
+                          Total Cost:
+                        </p>
+                        <p className="text-right font-bold text-blue-600">
+                          ₱{calculateUtilityBill().water.cost}
+                        </p>
                       </div>
                     </div>
-  
+
                     {/* Other Charges */}
                     <div className="p-5 bg-white">
                       <div className="flex items-center mb-3">
                         <span className="text-gray-500 mr-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                            />
                           </svg>
                         </span>
-                        <h4 className="text-lg font-semibold text-gray-800">Additional Charges</h4>
+                        <h4 className="text-lg font-semibold text-gray-800">
+                          Additional Charges
+                        </h4>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <p className="text-gray-600">Rent Amount:</p>
-                        <p className="text-right font-medium">₱{unit?.rent_amount}</p>
+                        <p className="text-right font-medium">
+                          ₱{unit?.rent_amount}
+                        </p>
                         <p className="text-gray-600">Association Dues:</p>
-                        <p className="text-right font-medium">₱{calculateUtilityBill().associationDues}</p>
+                        <p className="text-right font-medium">
+                          ₱{calculateUtilityBill().associationDues}
+                        </p>
                         <p className="text-gray-600">Late Fee:</p>
-                        <p className="text-right font-medium">₱{calculateUtilityBill().lateFee}</p>
+                        <p className="text-right font-medium">
+                          ₱{calculateUtilityBill().lateFee}
+                        </p>
                         <p className="text-gray-600">Discount:</p>
-                        <p className="text-right font-medium text-green-600">-₱{calculateUtilityBill().discountAmount}</p>
+                        <p className="text-right font-medium text-green-600">
+                          -₱{calculateUtilityBill().discountAmount}
+                        </p>
                         <p className="text-gray-600">Penalties:</p>
-                        <p className="text-right font-medium text-red-600">₱{calculateUtilityBill().penaltyAmount}</p>
+                        <p className="text-right font-medium text-red-600">
+                          ₱{calculateUtilityBill().penaltyAmount}
+                        </p>
                       </div>
                     </div>
-  
+
                     {/* Total Due */}
                     <div className="p-5 bg-gray-800 text-white">
                       <div className="flex justify-between items-center text-lg">
                         <p className="font-bold">Total Amount Due:</p>
-                        <p className="font-bold text-xl">₱{calculateUtilityBill().total}</p>
+                        <p className="font-bold text-xl">
+                          ₱{calculateUtilityBill().total}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
-            
+
             {/* Navigation Buttons */}
             <div className="mt-6 flex justify-between">
               {step > 1 ? (
@@ -580,8 +701,19 @@ export default function CreateUnitBill() {
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <span className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
                     </svg>
                     Previous
                   </span>
@@ -589,7 +721,7 @@ export default function CreateUnitBill() {
               ) : (
                 <div></div>
               )}
-              
+
               {step < 3 ? (
                 <button
                   onClick={handleNext}
@@ -597,8 +729,19 @@ export default function CreateUnitBill() {
                 >
                   <span className="flex items-center">
                     Next
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 ml-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </span>
                 </button>
@@ -608,8 +751,19 @@ export default function CreateUnitBill() {
                   onClick={handleSubmit}
                 >
                   <span className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                     Submit Bill
                   </span>
