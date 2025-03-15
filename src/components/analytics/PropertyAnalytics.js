@@ -490,30 +490,6 @@ const PropertyAnalytics = () => {
         {/* Chart Content */}
         <div className="mb-8">{renderTabContent()}</div>
 
-        {/* Time Period Filter */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            Data Period
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            <button className="px-4 py-2 bg-indigo-100 text-indigo-600 rounded-md font-medium text-sm hover:bg-indigo-200 transition-colors">
-              Last 7 Days
-            </button>
-            <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors">
-              Last 30 Days
-            </button>
-            <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors">
-              Last 3 Months
-            </button>
-            <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors">
-              Last Year
-            </button>
-            <button className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md font-medium text-sm hover:bg-gray-50 transition-colors">
-              All Time
-            </button>
-          </div>
-        </div>
-
         {/* Additional Insights */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-md">
@@ -654,73 +630,6 @@ const PropertyAnalytics = () => {
                   <p className="text-xs text-gray-500">Yesterday</p>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div className="mb-4 md:mb-0">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Export Analytics Data
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Download analytics reports for offline analysis
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2 text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
-                CSV
-              </button>
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2 text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                  />
-                </svg>
-                PDF
-              </button>
-              <button className="inline-flex items-center px-4 py-2 border border-indigo-600 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  />
-                </svg>
-                Full Report
-              </button>
             </div>
           </div>
         </div>
