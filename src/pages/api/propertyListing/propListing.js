@@ -1,4 +1,6 @@
 import { db } from "../../../lib/db";
+import {parse} from "cookie";
+import {jwtVerify} from "jose";
 
 export default async function PropertyListingCRUD(req, res) {
   const { id } = req.query;
@@ -101,6 +103,21 @@ async function handlePostRequest(req, res, connection) {
       values
     );
 
+    const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
+    if (!cookies || !cookies.token) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(cookies.token, secretKey);
+    let loggedUser = payload.user_id;
+
+    await db.query(
+        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+        [loggedUser, `Created Property ${propertyName} `]
+    );
+
+
     await connection.commit();
 
     res.status(201).json({ propertyID: result.insertId, ...req.body });
@@ -112,7 +129,6 @@ async function handlePostRequest(req, res, connection) {
     res.status(500).json({ error: "Failed to create property listing" });
   }
 }
-
 // Get Properties by ID or All, including verification status
 async function handleGetRequest(req, res, connection, landlord_id, property_id) {
   try {
@@ -225,6 +241,20 @@ async function handlePutRequest(req, res, connection, id) {
       ]
     );
 
+    const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
+    if (!cookies || !cookies.token) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(cookies.token, secretKey);
+    let loggedUser = payload.user_id;
+
+    await db.query(
+        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+        [loggedUser, `Updated Property ${propertyName} `]
+    );
+
     await connection.commit();
     console.log("Result: ", result);
     res.status(200).json({ propertyID: id, ...req.body });
@@ -263,6 +293,21 @@ async function handleDeleteRequest(req, res, connection, id) {
     await connection.beginTransaction();
 
     await connection.execute(`DELETE FROM Property WHERE property_id = ?`, [id]);
+
+
+    const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
+    if (!cookies || !cookies.token) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(cookies.token, secretKey);
+    let loggedUser = payload.user_id;
+
+    await db.query(
+        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+        [loggedUser, `Deleted Property: ${id}`]
+    );
 
     await connection.commit();
     res.status(200).json({ message: "Property listing deleted successfully" });
