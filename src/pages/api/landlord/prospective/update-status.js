@@ -19,7 +19,7 @@ export default async function updateProspectStatus(req, res) {
           .json({ message: "Disapproval message is required" });
     }
 
-    const tenantQuery = `SELECT user_id FROM Tenants WHERE tenant_id = ?`;
+    const tenantQuery = `SELECT user_id FROM Tenant WHERE tenant_id = ?`;
     const [tenantResult] = await db.query(tenantQuery, [tenant_id]);
 
     if (!tenantResult || tenantResult.length === 0) {
