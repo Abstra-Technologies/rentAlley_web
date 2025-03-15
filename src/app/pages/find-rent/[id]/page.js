@@ -14,6 +14,7 @@ import {
 import { BsImageAlt, BsCheckCircleFill } from "react-icons/bs";
 import { MdVerified, MdOutlineApartment } from "react-icons/md";
 import { IoArrowBackOutline } from "react-icons/io5";
+import Swal from "sweetalert2";
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -53,8 +54,19 @@ export default function PropertyDetails() {
   }, [id]);
 
   const handleUnitSelection = (unitId) => {
-    // Navigate to the unit details page
-    router.push(`/pages/find-rent/${id}/${unitId}`);
+    Swal.fire({
+      title: "Redirecting...",
+      text: "Please wait while we load the unit details...",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+    setTimeout(() => {
+      Swal.close();
+      router.push(`/pages/find-rent/${id}/${unitId}`);
+    }, 1500);
   };
 
   // Parse amenities into an array
