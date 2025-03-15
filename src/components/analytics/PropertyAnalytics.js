@@ -54,7 +54,6 @@ const PropertyAnalytics = () => {
     fetchData();
   }, []);
 
-  // Property type chart configuration
   const barChartOptions = {
     chart: {
       type: "bar",
@@ -108,7 +107,6 @@ const PropertyAnalytics = () => {
     },
   ];
 
-  // Property verification chart configuration
   const pieChartOptions = {
     chart: {
       type: "pie",
@@ -152,7 +150,6 @@ const PropertyAnalytics = () => {
 
   const pieChartSeries = verificationData.map((d) => d.count);
 
-  // Lease status chart configuration
   const labelsLease = leaseStatus.map((item) => item.status);
   const seriesLease = leaseStatus.map((item) => item.lease_count);
 
@@ -202,7 +199,6 @@ const PropertyAnalytics = () => {
     ],
   };
 
-  // Subscription chart configuration
   const labelsSubscriptions = subscriptionData.map((item) => item.plan_name);
   const seriesSubscriptions = subscriptionData.map(
     (item) => item.subscriber_count
@@ -254,7 +250,6 @@ const PropertyAnalytics = () => {
     ],
   };
 
-  // User distribution chart configuration
   const labelsUsers = userData.map((item) => item.userType);
   const seriesUsers = userData.map((item) => item.user_count);
 
@@ -398,7 +393,6 @@ const PropertyAnalytics = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
             Property Analytics Dashboard
@@ -409,7 +403,6 @@ const PropertyAnalytics = () => {
           </p>
         </div>
 
-        {/* Stats Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-indigo-500">
             <p className="text-gray-500 text-sm">Total Properties</p>
@@ -441,7 +434,6 @@ const PropertyAnalytics = () => {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="mb-6 border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <button
@@ -487,10 +479,8 @@ const PropertyAnalytics = () => {
           </nav>
         </div>
 
-        {/* Chart Content */}
         <div className="mb-8">{renderTabContent()}</div>
 
-        {/* Additional Insights */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">

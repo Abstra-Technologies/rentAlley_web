@@ -31,7 +31,9 @@ export default function Announcements() {
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full">
-      <h2 className="text-xl font-semibold text-gray-700 mb-4">Announcements</h2>
+      <h2 className="text-xl font-semibold text-gray-700 mb-4">
+        Announcements
+      </h2>
       {announcements.length === 0 ? (
         <p className="text-gray-600">No announcements available.</p>
       ) : (
@@ -54,5 +56,4 @@ export default function Announcements() {
       )}
     </div>
   );
-  
 }

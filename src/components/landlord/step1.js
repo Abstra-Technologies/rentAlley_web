@@ -7,7 +7,6 @@ import { PROVINCES_PHILIPPINES } from "../../constant/provinces";
 export const StepOne = () => {
   const { property, setProperty } = usePropertyStore();
 
-  // Set default property type if not already set
   useEffect(() => {
     if (!property.propertyType && PROPERTY_TYPES.length > 0) {
       setProperty({ propertyType: PROPERTY_TYPES[0].value });
@@ -26,9 +25,7 @@ export const StepOne = () => {
         List it in the market where renters are waiting!
       </p>
 
-      {/* Form Fields */}
       <form className="space-y-4">
-        {/* Property Type Dropdown */}
         <div>
           <label
             htmlFor="propertyType"
@@ -51,7 +48,6 @@ export const StepOne = () => {
           </select>
         </div>
 
-        {/* Property Name */}
         <div>
           <label
             htmlFor="propertyName"
@@ -70,7 +66,6 @@ export const StepOne = () => {
           />
         </div>
 
-        {/* Address Fields */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Street Address
@@ -85,7 +80,6 @@ export const StepOne = () => {
           />
         </div>
 
-        {/* Other Address Fields */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Barangay No. / District No.
@@ -134,7 +128,6 @@ export const StepOne = () => {
           />
         </div>
 
-        {/* Province Dropdown */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Province

@@ -19,11 +19,9 @@ export function StepFour() {
     govID,
     propTitle,
   } = usePropertyStore();
-  // State to control the camera
   const [showCamera, setShowCamera] = useState(false);
   const [photoType, setPhotoType] = useState("");
 
-  // Local states for file previews
   const [indoorPreview, setIndoorPreview] = useState(null);
   const [outdoorPreview, setOutdoorPreview] = useState(null);
 
@@ -79,7 +77,6 @@ export function StepFour() {
       return false;
     }
 
-    // Only restrict file type for Mayor's and Occupancy Permit
     if (!allowAnyType && file.type !== "application/pdf") {
       Swal.fire(
         "Invalid File Type",
@@ -119,7 +116,6 @@ export function StepFour() {
 
   return (
     <div>
-      {/* Requirements Section */}
       <h2 className="text-2xl font-bold mb-4">Add Requirements</h2>
       <ol className="text-gray-500 mb-6 list-decimal list-inside">
         <li>Please upload an occupancy permit in PDF format.</li>
@@ -132,7 +128,6 @@ export function StepFour() {
       </ol>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Mayor's Permit Upload */}
         <DropzoneUploader
           label="Business or Mayor's Permit (PDF)"
           file={mayorPermit}
@@ -141,7 +136,6 @@ export function StepFour() {
           multiple={false}
         />
 
-        {/* Occupancy Permit Upload */}
         <DropzoneUploader
           label="Occupancy Permit (PDF)"
           file={occPermit}
@@ -150,7 +144,6 @@ export function StepFour() {
           multiple={false}
         />
 
-        {/* Government ID Upload */}
         <DropzoneUploader
           label="Government ID"
           file={govID}
@@ -159,7 +152,6 @@ export function StepFour() {
           multiple={false}
         />
 
-        {/* Property Title Upload */}
         <DropzoneUploader
           label="Property Title (PDF)"
           file={propTitle}
@@ -171,7 +163,6 @@ export function StepFour() {
 
       <hr className="my-8" />
 
-      {/* Property Verification Section */}
       <h2 className="text-2xl font-bold mb-4">Property Verification</h2>
       <p className="text-gray-500 mb-4">
         Please take two photos of the property (inside and outside). This will

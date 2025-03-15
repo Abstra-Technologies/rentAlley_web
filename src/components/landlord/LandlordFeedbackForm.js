@@ -28,8 +28,8 @@ const LandlordFeedbackForm = ({ review_id, landlord_id, onFeedbackSubmit }) => {
 
       const data = await response.json();
       if (response.ok) {
-        onFeedbackSubmit(data); // Update parent component
-        setFeedbackText(""); // Clear form
+        onFeedbackSubmit(data);
+        setFeedbackText("");
       } else {
         setError(data.error || "Something went wrong.");
       }

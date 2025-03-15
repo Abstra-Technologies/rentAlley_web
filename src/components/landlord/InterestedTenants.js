@@ -88,8 +88,6 @@ export default function InterestedTenants({ unitId, landlordId }) {
     );
     Swal.close();
   };
-  
-  
 
   const handleUpgradeClick = () => {
     Swal.fire({
@@ -103,7 +101,7 @@ export default function InterestedTenants({ unitId, landlordId }) {
       cancelButtonText: "Maybe Later",
     }).then((result) => {
       if (result.isConfirmed) {
-        router.push("/pages/landlord/subscription"); // Navigate to subscription page
+        router.push("/pages/landlord/subscription");
       }
     });
   };
@@ -114,7 +112,6 @@ export default function InterestedTenants({ unitId, landlordId }) {
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button and Header */}
         <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-8 gap-4 sm:gap-0">
           <button
             className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors duration-200"
@@ -128,7 +125,6 @@ export default function InterestedTenants({ unitId, landlordId }) {
           </h2>
         </div>
 
-        {/* Subscription Info Banner */}
         {subscription && (
           <div
             className={`mb-6 p-4 rounded-lg ${
@@ -162,9 +158,7 @@ export default function InterestedTenants({ unitId, landlordId }) {
           </div>
         )}
 
-        {/* Content Card */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          {/* Status Summary */}
           <div className="p-6 border-b border-gray-200">
             <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4">
               <div className="text-sm font-medium text-gray-500">
@@ -201,7 +195,6 @@ export default function InterestedTenants({ unitId, landlordId }) {
             </div>
           </div>
 
-          {/* Tenants Table - Scrollable on Mobile */}
           <div className="overflow-x-auto max-w-full">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-100">

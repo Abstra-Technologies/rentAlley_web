@@ -8,7 +8,7 @@ const LeaseUpload = ({ onFileUpload }) => {
   const onDrop = (acceptedFiles) => {
     const uploadedFile = acceptedFiles[0];
     setFile(uploadedFile);
-    onFileUpload(uploadedFile); // Pass file to parent component
+    onFileUpload(uploadedFile);
   };
 
   const { getRootProps, getInputProps } = useDropzone({

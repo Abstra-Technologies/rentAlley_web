@@ -75,7 +75,6 @@ const LandlordLayout = ({ children }) => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
-      {/* Mobile Menu Button */}
       <div className="md:hidden p-4 bg-white shadow-sm flex justify-between items-center">
         <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
         <button
@@ -90,7 +89,6 @@ const LandlordLayout = ({ children }) => {
         </button>
       </div>
 
-      {/* Sidebar */}
       <div
         className={`${
           isMobileMenuOpen ? "block" : "hidden"
@@ -100,7 +98,6 @@ const LandlordLayout = ({ children }) => {
           <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
         </div>
 
-        {/* Navigation Links */}
         <nav className="px-4 py-2 md:py-0">
           <ul className="space-y-2">
             {menuItems.map(({ href, icon: Icon, label }) => {
@@ -135,7 +132,6 @@ const LandlordLayout = ({ children }) => {
         </nav>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 p-4 md:p-8">{children}</div>
     </div>
   );

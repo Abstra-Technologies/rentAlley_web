@@ -2,10 +2,8 @@ import AmenitiesSelector from "../amenities-selector";
 import usePropertyStore from "../../zustand/propertyStore";
 
 export function StepTwo() {
-  // Access state and actions from Zustand store
   const { property, setProperty } = usePropertyStore();
 
-  // Function to handle amenity changes and update Zustand store
   const handleAmenityChange = (amenity) => {
     const currentAmenities = property.amenities || [];
     const amenityIndex = currentAmenities.indexOf(amenity);
@@ -32,7 +30,6 @@ export function StepTwo() {
         Select the amenities available in your place.
       </p>
 
-      {/* Amenities Section */}
       <div className="mb-8">
         <AmenitiesSelector
           selectedAmenities={property.amenities || []}

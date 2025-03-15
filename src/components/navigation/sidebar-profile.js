@@ -72,7 +72,6 @@ export default function SideNavProfile() {
 
   return (
     <div className="flex-shrink-0">
-      {/* Mobile Header and Dropdown */}
       <div className="md:hidden relative z-30">
         <div className="p-4 bg-white shadow-sm flex justify-between items-center">
           <h1 className="text-xl font-bold text-blue-900">Menu</h1>
@@ -88,7 +87,6 @@ export default function SideNavProfile() {
           </button>
         </div>
 
-        {/* Mobile Dropdown Menu */}
         {isMobileMenuOpen && (
           <div className="absolute w-full bg-white shadow-lg z-30">
             <nav className="px-4 py-2">
@@ -131,7 +129,6 @@ export default function SideNavProfile() {
         )}
       </div>
 
-      {/* Overlay for Mobile */}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-30 md:hidden z-20"
@@ -139,7 +136,6 @@ export default function SideNavProfile() {
         ></div>
       )}
 
-      {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 bg-white shadow-lg min-h-screen">
         <div className="p-6">
           <h1 className="text-xl font-bold text-blue-600 mb-6">Menu</h1>

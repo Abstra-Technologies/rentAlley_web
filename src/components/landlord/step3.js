@@ -7,34 +7,29 @@ import { FaInfoCircle } from "react-icons/fa";
 import { useState } from "react";
 
 export function StepThree() {
-  // Access the property data and actions from Zustand store
   const { property, photos, setProperty, setPhotos } = usePropertyStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Handle file drop
   const onDrop = (acceptedFiles) => {
     const newPhotos = acceptedFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
     }));
     console.log("From step counter: ", newPhotos);
-    setPhotos([...photos, ...newPhotos]); // Add new photos to the existing ones
-    console.log("Current photos state:", [...photos, ...newPhotos]); // Add this line
+    setPhotos([...photos, ...newPhotos]);
+    console.log("Current photos state:", [...photos, ...newPhotos]);
   };
 
-  // Dropzone setup
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: "image/*",
     multiple: true,
   });
 
-  // Handle input changes for property details
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
     let newValue = type === "checkbox" ? (checked ? 1 : 0) : value;
 
-    //totalUnits should be at least 1
     if (name === "totalUnits") {
       if (value === "") {
         newValue = "";
@@ -45,7 +40,6 @@ export function StepThree() {
       }
     }
 
-    // Limit description to 3 paragraphs
     if (name === "propDesc") {
       const paragraphCount = value
         .split("\n")
@@ -58,21 +52,18 @@ export function StepThree() {
     setProperty({ ...property, [name]: newValue });
   };
 
-  // Remove image from preview
   const removeImage = (index) => {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
   return (
     <div className="space-y-8">
-      {/* Property Details */}
       <div className="p-6 border rounded-md shadow-md">
         <h2 className="text-2xl font-bold mb-2">Add a property details</h2>
         <p className="text-gray-500 mb-4">
           You can always change your property details later.
         </p>
         <div className="space-y-4">
-          {/* Units Info */}
           <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-md">
             <p className="font-medium">
               If the property is rented as a whole, then the unit count is 1 by
@@ -95,7 +86,6 @@ export function StepThree() {
             />
           </div>
 
-          {/* Property Description */}
           <div>
             <label className="block text-gray-700 font-medium mb-1">
               Description (Max 3 paragraphs)
@@ -109,7 +99,6 @@ export function StepThree() {
             ></textarea>
           </div>
 
-          {/* Floor Area */}
           <div className="flex items-center space-x-2">
             <div className="flex-grow">
               <label className="block text-gray-700 font-medium mb-1">
@@ -128,13 +117,11 @@ export function StepThree() {
             <span className="text-gray-500">sqm</span>
           </div>
 
-          {/* Property Preferences Checkboxes */}
           <div className="space-y-2">
             <label className="block text-gray-700 font-medium mb-1">
               Property Preferences
             </label>
 
-            {/* Pet-Friendly */}
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -146,7 +133,6 @@ export function StepThree() {
               <label className="text-gray-700">Pet-Friendly</label>
             </div>
 
-            {/* Utility Billing Type */}
             <div>
               <label className="text-gray-700 font-medium flex items-center space-x-2 mt-4">
                 <span>Utility Billing Type</span>
@@ -173,7 +159,6 @@ export function StepThree() {
             </div>
           </div>
 
-          {/* Payment Term Details */}
           <h2 className="text-2xl font-bold mt-4 mb-4">
             Add Payment Term Details
           </h2>
@@ -181,9 +166,7 @@ export function StepThree() {
             You can always change your payment term details later.
           </p>
 
-          {/* Payment Inputs */}
           <div className="space-y-4">
-            {/* Security Deposit */}
             <div>
               <label
                 htmlFor="secDeposit"
@@ -204,7 +187,6 @@ export function StepThree() {
               />
             </div>
 
-            {/* Advanced Payment */}
             <div>
               <label
                 htmlFor="advancedPayment"
@@ -228,7 +210,6 @@ export function StepThree() {
               />
             </div>
 
-            {/* Minimum Stay */}
             <div>
               <label
                 htmlFor="minStay"
@@ -252,7 +233,6 @@ export function StepThree() {
               />
             </div>
 
-            {/* Late Fee */}
             <div>
               <label
                 htmlFor="lateFee"
@@ -273,7 +253,6 @@ export function StepThree() {
               />
             </div>
 
-            {/* Association Dues */}
             <div>
               <label
                 htmlFor="assocDues"
@@ -294,7 +273,6 @@ export function StepThree() {
               />
             </div>
 
-            {/* Payment Frequency */}
             <div>
               <label
                 htmlFor="paymentFrequency"
@@ -320,7 +298,6 @@ export function StepThree() {
               </select>
             </div>
 
-            {/* Utility Billing Info Modal */}
             {isModalOpen && (
               <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm">
@@ -355,7 +332,6 @@ export function StepThree() {
         </div>
       </div>
 
-      {/* Photo Upload */}
       <div className="p-6 border rounded-md shadow-md">
         <h2 className="text-2xl font-bold mb-2">
           Add some photos of your place
@@ -374,7 +350,6 @@ export function StepThree() {
           <p className="font-medium text-gray-700">Drag your photos here</p>
         </div>
 
-        {/* Preview uploaded images */}
         {photos?.length > 0 && (
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
             {photos.map((file, index) => (

@@ -108,7 +108,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  // Approve or Disapprove tenant
   const updateTenantStatus = async (newStatus) => {
     let disapprovalReason = null;
 
@@ -155,10 +154,9 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  // Handle unit occupancy status update
   const toggleUnitStatus = async () => {
-    if (isUpdatingStatus) return; // Prevent multiple clicks
-    
+    if (isUpdatingStatus) return;
+
     setIsUpdatingStatus(true);
     const newStatus = status === "occupied" ? "unoccupied" : "occupied";
 
@@ -230,7 +228,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
           setTenant(response.data);
         }
       } else {
-        // Fallback to previous behavior if no tenant_id is provided
         const response = await axios.get(
           `/api/landlord/prospective/interested-tenants?unitId=${unitId}`
         );
@@ -289,7 +286,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
             `/api/leaseAgreement/deleteLease?unit_id=${unitId}&tenant_id=${tenantId}`
           );
           Swal.fire("Deleted!", "Lease agreement has been deleted.", "success");
-          setLease(null); // Remove lease from state
+          setLease(null);
         } catch (error) {
           console.error("Error deleting lease:", error);
           Swal.fire("Error!", "Failed to delete lease agreement.", "error");
@@ -298,11 +295,11 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     });
   };
 
-  const isTenantApproved = prospectiveStatus === "approved" || status === "occupied";
+  const isTenantApproved =
+    prospectiveStatus === "approved" || status === "occupied";
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Back Button */}
       <button
         onClick={() => router.back()}
         className="flex items-center text-blue-600 hover:text-blue-800 mb-6"
@@ -311,7 +308,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
         Back
       </button>
 
-      {/* Property Header */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
         <div className="h-48 bg-gray-200 relative">
           {unitPhoto ? (
@@ -335,7 +331,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex border-b">
           <button
             className={`px-4 py-3 font-medium text-sm ${
@@ -370,14 +365,11 @@ const LeaseDetails = ({ unitId, tenantId }) => {
         </div>
       </div>
 
-      {/* Content based on active tab */}
       {activeTab === "details" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Tenant Info Card */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
               <div className="flex items-start mb-4">
-                {/* Profile Image */}
                 <div className="w-16 h-16 rounded-full bg-gray-200 mr-4 overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {tenant?.profilePicture ? (
                     <Image
@@ -462,7 +454,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                   </div>
                 </div>
 
-                {/* Valid Government ID Section */}
                 {tenant?.valid_id ? (
                   <div className="mb-6">
                     <p className="text-sm text-gray-500 mb-2">
@@ -496,7 +487,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
             </div>
           </div>
 
-          {/* Lease Agreement Card */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
@@ -509,9 +499,12 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                     <div className="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
                       <LockClosedIcon className="h-8 w-8 text-gray-500" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">Lease Agreement Locked</h3>
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">
+                      Lease Agreement Locked
+                    </h3>
                     <p className="text-gray-600 mb-4">
-                      You must approve this tenant before managing their lease agreement.
+                      You must approve this tenant before managing their lease
+                      agreement.
                     </p>
                     <div className="flex gap-3 mt-2">
                       <button
@@ -531,10 +524,9 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                 </div>
               ) : (
                 <>
-                  {/* Lease Dates Update Section */}
                   <div className="mb-6">
                     <p className="text-md text-gray-500 mb-2">Lease Dates:</p>
-                    {/* Display Start and End Dates */}
+
                     {lease?.start_date && lease?.end_date && (
                       <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
                         <p className="text-gray-700 text-md mb-2">
@@ -586,10 +578,11 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                     </button>
                   </div>
 
-                  {/* Lease Agreement Upload/View/Delete Section */}
                   {lease?.agreement_url ? (
                     <div>
-                      <p className="text-sm text-gray-500 mb-2">Lease Agreement:</p>
+                      <p className="text-sm text-gray-500 mb-2">
+                        Lease Agreement:
+                      </p>
                       <div className="p-3 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between">
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-md bg-green-100 text-green-500 flex items-center justify-center mr-3">
@@ -625,8 +618,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                       <LeaseUpload onFileUpload={handleFileUpload} />
                     </div>
                   )}
-                  
-                  {/* Mark as Unoccupied button - moved inside the lease agreement card */}
+
                   {status === "occupied" && (
                     <div className="mt-6 border-t pt-4">
                       <p className="text-sm text-gray-500 mb-2">Unit Status:</p>
@@ -635,7 +627,9 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                         onClick={toggleUnitStatus}
                         disabled={isUpdatingStatus}
                       >
-                        {isUpdatingStatus ? "Updating..." : "Mark as Unoccupied"}
+                        {isUpdatingStatus
+                          ? "Updating..."
+                          : "Mark as Unoccupied"}
                       </button>
                     </div>
                   )}
