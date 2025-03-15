@@ -95,10 +95,10 @@ export default function InquiryBooking({
 
     if (!selectedDate || !selectedTime) {
       Swal.fire({
-        icon: 'error',
-        title: 'Incomplete Selection',
-        text: 'Please select both date and time.',
-        confirmButtonColor: '#3085d6'
+        icon: "error",
+        title: "Incomplete Selection",
+        text: "Please select both date and time.",
+        confirmButtonColor: "#3085d6",
       });
       return;
     }
@@ -108,32 +108,46 @@ export default function InquiryBooking({
       const response = await axios.post("/api/tenant/visits/schedule-visit", {
         tenant_id,
         unit_id,
-        visit_date: selectedDate.toISOString().split('T')[0],
+        visit_date: selectedDate.toISOString().split("T")[0],
         visit_time: `${selectedTime}:00`,
       });
 
       if (response.status === 200) {
         await Swal.fire({
-          icon: 'success',
-          title: 'Visit Scheduled',
-          text: 'Visit scheduled successfully! Redirecting to Tenant Application...',
-          confirmButtonColor: '#3085d6'
+          icon: "success",
+          title: "Visit Scheduled",
+          text: "Visit scheduled successfully!",
+          confirmButtonColor: "#3085d6",
         });
 
-        router.push(unit_id ? `/pages/tenant/prospective/${unit_id}` : '/pages/find-rent');
+        Swal.fire({
+          title: "Redirecting...",
+          text: "Taking you to the Tenant Application...",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        setTimeout(() => {
+          Swal.close();
+          router.push(unit_id ? `/pages/tenant/prospective/${unit_id}` : "/pages/find-rent");
+        }, 1500); // 1.5 seconds delay for smoother transition
       }
     } catch (error) {
       console.error("Error scheduling visit:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Scheduling Error',
-        text: 'Failed to schedule visit. Please try again.',
-        confirmButtonColor: '#3085d6'
+        icon: "error",
+        title: "Scheduling Error",
+        text: "Failed to schedule visit. Please try again.",
+        confirmButtonColor: "#3085d6",
       });
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleJustSchedule = async (e) => {
     e.preventDefault();

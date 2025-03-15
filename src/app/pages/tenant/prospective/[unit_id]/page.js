@@ -25,6 +25,7 @@ const TenantApplicationForm = () => {
     monthly_income: "",
     address: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user || !unit_id) return;
@@ -110,6 +111,120 @@ const TenantApplicationForm = () => {
     fileInputRef.current.click(); // Trigger file input on dropbox click
   };
 
+  // const handleFormSubmit = async (event) => {
+  //   event.preventDefault();
+  //
+  //   if (!user.tenant_id) {
+  //     return Swal.fire("Error", "Please log in.", "error");
+  //   }
+  //
+  //   if (!selectedFile) {
+  //     return Swal.fire("Error", "Please upload a valid ID.", "error");
+  //   }
+  //
+  //   if (
+  //     !formData.address ||
+  //     !formData.occupation ||
+  //     !formData.employment_type ||
+  //     !formData.monthly_income
+  //   ) {
+  //     return Swal.fire("Error", "All fields are required.", "error");
+  //   }
+  //
+  //   const confirmSubmission = await Swal.fire({
+  //     title: "Are you sure?",
+  //     text: "Do you want to proceed with the submission?",
+  //     icon: "warning",
+  //     showCancelButton: true,
+  //     confirmButtonText: "Yes, submit it!",
+  //     cancelButtonText: "No, cancel",
+  //   });
+  //
+  //   if (!confirmSubmission.isConfirmed) return;
+  //
+  //   // 1. Submit Tenant Information
+  //   try {
+  //     const infoPayload = {
+  //       unit_id: formData.unit_id,
+  //       tenant_id: user.tenant_id,
+  //       address: formData.address,
+  //       occupation: formData.occupation,
+  //       employment_type: formData.employment_type,
+  //       monthly_income: formData.monthly_income,
+  //     };
+  //
+  //     const infoResponse = await axios.put(
+  //       "/api/tenant/prospective/submit-info",
+  //       infoPayload
+  //     );
+  //
+  //     if (infoResponse.status === 200) {
+  //       // 2. Submit Requirements (File)
+  //       if (selectedFile) {
+  //         const fileFormData = new FormData();
+  //         fileFormData.append("file", selectedFile);
+  //         // Append tenant_id, current_home_address to fileFormData
+  //         fileFormData.append("unit_id", formData.unit_id);
+  //         fileFormData.append("tenant_id", user.tenant_id);
+  //
+  //         try {
+  //           const reqResponse = await axios.post(
+  //             "/api/tenant/prospective/submit-reqs",
+  //             fileFormData,
+  //             {
+  //               headers: {
+  //                 "Content-Type": "multipart/form-data",
+  //               },
+  //             }
+  //           );
+  //
+  //           if (reqResponse.status === 201) {
+  //             console.log("Requirements submitted successfully!");
+  //           } else {
+  //             console.error("Failed to submit requirements:", reqResponse.data);
+  //             Swal.fire({
+  //               icon: "error",
+  //               title: "Submission Failed",
+  //               text: `Submission failed: ${reqResponse.data.message || "Unknown error"}`,
+  //             });
+  //           }
+  //         } catch (reqError) {
+  //           console.error("Error submitting requirements:", reqError);
+  //           Swal.fire(
+  //             "Error",
+  //             `Submission failed: ${reqError.message || "Network error"}`,
+  //             "error"
+  //           );
+  //         }
+  //         await Swal.fire("Success", "Submission successful!", "success");
+  //         router.push("/pages/tenant/prospective/success");
+  //       } else {
+  //         Swal.fire(
+  //           "Warning",
+  //           "Tenant information saved, but no file was uploaded.",
+  //           "warning"
+  //         );
+  //       }
+  //     } else {
+  //       console.error(
+  //         "Failed to save tenant info:",
+  //         infoResponse.data || infoResponse.status
+  //       );
+  //       Swal.fire({
+  //         icon: "error",
+  //         title: "Submission Failed",
+  //         text: `Submission failed: ${infoResponse.data?.message || "Failed to save tenant info."}`,
+  //       });
+  //     }
+  //   } catch (infoError) {
+  //     Swal.fire(
+  //       "Error",
+  //       `Submission failed: ${infoError.message || "Network error"}`,
+  //       "error"
+  //     );
+  //   }
+  // };
+
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
@@ -122,10 +237,10 @@ const TenantApplicationForm = () => {
     }
 
     if (
-      !formData.address ||
-      !formData.occupation ||
-      !formData.employment_type ||
-      !formData.monthly_income
+        !formData.address ||
+        !formData.occupation ||
+        !formData.employment_type ||
+        !formData.monthly_income
     ) {
       return Swal.fire("Error", "All fields are required.", "error");
     }
@@ -141,7 +256,18 @@ const TenantApplicationForm = () => {
 
     if (!confirmSubmission.isConfirmed) return;
 
-    // 1. Submit Tenant Information
+    setIsSubmitting(true); // Activate submitting state
+
+    Swal.fire({
+      title: "Submitting...",
+      text: "Please wait while we process your submission.",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
     try {
       const infoPayload = {
         unit_id: formData.unit_id,
@@ -153,80 +279,73 @@ const TenantApplicationForm = () => {
       };
 
       const infoResponse = await axios.put(
-        "/api/tenant/prospective/submit-info",
-        infoPayload
+          "/api/tenant/prospective/submit-info",
+          infoPayload
       );
 
       if (infoResponse.status === 200) {
-        // 2. Submit Requirements (File)
         if (selectedFile) {
           const fileFormData = new FormData();
           fileFormData.append("file", selectedFile);
-          // Append tenant_id, current_home_address to fileFormData
           fileFormData.append("unit_id", formData.unit_id);
           fileFormData.append("tenant_id", user.tenant_id);
 
           try {
             const reqResponse = await axios.post(
-              "/api/tenant/prospective/submit-reqs",
-              fileFormData,
-              {
-                headers: {
-                  "Content-Type": "multipart/form-data",
-                },
-              }
+                "/api/tenant/prospective/submit-reqs",
+                fileFormData,
+                {
+                  headers: { "Content-Type": "multipart/form-data" },
+                }
             );
 
-            if (reqResponse.status === 201) {
-              console.log("✅ Requirements submitted successfully!");
-            } else {
-              console.error("Failed to submit requirements:", reqResponse.data);
-              Swal.fire({
-                icon: "error",
-                title: "Submission Failed",
-                text: `Submission failed: ${reqResponse.data.message || "Unknown error"}`,
-              });
+            if (reqResponse.status !== 201) {
+               new Error(reqResponse.data.message || "Failed to submit requirements.");
             }
           } catch (reqError) {
-            console.error("Error submitting requirements:", reqError);
-            Swal.fire(
-              "Error",
-              `Submission failed: ${reqError.message || "Network error"}`,
-              "error"
-            );
+            await Swal.fire("Error", `Submission failed: ${reqError.message || "Network error"}`, "error");
+            setIsSubmitting(false);
+            return;
           }
-          await Swal.fire("Success", "Submission successful!", "success");
-          // To go to the my units page and not find rent if successful.
-          router.push("/pages/tenant/prospective/success");
-        } else {
-          Swal.fire(
-            "Warning",
-            "Tenant information saved, but no file was uploaded.",
-            "warning"
-          );
         }
-      } else {
-        console.error(
-          "Failed to save tenant info:",
-          infoResponse.data || infoResponse.status
-        );
-        Swal.fire({
-          icon: "error",
-          title: "Submission Failed",
-          text: `Submission failed: ${infoResponse.data?.message || "Failed to save tenant info."}`,
+
+        await Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Submission successful!",
+          confirmButtonColor: "#3085d6",
         });
+
+        await Swal.fire({
+          title: "Redirecting...",
+          text: "Please wait while we process your submission...",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        setTimeout(() => {
+          Swal.close();
+          router.push("/pages/tenant/prospective/success");
+        }, 1500);
+      } else {
+        throw new Error(infoResponse.data?.message || "Failed to save tenant info.");
       }
-    } catch (infoError) {
-      Swal.fire(
-        "Error",
-        `Submission failed: ${infoError.message || "Network error"}`,
-        "error"
-      );
+    } catch (error) {
+      await Swal.fire({
+        icon: "error",
+        title: "Submission Failed",
+        text: `Submission failed: ${error.message || "Network error"}`,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleCancel = () => {
-    router.push("/pages/find-rent"); // Redirect on cancel
+    router.push("/pages/find-rent");
   };
 
   return (
