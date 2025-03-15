@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
 import { io } from "socket.io-client";
-import {useRouter, useSearchParams} from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import useAuth from "../../../../../hooks/useSession";
 import axios from "axios";
 
@@ -29,28 +28,29 @@ export default function Chat() {
     const chat_room = `chat_${[user?.user_id, landlord_id].sort().join("_")}`;
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", { autoConnect: true });
 
+    // Fetch Landlord's Name
     useEffect(() => {
         if (!landlord_id) return;
-
         axios.get(`/api/chat/getLandlordName?landlord_id=${landlord_id}`)
             .then((res) => {
                 if (res.data.landlordName) {
                     setLandlordName(res.data.landlordName);
-                } else {
-                    console.error("No landlord name found");
                 }
             })
             .catch((error) => console.error("Fetch error:", error));
     }, [landlord_id]);
 
-    // Fetch previous chat messages
+    // Load Messages & Listen for New Messages
     useEffect(() => {
         if (!user || !landlord_id) return;
 
         const fetchMessages = async () => {
             try {
-                const response = await axios.get(`/api/chats/messages?chat_room=${chatRoom}`);
-                setMessages(response.data);
+                const response = await axios.get(`/api/chats/messages?chat_room=${chat_room}`);
+                setMessages(response.data.map(msg => ({
+                    ...msg,
+                    isSender: msg.sender_id === user.user_id,  // Fix sender detection
+                })));
             } catch (error) {
                 console.error("Error fetching messages:", error);
             }
@@ -58,35 +58,47 @@ export default function Chat() {
 
         fetchMessages();
 
-        socket.emit("joinRoom", { chatRoom });
+        socket.emit("joinRoom", { chat_room });
 
         socket.on("loadMessages", (loadedMessages) => {
-            setMessages(loadedMessages);
+            setMessages(loadedMessages.map(msg => ({
+                ...msg,
+                isSender: msg.sender_id === user.user_id,
+            })));
         });
 
         socket.on("receiveMessage", (message) => {
-            setMessages((prevMessages) => [...prevMessages, message]);
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                {
+                    ...message,
+                    isSender: message.sender_id === user.user_id,
+                },
+            ]);
         });
 
         return () => {
-            socket.disconnect();
             socket.off("loadMessages");
             socket.off("receiveMessage");
+            socket.disconnect();
         };
-    }, [user, landlord_id]);
+    }, [user, landlord_id, chat_room]);
 
-    // Send message function
+    // Send Message Function
     const sendMessage = () => {
         if (!user || !landlord_id || newMessage.trim() === "") return;
 
         const newMsg = {
-            sender_id: user.tenant_id || user.landlord_id,
+            sender_id: user.user_id,  // Ensure sender_id is always user_id
             sender_type: user.tenant_id ? "tenant" : "landlord",
             receiver_id: landlord_id,
             receiver_type: "landlord",
             message: newMessage,
             chat_room,
         };
+
+        // Update local state first for instant UI update
+        setMessages((prevMessages) => [...prevMessages, { ...newMsg, isSender: true }]);
 
         socket.emit("sendMessage", newMsg);
         setNewMessage("");
@@ -117,24 +129,21 @@ export default function Chat() {
                     {messages.length === 0 ? (
                         <p className="text-center text-gray-500">No messages yet</p>
                     ) : (
-                        messages.map((msg, index) => {
-                            const isUser = msg.sender_id === user?.user_id;
-                            return (
-                                <div key={index} className={`mb-3 flex ${isUser ? "justify-end" : "justify-start"}`}>
-                                    <div className="max-w-[75%] md:max-w-[70%]">
-                                        <p className="text-xs text-gray-500 mb-1 px-1">
-                                            {isUser ? "You" : msg.sender_name}
-                                        </p>
-                                        <div className={`p-2 md:p-3 rounded-lg break-words ${
-                                            isUser ? "bg-blue-600 text-white rounded-br-none"
-                                                : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
-                                        }`}>
-                                            <p className="text-sm md:text-base">{msg.message || "[Encrypted Message]"}</p>
-                                        </div>
+                        messages.map((msg, index) => (
+                            <div key={index} className={`mb-3 flex ${msg.isSender ? "justify-end" : "justify-start"}`}>
+                                <div className="max-w-[75%] md:max-w-[70%]">
+                                    <p className="text-xs text-gray-500 mb-1 px-1">
+                                        {msg.isSender ? "You" : msg.sender_name}
+                                    </p>
+                                    <div className={`p-2 md:p-3 rounded-lg break-words ${
+                                        msg.isSender ? "bg-blue-600 text-white rounded-br-none"
+                                            : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
+                                    }`}>
+                                        <p className="text-sm md:text-base">{msg.message || "[Encrypted Message]"}</p>
                                     </div>
                                 </div>
-                            );
-                        })
+                            </div>
+                        ))
                     )}
                 </div>
 
@@ -150,7 +159,7 @@ export default function Chat() {
                         />
                         <button
                             onClick={sendMessage}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rsounded-r-lg transition-colors flex items-center justify-center min-w-[60px]"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded-r-lg transition-colors flex items-center justify-center min-w-[60px]"
                         >
                             <span className="hidden sm:inline">Send</span>
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor">

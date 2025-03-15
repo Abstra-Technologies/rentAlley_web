@@ -18,8 +18,8 @@ import {
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
 import Link from "next/link";
+import Swal from "sweetalert2";
 
 export default function MyUnit() {
   const { user } = useAuth();
@@ -140,14 +140,22 @@ export default function MyUnit() {
       console.error("Missing landlord_id!");
       return;
     }
-    const chatRoom = `chat_${[user?.user_id, unit.landlord_id]
-      .sort()
-      .join("_")}`;
 
-    router.push(
-      `/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${unit.landlord_id}`
-    );
+    const chatRoom = `chat_${[user?.user_id, unit.landlord_id].sort().join("_")}`;
+    const chatUrl = `/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${unit.landlord_id}`;
+
+    Swal.fire({
+      title: "Redirecting...",
+      text: "Taking you to the chat room...",
+      icon: "info",
+      timer: 1500,
+      showConfirmButton: false,
+      didClose: () => {
+        router.push(chatUrl);
+      },
+    });
   };
+
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen error={error} />;

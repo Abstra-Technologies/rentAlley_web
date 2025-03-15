@@ -26,7 +26,7 @@ const io = new Server(server, {
     },
 });
 
-//region ENCRYPT AND DECRYPT
+//region ENCRYPT AND DECRYPT MESSAGESS
 const encryptMessage = (message) => {
     if (!message || typeof message !== "string") {
         console.error("Encryption Error: Invalid message.");
@@ -79,7 +79,7 @@ io.on("connection", (socket) => {
             }
 
             socket.join(chatRoom);
-            console.log(`👥 User joined room: ${chatRoom}`);
+            console.log(`User joined room: ${chatRoom}`);
 
             const [messages] = await pool.query(
                 `SELECT m.*, u.firstName FROM Message m
