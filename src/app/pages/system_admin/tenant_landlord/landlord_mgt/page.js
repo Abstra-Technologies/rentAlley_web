@@ -42,6 +42,7 @@ export default function LandlordList() {
                 }
                 const data = await response.json();
                 setLandlords(data.landlords);
+
             } catch (error) {
                 setError(error.message);
             } finally {
@@ -50,7 +51,7 @@ export default function LandlordList() {
         };
 
         fetchLandlords();
-    }, []);
+        }, []);
 
     const requestSort = (key) => {
         let direction = "asc";
@@ -61,7 +62,7 @@ export default function LandlordList() {
     };
 
 
-    const handleSuspend = async (userId) => {
+    const handleSuspend = async (userId, email) => {
         const { isConfirmed } = await Swal.fire({
             title: "Are you sure?",
             text: "Do you really want to suspend this account?",
@@ -70,29 +71,65 @@ export default function LandlordList() {
             confirmButtonText: "Yes, suspend it!",
             cancelButtonText: "Cancel",
             confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33"
+            cancelButtonColor: "#d33",
         });
-
         if (!isConfirmed) return;
 
+        const { value: formValues } = await Swal.fire({
+            title: "Additional Details",
+            html:
+                `<input 
+          id="swal-input1" 
+          type="email" 
+          placeholder="Email" 
+          class="swal2-input" 
+          value="${email}" 
+        />` +
+                `<textarea 
+          id="swal-input2" 
+          placeholder="Message (optional)" 
+          class="swal2-textarea"
+        ></textarea>`,
+            focusConfirm: false,
+            preConfirm: () => {
+                const emailInput = document.getElementById("swal-input1").value;
+                const message = document.getElementById("swal-input2").value;
+                if (!emailInput) {
+                    Swal.showValidationMessage("Email is required.");
+                    return;
+                }
+                return { email: emailInput, message };
+            },
+            showCancelButton: true,
+            confirmButtonText: "Submit",
+            cancelButtonText: "Cancel",
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+        });
+
+        if (!formValues) return;
+
         try {
-            await axios.post(`/api/suspendAccount/suspend`, { userId });
+            await axios.post(`/api/suspendAccount/suspend`, {
+                userId,
+                email: formValues.email,
+                message: formValues.message,
+            });
+
             await Swal.fire({
                 title: "Suspended!",
                 text: "Account has been suspended.",
-                icon: "success"
+                icon: "success",
             });
         } catch (error) {
             console.error("Error suspending account:", error);
             await Swal.fire({
                 title: "Error!",
                 text: "Failed to suspend account. Please try again.",
-                icon: "error"
+                icon: "error",
             });
         }
     };
-
-
     const filteredAndSortedLandlords = landlords
         .filter(
             (landlord) =>
@@ -150,6 +187,7 @@ export default function LandlordList() {
                                     {[
                                         { key: "landlord_id", label: "ID" },
                                         { key: "user_id", label: "User ID" },
+                                        { key: "email", label: "Email" },
                                         { key: "is_verified", label: "Verified" },
                                         { key: "createdAt", label: "Created At" },
                                         { key: "actions", label: "Actions" },
@@ -189,6 +227,13 @@ export default function LandlordList() {
                                             >
                                                 {landlord?.user_id}
                                             </TableCell>
+                                            <TableCell
+                                                align="center"
+                                                className="text-blue-600 hover:underline cursor-pointer"
+                                                onClick={() => router.push(`./viewProfile/landlord/${landlord?.user_id}`)}
+                                            >
+                                                {landlord?.email}
+                                            </TableCell>
                                             <TableCell align="center">
                                                 {landlord?.is_verified ? (
                                                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
@@ -217,7 +262,7 @@ export default function LandlordList() {
                                                     variant="contained"
                                                     color="secondary"
                                                     size="small"
-                                                    onClick={() => handleSuspend(landlord?.user_id)}
+                                                    onClick={() => handleSuspend(landlord?.user_id, landlord?.email)}
                                                     style={{ marginLeft: '8px' }}
                                                 >
                                                     Suspend Account

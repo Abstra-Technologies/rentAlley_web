@@ -1,4 +1,5 @@
 import { db } from "../../../lib/db";
+import nodemailer from "nodemailer";
 
 export default async function SuspendAccount(req, res) {
     if (req.method !== "POST") {
@@ -7,7 +8,7 @@ export default async function SuspendAccount(req, res) {
             .json({ error: "Method Not Allowed. Use POST." });
     }
     try {
-        const { userId } = req.body;
+        const { userId, message, email } = req.body;
         if (!userId) {
             return res
                 .status(400)
@@ -20,6 +21,7 @@ export default async function SuspendAccount(req, res) {
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "User not found." });
         }
+        await sendOtpEmail(email, message);
         return res.status(200).json({
             message: "Account suspended successfully."
         });
@@ -29,4 +31,23 @@ export default async function SuspendAccount(req, res) {
             error: "Internal Server Error. Please try again later."
         });
     }
+}
+
+async function sendOtpEmail(toEmail, message) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+        tls: {
+            rejectUnauthorized: false,
+        },
+    });
+
+    await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: toEmail,
+        subject: 'Account Suspended',
+        text: `Your account is: ${message}.`,
+    });
+
+    console.log(`OTP sent to ${toEmail}`);
 }

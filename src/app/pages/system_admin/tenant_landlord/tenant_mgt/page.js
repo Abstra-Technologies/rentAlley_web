@@ -61,7 +61,7 @@ export default function TenantList() {
     };
 
 
-    const handleSuspend = async (userId) => {
+    const handleSuspend = async (userId, email) => {
         const { isConfirmed } = await Swal.fire({
             title: "Are you sure?",
             text: "Do you really want to suspend this account?",
@@ -70,24 +70,73 @@ export default function TenantList() {
             confirmButtonText: "Yes, suspend it!",
             cancelButtonText: "Cancel",
             confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33"
+            cancelButtonColor: "#d33",
         });
-
         if (!isConfirmed) return;
 
+        const { value: formValues } = await Swal.fire({
+            title: "Additional Details",
+            html:
+                `<input 
+          id="swal-input1" 
+          type="email" 
+          placeholder="Email" 
+          class="swal2-input" 
+          value="${email}" 
+        />` +
+                `<textarea 
+          id="swal-input2" 
+          placeholder="Message (optional)" 
+          class="swal2-textarea"
+        ></textarea>`,
+            focusConfirm: false,
+            preConfirm: () => {
+                const emailInput = document.getElementById("swal-input1").value;
+                const message = document.getElementById("swal-input2").value;
+                if (!emailInput) {
+                    Swal.showValidationMessage("Email is required.");
+                    return;
+                }
+                return { email: emailInput, message };
+            },
+            showCancelButton: true,
+            confirmButtonText: "Submit",
+            cancelButtonText: "Cancel",
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+        });
+        if (!formValues) return;
+
         try {
-            await axios.post(`/api/suspendAccount/suspend`, { userId });
+            Swal.fire({
+                title: "Processing...",
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
+            await axios.post(`/api/suspendAccount/suspend`, {
+                userId,
+                email: formValues.email,
+                message: formValues.message,
+            });
+
+            Swal.close();
+
             await Swal.fire({
                 title: "Suspended!",
                 text: "Account has been suspended.",
-                icon: "success"
+                icon: "success",
             });
+            window.location.reload();
         } catch (error) {
+            Swal.close();
             console.error("Error suspending account:", error);
             await Swal.fire({
                 title: "Error!",
                 text: "Failed to suspend account. Please try again.",
-                icon: "error"
+                icon: "error",
             });
         }
     };
@@ -149,6 +198,7 @@ export default function TenantList() {
                                     {[
                                         { key: "tenant_id", label: "ID" },
                                         { key: "user_id", label: "User ID" },
+                                        { key: "email", label: "Email" },
                                         { key: "createdAt", label: "Date Registered" },
                                         { key: "actions", label: "Actions" },
                                     ].map((column) => (
@@ -181,6 +231,8 @@ export default function TenantList() {
                                         <TableRow key={tenant?.tenant_id} hover>
                                             <TableCell align="center">{index + 1}</TableCell>
                                             <TableCell align="center">{tenant?.user_id}</TableCell>
+                                            <TableCell align="center">{tenant?.email}</TableCell>
+
                                             <TableCell align="center">
                                                 {new Date(tenant?.createdAt).toLocaleDateString()}
                                             </TableCell>
@@ -198,7 +250,7 @@ export default function TenantList() {
                                                     variant="contained"
                                                     color="secondary"
                                                     size="small"
-                                                    onClick={() => handleSuspend(tenant?.user_id)}
+                                                    onClick={() => handleSuspend(tenant?.user_id, tenant?.email)}
                                                     style={{ marginLeft: '8px' }}
                                                 >
                                                     Suspend Account
