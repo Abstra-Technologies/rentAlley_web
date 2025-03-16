@@ -10,6 +10,7 @@ import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { logEvent } from "../../../../../utils/gtag";
 import LoadingScreen from "../../../../../components/loadingScreen";
 import {decryptData} from "../../../../../crypto/encrypt";
+import Swal from "sweetalert2";
 
 export default function CoAdminDashboard() {
   const [admins, setAdmins] = useState([]);
@@ -94,21 +95,35 @@ export default function CoAdminDashboard() {
         body: JSON.stringify({ status: newStatus }),
         credentials: "include"
       });
-      
-      if (!res.ok) throw new Error("Failed to update co-admin status");
-      
-      setAdmins(prev => prev.map(admin => 
-        admin.admin_id === admin_id ? {...admin, status: newStatus} : admin
-      ));
-      
-      alert(`Co-admin status updated to ${newStatus}`);
+
+      if (!res.ok) {
+         new Error("Failed to update co-admin status");
+      }
+
+      setAdmins(prev =>
+          prev.map(admin =>
+              admin.admin_id === admin_id ? { ...admin, status: newStatus } : admin
+          )
+      );
+
+      await Swal.fire({
+        title: "Success",
+        text: `Co-admin status updated to ${newStatus}`,
+        icon: "success",
+        confirmButtonText: "OK"
+      });
     } catch (err) {
-      alert(err.message);
+      await Swal.fire({
+        title: "Error!",
+        text: err.message,
+        icon: "error",
+        confirmButtonText: "OK"
+      });
     }
   };
 
   const handleAddCoAdmin = () => {
-    logEvent("page_view", "Navigation", "Add Co-Admin Page", 1); // Track page view in GA
+    logEvent("page_view", "Navigation", "Add Co-Admin Page", 1);
     router.push("/pages/system_admin/co_admin/create");
   };
 
@@ -185,12 +200,7 @@ export default function CoAdminDashboard() {
                           >
                             <FaEye className="w-4 h-4 mr-1" /> View Details
                           </button>
-                          <button 
-                            className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center" 
-                            onClick={() => handleDelete(admin.admin_id)}
-                          >
-                            <FaTrash className="w-4 h-4 mr-1" /> Delete
-                          </button>
+
                         </div>
                       </td>
                     </tr>
