@@ -25,12 +25,11 @@ const TenantApplicationForm = () => {
     monthly_income: "",
     address: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user || !unit_id) return;
 
-    // Check if tenant has already applied
     const checkTenantApplication = async () => {
       try {
         const response = await axios.get(
@@ -95,7 +94,7 @@ const TenantApplicationForm = () => {
   }
 
   const handleFileSelect = (event) => {
-    const file = event.target.files[0]; // Get only the first file
+    const file = event.target.files[0];
     if (file) {
       // File Size validation
       if (file.size > 15 * 1024 * 1024) {
@@ -108,7 +107,7 @@ const TenantApplicationForm = () => {
   };
 
   const handleDropboxClick = () => {
-    fileInputRef.current.click(); // Trigger file input on dropbox click
+    fileInputRef.current.click();
   };
 
   const handleFormSubmit = async (event) => {
@@ -123,10 +122,10 @@ const TenantApplicationForm = () => {
     }
 
     if (
-        !formData.address ||
-        !formData.occupation ||
-        !formData.employment_type ||
-        !formData.monthly_income
+      !formData.address ||
+      !formData.occupation ||
+      !formData.employment_type ||
+      !formData.monthly_income
     ) {
       return Swal.fire("Error", "All fields are required.", "error");
     }
@@ -142,7 +141,7 @@ const TenantApplicationForm = () => {
 
     if (!confirmSubmission.isConfirmed) return;
 
-    setIsSubmitting(true); // Activate submitting state
+    setIsSubmitting(true);
 
     Swal.fire({
       title: "Submitting...",
@@ -165,8 +164,8 @@ const TenantApplicationForm = () => {
       };
 
       const infoResponse = await axios.put(
-          "/api/tenant/prospective/submit-info",
-          infoPayload
+        "/api/tenant/prospective/submit-info",
+        infoPayload
       );
 
       if (infoResponse.status === 200) {
@@ -178,18 +177,24 @@ const TenantApplicationForm = () => {
 
           try {
             const reqResponse = await axios.post(
-                "/api/tenant/prospective/submit-reqs",
-                fileFormData,
-                {
-                  headers: { "Content-Type": "multipart/form-data" },
-                }
+              "/api/tenant/prospective/submit-reqs",
+              fileFormData,
+              {
+                headers: { "Content-Type": "multipart/form-data" },
+              }
             );
 
             if (reqResponse.status !== 201) {
-               new Error(reqResponse.data.message || "Failed to submit requirements.");
+              new Error(
+                reqResponse.data.message || "Failed to submit requirements."
+              );
             }
           } catch (reqError) {
-            await Swal.fire("Error", `Submission failed: ${reqError.message || "Network error"}`, "error");
+            await Swal.fire(
+              "Error",
+              `Submission failed: ${reqError.message || "Network error"}`,
+              "error"
+            );
             setIsSubmitting(false);
             return;
           }
@@ -199,25 +204,13 @@ const TenantApplicationForm = () => {
           icon: "success",
           title: "Success",
           text: "Submission successful!",
-          confirmButtonColor: "#3085d6",
         });
 
-        await Swal.fire({
-          title: "Redirecting...",
-          text: "Please wait while we process your submission...",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          didOpen: () => {
-            Swal.showLoading();
-          },
-        });
-
-        setTimeout(() => {
-          Swal.close();
-          router.push("/pages/tenant/prospective/success");
-        }, 1500);
+        router.push("/pages/tenant/prospective/success");
       } else {
-        throw new Error(infoResponse.data?.message || "Failed to save tenant info.");
+        throw new Error(
+          infoResponse.data?.message || "Failed to save tenant info."
+        );
       }
     } catch (error) {
       await Swal.fire({
