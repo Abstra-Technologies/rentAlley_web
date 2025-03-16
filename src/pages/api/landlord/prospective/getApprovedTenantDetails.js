@@ -49,10 +49,22 @@ export default async function handler(req, res) {
     let decryptedAddress = tenantDetails[0].address.toString("utf8");
 
     res.status(200).json({
-      firstName: tenantDetails[0].firstName,
-      lastName: tenantDetails[0].lastName,
-      birthDate: tenantDetails[0].birthDate,
-      phoneNumber: tenantDetails[0].phoneNumber,
+      firstName: decryptData(
+        JSON.parse(tenantDetails[0].firstName),
+        encryptionSecret
+      ),
+      lastName: decryptData(
+        JSON.parse(tenantDetails[0].lastName),
+        encryptionSecret
+      ),
+      birthDate: decryptData(
+        JSON.parse(tenantDetails[0].birthDate),
+        encryptionSecret
+      ),
+      phoneNumber: decryptData(
+        JSON.parse(tenantDetails[0].phoneNumber),
+        encryptionSecret
+      ),
       monthlyIncome: tenantDetails[0].monthly_income,
       occupation: tenantDetails[0].occupation,
       employmentType: tenantDetails[0].employment_type,
