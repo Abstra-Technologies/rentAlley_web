@@ -15,13 +15,26 @@ export default async function deleteLease(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { unit_id, tenant_id } = req.query;
+  const { unit_id } = req.query;
 
   let connection;
 
   try {
     connection = await db.getConnection();
     await connection.beginTransaction();
+
+    const [tenantRows] = await connection.execute(
+      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
+      [unit_id]
+    );
+
+    if (tenantRows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No approved tenant found for this unit" });
+    }
+
+    const tenant_id = tenantRows[0].tenant_id;
 
     // Retrieve the lease agreement file URL
     const [leaseRows] = await connection.execute(
@@ -84,7 +97,7 @@ export default async function deleteLease(req, res) {
 
     await connection.commit();
     res.status(200).json({
-      message: "Lease agreement and associated detailes deleted successfully",
+      message: "Lease agreement and associated details deleted successfully",
     });
   } catch (error) {
     if (connection) await connection.rollback();
