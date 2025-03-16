@@ -25,7 +25,7 @@ const TenantApplicationForm = () => {
     monthly_income: "",
     address: "",
   });
-  const [setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user || !unit_id) return;
@@ -96,7 +96,7 @@ const TenantApplicationForm = () => {
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      // File Size validation
+
       if (file.size > 15 * 1024 * 1024) {
         Swal.fire("Error", "File size exceeds 15MB!", "error");
         return;
@@ -234,9 +234,8 @@ const TenantApplicationForm = () => {
           Tenant Application Form
         </h1>
 
-        {/* Steps to Follow */}
         <div className="mb-6">
-          {/* Back Button */}
+
           <button
             onClick={() => router.back()}
             className="absolute top-6 left-6 flex items-center text-gray-700 hover:text-gray-900"
@@ -252,7 +251,7 @@ const TenantApplicationForm = () => {
           </ol>
         </div>
 
-        {/* Dropbox Section */}
+
         <div className="mb-6">
           <h3 className="text-sm text-gray-500 mb-1">Dropbox Below:</h3>
           <p className="text-xs text-gray-500 mb-2">
@@ -270,7 +269,7 @@ const TenantApplicationForm = () => {
             </p>
             <p className="text-xs text-gray-500">Max File Size: 15MB</p>
 
-            {/* Hidden File Input */}
+
             <input
               type="file"
               accept="image/jpeg, image/png"
@@ -287,14 +286,14 @@ const TenantApplicationForm = () => {
           </div>
         </div>
 
-        {/* Application Form Section */}
+
         <form onSubmit={handleFormSubmit}>
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-2">
               2. Kindly fill up the application form.
             </h2>
 
-            {/* First Name */}
+
             <div className="mb-4">
               <label
                 htmlFor="firstName"
@@ -314,7 +313,6 @@ const TenantApplicationForm = () => {
               />
             </div>
 
-            {/* Last Name */}
             <div className="mb-4">
               <label
                 htmlFor="lastName"
@@ -334,7 +332,6 @@ const TenantApplicationForm = () => {
               />
             </div>
 
-            {/* Date of Birth */}
             <div className="mb-4">
               <label
                 htmlFor="birthDate"
@@ -364,7 +361,6 @@ const TenantApplicationForm = () => {
               </div>
             </div>
 
-            {/* Email Address */}
             <div className="mb-4">
               <label
                 htmlFor="email"
@@ -384,7 +380,6 @@ const TenantApplicationForm = () => {
               />
             </div>
 
-            {/* Mobile Number */}
             <div className="mb-4">
               <label
                 htmlFor="mobile"
@@ -482,7 +477,6 @@ const TenantApplicationForm = () => {
               </select>
             </div>
 
-            {/* Address */}
             <div className="mb-4">
               <label
                 htmlFor="address"
