@@ -42,8 +42,8 @@ export default function MyUnit() {
 
         if (data) {
           setUnit(data);
-          setIsSecurityPaid(data.is_security_deposit_paid || 0);
-          setIsAdvancedPaid(data.is_advance_payment_paid || 0);
+          setIsSecurityPaid(!!data.is_security_deposit_paid);
+          setIsAdvancedPaid(!!data.is_advance_payment_paid);
         }
       } catch (err) {
         setError(err.response?.data?.message);
@@ -132,14 +132,15 @@ export default function MyUnit() {
     }, 1500);
   };
 
-
   const handleContactLandlord = () => {
     if (!unit?.landlord_id) {
       console.error("Missing landlord_id!");
       return;
     }
 
-    const chatRoom = `chat_${[user?.user_id, unit.landlord_id].sort().join("_")}`;
+    const chatRoom = `chat_${[user?.user_id, unit.landlord_id]
+      .sort()
+      .join("_")}`;
     const chatUrl = `/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${unit.landlord_id}`;
 
     Swal.fire({
@@ -153,7 +154,6 @@ export default function MyUnit() {
       },
     });
   };
-
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen error={error} />;
@@ -437,7 +437,8 @@ export default function MyUnit() {
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Other Payment Option
                 </h3>
-                {(requiresAdvanced && !isAdvancedPaid) || (requiresSecurity && !isSecurityPaid) ? (
+                {(requiresAdvanced && !isAdvancedPaid) ||
+                (requiresSecurity && !isSecurityPaid) ? (
                   <button
                     onClick={() =>
                       router.push(
@@ -509,21 +510,22 @@ const ErrorScreen = ({ error }) => (
         <div className="bg-red-50 p-4 rounded-full mb-6">
           <XCircleIcon className="h-16 w-16 text-red-500" />
         </div>
-        
+
         <h2 className="text-2xl font-bold text-gray-800 mb-3">
           No Active Lease Agreement
         </h2>
-        
+
         <p className="text-gray-600 mb-2 text-center">
           You don't currently have an active lease agreement with any unit.
         </p>
-        
+
         <div className="bg-red-50 p-3 rounded-lg w-full mb-6 mt-2">
           <p className="text-red-600 text-sm font-medium">
-            {error || "Please complete the application process to establish a lease"}
+            {error ||
+              "Please complete the application process to establish a lease"}
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full">
           <button
             onClick={() => window.location.reload()}
