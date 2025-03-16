@@ -18,6 +18,8 @@ import {
 } from "@mui/material";
 import { Eye } from "lucide-react";
 import LoadingScreen from "../../../../../components/loadingScreen";
+import Swal from "sweetalert2";
+import axios from "axios";
 
 export default function TenantList() {
     const [tenants, setTenants] = useState([]);
@@ -50,7 +52,6 @@ export default function TenantList() {
         fetchTenants();
     }, []);
 
-    // Sorting Function
     const requestSort = (key) => {
         let direction = "asc";
         if (sortConfig.key === key && sortConfig.direction === "asc") {
@@ -59,7 +60,39 @@ export default function TenantList() {
         setSortConfig({ key, direction });
     };
 
-    // Filter and Sort Tenants
+
+    const handleSuspend = async (userId) => {
+        const { isConfirmed } = await Swal.fire({
+            title: "Are you sure?",
+            text: "Do you really want to suspend this account?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, suspend it!",
+            cancelButtonText: "Cancel",
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33"
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            await axios.post(`/api/suspendAccount/suspend`, { userId });
+            await Swal.fire({
+                title: "Suspended!",
+                text: "Account has been suspended.",
+                icon: "success"
+            });
+        } catch (error) {
+            console.error("Error suspending account:", error);
+            await Swal.fire({
+                title: "Error!",
+                text: "Failed to suspend account. Please try again.",
+                icon: "error"
+            });
+        }
+    };
+
+
     const filteredAndSortedTenants = tenants
         .filter(
             (tenant) =>
@@ -145,21 +178,30 @@ export default function TenantList() {
                                     </TableRow>
                                 ) : (
                                     filteredAndSortedTenants.map((tenant, index) => (
-                                        <TableRow key={tenant.tenant_id} hover>
+                                        <TableRow key={tenant?.tenant_id} hover>
                                             <TableCell align="center">{index + 1}</TableCell>
-                                            <TableCell align="center">{tenant.user_id}</TableCell>
+                                            <TableCell align="center">{tenant?.user_id}</TableCell>
                                             <TableCell align="center">
-                                                {new Date(tenant.createdAt).toLocaleDateString()}
+                                                {new Date(tenant?.createdAt).toLocaleDateString()}
                                             </TableCell>
                                             <TableCell align="center">
                                                 <Button
                                                     variant="contained"
                                                     color="primary"
                                                     size="small"
-                                                    onClick={() => router.push(`./viewProfile/tenant/${tenant.user_id}`)}
+                                                    onClick={() => router.push(`./viewProfile/tenant/${tenant?.user_id}`)}
                                                     startIcon={<Eye size={16} />}
                                                 >
                                                     View
+                                                </Button>
+                                                <Button
+                                                    variant="contained"
+                                                    color="secondary"
+                                                    size="small"
+                                                    onClick={() => handleSuspend(tenant?.user_id)}
+                                                    style={{ marginLeft: '8px' }}
+                                                >
+                                                    Suspend Account
                                                 </Button>
                                             </TableCell>
                                         </TableRow>

@@ -86,19 +86,7 @@ export default function AdminDashboard() {
           ></iframe>
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={handleDeleteAccount}
-            className={`px-6 py-3 text-white font-semibold rounded-lg transition-all duration-300 ease-in-out ${
-              isDeleting
-                ? "bg-gray-500 cursor-not-allowed"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Deleting..." : "Delete Account"}
-          </button>
-        </div>
+
       </div>
     </div>
   );

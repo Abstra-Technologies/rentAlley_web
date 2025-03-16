@@ -18,6 +18,8 @@ import {
 } from "@mui/material";
 import { Eye } from "lucide-react";
 import LoadingScreen from "../../../../../components/loadingScreen";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 export default function LandlordList() {
     const [landlords, setLandlords] = useState([]);
@@ -36,7 +38,7 @@ export default function LandlordList() {
                 const response = await fetch("/api/landlord/list");
 
                 if (!response.ok) {
-                    throw new Error("Failed to fetch landlords.");
+                     new Error("Failed to fetch landlords.");
                 }
                 const data = await response.json();
                 setLandlords(data.landlords);
@@ -50,7 +52,6 @@ export default function LandlordList() {
         fetchLandlords();
     }, []);
 
-    // Sorting Function
     const requestSort = (key) => {
         let direction = "asc";
         if (sortConfig.key === key && sortConfig.direction === "asc") {
@@ -59,7 +60,39 @@ export default function LandlordList() {
         setSortConfig({ key, direction });
     };
 
-    // Filter and Sort Landlords
+
+    const handleSuspend = async (userId) => {
+        const { isConfirmed } = await Swal.fire({
+            title: "Are you sure?",
+            text: "Do you really want to suspend this account?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, suspend it!",
+            cancelButtonText: "Cancel",
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33"
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            await axios.post(`/api/suspendAccount/suspend`, { userId });
+            await Swal.fire({
+                title: "Suspended!",
+                text: "Account has been suspended.",
+                icon: "success"
+            });
+        } catch (error) {
+            console.error("Error suspending account:", error);
+            await Swal.fire({
+                title: "Error!",
+                text: "Failed to suspend account. Please try again.",
+                icon: "error"
+            });
+        }
+    };
+
+
     const filteredAndSortedLandlords = landlords
         .filter(
             (landlord) =>
@@ -147,17 +180,17 @@ export default function LandlordList() {
                                     </TableRow>
                                 ) : (
                                     filteredAndSortedLandlords.map((landlord, index) => (
-                                        <TableRow key={landlord.landlord_id} hover>
+                                        <TableRow key={landlord?.landlord_id} hover>
                                             <TableCell align="center">{index + 1}</TableCell>
                                             <TableCell
                                                 align="center"
                                                 className="text-blue-600 hover:underline cursor-pointer"
-                                                onClick={() => router.push(`./viewProfile/landlord/${landlord.user_id}`)}
+                                                onClick={() => router.push(`./viewProfile/landlord/${landlord?.user_id}`)}
                                             >
-                                                {landlord.user_id}
+                                                {landlord?.user_id}
                                             </TableCell>
                                             <TableCell align="center">
-                                                {landlord.is_verified ? (
+                                                {landlord?.is_verified ? (
                                                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                             ✅ Yes
                           </span>
@@ -168,19 +201,27 @@ export default function LandlordList() {
                                                 )}
                                             </TableCell>
                                             <TableCell align="center">
-                                                {new Date(landlord.createdAt).toLocaleDateString()}
+                                                {new Date(landlord?.createdAt).toLocaleDateString()}
                                             </TableCell>
                                             <TableCell align="center">
                                                 <Button
                                                     variant="contained"
                                                     color="primary"
                                                     size="small"
-                                                    onClick={() => router.push(`./viewProfile/landlord/${landlord.user_id}`)}
+                                                    onClick={() => router.push(`./viewProfile/landlord/${landlord?.user_id}`)}
                                                     startIcon={<Eye size={16} />}
                                                 >
                                                     View
                                                 </Button>
-
+                                                <Button
+                                                    variant="contained"
+                                                    color="secondary"
+                                                    size="small"
+                                                    onClick={() => handleSuspend(landlord?.user_id)}
+                                                    style={{ marginLeft: '8px' }}
+                                                >
+                                                    Suspend Account
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))
