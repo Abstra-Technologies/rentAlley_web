@@ -343,7 +343,7 @@ export default function MyUnit() {
                       <p className="text-sm text-gray-500">Monthly Rent</p>
                     </div>
                     <p className="text-xl font-bold text-indigo-600">
-                      ₱{unit.rent_amount?.toLocaleString() || 0}
+                      ₱{Number(unit.rent_amount || 0).toLocaleString() || 0}
                     </p>
                   </div>
 
@@ -353,7 +353,7 @@ export default function MyUnit() {
                       <p className="text-sm text-gray-500">Security Deposit</p>
                     </div>
                     <p className="text-xl font-bold text-indigo-600">
-                      ₱{unit.sec_deposit?.toLocaleString() || 0}
+                      ₱{Number(unit.sec_deposit || 0).toLocaleString()}
                     </p>
                     {requiresSecurity && (
                       <PaymentStatus
@@ -403,7 +403,7 @@ export default function MyUnit() {
                     </div>
                     <div className="flex items-center">
                       <span className="font-bold mr-2">
-                        ₱{unit.sec_deposit?.toLocaleString()}
+                        ₱{Number(unit.sec_deposit || 0).toLocaleString()}
                       </span>
                       <ArrowRightIcon className="h-4 w-4" />
                     </div>
