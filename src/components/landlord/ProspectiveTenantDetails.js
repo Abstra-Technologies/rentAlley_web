@@ -130,13 +130,6 @@ const ProspectiveTenantDetails = () => {
 
       await axios.put("/api/landlord/prospective/update-status", payload);
 
-      if (newStatus === "approved") {
-        await axios.put("/api/landlord/propertyStatus/update", {
-          unitId,
-          status: "occupied",
-        });
-      }
-
       setApplicationStatus(newStatus);
 
       Swal.fire({

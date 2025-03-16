@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
     const [tenantDetails] = await connection.execute(
       `SELECT t.user_id, t.occupation, t.employment_type, t.monthly_income, t.address,
-                    u.firstName, u.lastName, u.birthDate, u.phoneNumber
+                    u.firstName, u.lastName, u.birthDate, u.phoneNumber, u.email
             FROM Tenant t
             JOIN User u ON t.user_id = u.user_id
             WHERE t.tenant_id = ?`,
@@ -65,6 +65,7 @@ export default async function handler(req, res) {
         JSON.parse(tenantDetails[0].phoneNumber),
         encryptionSecret
       ),
+      email: decryptData(JSON.parse(tenantDetails[0].email), encryptionSecret),
       monthlyIncome: tenantDetails[0].monthly_income,
       occupation: tenantDetails[0].occupation,
       employmentType: tenantDetails[0].employment_type,

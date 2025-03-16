@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Swal from "sweetalert2";
 import { FaArrowLeft } from "react-icons/fa";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   DocumentTextIcon,
   EnvelopeIcon,
@@ -33,7 +33,6 @@ const LeaseDetails = ({ unitId }) => {
   const [propertyName, setPropertyName] = useState("");
   const [unitPhoto, setUnitPhoto] = useState("");
   const [activeTab, setActiveTab] = useState("details");
-  const [prospectiveStatus, setProspectiveStatus] = useState("pending");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -163,6 +162,8 @@ const LeaseDetails = ({ unitId }) => {
         const response = await axios.get(
           `/api/landlord/prospective/getApprovedTenantDetails?unit_id=${unitId}`
         );
+
+        console.log("Tenant API Response:", response.data);
         if (response.data) {
           setTenant(response.data);
         }
@@ -355,7 +356,7 @@ const LeaseDetails = ({ unitId }) => {
                   <div>
                     <p className="text-sm text-gray-500">Monthly Income:</p>
                     <p className="text-gray-800 font-medium">
-                      {tenant?.monthly_income?.replace("_", "-")}
+                      {tenant?.monthlyIncome?.replace("_", "-")}
                     </p>
                   </div>
                 </div>
@@ -365,7 +366,7 @@ const LeaseDetails = ({ unitId }) => {
                   <div>
                     <p className="text-sm text-gray-500">Employment Status:</p>
                     <p className="text-gray-800 font-medium">
-                      {tenant?.employment_type}
+                      {tenant?.employmentType}
                     </p>
                   </div>
                 </div>
@@ -380,7 +381,7 @@ const LeaseDetails = ({ unitId }) => {
                   </div>
                 </div>
 
-                {tenant?.valid_id ? (
+                {tenant?.validId ? (
                   <div className="mb-6">
                     <p className="text-sm text-gray-500 mb-2">
                       Valid Government ID:
@@ -395,7 +396,7 @@ const LeaseDetails = ({ unitId }) => {
                             Tenant's Valid ID
                           </p>
                           <Link
-                            href={tenant?.valid_id}
+                            href={tenant?.validId}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-500 hover:underline"
@@ -514,18 +515,24 @@ const LeaseDetails = ({ unitId }) => {
                   </div>
                 )}
 
-                {status === "occupied" && (
-                  <div className="mt-6 border-t pt-4">
-                    <p className="text-sm text-gray-500 mb-2">Unit Status:</p>
-                    <button
-                      className="px-4 py-2 bg-yellow-500 text-white font-medium rounded-lg shadow-md hover:bg-yellow-600 transition duration-300 disabled:opacity-50"
-                      onClick={toggleUnitStatus}
-                      disabled={isUpdatingStatus}
-                    >
-                      {isUpdatingStatus ? "Updating..." : "Mark as Unoccupied"}
-                    </button>
-                  </div>
-                )}
+                <div className="mt-6 border-t pt-4">
+                  <p className="text-sm text-gray-500 mb-2">Unit Status:</p>
+                  <button
+                    className={`px-4 py-2 text-white font-medium rounded-lg shadow-md transition duration-300 disabled:opacity-50 ${
+                      status === "occupied"
+                        ? "bg-yellow-500 hover:bg-yellow-600"
+                        : "bg-green-500 hover:bg-green-600"
+                    }`}
+                    onClick={toggleUnitStatus}
+                    disabled={isUpdatingStatus}
+                  >
+                    {isUpdatingStatus
+                      ? "Updating..."
+                      : status === "occupied"
+                      ? "Mark as Unoccupied"
+                      : "Mark as Occupied"}
+                  </button>
+                </div>
               </>
             </div>
           </div>

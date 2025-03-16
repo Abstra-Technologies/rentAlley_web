@@ -229,7 +229,7 @@ const ViewUnitPage = () => {
                     )
                   }
                 >
-                  <div className="h-32 bg-blue-50 flex items-center justify-center">
+                  <div className="h-32 bg-blue-50 flex items-center justify-center cursor-pointer">
                     <div className="text-center">
                       <HomeIcon className="h-12 w-12 text-blue-600 mx-auto" />
                       <h3 className="text-xl font-bold text-gray-800">
