@@ -13,7 +13,7 @@ const useAnnouncementStore = create(
             resetForm: () => set({ title: "", message: "", targetAudience: "all" }),
         }),
         {
-            name: "announcement-form", // Key in localStorage
+            name: "announcement-form",
         }
     )
 );

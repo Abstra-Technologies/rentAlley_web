@@ -28,7 +28,6 @@ export default async function getAnnoucementDetails(req, res) {
         const { title, message, target_audience } = req.body;
 
         try {
-            //  at least one field is updated
             if (!title && !message && !target_audience) {
                 return res.status(400).json({ success: false, message: "No updates provided" });
             }

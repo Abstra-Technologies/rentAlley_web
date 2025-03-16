@@ -64,10 +64,10 @@ export default async function handler(req, res) {
     }
 
     if(rows[0].status === "deactivated") {
-      return res.redirect(`/pages/auth/login?error=${encodeURIComponent("User Account Deactivated snce you requestd for deletion. Contact Support.")}`);
+      return res.redirect(`/pages/auth/login?error=${encodeURIComponent("Your Account is DEACTIVATED since you requested your account for deletion. Contact Support Instead..")}`);
     }
     if(rows[0].status === "suspended") {
-      return res.redirect(`/pages/auth/login?error=${encodeURIComponent("User Account SUSPENDED. Contact Support.")}`);
+      return res.redirect(`/pages/auth/login?error=${encodeURIComponent("User Account SUSPENDED. Please Contact Support.")}`);
     }
 
     const dbUser = rows[0];

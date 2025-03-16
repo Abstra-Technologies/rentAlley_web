@@ -10,7 +10,6 @@ export default async function deleteAnnoucement(req, res) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
 
-        // Decode JWT to get the logged-in user
         const secretKey = process.env.JWT_SECRET;
         const decoded = jwt.verify(cookies.token, secretKey);
         if (!decoded || !decoded.admin_id) {

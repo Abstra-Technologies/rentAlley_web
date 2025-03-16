@@ -26,7 +26,7 @@ export default async function getSubscription(req, res) {
 
         // Define listing limits per plan
         // maxUnits is the propertyLisitn they can add.
-
+        // this is he one shown on the current kimit plane on ui.
         const listingLimits = {
             "Free Plan": { maxProperties: 1, maxUnits: 2, maxMaintenanceRequest: 5, maxReports: 3, maxBilling: 2, maxProspect: 3 },
             "Standard Plan": { maxProperties: 5, maxUnits: 2, maxMaintenanceRequest: 10, maxReports: Infinity, maxBilling: 10, maxProspect: 10 },

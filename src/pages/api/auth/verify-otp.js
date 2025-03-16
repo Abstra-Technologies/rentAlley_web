@@ -87,7 +87,7 @@ export default async function VerifyOtpCode(req, res) {
         const lastName = await decryptData(encryptedLastName, process.env.ENCRYPTION_SECRET);
 
         const userType = userResult[0].userType;
-        console.log("Decrypted User Data:", { firstName, lastName, userType }); // ✅ Debugging step
+        console.log("Decrypted User Data:", { firstName, lastName, userType });
 
         const newToken = await new SignJWT({ user_id, userType, firstName, lastName })
             .setProtectedHeader({ alg: 'HS256' })

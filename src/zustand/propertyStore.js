@@ -1,7 +1,6 @@
 import axios from "axios";
 import { create } from "zustand";
 
-// Define the Zustand store
 const usePropertyStore = create((set) => ({
   property: {
     propertyName: "",
@@ -110,14 +109,10 @@ const usePropertyStore = create((set) => ({
         p.property_id === id ? { ...p, ...updatedData } : p
       ),
     })),
-  // Set uploaded photos
   setPhotos: (photos) => set({ photos }),
-  // Set Document Files
   setMayorPermit: (file) => set({ mayorPermit: file }),
   setOccPermit: (file) => set({ occPermit: file }),
-  // Set Indoor Photo File
   setIndoorPhoto: (file) => set({ indoorPhoto: file }),
-  // Set Outdoor Photo File
   setOutdoorPhoto: (file) => set({ outdoorPhoto: file }),
   setGovID: (file) => set({ govID: file }),
   setPropTitle: (file) => set({ propTitle: file }),
