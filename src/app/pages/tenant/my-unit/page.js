@@ -16,6 +16,7 @@ import {
   MapPinIcon,
   KeyIcon,
   CreditCardIcon,
+  PencilSquareIcon
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -164,7 +165,7 @@ export default function MyUnit() {
     (!requiresSecurity || isSecurityPaid) &&
     (!requiresAdvanced || isAdvancedPaid);
 
-  // Status badge color logic
+ 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "active":
@@ -176,7 +177,7 @@ export default function MyUnit() {
     }
   };
 
-  // Payment status indicators
+  
   const PaymentStatus = ({ isPaid, label }) => (
     <div className="flex items-center gap-2 text-sm">
       {isPaid ? (
@@ -190,7 +191,7 @@ export default function MyUnit() {
     </div>
   );
 
-  // Format complete address
+  
   const formatAddress = () => {
     if (!unit) return "";
 
@@ -246,13 +247,23 @@ export default function MyUnit() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-indigo-900">My Unit</h1>
 
-          <button
-            onClick={handleContactLandlord}
-            className="mt-3 sm:mt-0 flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors"
-          >
-            <ChatBubbleLeftRightIcon className="h-5 w-5" />
-            <span>Contact Landlord</span>
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={handleContactLandlord}
+              className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors"
+            >
+              <ChatBubbleLeftRightIcon className="h-5 w-5" />
+              <span>Contact Landlord</span>
+            </button>
+
+            <button
+              onClick={() => router.push("/pages/tenant/review")}
+              className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors"
+            >
+              <PencilSquareIcon className="h-5 w-5" />
+              <span>Unit Feedback</span>
+            </button>
+          </div>
         </div>
 
         {unit && (
