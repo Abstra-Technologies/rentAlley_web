@@ -22,7 +22,6 @@ export default async function verify2faOtp(req, res) {
             return res.status(401).json({ error: "Invalid or expired OTP" });
         }
 
-        // Retrieve user type from the User table
         const [users] = await db.query(
             "SELECT user_id, userType FROM User WHERE user_id = ?",
             [user_id]

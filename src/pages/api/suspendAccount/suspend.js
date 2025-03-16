@@ -15,8 +15,8 @@ export default async function SuspendAccount(req, res) {
                 .json({ error: "Missing required field: userId." });
         }
         const [result] = await db.query(
-            "UPDATE User SET is_active = ? WHERE user_id = ?",
-            [0, userId]
+            "UPDATE User SET status = ? WHERE user_id = ?",
+            ['suspended', userId]
         );
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "User not found." });

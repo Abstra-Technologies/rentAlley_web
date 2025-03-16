@@ -31,19 +31,6 @@ export default async function ReactivateAccount(req, res){
                 return res.status(400).json({ error: "Landlord account not found." });
             }
 
-            const landlordId = landlordRows[0].landlord_id;
-            console.log("Landlord found:", landlordId);
-
-            await db.query(`UPDATE Property SET status = 'active' WHERE landlord_id = ?`, [landlordId]);
-            await db.query(
-                `UPDATE Unit u 
-                 JOIN Property p ON u.property_id = p.property_id
-                 SET u.status = 'active' 
-                 WHERE p.landlord_id = ?`,
-                [landlordId]
-            );
-
-            console.log("Properties and units set to active.");
             await db.query(`UPDATE User SET status = 'active' WHERE user_id = ?`, [user_id]);
             return res.status(200).json({ success: true, message: "Landlord account reactivated successfully." });
         }
@@ -57,26 +44,10 @@ export default async function ReactivateAccount(req, res){
                 return res.status(400).json({ error: "Tenant account not found." });
             }
 
-            const tenantId = tenantRows[0].tenant_id;
-
-            const [tenantLeaseRows] = await db.query(
-                `SELECT COUNT(*) AS active_lease_count FROM LeaseAgreement WHERE tenant_id = ? AND status = 'active'`,
-                [tenantId]
-            );
-
-            const activeTenantLeaseCount = tenantLeaseRows[0]?.active_lease_count || 0;
-            console.log("Active Tenant Lease Count:", activeTenantLeaseCount);
-
-            if (activeTenantLeaseCount > 0) {
-                return res.status(400).json({ error: "You cannot deactivate your account. You have an active lease." });
-            }
-
-            console.log("Deactivating user account...");
             await db.query(`UPDATE User SET status = 'active' WHERE user_id = ?`, [user_id]);
             return res.status(200).json({ success: true, message: "Landlord account reactivated successfully." });
 
         }
-
 
     } catch (error) {
         console.error("Error deactivating account:", error);

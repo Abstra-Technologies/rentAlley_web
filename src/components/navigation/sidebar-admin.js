@@ -34,6 +34,11 @@ export default function SideNavAdmin({ admin }) {
       label: "Landlord Management",
     },
     {
+      href: "/pages/system_admin/tenant_landlord/suspendedAccounts",
+      icon: Users,
+      label: "Suspended Accounts",
+    },
+    {
       href: "/pages/system_admin/propertyManagement/list",
       icon: Building2,
       label: "Property Verification",

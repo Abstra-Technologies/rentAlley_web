@@ -2,7 +2,7 @@
 import { db } from "../../../../lib/db";
 import {decryptData} from "../../../../crypto/encrypt";
 
-export default async function listOfDeactivatedAccounts(req, res) {
+export default async function listOfSuspended(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
@@ -11,7 +11,7 @@ export default async function listOfDeactivatedAccounts(req, res) {
         const [rows] = await db.query(
             `SELECT user_id, firstName, lastName, email, phoneNumber, userType, createdAt, updatedAt
             FROM User 
-            WHERE status = 'deactivated'`
+            WHERE status = 'suspended'`
         );
 
         const row = rows.map(rows => ({

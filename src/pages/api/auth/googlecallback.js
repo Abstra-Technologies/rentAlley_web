@@ -63,6 +63,13 @@ export default async function handler(req, res) {
       return res.redirect(`/pages/auth/login?error=${encodeURIComponent("User not registered with Google. use Email and Password to sign in")}`);
     }
 
+    if(rows[0].status === "deactivated") {
+      return res.redirect(`/pages/auth/login?error=${encodeURIComponent("User Account Deactivated snce you requestd for deletion. Contact Support.")}`);
+    }
+    if(rows[0].status === "suspended") {
+      return res.redirect(`/pages/auth/login?error=${encodeURIComponent("User Account SUSPENDED. Contact Support.")}`);
+    }
+
     const dbUser = rows[0];
 
     if (!dbUser.email) {

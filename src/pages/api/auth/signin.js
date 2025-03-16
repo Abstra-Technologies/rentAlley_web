@@ -29,9 +29,15 @@ export default async function Signin(req, res) {
       });
     }
 
-    if(user.is_active === 0) {
+    if(user.status === 'deactivated') {
       return res.status(403).json({
         error: "Your account is deactivated since you requested deletion. Please contact support if this was a mistake."
+      });
+    }
+
+    if(user.status === 'suspended') {
+      return res.status(403).json({
+        error: "Your account is suspended Please contact support"
       });
     }
 
