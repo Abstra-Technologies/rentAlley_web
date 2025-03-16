@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { AiOutlineArrowLeft } from "react-icons/ai";
+import { AiOutlineArrowLeft, AiOutlineEye } from "react-icons/ai";
 import Swal from "sweetalert2";
 import LoadingScreen from "../../components/loadingScreen";
 import Image from "next/image";
@@ -84,7 +84,7 @@ export default function InterestedTenants({ unitId, landlordId }) {
       },
     });
     router.push(
-      `/pages/landlord/property-listing/view-unit/view-tenant/${unitId}?tenant_id=${tenant.tenant_id}`
+      `/pages/landlord/property-listing/view-unit/view-tenant/${unitId}?unit_id=${unitId}&tenant_id=${tenant.tenant_id}`
     );
     Swal.close();
   };
@@ -217,6 +217,9 @@ export default function InterestedTenants({ unitId, landlordId }) {
                   <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Status
                   </th>
+                  <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -234,10 +237,7 @@ export default function InterestedTenants({ unitId, landlordId }) {
                         className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-gray-200"
                       />
                     </td>
-                    <td
-                      className="px-4 sm:px-6 py-4 text-blue-600 font-medium hover:underline cursor-pointer"
-                      onClick={() => handleTenantClick(tenant)}
-                    >
+                    <td className="px-4 sm:px-6 py-4 text-gray-900 font-medium">
                       {tenant?.firstName} {tenant?.lastName}
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-gray-600">
@@ -261,6 +261,16 @@ export default function InterestedTenants({ unitId, landlordId }) {
                       >
                         {tenant?.status}
                       </span>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 text-center">
+                      <button
+                        onClick={() => handleTenantClick(tenant)}
+                        className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                        title="View tenant details"
+                      >
+                        <AiOutlineEye className="mr-1" />
+                        View Details
+                      </button>
                     </td>
                   </tr>
                 ))}

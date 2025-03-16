@@ -15,7 +15,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch the approved prospective tenant for the given unit_id
     const [prospectiveTenant] = await db.execute(
       `SELECT * FROM ProspectiveTenant 
               WHERE unit_id = ? AND status = 'approved' 
@@ -31,7 +30,6 @@ export default async function handler(req, res) {
 
     const tenantData = prospectiveTenant[0];
 
-    // Fetch tenant details from the Tenant table
     const [tenant] = await db.execute(
       `SELECT tenant_id, user_id, occupation, employment_type, monthly_income 
               FROM Tenant WHERE tenant_id = ?`,
@@ -42,7 +40,6 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Tenant details not found" });
     }
 
-    // Fetch user details for decryption
     const [user] = await db.execute(
       `SELECT firstName, lastName, email, birthDate FROM User WHERE user_id = ?`,
       [tenant[0].user_id]
@@ -52,7 +49,6 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "User details not found" });
     }
 
-    // Decrypt user details
     const decryptedUser = {
       firstName: decryptData(JSON.parse(user[0].firstName), SECRET_KEY),
       lastName: decryptData(JSON.parse(user[0].lastName), SECRET_KEY),
