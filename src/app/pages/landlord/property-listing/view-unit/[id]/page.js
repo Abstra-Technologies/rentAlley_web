@@ -1,5 +1,5 @@
 "use client";
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
@@ -24,7 +24,6 @@ const ViewUnitPage = () => {
   const { user } = useAuth();
   const landlord_id = user?.landlord_id;
   const [isNavigating, setIsNavigating] = useState(false);
-
 
   const { data: property } = useSWR(
     id ? `/api/propertyListing/property/${id}` : null,
@@ -78,15 +77,13 @@ const ViewUnitPage = () => {
       },
     });
 
-    // Simulate a short delay before navigation
     setTimeout(() => {
       Swal.close();
       router.push(
-          `/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`
+        `/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`
       );
-    }, 1500); // 1.5 seconds delay
+    }, 1500);
   };
-
 
   const handleDeleteUnit = async (unitId) => {
     const result = await Swal.fire({
@@ -150,7 +147,6 @@ const ViewUnitPage = () => {
   return (
     <LandlordLayout>
       <div className="min-h-screen bg-gray-50 p-6">
-        {/* Property Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center space-x-2 mb-2">
             <BuildingOffice2Icon className="h-6 w-6 text-blue-600" />
@@ -188,7 +184,6 @@ const ViewUnitPage = () => {
             Add New Unit
           </button>
 
-
           {subscription &&
             units?.length >= subscription.listingLimits.maxUnits && (
               <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -203,7 +198,6 @@ const ViewUnitPage = () => {
             )}
         </div>
 
-        {/* Units Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
             <HomeIcon className="h-5 w-5 mr-2 text-blue-600" />
@@ -229,6 +223,11 @@ const ViewUnitPage = () => {
                 <div
                   key={unit?.unit_id}
                   className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                  onClick={() =>
+                    router.push(
+                      `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unit.unit_id}`
+                    )
+                  }
                 >
                   <div className="h-32 bg-blue-50 flex items-center justify-center">
                     <div className="text-center">
@@ -266,11 +265,12 @@ const ViewUnitPage = () => {
                     <div className="flex justify-between items-center">
                       <button
                         className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           router.push(
                             `/pages/landlord/property-listing/view-unit/tenant-req/${unit.unit_id}`
-                          )
-                        }
+                          );
+                        }}
                       >
                         <ClipboardDocumentListIcon className="h-4 w-4 mr-1" />
                         Tenant Requests
@@ -278,14 +278,20 @@ const ViewUnitPage = () => {
                       <div className="flex space-x-2">
                         <button
                           className="p-2 text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
-                          onClick={() => handleEditUnit(unit.unit_id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditUnit(unit.unit_id);
+                          }}
                           aria-label="Edit unit"
                         >
                           <PencilSquareIcon className="h-5 w-5" />
                         </button>
                         <button
                           className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                          onClick={() => handleDeleteUnit(unit.unit_id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUnit(unit.unit_id);
+                          }}
                           aria-label="Delete unit"
                         >
                           <TrashIcon className="h-5 w-5" />

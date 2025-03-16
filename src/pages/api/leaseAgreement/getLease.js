@@ -14,7 +14,6 @@ export default async function getLease(req, res) {
   const { unit_id } = req.query;
 
   try {
-    // Step 1: Get tenant_id of the approved prospective tenant for the unit
     let tenantQuery = `
       SELECT tenant_id FROM ProspectiveTenant 
       WHERE unit_id = ? AND status = 'approved'
@@ -30,7 +29,6 @@ export default async function getLease(req, res) {
 
     const tenant_id = tenantRows[0].tenant_id;
 
-    // Step 2: Fetch lease agreement using tenant_id and unit_id
     let leaseQuery = `SELECT * FROM LeaseAgreement WHERE tenant_id = ? AND unit_id = ? LIMIT 1`;
     const [leaseRows] = await connection.execute(leaseQuery, [
       tenant_id,
@@ -43,7 +41,6 @@ export default async function getLease(req, res) {
         .json({ error: "No lease agreement found for the approved tenant" });
     }
 
-    // Step 3: Decrypt the agreement_url before returning the response
     const decryptedRows = leaseRows.map((row) => {
       try {
         const encryptedData = JSON.parse(row.agreement_url);
