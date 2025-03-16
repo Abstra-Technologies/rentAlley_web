@@ -26,8 +26,6 @@ interface PropertyCardProps {
 export default function SplashScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedLocation, setSelectedLocation] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("");
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [recentProperties, setRecentProperties] = useState<Property[]>([]);
@@ -387,35 +385,6 @@ export default function SplashScreen() {
           </div>
         </div>
       </section>
-
-      {/* <section className="py-10 px-4 bg-gray-700 text-white">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between">
-            <div className="mb-6 lg:mb-0">
-              <h3 className="text-lg font-medium mb-2">Join Us</h3>
-              <h2 className="text-2xl font-bold">
-                Get Property Insights and Listings Directly to Your Email
-              </h2>
-              <p className="mt-2 text-gray-300">
-                Subscribe to get newsletter about property information.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 lg:w-2/5">
-              <input
-                type="email"
-                placeholder="Enter your email here"
-                className="px-4 py-3 rounded-lg bg-gray-600 text-white placeholder-gray-400 border border-gray-500 focus:outline-none focus:border-blue-500 flex-grow"
-              />
-              <button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap"
-                type="button"
-              >
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
-      </section> */}
       <Footer />
     </div>
   );

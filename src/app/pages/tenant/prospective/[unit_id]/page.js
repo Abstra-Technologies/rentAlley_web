@@ -25,7 +25,7 @@ const TenantApplicationForm = () => {
     monthly_income: "",
     address: "",
   });
-  const [setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user || !unit_id) return;
