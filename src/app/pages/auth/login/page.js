@@ -263,6 +263,23 @@ function Login() {
             >
               Login
             </button>
+
+            <p className="text-center text-sm mt-3">
+              <Link
+                href="/pages/admin_login"
+                className="text-teal-600 hover:text-teal-800 hover:underline font-medium"
+                onClick={() =>
+                  logEvent(
+                    "Admin Login Click",
+                    "User Interaction",
+                    "Clicked Admin Login",
+                    1
+                  )
+                }
+              >
+                System Admin Login
+              </Link>
+            </p>
           </form>
 
           <div className="flex items-center my-6">

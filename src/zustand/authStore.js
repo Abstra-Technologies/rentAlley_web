@@ -1,146 +1,182 @@
-
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { decryptData } from "../crypto/encrypt";
 
 const useAuthStore = create(
-    persist(
-        (set) => ({
-            user: null,
-            admin: null,
-            loading: true,
+  persist(
+    (set) => ({
+      user: null,
+      admin: null,
+      loading: true,
 
-            decryptUserData: (data) => {
-                try {
-                    const encryptionKey = process.env.ENCRYPTION_SECRET;
-                    if (!encryptionKey) {
-                        console.error("[AuthStore] Missing ENCRYPTION_SECRET in environment variables.");
-                        return data;
-                    }
+      decryptUserData: (data) => {
+        try {
+          const encryptionKey = process.env.ENCRYPTION_SECRET;
+          if (!encryptionKey) {
+            console.error(
+              "[AuthStore] Missing ENCRYPTION_SECRET in environment variables."
+            );
+            return data;
+          }
 
+          const safeParse = (value) => {
+            try {
+              return value ? JSON.parse(value) : null;
+            } catch (err) {
+              console.error("Failed to parse encrypted value:", value, err);
+              return null;
+            }
+          };
 
-                    console.log("[AuthStore]Decrypting user data...", data);
-                    console.log("Checking fields before JSON.parse():");
-                    console.log("firstName:", data.firstName);
-                    console.log("lastName:", data.lastName);
-                    console.log("email:", data.email);
-                    console.log("profilePicture:", data.profilePicture);
-                    console.log("phoneNumber:", data.phoneNumber);
+          console.log("[AuthStore]Decrypting user data...", data);
+          console.log("Checking fields before JSON.parse():");
+          console.log("firstName:", data.firstName);
+          console.log("lastName:", data.lastName);
+          console.log("email:", data.email);
+          console.log("profilePicture:", data.profilePicture);
+          console.log("phoneNumber:", data.phoneNumber);
 
-                    return {
-                        user_id: data.user_id || null,
-                        firstName: data.firstName ? decryptData(JSON.parse(data.firstName), encryptionKey) : null,
-                        lastName: data.lastName ? decryptData(JSON.parse(data.lastName), encryptionKey) : null,
-                        email: data.email ? decryptData(JSON.parse(data.email), encryptionKey) : null,
-                        profilePicture: data.profilePicture ? decryptData(JSON.parse(data.profilePicture), encryptionKey): null,
-                        birthDate: data.birthDate ? decryptData(JSON.parse(data.birthDate), encryptionKey) : null,
-                        phoneNumber: data.phoneNumber ? decryptData(JSON.parse(data.phoneNumber), encryptionKey) : null,
-                        is_2fa_enabled: data.is_2fa_enabled || false,
-                        tenant_id: data.tenant_id || null,
-                        userType: data.userType || null,
-                        landlord_id: data.landlord_id || null,
-                        is_verified: data.landlord_id ? (data.is_verified || false) : null,
-                        is_trial_used: data.landlord_id ? (data.is_trial_used || false) : null,
-                        subscription: data.subscription?{
-                                subscription_id: data.subscription.subscription_id || null,
-                                plan_name: data.subscription.plan_name || "N/A",
-                                status: data.subscription.status || "inactive",
-                                start_date: data.subscription.start_date || null,
-                                end_date: data.subscription.end_date || null,
-                                payment_status: data.subscription.payment_status || "unpaid",
-                                trial_end_date: data.subscription.trial_end_date || null,
-                            }
-                            : null,
-                    };
-                } catch (error) {
-                    console.error("[AuthStore] Error decrypting user data:", error);
-                    return data;
+          return {
+            user_id: data.user_id || null,
+            firstName: safeParse(data.firstName)
+              ? decryptData(safeParse(data.firstName), encryptionKey)
+              : null,
+            lastName: safeParse(data.lastName)
+              ? decryptData(safeParse(data.lastName), encryptionKey)
+              : null,
+            email: safeParse(data.email)
+              ? decryptData(safeParse(data.email), encryptionKey)
+              : null,
+            profilePicture: safeParse(data.profilePicture)
+              ? decryptData(safeParse(data.profilePicture), encryptionKey)
+              : null,
+            birthDate: safeParse(data.birthDate)
+              ? decryptData(safeParse(data.birthDate), encryptionKey)
+              : null,
+            phoneNumber: safeParse(data.phoneNumber)
+              ? decryptData(safeParse(data.phoneNumber), encryptionKey)
+              : null,
+            is_2fa_enabled: data.is_2fa_enabled || false,
+            tenant_id: data.tenant_id || null,
+            userType: data.userType || null,
+            landlord_id: data.landlord_id || null,
+            is_verified: data.landlord_id ? data.is_verified || false : null,
+            is_trial_used: data.landlord_id
+              ? data.is_trial_used || false
+              : null,
+            subscription: data.subscription
+              ? {
+                  subscription_id: data.subscription.subscription_id || null,
+                  plan_name: data.subscription.plan_name || "N/A",
+                  status: data.subscription.status || "inactive",
+                  start_date: data.subscription.start_date || null,
+                  end_date: data.subscription.end_date || null,
+                  payment_status: data.subscription.payment_status || "unpaid",
+                  trial_end_date: data.subscription.trial_end_date || null,
                 }
-            },
+              : null,
+          };
+        } catch (error) {
+          console.error("[AuthStore] Error decrypting user data:", error);
+          return data;
+        }
+      },
 
-            decryptAdminData: (data) => {
-                try {
-                    const encryptionKey = process.env.ENCRYPTION_SECRET;
-                    if (!encryptionKey) {
-                        console.error("[AuthStore] Missing ENCRYPTION_SECRET in environment variables.");
-                        return data;
-                    }
+      decryptAdminData: (data) => {
+        try {
+          const encryptionKey = process.env.ENCRYPTION_SECRET;
+          if (!encryptionKey) {
+            console.error(
+              "[AuthStore] Missing ENCRYPTION_SECRET in environment variables."
+            );
+            return data;
+          }
 
-                    console.log("[AuthStore] Decrypting admin data...", data);
+          console.log("[AuthStore] Decrypting admin data...", data);
 
-                    return {
-                        admin_id: data.admin_id || null,
-                        username: data.username || "N/A",
-                        first_name: data.first_name ? decryptData(JSON.parse(data.first_name), encryptionKey) : null,
-                        last_name: data.last_name ? decryptData(JSON.parse(data.last_name), encryptionKey) : null,
-                        email: data.email ? decryptData(JSON.parse(data.email), encryptionKey) : null,
-                        role: data.role,
-                        status: data.status || "inactive",
-                        profile_picture: data.profile_picture || null,
-                        permissions: data.permissions,
+          return {
+            admin_id: data.admin_id || null,
+            username: data.username || "N/A",
+            first_name: data.first_name
+              ? decryptData(JSON.parse(data.first_name), encryptionKey)
+              : null,
+            last_name: data.last_name
+              ? decryptData(JSON.parse(data.last_name), encryptionKey)
+              : null,
+            email: data.email
+              ? decryptData(JSON.parse(data.email), encryptionKey)
+              : null,
+            role: data.role,
+            status: data.status || "inactive",
+            profile_picture: data.profile_picture || null,
+            permissions: data.permissions,
+          };
+        } catch (error) {
+          console.error("[AuthStore] Error decrypting admin data:", error);
+          return data;
+        }
+      },
 
-                    };
-                } catch (error) {
-                    console.error("[AuthStore] Error decrypting admin data:", error);
-                    return data;
-                }
-            },
+      setUser: (userData) =>
+        set((state) => ({
+          user: state.decryptUserData(userData),
+          admin: null,
+          loading: false,
+        })),
 
-            setUser: (userData) => set((state) => ({
-                user: state.decryptUserData(userData),
-                admin: null,
-                loading: false
-            })),
+      setAdmin: (adminData) =>
+        set((state) => ({
+          admin: state.decryptAdminData(adminData),
+          user: null,
+          loading: false,
+        })),
 
-            setAdmin: (adminData) => set((state) => ({
-                admin: state.decryptAdminData(adminData),
-                user: null,
-                loading: false
-            })),
+      logout: () => set({ user: null, admin: null, loading: false }),
 
-            logout: () => set({ user: null, admin: null, loading: false }),
+      fetchSession: async () => {
+        try {
+          set({ loading: true });
+          const response = await fetch("/api/auth/me", {
+            method: "GET",
+            credentials: "include",
+          });
 
-            fetchSession: async () => {
-                try {
-                    set({ loading: true });
-                    const response = await fetch("/api/auth/me", { method: "GET", credentials: "include" });
+          if (!response.ok) {
+            console.warn("[AuthStore]  No active session found.");
+            set({ user: null, admin: null, loading: false });
+            return;
+          }
 
-                    if (!response.ok) {
-                        console.warn("[AuthStore]  No active session found.");
-                        set({ user: null, admin: null, loading: false });
-                        return;
-                    }
+          const data = await response.json();
+          console.log("[AuthStore] Received session data:", data);
 
-                    const data = await response.json();
-                    console.log("[AuthStore] Received session data:", data);
-
-                    if (data.admin_id) {
-                        set((state) => ({
-                            admin: state.decryptAdminData(data),
-                            user: null,
-                            loading: false
-                        }));
-                    } else if (data.user_id) {
-                        set((state) => ({
-                            user: state.decryptUserData(data),
-                            admin: null,
-                            loading: false
-                        }));
-                    } else {
-                        console.warn("[AuthStore] Unknown session structure.");
-                        set({ user: null, admin: null, loading: false });
-                    }
-                } catch (error) {
-                    console.error("[AuthStore]Session fetch failed:", error);
-                    set({ user: null, admin: null, loading: false });
-                }
-            },
-        }),
-{
-    name: "auth-storage",
-        getStorage: () => localStorage,
-})
-
+          if (data.admin_id) {
+            set((state) => ({
+              admin: state.decryptAdminData(data),
+              user: null,
+              loading: false,
+            }));
+          } else if (data.user_id) {
+            set((state) => ({
+              user: state.decryptUserData(data),
+              admin: null,
+              loading: false,
+            }));
+          } else {
+            console.warn("[AuthStore] Unknown session structure.");
+            set({ user: null, admin: null, loading: false });
+          }
+        } catch (error) {
+          console.error("[AuthStore]Session fetch failed:", error);
+          set({ user: null, admin: null, loading: false });
+        }
+      },
+    }),
+    {
+      name: "auth-storage",
+      getStorage: () => localStorage,
+    }
+  )
 );
 
 export default useAuthStore;
