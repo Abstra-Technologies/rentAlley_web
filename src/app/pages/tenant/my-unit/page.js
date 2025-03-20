@@ -16,6 +16,7 @@ import {
   MapPinIcon,
   KeyIcon,
   CreditCardIcon,
+  PencilSquareIcon
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -42,8 +43,8 @@ export default function MyUnit() {
 
         if (data) {
           setUnit(data);
-          setIsSecurityPaid(data.is_security_deposit_paid || 0);
-          setIsAdvancedPaid(data.is_advance_payment_paid || 0);
+          setIsSecurityPaid(!!data.is_security_deposit_paid);
+          setIsAdvancedPaid(!!data.is_advance_payment_paid);
         }
       } catch (err) {
         setError(err.response?.data?.message);
@@ -132,14 +133,15 @@ export default function MyUnit() {
     }, 1500);
   };
 
-
   const handleContactLandlord = () => {
     if (!unit?.landlord_id) {
       console.error("Missing landlord_id!");
       return;
     }
 
-    const chatRoom = `chat_${[user?.user_id, unit.landlord_id].sort().join("_")}`;
+    const chatRoom = `chat_${[user?.user_id, unit.landlord_id]
+      .sort()
+      .join("_")}`;
     const chatUrl = `/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${unit.landlord_id}`;
 
     Swal.fire({
@@ -154,7 +156,6 @@ export default function MyUnit() {
     });
   };
 
-
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen error={error} />;
 
@@ -164,7 +165,7 @@ export default function MyUnit() {
     (!requiresSecurity || isSecurityPaid) &&
     (!requiresAdvanced || isAdvancedPaid);
 
-  // Status badge color logic
+ 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "active":
@@ -176,7 +177,7 @@ export default function MyUnit() {
     }
   };
 
-  // Payment status indicators
+  
   const PaymentStatus = ({ isPaid, label }) => (
     <div className="flex items-center gap-2 text-sm">
       {isPaid ? (
@@ -190,7 +191,7 @@ export default function MyUnit() {
     </div>
   );
 
-  // Format complete address
+  
   const formatAddress = () => {
     if (!unit) return "";
 
@@ -246,13 +247,23 @@ export default function MyUnit() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-indigo-900">My Unit</h1>
 
-          <button
-            onClick={handleContactLandlord}
-            className="mt-3 sm:mt-0 flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors"
-          >
-            <ChatBubbleLeftRightIcon className="h-5 w-5" />
-            <span>Contact Landlord</span>
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={handleContactLandlord}
+              className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors"
+            >
+              <ChatBubbleLeftRightIcon className="h-5 w-5" />
+              <span>Contact Landlord</span>
+            </button>
+
+            <button
+              onClick={() => router.push("/pages/tenant/review")}
+              className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition-colors"
+            >
+              <PencilSquareIcon className="h-5 w-5" />
+              <span>Unit Feedback</span>
+            </button>
+          </div>
         </div>
 
         {unit && (
@@ -343,7 +354,7 @@ export default function MyUnit() {
                       <p className="text-sm text-gray-500">Monthly Rent</p>
                     </div>
                     <p className="text-xl font-bold text-indigo-600">
-                      ₱{unit.rent_amount?.toLocaleString() || 0}
+                      ₱{Number(unit.rent_amount || 0).toLocaleString() || 0}
                     </p>
                   </div>
 
@@ -353,7 +364,7 @@ export default function MyUnit() {
                       <p className="text-sm text-gray-500">Security Deposit</p>
                     </div>
                     <p className="text-xl font-bold text-indigo-600">
-                      ₱{unit.sec_deposit?.toLocaleString() || 0}
+                      ₱{Number(unit.sec_deposit || 0).toLocaleString()}
                     </p>
                     {requiresSecurity && (
                       <PaymentStatus
@@ -403,7 +414,7 @@ export default function MyUnit() {
                     </div>
                     <div className="flex items-center">
                       <span className="font-bold mr-2">
-                        ₱{unit.sec_deposit?.toLocaleString()}
+                        ₱{Number(unit.sec_deposit || 0).toLocaleString()}
                       </span>
                       <ArrowRightIcon className="h-4 w-4" />
                     </div>
@@ -437,7 +448,8 @@ export default function MyUnit() {
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Other Payment Option
                 </h3>
-                {(requiresAdvanced && !isAdvancedPaid) || (requiresSecurity && !isSecurityPaid) ? (
+                {(requiresAdvanced && !isAdvancedPaid) ||
+                (requiresSecurity && !isSecurityPaid) ? (
                   <button
                     onClick={() =>
                       router.push(
@@ -509,21 +521,22 @@ const ErrorScreen = ({ error }) => (
         <div className="bg-red-50 p-4 rounded-full mb-6">
           <XCircleIcon className="h-16 w-16 text-red-500" />
         </div>
-        
+
         <h2 className="text-2xl font-bold text-gray-800 mb-3">
           No Active Lease Agreement
         </h2>
-        
+
         <p className="text-gray-600 mb-2 text-center">
           You don't currently have an active lease agreement with any unit.
         </p>
-        
+
         <div className="bg-red-50 p-3 rounded-lg w-full mb-6 mt-2">
           <p className="text-red-600 text-sm font-medium">
-            {error || "Please complete the application process to establish a lease"}
+            {error ||
+              "Please complete the application process to establish a lease"}
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full">
           <button
             onClick={() => window.location.reload()}

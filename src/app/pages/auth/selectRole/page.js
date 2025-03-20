@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import useRoleStore from "../../../../zustand/store";
 import { logEvent } from "../../../../utils/gtag";
 import Image from "next/image";
@@ -17,25 +16,25 @@ export default function RegisterAs() {
 
   return (
     <div className="relative flex justify-center items-center min-h-screen bg-gray-100 overflow-hidden">
-      <Image 
-        src="/images/hero-section.jpeg" 
-        alt="Cityscape view of high-rise buildings" 
+      <Image
+        src="/images/hero-section.jpeg"
+        alt="Cityscape view of high-rise buildings"
         fill
         className="absolute inset-0 object-cover brightness-75"
         priority
       />
-      
+
       <div className="relative z-10 bg-white p-10 rounded-2xl shadow-lg w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <div className="text-3xl font-bold text-blue-600">Rentahan</div>
         </div>
-  
+
         {/* "Register As" Heading */}
         <h2 className="text-center text-2xl font-semibold text-gray-800 mb-6">
           Register As
         </h2>
-  
+
         {/* Buttons */}
         <div className="space-y-5">
           {/* Tenant Button */}
@@ -46,7 +45,7 @@ export default function RegisterAs() {
           >
             Tenant
           </button>
-  
+
           {/* Landlord Button */}
           <button
             className="w-full bg-blue-600 text-white py-3 rounded-lg shadow-md hover:bg-blue-700 transition-all"
@@ -59,5 +58,4 @@ export default function RegisterAs() {
       </div>
     </div>
   );
-  
 }

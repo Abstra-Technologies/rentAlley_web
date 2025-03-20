@@ -1,17 +1,17 @@
 import { db } from "../../../lib/db";
 
 export default async function leaseDetails(req, res) {
-  const { unit_id, tenant_id } = req.query;
+  const { unit_id } = req.query;
   let connection;
 
   try {
     connection = await db.getConnection();
     if (req.method === "GET") {
-      await handleGetRequest(req, res, connection, unit_id, tenant_id);
+      await handleGetRequest(req, res, connection, unit_id);
     } else if (req.method === "PUT") {
-      await handlePutRequest(req, res, connection, unit_id, tenant_id);
+      await handlePutRequest(req, res, connection, unit_id);
     } else if (req.method === "DELETE") {
-      await handleDeleteRequest(req, res, connection, unit_id, tenant_id);
+      await handleDeleteRequest(req, res, connection, unit_id);
     } else {
       res.setHeader("Allow", ["POST", "GET", "PUT", "DELETE"]);
       res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -26,8 +26,21 @@ export default async function leaseDetails(req, res) {
   }
 }
 
-async function handleGetRequest(req, res, connection, unit_id, tenant_id) {
+async function handleGetRequest(req, res, connection, unit_id) {
   try {
+    const [tenantRows] = await connection.execute(
+      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
+      [unit_id]
+    );
+
+    if (tenantRows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No approved tenant found for this unit" });
+    }
+
+    const tenant_id = tenantRows[0].tenant_id;
+
     const [rows] = await connection.execute(
       "SELECT * FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?",
       [unit_id, tenant_id]
@@ -39,7 +52,7 @@ async function handleGetRequest(req, res, connection, unit_id, tenant_id) {
   }
 }
 
-async function handlePutRequest(req, res, connection, unit_id, tenant_id) {
+async function handlePutRequest(req, res, connection, unit_id) {
   try {
     const { start_date, end_date } = req.body;
 
@@ -48,6 +61,19 @@ async function handlePutRequest(req, res, connection, unit_id, tenant_id) {
         .status(400)
         .json({ error: "Start date and end date are required" });
     }
+
+    const [tenantRows] = await connection.execute(
+      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
+      [unit_id]
+    );
+
+    if (tenantRows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No approved tenant found for this unit" });
+    }
+
+    const tenant_id = tenantRows[0].tenant_id;
 
     await connection.beginTransaction();
 
@@ -73,8 +99,21 @@ async function handlePutRequest(req, res, connection, unit_id, tenant_id) {
   }
 }
 
-async function handleDeleteRequest(req, res, connection, unit_id, tenant_id) {
+async function handleDeleteRequest(req, res, connection, unit_id) {
   try {
+    const [tenantRows] = await connection.execute(
+      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
+      [unit_id]
+    );
+
+    if (tenantRows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No approved tenant found for this unit" });
+    }
+
+    const tenant_id = tenantRows[0].tenant_id;
+
     await connection.beginTransaction();
 
     const [deleteResult] = await connection.execute(

@@ -78,14 +78,10 @@ export default async function saveUploadLease(req, res) {
         .json({ error: "File parsing error", message: err.message });
     }
 
-    const { unit_id, tenant_id } = fields;
+    const { unit_id } = fields;
 
     if (!unit_id || !unit_id[0]) {
       return res.status(400).json({ error: "unit_id is required" });
-    }
-
-    if (!tenant_id || !tenant_id[0]) {
-      return res.status(400).json({ error: "tenant_id is required" });
     }
 
     console.log("Parsed Fields:", fields);
@@ -96,9 +92,22 @@ export default async function saveUploadLease(req, res) {
       connection = await db.getConnection();
       await connection.beginTransaction();
 
+      const [tenantRows] = await connection.execute(
+        `SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1`,
+        [unit_id[0]]
+      );
+
+      if (tenantRows.length === 0) {
+        return res
+          .status(404)
+          .json({ error: "No approved tenant found for this unit" });
+      }
+
+      const tenant_id = tenantRows[0].tenant_id;
+
       const [existingLease] = await connection.execute(
         `SELECT agreement_id FROM LeaseAgreement WHERE tenant_id = ? AND unit_id = ?`,
-        [tenant_id[0], unit_id[0]]
+        [tenant_id, unit_id[0]]
       );
 
       if (existingLease.length === 0) {
@@ -111,26 +120,15 @@ export default async function saveUploadLease(req, res) {
         ? await uploadToS3(leaseAgreementFile, "leaseAgreement")
         : null;
 
+      if (!agreementUrl) {
+        return res.status(400).json({ error: "No lease file uploaded" });
+      }
+
       const query = `
         UPDATE LeaseAgreement 
         SET agreement_url = ?, updated_at = NOW() 
         WHERE agreement_id = ?
       `;
-
-      console.log("Inserting into MySQL with:", {
-        tenant_id: tenant_id[0],
-        unit_id: unit_id[0],
-        agreementUrl,
-      });
-
-      // Validate unit_id and tenant_id
-      if (!unit_id || !unit_id[0]) {
-        return res.status(400).json({ error: "unit_id is required" });
-      }
-
-      if (!tenant_id || !tenant_id[0]) {
-        return res.status(400).json({ error: "tenant_id is required" });
-      }
 
       await connection.execute(query, [
         agreementUrl,

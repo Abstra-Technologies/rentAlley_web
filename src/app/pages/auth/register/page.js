@@ -28,9 +28,7 @@ const registerSchema = z
         "Password must contain only letters and numbers"
       ),
 
-    confirmPassword: z
-      .string()
-      .min(6, "Confirm Password must be the same."),
+    confirmPassword: z.string().min(6, "Confirm Password must be the same."),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -84,68 +82,6 @@ function Register() {
     const { id, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [id]: value }));
   };
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setErrors({});
-  //   setError("");
-  //
-  //   await Swal.fire({
-  //     title: "Registering...",
-  //     text: "Please wait while we create your account.",
-  //     allowOutsideClick: false,
-  //     didOpen: () => {
-  //       Swal.showLoading();
-  //     },
-  //   });
-  //
-  //   try {
-  //     registerSchema.parse(formData);
-  //
-  //     const res = await fetch("/api/auth/register", {
-  //       method: "POST",
-  //       headers: {
-  //         "content-type": "application/json",
-  //       },
-  //       body: JSON.stringify(formData),
-  //     });
-  //
-  //     const data = await res.json();
-  //
-  //     if (res.ok) {
-  //       console.log("Registration Data: ", formData);
-  //       logEvent("Register", "Authentication", "Register Successful", 1);
-  //
-  //       Swal.fire({
-  //         title: "Success!",
-  //         text: "Account successfully registered! Redirecting...",
-  //         icon: "success",
-  //         confirmButtonText: "OK",
-  //       }).then(() => {
-  //         router.push("/pages/auth/verify-email");
-  //       });
-  //
-  //       setTimeout(() => {
-  //         router.push("/pages/auth/verify-email");
-  //       }, 1000);
-  //     } else if (data.error && data.error.includes("already registered")) {
-  //       setError("This email is already registered. Please admin_login.");
-  //     } else {
-  //       setError(data.error || "Registration failed. Please try again.");
-  //     }
-  //   } catch (err) {
-  //     if (err instanceof z.ZodError) {
-  //       const errorObj = err.errors.reduce((acc, curr) => {
-  //         acc[curr.path[0]] = curr.message;
-  //         return acc;
-  //       }, {});
-  //       setErrors(errorObj);
-  //     } else {
-  //       console.error("Error during API call:", err);
-  //       setError("An unexpected error occurred. Please try again.");
-  //     }
-  //   }
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -237,7 +173,6 @@ function Register() {
     }
   };
 
-
   return (
     <>
       <div className="relative flex items-center justify-center min-h-screen bg-gray-100 overflow-hidden px-4 sm:px-6 lg:px-8 py-16">
@@ -316,14 +251,14 @@ function Register() {
             <p className="text-sm text-gray-700 text-center">
               By signing up, you agree to our{" "}
               <Link
-                href="/pages/terms-conditions"
+                href="/pages/terms-services"
                 className="text-blue-600 hover:underline"
               >
                 Terms of Service
               </Link>{" "}
               and{" "}
               <Link
-                href="/pages/terms-conditions"
+                href="/pages/terms-services"
                 className="text-blue-600 hover:underline"
               >
                 Privacy Policy

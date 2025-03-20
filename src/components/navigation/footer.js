@@ -86,7 +86,10 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-white transition">
+                <Link
+                  href="/pages/terms-services"
+                  className="hover:text-white transition"
+                >
                   Terms & Conditions
                 </Link>
               </li>

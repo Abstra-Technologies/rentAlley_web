@@ -30,7 +30,6 @@ const TenantApplicationForm = () => {
   useEffect(() => {
     if (!user || !unit_id) return;
 
-    // Check if tenant has already applied
     const checkTenantApplication = async () => {
       try {
         const response = await axios.get(
@@ -95,9 +94,9 @@ const TenantApplicationForm = () => {
   }
 
   const handleFileSelect = (event) => {
-    const file = event.target.files[0]; // Get only the first file
+    const file = event.target.files[0];
     if (file) {
-      // File Size validation
+
       if (file.size > 15 * 1024 * 1024) {
         Swal.fire("Error", "File size exceeds 15MB!", "error");
         return;
@@ -108,7 +107,7 @@ const TenantApplicationForm = () => {
   };
 
   const handleDropboxClick = () => {
-    fileInputRef.current.click(); // Trigger file input on dropbox click
+    fileInputRef.current.click();
   };
 
   const handleFormSubmit = async (event) => {
@@ -123,10 +122,10 @@ const TenantApplicationForm = () => {
     }
 
     if (
-        !formData.address ||
-        !formData.occupation ||
-        !formData.employment_type ||
-        !formData.monthly_income
+      !formData.address ||
+      !formData.occupation ||
+      !formData.employment_type ||
+      !formData.monthly_income
     ) {
       return Swal.fire("Error", "All fields are required.", "error");
     }
@@ -142,7 +141,7 @@ const TenantApplicationForm = () => {
 
     if (!confirmSubmission.isConfirmed) return;
 
-    setIsSubmitting(true); // Activate submitting state
+    setIsSubmitting(true);
 
     Swal.fire({
       title: "Submitting...",
@@ -165,8 +164,8 @@ const TenantApplicationForm = () => {
       };
 
       const infoResponse = await axios.put(
-          "/api/tenant/prospective/submit-info",
-          infoPayload
+        "/api/tenant/prospective/submit-info",
+        infoPayload
       );
 
       if (infoResponse.status === 200) {
@@ -178,18 +177,24 @@ const TenantApplicationForm = () => {
 
           try {
             const reqResponse = await axios.post(
-                "/api/tenant/prospective/submit-reqs",
-                fileFormData,
-                {
-                  headers: { "Content-Type": "multipart/form-data" },
-                }
+              "/api/tenant/prospective/submit-reqs",
+              fileFormData,
+              {
+                headers: { "Content-Type": "multipart/form-data" },
+              }
             );
 
             if (reqResponse.status !== 201) {
-               new Error(reqResponse.data.message || "Failed to submit requirements.");
+              new Error(
+                reqResponse.data.message || "Failed to submit requirements."
+              );
             }
           } catch (reqError) {
-            await Swal.fire("Error", `Submission failed: ${reqError.message || "Network error"}`, "error");
+            await Swal.fire(
+              "Error",
+              `Submission failed: ${reqError.message || "Network error"}`,
+              "error"
+            );
             setIsSubmitting(false);
             return;
           }
@@ -199,25 +204,13 @@ const TenantApplicationForm = () => {
           icon: "success",
           title: "Success",
           text: "Submission successful!",
-          confirmButtonColor: "#3085d6",
         });
 
-        await Swal.fire({
-          title: "Redirecting...",
-          text: "Please wait while we process your submission...",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          didOpen: () => {
-            Swal.showLoading();
-          },
-        });
-
-        setTimeout(() => {
-          Swal.close();
-          router.push("/pages/tenant/prospective/success");
-        }, 1500);
+        router.push("/pages/tenant/prospective/success");
       } else {
-        throw new Error(infoResponse.data?.message || "Failed to save tenant info.");
+        throw new Error(
+          infoResponse.data?.message || "Failed to save tenant info."
+        );
       }
     } catch (error) {
       await Swal.fire({
@@ -241,9 +234,8 @@ const TenantApplicationForm = () => {
           Tenant Application Form
         </h1>
 
-        {/* Steps to Follow */}
         <div className="mb-6">
-          {/* Back Button */}
+
           <button
             onClick={() => router.back()}
             className="absolute top-6 left-6 flex items-center text-gray-700 hover:text-gray-900"
@@ -259,7 +251,7 @@ const TenantApplicationForm = () => {
           </ol>
         </div>
 
-        {/* Dropbox Section */}
+
         <div className="mb-6">
           <h3 className="text-sm text-gray-500 mb-1">Dropbox Below:</h3>
           <p className="text-xs text-gray-500 mb-2">
@@ -277,7 +269,7 @@ const TenantApplicationForm = () => {
             </p>
             <p className="text-xs text-gray-500">Max File Size: 15MB</p>
 
-            {/* Hidden File Input */}
+
             <input
               type="file"
               accept="image/jpeg, image/png"
@@ -294,14 +286,14 @@ const TenantApplicationForm = () => {
           </div>
         </div>
 
-        {/* Application Form Section */}
+
         <form onSubmit={handleFormSubmit}>
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-2">
               2. Kindly fill up the application form.
             </h2>
 
-            {/* First Name */}
+
             <div className="mb-4">
               <label
                 htmlFor="firstName"
@@ -321,7 +313,6 @@ const TenantApplicationForm = () => {
               />
             </div>
 
-            {/* Last Name */}
             <div className="mb-4">
               <label
                 htmlFor="lastName"
@@ -341,7 +332,6 @@ const TenantApplicationForm = () => {
               />
             </div>
 
-            {/* Date of Birth */}
             <div className="mb-4">
               <label
                 htmlFor="birthDate"
@@ -371,7 +361,6 @@ const TenantApplicationForm = () => {
               </div>
             </div>
 
-            {/* Email Address */}
             <div className="mb-4">
               <label
                 htmlFor="email"
@@ -391,7 +380,6 @@ const TenantApplicationForm = () => {
               />
             </div>
 
-            {/* Mobile Number */}
             <div className="mb-4">
               <label
                 htmlFor="mobile"
@@ -489,7 +477,6 @@ const TenantApplicationForm = () => {
               </select>
             </div>
 
-            {/* Address */}
             <div className="mb-4">
               <label
                 htmlFor="address"

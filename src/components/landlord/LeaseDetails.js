@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Swal from "sweetalert2";
 import { FaArrowLeft } from "react-icons/fa";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   DocumentTextIcon,
   EnvelopeIcon,
@@ -22,7 +22,7 @@ import { PhoneIcon } from "lucide-react";
 import { MapPinIcon } from "lucide-react";
 import { UserIcon } from "lucide-react";
 
-const LeaseDetails = ({ unitId, tenantId }) => {
+const LeaseDetails = ({ unitId }) => {
   const router = useRouter();
   const [lease, setLease] = useState(null);
   const [tenant, setTenant] = useState(null);
@@ -33,20 +33,16 @@ const LeaseDetails = ({ unitId, tenantId }) => {
   const [propertyName, setPropertyName] = useState("");
   const [unitPhoto, setUnitPhoto] = useState("");
   const [activeTab, setActiveTab] = useState("details");
-  const [prospectiveStatus, setProspectiveStatus] = useState("pending");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const searchParams = useSearchParams();
-  const queryTenantId = tenantId || searchParams.get("tenant_id");
 
   useEffect(() => {
     fetchLeaseDetails();
     fetchTenantDetails();
     fetchStatus();
     fetchUnitDetails();
-    fetchProspectiveStatus();
-  }, [queryTenantId]);
+  }, [unitId]);
 
   const formatDate = (dateString) => {
     if (!dateString) {
@@ -63,17 +59,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     } catch (error) {
       console.error("Error formatting date:", error);
       return "Invalid Date";
-    }
-  };
-
-  const fetchProspectiveStatus = async () => {
-    try {
-      const response = await axios.get(
-        `/api/landlord/prospective/getProspectiveStatus?unit_id=${unitId}&tenant_id=${tenantId}`
-      );
-      setProspectiveStatus(response.data.status);
-    } catch (error) {
-      console.error("Error fetching tenant status:", error);
     }
   };
 
@@ -108,52 +93,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
   };
 
-  const updateTenantStatus = async (newStatus) => {
-    let disapprovalReason = null;
-
-    if (newStatus === "disapproved") {
-      const { value } = await Swal.fire({
-        title: "Disapprove Tenant",
-        input: "textarea",
-        inputLabel: "Provide a reason for disapproval",
-        inputPlaceholder: "Type your reason here...",
-        inputAttributes: { "aria-label": "Disapproval reason" },
-        showCancelButton: true,
-      });
-
-      if (!value) return;
-      disapprovalReason = value;
-    }
-
-    try {
-      const payload = {
-        unitId,
-        tenant_id: tenant?.tenant_id,
-        status: newStatus,
-        message: newStatus === "disapproved" ? disapprovalReason : null,
-      };
-
-      await axios.put("/api/landlord/prospective/update-status", payload);
-
-      Swal.fire("Success!", `Tenant ${newStatus} successfully!`, "success");
-
-      if (newStatus === "approved") {
-        await axios.put("/api/landlord/propertyStatus/update", {
-          unitId,
-          status: "occupied",
-        });
-
-        setStatus("occupied");
-        setProspectiveStatus("approved");
-      } else {
-        setProspectiveStatus("disapproved");
-      }
-    } catch (error) {
-      Swal.fire("Error!", "Failed to update tenant status.", "error");
-      console.error("Error updating tenant status:", error);
-    }
-  };
-
   const toggleUnitStatus = async () => {
     if (isUpdatingStatus) return;
 
@@ -179,7 +118,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
   const fetchLeaseDetails = async () => {
     try {
       const response = await axios.get(
-        `/api/leaseAgreement/getLease?unit_id=${unitId}&tenant_id=${tenantId}`
+        `/api/leaseAgreement/getLease?unit_id=${unitId}`
       );
 
       if (response.data.length > 0) {
@@ -199,11 +138,10 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     const formData = new FormData();
     formData.append("leaseFile", file);
     formData.append("unit_id", unitId);
-    formData.append("tenant_id", tenantId);
 
     try {
       await axios.put(
-        `/api/leaseAgreement/uploadLease?unit_id=${unitId}&tenant_id=${tenantId}`,
+        `/api/leaseAgreement/uploadLease?unit_id=${unitId}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -220,19 +158,14 @@ const LeaseDetails = ({ unitId, tenantId }) => {
   const fetchTenantDetails = async () => {
     setIsLoading(true);
     try {
-      if (queryTenantId) {
+      if (unitId) {
         const response = await axios.get(
-          `/api/landlord/prospective/interested-tenants?tenant_id=${queryTenantId}`
+          `/api/landlord/prospective/getApprovedTenantDetails?unit_id=${unitId}`
         );
+
+        console.log("Tenant API Response:", response.data);
         if (response.data) {
           setTenant(response.data);
-        }
-      } else {
-        const response = await axios.get(
-          `/api/landlord/prospective/interested-tenants?unitId=${unitId}`
-        );
-        if (response.data.length > 0) {
-          setTenant(response.data[0]);
         }
       }
     } catch (error) {
@@ -255,13 +188,10 @@ const LeaseDetails = ({ unitId, tenantId }) => {
     }
 
     try {
-      await axios.put(
-        `/api/leaseAgreement/leaseDetails?unit_id=${unitId}&tenant_id=${tenantId}`,
-        {
-          start_date: startDate,
-          end_date: endDate,
-        }
-      );
+      await axios.put(`/api/leaseAgreement/leaseDetails?unit_id=${unitId}`, {
+        start_date: startDate,
+        end_date: endDate,
+      });
       Swal.fire("Success", "Lease dates updated successfully", "success");
       fetchLeaseDetails();
     } catch (error) {
@@ -283,7 +213,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
       if (result.isConfirmed) {
         try {
           await axios.delete(
-            `/api/leaseAgreement/deleteLease?unit_id=${unitId}&tenant_id=${tenantId}`
+            `/api/leaseAgreement/deleteLease?unit_id=${unitId}`
           );
           Swal.fire("Deleted!", "Lease agreement has been deleted.", "success");
           setLease(null);
@@ -294,9 +224,6 @@ const LeaseDetails = ({ unitId, tenantId }) => {
       }
     });
   };
-
-  const isTenantApproved =
-    prospectiveStatus === "approved" || status === "occupied";
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -429,7 +356,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                   <div>
                     <p className="text-sm text-gray-500">Monthly Income:</p>
                     <p className="text-gray-800 font-medium">
-                      {tenant?.monthly_income?.replace("_", "-")}
+                      {tenant?.monthlyIncome?.replace("_", "-")}
                     </p>
                   </div>
                 </div>
@@ -439,7 +366,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                   <div>
                     <p className="text-sm text-gray-500">Employment Status:</p>
                     <p className="text-gray-800 font-medium">
-                      {tenant?.employment_type}
+                      {tenant?.employmentType}
                     </p>
                   </div>
                 </div>
@@ -454,7 +381,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                   </div>
                 </div>
 
-                {tenant?.valid_id ? (
+                {tenant?.validId ? (
                   <div className="mb-6">
                     <p className="text-sm text-gray-500 mb-2">
                       Valid Government ID:
@@ -469,7 +396,7 @@ const LeaseDetails = ({ unitId, tenantId }) => {
                             Tenant's Valid ID
                           </p>
                           <Link
-                            href={tenant?.valid_id}
+                            href={tenant?.validId}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-500 hover:underline"
@@ -492,149 +419,121 @@ const LeaseDetails = ({ unitId, tenantId }) => {
               <h2 className="text-xl font-semibold text-gray-800 mb-4">
                 Lease Agreement
               </h2>
+              <>
+                <div className="mb-6">
+                  <p className="text-md text-gray-500 mb-2">Lease Dates:</p>
 
-              {!isTenantApproved ? (
-                <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <div className="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                      <LockClosedIcon className="h-8 w-8 text-gray-500" />
+                  {lease?.start_date && lease?.end_date && (
+                    <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                      <p className="text-gray-700 text-md mb-2">
+                        Start Date: {formatDate(lease.start_date)}
+                      </p>
+                      <p className="text-gray-700 text-md">
+                        End Date: {formatDate(lease.end_date)}
+                      </p>
                     </div>
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">
-                      Lease Agreement Locked
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      You must approve this tenant before managing their lease
-                      agreement.
-                    </p>
-                    <div className="flex gap-3 mt-2">
-                      <button
-                        className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg shadow-sm hover:bg-green-700 transition duration-300"
-                        onClick={() => updateTenantStatus("approved")}
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="startDate"
+                        className="block text-gray-700 text-sm font-bold mb-2"
                       >
-                        Approve Tenant
-                      </button>
-                      <button
-                        className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg shadow-sm hover:bg-red-700 transition duration-300"
-                        onClick={() => updateTenantStatus("disapproved")}
+                        Start Date:
+                      </label>
+                      <input
+                        type="date"
+                        id="startDate"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="endDate"
+                        className="block text-gray-700 text-sm font-bold mb-2"
                       >
-                        Disapprove
-                      </button>
+                        End Date:
+                      </label>
+                      <input
+                        type="date"
+                        id="endDate"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
                     </div>
                   </div>
+                  <button
+                    onClick={handleUpdateLease}
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
+                  >
+                    Update Lease Dates
+                  </button>
                 </div>
-              ) : (
-                <>
-                  <div className="mb-6">
-                    <p className="text-md text-gray-500 mb-2">Lease Dates:</p>
 
-                    {lease?.start_date && lease?.end_date && (
-                      <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
-                        <p className="text-gray-700 text-md mb-2">
-                          Start Date: {formatDate(lease.start_date)}
-                        </p>
-                        <p className="text-gray-700 text-md">
-                          End Date: {formatDate(lease.end_date)}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label
-                          htmlFor="startDate"
-                          className="block text-gray-700 text-sm font-bold mb-2"
-                        >
-                          Start Date:
-                        </label>
-                        <input
-                          type="date"
-                          id="startDate"
-                          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="endDate"
-                          className="block text-gray-700 text-sm font-bold mb-2"
-                        >
-                          End Date:
-                        </label>
-                        <input
-                          type="date"
-                          id="endDate"
-                          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleUpdateLease}
-                      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
-                    >
-                      Update Lease Dates
-                    </button>
-                  </div>
-
-                  {lease?.agreement_url ? (
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">
-                        Lease Agreement:
-                      </p>
-                      <div className="p-3 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-md bg-green-100 text-green-500 flex items-center justify-center mr-3">
-                            <DocumentTextIcon className="h-6 w-6" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">
-                              Current Lease Agreement
-                            </p>
-                            <Link
-                              href={lease.agreement_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-500 hover:underline"
-                            >
-                              View Lease Agreement
-                            </Link>
-                          </div>
+                {lease?.agreement_url ? (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">
+                      Lease Agreement:
+                    </p>
+                    <div className="p-3 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded-md bg-green-100 text-green-500 flex items-center justify-center mr-3">
+                          <DocumentTextIcon className="h-6 w-6" />
                         </div>
-                        <button
-                          onClick={handleDeleteLease}
-                          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                        >
-                          Delete Lease
-                        </button>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">
+                            Current Lease Agreement
+                          </p>
+                          <Link
+                            href={lease.agreement_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-500 hover:underline"
+                          >
+                            View Lease Agreement
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">
-                        Upload Lease Agreement:
-                      </p>
-                      <LeaseUpload onFileUpload={handleFileUpload} />
-                    </div>
-                  )}
-
-                  {status === "occupied" && (
-                    <div className="mt-6 border-t pt-4">
-                      <p className="text-sm text-gray-500 mb-2">Unit Status:</p>
                       <button
-                        className="px-4 py-2 bg-yellow-500 text-white font-medium rounded-lg shadow-md hover:bg-yellow-600 transition duration-300 disabled:opacity-50"
-                        onClick={toggleUnitStatus}
-                        disabled={isUpdatingStatus}
+                        onClick={handleDeleteLease}
+                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                       >
-                        {isUpdatingStatus
-                          ? "Updating..."
-                          : "Mark as Unoccupied"}
+                        Delete Lease
                       </button>
                     </div>
-                  )}
-                </>
-              )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm text-gray-500 mb-2">
+                      Upload Lease Agreement:
+                    </p>
+                    <LeaseUpload onFileUpload={handleFileUpload} />
+                  </div>
+                )}
+
+                <div className="mt-6 border-t pt-4">
+                  <p className="text-sm text-gray-500 mb-2">Unit Status:</p>
+                  <button
+                    className={`px-4 py-2 text-white font-medium rounded-lg shadow-md transition duration-300 disabled:opacity-50 ${
+                      status === "occupied"
+                        ? "bg-yellow-500 hover:bg-yellow-600"
+                        : "bg-green-500 hover:bg-green-600"
+                    }`}
+                    onClick={toggleUnitStatus}
+                    disabled={isUpdatingStatus}
+                  >
+                    {isUpdatingStatus
+                      ? "Updating..."
+                      : status === "occupied"
+                      ? "Mark as Unoccupied"
+                      : "Mark as Occupied"}
+                  </button>
+                </div>
+              </>
             </div>
           </div>
         </div>

@@ -13,9 +13,8 @@ export default function TenantRequest() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Get landlord ID from the authenticated user
     if (user) {
-      setLandlordId(user.landlord_id); // Adjust this based on how your user object is structured
+      setLandlordId(user.landlord_id);
       setLoading(false);
     }
   }, [user]);

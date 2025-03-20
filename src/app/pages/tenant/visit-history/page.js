@@ -46,7 +46,6 @@ const PropertyVisits = () => {
           visit_id: visitId,
         });
 
-        
         setVisits((prevVisits) =>
           prevVisits.map((visit) =>
             visit.visit_id === visitId
@@ -84,7 +83,7 @@ const PropertyVisits = () => {
             View and manage your scheduled property visits.
           </p>
         </div>
-  
+
         {loading ? (
           <p className="text-gray-500">Loading scheduled visits...</p>
         ) : visits.length === 0 ? (
@@ -103,7 +102,9 @@ const PropertyVisits = () => {
                     {visit?.property_name} - {visit?.unit_name}
                   </h3>
                   <p className="text-gray-600">
-                    Date: {visit?.visit_date}, Time: {visit?.visit_time}
+                    Date:{" "}
+                    {new Date(visit?.visit_date).toISOString().split("T")[0]},
+                    Time: {visit?.visit_time}
                   </p>
                   {visit?.disapproval_reason && (
                     <p className="text-gray-500">
@@ -112,7 +113,7 @@ const PropertyVisits = () => {
                   )}
                   <p className="text-gray-500">Status: {visit?.status}</p>
                 </div>
-  
+
                 {visit?.status === "pending" && (
                   <button
                     onClick={() => handleCancelVisit(visit?.visit_id)}
