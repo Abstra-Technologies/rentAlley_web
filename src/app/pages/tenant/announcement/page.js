@@ -8,7 +8,7 @@ export default function TenantAnnouncements() {
 
   return (
     <TenantLayout>
-      <Announcements userType={user?.userType} />
+      <Announcements user_id={user?.user_id} />
     </TenantLayout>
   );
 }

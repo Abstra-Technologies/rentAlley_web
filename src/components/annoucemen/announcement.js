@@ -1,19 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import useAuthStore from "../../zustand/authStore";
 
-export default function Announcements() {
-  const { user } = useAuthStore();
+export default function Announcements({ user_id }) {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!user_id) return;
+
     const fetchAnnouncements = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await axios.get(
-          `/api/tenant/announcement/combined?user_id=${user?.user_id}`
+          `/api/tenant/announcement/combined?user_id=${user_id}`
         );
         setAnnouncements(response.data);
       } catch (err) {
@@ -24,7 +26,7 @@ export default function Announcements() {
     };
 
     fetchAnnouncements();
-  }, []);
+  }, [user_id]);
 
   if (loading) return <p>Loading announcements...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
