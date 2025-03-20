@@ -95,7 +95,7 @@ export default function TenantBilling({}) {
           email: user.email,
           redirectUrl: {
             success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billSuccess`,
-            failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billFailed`,
+            failure: `$src/app/pages/tenant/billing/page.js{process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billFailed`,
             cancel: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billCancelled`,
           },
         });

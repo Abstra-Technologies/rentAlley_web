@@ -10,7 +10,7 @@ const mysql = require("mysql2/promise");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const crypto = require("node:crypto");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-require("dotenv").config({ path: ".env.local" });
+require("dotenv").config({ path: ".env" });
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pool = require("./src/lib/chat-db");
 // const chatRoutes = require("./routes/chatRoutes");
@@ -252,6 +252,7 @@ io.on("connection", (socket) => {
     });
 });
 
+const PORT = process.env.CHAT_PORT || 4000;
 server.listen(4000, () => {
-    console.log("Socket.io server running on port 4000");
+    console.log(`Socket.io server running on port ${PORT}`);
 });

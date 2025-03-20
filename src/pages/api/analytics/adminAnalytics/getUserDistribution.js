@@ -10,12 +10,12 @@ export default async function getPlatformUserDistributions(req, res) {
         const [userDistribution] = await db.execute(
             `SELECT userType, COUNT(*) AS user_count
              FROM User
-             WHERE is_active = 1
+             WHERE status = 'active'
              GROUP BY userType;`
         );
 
         res.status(200).json(userDistribution);
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error" });
+        res.status(500).json({ message: `Database Server Error ${error}` });
     }
 }
