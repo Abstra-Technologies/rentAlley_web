@@ -17,23 +17,19 @@ export default async function getSubscription(req, res) {
             "SELECT plan_name, is_active, start_date, end_date, payment_status FROM Subscription WHERE landlord_id = ? AND is_active = 1",
             [landlord_id]
         );
-
         if (rows.length === 0) {
             return res.status(404).json({ error: "Subscription not found" });
         }
 
         let subscription = rows[0];
 
-        // Define listing limits per plan
-        // maxUnits is the propertyLisitn they can add.
-        // this is he one shown on the current kimit plane on ui.
+        
         const listingLimits = {
             "Free Plan": { maxProperties: 1, maxUnits: 2, maxMaintenanceRequest: 5, maxReports: 3, maxBilling: 2, maxProspect: 3 },
-            "Standard Plan": { maxProperties: 5, maxUnits: 2, maxMaintenanceRequest: 10, maxReports: Infinity, maxBilling: 10, maxProspect: 10 },
-            "Premium Plan": { maxProperties: 20, maxUnits: 50, maxMaintenanceRequest: Infinity, maxReports: Infinity, maxBilling: Infinity, maxProspect: Infinity },
+            "Standard Plan": { maxProperties: 5, maxUnits: 2, maxMaintenanceRequest: 10, maxReports: 999999, maxBilling: 10, maxProspect: 10 },
+            "Premium Plan": { maxProperties: 20, maxUnits: 50, maxMaintenanceRequest: 999999, maxReports: 999999, maxBilling: 999999, maxProspect: 999999 },
         };
 
-        // Assign listing limits based on plan_name
         subscription.listingLimits = listingLimits[subscription.plan_name] || listingLimits["Free Plan"];
 
         return res.status(200).json(subscription);
@@ -41,4 +37,5 @@ export default async function getSubscription(req, res) {
         console.error("Database query error:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
+    
 }

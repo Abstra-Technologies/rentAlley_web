@@ -19,12 +19,6 @@ const SearchParamsWrapper = ({ setActiveTab }) => {
   return null;
 };
 
-const SUBSCRIPTION_PLANS = {
-  "Free Plan": { maxMaintenanceRequest: 5 },
-  "Standard Plan": { maxMaintenanceRequest: 10 },
-  "Premium Plan": { maxMaintenanceRequest: Infinity },
-};
-
 const MaintenanceRequestPage = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -46,18 +40,19 @@ const MaintenanceRequestPage = () => {
       if (!user?.landlord_id) return;
 
       try {
-        const plans = ["Free Plan", "Standard Plan", "Premium Plan"];
-        const userPlan = plans[0];
-
-        const mockSubscription = {
-          plan_name: userPlan,
-          is_active: 1,
-          listingLimits: SUBSCRIPTION_PLANS[userPlan],
-        };
-
-        setSubscription(mockSubscription);
+        const response = await axios.get(
+          `/api/subscription/getCurrentPlan/${user.landlord_id}`
+        );
+        setSubscription(response.data);
       } catch (error) {
         console.error("Error fetching subscription:", error);
+        setSubscription({
+          plan_name: "Free Plan",
+          is_active: 1,
+          listingLimits: {
+            maxMaintenanceRequest: 5,
+          },
+        });
       }
     };
 
@@ -109,12 +104,10 @@ const MaintenanceRequestPage = () => {
       (request) => request.status.toLowerCase() !== "completed"
     );
 
-    // Sort active requests by creation date (oldest first)
     const sortedActiveRequests = [...activeRequests].sort(
       (a, b) => new Date(a.created_at) - new Date(b.created_at)
     );
 
-    // Determine how many active requests can be shown
     const visibleActiveCount = Math.min(
       maxMaintenanceRequest === Infinity
         ? activeRequests.length
@@ -127,9 +120,8 @@ const MaintenanceRequestPage = () => {
       .map((req) => req.request_id);
 
     const visibleTabRequests = filteredByTab.filter((req) => {
-      // Completed requests are always visible
       if (req.status.toLowerCase() === "completed") return true;
-      // For active requests, check if they're in the visible set
+
       return visibleActiveRequestIds.includes(req.request_id);
     });
 
@@ -192,7 +184,6 @@ const MaintenanceRequestPage = () => {
     setShowModal(true);
   };
 
-  // Get subscription plan details
   const getPlanDetails = () => {
     if (!subscription) return { name: "Loading...", limit: "..." };
 
@@ -228,7 +219,6 @@ const MaintenanceRequestPage = () => {
             {planDetails.limit}
           </div>
         </div>
-
         {hiddenRequestCount > 0 && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700">
             <strong>Note:</strong> {hiddenRequestCount} maintenance request
@@ -238,7 +228,6 @@ const MaintenanceRequestPage = () => {
             plan.
           </div>
         )}
-
         <div className="mb-6 border-b border-gray-200 bg-white rounded-t-lg flex">
           {["pending", "scheduled", "in-progress", "completed"].map((tab) => (
             <button
@@ -254,7 +243,6 @@ const MaintenanceRequestPage = () => {
             </button>
           ))}
         </div>
-
         {loading ? (
           <div className="text-center py-8">Loading requests...</div>
         ) : visibleRequests.length === 0 ? (
@@ -372,16 +360,13 @@ const MaintenanceRequestPage = () => {
             </table>
           </div>
         )}
-
         {showCalendar && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-[400px] max-w-full">
               <h2 className="text-lg font-bold mb-4">Select Scheduled Date</h2>
 
-              {/* Calendar Picker */}
               <Calendar onChange={setSelectedDate} value={selectedDate} />
 
-              {/* Buttons */}
               <div className="mt-4 flex justify-end">
                 <button
                   onClick={handleScheduleConfirm}
@@ -399,90 +384,403 @@ const MaintenanceRequestPage = () => {
             </div>
           </div>
         )}
-
-        {/* Maintenance Request Modal */}
         {showModal && selectedRequest && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-[500px] max-w-full">
-              <h2 className="text-lg font-bold mb-4">
-                Maintenance Request Details
-              </h2>
-
-              <p>
-                <strong>Tenant:</strong> {selectedRequest.tenant_first_name}{" "}
-                {selectedRequest.tenant_last_name}
-              </p>
-              <p>
-                <strong>Property:</strong> {selectedRequest.property_name}
-              </p>
-              <p>
-                <strong>Unit:</strong> {selectedRequest.unit_name}
-              </p>
-              <p>
-                <strong>Subject:</strong> {selectedRequest.subject}
-              </p>
-              <p>
-                <strong>Description:</strong> {selectedRequest.description}
-              </p>
-              <p>
-                <strong>Category:</strong> {selectedRequest.category}
-              </p>
-              <p>
-                <strong>Status:</strong> {selectedRequest.status.toUpperCase()}
-              </p>
-              <p>
-                <strong>Date:</strong>{" "}
-                {
-                  new Date(selectedRequest.created_at)
-                    .toISOString()
-                    .split("T")[0]
-                }
-              </p>
-
-              {/* Photos */}
-              {selectedRequest.photo_urls &&
-              selectedRequest.photo_urls.length > 0 ? (
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  {selectedRequest.photo_urls.map((photo, index) => (
-                    <img
-                      key={index}
-                      src={photo}
-                      alt={`Maintenance Photo ${index + 1}`}
-                      className="h-20 w-20 rounded object-cover cursor-pointer"
-                      onClick={() => setSelectedImage(photo)}
-                    />
-                  ))}
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+              
+              <div className="flex justify-between items-center border-b p-4 bg-blue-50">
+                <h2 className="text-xl font-bold text-blue-900 flex items-center">
+                  <span className="mr-2">Maintenance Request</span>
+                </h2>
+                <div className="flex items-center space-x-3">
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      selectedRequest.status.toLowerCase() === "pending"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : selectedRequest.status.toLowerCase() === "scheduled"
+                        ? "bg-blue-100 text-blue-800"
+                        : selectedRequest.status.toLowerCase() === "in-progress"
+                        ? "bg-purple-100 text-purple-800"
+                        : selectedRequest.status.toLowerCase() === "completed"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {selectedRequest.status.toUpperCase()}
+                  </span>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="text-gray-500 hover:bg-gray-100 p-1 rounded-full transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 </div>
-              ) : (
-                <p className="mt-4 text-gray-500">No Photos Available</p>
-              )}
+              </div>
 
-              {/* Close Button */}
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-md"
-                >
-                  Close
-                </button>
+              
+              <div className="overflow-y-auto p-6 flex-grow">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  
+                  <div className="md:col-span-2 space-y-5">
+                    <div className="bg-white rounded-lg border p-4">
+                      <h3 className="font-semibold text-lg mb-3 text-blue-900">
+                        {selectedRequest.subject}
+                      </h3>
+                      <div className="bg-gray-50 p-3 rounded text-gray-700 mb-4">
+                        <p>{selectedRequest.description}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-start">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mt-1 mr-2 text-blue-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-gray-500">Submitted On</p>
+                            <p className="font-medium">
+                              {new Date(
+                                selectedRequest.created_at
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mt-1 mr-2 text-blue-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-gray-500">Category</p>
+                            <p className="font-medium">
+                              {selectedRequest.category}
+                            </p>
+                          </div>
+                        </div>
+
+                        {selectedRequest.schedule_date && (
+                          <div className="flex items-start">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mt-1 mr-2 text-blue-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <div>
+                              <p className="text-gray-500">Scheduled For</p>
+                              <p className="font-medium">
+                                {new Date(
+                                  selectedRequest.schedule_date
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedRequest.completion_date && (
+                          <div className="flex items-start">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mt-1 mr-2 text-green-600"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <div>
+                              <p className="text-gray-500">Completed On</p>
+                              <p className="font-medium">
+                                {new Date(
+                                  selectedRequest.completion_date
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    
+                    {selectedRequest.photo_urls &&
+                      selectedRequest.photo_urls.length > 0 && (
+                        <div className="bg-white rounded-lg border p-4">
+                          <h3 className="font-semibold text-gray-700 mb-3">
+                            Photos ({selectedRequest.photo_urls.length})
+                          </h3>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {selectedRequest.photo_urls.map((photo, index) => (
+                              <div
+                                key={index}
+                                className="relative group cursor-pointer h-24 overflow-hidden rounded-lg border"
+                                onClick={() => setSelectedImage(photo)}
+                              >
+                                <img
+                                  src={photo}
+                                  alt={`Maintenance issue ${index + 1}`}
+                                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity"></div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+
+                  
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg border p-4">
+                      <h3 className="font-semibold text-gray-700 mb-3">
+                        Property Details
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-start">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mt-1 mr-2 text-blue-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-gray-500 text-sm">Property</p>
+                            <p className="font-medium">
+                              {selectedRequest.property_name}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mt-1 mr-2 text-blue-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-gray-500 text-sm">Unit</p>
+                            <p className="font-medium">
+                              {selectedRequest.unit_name}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg border p-4">
+                      <h3 className="font-semibold text-gray-700 mb-3">
+                        Tenant Information
+                      </h3>
+                      <div className="flex items-center">
+                        <div className="bg-blue-100 text-blue-700 rounded-full p-2 mr-3">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {selectedRequest.tenant_first_name}{" "}
+                            {selectedRequest.tenant_last_name}
+                          </p>
+                          {selectedRequest.tenant_email && (
+                            <p className="text-sm text-gray-500">
+                              {selectedRequest.tenant_email}
+                            </p>
+                          )}
+                          {selectedRequest.tenant_phone && (
+                            <p className="text-sm text-gray-500">
+                              {selectedRequest.tenant_phone}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    
+                    <div className="bg-white rounded-lg border p-4">
+                      <h3 className="font-semibold text-gray-700 mb-3">
+                        Actions
+                      </h3>
+                      <div className="space-y-2">
+                        {selectedRequest.status.toLowerCase() === "pending" && (
+                          <button
+                            onClick={() => {
+                              updateStatus(
+                                selectedRequest.request_id,
+                                "scheduled"
+                              );
+                              setShowModal(false);
+                            }}
+                            className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors flex items-center justify-center"
+                          >
+                            Approve Request
+                          </button>
+                        )}
+
+                        {selectedRequest.status.toLowerCase() ===
+                          "scheduled" && (
+                          <button
+                            onClick={() => {
+                              handleStartClick(selectedRequest.request_id);
+                              setShowModal(false);
+                            }}
+                            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center justify-center"
+                          >
+                            Start Work
+                          </button>
+                        )}
+
+                        {selectedRequest.status.toLowerCase() ===
+                          "in-progress" && (
+                          <button
+                            onClick={() => {
+                              updateStatus(
+                                selectedRequest.request_id,
+                                "completed",
+                                {
+                                  completion_date: new Date()
+                                    .toISOString()
+                                    .split("T")[0],
+                                }
+                              );
+                              setShowModal(false);
+                            }}
+                            className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors flex items-center justify-center"
+                          >
+                            Mark as Completed
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => setShowModal(false)}
+                          className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md transition-colors"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
-
-        {/* Fullscreen Image Modal */}
+        
         {selectedImage && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+            onClick={() => setSelectedImage(null)}
+          >
             <button
-              className="absolute top-4 right-4 text-white text-xl"
-              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 text-white bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImage(null);
+              }}
             >
-              ✕
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
             <img
               src={selectedImage}
-              alt="Enlarged Maintenance Photo"
-              className="max-w-full max-h-full rounded-lg shadow-lg"
+              alt="Enlarged maintenance photo"
+              className="max-h-[90vh] max-w-[90vw] object-contain"
             />
           </div>
         )}
