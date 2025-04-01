@@ -171,7 +171,7 @@ export default function ChatComponent() {
                     >
                       {msg.message}
                       <span className="block text-xs text-gray-300 mt-1 text-right">
-                        {msg.timestamp}
+                        {new Date(msg.timestamp).toLocaleString()}
                       </span>
                     </div>
                   </div>

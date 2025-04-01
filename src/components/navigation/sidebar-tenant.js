@@ -30,22 +30,6 @@ const menuItems = [
   { href: "/pages/tenant/billing", icon: CreditCard, label: "Billing Payment" },
 ];
 
-const handleNavigation = (href) => {
-  Swal.fire({
-    title: "Loading...",
-    text: "Redirecting to " + href,
-    allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    },
-  });
-
-  setTimeout(() => {
-    router.push(href);
-    Swal.close();
-  }, 1000);
-};
-
 const TenantLayout = ({ children }) => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -55,10 +39,10 @@ const TenantLayout = ({ children }) => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const handleNavigation = (href) => {
+  const handleNavigation = (label, href) => {
     Swal.fire({
       title: "Loading...",
-      text: "Redirecting to " + href,
+      text: "Redirecting to " + label,
       allowOutsideClick: false,
       didOpen: () => {
         Swal.showLoading();
@@ -103,7 +87,7 @@ const TenantLayout = ({ children }) => {
               return (
                 <li key={href}>
                   <button
-                    onClick={() => handleNavigation(href)}
+                    onClick={() => handleNavigation(label, href)}
                     className={`
                       flex items-center w-full px-4 py-3 rounded-lg text-gray-700 transition-all duration-200
                       ${

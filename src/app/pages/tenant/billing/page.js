@@ -132,7 +132,11 @@ export default function TenantBilling({}) {
     return <p className="text-gray-500">Loading billing records...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
   if (billingData.length === 0)
-    return <p className="text-gray-500">No billing records found.</p>;
+    return (
+      <TenantLayout>
+        <p className="text-gray-500">No billing records found.</p>
+      </TenantLayout>
+    );
 
   return (
     <TenantLayout>

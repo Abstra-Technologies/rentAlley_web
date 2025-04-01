@@ -99,55 +99,47 @@ export default function TenantDetails() {
                   <p className="text-gray-500">No payment records found.</p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300 mt-2">
+                    <table className="w-full border-collapse mt-2 rounded-lg overflow-hidden shadow">
                       <thead>
-                        <tr className="bg-gray-100 text-gray-700">
-                          <th className="border p-2">Date</th>
-                          <th className="border p-2">Type</th>
-                          <th className="border p-2">Amount</th>
-                          <th className="border p-2">Status</th>
-                          <th className="border p-2">Receipt</th>
+                        <tr className="bg-gray-200 text-gray-700">
+                          <th className="p-3 text-left">Date</th>
+                          <th className="p-3 text-left">Type</th>
+                          <th className="p-3 text-right">Amount</th>
+                          <th className="p-3 text-center">Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {paymentHistory.map((payment) => (
+                        {paymentHistory.map((payment, index) => (
                           <tr
                             key={payment.payment_id}
-                            className="text-gray-600 text-center"
+                            className={`text-gray-600 ${
+                              index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                            } hover:bg-gray-100 transition`}
                           >
-                            <td className="border p-2">
+                            <td className="p-3 text-left">
                               {new Date(
                                 payment?.payment_date
                               ).toLocaleDateString()}
                             </td>
-                            <td className="border p-2">
+                            <td className="p-3 text-left">
                               {payment?.payment_type}
                             </td>
-                            <td className="border p-2">
-                            ₱{isNaN(payment?.amount_paid) ? "0.00" : Number(payment.amount_paid).toFixed(2)}
+                            <td className="p-3 text-right font-medium">
+                              ₱
+                              {isNaN(payment?.amount_paid)
+                                ? "0.00"
+                                : Number(payment.amount_paid).toFixed(2)}
                             </td>
-                            <td
-                              className={`border p-2 font-semibold ${
-                                payment?.payment_status === "confirmed"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {payment?.payment_status}
-                            </td>
-                            <td className="border p-2">
-                              {payment?.receipt_reference ? (
-                                <a
-                                  href={payment?.receipt_reference}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 underline"
-                                >
-                                  View Receipt
-                                </a>
-                              ) : (
-                                "N/A"
-                              )}
+                            <td className="p-3 text-center">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  payment?.payment_status === "confirmed"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {payment?.payment_status}
+                              </span>
                             </td>
                           </tr>
                         ))}
