@@ -18,6 +18,8 @@ export default function MaintenanceHistoryPage() {
           `/api/maintenance/viewHistory?tenant_id=${user?.tenant_id}`
         );
         setHistory(response.data);
+
+        console.log("Fetched Maintenance History:", response.data);
       } catch (error) {
         console.error("Error fetching maintenance history:", error);
       } finally {
@@ -26,7 +28,7 @@ export default function MaintenanceHistoryPage() {
     };
 
     fetchCompletedRequests();
-  }, []);
+  }, [user]);
 
   return (
     <TenantLayout>

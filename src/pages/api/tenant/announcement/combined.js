@@ -36,16 +36,33 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "No associated property found" });
     }
 
-    const landlord_id = property[0]?.landlord_id;
-
-    const [systemAnnouncements] = await db.execute(
+    const [systemAnnouncementsRaw] = await db.execute(
       "SELECT id, title, message, created_at FROM AdminAnnouncement WHERE target_audience IN ('all', 'tenant')"
     );
 
-    const [landlordAnnouncements] = await db.execute(
-      "SELECT announcement_id, subject AS title, description AS message, created_at FROM Announcement WHERE landlord_id = ?",
-      [landlord_id]
-    );
+    const systemAnnouncements = systemAnnouncementsRaw.map((ann) => ({
+      unique_id: `sys-${ann.id}`,
+      title: ann.title,
+      message: ann.message,
+      created_at: ann.created_at,
+    }));
+
+    let landlordAnnouncements = [];
+
+    if (property.length > 0 && property[0].landlord_id) {
+      const landlord_id = property[0].landlord_id;
+      const [landlordAnnouncementsRaw] = await db.execute(
+        "SELECT announcement_id, subject AS title, description AS message, created_at FROM Announcement WHERE landlord_id = ?",
+        [landlord_id]
+      );
+
+      landlordAnnouncements = landlordAnnouncementsRaw.map((ann) => ({
+        unique_id: `ll-${ann.announcement_id}`,
+        title: ann.title,
+        message: ann.message,
+        created_at: ann.created_at,
+      }));
+    }
 
     const announcements = [
       ...systemAnnouncements,

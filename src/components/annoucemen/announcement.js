@@ -42,7 +42,7 @@ export default function Announcements({ user_id }) {
         <ul className="space-y-4">
           {announcements.map((announcement) => (
             <li
-              key={announcement.announcement_id}
+              key={announcement.unique_id}
               className="p-5 border border-gray-200 rounded-xl shadow-sm bg-gray-50 hover:bg-gray-100 transition"
             >
               <h2 className="text-lg font-semibold text-gray-800">
