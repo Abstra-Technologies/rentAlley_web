@@ -40,29 +40,25 @@ export default function CreateUnitBill() {
           `/api/landlord/billing/getUnitBill?unit_id=${unit_id}`
         );
         const data = res.data;
-
         if (!data.unit || !data.property) {
           new Error("Missing unit or property data");
         }
-
         setUnit(data.unit);
         setProperty(data.property);
-
         const concessionaireRes = await axios.get(
           `/api/landlord/billing/saveConcessionaireBilling?property_id=${data?.property?.property_id}`
         );
         let concessionaireData = concessionaireRes.data;
-
         if (!Array.isArray(concessionaireData)) {
           concessionaireData = [];
         }
         let waterRate = 0;
         let electricityRate = 0;
-
         concessionaireData.forEach((bill) => {
           if (bill.utility_type === "water") {
             waterRate = bill.rate_consumed;
-          } else if (bill.utility_type === "electricity") {
+          }
+          if (bill.utility_type === "electricity") {
             electricityRate = bill.rate_consumed;
           }
         });

@@ -100,7 +100,7 @@ export default function MyUnit() {
             failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/secFailed`,
             cancel: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/secCancelled`,
           },
-        });src/app/pages/tenant/my-unit/page.js
+        });
 
         if (response.status === 200) {
           window.location.href = response.data.checkoutUrl;

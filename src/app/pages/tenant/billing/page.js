@@ -95,7 +95,7 @@ export default function TenantBilling({}) {
           email: user.email,
           redirectUrl: {
             success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billSuccess`,
-            failure: `$src/app/pages/tenant/billing/page.js{process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billFailed`,
+            failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billFailed`,
             cancel: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billCancelled`,
           },
         });
@@ -105,7 +105,7 @@ export default function TenantBilling({}) {
         }
       } catch (error) {
         console.error("Payment error:", error);
-        Swal.fire({
+        await Swal.fire({
           icon: "error",
           title: "Payment Failed",
           text: "Failed to process payment. Please try again.",
