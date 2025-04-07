@@ -40,15 +40,6 @@ export function StepThree() {
       }
     }
 
-    if (name === "propDesc") {
-      const paragraphCount = value
-        .split("\n")
-        .filter((p) => p.trim() !== "").length;
-      if (paragraphCount > 3) {
-        return;
-      }
-    }
-
     setProperty({ ...property, [name]: newValue });
   };
 
@@ -96,6 +87,7 @@ export function StepThree() {
               onChange={handleChange}
               placeholder="Add a brief description of the property"
               className="w-full p-2 border rounded"
+              maxLength={500}
             ></textarea>
           </div>
 

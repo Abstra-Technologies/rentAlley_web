@@ -11,11 +11,37 @@ import Footer from "../../../../components/navigation/footer";
 import Image from "next/image";
 import Swal from "sweetalert2";
 
+// function to calculate age from birthdate
+const isAdult = (dob) => {
+  const birthDate = new Date(dob);
+  const today = new Date();
+  const age = today.getFullYear() - birthDate.getFullYear();
+
+  // Check if the birthday hasn't occurred yet this year
+  const hasBirthdayPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+
+  return hasBirthdayPassed ? age >= 18 : age - 1 >= 18;
+};
+
 const registerSchema = z
   .object({
-    firstName: z.string().nonempty("First Name is required"),
-    lastName: z.string().nonempty("Last Name is required"),
-    dob: z.string().nonempty("Date of Birth is required"),
+    firstName: z
+      .string()
+      .nonempty("First Name is required")
+      .regex(/^[A-Za-z]+$/, "First Name must only contain letters"),
+    lastName: z
+      .string()
+      .nonempty("Last Name is required")
+      .regex(/^[A-Za-z]+$/, "Last Name must only contain letters"),
+    dob: z
+      .string()
+      .nonempty("Date of Birth is required")
+      .refine((dob) => isAdult(dob), {
+        message: "You must be at least 18 years old",
+      }),
     mobileNumber: z
       .string()
       .regex(/^\d{11}$/, "Mobile Number must be 11 digits"),
@@ -59,6 +85,11 @@ function Register() {
     confirmPassword: "",
     role: role,
   });
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  const handleCheckboxChange = (e) => {
+    setAgreeToTerms(e.target.checked);
+  };
 
   const handleGoogleSignup = () => {
     logEvent(
@@ -88,18 +119,18 @@ function Register() {
     setErrors({});
     setError("");
 
-    // Show a loading Swal before making the API request
-    Swal.fire({
-      title: "Registering...",
-      text: "Please wait while we create your account.",
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-    });
-
     try {
       registerSchema.parse(formData);
+
+      if (!agreeToTerms) {
+        Swal.fire({
+          icon: "error",
+          title: "Terms Not Accepted",
+          text: "You must agree to the Terms of Service and Privacy Policy before registering.",
+          confirmButtonText: "OK",
+        });
+        return;
+      }
 
       Swal.fire({
         title: "Registering...",
@@ -161,6 +192,9 @@ function Register() {
           icon: "error",
           title: "Validation Error!",
           text: "Please check your input fields.",
+          confirmButtonText: "OK",
+          allowOutsideClick: true,
+          allowEscapeKey: true,
         });
       } else {
         console.error("Error during API call:", err);
@@ -200,7 +234,7 @@ function Register() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             {[
               { id: "firstName", label: "First Name", placeholder: "Juan" },
-              { id: "lastName", label: "Last Name", placeholder: "Tamad" },
+              { id: "lastName", label: "Last Name", placeholder: "Gonzalez" },
               { id: "dob", label: "Date of Birth", type: "date" },
               {
                 id: "mobileNumber",
@@ -211,7 +245,7 @@ function Register() {
               {
                 id: "email",
                 label: "Email Address",
-                placeholder: "juantamad@email.com",
+                placeholder: "juan@email.com",
                 type: "email",
               },
               {
@@ -248,23 +282,32 @@ function Register() {
               </div>
             ))}
 
-            <p className="text-sm text-gray-700 text-center">
-              By signing up, you agree to our{" "}
-              <Link
-                href="/pages/terms-services"
-                className="text-blue-600 hover:underline"
-              >
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link
-                href="/pages/terms-services"
-                className="text-blue-600 hover:underline"
-              >
-                Privacy Policy
-              </Link>
-              .
-            </p>
+            <div className="flex items-center text-sm text-gray-700">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreeToTerms}
+                onChange={handleCheckboxChange}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="terms" className="ml-2">
+                By signing up, you agree to our{" "}
+                <Link
+                  href="/pages/terms-services"
+                  className="text-blue-600 hover:underline"
+                >
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/pages/terms-services"
+                  className="text-blue-600 hover:underline"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </label>
+            </div>
 
             <button
               type="submit"

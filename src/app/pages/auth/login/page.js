@@ -210,7 +210,7 @@ function Login() {
                 className="mt-1 w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="juantamad@email.com"
+                placeholder="juan@email.com"
               />
               {errors.email && (
                 <p className="text-red-500 text-sm mt-1">{errors.email}</p>

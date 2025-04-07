@@ -146,6 +146,7 @@ const Navbar = () => {
       return [
         { href: "/pages/landlord/inbox", label: "Inbox" },
         { href: "/pages/landlord/dashboard", label: "Dashboard" },
+        { href: "/pages/find-rent", label: "Find Rent" },
       ];
     }
 
@@ -155,31 +156,33 @@ const Navbar = () => {
   const navigationLinks = getNavigationLinks();
 
   const markAllAsRead = async () => {
-    for (const notification of notifications) {
-      if (!notification?.is_read) {
-        try {
-          const res = await fetch("/api/notification/get-notification", {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ id: notification?.id }),
-          });
+    if (!notifications.length) return;
 
-          console.log(`Marking notification ${notification?.id} as read...`);
-
-          if (!res.ok) {
-            console.error("Failed to mark notification as read:", res.status);
-          }
-        } catch (error) {
-          console.error("Error marking notification as read:", error);
-        }
+    try {
+      const unreadNotifications = notifications.filter((n) => !n.is_read);
+      if (unreadNotifications.length === 0) {
+        return;
       }
-    }
 
-    setNotifications(
-      notifications.map((notification) => ({ ...notification, is_read: true }))
-    );
+      const res = await fetch("/api/notification/mark-all-read", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids: unreadNotifications.map((n) => n.id) }),
+      });
+
+      if (!res.ok) {
+        console.error("Failed to mark all notifications as read:", res.status);
+        return;
+      }
+
+      setNotifications(notifications.map((n) => ({ ...n, is_read: true })));
+
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
   };
 
   return (
@@ -255,7 +258,7 @@ const Navbar = () => {
                       {notifications.length > 0 && (
                         <button
                           className="text-xs text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                          onClick={() => markAllAsRead()}
+                          onClick={markAllAsRead}
                         >
                           Mark all as read
                         </button>
@@ -681,7 +684,7 @@ const Navbar = () => {
             {notifications.length > 0 && (
               <button
                 className="text-xs text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                onClick={() => markAllAsRead()}
+                onClick={markAllAsRead}
               >
                 Mark all as read
               </button>

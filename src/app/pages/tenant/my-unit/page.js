@@ -16,7 +16,7 @@ import {
   MapPinIcon,
   KeyIcon,
   CreditCardIcon,
-  PencilSquareIcon
+  PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -165,7 +165,6 @@ export default function MyUnit() {
     (!requiresSecurity || isSecurityPaid) &&
     (!requiresAdvanced || isAdvancedPaid);
 
- 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "active":
@@ -177,7 +176,6 @@ export default function MyUnit() {
     }
   };
 
-  
   const PaymentStatus = ({ isPaid, label }) => (
     <div className="flex items-center gap-2 text-sm">
       {isPaid ? (
@@ -191,7 +189,6 @@ export default function MyUnit() {
     </div>
   );
 
-  
   const formatAddress = () => {
     if (!unit) return "";
 

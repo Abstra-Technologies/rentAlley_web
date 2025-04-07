@@ -9,7 +9,7 @@ const Camera = ({ onCapture }) => {
   const videoConstraints = {
     width: 1280,
     height: 720,
-    facingMode: "environment", // Use back camera for property photos
+    facingMode: "user",
   };
 
   //modify this where to save.

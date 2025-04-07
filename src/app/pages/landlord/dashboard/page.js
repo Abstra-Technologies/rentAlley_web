@@ -6,20 +6,19 @@ import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import LandlordPropertyChart from "../../../../components/analytics/landlordAnalytics";
 
 export default function LandlordDashboard() {
-    const { user, admin, loading } = useAuthStore();
-    const [isMounted, setIsMounted] = useState(false);
-    const router = useRouter();
+  const { user, admin, loading } = useAuthStore();
+  const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-
-    return (
-        <LandlordLayout>
-            <div>
-                <LandlordPropertyChart />
-            </div>
-        </LandlordLayout>
-    );
+  return (
+    <LandlordLayout>
+      <div>
+        <LandlordPropertyChart />
+      </div>
+    </LandlordLayout>
+  );
 }

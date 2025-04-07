@@ -54,7 +54,7 @@ export default function TenantDashboard() {
           <LeaseAgreementWidget tenant_id={user?.tenant_id} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:col-span-2">
             <TenantBillingTable tenant_id={user?.tenant_id} />
-            <Announcements />
+            <Announcements user_id={user?.user_id} />
           </div>
           <div className="lg:col-span-2">
             <TenantPropertyChart />
@@ -63,6 +63,4 @@ export default function TenantDashboard() {
       </div>
     </TenantLayout>
   );
-  
-  
 }

@@ -249,7 +249,7 @@ const LandlordPropertyChart = () => {
     labels: data.map((item) => item.category),
     title: { text: "Maintenance Request Categories", align: "center" },
   };
-  const chartSeriesMaintenance = data.map((item) => item.category);
+  const chartSeriesMaintenance = data.map((item) => item.count);
 
   const monthsUtility = [...new Set(utilityTrend.map((item) => item.month))];
   const waterData = monthsUtility.map(
@@ -369,24 +369,36 @@ const LandlordPropertyChart = () => {
               <h3 className="text-lg font-semibold text-gray-700 mb-3">
                 Tenant Occupation
               </h3>
-              <Chart
-                options={chartOptionsOccupation}
-                series={seriesOccupation}
-                type="pie"
-                height={350}
-              />
+              {occupationData.length > 0 ? (
+                <Chart
+                  options={chartOptionsOccupation}
+                  series={seriesOccupation}
+                  type="pie"
+                  height={350}
+                />
+              ) : (
+                <div className="flex justify-center items-center h-64">
+                  <p className="text-gray-500">No data available</p>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
               <h3 className="text-lg font-semibold text-gray-700 mb-3">
                 Property Utilities
               </h3>
-              <Chart
-                options={chartOptionsPropertyUtilities}
-                series={seriesPropertyUtilities}
-                type="bar"
-                height={350}
-              />
+              {waterRates.length > 0 && electricityRates.length > 0 ? (
+                <Chart
+                  options={chartOptionsPropertyUtilities}
+                  series={seriesPropertyUtilities}
+                  type="bar"
+                  height={350}
+                />
+              ) : (
+                <div className="flex justify-center items-center h-64">
+                  <p className="text-gray-500">No data available</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -395,12 +407,18 @@ const LandlordPropertyChart = () => {
               <h3 className="text-lg font-semibold text-gray-700 mb-3">
                 Utility Trends
               </h3>
-              <Chart
-                options={chartOptionsUtilityTrends}
-                series={seriesUtilityTrends}
-                type="line"
-                height={350}
-              />
+              {utilityTrend.length > 0 ? (
+                <Chart
+                  options={chartOptionsUtilityTrends}
+                  series={seriesUtilityTrends}
+                  type="line"
+                  height={350}
+                />
+              ) : (
+                <div className="flex justify-center items-center h-64">
+                  <p className="text-gray-500">No data available</p>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
@@ -416,7 +434,7 @@ const LandlordPropertyChart = () => {
                 />
               ) : (
                 <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No properties data available</p>
+                  <p className="text-gray-500">No data available</p>
                 </div>
               )}
             </div>
@@ -441,7 +459,7 @@ const LandlordPropertyChart = () => {
                 />
               ) : (
                 <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No visit data available</p>
+                  <p className="text-gray-500">No data available</p>
                 </div>
               )}
             </div>
@@ -463,7 +481,7 @@ const LandlordPropertyChart = () => {
                 />
               ) : (
                 <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No occupancy data available</p>
+                  <p className="text-gray-500">No data available</p>
                 </div>
               )}
             </div>
@@ -481,13 +499,13 @@ const LandlordPropertyChart = () => {
               ) : data.length > 0 ? (
                 <Chart
                   options={chartOptionsMaintenanceCategories}
-                  series={chartSeries}
+                  series={chartSeriesMaintenance}
                   type="pie"
                   height={300}
                 />
               ) : (
                 <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No maintenance data available</p>
+                  <p className="text-gray-500">No data available</p>
                 </div>
               )}
             </div>
@@ -496,12 +514,18 @@ const LandlordPropertyChart = () => {
               <h3 className="text-lg font-semibold text-gray-700 mb-3">
                 Payment Analysis
               </h3>
-              <Chart
-                options={chartOptionsPayment}
-                series={seriesPayment}
-                type="bar"
-                height={350}
-              />
+              {paymentData.length > 0 ? (
+                <Chart
+                  options={chartOptionsPayment}
+                  series={seriesPayment}
+                  type="bar"
+                  height={350}
+                />
+              ) : (
+                <div className="flex justify-center items-center h-64">
+                  <p className="text-gray-500">No data available</p>
+                </div>
+              )}
             </div>
           </div>
         </>
