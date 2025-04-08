@@ -244,12 +244,6 @@ export default function PropertyDetails() {
                   <h3 className="font-medium text-gray-700">Late Fee</h3>
                   <p className="text-gray-600">{property.late_fee} %</p>
                 </div>
-                <div>
-                  <h3 className="font-medium text-gray-700">
-                    Security Deposit
-                  </h3>
-                  <p className="text-gray-600">₱{property.sec_deposit}</p>
-                </div>
               </div>
 
               {/* Amenities */}
@@ -279,7 +273,7 @@ export default function PropertyDetails() {
                   Property Description
                 </h2>
                 <p className="text-gray-600 leading-relaxed">
-                  {property.description.split('\n').map((line, index) => (
+                  {property.description.split("\n").map((line, index) => (
                     <span key={index}>
                       {line}
                       <br />

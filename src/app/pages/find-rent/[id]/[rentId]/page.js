@@ -146,13 +146,23 @@ export default function UnitDetailPage() {
                   .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                   .join(" ")}
               </li>
+              <li>
+                <strong className="text-gray-800">Security Deposit:</strong> ₱{" "}
+                {unit?.sec_deposit}
+              </li>
+              <li>
+                <strong className="text-gray-800">Advanced Payment:</strong> ₱{" "}
+                {unit?.advanced_payment}
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Right: Inquiry Booking, and Sending Message */}
         <div className="bg-white p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Book This Unit</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Book This Unit
+          </h3>
           {user && user.tenant_id ? (
             <InquiryBooking
               tenant_id={user.tenant_id}
@@ -161,7 +171,9 @@ export default function UnitDetailPage() {
               landlord_id={unit?.landlord_id}
             />
           ) : (
-            <p className="text-red-500">You must be logged in as a tenant to book this unit.</p>
+            <p className="text-red-500">
+              You must be logged in as a tenant to book this unit.
+            </p>
           )}
         </div>
       </div>
