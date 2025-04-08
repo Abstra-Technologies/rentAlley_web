@@ -36,15 +36,6 @@ export default async function updateProspectStatus(req, res) {
 
     await db.query(updateQuery, [status, message || null, unitId, tenant_id]);
 
-    if (status === "approved") {
-      const leaseQuery = `
-        INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, status)
-        VALUES (?, ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 1 YEAR), 'active')
-      `;
-
-      await db.query(leaseQuery, [tenant_id, unitId]);
-    }
-
     const notificationQuery = `
       INSERT INTO Notification (user_id, title, body, is_read, created_at)
       VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)

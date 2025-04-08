@@ -13,8 +13,8 @@ export default async function handler(req, res) {
     }
 
     const [landlord] = await db.execute(
-        `SELECT user_id FROM Landlord WHERE landlord_id = ?`,
-        [landlord_id]
+      `SELECT user_id FROM Landlord WHERE landlord_id = ?`,
+      [landlord_id]
     );
 
     if (landlord.length === 0) {
@@ -34,14 +34,43 @@ export default async function handler(req, res) {
       VALUES (?, ?, NOW());
     `;
 
-
     await db.execute(activityLogQuery, [
       user_id,
-      `Created Announcement ${subject - description}`
+      `Created Announcement ${subject - description}`,
     ]);
 
-    return res.status(201).json({ message: "Announcement created and logged successfully" });
+    const tenantQuery = `
+      SELECT DISTINCT t.user_id
+      FROM LeaseAgreement la
+      JOIN Tenant t ON la.tenant_id = t.tenant_id
+      JOIN Unit u ON la.unit_id = u.unit_id
+      WHERE u.property_id = ? AND la.status = 'active'
+    `;
+    const [tenants] = await db.execute(tenantQuery, [property_id]);
 
+    const notificationQuery = `
+      INSERT INTO Notification (user_id, title, body, is_read, created_at)
+      VALUES (?, ?, ?, ?, NOW())
+    `;
+
+    const maxBodyLength = 100;
+    const truncatedDescription =
+      description.length > maxBodyLength
+        ? description.slice(0, maxBodyLength) + "..."
+        : description;
+
+    for (const tenant of tenants) {
+      await db.execute(notificationQuery, [
+        tenant.user_id,
+        subject,
+        truncatedDescription,
+        0,
+      ]);
+    }
+
+    return res
+      .status(201)
+      .json({ message: "Announcement created and logged successfully" });
   } catch (error) {
     console.error("Error creating announcement:", error);
     return res.status(500).json({ message: "Internal Server Error" });
