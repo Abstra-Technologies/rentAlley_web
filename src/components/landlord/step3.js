@@ -151,57 +151,7 @@ export function StepThree() {
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold mt-4 mb-4">
-            Add Payment Term Details
-          </h2>
-          <p className="text-gray-500 mb-6">
-            You can always change your payment term details later.
-          </p>
-
           <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="secDeposit"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Security Deposit (Amount)
-              </label>
-              <input
-                id="secDeposit"
-                type="number"
-                placeholder="1000"
-                min={0}
-                className="mt-1 block w-full rounded-md border p-3"
-                value={property.secDeposit || ""}
-                onChange={(e) =>
-                  setProperty({ ...property, secDeposit: e.target.value })
-                }
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="advancedPayment"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Advanced Payment (Amount)
-              </label>
-              <input
-                type="number"
-                id="advancedPayment"
-                min="0"
-                value={property.advancedPayment || ""}
-                placeholder="1000"
-                onChange={(e) =>
-                  setProperty({
-                    ...property,
-                    advancedPayment: Number(e.target.value),
-                  })
-                }
-                className="mt-1 block w-full rounded-md border p-3"
-              />
-            </div>
-
             <div>
               <label
                 htmlFor="minStay"

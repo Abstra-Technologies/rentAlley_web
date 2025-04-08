@@ -1,6 +1,6 @@
 import { db } from "../../../lib/db";
-import {parse} from "cookie";
-import {jwtVerify} from "jose";
+import { parse } from "cookie";
+import { jwtVerify } from "jose";
 
 export default async function PropertyListingCRUD(req, res) {
   const { id } = req.query;
@@ -50,8 +50,6 @@ async function handlePostRequest(req, res, connection) {
     minStay,
     lateFee,
     assocDues,
-    secDeposit,
-    advancedPayment,
     paymentFrequency,
   } = req.body;
 
@@ -81,8 +79,6 @@ async function handlePostRequest(req, res, connection) {
       minStay || null,
       lateFee || 0.0,
       assocDues || 0.0,
-      secDeposit || null,
-      advancedPayment || null,
       paymentFrequency || null,
     ];
 
@@ -96,9 +92,9 @@ async function handlePostRequest(req, res, connection) {
           landlord_id, property_name, property_type, amenities, street,
           brgy_district, city, zip_code, province, total_units,
           utility_billing_type, description, floor_area, pet_friendly,
-          min_stay, late_fee, assoc_dues, sec_deposit, advanced_payment,
+          min_stay, late_fee, assoc_dues,
           payment_frequency, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `,
       values
     );
@@ -113,10 +109,9 @@ async function handlePostRequest(req, res, connection) {
     let loggedUser = payload.user_id;
 
     await db.query(
-        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
-        [loggedUser, `Created Property ${propertyName} `]
+      "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+      [loggedUser, `Created Property ${propertyName} `]
     );
-
 
     await connection.commit();
 
@@ -129,7 +124,13 @@ async function handlePostRequest(req, res, connection) {
     res.status(500).json({ error: "Failed to create property listing" });
   }
 }
-async function handleGetRequest(req, res, connection, landlord_id, property_id) {
+async function handleGetRequest(
+  req,
+  res,
+  connection,
+  landlord_id,
+  property_id
+) {
   try {
     let query = `
       SELECT
@@ -140,7 +141,6 @@ async function handleGetRequest(req, res, connection, landlord_id, property_id) 
              LEFT JOIN PropertyVerification pv ON p.property_id = pv.property_id
       WHERE 1=1
     `;
-
 
     let params = [];
 
@@ -158,7 +158,9 @@ async function handleGetRequest(req, res, connection, landlord_id, property_id) 
     const [rows] = await connection.execute(query, params);
 
     if (property_id && rows.length === 0) {
-      return res.status(404).json({ error: "No Properties found for this Landlord" });
+      return res
+        .status(404)
+        .json({ error: "No Properties found for this Landlord" });
     }
 
     res.status(200).json(rows);
@@ -201,9 +203,7 @@ async function handlePutRequest(req, res, connection, id) {
       utilityBillingType,
       petFriendly,
       minStay,
-      secDeposit,
       assocDues,
-      advancedPayment,
       paymentFrequency,
       lateFee,
     } = req.body;
@@ -213,7 +213,7 @@ async function handlePutRequest(req, res, connection, id) {
     const [result] = await connection.execute(
       `UPDATE Property SET
         property_name = ?, property_type = ?, amenities = ?, street = ?, brgy_district = ?,
-        city = ?, zip_code = ?, province = ?, total_units = ?, utility_billing_type = ?, description = ?, floor_area = ?, pet_friendly = ?, min_stay = ?, sec_deposit = ?, advanced_payment = ?, assoc_dues = ?, late_fee = ?, payment_frequency = ?, updated_at = CURRENT_TIMESTAMP
+        city = ?, zip_code = ?, province = ?, total_units = ?, utility_billing_type = ?, description = ?, floor_area = ?, pet_friendly = ?, min_stay = ?, assoc_dues = ?, late_fee = ?, payment_frequency = ?, updated_at = CURRENT_TIMESTAMP
       WHERE property_id = ?`,
       [
         propertyName,
@@ -230,8 +230,6 @@ async function handlePutRequest(req, res, connection, id) {
         floorArea,
         petFriendly,
         minStay,
-        secDeposit,
-        advancedPayment,
         assocDues,
         lateFee,
         paymentFrequency,
@@ -249,8 +247,8 @@ async function handlePutRequest(req, res, connection, id) {
     let loggedUser = payload.user_id;
 
     await db.query(
-        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
-        [loggedUser, `Updated Property ${propertyName} `]
+      "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+      [loggedUser, `Updated Property ${propertyName} `]
     );
 
     await connection.commit();
@@ -266,8 +264,8 @@ async function handlePutRequest(req, res, connection, id) {
 async function handleDeleteRequest(req, res, connection, id) {
   try {
     const [rows] = await connection.execute(
-        `SELECT * FROM Property WHERE property_id = ?`,
-        [id]
+      `SELECT * FROM Property WHERE property_id = ?`,
+      [id]
     );
 
     if (rows.length === 0) {
@@ -276,21 +274,24 @@ async function handleDeleteRequest(req, res, connection, id) {
 
     // Check if any unit within the property has an active lease
     const [activeLeases] = await connection.execute(
-        `SELECT la.agreement_id 
+      `SELECT la.agreement_id 
      FROM LeaseAgreement la
      JOIN Unit u ON la.unit_id = u.unit_id
      WHERE u.property_id = ? AND la.status = 'active'`,
-        [id]
+      [id]
     );
 
     if (activeLeases.length > 0) {
-      return res.status(400).json({ error: "Cannot delete property with active leases" });
+      return res
+        .status(400)
+        .json({ error: "Cannot delete property with active leases" });
     }
 
     await connection.beginTransaction();
 
-    await connection.execute(`DELETE FROM Property WHERE property_id = ?`, [id]);
-
+    await connection.execute(`DELETE FROM Property WHERE property_id = ?`, [
+      id,
+    ]);
 
     const cookies = req.headers.cookie ? parse(req.headers.cookie) : null;
     if (!cookies || !cookies.token) {
@@ -302,18 +303,16 @@ async function handleDeleteRequest(req, res, connection, id) {
     let loggedUser = payload.user_id;
 
     await db.query(
-        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
-        [loggedUser, `Deleted Property: ${id}`]
+      "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
+      [loggedUser, `Deleted Property: ${id}`]
     );
 
     await connection.commit();
     res.status(200).json({ message: "Property listing deleted successfully" });
-
   } catch (error) {
     await connection.rollback();
     console.error("Error deleting property listing:", error);
 
     res.status(500).json({ error: "Failed to delete property listing" });
   }
-
 }

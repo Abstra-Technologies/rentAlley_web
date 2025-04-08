@@ -40,10 +40,11 @@ async function handlePostRequest(req, res, connection) {
     availBeds,
     rentAmt,
     furnish,
+    secDeposit,
+    advancedPayment,
     status,
   } = req.body;
 
-  // Ensure property_id is not undefined
   if (!property_id) {
     return res.status(400).json({ error: "property id is required" });
   }
@@ -57,23 +58,22 @@ async function handlePostRequest(req, res, connection) {
       availBeds,
       rentAmt,
       furnish,
+      secDeposit,
+      advancedPayment,
       status || "unoccupied",
     ];
 
     console.log("Values array:", values);
 
-    // Start a new transaction
     await connection.beginTransaction();
 
-    // Execute the SQL query to insert a new property listing
     const [result] = await connection.execute(
       `INSERT INTO Unit 
-      (property_id, unit_name, unit_size, bed_spacing, avail_beds, rent_amount, furnish, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      (property_id, unit_name, unit_size, bed_spacing, avail_beds, rent_amount, furnish, sec_deposit, advanced_payment, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       values
     );
 
-    // Commit the transaction
     await connection.commit();
 
     // Respond with the newly created property ID and the request body
@@ -153,6 +153,8 @@ async function handlePutRequest(req, res, connection, id) {
       availBeds,
       rentAmt,
       furnish,
+      secDeposit,
+      advancedPayment,
       status,
     } = req.body;
 
@@ -161,7 +163,7 @@ async function handlePutRequest(req, res, connection, id) {
     const [result] = await connection.execute(
       `UPDATE Unit SET
           unit_name = ?, unit_size = ?, bed_spacing = ?,
-          avail_beds = ?, rent_amount = ?, furnish = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+          avail_beds = ?, rent_amount = ?, furnish = ?,  status = ?, sec_deposit = ?, advanced_payment = ?, updated_at = CURRENT_TIMESTAMP
         WHERE unit_id = ?`,
       [
         unitName,
@@ -171,6 +173,8 @@ async function handlePutRequest(req, res, connection, id) {
         rentAmt,
         furnish,
         status ?? "unoccupied",
+        secDeposit,
+        advancedPayment,
         id,
       ]
     );
@@ -198,8 +202,8 @@ async function handleDeleteRequest(req, res, connection, id) {
     }
 
     const [rows] = await connection.execute(
-        `SELECT * FROM Unit WHERE unit_id = ?`,
-        [id]
+      `SELECT * FROM Unit WHERE unit_id = ?`,
+      [id]
     );
 
     if (rows.length === 0) {
@@ -207,8 +211,8 @@ async function handleDeleteRequest(req, res, connection, id) {
     }
 
     const [activeLeases] = await connection.execute(
-        `SELECT agreement_id FROM LeaseAgreement WHERE unit_id = ? AND status = 'active'`,
-        [id]
+      `SELECT agreement_id FROM LeaseAgreement WHERE unit_id = ? AND status = 'active'`,
+      [id]
     );
 
     if (activeLeases.length > 0) {
@@ -227,4 +231,3 @@ async function handleDeleteRequest(req, res, connection, id) {
     res.status(500).json({ error: "Failed to delete unit listing" });
   }
 }
-

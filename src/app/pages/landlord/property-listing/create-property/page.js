@@ -114,24 +114,6 @@ export default function AddNewProperty() {
         return false;
       }
 
-      if (!property.secDeposit || property.secDeposit <= 0) {
-        Swal.fire(
-          "Missing Security Deposit",
-          "Please enter a valid security deposit amount.",
-          "error"
-        );
-        return false;
-      }
-
-      if (!property.advancedPayment || property.advancedPayment <= 0) {
-        Swal.fire(
-          "Missing Advanced Payment",
-          "Please enter a valid advanced payment amount.",
-          "error"
-        );
-        return false;
-      }
-
       if (!property.lateFee || property.lateFee < 0) {
         Swal.fire(
           "Missing Late Fee",
@@ -399,8 +381,6 @@ export default function AddNewProperty() {
       }).then(() => {
         router.push("/pages/landlord/property-listing/review-listing");
       });
-
-      // router.push("/pages/landlord/property-listing/review-listing");
     } catch (error) {
       console.error("Property listing failed:", error.response?.data);
 

@@ -15,6 +15,8 @@ const unitSchema = z.object({
   unitSize: z.string().min(1, "Unit Size is required"),
   rentAmt: z.number().min(1, "Rent amount is required"),
   furnish: z.string().min(1, "Furnishing selection is required"),
+  secDeposit: z.number().min(1, "Security Deposit is required"),
+  advancedPayment: z.number().min(1, "Advanced Payment is required"),
   photos: z.array(z.any()).min(1, "At least one image is required"),
 });
 
@@ -28,14 +30,16 @@ export default function UnitListingForm() {
     bedSpacing: "",
     availBeds: "",
     rentAmt: "",
+    secDeposit: "",
+    advancedPayment: "",
     furnish: "",
   });
-  const [photos, setPhotos] = useState([]); // State for selected files
+  const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleChange = (e) => {
-    const { name, type, checked, value } = e.target; //Destructure value
+    const { name, type, checked, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
@@ -58,6 +62,8 @@ export default function UnitListingForm() {
     const parsedFormData = {
       ...formData,
       rentAmt: Number(formData.rentAmt),
+      secDeposit: Number(formData.secDeposit),
+      advancedPayment: Number(formData.advancedPayment),
     };
 
     // Validate form data with Zod
@@ -134,7 +140,7 @@ export default function UnitListingForm() {
 
   const handleCancel = () => {
     const propURL = `/pages/landlord/property-listing/${propertyId}/view-unit`;
-    router.back(propURL); // Go back to the previous page
+    router.back(propURL);
   };
 
   return (
@@ -191,7 +197,7 @@ export default function UnitListingForm() {
               <input
                 type="checkbox"
                 name="bedSpacing"
-                checked={formData.bedSpacing} // Ensure it checks based on 1
+                checked={formData.bedSpacing}
                 onChange={handleChange}
                 className="h-6 w-6"
               />
@@ -234,7 +240,37 @@ export default function UnitListingForm() {
             />
           </div>
 
-          {/* Furnish (Dynamic from API) */}
+          {/* Security Deposit */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Security Deposit
+            </label>
+            <input
+              type="number"
+              name="secDeposit"
+              value={formData.secDeposit || ""}
+              onChange={handleChange}
+              min={0}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          {/* Advanced Payment */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Advanced Payment
+            </label>
+            <input
+              type="number"
+              name="advancedPayment"
+              value={formData.advancedPayment || ""}
+              onChange={handleChange}
+              min={0}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          {/* Furnish Options */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Furnishing

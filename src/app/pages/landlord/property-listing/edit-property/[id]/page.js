@@ -34,8 +34,6 @@ const EditProperty = () => {
     totalUnits: "",
     utilityBillingType: "",
     paymentFrequency: "",
-    advancedPayment: "",
-    secDeposit: "",
     minStay: "",
     lateFee: "",
     petFriendly: false,
@@ -74,12 +72,10 @@ const EditProperty = () => {
           )
             ? propertyData?.utility_billing_type
             : "",
-          advancedPayment: propertyData?.advanced_payment || 0,
-          secDeposit: propertyData?.sec_deposit || 0,
           minStay: propertyData?.min_stay || 0,
           lateFee: propertyData?.late_fee || 0,
           petFriendly: propertyData?.pet_friendly === 1,
-          assocDues: propertyData?.assoc_dues || "",
+          assocDues: propertyData?.assoc_dues || 0,
           propertyType: PROPERTY_TYPES.some(
             (p) => p.value === propertyData?.property_type
           )
@@ -155,12 +151,26 @@ const EditProperty = () => {
       photo_id: null,
       photo_url: URL.createObjectURL(file),
       file: file,
+      isNew: true,
     }));
 
     setPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
   };
 
-  const handleDeletePhoto = async (photoId) => {
+  const handleDeletePhoto = async (photoId, index) => {
+    if (photoId === null) {
+      setPhotos((prevPhotos) => {
+        const newPhotos = [...prevPhotos];
+        const nullIdPhotos = newPhotos.filter((p) => p.photo_id === null);
+        if (nullIdPhotos.length > 0) {
+          const photoToRemove = nullIdPhotos[index % nullIdPhotos.length];
+          return newPhotos.filter((p) => p !== photoToRemove);
+        }
+        return newPhotos;
+      });
+      return;
+    }
+
     Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to recover this photo!",
@@ -205,16 +215,16 @@ const EditProperty = () => {
           });
           updateProperty(id, formData);
 
-          const newPhotos = photos.filter(photo => photo.isNew && photo.file);
-          
+          const newPhotos = photos.filter((photo) => photo.isNew && photo.file);
+
           if (newPhotos.length > 0) {
             const formDataPhotos = new FormData();
             formDataPhotos.append("property_id", id);
-            
-            newPhotos.forEach(photo => {
+
+            newPhotos.forEach((photo) => {
               formDataPhotos.append("photos", photo.file);
             });
-      
+
             await axios.post(
               "/api/propertyListing/propPhotos",
               formDataPhotos,
@@ -488,42 +498,6 @@ const EditProperty = () => {
             </select>
           </div>
 
-          {/* Advanced Payment (Amount) */}
-          <div>
-            <label
-              htmlFor="advancedPayment"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Advanced Payment
-            </label>
-            <input
-              type="number"
-              name="advancedPayment"
-              id="advancedPayment"
-              value={formData.advancedPayment || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Security Deposit (Amount) */}
-          <div>
-            <label
-              htmlFor="secDeposit"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Security Deposit (Amount)
-            </label>
-            <input
-              type="number"
-              name="secDeposit"
-              id="secDeposit"
-              value={formData.secDeposit || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
           {/* Minimum Stay (Months) */}
           <div>
             <label
@@ -572,7 +546,7 @@ const EditProperty = () => {
               type="number"
               name="assocDues"
               id="assocDues"
-              value={formData.assocDues || ""}
+              value={formData.assocDues}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             />
@@ -642,7 +616,14 @@ const EditProperty = () => {
               <p className="text-sm text-gray-600">Existing Photos:</p>
               <div className="grid grid-cols-3 gap-2 mt-2">
                 {photos?.map((photo, index) => (
-                  <div key={photo?.photo_id || index} className="relative">
+                  <div
+                    key={
+                      photo?.photo_id
+                        ? `existing-${photo.photo_id}`
+                        : `new-${index}`
+                    }
+                    className="relative"
+                  >
                     {photo?.photo_url ? (
                       <Image
                         src={photo.photo_url}
@@ -659,7 +640,7 @@ const EditProperty = () => {
                     <button
                       type="button"
                       className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full text-xs"
-                      onClick={() => handleDeletePhoto(photo.photo_id)}
+                      onClick={() => handleDeletePhoto(photo.photo_id, index)}
                     >
                       ✕
                     </button>
