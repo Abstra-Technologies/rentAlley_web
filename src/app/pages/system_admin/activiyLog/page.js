@@ -68,7 +68,7 @@ export default function ActivityLogs() {
             const term = searchTerm.toLowerCase();
             result = result.filter(log => 
                 (log.user_id || log.admin_id || "").toString().toLowerCase().includes(term) ||
-                (log.user_name || "").toLowerCase().includes(term) ||
+                (log.firstName || "").toLowerCase().includes(term) ||
                 (log.action || "").toLowerCase().includes(term) ||
                 (log.details || "").toLowerCase().includes(term)
             );
@@ -90,7 +90,7 @@ export default function ActivityLogs() {
             headers.join(","),
             ...filteredLogs.map(log => [
                 log.user_id || log.admin_id || "N/A",
-                `"${(log.user_name || "Anonymous User").replace(/"/g, '""')}"`,
+                `"${(log.firstName || "Anonymous User").replace(/"/g, '""')}"`,
                 `"${(log.action || "Unknown Action").replace(/"/g, '""')}"`,
                 `"${new Date(log.timestamp).toLocaleString()}"`,
                 `"${(log.details || "").replace(/"/g, '""')}"`
@@ -281,10 +281,12 @@ export default function ActivityLogs() {
                                                         </div>
                                                         <div className="ml-3">
                                                             <div className="text-sm font-medium text-gray-900">
-                                                                {log.user_name || "Anonymous User"}
+                                                                {log.adminUsername?.trim()
+                                                                    ? log.adminUsername
+                                                                    : `${log.firstName ?? ''} ${log.lastName ?? ''}`.trim()}
                                                             </div>
-                                                            <Link 
-                                                                href={`/admin/users/${log.user_id || log.admin_id}`}
+                                                            <Link
+                                                                href={`/pages/system_admin/users/${log.user_id || log.admin_id}`}
                                                                 className="text-xs text-indigo-600 font-medium hover:text-indigo-800"
                                                             >
                                                                 {log.user_id || log.admin_id || "N/A"}
