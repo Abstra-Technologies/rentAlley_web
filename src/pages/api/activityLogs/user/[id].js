@@ -29,33 +29,33 @@ export default async function handler(req, res) {
             [id, id]
         );
 
-        const logs = activityLogs.map((log) => {
-            let decryptedFirstName = null;
-            let decryptedLastName = null;
+        const logs = activityLogs.map(log => {
+            const decryptedLog = { ...log };
 
             try {
                 if (log.firstName) {
-                    decryptedFirstName = decryptData(
-                        log.firstName.toString(),
-                        process.env.ENCRYPTION_SECRET
-                    );
+                    const encryptedFirstName = JSON.parse(log.firstName);
+                    const decryptedFirstName = decryptData(encryptedFirstName, process.env.ENCRYPTION_SECRET);
+                    decryptedLog.firstName = decryptedFirstName; // ❌ no JSON.parse here
                 }
+
                 if (log.lastName) {
-                    decryptedLastName = decryptData(
-                        log.lastName.toString(),
-                        process.env.ENCRYPTION_SECRET
-                    );
+                    const encryptedLastName = JSON.parse(log.lastName);
+                    const decryptedLastName = decryptData(encryptedLastName, process.env.ENCRYPTION_SECRET);
+                    decryptedLog.lastName = decryptedLastName; // ❌ no JSON.parse here
                 }
-            } catch (err) {
-                console.error(`Decryption failed for log ID ${log.log_id}:`, err);
+
+                console.log("Decrypted First Name:", decryptedLog.firstName);
+                console.log("Decrypted Last Name:", decryptedLog.lastName);
+            } catch (decryptionError) {
+                console.error(`Decryption failed for log ID ${log.log_id}:`, decryptionError);
+                decryptedLog.firstName = null;
+                decryptedLog.lastName = null;
             }
 
-            return {
-                ...log,
-                firstName: decryptedFirstName,
-                lastName: decryptedLastName,
-            };
+            return decryptedLog;
         });
+
 
         return res.status(200).json({ logs });
     } catch (error) {

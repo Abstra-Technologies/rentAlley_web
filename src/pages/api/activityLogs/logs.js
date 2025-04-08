@@ -30,18 +30,19 @@ export default async function viewActivityLogs(req, res) {
 
             try {
                 if (log.firstName) {
-                    decryptedLog.firstName = decryptData(
-                        log.firstName.toString(),
-                        process.env.ENCRYPTION_SECRET
-                    );
+                    const encryptedFirstName = JSON.parse(log.firstName);
+                    const decryptedFirstName = decryptData(encryptedFirstName, process.env.ENCRYPTION_SECRET);
+                    decryptedLog.firstName = decryptedFirstName;
                 }
 
                 if (log.lastName) {
-                    decryptedLog.lastName = decryptData(
-                        log.lastName.toString(),
-                        process.env.ENCRYPTION_SECRET
-                    );
+                    const encryptedLastName = JSON.parse(log.lastName);
+                    const decryptedLastName = decryptData(encryptedLastName, process.env.ENCRYPTION_SECRET);
+                    decryptedLog.lastName = decryptedLastName;
                 }
+
+                console.log("Decrypted First Name:", decryptedLog.firstName);
+                console.log("Decrypted Last Name:", decryptedLog.lastName);
             } catch (decryptionError) {
                 console.error(`Decryption failed for log ID ${log.log_id}:`, decryptionError);
                 decryptedLog.firstName = null;
@@ -50,6 +51,8 @@ export default async function viewActivityLogs(req, res) {
 
             return decryptedLog;
         });
+
+
 
         return res.status(200).json({ logs });
     } catch (error) {

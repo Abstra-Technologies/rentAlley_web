@@ -49,7 +49,7 @@ export default function UserActivityLogPage() {
                     <h1 className="text-2xl font-bold text-gray-800">
                         Activity Logs for {actorName || "..."} {isAdmin ? "(Admin)" : "(User)"}
                     </h1>
-                    <Link href="/admin/logs" className="text-indigo-600 text-sm hover:underline">
+                    <Link href="/pages/system_admin/activiyLog" className="text-indigo-600 text-sm hover:underline">
                         ← Back to Logs
                     </Link>
                 </div>
