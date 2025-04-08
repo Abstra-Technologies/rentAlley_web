@@ -104,7 +104,7 @@ export const config = {
   matcher: [
     "/pages/tenant/:path*",
     "/pages/landlord/:path*",
-    "/pages/system_admin/:path*",
+    // "/pages/system_admin/:path*",
     "/pages/commons/:path*",
   ],
 };

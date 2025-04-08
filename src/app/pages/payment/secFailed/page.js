@@ -59,13 +59,13 @@ function SecFailed() {
     return (
         <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg text-center">
             <h2 className={`text-2xl font-semibold mb-4 ${loading ? "text-yellow-600" : "text-green-600"}`}>
-                {loading ? "Processing..." : "Payment Successful"}
+                {loading ? "Processing..." : "Payment Failed"}
             </h2>
             <p>{message}</p>
 
             {!loading && (
                 <div className="mt-4 p-4 border rounded bg-gray-100">
-                    <h2>Payment Cancellation Successful.</h2>
+                    <h2>Payment Cancelled.</h2>
                 </div>
             )}
 

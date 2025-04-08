@@ -39,7 +39,7 @@ function billFailed() {
                     amount,
                     requestReferenceNumber,
                 });
-                setMessage("Your payment Cancellation was Successful");
+                setMessage("Your payment Failed");
             } catch (error) {
                 setMessage(`Failed to update payment status. ${error}`);
             } finally {
@@ -55,17 +55,17 @@ function billFailed() {
     return (
         <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg text-center">
             <h2 className={`text-2xl font-semibold mb-4 ${loading ? "text-yellow-600" : "text-green-600"}`}>
-                {loading ? "Processing..." : "Payment Successful"}
+                {loading ? "Processing..." : "Payment Failed"}
             </h2>
             <p>{message}</p>
 
-            {!loading && (
-                <div className="mt-4 p-4 border rounded bg-gray-100">
-                    <h3 className="text-lg font-bold">Payment Receipt Invoice</h3>
-                    <p><strong>Request Reference:</strong> {requestReferenceNumber}</p>
-                    <p><strong>Amount Paid:</strong> ₱{parseFloat(amount).toLocaleString()}</p>
-                </div>
-            )}
+            {/*{!loading && (*/}
+            {/*    <div className="mt-4 p-4 border rounded bg-gray-100">*/}
+            {/*        <h3 className="text-lg font-bold">Payment Receipt Invoice</h3>*/}
+            {/*        <p><strong>Request Reference:</strong> {requestReferenceNumber}</p>*/}
+            {/*        <p><strong>Amount Paid:</strong> ₱{parseFloat(amount).toLocaleString()}</p>*/}
+            {/*    </div>*/}
+            {/*)}*/}
 
             <button
                 onClick={() => router.push("/pages/tenant/my-unit")}
