@@ -59,7 +59,7 @@ const uploadToS3 = async (file, folder) => {
 };
 
 export default async function saveUploadLease(req, res) {
-  if (req.method !== "PUT") {
+  if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -86,6 +86,7 @@ export default async function saveUploadLease(req, res) {
 
     console.log("Parsed Fields:", fields);
     console.log("Parsed Files:", files);
+    console.log("Unit ID: ", unit_id[0]);
 
     let connection;
     try {
@@ -110,35 +111,46 @@ export default async function saveUploadLease(req, res) {
         [tenant_id, unit_id[0]]
       );
 
-      if (existingLease.length === 0) {
-        return res.status(404).json({ error: "Lease agreement not found" });
+      if (existingLease.length > 0) {
+        return res.status(409).json({
+          error: "Lease agreement already exists for this tenant and unit.",
+        });
       }
 
       const leaseAgreementFile = files.leaseFile?.[0] || null;
 
-      const agreementUrl = leaseAgreementFile
-        ? await uploadToS3(leaseAgreementFile, "leaseAgreement")
-        : null;
+      const agreementUrl = await uploadToS3(
+        leaseAgreementFile,
+        "leaseAgreement"
+      );
 
       if (!agreementUrl) {
         return res.status(400).json({ error: "No lease file uploaded" });
       }
 
       const query = `
-        UPDATE LeaseAgreement 
-        SET agreement_url = ?, updated_at = NOW() 
-        WHERE agreement_id = ?
+        INSERT INTO LeaseAgreement (tenant_id, unit_id, agreement_url, created_at, updated_at) 
+        VALUES (?, ?, ?, NOW(), NOW())
       `;
 
-      await connection.execute(query, [
+      const [insertResult] = await connection.execute(query, [
+        tenant_id,
+        unit_id[0],
         agreementUrl,
-        existingLease[0].agreement_id,
       ]);
+
+      if (insertResult.affectedRows !== 1) {
+        throw new Error("Failed to insert lease agreement into database.");
+      }
       await connection.commit();
       res.status(201).json({ message: "Lease agreement stored successfully." });
     } catch (error) {
-      if (connection) await connection.rollback();
-      res.status(500).json({ error: "Internal server error" });
+      // if (connection) await connection.rollback();
+      // res.status(500).json({ error: "Internal server error" });
+      console.error("Insert Error:", error);
+      res
+        .status(500)
+        .json({ error: "Internal server error", message: error.message });
     } finally {
       if (connection) connection.release();
     }
