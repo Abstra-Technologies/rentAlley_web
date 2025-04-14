@@ -15,8 +15,9 @@ export default function Announcements() {
         const response = await axios.get(
           `/api/tenant/announcement/combined?user_id=${user?.user_id}`
         );
-        const sortedAnnouncements = response.data
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const sortedAnnouncements = response.data.sort(
+          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        );
         setAnnouncements(sortedAnnouncements);
       } catch (err) {
         setError("Failed to load announcements");
@@ -26,34 +27,41 @@ export default function Announcements() {
     };
 
     fetchAnnouncements();
-  }, [user?.user_id]);
+  }, [user.user_id]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
-  if (loading) return (
-    <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full flex justify-center items-center">
-      <div className="animate-pulse text-gray-500">Loading announcements...</div>
-    </div>
-  );
-  
-  if (error) return (
-    <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full">
-      <p className="text-red-500">{error}</p>
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full flex justify-center items-center">
+        <div className="animate-pulse text-gray-500">
+          Loading announcements...
+        </div>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
 
   return (
     <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full">
-      <h2 className="text-xl font-semibold text-gray-700 mb-4">
-        Announcements
-      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-700">Announcements</h2>
+        <span className="text-sm bg-blue-100 text-blue-800 font-semibold px-3 py-1 rounded-full">
+          {announcements.length}
+        </span>
+      </div>
       {announcements.length === 0 ? (
         <p className="text-gray-600">No announcements available.</p>
       ) : (
