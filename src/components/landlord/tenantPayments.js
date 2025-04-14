@@ -31,6 +31,16 @@ const PaymentList = ({ landlord_id }) => {
     fetchPayments();
   }, [landlord_id]);
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-600 text-lg animate-pulse">
+          Loading payments...
+        </div>
+      </div>
+    );
+  }
+
   if (error) return <p className="text-red-500">Error: {error}</p>;
 
   return (

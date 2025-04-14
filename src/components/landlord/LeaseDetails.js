@@ -11,7 +11,6 @@ import {
   DocumentTextIcon,
   EnvelopeIcon,
   IdentificationIcon,
-  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import {
   HiOutlineBriefcase,
@@ -177,6 +176,16 @@ const LeaseDetails = ({ unitId }) => {
       Swal.fire({
         title: "Error",
         text: "Start date and End date cannot be empty!",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
+    if (endDate <= startDate) {
+      Swal.fire({
+        title: "Error",
+        text: "End date must be after the start date!",
         icon: "error",
         confirmButtonText: "OK",
       });

@@ -8,20 +8,17 @@ export default async function handler(req, res) {
   try {
     const { unitId } = req.query;
 
-    let result;
-    if (unitId) {
-      result = await db.query("SELECT status FROM Unit WHERE unit_id = ?", [
-        unitId,
-      ]);
-    } else {
-      return res.status(400).json({ message: "Unit ID is required" });
-    }
+    const [rows] = await db.query("SELECT status FROM Unit WHERE unit_id = ?", [
+      unitId,
+    ]);
 
-    if (result.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ message: "Unit not found" });
     }
 
-    return res.status(200).json({ status: result[0].status });
+    const unitStatus = rows[0].status;
+
+    return res.status(200).json({ status: unitStatus });
   } catch (error) {
     console.error("Error fetching status:", error);
     return res.status(500).json({ message: "Internal server error" });
