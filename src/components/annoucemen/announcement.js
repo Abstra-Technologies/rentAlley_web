@@ -31,7 +31,7 @@ export default function Announcements() {
     fetchAnnouncements();
   }, [user?.user_id]);
 
-  const handleAnnouncementClick = (announcement) => {
+  const handleSeeMoreClick = (announcement) => {
     setSelectedAnnouncement(announcement);
     setShowModal(true);
   };
@@ -41,13 +41,31 @@ export default function Announcements() {
     setSelectedAnnouncement(null);
   };
 
-  const createExcerpt = (text, maxLength = 150) => {
+  const createExcerpt = (text, maxLength = 100) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
 
-  if (loading) return <p>Loading announcements...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) return (
+    <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full flex justify-center items-center">
+      <div className="animate-pulse text-gray-500">Loading announcements...</div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="bg-white shadow-md rounded-2xl p-6 border border-gray-200 h-full">
+      <p className="text-red-500">{error}</p>
+    </div>
+  );
 
   return (
     <>
@@ -62,18 +80,25 @@ export default function Announcements() {
             {announcements.map((announcement) => (
               <li
                 key={announcement.unique_id}
-                className="p-5 border border-gray-200 rounded-xl shadow-sm bg-gray-50 hover:bg-gray-100 transition cursor-pointer"
-                onClick={() => handleAnnouncementClick(announcement)}
+                className="p-5 border border-gray-200 rounded-xl shadow-sm bg-gray-50 transition"
               >
                 <h2 className="text-lg font-semibold text-gray-800">
                   {announcement.title}
                 </h2>
-                <p className="text-gray-700 mt-1">
+                <p className="text-sm text-gray-500 mb-2">
+                  {formatDate(announcement.created_at)}
+                </p>
+                <p className="text-gray-700">
                   {createExcerpt(announcement.message)}
                 </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  {new Date(announcement.created_at).toLocaleString()}
-                </p>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    onClick={() => handleSeeMoreClick(announcement)}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition text-sm font-medium"
+                  >
+                    See more
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -81,15 +106,16 @@ export default function Announcements() {
       </div>
 
       {showModal && selectedAnnouncement && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start mb-2">
               <h2 className="text-xl font-bold text-gray-800">
                 {selectedAnnouncement.title}
               </h2>
               <button
                 onClick={closeModal}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                aria-label="Close"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -107,11 +133,19 @@ export default function Announcements() {
                 </svg>
               </button>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
-              {new Date(selectedAnnouncement.created_at).toLocaleString()}
+            <p className="text-sm text-gray-500 mb-4">
+              {formatDate(selectedAnnouncement.created_at)}
             </p>
-            <div className="mt-4 text-gray-700">
+            <div className="text-gray-700 prose max-w-none">
               {selectedAnnouncement.message}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition text-sm font-medium"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
