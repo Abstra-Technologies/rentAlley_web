@@ -19,7 +19,9 @@ export default async function handler(req, res) {
         billing_period,
         total_amount_due,
         status,
-        due_date
+        due_date,
+        created_at,
+        paid_at
       FROM Billing
       WHERE unit_id = ?
       ORDER BY billing_period DESC
