@@ -1,5 +1,65 @@
+// "use client";
+// // import type { Metadata } from "next";
+// import { Geist, Geist_Mono } from "next/font/google";
+// import "./globals.css";
+// import Navbar from "../../src/components/navigation/navbar";
+// import { useEffect } from "react";
+// import Script from "next/script";
+// import useAuthStore from "@/src/zustand/authStore";
+//
+// const geistSans = Geist({
+//   variable: "--font-geist-sans",
+//   subsets: ["latin"],
+// });
+//
+// const geistMono = Geist_Mono({
+//   variable: "--font-geist-mono",
+//   subsets: ["latin"],
+// });
+//
+// export default function RootLayout({
+//   children,
+// }: {
+//   children: React.ReactNode;
+// }) {
+//   const { fetchSession } = useAuthStore();
+//   useEffect(() => {
+//     fetchSession();
+//   }, []);
+//   return (
+//     <html lang="en">
+//       <body className="antialiased">
+//         {/* Google Analytics Script */}
+//         <Script
+//           strategy="afterInteractive"
+//           src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+//         />
+//         <Script
+//           id="google-analytics"
+//           strategy="afterInteractive"
+//           dangerouslySetInnerHTML={{
+//             __html: `
+//               window.dataLayer = window.dataLayer || [];
+//               function gtag(){dataLayer.push(arguments);}
+//               gtag('js', new Date());
+//               gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+//                 page_path: window.location.pathname,
+//               });
+//             `,
+//           }}
+//         />
+//
+//         <Navbar />
+//         {children}
+//       </body>
+//     </html>
+//   );
+// }
+
+
+// app/layout.tsx (or wherever your layout is)
 "use client";
-// import type { Metadata } from "next";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "../../src/components/navigation/navbar";
@@ -18,40 +78,39 @@ const geistMono = Geist_Mono({
 });
 
 export default function RootLayout({
-  children,
-}: {
+                                     children,
+                                   }: {
   children: React.ReactNode;
 }) {
   const { fetchSession } = useAuthStore();
+
   useEffect(() => {
     fetchSession();
   }, []);
+
   return (
-    <html lang="en">
-      <body className="antialiased">
+      <>
         {/* Google Analytics Script */}
         <Script
-          strategy="afterInteractive"
-          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+            strategy="afterInteractive"
+            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
         />
         <Script
-          id="google-analytics"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
-                page_path: window.location.pathname,
-              });
-            `,
-          }}
+            id="google-analytics"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', {
+              page_path: window.location.pathname,
+            });
+          `,
+            }}
         />
-
         <Navbar />
         {children}
-      </body>
-    </html>
+      </>
   );
 }

@@ -21,6 +21,8 @@ const EditUnit = () => {
     availBeds: "",
     rentAmt: "",
     furnish: "",
+    secDeposit: "",
+    advancedPayment: "",
     status: "unoccupied",
   });
   const [newPhotos, setNewPhotos] = useState([]);
@@ -38,7 +40,7 @@ const EditUnit = () => {
         console.log("Unit data:", data);
 
         if (data.length > 0) {
-          const unitData = data[0]; // Get the first object from the array
+          const unitData = data[0];
 
           setUnit(unitData);
           setFormData({
@@ -47,6 +49,8 @@ const EditUnit = () => {
             bedSpacing: unitData.bed_spacing || "",
             availBeds: unitData.avail_beds || "",
             rentAmt: unitData.rent_amount || "",
+            secDeposit: unitData.sec_deposit || "",
+            advancedPayment: unitData.advanced_payment || "",
             furnish: furnishingTypes.some((p) => p.value === unitData.furnish)
               ? unitData.furnish
               : "",
@@ -216,6 +220,34 @@ const EditUnit = () => {
               type="number"
               name="rentAmt"
               value={formData.rentAmt}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          {/* Security Deposit */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Security Deposit
+            </label>
+            <input
+              type="number"
+              name="secDeposit"
+              value={formData.secDeposit}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          {/* Advanced Payment */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Advanced Payment
+            </label>
+            <input
+              type="number"
+              name="advancedPayment"
+              value={formData.advancedPayment}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             />

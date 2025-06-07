@@ -62,6 +62,15 @@ async function handlePutRequest(req, res, connection, unit_id) {
         .json({ error: "Start date and end date are required" });
     }
 
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+
+    if (endDate <= startDate) {
+      return res
+        .status(400)
+        .json({ error: "End date must be after the start date" });
+    }
+
     const [tenantRows] = await connection.execute(
       "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
       [unit_id]

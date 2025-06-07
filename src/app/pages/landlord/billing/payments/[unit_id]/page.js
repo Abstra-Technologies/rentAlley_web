@@ -87,43 +87,92 @@ export default function PaymentManagement() {
           onClick={() => router.back()}
           className="flex items-center text-blue-600 hover:text-blue-800 mb-6 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 mr-1"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
           Back
         </button>
-        
+
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Payment Management</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Payment Management
+          </h1>
           <div className="hidden md:block">
             {/* You could add search/filter here if needed */}
           </div>
         </div>
-        
+
         <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proof</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Type
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Method
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Transaction Date
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Proof
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {payments.map((payment) => (
-                <tr key={payment.payment_id} className="hover:bg-gray-50 transition-colors">
+                <tr
+                  key={payment.payment_id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
                   <td className="px-4 py-4 whitespace-nowrap">
                     {payment.payment_type
                       .replace("_", " ")
                       .split(" ")
-                      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
                       .join(" ")}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap font-medium">₱{payment.amount_paid}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{payment.method_name}</td>
+                  <td className="px-4 py-4 whitespace-nowrap font-medium">
+                    ₱{payment.amount_paid}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {payment.method_name}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {new Date(payment.payment_date).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
+                  </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     <select
                       value={payment.payment_status}
@@ -156,14 +205,32 @@ export default function PaymentManagement() {
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800 font-medium flex items-center"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
                         </svg>
                         View Proof
                       </a>
                     ) : (
-                      <span className="text-gray-500 text-sm">No proof uploaded</span>
+                      <span className="text-gray-500 text-sm">
+                        No proof uploaded
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-right">
@@ -185,7 +252,7 @@ export default function PaymentManagement() {
             </tbody>
           </table>
         </div>
-        
+
         {payments.length === 0 && (
           <div className="text-center py-10 bg-white rounded-lg shadow">
             <p className="text-gray-500">No payments found</p>

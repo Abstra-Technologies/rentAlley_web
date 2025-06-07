@@ -36,9 +36,7 @@ export default async function getLease(req, res) {
     ]);
 
     if (leaseRows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No lease agreement found for the approved tenant" });
+      return res.status(200).json([]);
     }
 
     const decryptedRows = leaseRows.map((row) => {

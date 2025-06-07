@@ -15,8 +15,8 @@ export default async function updateProspectStatus(req, res) {
 
     if (status === "disapproved" && (!message || message.trim() === "")) {
       return res
-          .status(400)
-          .json({ message: "Disapproval message is required" });
+        .status(400)
+        .json({ message: "Disapproval message is required" });
     }
 
     const tenantQuery = `SELECT user_id FROM Tenant WHERE tenant_id = ?`;
@@ -26,7 +26,7 @@ export default async function updateProspectStatus(req, res) {
       return res.status(404).json({ message: "Tenant not found" });
     }
 
-    const user_id = tenantResult.user_id;
+    const user_id = tenantResult[0].user_id;
 
     const updateQuery = `
       UPDATE ProspectiveTenant 
@@ -36,24 +36,15 @@ export default async function updateProspectStatus(req, res) {
 
     await db.query(updateQuery, [status, message || null, unitId, tenant_id]);
 
-    if (status === "approved") {
-      const leaseQuery = `
-        INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, status)
-        VALUES (?, ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 1 YEAR), 'active')
-      `;
-
-      await db.query(leaseQuery, [tenant_id, unitId]);
-    }
-
     const notificationQuery = `
       INSERT INTO Notification (user_id, title, body, is_read, created_at)
       VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
     `;
 
     const notificationMessage =
-        status === "approved"
-            ? "Your tenant application has been approved! Check your lease agreement."
-            : `Your tenant application was disapproved. Reason: ${message}`;
+      status === "approved"
+        ? "Your tenant application has been approved! Check your lease agreement."
+        : `Your tenant application was disapproved. Reason: ${message}`;
 
     await db.query(notificationQuery, [
       user_id,

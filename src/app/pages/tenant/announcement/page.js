@@ -1,5 +1,5 @@
 "use client";
-import Announcements from "../../../../components/annoucemen/announcement";
+import Announcements from "../../../../components/annoucemen/announcementList";
 import useAuth from "../../../../../hooks/useSession";
 import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 

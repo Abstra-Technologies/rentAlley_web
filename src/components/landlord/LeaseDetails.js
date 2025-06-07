@@ -11,7 +11,6 @@ import {
   DocumentTextIcon,
   EnvelopeIcon,
   IdentificationIcon,
-  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import {
   HiOutlineBriefcase,
@@ -124,8 +123,8 @@ const LeaseDetails = ({ unitId }) => {
       if (response.data.length > 0) {
         const leaseData = response.data[0];
         setLease(leaseData);
-        setStartDate(leaseData.start_date || "");
-        setEndDate(leaseData.end_date || "");
+        setStartDate(leaseData?.start_date || "");
+        setEndDate(leaseData?.end_date || "");
 
         console.log("Lease Data: ", leaseData);
       }
@@ -140,13 +139,9 @@ const LeaseDetails = ({ unitId }) => {
     formData.append("unit_id", unitId);
 
     try {
-      await axios.put(
-        `/api/leaseAgreement/uploadLease?unit_id=${unitId}`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      await axios.post(`/api/leaseAgreement/uploadLease`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       Swal.fire("Success", "Lease agreement uploaded successfully", "success");
       fetchLeaseDetails();
     } catch (error) {
@@ -181,6 +176,16 @@ const LeaseDetails = ({ unitId }) => {
       Swal.fire({
         title: "Error",
         text: "Start date and End date cannot be empty!",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+      return;
+    }
+
+    if (endDate <= startDate) {
+      Swal.fire({
+        title: "Error",
+        text: "End date must be after the start date!",
         icon: "error",
         confirmButtonText: "OK",
       });

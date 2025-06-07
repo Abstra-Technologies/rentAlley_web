@@ -5,11 +5,12 @@ import InquiryBooking from "../../../../../components/tenant/inquiry";
 import Image from "next/image";
 import useAuth from "../../../../../../hooks/useSession";
 import { IoArrowBackOutline } from "react-icons/io5";
+import { FaExclamationTriangle, FaInfoCircle } from "react-icons/fa";
 import ReviewsList from "../../../../../components/tenant/reviewList";
 
 export default function UnitDetailPage() {
   const router = useRouter();
-  const { rentId } = useParams();
+  const { rentId, id } = useParams();
   const { user } = useAuth();
 
   const [unit, setUnit] = useState(null);
@@ -67,6 +68,8 @@ export default function UnitDetailPage() {
     );
   }
 
+  const isOccupied = unit.status === "occupied";
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       {/* Photo Gallery */}
@@ -114,6 +117,19 @@ export default function UnitDetailPage() {
         </button>
       </div>
 
+      {/* Status Badge */}
+      <div className="mt-4">
+        <span
+          className={`inline-block px-4 py-2 font-medium rounded-full text-sm ${
+            isOccupied
+              ? "bg-red-100 text-red-800"
+              : "bg-green-100 text-green-800"
+          }`}
+        >
+          {isOccupied ? "Currently Occupied" : "Available for Booking"}
+        </span>
+      </div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         {/* Left: Unit Details */}
@@ -146,26 +162,99 @@ export default function UnitDetailPage() {
                   .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                   .join(" ")}
               </li>
+              <li>
+                <strong className="text-gray-800">Security Deposit:</strong> ₱{" "}
+                {unit?.sec_deposit}
+              </li>
+              <li>
+                <strong className="text-gray-800">Advanced Payment:</strong> ₱{" "}
+                {unit?.advanced_payment}
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Right: Inquiry Booking, and Sending Message */}
-        <div className="bg-white p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Book This Unit</h3>
-          {user && user.tenant_id ? (
-            <InquiryBooking
-              tenant_id={user.tenant_id}
-              unit_id={unit?.unit_id}
-              rent_amount={unit?.rent_amount}
-              landlord_id={unit?.landlord_id}
-            />
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          {isOccupied ? (
+            <>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+                <div className="flex items-start">
+                  <FaExclamationTriangle className="text-red-500 text-xl mt-0.5 mr-3" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-800 mb-2">
+                      Unit Currently Occupied
+                    </h3>
+                    <p className="text-gray-700">
+                      This unit is currently rented and not available for
+                      booking. You can browse other available units in this
+                      property.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => router.push(`/pages/find-rent/${id}`)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  View Available Units
+                </button>
+              </div>
+              {/* <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-start">
+                  <FaInfoCircle className="text-blue-500 text-xl mt-0.5 mr-3" />
+                  <div>
+                    <h3 className="font-medium text-gray-800 mb-2">Want to be notified?</h3>
+                    <p className="text-gray-600 text-sm">
+                      You can sign up to be notified when this unit or similar units become available.
+                    </p>
+                    <button className="mt-3 w-full py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                      Join Waitlist
+                    </button>
+                  </div>
+                </div>
+              </div> */}
+            </>
           ) : (
-            <p className="text-red-500">You must be logged in as a tenant to book this unit.</p>
+            <>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Book This Unit
+              </h3>
+              {user && user.tenant_id ? (
+                <InquiryBooking
+                  tenant_id={user.tenant_id}
+                  unit_id={unit?.unit_id}
+                  rent_amount={unit?.rent_amount}
+                  landlord_id={unit?.landlord_id}
+                />
+              ) : (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-yellow-800 font-medium mb-2">
+                    Login Required
+                  </p>
+                  <p className="text-gray-600 text-sm">
+                    You must be logged in as a tenant to book this unit.
+                  </p>
+                  <button
+                    onClick={() =>
+                      router.push(
+                        "/login?redirect=" +
+                          encodeURIComponent(window.location.pathname)
+                      )
+                    }
+                    className="mt-3 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    Log In or Sign Up
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
-      {/* Reviews Section - Added Below Unit Details */}
+
+      {/* Reviews Section */}
       <div className="bg-white p-6 shadow-md rounded-lg mt-6">
         <ReviewsList unit_id={unit?.unit_id} landlord_id={user?.landlord_id} />
       </div>
