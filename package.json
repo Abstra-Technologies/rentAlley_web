@@ -21,7 +21,6 @@
     "@knocklabs/client": "^0.12.0-rc.3.0",
     "@mui/material": "^6.4.3",
     "@mui/x-data-grid": "^7.25.0",
-    "@netlify/next": "^1.4.9",
     "@react-pdf-viewer/core": "^3.12.0",
     "@react-pdf-viewer/default-layout": "^3.12.0",
     "@tiptap/pm": "^2.11.5",

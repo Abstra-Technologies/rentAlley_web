@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
-// @ts-ignore
-import {withNetlify} from '@netlify/next';
+
 const nextConfig: NextConfig = {
   env: {
     ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
@@ -8,11 +7,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // api: {
-  //   bodyParser: {
-  //     sizeLimit: "25mb",
-  //   },
-  // },
   images: {
     domains: [
       "upload.wikimedia.org",
@@ -36,4 +30,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNetlify(nextConfig);
+export default nextConfig;
