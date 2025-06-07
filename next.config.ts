@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
-
+// @ts-ignore
+import {withNetlify} from '@netlify/next';
 const nextConfig: NextConfig = {
   env: {
     ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
@@ -19,7 +20,6 @@ const nextConfig: NextConfig = {
       "lh3.googleusercontent.com",
       "encrypted-tbn0.gstatic.com",
       "mir-s3-cdn-cf.behance.net",
-
     ],
     remotePatterns: [
       {
@@ -36,4 +36,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNetlify(nextConfig);
