@@ -9,7 +9,14 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "coverage": "jest --coverage"
+    "coverage": "jest --coverage",
+    "prepare": "npx simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "commit-msg": "npx --no -- commitlint --edit"
+  },
+  "commitlint": {
+    "extends": ["@commitlint/config-conventional"]
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.750.0",
@@ -92,6 +99,8 @@
     "@babel/preset-env": "^7.26.9",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.26.0",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@eslint/eslintrc": "^3",
     "@netlify/next-runtime": "^5.0.0-alpha.25",
     "@playwright/test": "^1.50.1",
@@ -109,6 +118,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "postcss": "^8",
+    "simple-git-hooks": "^2.13.0",
     "supertest": "^7.0.0",
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.2.6",
