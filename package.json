@@ -7,9 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "coverage": "jest --coverage",
     "prepare": "npx simple-git-hooks"
   },
   "simple-git-hooks": {
