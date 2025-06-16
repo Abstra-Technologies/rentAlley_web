@@ -12,9 +12,6 @@
   "simple-git-hooks": {
     "commit-msg": "npx --no -- commitlint --edit"
   },
-  "engines": {
-    "node": ">=22"
-  },
 
   "commitlint": {
     "extends": [
