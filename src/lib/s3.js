@@ -3,7 +3,7 @@ import AWS from "aws-sdk";
 // ✅ Configure AWS S3
 const s3 = new AWS.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY,
     region: process.env.AWS_REGION,
 });
 
@@ -13,7 +13,7 @@ export const deleteFromS3 = async (fileUrl) => {
         if (!fileUrl) return;
 
         // Extract bucket name and key from URL
-        const bucketName = process.env.S3_BUCKET_NAME;
+        const bucketName = process.env.NEXT_S3_BUCKET_NAME;
         const key = fileUrl.split(".amazonaws.com/")[1];
 
         console.log("📂 Deleting from S3:", key);

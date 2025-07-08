@@ -6,7 +6,7 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY,
   },
 });
 
@@ -65,7 +65,7 @@ export default async function deleteLease(req, res) {
     try {
       await s3Client.send(
         new DeleteObjectCommand({
-          Bucket: process.env.S3_BUCKET_NAME,
+          Bucket: process.env.NEXT_S3_BUCKET_NAME,
           Key: key,
         })
       );

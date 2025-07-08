@@ -12,7 +12,7 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY,
   },
 });
 
@@ -94,14 +94,14 @@ async function handlePostRequest(req, res, connection) {
         const sanitizedFilename = sanitizeFilename(file.originalFilename);
         const fileName = `propertyPhoto/${Date.now()}_${sanitizedFilename}`;
         const fileStream = fs.createReadStream(filePath);
-        const photoUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        const photoUrl = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
         const encryptedUrl = JSON.stringify(
             encryptData(photoUrl, encryptionSecret)
         );
 
         const uploadParams = {
-          Bucket: process.env.S3_BUCKET_NAME,
+          Bucket: process.env.NEXT_S3_BUCKET_NAME,
           Key: fileName,
           Body: fileStream,
           ContentType: file.mimetype,
@@ -221,7 +221,7 @@ async function handleDeleteRequest(req, res, connection) {
       const key = new URL(photo_url).pathname.substring(1);
 
       const deleteParams = {
-        Bucket: process.env.S3_BUCKET_NAME,
+        Bucket: process.env.NEXT_S3_BUCKET_NAME,
         Key: key,
       };
 
