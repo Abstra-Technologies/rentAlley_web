@@ -14,7 +14,7 @@
 //     region: process.env.AWS_REGION,
 //     credentials: {
 //         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-//         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+//         secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY,
 //     },
 // });
 //
@@ -31,7 +31,7 @@
 //         const fileName = `${folder}/${Date.now()}_${file.originalFilename.replace(/\s+/g, "_")}`;
 //
 //         const params = {
-//             Bucket: process.env.S3_BUCKET_NAME,
+//             Bucket: process.env.NEXT_S3_BUCKET_NAME,
 //             Key: fileName,
 //             Body: fileStream,
 //             ContentType: file.mimetype,
@@ -39,7 +39,7 @@
 //
 //         s3.send(new PutObjectCommand(params))
 //             .then(() => {
-//                 const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+//                 const s3Url = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 //                 resolve(s3Url);
 //             })
 //             .catch((err) => reject(err));
@@ -53,7 +53,7 @@
 //         const fileName = `${folder}/${Date.now()}_selfie.jpg`;
 //
 //         const params = {
-//             Bucket: process.env.S3_BUCKET_NAME,
+//             Bucket: process.env.NEXT_S3_BUCKET_NAME,
 //             Key: fileName,
 //             Body: buffer,
 //             ContentEncoding: "base64",
@@ -62,7 +62,7 @@
 //
 //         s3.send(new PutObjectCommand(params))
 //             .then(() => {
-//                 const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+//                 const s3Url = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 //                 resolve(s3Url);
 //             })
 //             .catch((err) => reject(err));
@@ -205,7 +205,7 @@ const s3 = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY,
     },
 });
 
@@ -239,7 +239,7 @@ const uploadToS3 = async (file, folder) => {
         const fileName = `${folder}/${Date.now()}_${sanitizedFileName}`;
 
         const params = {
-            Bucket: process.env.S3_BUCKET_NAME,
+            Bucket: process.env.NEXT_S3_BUCKET_NAME,
             Key: fileName,
             Body: fileStream,
             ContentType: file.mimetype,
@@ -247,7 +247,7 @@ const uploadToS3 = async (file, folder) => {
 
         s3.send(new PutObjectCommand(params))
             .then(() => {
-                const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+                const s3Url = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
                 resolve(s3Url);
             })
             .catch((err) => reject(err));
@@ -264,7 +264,7 @@ const uploadBase64ToS3 = async (base64String, folder) => {
         const fileName = `${folder}/${Date.now()}_selfie.jpg`;
 
         const params = {
-            Bucket: process.env.S3_BUCKET_NAME,
+            Bucket: process.env.NEXT_S3_BUCKET_NAME,
             Key: fileName,
             Body: buffer,
             ContentEncoding: "base64",
@@ -273,7 +273,7 @@ const uploadBase64ToS3 = async (base64String, folder) => {
 
         s3.send(new PutObjectCommand(params))
             .then(() => {
-                const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+                const s3Url = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
                 resolve(s3Url);
             })
             .catch((err) => reject(err));

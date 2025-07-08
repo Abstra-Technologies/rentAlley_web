@@ -17,7 +17,7 @@ const s3Client = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY,
     },
 });
 
@@ -62,7 +62,7 @@ export default async function profilepictureHandler(req, res) {
 
         // Upload to S3
         const uploadParams = {
-            Bucket: process.env.S3_BUCKET_NAME,
+            Bucket: process.env.NEXT_S3_BUCKET_NAME,
             Key: fileName,
             Body: fileBuffer,
             ContentType: file.mimetype,
@@ -70,7 +70,7 @@ export default async function profilepictureHandler(req, res) {
 
         await s3Client.send(new PutObjectCommand(uploadParams));
 
-        const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        const imageUrl = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
         const encryptImage = imageUrl ? JSON.stringify(encryptData(imageUrl, process.env.ENCRYPTION_SECRET)) : null;
 
         console.log(`[Profile Upload] File Uploaded to S3: ${imageUrl}`);

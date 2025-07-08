@@ -13,10 +13,10 @@ export const config = {
 };
 
 const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
+    region: process.env.NEXT_AWS_REGION,
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId: process.env.NEXT_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY,
     },
 });
 
@@ -59,7 +59,7 @@ export default async function adminProfilePic(req, res) {
         const fileName = `admin-profile/${Date.now()}-${path.basename(file.originalFilename)}`;
 
         const uploadParams = {
-            Bucket: process.env.S3_BUCKET_NAME,
+            Bucket: process.env.NEXT_S3_BUCKET_NAME,
             Key: fileName,
             Body: fileBuffer,
             ContentType: file.mimetype,
@@ -68,7 +68,7 @@ export default async function adminProfilePic(req, res) {
         await s3Client.send(new PutObjectCommand(uploadParams));
 
         // Generate the S3 file URL
-        const imageUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        const imageUrl = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${fileName}`;
         console.log(`[Profile Upload] File Uploaded to S3: ${imageUrl}`);
 
         await db.query("UPDATE Admin SET profile_picture = ? WHERE admin_id = ?", [imageUrl, userId]);

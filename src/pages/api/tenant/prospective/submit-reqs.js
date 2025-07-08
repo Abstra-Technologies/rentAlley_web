@@ -18,7 +18,7 @@ const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY,
   },
 });
 
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
     const fileName = `validId/${Date.now()}-${sanitizedFilename}`;
 
     const uploadParams = {
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: process.env.NEXT_S3_BUCKET_NAME,
       Key: fileName,
       Body: fileBuffer,
       ContentType: file.mimetype,
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
 
     await s3.send(new PutObjectCommand(uploadParams));
 
-    const s3Url = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    const s3Url = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
     const encryptedS3Url = JSON.stringify(
       encryptData(s3Url, process.env.ENCRYPTION_SECRET)
     );
