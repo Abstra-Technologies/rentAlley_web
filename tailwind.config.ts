@@ -16,6 +16,16 @@ export default {
       backgroundImage: {
         "hero-pattern": "url('/images/hero-section.jpeg')",
       },
+      animation: {
+        'pulse-slow': 'pulse 2s infinite ease-in-out',
+        'wiggle': 'wiggle 0.6s ease-in-out infinite',
+      },
+      keyframes: {
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(-1deg)' },
+          '50%': { transform: 'rotate(1deg)' },
+        },
+      },
     },
   },
   plugins: [],

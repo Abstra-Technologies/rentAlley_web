@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./clientLayout";
+import FeedbackWidget from "../components/feedback/FeedbackWidget";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -27,6 +28,7 @@ export default function RootLayout({
         <body>
         <ClientLayout>
             {children}
+            <FeedbackWidget />
         </ClientLayout>
         </body>
         </html>
