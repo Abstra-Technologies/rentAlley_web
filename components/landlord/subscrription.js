@@ -11,7 +11,7 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
 
   useEffect(() => {
     if (landlord_id) {
-      fetch(`/api/subscription/${landlord_id}`)
+      fetch(`/api/landlord/subscription/active/${landlord_id}`)
         .then((response) => response.json())
         .then((data) => {
           setSubscription(data);

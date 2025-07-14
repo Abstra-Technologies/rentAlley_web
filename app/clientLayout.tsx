@@ -6,12 +6,15 @@ import Navbar from "../components/navigation/navbar";
 import useAuthStore from "../zustand/authStore";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-    const { fetchSession } = useAuthStore();
+  const { fetchSession, user, admin } = useAuthStore();
 
-    useEffect(() => {
-        fetchSession();
-    }, []);
-
+   useEffect(() => {
+    // Fetch session only if user/admin is not already available
+    if (!user && !admin) {
+      fetchSession();
+    }
+  }, [user, admin]);
+  
     return (
         <>
             {/* Google Analytics */}
