@@ -1,0 +1,33 @@
+import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
+
+export async function GET(req, { params }) {
+  const { landlord_id } = params;
+
+  try {
+    const query = "SELECT landlord_id FROM Landlord WHERE landlord_id = ?";
+    const [rows] = await db.execute(query, [landlord_id]);
+
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { message: "Landlord not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(rows[0]);
+  } catch (error) {
+    console.error("Error fetching landlord ID:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST() {
+  return NextResponse.json(
+    { message: "Method not allowed" },
+    { status: 405 }
+  );
+}

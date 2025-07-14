@@ -78,6 +78,8 @@ export default function SplashScreen() {
                 alt={property.property_name}
                 fill
                 className="object-cover"
+                priority
+                unoptimized
               />
             </div>
           ) : (

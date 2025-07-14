@@ -58,7 +58,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user && user?.userType === "landlord") {
       axios
-        .get(`/api/landlord/verification-status?user_id=${user.user_id}`)
+        .get(`/api/landlord/verification-upload/status?user_id=${user.user_id}`)
         .then((response) => {
           console.log("Verification Status Response:", response.data);
           if (response.data.verification_status) {

@@ -18,7 +18,7 @@ export default function LandlordVerificationList(){
             try {
                 setLoading(true);
 
-                const response = await fetch("/api/landlord/verifications");
+                const response = await fetch("/api/systemadmin/landlord-verifications");
                 const data = await response.json();
                 setLandlords(data);
             } catch (error) {

@@ -14,9 +14,10 @@ export default function LandlordDetails() {
     const [message, setMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // load details of the landlord
     useEffect(() => {
         if (landlord_id) {
-            fetch(`/api/landlord/verificationDetails/${landlord_id}`)
+            fetch(`/api/systemadmin/landlord-verifications/details/${landlord_id}`)
                 .then((res) => res.json())
                 .then((data) => {
                     setLandlord(data);
@@ -35,10 +36,10 @@ export default function LandlordDetails() {
             return;
         }
 
-        setIsSubmitting(true); // Show loading state
+        setIsSubmitting(true); 
 
         try {
-            const res = await fetch("/api/landlord/updateVerificationStatus", {
+            const res = await fetch("/api/systemadmin/landlord-verifications/update-status", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
