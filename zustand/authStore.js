@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { decryptData } from "../crypto/encrypt";
+import { useRouter } from "next/navigation";
 
 const useAuthStore = create(
   persist(
@@ -180,6 +181,8 @@ const useAuthStore = create(
 
       if (!res.ok) {
         console.warn("[AuthStore] Failed to log out user.");
+        window.location.href = "/pages/auth/login";
+
       }
 
       set({ user: null, admin: null, loading: false });
@@ -200,6 +203,8 @@ const useAuthStore = create(
       }
 
       set({ admin: null, user: null, loading: false });
+          window.location.href = "/pages/admin_login";
+
     } catch (error) {
       console.error("[AuthStore] signOutAdmin error:", error);
       set({ admin: null, user: null, loading: false });

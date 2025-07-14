@@ -5,19 +5,28 @@ import Image from "next/image";
 import { CiBellOn } from "react-icons/ci";
 import useAuthStore from "../../zustand/authStore";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const Navbar = () => {
-  const { user, admin, loading, signOut, signOutAdmin } = useAuthStore();
+  const { user, admin, loading, signOut, signOutAdmin, fetchSession } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasLease, setHasLease] = useState(null);
+const router = useRouter();
 
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
+
+useEffect(() => {
+    if (!user && !admin) {
+      fetchSession();
+    }
+  }, [user, admin]);
+
 
   useEffect(() => {
     if (user?.userType === "tenant" && user?.tenant_id) {
@@ -112,8 +121,10 @@ const Navbar = () => {
   const handleLogout = async () => {
     if (admin) {
       await signOutAdmin();
+      router.push("/pages/admin_login");
     } else {
       await signOut();
+router.push("/pages/auth/login");
     }
     setDropdownOpen(false);
   };
@@ -194,7 +205,7 @@ const Navbar = () => {
               user?.userType === "tenant"
                 ? "/"
                 : user?.userType === "landlord"
-                ? "/pages/Landlord_Experience/dashboard"
+                ? "/pages/landlord/dashboard"
                 : "/"
             }
             className="text-2xl font-bold flex items-center space-x-2 transition-transform duration-300 hover:scale-105"
