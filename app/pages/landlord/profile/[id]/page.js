@@ -1,6 +1,6 @@
 "use client";
 
-import ProfilePage from "../../../../../components/profilePage";
+import ProfilePage from "../../../../../components/Commons/profilePage";
 import SideNavProfile from "../../../../../components/navigation/sidebar-profile";
 
 export default function LandlordProfile() {

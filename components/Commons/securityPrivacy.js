@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import useAuth from "../hooks/useSession";
-import { logEvent } from "../utils/gtag";
+import useAuth from "../../hooks/useSession";
+import { logEvent } from "../../utils/gtag";
 import {
   UserIcon,
   ShieldCheckIcon,
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
-import SideNavProfile from "./navigation/sidebar-profile";
+import SideNavProfile from "../navigation/sidebar-profile";
 
 export default function SecurityPage() {
   const { user, loading, error } = useAuth();

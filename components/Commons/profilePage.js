@@ -10,9 +10,9 @@ import {
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import axios from "axios";
-import { logEvent } from "../utils/gtag";
-import DeleteAccountButton from "./authentication/deleteAccountButton";
-import useAuthStore from "../zustand/authStore";
+import { logEvent } from "../../utils/gtag";
+import DeleteAccountButton from "../authentication/deleteAccountButton";
+import useAuthStore from "../../zustand/authStore";
 
 export default function ProfilePage() {
   const { user, loading, error } = useAuthStore();
@@ -109,7 +109,7 @@ export default function ProfilePage() {
     logEvent("Profile Update", "User Interaction", "User Updated Profile", 1);
 
     try {
-      await axios.post("/api/profile/update", formData, {
+      await axios.post("/api/commons/profile/user_profile/update", formData, {
         headers: { "Content-Type": "application/json" },
         withCredentials: true,
       });

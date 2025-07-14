@@ -194,13 +194,13 @@ const Navbar = () => {
               user?.userType === "tenant"
                 ? "/"
                 : user?.userType === "landlord"
-                ? "/pages/landlord/dashboard"
+                ? "/pages/Landlord_Experience/dashboard"
                 : "/"
             }
             className="text-2xl font-bold flex items-center space-x-2 transition-transform duration-300 hover:scale-105"
           >
             <span className="text-3xl">🏠</span>
-            <span>Rentahan</span>
+            <span>Hestia</span>
           </Link>
 
           <div className="hidden md:flex space-x-6 ml-auto mr-6">

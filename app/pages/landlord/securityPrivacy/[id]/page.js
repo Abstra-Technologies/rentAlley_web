@@ -1,10 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import ProfilePage from "../../../../../components/profilePage"; 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import SecurityPage from "../../../../../components/securityPrivacy";
+import SecurityPage from "../../../../../components/Commons/securityPrivacy";
 import SideNavProfile from "../../../../../components/navigation/sidebar-profile";
 
 export default function LandlordSecurityPrivacy() {
