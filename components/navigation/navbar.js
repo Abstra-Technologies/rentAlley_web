@@ -3,11 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { CiBellOn } from "react-icons/ci";
-import useAuth from "../../hooks/useSession";
+import useAuthStore from "../../zustand/authStore";
 import axios from "axios";
 
 const Navbar = () => {
-  const { user, admin, loading, signOut, signOutAdmin } = useAuth();
+  const { user, admin, loading, signOut, signOutAdmin } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -200,7 +200,7 @@ const Navbar = () => {
             className="text-2xl font-bold flex items-center space-x-2 transition-transform duration-300 hover:scale-105"
           >
             <span className="text-3xl">🏠</span>
-            <span>Hestia</span>
+            <span>Rentahan</span>
           </Link>
 
           <div className="hidden md:flex space-x-6 ml-auto mr-6">

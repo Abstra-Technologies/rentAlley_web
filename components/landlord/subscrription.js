@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import useAuth from "../../hooks/useSession";
+import useAuthStore from "../../zustand/authStore";
 
 export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
-  const { user, loading, error } = useAuth();
+  const { fetchSession, user } = useAuthStore();
   const [subscription, setSubscription] = useState(null);
   const [fetchError, setFetchError] = useState(null);
   const [isFetching, setIsFetching] = useState(true);
@@ -24,8 +24,6 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
     }
   }, [landlord_id]);
 
-  if (loading || isFetching) return <p>Loading your subscription details...</p>;
-  if (error || fetchError) return <p>Error loading subscription details.</p>;
 
   return (
     <div>

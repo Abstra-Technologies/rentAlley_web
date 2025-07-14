@@ -171,6 +171,40 @@ const useAuthStore = create(
           set({ user: null, admin: null, loading: false });
         }
       },
+      signOut: async () => {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        console.warn("[AuthStore] Failed to log out user.");
+      }
+
+      set({ user: null, admin: null, loading: false });
+    } catch (error) {
+      console.error("[AuthStore] signOut error:", error);
+      set({ user: null, admin: null, loading: false });
+    }
+  },
+  signOutAdmin: async () => {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        console.warn("[AuthStore] Failed to log out admin.");
+      }
+
+      set({ admin: null, user: null, loading: false });
+    } catch (error) {
+      console.error("[AuthStore] signOutAdmin error:", error);
+      set({ admin: null, user: null, loading: false });
+    }
+  },
     }),
     {
       name: "auth-storage",

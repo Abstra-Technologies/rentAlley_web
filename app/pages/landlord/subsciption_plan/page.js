@@ -1,12 +1,17 @@
 "use client";
-
-import useAuth from "../../../../hooks/useSession";
 import LandlordSubscriptionPlanComponent from "../../../../components/landlord/subscrription";
+import useAuthStore from "../../../../zustand/authStore";
+import { useEffect } from "react";
 
 export default function LandlordSubscriptionPlan() {
-  const { user } = useAuth();
+  const { fetchSession, user } = useAuthStore();
 
-  if (!user) return null;
+useEffect(() => {
+    if (!user) {
+      fetchSession();
+    }
+  }, [user]);
+
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
@@ -56,7 +61,7 @@ export default function LandlordSubscriptionPlan() {
 
       {/* Subscription Plan Component */}
       <div className="mt-8">
-        <LandlordSubscriptionPlanComponent landlord_id={user.landlord_id} />
+        <LandlordSubscriptionPlanComponent landlord_id={user?.landlord_id} />
       </div>
     </div>
   );
