@@ -1,0 +1,158 @@
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcrypt";
+import { SignJWT } from "jose";
+import { db } from "@/lib/db";
+import { decryptData } from "@/crypto/encrypt";
+import nodeCrypto from "crypto";
+import nodemailer from "nodemailer";
+
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const { email, password } = body;
+
+  if (!email || !password) {
+    return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+  }
+
+  try {
+    const emailHash = nodeCrypto.createHash("sha256").update(email).digest("hex");
+    const [users]: any[] = await db.query("SELECT * FROM User WHERE emailHashed = ?", [emailHash]);
+
+    if (!users || users.length === 0) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    const user = users[0];
+
+    //#region FOR GOOGLE, ACCOUNT STATUS: DEACTIVATED, SUSPENDED VALIDATIONS
+
+    if (user.google_id) {
+      return NextResponse.json({
+        error: "Your account is linked with Google Sign-In. Please log in using Google.",
+      }, { status: 403 });
+    }
+
+    if (user.status === "deactivated") {
+      return NextResponse.json({
+        error: "Your account is deactivated since you requested deletion. Please contact support if this was a mistake.",
+      }, { status: 403 });
+    }
+
+    if (user.status === "suspended") {
+      return NextResponse.json({
+        error: "Your account is suspended. Please contact support.",
+      }, { status: 403 });
+    }
+
+    //#endregion
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    const firstName = await decryptData(JSON.parse(user.firstName), process.env.ENCRYPTION_SECRET!);
+    const lastName = await decryptData(JSON.parse(user.lastName), process.env.ENCRYPTION_SECRET!);
+
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+    const token = await new SignJWT({
+      user_id: user.user_id,
+      userType: user.userType,
+      firstName,
+      lastName,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("2h")
+      .setIssuedAt()
+      .setSubject(user.user_id)
+      .sign(secret);
+
+    const response = NextResponse.json(
+      {
+        message: "Login successful",
+        token,
+        user: {
+          userID: user.user_id,
+          firstName,
+          lastName,
+          email,
+          userType: user.userType,
+        },
+      },
+      { status: 200 }
+    );
+
+    const isDev = process.env.NODE_ENV === "production";
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      secure: !isDev,
+      path: "/",
+      sameSite: "lax",
+    });
+
+//#region FOR 2FA ENABLED SIGNED - IN.
+    if (user.is_2fa_enabled) {
+      const otp = Math.floor(100000 + Math.random() * 900000);
+      const nowUTC8 = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
+      );
+      const expiresAtUTC8 = new Date(nowUTC8.getTime() + 10 * 60 * 1000);
+
+      await db.query("SET time_zone = '+08:00'");
+      await db.query(
+        `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
+         VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))
+         ON DUPLICATE KEY UPDATE token = VALUES(token), created_at = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)`,
+        [user.user_id, otp]
+      );
+
+      await sendOtpEmail(email, otp);
+      response.cookies.set("pending_2fa", "true", { httpOnly: true, path: "/" });
+
+      return NextResponse.json({
+        message: "OTP sent. Please verify to continue.",
+        requires_otp: true,
+        user_id: user.user_id,
+        userType: user.userType,
+      }, { status: 200 });
+    }
+//#endregion 
+    
+
+//#region ACTIVITY LOG 
+    const action = "User logged in";
+    const timestamp = new Date().toISOString();
+    await db.query(
+      "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)",
+      [user.user_id, action, timestamp]
+    );
+//#endregion
+
+    return response;
+    
+  } catch (error: any) {
+    console.error("Error during signin:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+
+async function sendOtpEmail(email: string, otp: string) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER!,
+      pass: process.env.EMAIL_PASS!,
+    },
+    tls: { rejectUnauthorized: false },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER!,
+    to: email,
+    subject: "Your Rentahan 2FA OTP Code",
+    text: `Your OTP Code is: ${otp}\nThis code will expire in 10 minutes.`,
+  });
+
+  console.log(`OTP sent to ${email}`);
+}

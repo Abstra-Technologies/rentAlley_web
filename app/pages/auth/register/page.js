@@ -60,6 +60,8 @@ const registerSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+  
 export default function RegisterPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>

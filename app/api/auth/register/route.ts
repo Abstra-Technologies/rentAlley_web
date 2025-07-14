@@ -1,25 +1,26 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import CryptoJS from "crypto-js";
-import {SignJWT} from "jose";
+import { SignJWT } from "jose";
 import nodemailer from "nodemailer";
 import mysql from 'mysql2/promise';
-import { encryptData } from "../../../crypto/encrypt";
-import {logAuditEvent} from "../../../utils/auditLogger";
+import { NextRequest, NextResponse } from "next/server";
+import { encryptData } from "@/crypto/encrypt";
 
 const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    host: process.env.DB_HOST!,
+    user: process.env.DB_USER!,
+    password: process.env.DB_PASSWORD!,
+    database: process.env.DB_NAME!,
 };
 
-export default async function RegisterAnAccount(req, res) {
-    const { firstName, lastName, email, password, dob, mobileNumber, role  } = req.body;
+export async function POST(req: NextRequest) {
+    const body = await req.json();
+    const { firstName, lastName, email, password, dob, mobileNumber, role } = body;
 
     if (!firstName || !lastName || !email || !password || !dob || !mobileNumber || !role) {
-        console.error("Missing fields in request body:", req.body);
-        return res.status(400).json({ error: "All fields are required" });
+        console.error("Missing fields in request body:", body);
+        return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
     const db = await mysql.createConnection(dbConfig);
@@ -33,7 +34,7 @@ export default async function RegisterAnAccount(req, res) {
         const phoneNumber = mobileNumber;
         const userType = role.toLowerCase();
 
-        const [existingUser] = await db.execute(
+        const [existingUser] = await db.execute<any[]>(
             "SELECT user_id FROM User WHERE emailHashed = ?",
             [emailHash]
         );
@@ -43,22 +44,21 @@ export default async function RegisterAnAccount(req, res) {
         if (existingUser.length > 0) {
             user_id = existingUser[0].user_id;
             console.error("An existing account is already in use.");
-            return res.status(400).json({ error: "An account with this email already exists." });
+            return NextResponse.json({ error: "An account with this email already exists." }, { status: 400 });
         } else {
-            const [userIdResult] = await db.execute("SELECT UUID() AS uuid");
+            const [userIdResult] = await db.execute<any[]>("SELECT UUID() AS uuid");
             user_id = userIdResult[0].uuid;
 
-            const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+            const ipAddress = req.headers.get("x-forwarded-for") || "unknown";
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            const emailEncrypted = JSON.stringify(await encryptData(email, process.env.ENCRYPTION_SECRET));
-            const fnameEncrypted = JSON.stringify(await encryptData(firstName, process.env.ENCRYPTION_SECRET));
-            const lnameEncrypted = JSON.stringify(await encryptData(lastName, process.env.ENCRYPTION_SECRET));
-            const phoneEncrypted = JSON.stringify(await encryptData(phoneNumber, process.env.ENCRYPTION_SECRET));
-            const birthDateEncrypted = JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET));
-const photoEncrypted =JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET));
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-
+            const emailEncrypted = JSON.stringify(await encryptData(email, process.env.ENCRYPTION_SECRET!));
+            const fnameEncrypted = JSON.stringify(await encryptData(firstName, process.env.ENCRYPTION_SECRET!));
+            const lnameEncrypted = JSON.stringify(await encryptData(lastName, process.env.ENCRYPTION_SECRET!));
+            const phoneEncrypted = JSON.stringify(await encryptData(phoneNumber, process.env.ENCRYPTION_SECRET!));
+            const birthDateEncrypted = JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET!));
+            const photoEncrypted = JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET!));
+            // "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
 
             console.log("Inserting user into database...");
 
@@ -77,7 +77,6 @@ const photoEncrypted =JSON.stringify(await encryptData(birthDate, process.env.EN
                     phoneEncrypted,
                     userType,
                     0,
-
                 ]
             );
 
@@ -94,8 +93,10 @@ const photoEncrypted =JSON.stringify(await encryptData(birthDate, process.env.EN
                 );
             }
 
-            await logAuditEvent(user_id, "User Registered", "User", user_id, ipAddress, "Success", `New user registered as ${role}`);
+            // await logAuditEvent(user_id, "User Registered", "User", user_id, ipAddress, "Success", `New user registered as ${role}`);
+
             console.log("Logging registration activity...");
+
             await db.execute(
                 `INSERT INTO ActivityLog (user_id, action, timestamp) 
                 VALUES (?, ?, NOW())`,
@@ -107,7 +108,7 @@ const photoEncrypted =JSON.stringify(await encryptData(birthDate, process.env.EN
             await sendOtpEmail(email, otp);
         }
 
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
         const token = await new SignJWT({ user_id })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("2h")
@@ -115,31 +116,38 @@ const photoEncrypted =JSON.stringify(await encryptData(birthDate, process.env.EN
 
         console.log("Generated JWT Token for User ID:", user_id);
 
-        const isDev = process.env.NODE_ENV === "production";
-        res.setHeader(
-            "Set-Cookie",
-            `token=${token}; HttpOnly; Path=/; ${isDev ? "" : "Secure;"} SameSite=Strict`
+        const response = NextResponse.json(
+            { message: "User registered. Please verify your OTP." },
+            { status: 201 }
         );
 
-        console.log("Cookie Set: auth_token");
+        response.cookies.set("token", token, {
+            httpOnly: true,
+            path: "/",
+            sameSite: "strict",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 2 * 60 * 60, // 2 hours
+        });
 
         await db.commit();
-        res.status(201).json({ message: "User registered. Please verify your OTP." });
+        return response;
 
-    } catch (error) {
+    } catch (error: any) {
         await db.rollback();
         console.error("Error:", error);
-        res.status(500).json({ message: "Internal Server Error" });
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     } finally {
         await db.end();
     }
 }
 
+// --------------------- OTP HELPERS ------------------------
+
 function generateOTP() {
     return crypto.randomInt(100000, 999999).toString();
 }
 
-async function storeOTP(connection, user_id, otp) {
+async function storeOTP(connection: mysql.Connection, user_id: string, otp: string) {
     console.log(`Storing OTP for User ID: ${user_id}, OTP: ${otp}`);
 
     await connection.execute("SET time_zone = '+08:00'");
@@ -157,10 +165,13 @@ async function storeOTP(connection, user_id, otp) {
     console.log(`OTP ${otp} stored for user ${user_id} (expires in 10 min)`);
 }
 
-async function sendOtpEmail(toEmail, otp) {
+async function sendOtpEmail(toEmail: string, otp: string) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
         tls: {
             rejectUnauthorized: false,
         },
@@ -169,9 +180,10 @@ async function sendOtpEmail(toEmail, otp) {
     await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: toEmail,
-        subject: 'Your OTP for Rentfolio',
+        subject: 'Hestia: Registration One Time Password.',
         text: `Your OTP is: ${otp}. It expires in 10 minutes.`,
     });
 
     console.log(`OTP sent to ${toEmail}`);
 }
+

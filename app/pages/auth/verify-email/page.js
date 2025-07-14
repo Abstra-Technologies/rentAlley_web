@@ -64,7 +64,7 @@ export default function VerifyOTP() {
     setLoading(true);
     try {
       const response = await axios.post(
-        "/api/auth/verify-otp",
+        "/api/auth/verify-otp-reg",
         { otp },
         { withCredentials: true }
       );
@@ -88,7 +88,7 @@ export default function VerifyOTP() {
     if (timeLeft > 0) return;
     setLoading(true);
     try {
-      await axios.post("/api/auth/resend-otp");
+      await axios.post("/api/auth/resend-otp-reg");
       toast.info("New OTP sent. Check your email.");
       resetTimer();
     } catch (error) {

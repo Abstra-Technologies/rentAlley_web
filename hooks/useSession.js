@@ -3,7 +3,7 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import useAuthStore from "../src/zustand/authStore";
+import useAuthStore from "../zustand/authStore";
 
 export default function useAuth() {
   const { user, admin, loading, fetchSession, logout } = useAuthStore();
@@ -26,7 +26,7 @@ export default function useAuth() {
     try {
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       logout();
-      window.dispatchEvent(new Event("authChange")); // Notify components
+      window.dispatchEvent(new Event("authChange")); 
       router.push("/pages/auth/login");
     } catch (error) {
       console.error("Logout failed:", error);

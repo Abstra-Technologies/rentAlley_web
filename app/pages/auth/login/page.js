@@ -12,8 +12,9 @@ import Image from "next/image";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
 });
+
+
 
 export default function LoginPage() {
   return (
@@ -22,6 +23,12 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
+
+
+
+
+
 
 function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -133,7 +140,7 @@ function Login() {
         },
       });
 
-      const response = await fetch("/api/auth/signin", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
