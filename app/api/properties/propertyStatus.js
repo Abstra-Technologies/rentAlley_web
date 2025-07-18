@@ -1,7 +1,7 @@
 import mysql from "mysql2/promise";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
-
+//  to be deleted.
 export default async function handler(req, res) {
 
 //region GET ADMIN ID

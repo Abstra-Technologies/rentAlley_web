@@ -1,7 +1,7 @@
 "use client";
 import { useParams, useSearchParams } from "next/navigation";
 import LandlordLayout from "../../../../../../../../components/navigation/sidebar-landlord";
-import LeaseDetails from "../../../../../../../../components/landlord/LeaseDetails";
+import LeaseDetails from "../../../../../../../../components/landlord/properties/LeaseDetails";
 
 const ViewUnitTenantPage = () => {
   const { unitId } = useParams();

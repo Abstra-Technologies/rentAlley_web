@@ -2,14 +2,20 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import useAuth from "../../../../hooks/useSession";
+import useAuthStore from "../../../../zustand/authStore";
 import Swal from "sweetalert2";
 import SideNavProfile from "../../../../components/navigation/sidebar-profile";
 
 const PropertyVisits = () => {
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+    if (!user && !admin) {
+      fetchSession();
+    }
+  }, [user, admin]);
 
   useEffect(() => {
     if (!user?.tenant_id) return;
@@ -17,7 +23,7 @@ const PropertyVisits = () => {
     const fetchVisits = async () => {
       try {
         const response = await axios.get(
-          `/api/tenant/visits/getVisit?tenant_id=${user.tenant_id}`
+          `/api/tenant/property-finder/viewBookings?tenant_id=${user?.tenant_id}`
         );
         setVisits(response.data);
       } catch (error) {
@@ -42,7 +48,7 @@ const PropertyVisits = () => {
     });
     if (confirmResult.isConfirmed) {
       try {
-        await axios.put("/api/tenant/visits/cancel-visit", {
+        await axios.put("/api/tenant/property-finder/viewBookings/cancelBookings", {
           visit_id: visitId,
         });
 

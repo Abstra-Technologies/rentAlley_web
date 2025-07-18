@@ -33,7 +33,7 @@ useEffect(() => {
       const fetchLeaseStatus = async () => {
         try {
           const res = await axios.get(
-            `/api/leaseAgreement/checkLease?tenant_id=${user?.tenant_id}`
+            `/api/leaseAgreement/checkCurrentLease?tenant_id=${user?.tenant_id}`
           );
           setHasLease(res?.data?.hasLease);
         } catch (error) {
@@ -67,18 +67,18 @@ useEffect(() => {
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
+  // useEffect(() => {
+  //   fetchNotifications();
 
-    const intervalId = setInterval(fetchNotifications, 5000);
+  //   const intervalId = setInterval(fetchNotifications, 5000);
 
-    return () => clearInterval(intervalId);
-  }, [user, admin]);
+  //   return () => clearInterval(intervalId);
+  // }, [user, admin]);
 
-  useEffect(() => {
-    const count = notifications.filter((notif) => !notif?.is_read).length;
-    setUnreadCount(count);
-  }, [notifications]);
+  // useEffect(() => {
+  //   const count = notifications.filter((notif) => !notif?.is_read).length;
+  //   setUnreadCount(count);
+  // }, [notifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -130,6 +130,7 @@ router.push("/pages/auth/login");
   };
 
   const getNavigationLinks = () => {
+    
     if (admin) {
       return [{ href: "/pages/system_admin/dashboard", label: "Dashboard" }];
     }
@@ -150,6 +151,8 @@ router.push("/pages/auth/login");
         { href: "/pages/tenant/inbox", label: "Inbox" },
         { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/contact-us", label: "Contact Us" },
+        { href: "/pages/tenant/my-unit", label: "Dashboard" },
+
       ];
     }
 
@@ -314,10 +317,13 @@ router.push("/pages/auth/login");
                         </Link>
                       </div>
                     )}
+
                   </div>
                 )}
               </div>
-
+                <div>
+                  Earned Points: {user?.points ?? 0}
+                </div>
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={toggleDropdown}
@@ -393,12 +399,14 @@ router.push("/pages/auth/login");
                         Dashboard (Restricted)
                       </div>
                     ) : (
-                      <Link
-                        href={`/pages/${
-                          user?.userType || "system_admin"
-                        }/dashboard`}
-                        className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
-                      >
+                    <Link
+  href={
+    user?.userType === "tenant"
+      ? "/pages/tenant/my-unit"
+      : `/pages/${user?.userType || "system_admin"}/dashboard`
+  }
+  className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
+>
                         <svg
                           className="w-4 h-4 mr-2"
                           fill="none"

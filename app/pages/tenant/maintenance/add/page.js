@@ -9,6 +9,7 @@ import { MAINTENANCE_CATEGORIES } from "../../../../../constant/maintenanceCateg
 import Swal from "sweetalert2";
 import { z } from "zod";
 import { io } from "socket.io-client";
+import { useSearchParams } from "next/navigation";
 
 const maintenanceRequestSchema = z.object({
   category: z.string().min(1, "Category is required"),
@@ -25,6 +26,11 @@ export default function MaintenanceRequestPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [photos, setPhotos] = useState([]);
   const [errors, setErrors] = useState({});
+  const searchParams = useSearchParams();
+  const agreement_id = searchParams.get("agreement_id");
+
+console.log('agreement id create page: ', agreement_id);
+
   const socket = io(
     process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000",
     { autoConnect: true }
@@ -75,22 +81,33 @@ export default function MaintenanceRequestPage() {
     });
 
     try {
-      const maintenanceRes = await axios.post("/api/maintenance/create", {
-        tenant_id: user.tenant_id,
-        subject,
-        description,
-        user_id: user?.user_id,
-        category: selectedCategory,
-      });
+      const maintenanceRes = 
+      
+      // await axios.post("/api/maintenance/createMaintenance", {
+      //   // tenant_id: user.tenant_id,
+      //   subject,
+      //   agreementId,
+      //   description,
+      //   // user_id: user?.user_id,
+      //   category: selectedCategory,
+      // });
+
+      await axios.post("/api/maintenance/createMaintenance", {
+  agreement_id, // <-- this is camelCase
+  subject,
+  description,
+  category: selectedCategory,
+  // user_id,
+});
 
       console.log("Maintenance Request Response:", maintenanceRes);
 
       const requestId = maintenanceRes.data.request_id;
 
       // Notify the landlord
-      await axios.post("/api/maintenance/notify-landlord", {
-        request_id: requestId,
-      });
+      // await axios.post("/api/maintenance/notify-landlord", {
+      //   request_id: requestId,
+      // });
 
       // Upload photos if available
       if (photos.length > 0) {
@@ -103,7 +120,7 @@ export default function MaintenanceRequestPage() {
           formData.append("photos", photo);
         });
 
-        await axios.post("/api/maintenance/uploadPhotos", formData, {
+        await axios.post("/api/maintenance/createMaintenance/uploadPhotos", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       }
@@ -114,7 +131,7 @@ export default function MaintenanceRequestPage() {
         text: "Your maintenance request has been submitted successfully!",
         confirmButtonColor: "#3085d6",
       }).then(() => {
-        router.push("/pages/tenant/maintenance");
+router.push(`/pages/tenant/maintenance?agreement_id=${agreement_id}`);
       });
     } catch (error) {
       console.error("Error submitting maintenance request:", error);

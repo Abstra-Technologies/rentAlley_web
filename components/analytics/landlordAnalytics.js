@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import useAuthStore from "../../zustand/authStore";
 import LoadingScreen from "../loadingScreen";
+const PropertyTypeChart = dynamic(() => import("../landlord/analytics/typesOfProperties"), { ssr: false });
+const TenantOccupationChart = dynamic(() => import("../landlord/analytics/tenantOccupation"), { ssr: false });
+const ScoreCard = dynamic(() => import("../landlord/analytics/scoreCards"), { ssr: false });
 
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -11,7 +14,6 @@ const Chart = dynamic(() => import("react-apexcharts"), {
 const LandlordPropertyChart = () => {
   const { user, fetchSession } = useAuthStore();
 
-  const [totalProperties, setTotalProperties] = useState(0);
   const [monthlyVisits, setMonthlyVisits] = useState([]);
   const [occupancyRate, setOccupancyRate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,6 @@ const LandlordPropertyChart = () => {
   const [totalReceivables, setTotalReceivables] = useState(0);
   const [utilityTrend, setUtilityTrend] = useState([]);
   const [utilityRates, setUtilityRates] = useState([]);
-  const [occupationData, setOccupationData] = useState([]);
 
   useEffect(() => {
     if (!user) {
@@ -32,14 +33,7 @@ const LandlordPropertyChart = () => {
     }
 
     fetch(
-      `/api/analytics/landlord/getNumberofProperties?landlord_id=${user.landlord_id}`
-    )
-      .then((res) => res.json())
-      .then((data) => setTotalProperties(data.totalProperties))
-      .catch((error) => console.error("Error fetching property data:", error));
-
-    fetch(
-      `/api/analytics/landlord/getPropertyVisitsPerMonth?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/propertyVisitsPerMonth?landlord_id=${user.landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -49,7 +43,7 @@ const LandlordPropertyChart = () => {
       .catch((error) => console.error("Error fetching visit data:", error));
 
     fetch(
-      `/api/analytics/landlord/getOccupancyRate?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/occupancyRateProperty?landlord_id=${user.landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -147,45 +141,8 @@ const LandlordPropertyChart = () => {
         console.error("Error fetching utility rate data:", error)
       );
 
-    fetch(
-      `/api/analytics/landlord/getTenantOccupations?landlord_id=${user.landlord_id}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Tenant Occupation Data:", data);
-        setOccupationData(data);
-      })
-      .catch((error) =>
-        console.error("Error fetching tenant occupation data:", error)
-      );
+
   }, [fetchSession, user]);
-
-  // tenant occupcations
-
-  const labelsOccupation =
-    occupationData.length > 0
-      ? occupationData.map((item) => item.occupation)
-      : ["No Data"];
-
-  const seriesOccupation =
-    occupationData.length > 0
-      ? occupationData.map((item) => item.tenant_count)
-      : [0];
-
-  const chartOptionsOccupation = {
-    chart: { type: "pie" },
-    labelsOccupation,
-    title: { text: "Tenant Occupation Distribution", align: "center" },
-    legend: { position: "bottom" },
-    tooltip: {
-      y: {
-        formatter: (val, opts) => {
-          const occupationName = labelsOccupation[opts.seriesIndex];
-          return `${occupationName}: ${val} Tenants`;
-        },
-      },
-    },
-  };
 
   const months = [
     "Jan",
@@ -212,13 +169,6 @@ const LandlordPropertyChart = () => {
     chart: { type: "bar" },
     xaxis: { categories: visitData.map((item) => item.month) },
     title: { text: "Property Visits Request Per Month" },
-    colors: ["#6A0DAD"],
-  };
-
-  const chartOptions = {
-    chart: { type: "bar" },
-    xaxis: { categories: ["Your Properties"] },
-    title: { text: "Total Number of Properties Listed" },
     colors: ["#6A0DAD"],
   };
 
@@ -354,33 +304,17 @@ const LandlordPropertyChart = () => {
               </p>
             </div>
 
-            <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-green-500 transition-all hover:shadow-md">
-              <h3 className="text-sm font-medium text-gray-500">
-                Total Current Tenants
-              </h3>
-              <p className="text-2xl font-bold text-gray-800 mt-2">
-                {totalTenants || 0}
-              </p>
-            </div>
+           <ScoreCard
+              title="Total Current Tenants"
+              value={totalTenants}
+              borderColor="green"
+            />
+
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Tenant Occupation
-              </h3>
-              {occupationData.length > 0 ? (
-                <Chart
-                  options={chartOptionsOccupation}
-                  series={seriesOccupation}
-                  type="pie"
-                  height={350}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No data available</p>
-                </div>
-              )}
+              <TenantOccupationChart landlordId={user.landlord_id} />
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
@@ -422,21 +356,8 @@ const LandlordPropertyChart = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Properties Overview
-              </h3>
-              {totalProperties > 0 ? (
-                <Chart
-                  options={chartOptions}
-                  series={[{ name: "Properties", data: [totalProperties] }]}
-                  type="bar"
-                  height={350}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No data available</p>
-                </div>
-              )}
+             
+                  <PropertyTypeChart landlordId={user.landlord_id} />
             </div>
           </div>
 

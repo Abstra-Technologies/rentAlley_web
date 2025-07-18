@@ -1,10 +1,11 @@
-import usePropertyStore from "../../zustand/propertyStore";
+import usePropertyStore from "../../zustand/property/usePropertyStore";
 import { FaImage } from "react-icons/fa"; // Import checkmark icon from react-icons
 import { useDropzone } from "react-dropzone";
 import { UTILITY_BILLING_TYPES } from "../../constant/utilityBillingType";
 import { PAYMENT_FREQUENCIES } from "../../constant/paymentFrequency";
 import { FaInfoCircle } from "react-icons/fa";
 import { useState } from "react";
+import { PROPERTY_PREFERENCES } from "../../constant/propertyPreferences";
 
 export function StepThree() {
   const { property, photos, setProperty, setPhotos } = usePropertyStore();
@@ -47,6 +48,50 @@ export function StepThree() {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
+const handleGenerateDescription = async () => {
+  const prompt = `Generate a friendly and appealing property description for a rental listing. Include basic highlights like location, amenities, and suitable tenants. Keep it under 3 paragraphs.`;
+
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek/deepseek-r1:free", // ✅ or "deepseek/deepseek-chat", depending on model
+        messages: [
+          { role: "system", content: "You are a helpful assistant that writes rental property descriptions." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    console.log("AI response:", data); // ✅ See full shape
+
+    const aiText = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.content;
+
+    if (aiText && aiText.trim().length > 0) {
+      setProperty({ propDesc: aiText.trim() });
+    } else {
+      alert("AI response was empty. Try again.");
+    }
+  } catch (err) {
+    console.error("AI generation error:", err);
+    alert("Failed to generate description.");
+  }
+};
+
+  const handleCheckboxChange = (method) => {
+    const accepted = property.propertyPreferences || [];
+    const newList = accepted.includes(method)
+      ? accepted.filter((m) => m !== method)
+      : [...accepted, method];
+
+    setProperty({ ...property, propertyPreferences: newList });
+  };
+
   return (
     <div className="space-y-8">
       <div className="p-6 border rounded-md shadow-md">
@@ -81,20 +126,30 @@ export function StepThree() {
             <label className="block text-gray-700 font-medium mb-1">
               Description (Max 3 paragraphs)
             </label>
-            <textarea
-              name="propDesc"
-              value={property.propDesc || ""}
-              onChange={handleChange}
-              placeholder="Add a brief description of the property"
-              className="w-full p-2 border rounded"
-              maxLength={500}
-            ></textarea>
+             <textarea
+    name="propDesc"
+    value={property.propDesc || ""}
+    onChange={handleChange}
+    placeholder="Add a brief description of the property"
+    className="w-full p-2 border rounded"
+    maxLength={500}
+    rows={5}
+  ></textarea>
+             <button
+    type="button"
+    onClick={handleGenerateDescription}
+    className="mt-2 text-sm text-blue-600 hover:underline"
+  >
+    ✨ Generate with AI
+  </button>
+  {/* <pre className="text-xs text-gray-400 mt-2">{JSON.stringify(property.propDesc)}</pre> */}
+
           </div>
 
           <div className="flex items-center space-x-2">
             <div className="flex-grow">
               <label className="block text-gray-700 font-medium mb-1">
-                Floor Area
+                Total Property Size 
               </label>
               <input
                 type="number"
@@ -109,23 +164,27 @@ export function StepThree() {
             <span className="text-gray-500">sqm</span>
           </div>
 
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium mb-1">
-              Property Preferences
-            </label>
+<div className="space-y-2">
+  <label className="block text-gray-700 font-medium mb-1">
+    Property Preferences/Rules
+  </label>
 
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                name="petFriendly"
-                checked={property.petFriendly === 1}
-                onChange={handleChange}
-                className="h-6 w-6"
-              />
-              <label className="text-gray-700">Pet-Friendly</label>
-            </div>
+   <div className="space-y-2">
+            {PROPERTY_PREFERENCES.map((method) => (
+              <label key={method.key} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={(property.propertyPreferences || []).includes(method.key)}
+                  onChange={() => handleCheckboxChange(method.key)}
+                  className="h-4 w-4"
+                />
+                <span>{method.label}</span>
+              </label>
+            ))}
+          </div>
+</div>
 
-            <div>
+ <div>
               <label className="text-gray-700 font-medium flex items-center space-x-2 mt-4">
                 <span>Utility Billing Type</span>
                 <FaInfoCircle
@@ -149,7 +208,6 @@ export function StepThree() {
                 ))}
               </select>
             </div>
-          </div>
 
           <div className="space-y-4">
             <div>
@@ -175,71 +233,7 @@ export function StepThree() {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="lateFee"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Late Fee (%)
-              </label>
-              <input
-                id="lateFee"
-                type="number"
-                placeholder="5"
-                min={0}
-                className="mt-1 block w-full rounded-md border p-3"
-                value={property.lateFee || ""}
-                onChange={(e) =>
-                  setProperty({ ...property, lateFee: e.target.value })
-                }
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="assocDues"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Association Dues
-              </label>
-              <input
-                id="assocDues"
-                type="number"
-                placeholder="0"
-                min={0}
-                className="mt-1 block w-full rounded-md border p-3"
-                value={property.assocDues || ""}
-                onChange={(e) =>
-                  setProperty({ ...property, assocDues: e.target.value })
-                }
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="paymentFrequency"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Payment Frequency
-              </label>
-              <select
-                id="paymentFrequency"
-                name="paymentFrequency"
-                value={property.paymentFrequency || ""}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border p-3"
-              >
-                <option value="" disabled>
-                  Select Payment Frequency
-                </option>
-                {PAYMENT_FREQUENCIES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+      
             {isModalOpen && (
               <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm">

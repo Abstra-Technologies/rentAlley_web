@@ -65,6 +65,7 @@ export default function PropertySearch() {
       router.push(`/pages/find-rent/${propertyId}`);
     }, 1500); // 1.5 seconds delay
   };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const queryParam = params.get("searchQuery");
@@ -257,6 +258,20 @@ export default function PropertySearch() {
                         <span className="text-blue-600 font-medium text-sm">
                           Verified
                         </span>
+                         {property?.flexipay_enabled === 1 && (
+    <div className="ml-2 px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full flex items-center gap-1">
+      <span>FlexiPay</span>
+      <svg
+        className="w-3 h-3 text-green-600"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+  )}
                       </div>
                     </div>
 

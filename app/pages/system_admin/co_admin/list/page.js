@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {FaTrash, FaEdit, FaEye} from "react-icons/fa";
 import { MdPersonAddDisabled } from "react-icons/md";
-import useAuth from "../../../../../hooks/useSession";
+import authStore from "../../../../../zustand/authStore";
 import EditModal from "../../../../../components/systemAdmin/editAdmin";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { logEvent } from "../../../../../utils/gtag";
@@ -16,7 +16,7 @@ export default function CoAdminDashboard() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { admin } = useAuth();
+  const { admin } = authStore();
   const [editModal, setEditModal] = useState(false);
   const router = useRouter();
   const [selectedAdmin, setSelectedAdmin] = useState(null);
@@ -28,7 +28,7 @@ export default function CoAdminDashboard() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/systemadmin/co_admin_list", { method: "GET", credentials: "include" });
+        const res = await fetch("/api/systemadmin/co_admin/getAllAdmins", { method: "GET", credentials: "include" });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Failed to fetch admins");
         setAdmins(data.admins || []);
@@ -43,12 +43,10 @@ export default function CoAdminDashboard() {
 
   const handleEdit = async (admin_id) => {
     try {
-      const res = await fetch(`/api/systemadmin/co_admin/details/${admin_id}`);
+      const res = await fetch(`/api/systemadmin/co_admin/getAdminDetail/${admin_id}`);
       const data = await res.json();
 
       if (!res.ok)  new Error(data.message || "Failed to fetch admin details");
-
-      console.log("✅ Admin Data (Fetched):", data.admin);
 
       const encryptionKey = process.env.ENCRYPTION_SECRET;
       const decryptedEmail = data.admin.email.startsWith("{") && data.admin.email.endsWith("}")
@@ -89,7 +87,7 @@ export default function CoAdminDashboard() {
 
   const handleStatusChange = async (admin_id, newStatus) => {
     try {
-      const res = await fetch(`/api/systemadmin/co_admin/${admin_id}`, {
+      const res = await fetch(`/api/systemadmin/co_admin/updateAccountStatus/${admin_id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

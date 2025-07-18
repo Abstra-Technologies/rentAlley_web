@@ -1,5 +1,5 @@
 import { db } from "../../../../lib/db";
-
+//  to be deleted.
 export default async function getPropertiesDetails(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });

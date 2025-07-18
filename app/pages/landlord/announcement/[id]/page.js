@@ -26,7 +26,7 @@ export default function ViewAnnouncement() {
           user.landlord_id
         );
         const response = await fetch(
-          `/api/landlord/announcement/view-announcement?id=${id}`
+          `/api/landlord/announcement/viewAnnouncementbyId?id=${id}`
         );
         if (!response.ok) throw new Error("Failed to fetch announcement");
         const data = await response.json();
@@ -71,7 +71,7 @@ export default function ViewAnnouncement() {
     setIsDeleting(true);
     try {
       const response = await fetch(
-        `/api/landlord/announcement/delete-announcement?id=${id}`,
+        `/api/landlord/announcement/deleteAnnouncement?id=${id}`,
         {
           method: "DELETE",
         }

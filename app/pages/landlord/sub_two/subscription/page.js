@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import LoadingScreen from "../../../../../components/loadingScreen";
 import Swal from "sweetalert2";
 
+// Convert to another constant file.
 const plans = [
   {
     id: 1,
@@ -75,7 +76,9 @@ export default function SubscriptionPlans() {
       setDataLoading(true);
 
       try {
-        const trialResponse = await fetch("/api/payment/stats", {
+
+        //  Testing/Validating a user if they can avail free trial.
+        const trialResponse = await fetch("/api/landlord/subscription/freeTrialTest", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ landlord_id: user.landlord_id }),
@@ -84,9 +87,12 @@ export default function SubscriptionPlans() {
         const trialData = await trialResponse.json();
         setTrialUsed(trialData.is_trial_used);
 
+
+
+
         // Fetch Current Subscription
         const subscriptionResponse = await fetch(
-          `/api/landlord/subscription/${user.landlord_id}`
+          `/api/landlord/subscription/active/${user.landlord_id}`
         );
 
         if (!subscriptionResponse.ok) return;
@@ -150,7 +156,7 @@ export default function SubscriptionPlans() {
     try {
       if (selectedPlan.id === 1) {
         // Free Plan logic
-        const response = await fetch("/api/payment/stats", {
+        const response = await fetch("/api/landlord/subscription/freeTrialTest", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -175,9 +181,11 @@ export default function SubscriptionPlans() {
             text: "Failed to activate Free Plan.",
           });
         }
-      } else if (!trialUsed && selectedPlan.trialDays > 0) {
+      }
+      // For other PTiers except the Free.
+      else if (!trialUsed && selectedPlan.trialDays > 0) {
         // Start free trial
-        const response = await fetch("/api/payment/stats", {
+        const response = await fetch("/api/landlord/subscription/freeTrialTest", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -202,6 +210,8 @@ export default function SubscriptionPlans() {
           });
         }
       } else {
+        // PAID Tier
+
         // Determine the amount for checkout
         let amountToCharge;
 

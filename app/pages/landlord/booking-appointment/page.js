@@ -4,10 +4,10 @@ import dayjs from 'dayjs';
 import { ChevronLeft, ChevronRight, Calendar, Clock, Home, User, XCircle, AlertTriangle } from 'lucide-react';
 import LandlordLayout from '../../../../components/navigation/sidebar-landlord';
 import axios from 'axios';
-import useAuth from '../../../../hooks/useSession';
+import useAuthStore from "../../../../zustand/authStore";
 
 const BookingAppointment = () => {
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ const BookingAppointment = () => {
         return;
       }
       
-      const response = await axios.get(`/api/landlord/visits/visit-all?landlord_id=${user.landlord_id}`);
+      const response = await axios.get(`/api/landlord/properties/getAllBookingVisits?landlord_id=${user?.landlord_id}`);
       setVisits(response.data);
       setLoading(false);
     } catch (error) {
@@ -46,7 +46,7 @@ const BookingAppointment = () => {
 
   const approveVisit = async (visitId) => {
     try {
-      await axios.put("/api/landlord/visits/respond", {
+      await axios.put("/api/landlord/properties/updateBookingStatus", {
         visit_id: visitId,
         status: "approved"
       });
@@ -67,7 +67,7 @@ const BookingAppointment = () => {
 
   const submitDisapproval = async () => {
     try {
-      await axios.put("/api/landlord/visits/respond", {
+      await axios.put("/api/landlord/properties/updateBookingStatus", {
         visit_id: selectedVisitId,
         status: "disapproved",
         reason: disapprovalReason
@@ -96,7 +96,7 @@ const BookingAppointment = () => {
 
   const submitCancellation = async () => {
     try {
-      await axios.put("/api/landlord/visits/respond", {
+      await axios.put("/api/landlord/properties/updateBookingStatus", {
         visit_id: selectedVisitId,
         status: "cancelled"
       });

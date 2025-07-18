@@ -1,3 +1,5 @@
+//  to be removed. change to my unit. no more dashboard
+
 "use client";
 import { useRouter } from "next/navigation";
 import TenantLayout from "../../../../components/navigation/sidebar-tenant";
@@ -5,13 +7,13 @@ import useAuthStore from "../../../../zustand/authStore";
 import { useEffect, useState } from "react";
 import LoadingScreen from "../../../../components/loadingScreen";
 import Announcements from "../../../../components/annoucemen/announcement";
-import LeaseAgreementWidget from "../../../../components/tenant/LeaseAgreementWidget";
+import LeaseAgreementWidget from "../../../../components/tenant/analytics-insights/LeaseAgreementWidget";
 import TenantBillingTable from "../../../../components/tenant/TenantBillingTable";
 import TenantPendingPaymentWidget from "../../../../components/tenant/PendingPaymentWidget";
 import TenantPropertyChart from "../../../../components/analytics/tenantAnalytics";
 
 export default function TenantDashboard() {
-  const { user, admin, fetchSession, loading } = useAuthStore();
+  const { user, fetchSession, loading } = useAuthStore();
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
   const [billingHistory, setBillingHistory] = useState([]);
@@ -34,7 +36,7 @@ export default function TenantDashboard() {
   useEffect(() => {
     if (!loading && !user && !admin) {
     }
-  }, [user, admin, loading, router]);
+  }, [user, loading, router]);
 
   if (loading || dataLoading) {
     return <LoadingScreen />;

@@ -18,7 +18,7 @@ export default function AdminSupportList() {
     const fetchSupportRequests = async () => {
         setLoading(true);
         try {
-            const response = await fetch("/api/support/list");
+            const response = await fetch("/api/systemadmin/customerSupport/getAllRequest");
             const data = await response.json();
             setSupportRequests(data);
             // eslint-disable-next-line @typescript-eslint/no-unused-vars

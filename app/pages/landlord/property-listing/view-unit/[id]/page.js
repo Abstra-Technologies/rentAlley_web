@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
@@ -14,32 +14,178 @@ import {
   TrashIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
-import useAuth from "../../../../../../hooks/useSession";
+import useAuthStore from "../../../../../../zustand/authStore";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { FaCheckCircle } from "react-icons/fa";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 const ViewUnitPage = () => {
   const { id } = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const landlord_id = user?.landlord_id;
   const [isNavigating, setIsNavigating] = useState(false);
+  const [billingMode, setBillingMode] = useState(false);
+  const [billingForm, setBillingForm] = useState({
+    billingPeriod: "",
+    electricityTotal: "",
+    electricityRate: "",
+    waterTotal: "",
+    waterRate: "",
+  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [billingData, setBillingData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [hasBillingForMonth, setHasBillingForMonth] = useState(false);
+  const [unitBillingStatus, setUnitBillingStatus] = useState({});
+
+  useEffect(() => {
+    if (!id) return;
+
+    async function fetchBillingData_PropertyUtility() {
+      try {
+        const response = await axios.get(
+          `/api/landlord/billing/checkPropertyBillingStats`,
+          {
+            params: { id },
+          }
+        );
+
+        if (response.data.billingData && response.data.billingData.length > 0) {
+          setBillingData(response.data.billingData);
+          setHasBillingForMonth(true);
+          setBillingForm({
+            billingPeriod: response.data.billingData[0]?.billing_period || "",
+            electricityTotal:
+              response.data.billingData.find(
+                (b) => b.utility_type === "electricity"
+              )?.total_billed_amount || "",
+            electricityRate:
+              response.data.billingData.find(
+                (b) => b.utility_type === "electricity"
+              )?.rate_consumed || "",
+            waterTotal:
+              response.data.billingData.find((b) => b.utility_type === "water")
+                ?.total_billed_amount || "",
+            waterRate:
+              response.data.billingData.find((b) => b.utility_type === "water")
+                ?.rate_consumed || "",
+          });
+        } else {
+          setBillingData(null);
+          setHasBillingForMonth(false);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to fetch billing data:",
+          error.response?.data || error.message
+        );
+      }
+    }
+    fetchBillingData_PropertyUtility();
+  }, [id]);
+
+ useEffect(() => {
+    if (!user && !admin) {
+      fetchSession();
+    }
+  }, [user, admin]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setBillingForm({ ...billingForm, [name]: value });
+  };
+
+  const handleSaveOrUpdateBilling = async (e) => {
+    e.preventDefault();
+    try {
+      const url = hasBillingForMonth
+        ? "/api/landlord/billing/updateConcessionaireBilling"
+        : "/api/landlord/billing/savePropertyUtilityBillingMonthly";
+
+      const response = await axios({
+        method: hasBillingForMonth ? "PUT" : "POST",
+        url: url,
+        data: {
+          id,
+          ...billingForm,
+        },
+      });
+
+      await Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: hasBillingForMonth
+          ? "Billing information updated successfully."
+          : "Billing information saved successfully.",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "OK",
+      });
+
+      setIsEditing(false);
+      setIsModalOpen(false);
+      window.location.reload();
+    } catch (error) {
+      console.error(
+        "Error saving billing:",
+        error.response?.data || error.message
+      );
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Failed to save billing. Please try again.",
+        confirmButtonColor: "#d33",
+        confirmButtonText: "OK",
+      });
+    }
+  };
 
   const { data: property } = useSWR(
-    id ? `/api/propertyListing/property/${id}` : null,
+    id ? `/api/propertyListing/viewDetailedProperty/${id}` : null,
     fetcher
   );
+
   const { data: subscription, isLoading: loadingSubscription } = useSWR(
-    `/api/subscription/getCurrentPlan/${landlord_id}`,
+    `/api/landlord/subscription/active/${landlord_id}`,
     fetcher
   );
 
-  const {
-    data: units,
-    error,
-    isLoading,
-  } = useSWR(id ? `/api/unitListing/unit?property_id=${id}` : null, fetcher);
+const {
+  data: units,
+  error,
+  isLoading,
+} = useSWR(id ? `/api/unitListing/getUnitListings?property_id=${id}` : null, fetcher);
 
+//  Get Unit Billing Status
+useEffect(() => {
+  const fetchUnitBillingStatus = async () => {
+    if (!units || units.length === 0) return;
+
+    const statusMap = {};
+
+    await Promise.all(
+      units.map(async (unit) => {
+        try {
+          const response = await axios.get(
+            `/api/landlord/billing/getUnitDetails/billingStatus?unit_id=${unit.unit_id}`
+          );
+          statusMap[unit.unit_id] = response.data?.hasBillForThisMonth || false;
+        } catch (error) {
+          console.error(`Error fetching billing status for unit ${unit.unit_id}`, error);
+        }
+      })
+    );
+
+    setUnitBillingStatus(statusMap);
+  };
+
+  fetchUnitBillingStatus();
+}, [units]);
+
+
+  
   const handleEditUnit = (unitId) => {
     router.push(
       `/pages/landlord/property-listing/view-unit/${id}/edit-unit/${unitId}`
@@ -184,6 +330,27 @@ const ViewUnitPage = () => {
             Add New Unit
           </button>
 
+          {/*  Billing Management */}
+        <button
+  onClick={() => setBillingMode(!billingMode)}
+  className="mt-2 mb-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+>
+  {billingMode ? "Exit Billing Mode" : "Enter Billing Mode"}
+</button>
+
+        <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-indigo-600 text-white px-4 py-2.5 rounded-md shadow hover:bg-indigo-700 transition-colors flex items-center gap-2"
+          >
+            <span>Property Utility</span>
+          </button>
+{hasBillingForMonth && (
+  <div className="flex items-center text-green-600 gap-1">
+<FaCheckCircle size='20' />
+    <span className="text-sm">Utility bill already issued for this month</span>
+  </div>
+)}
+
           {subscription &&
             units?.length >= subscription.listingLimits.maxUnits && (
               <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -219,16 +386,33 @@ const ViewUnitPage = () => {
             </div>
           ) : units && units.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              
               {units.map((unit) => (
                 <div
                   key={unit?.unit_id}
                   className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                  onClick={() =>
-                    router.push(
-                      `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unit.unit_id}`
-                    )
-                  }
                 >
+
+                  {unitBillingStatus[unit.unit_id] && (
+  <div className="text-green-600 flex items-center gap-1 ml-4 mt-2">
+    <FaCheckCircle size={18} />
+    <span className="text-sm">Billed this month</span>
+  </div>
+)}
+
+
+                 <button
+  onClick={() =>
+    router.push(
+      `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unit.unit_id}`
+    )
+  }
+  className="px-3 py-1 text-sm border rounded hover:bg-gray-100"
+>
+  View Unit Details
+</button>
+
+
                   <div className="h-32 bg-blue-50 flex items-center justify-center cursor-pointer">
                     <div className="text-center">
                       <HomeIcon className="h-12 w-12 text-blue-600 mx-auto" />
@@ -299,6 +483,48 @@ const ViewUnitPage = () => {
                       </div>
                     </div>
                   </div>
+
+                  {billingMode && (
+  <div className="mt-5 grid grid-cols-2 gap-3">
+    <Link
+      href={`/pages/landlord/billing/billingHistory/${unit.unit_id}`}
+      className="col-span-2"
+    >
+      <button className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-200 transition-colors font-medium">
+        Billing History
+      </button>
+    </Link>
+
+    <Link
+      href={`/pages/landlord/billing/payments/${unit.unit_id}`}
+      className="col-span-2"
+    >
+      <button className="w-full bg-blue-50 text-blue-700 px-4 py-2 rounded-md border border-blue-200 hover:bg-blue-100 transition-colors font-medium">
+        View Payments
+      </button>
+    </Link>
+
+    {unitBillingStatus[unit.unit_id] ? (
+      <Link
+        href={`/pages/landlord/billing/editUnitBill/${unit?.unit_id}`}
+        className="col-span-2"
+      >
+        <button className="w-full bg-amber-50 text-amber-700 px-4 py-2 rounded-md border border-amber-200 hover:bg-amber-100 transition-colors font-medium">
+          Edit Unit Bill
+        </button>
+      </Link>
+    ) : (
+      <Link
+        href={`/pages/landlord/billing/createUnitBill/${unit?.unit_id}`}
+        className="col-span-2"
+      >
+        <button className="w-full bg-green-50 text-green-700 px-4 py-2 rounded-md border border-green-200 hover:bg-green-100 transition-colors font-medium">
+          Create Unit Bill
+        </button>
+      </Link>
+    )}
+  </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -320,6 +546,146 @@ const ViewUnitPage = () => {
             </div>
           )}
         </div>
+ {isModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="p-5 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Property Utility
+                </h2>
+              </div>
+              
+              <div className="p-5">
+                {billingData ? (
+                  <div className="mb-6 p-4 bg-green-50 rounded-md border border-green-200">
+                    <h3 className="font-medium text-green-700 mb-2">Billing set for this month</h3>
+                    <p className="text-gray-700 mb-3">Period: <span className="font-medium">{billingForm?.billingPeriod}</span></p>
+                    
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                      <div className="p-3 bg-white rounded-md border border-gray-200">
+                        <h4 className="text-sm uppercase text-gray-500 font-semibold mb-2">Electricity</h4>
+                        <p className="text-gray-800 font-medium">₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</p>
+                        <p className="text-xs text-gray-500 mt-1">{billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "N/A"} kWh</p>
+                      </div>
+                      
+                      <div className="p-3 bg-white rounded-md border border-gray-200">
+                        <h4 className="text-sm uppercase text-gray-500 font-semibold mb-2">Water</h4>
+                        <p className="text-gray-800 font-medium">₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</p>
+                        <p className="text-xs text-gray-500 mt-1">{billingData.find(b => b.utility_type === "water")?.rate_consumed || "N/A"} cu. meters</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mb-6 p-4 bg-gray-50 rounded-md border border-gray-200">
+                    <p className="text-gray-600 text-center">
+                      No billing data found for this month
+                    </p>
+                  </div>
+                )}
+                
+                <form className="space-y-5" onSubmit={handleSaveOrUpdateBilling}>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-1">
+                      Billing Period
+                    </label>
+                    <input
+                      name="billingPeriod"
+                      value={billingForm.billingPeriod}
+                      onChange={handleInputChange}
+                      type="date"
+                      className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                    />
+                  </div>
+                  
+                  <div className="p-4 bg-blue-50 rounded-md border border-blue-100">
+                    <h3 className="text-md font-semibold text-blue-800 mb-3">
+                      Electricity
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-gray-700 text-sm font-medium mb-1">
+                          Total Amount Billed
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
+                          <input
+                            type="number"
+                            name="electricityTotal"
+                            value={billingForm.electricityTotal}
+                            onChange={handleInputChange}
+                            className="w-full border border-gray-300 rounded-md p-2.5 pl-7 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 text-sm font-medium mb-1">
+                          Rate this month (kWh)
+                        </label>
+                        <input
+                          type="number"
+                          name="electricityRate"
+                          value={billingForm.electricityRate}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-cyan-50 rounded-md border border-cyan-100">
+                    <h3 className="text-md font-semibold text-cyan-800 mb-3">
+                      Water
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-gray-700 text-sm font-medium mb-1">
+                          Total Amount Billed
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
+                          <input
+                            type="number"
+                            name="waterTotal"
+                            value={billingForm.waterTotal}
+                            onChange={handleInputChange}
+                            className="w-full border border-gray-300 rounded-md p-2.5 pl-7 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 text-sm font-medium mb-1">
+                          Rate this month (cu. meters)
+                        </label>
+                        <input
+                          type="number"
+                          name="waterRate"
+                          value={billingForm.waterRate}
+                          onChange={handleInputChange}
+                          className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              
+              <div className="p-5 border-t border-gray-200 flex justify-end gap-3">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveOrUpdateBilling}
+                  className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                >
+                  {isEditing ? "Update Utility Info" : "Save Utility Info"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </LandlordLayout>
   );

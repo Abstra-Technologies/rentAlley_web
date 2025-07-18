@@ -19,7 +19,7 @@ export default function SuspendedAccounts() {
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
-        fetch('/api/systemadmin/suspended/list')
+        fetch('/api/systemadmin/users/getAllSuspendAccounts')
             .then((res) => res.json())
             .then((data) => setAccounts(data))
             .catch((err) => console.error('Error:', err));

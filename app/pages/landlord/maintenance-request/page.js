@@ -3,7 +3,7 @@ import React, { useEffect, useState, Suspense } from "react";
 import { EyeIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
-import useAuth from "../../../../hooks/useSession";
+import useAuthStore from "../../../../zustand/authStore";
 import axios from "axios";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -21,7 +21,7 @@ const SearchParamsWrapper = ({ setActiveTab }) => {
 
 const MaintenanceRequestPage = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const [activeTab, setActiveTab] = useState("pending");
   const [allRequests, setAllRequests] = useState([]);
   const [visibleRequests, setVisibleRequests] = useState([]);
@@ -35,13 +35,14 @@ const MaintenanceRequestPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
+  //  Getting current tier plan. and all requests
   useEffect(() => {
     const fetchSubscription = async () => {
       if (!user?.landlord_id) return;
 
       try {
         const response = await axios.get(
-          `/api/subscription/getCurrentPlan/${user.landlord_id}`
+          `/api/landlord/subscription/active/${user?.landlord_id}`
         );
         setSubscription(response.data);
       } catch (error) {
@@ -63,7 +64,7 @@ const MaintenanceRequestPage = () => {
 
       try {
         const response = await axios.get(
-          `/api/maintenance/getAllMaintenance?landlord_id=${user.landlord_id}`
+          `/api/maintenance/getAllMaintenance?landlord_id=${user?.landlord_id}`
         );
 
         if (response.data.success) {
@@ -145,7 +146,7 @@ const MaintenanceRequestPage = () => {
         landlord_id: user?.landlord_id,
       });
 
-      await axios.post("/api/maintenance/sendMaintenanceNotification", {
+      await axios.post("/api/maintenance/sendNotification", {
         request_id,
         status: newStatus,
         landlord_id: user?.landlord_id,

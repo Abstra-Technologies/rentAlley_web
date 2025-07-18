@@ -14,7 +14,7 @@ export default function TenantDetails() {
   useEffect(() => {
     if (!tenant_id) return;
 
-    fetch(`/api/landlord/tenants/details/${tenant_id}`)
+    fetch(`/api/landlord/properties/getCurrentTenants/viewDetail/${tenant_id}`)
       .then((res) => res.json())
       .then((data) => {
         setTenant(data.tenant);

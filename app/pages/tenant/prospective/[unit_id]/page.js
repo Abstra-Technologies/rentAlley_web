@@ -27,13 +27,14 @@ const TenantApplicationForm = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  //  Check if application is submitted for a particular unit. (same unit)
   useEffect(() => {
     if (!user || !unit_id) return;
 
     const checkTenantApplication = async () => {
       try {
         const response = await axios.get(
-          `/api/tenant/prospective/check-application`,
+          `/api/tenant/applications/alreadyApplied`,
           {
             params: {
               tenant_id: user?.tenant_id,
@@ -164,7 +165,7 @@ const TenantApplicationForm = () => {
       };
 
       const infoResponse = await axios.put(
-        "/api/tenant/prospective/submit-info",
+        "/api/tenant/applications/submitApplication",
         infoPayload
       );
 
@@ -177,7 +178,7 @@ const TenantApplicationForm = () => {
 
           try {
             const reqResponse = await axios.post(
-              "/api/tenant/prospective/submit-reqs",
+              "/api/tenant/applications/submitDocRequirements",
               fileFormData,
               {
                 headers: { "Content-Type": "multipart/form-data" },

@@ -1,5 +1,5 @@
 import { db } from "../../../lib/db";
-
+//  to be modularized, deleted
 export default async function leaseDetails(req, res) {
   const { unit_id } = req.query;
   let connection;
@@ -23,6 +23,42 @@ export default async function leaseDetails(req, res) {
     if (connection) {
       connection.release();
     }
+  }
+}
+async function handleDeleteRequest(req, res, connection, unit_id) {
+  try {
+    const [tenantRows] = await connection.execute(
+      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
+      [unit_id]
+    );
+
+    if (tenantRows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No approved tenant found for this unit" });
+    }
+
+    const tenant_id = tenantRows[0].tenant_id;
+
+    await connection.beginTransaction();
+
+    const [deleteResult] = await connection.execute(
+      `DELETE FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?`,
+      [unit_id, tenant_id]
+    );
+
+    await connection.commit();
+
+    if (deleteResult.affectedRows === 0) {
+      return res.status(404).json({ error: "Lease agreement not found" });
+    }
+
+    res.status(200).json({ message: "Lease Agreement deleted successfully" });
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error deleting lease agreement:", error);
+
+    res.status(500).json({ error: "Failed to delete lease agreement" });
   }
 }
 
@@ -108,39 +144,3 @@ async function handlePutRequest(req, res, connection, unit_id) {
   }
 }
 
-async function handleDeleteRequest(req, res, connection, unit_id) {
-  try {
-    const [tenantRows] = await connection.execute(
-      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
-      [unit_id]
-    );
-
-    if (tenantRows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No approved tenant found for this unit" });
-    }
-
-    const tenant_id = tenantRows[0].tenant_id;
-
-    await connection.beginTransaction();
-
-    const [deleteResult] = await connection.execute(
-      `DELETE FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?`,
-      [unit_id, tenant_id]
-    );
-
-    await connection.commit();
-
-    if (deleteResult.affectedRows === 0) {
-      return res.status(404).json({ error: "Lease agreement not found" });
-    }
-
-    res.status(200).json({ message: "Lease Agreement deleted successfully" });
-  } catch (error) {
-    await connection.rollback();
-    console.error("Error deleting lease agreement:", error);
-
-    res.status(500).json({ error: "Failed to delete lease agreement" });
-  }
-}

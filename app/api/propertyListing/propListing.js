@@ -1,6 +1,7 @@
 import { db } from "../../../lib/db";
 import { parse } from "cookie";
 import { jwtVerify } from "jose";
+//  Will be modularized per Operations.
 
 export default async function PropertyListingCRUD(req, res) {
   const { id } = req.query;

@@ -14,6 +14,20 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       fetchSession();
     }
   }, [user, admin]);
+
+  useEffect(() => {
+    const existingScript = document.getElementById("google-maps");
+
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&libraries=places`;
+      script.id = "google-maps";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+  }, []);
+
   
     return (
         <>

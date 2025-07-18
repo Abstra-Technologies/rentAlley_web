@@ -29,13 +29,7 @@ const useAuthStore = create(
             }
           };
 
-          console.log("[AuthStore]Decrypting user data...", data);
-          console.log("Checking fields before JSON.parse():");
-          console.log("firstName:", data.firstName);
-          console.log("lastName:", data.lastName);
-          console.log("email:", data.email);
-          console.log("profilePicture:", data.profilePicture);
-          console.log("phoneNumber:", data.phoneNumber);
+    
 
           return {
             user_id: data.user_id || null,
@@ -59,6 +53,7 @@ const useAuthStore = create(
               : null,
             is_2fa_enabled: data.is_2fa_enabled || false,
             tenant_id: data.tenant_id || null,
+            points: data.points || 0,
             userType: data.userType || null,
             landlord_id: data.landlord_id || null,
             is_verified: data.landlord_id ? data.is_verified || false : null,
@@ -93,7 +88,6 @@ const useAuthStore = create(
             return data;
           }
 
-          console.log("[AuthStore] Decrypting admin data...", data);
 
           return {
             admin_id: data.admin_id || null,

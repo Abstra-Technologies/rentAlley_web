@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import useAuth from "../../../../../hooks/useSession";
+import useAuthStore from "../../../../../zustand/authStore";
 import useSWR from "swr";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { FaBug, FaSearch, FaFilter, FaExclamationTriangle, FaCheckCircle, FaClock } from "react-icons/fa";
@@ -21,13 +21,12 @@ const fetcher = async (url) => {
 };
 
 export default function BugReports() {
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // Use SWR to fetch bug reports with error handling
-  const { data, error, isLoading, mutate } = useSWR("/api/systemadmin/bugReport/list", fetcher, { 
+  const { data, error, isLoading, mutate } = useSWR("/api/systemadmin/bugReport/getAllReports", fetcher, { 
     refreshInterval: 10000,
     onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
       // Only retry up to 3 times

@@ -1,6 +1,6 @@
 import { db } from "../../../lib/db";
 import { decryptData } from "../../../crypto/encrypt";
-
+// to be deleted
 const SECRET_KEY = process.env.ENCRYPTION_SECRET; // Store in .env
 
 export default async function handler(req, res) {

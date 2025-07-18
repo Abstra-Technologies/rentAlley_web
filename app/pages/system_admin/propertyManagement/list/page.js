@@ -29,7 +29,7 @@ export default function PropertyList() {
     useEffect(() => {
         async function fetchProperties() {
             try {
-                const res = await fetch("/api/properties/list");
+                const res = await fetch("/api/systemadmin/propertyListings/getAllProperties");
                 const data = await res.json();
 
                 if (!data.properties.length) {

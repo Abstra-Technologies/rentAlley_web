@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   env: {
     ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
   },
+  swcMinify: true, 
   eslint: {
     ignoreDuringBuilds: true,
   },

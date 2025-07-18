@@ -33,12 +33,12 @@ export default function EditAnnouncement() {
 
       try {
         // Fetch announcement details
-        const announcementRes = await fetch(`/api/landlord/announcement/view-announcement?id=${id}`);
+        const announcementRes = await fetch(`/api/landlord/announcement/viewAnnouncementbyId?id=${id}`);
         if (!announcementRes.ok) throw new Error('Failed to fetch announcement');
         const announcementData = await announcementRes.json();
 
         // Fetch properties for dropdown
-        const propertiesRes = await fetch(`/api/landlord/announcement/retrieve-announcement?landlord_id=${user?.landlord_id}`);
+        const propertiesRes = await fetch(`/api/landlord/announcement/fetchPropertyLists?landlord_id=${user?.landlord_id}`);
         if (!propertiesRes.ok) throw new Error('Failed to fetch properties');
         const propertiesData = await propertiesRes.json();
 
@@ -71,7 +71,7 @@ export default function EditAnnouncement() {
     e.preventDefault();
   
     try {
-      const response = await fetch(`/api/landlord/announcement/edit-announcement?id=${id}`, {
+      const response = await fetch(`/api/landlord/announcement/updateAnnouncement?id=${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

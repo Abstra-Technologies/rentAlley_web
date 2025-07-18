@@ -5,7 +5,8 @@ const steps = [
   { id: 1, label: "Location" },
   { id: 2, label: "Amenities/Features" },
   { id: 3, label: "Property Details and Photos" },
-  { id: 4, label: "Requirements" },
+  { id: 4, label: "Payment Details" },
+  { id: 5, label: "Requirements" },
 ];
 
 const StepCounter = ({ currentStep }) => {

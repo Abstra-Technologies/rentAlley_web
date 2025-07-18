@@ -1,5 +1,5 @@
 import { db } from "../../../lib/db";
-
+//  to be modularized and deleted.
 export default async function handler(req, res) {
   const { id } = req.query;
   let connection;
@@ -21,107 +21,11 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error("Error handling request:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Database Server Error" });
   } finally {
     if (connection) {
       connection.release();
     }
-  }
-}
-
-//Create Units
-async function handlePostRequest(req, res, connection) {
-  // Destructure the request body to get the unit details
-  const {
-    property_id,
-    unitName,
-    unitSize,
-    bedSpacing,
-    availBeds,
-    rentAmt,
-    furnish,
-    secDeposit,
-    advancedPayment,
-    status,
-  } = req.body;
-
-  if (!property_id) {
-    return res.status(400).json({ error: "property id is required" });
-  }
-
-  try {
-    const values = [
-      property_id,
-      unitName,
-      unitSize,
-      bedSpacing,
-      availBeds,
-      rentAmt,
-      furnish,
-      secDeposit,
-      advancedPayment,
-      status || "unoccupied",
-    ];
-
-    console.log("Values array:", values);
-
-    await connection.beginTransaction();
-
-    const [result] = await connection.execute(
-      `INSERT INTO Unit 
-      (property_id, unit_name, unit_size, bed_spacing, avail_beds, rent_amount, furnish, sec_deposit, advanced_payment, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      values
-    );
-
-    await connection.commit();
-
-    // Respond with the newly created property ID and the request body
-    res.status(201).json({ unitId: result.insertId, ...req.body });
-  } catch (error) {
-    // Rollback the transaction in case of an error
-    await connection.rollback();
-
-    // Log the error message
-    console.error("Error creating unit listings:", error);
-
-    // Respond with an error message
-    res.status(500).json({ error: "Failed to create unit listing" });
-  }
-}
-
-//Get Units by ID or All
-async function handleGetRequest(req, res, connection, property_id, unit_id) {
-  try {
-    let query = `SELECT * FROM Unit WHERE 1=1`; // Ensures base query is always valid
-    let params = [];
-
-    // If an ID is provided, add it to the query
-    if (unit_id) {
-      query += ` AND unit_id = ?`;
-      params.push(unit_id);
-    }
-
-    if (property_id) {
-      query += ` AND property_id = ?`;
-      params.push(property_id);
-    }
-
-    const [rows] = await connection.execute(query, params);
-
-    if (unit_id && rows.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No Units found for this Property" });
-    }
-
-    res.status(200).json(rows);
-  } catch (error) {
-    // Log the error message
-    console.error("Error fetching unit listings:", error);
-
-    // Respond with an error message
-    res.status(500).json({ error: "Failed to fetch unit listings" });
   }
 }
 

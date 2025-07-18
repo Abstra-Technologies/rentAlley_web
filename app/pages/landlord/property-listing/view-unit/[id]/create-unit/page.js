@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import { z } from "zod";
 import furnishingTypes from "../../../../../../../constant/furnishingTypes";
 import LandlordLayout from "../../../../../../../components/navigation/sidebar-landlord";
+import AmenitiesSelector from "../../../../../../../components/landlord/properties/unitAmenities";
 
 // Zod validation schema
 const unitSchema = z.object({
@@ -15,8 +16,6 @@ const unitSchema = z.object({
   unitSize: z.string().min(1, "Unit Size is required"),
   rentAmt: z.number().min(1, "Rent amount is required"),
   furnish: z.string().min(1, "Furnishing selection is required"),
-  secDeposit: z.number().min(1, "Security Deposit is required"),
-  advancedPayment: z.number().min(1, "Advanced Payment is required"),
   photos: z.array(z.any()).min(1, "At least one image is required"),
 });
 
@@ -30,13 +29,27 @@ export default function UnitListingForm() {
     bedSpacing: "",
     availBeds: "",
     rentAmt: "",
-    secDeposit: "",
-    advancedPayment: "",
     furnish: "",
+    secDepo:'',
+    advPay:'',
+    amenities: [],
+
   });
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const handleAmenityChange = (amenityName) => {
+  setFormData((prev) => {
+    const isSelected = prev.amenities.includes(amenityName);
+    return {
+      ...prev,
+      amenities: isSelected
+        ? prev.amenities.filter((a) => a !== amenityName)
+        : [...prev.amenities, amenityName],
+    };
+  });
+};
 
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
@@ -62,8 +75,8 @@ export default function UnitListingForm() {
     const parsedFormData = {
       ...formData,
       rentAmt: Number(formData.rentAmt),
-      secDeposit: Number(formData.secDeposit),
-      advancedPayment: Number(formData.advancedPayment),
+     amenities: formData.amenities.join(","), 
+
     };
 
     // Validate form data with Zod
@@ -98,8 +111,9 @@ export default function UnitListingForm() {
 
     setLoading(true);
     const propURL = `/pages/landlord/property-listing/view-unit/${propertyId}`;
+    
     try {
-      const unitResponse = await axios.post("/api/unitListing/unit", formData);
+      const unitResponse = await axios.post("/api/unitListing/addUnit", formData);
 
       const unitId = unitResponse.data.unitId;
 
@@ -111,7 +125,7 @@ export default function UnitListingForm() {
         photoFormData.append("unit_id", unitId);
 
         const photoResponse = await axios.post(
-          "/api/unitListing/unitPhoto",
+          "/api/unitListing/addUnit/UnitPhotos",
           photoFormData
         );
 
@@ -240,30 +254,28 @@ export default function UnitListingForm() {
             />
           </div>
 
-          {/* Security Deposit */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Security Deposit
+              Security Deposit (max for 2 months only)
             </label>
             <input
               type="number"
-              name="secDeposit"
-              value={formData.secDeposit || ""}
+              name="secDepo"
+              value={formData.secDepo || ""}
               onChange={handleChange}
               min={0}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
             />
           </div>
 
-          {/* Advanced Payment */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Advanced Payment
+              Advanced Payment (max for 1 month only)
             </label>
             <input
               type="number"
-              name="advancedPayment"
-              value={formData.advancedPayment || ""}
+              name="advPay"
+              value={formData.advPay || ""}
               onChange={handleChange}
               min={0}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -291,6 +303,14 @@ export default function UnitListingForm() {
               ))}
             </select>
           </div>
+
+
+<AmenitiesSelector
+  selectedAmenities={formData.amenities}
+  onAmenityChange={handleAmenityChange}
+/>
+
+
 
           {/* Dropzone */}
           <div

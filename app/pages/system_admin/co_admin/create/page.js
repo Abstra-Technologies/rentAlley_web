@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { roles } from "../../../../../constant/adminroles";
-import useAuth from "../../../../../hooks/useSession";
+import useAuthStore from "../../../../../zustand/authStore";
 import { availablePermissions } from "../../../../../constant/adminPermission";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 
@@ -17,7 +17,7 @@ const CreateCoAdmin = () => {
     permissions: [],
   });
 
-  const { admin, loading, error } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
@@ -47,7 +47,7 @@ const CreateCoAdmin = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch("/api/systemadmin/addUsers", {
+      const res = await fetch("/api/systemadmin/co_admin/addNewAdmin", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

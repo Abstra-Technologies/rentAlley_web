@@ -3,19 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import LandlordLayout from '../../../../components/navigation/sidebar-landlord';
-import useAuth from '../../../../hooks/useSession';
+import useAuthStore from "../../../../zustand/authStore";
 import Swal from "sweetalert2";
 
 export default function AnnouncementsList() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+    if (!user && !admin) {
+      fetchSession();
+    }
+  }, [user, admin]);
 
   useEffect(() => {
     async function fetchAnnouncements() {
       try {
-        const response = await fetch(`/api/landlord/announcement/get-announcement?landlord_id=${user?.landlord_id}`);
+        const response = await fetch(`/api/landlord/announcement/getAllAnnouncements?landlord_id=${user?.landlord_id}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch announcements');
@@ -39,7 +45,7 @@ export default function AnnouncementsList() {
   }, [user]);
 
   const handleCreate = () => {
-    router.push(`/pages/landlord/announcement/announcement-create`);
+    router.push(`/pages/landlord/announcement/create-announcement`);
   };
 
   if (loading) {

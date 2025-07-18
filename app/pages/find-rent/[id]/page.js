@@ -28,7 +28,7 @@ export default function PropertyDetails() {
   useEffect(() => {
     async function fetchPropertyDetails() {
       try {
-        const res = await fetch(`/api/properties/getProperty?id=${id}`);
+        const res = await fetch(`/api/properties/findRent/viewPropertyDetails?id=${id}`);
         if (!res.ok) throw new Error("Failed to fetch property details");
 
         const data = await res.json();
@@ -241,6 +241,7 @@ export default function PropertyDetails() {
                   <h3 className="font-medium text-gray-700">Late Fee</h3>
                   <p className="text-gray-600">{property.late_fee} %</p>
                 </div>
+              
               </div>
 
               {/* Amenities */}
@@ -258,6 +259,36 @@ export default function PropertyDetails() {
                       </div>
                     ))}
                   </div>
+
+  {property?.flexipay_enabled === 1 && (
+    <div className="ml-2 px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full flex items-center gap-1">
+      <span>FlexiPay</span>
+      <svg
+        className="w-3 h-3 text-green-600"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+  )}
+
+{property?.payment_methods?.length > 0 && (
+  <div className="ml-2 mt-1 flex flex-wrap gap-2">
+    {property.payment_methods.map((method) => (
+      <span
+        key={method.method_id}
+        className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full"
+      >
+        {method.method_name}
+      </span>
+    ))}
+  </div>
+)}
+
+
                 </div>
               )}
             </div>

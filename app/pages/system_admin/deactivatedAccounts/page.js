@@ -18,7 +18,7 @@ export default function DeactivatedAccounts() {
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
-        fetch('/api/systemadmin/deactivated/list')
+        fetch('/api/systemadmin/users/getAllDeActivatedAccounts')
             .then((res) => res.json())
             .then((data) => setAccounts(data))
             .catch((err) => console.error('Error:', err));
@@ -32,7 +32,7 @@ export default function DeactivatedAccounts() {
     );
 
     const handleReactivate = (user_id, userType) => {
-        fetch(`/api/systemadmin/reactivate/reactivate`, {
+        fetch(`/api/systemadmin/users/reActivateAccounts`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id, userType })

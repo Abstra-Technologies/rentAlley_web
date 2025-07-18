@@ -1,14 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import InquiryBooking from "../../../../../components/tenant/inquiry";
+import InquiryBooking from "../../../../../components/tenant/find-rent/inquiry";
 import Image from "next/image";
 import useAuth from "../../../../../hooks/useSession";
 import { IoArrowBackOutline } from "react-icons/io5";
 import { FaExclamationTriangle, FaInfoCircle } from "react-icons/fa";
 import ReviewsList from "../../../../../components/tenant/reviewList";
 
-export default function UnitDetailPage() {
+export default function PropertyUnitDetailedPage() {
   const router = useRouter();
   const { rentId, id } = useParams();
   const { user } = useAuth();
@@ -23,11 +23,15 @@ export default function UnitDetailPage() {
 
     async function fetchUnitDetails() {
       try {
-        const res = await fetch(`/api/properties/getUnit?rentId=${rentId}`);
+        const res = await fetch(`/api/properties/findRent/viewPropUnitDetails?rentId=${rentId}`);
         if (!res.ok) throw new Error("Failed to fetch unit details");
-
         const data = await res.json();
-        setUnit(data.unit[0]);
+        console.log('unit data:' ,data)
+
+        // setUnit(data.unit[0]);
+        // single object.
+        // You should use setUnit(data.unit) (as an object, not an array) because of how your API is structured.
+        setUnit(data.unit);
         setPhotos(data.photos);
       } catch (error) {
         console.error(error.message);

@@ -13,7 +13,7 @@ function AdminDetailsPage() {
     useEffect(() => {
         async function fetchAdminDetails() {
             try {
-                const response = await fetch(`/api/systemadmin/co_admin/details/${admin_id}`);
+                const response = await fetch(`/api/systemadmin/co_admin/getAdminDetail/${admin_id}`);
                 const data = await response.json();
                 if (data.success) {
                     setAdmin(data.admin);

@@ -1,6 +1,6 @@
 import { db } from "../../../../lib/db";
 import {decryptData} from "../../../../crypto/encrypt";
-
+//  to be deleted.
 export default async function UnitPhotos(req, res) {
     try {
         const { property_id } = req.query;

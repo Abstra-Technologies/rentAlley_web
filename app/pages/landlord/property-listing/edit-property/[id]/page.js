@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import usePropertyStore from "../../../../../../zustand/propertyStore";
+import usePropertyStore from "../../../../../../zustand/property/usePropertyStore";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -41,6 +41,7 @@ const EditProperty = () => {
     availBeds: "",
     assocDues: "",
   });
+
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -48,7 +49,7 @@ const EditProperty = () => {
     const fetchProperty = async () => {
       try {
         const response = await axios.get(
-          `/api/propertyListing/propListing?property_id=${id}`
+          `/api/propertyListing/editProperty?property_id=${id}`
         );
         console.log("Fetched Property Data:", response.data);
         const propertyData = response.data[0];
@@ -102,7 +103,7 @@ const EditProperty = () => {
       if (!id) return;
       try {
         const { data } = await axios.get(
-          `/api/propertyListing/propPhotos?property_id=${id}`
+          `/api/propertyListing/propertyPhotos?property_id=${id}`
         );
 
         setPhotos(data);
@@ -209,7 +210,7 @@ const EditProperty = () => {
       if (result.isConfirmed) {
         setLoading(true);
         try {
-          await axios.put(`/api/propertyListing/propListing?id=${id}`, {
+          await axios.put(`/api/propertyListing/updateProperty?property_id=${id}`, {
             ...formData,
             petFriendly: formData.petFriendly ? 1 : 0,
           });
@@ -226,7 +227,7 @@ const EditProperty = () => {
             });
 
             await axios.post(
-              "/api/propertyListing/propPhotos",
+              "/api/propertyListing/uploadPropertyPhotos",
               formDataPhotos,
               {
                 headers: { "Content-Type": "multipart/form-data" },

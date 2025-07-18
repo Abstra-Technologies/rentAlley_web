@@ -13,6 +13,28 @@ export default function LoginAdmin() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
+// Added a check if loggedin no more lofin form.
+  useEffect(() => {
+    const checkAdminSession = async () => {
+      try {
+        const res = await fetch("/api/systemadmin/session", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (data.isLoggedIn) {
+          router.replace("/pages/system_admin/dashboard");
+        }
+      } catch (error) {
+        console.error("Session check failed:", error);
+      }
+    };
+
+    checkAdminSession();
+  }, []);
+
   useEffect(() => {
     const storedLockTime = localStorage.getItem("lockUntil");
     if (storedLockTime) {

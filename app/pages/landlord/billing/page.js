@@ -1,14 +1,14 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import useAuth from "../../../../hooks/useSession";
+import useAuthStore from "../../../../zustand/authStore";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import { useEffect } from "react";
 import axios from "axios";
 import LoadingScreen from "../../../../components/loadingScreen";
 
 const PropertyListPage = () => {
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const [properties, setProperties] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");

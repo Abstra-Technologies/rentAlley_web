@@ -37,23 +37,31 @@ export default function CreateUnitBill() {
     async function fetchUnitData() {
       try {
         const res = await axios.get(
-          `/api/landlord/billing/getUnitBill?unit_id=${unit_id}`
+          `/api/landlord/billing/getUnitBilling?unit_id=${unit_id}`
         );
+
         const data = res.data;
+
         if (!data.unit || !data.property) {
           new Error("Missing unit or property data");
         }
         setUnit(data.unit);
         setProperty(data.property);
+
+        //  Getting Month Rate if Submetered.
         const concessionaireRes = await axios.get(
-          `/api/landlord/billing/saveConcessionaireBilling?property_id=${data?.property?.property_id}`
+          `/api/landlord/billing/savePropertyUtilityBillingMonthly?id=${data?.property?.property_id}`
         );
+
         let concessionaireData = concessionaireRes.data;
+
         if (!Array.isArray(concessionaireData)) {
           concessionaireData = [];
         }
+
         let waterRate = 0;
         let electricityRate = 0;
+
         concessionaireData.forEach((bill) => {
           if (bill.utility_type === "water") {
             waterRate = bill.rate_consumed;
@@ -76,6 +84,7 @@ export default function CreateUnitBill() {
 
     fetchUnitData();
   }, [unit_id]);
+
 
   const calculateUtilityBill = () => {
     const electricityPrevReading = parseFloat(form.electricityPrevReading) || 0;
@@ -168,7 +177,7 @@ export default function CreateUnitBill() {
         total_amount_due: parseFloat(calculateUtilityBill().total),
       };
 
-      const res = await axios.post("/api/billing/create", billingData);
+      const res = await axios.post("/api/landlord/billing/createUnitMonthlyBilling", billingData);
 
       if (res.status === 201) {
         Swal.fire({
@@ -178,7 +187,7 @@ export default function CreateUnitBill() {
           confirmButtonText: "OK",
         }).then(() => {
           router.push(
-            `/pages/landlord/billing/viewUnit/${property.property_id}`
+            `/pages/landlord/property-listing/view-unit/${property.property_id}`
           );
         });
         setForm({
@@ -215,7 +224,7 @@ export default function CreateUnitBill() {
           Unit {unit?.unit_name} - Billing
         </h1>
 
-        {/* Show Billing History */}
+        {/* Show Billing Rates */}
         <div className="mb-6 p-5 border border-gray-200 rounded-lg bg-gray-50 shadow-sm">
           <h2 className="text-lg font-semibold flex justify-between items-center mb-3 text-gray-700">
             Property Rate
@@ -336,12 +345,19 @@ export default function CreateUnitBill() {
                           Previous Water Meter Reading
                         </label>
                         <input
-                          type="number"
-                          name="waterPrevReading"
-                          placeholder="Previous Water Reading"
-                          value={form.waterPrevReading}
-                          onChange={handleChange}
-                          className="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                              type="number"
+                              name="waterPrevReading"
+                              placeholder="Previous Water Reading"
+                              value={form.waterPrevReading}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value.length <= 6) {
+                                  handleChange(e);
+                                }
+                              }}
+                              min="0"
+                              max="999999"
+                              className="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         />
                       </div>
                       <div>
@@ -353,7 +369,14 @@ export default function CreateUnitBill() {
                           name="waterCurrentReading"
                           placeholder="Current Water Reading"
                           value={form.waterCurrentReading}
-                          onChange={handleChange}
+                         onChange={(e) => {
+                                const value = e.target.value;
+                                if (value.length <= 6) {
+                                  handleChange(e);
+                                }
+                              }}
+                              min="0"
+                              max="999999"
                           className="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         />
                       </div>
@@ -372,7 +395,14 @@ export default function CreateUnitBill() {
                           name="electricityPrevReading"
                           placeholder="Previous Electricity Reading"
                           value={form.electricityPrevReading}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                                const value = e.target.value;
+                                if (value.length <= 5) {
+                                  handleChange(e);
+                                }
+                              }}
+                              min="0"
+                              max="99999"
                           className="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         />
                       </div>
@@ -385,7 +415,14 @@ export default function CreateUnitBill() {
                           name="electricityCurrentReading"
                           placeholder="Current Electricity Reading"
                           value={form.electricityCurrentReading}
-                          onChange={handleChange}
+                           onChange={(e) => {
+                                const value = e.target.value;
+                                if (value.length <= 5) {
+                                  handleChange(e);
+                                }
+                              }}
+                              min="0"
+                              max="99999"
                           className="px-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         />
                       </div>

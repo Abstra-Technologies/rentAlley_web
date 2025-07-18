@@ -28,7 +28,7 @@ export default function RootLayout({
         <body>
         <ClientLayout>
             {children}
-            <FeedbackWidget />
+            {/* <FeedbackWidget /> */}
         </ClientLayout>
         </body>
         </html>

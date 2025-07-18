@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import useAuth from "../../../../../hooks/useSession";
+import useAuthStore from "../../../../../zustand/authStore";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import {
     Table,
@@ -28,14 +28,14 @@ export default function TenantList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
-    const { admin } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
     const router = useRouter();
 
     useEffect(() => {
         const fetchTenants = async () => {
             try {
                 setLoading(true);
-                const response = await fetch("/api/tenant/list");
+                const response = await fetch("/api/systemadmin/users/getAllTenants");
 
                 if (!response.ok) {
                     throw new Error("Failed to fetch tenants.");
@@ -116,7 +116,7 @@ export default function TenantList() {
                 },
             });
 
-            await axios.post(`/api/suspendAccount/suspend`, {
+            await axios.post(`/api/systemadmin/users/suspendAccounts`, {
                 userId,
                 email: formValues.email,
                 message: formValues.message,

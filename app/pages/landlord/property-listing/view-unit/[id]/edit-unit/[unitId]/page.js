@@ -34,7 +34,7 @@ const EditUnit = () => {
       try {
         // Fetch unit details
         const { data } = await axios.get(
-          `/api/unitListing/unit?unit_id=${unitId}`
+          `/api/unitListing/getUnitListings?unit_id=${unitId}`
         );
 
         console.log("Unit data:", data);
@@ -61,7 +61,7 @@ const EditUnit = () => {
 
         // Fetch unit photos
         const { data: photoData } = await axios.get(
-          `/api/unitListing/unitPhoto?unit_id=${unitId}`
+          `/api/unitListing/getUnitPhotos?unit_id=${unitId}`
         );
 
         console.log("Photo data:", photoData);
@@ -106,7 +106,7 @@ const EditUnit = () => {
       if (result.isConfirmed) {
         try {
           // Update unit details
-          await axios.put(`/api/unitListing/unit?id=${unitId}`, formData);
+          await axios.put(`/api/unitListing/updateUnitListing?id=${unitId}`, formData);
 
           // If new photos were selected, upload them
           if (newPhotos.length > 0) {
@@ -116,7 +116,7 @@ const EditUnit = () => {
               photoFormData.append("files", file);
             });
 
-            await axios.post(`/api/unitListing/unitPhoto`, photoFormData);
+            await axios.post(`/api/unitListing/addUnit/UnitPhotos`, photoFormData);
           }
 
           Swal.fire("Updated!", "Unit updated successfully.", "success").then(

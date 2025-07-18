@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import useAuth from "../../../../../../hooks/useSession";
-import PropertyPhotos from "../../../../../../components/PropertyPhotos";
+import PropertyPhotos from "../../../../../../components/propertyVerification/PropertyPhotos";
 import SideNavAdmin from "../../../../../../components/navigation/sidebar-admin";
 
 export default function PropertyDetails() {
@@ -16,13 +16,13 @@ export default function PropertyDetails() {
   const params = useParams();
   const router = useRouter();
   const property_id = params.property_id;
-
+console.log('gotten property id:', property_id)
   useEffect(() => {
     if (!property_id) return;
 
     async function fetchProperty() {
       try {
-        const res = await fetch(`/api/properties/${property_id}`);
+        const res = await fetch(`/api/systemadmin/propertyListings/viewDetails/${property_id}`);
         const data = await res.json();
 
         if (data.message) {
@@ -41,7 +41,7 @@ export default function PropertyDetails() {
 
   const handleUpdateStatus = async (status) => {
     try {
-      const res = await fetch("/api/properties/propertyStatus", {
+      const res = await fetch("/api/systemadmin/propertyListings/updateStatus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ property_id, status, message }),

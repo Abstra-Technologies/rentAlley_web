@@ -3,7 +3,7 @@
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { BUG_REPORT_STATUSES } from "../../../../../constant/bugStatus";
-import useAuth from "../../../../../hooks/useSession";
+import useAuthStore from "../../../../../zustand/authStore";
 import SideNavAdmin from "../../../../../components/navigation/sidebar-admin";
 import { FaBug, FaUser, FaCalendarAlt, FaExclamationTriangle, FaCheckCircle, FaClock, FaArrowLeft } from "react-icons/fa";
 import LoadingScreen from "../../../../../components/loadingScreen";
@@ -23,14 +23,14 @@ export default function BugReportDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { admin } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
 
   useEffect(() => {
     async function fetchBugReport() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/systemadmin/bugReport/${report_id}`);
+        const res = await fetch(`/api/systemadmin/bugReport/getDetailedReports/${report_id}`);
         if (!res.ok) {
           throw new Error(`Failed to fetch bug report: ${res.status}`);
         }
@@ -59,7 +59,7 @@ export default function BugReportDetails() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/systemadmin/bugReport/update/${report_id}`, {
+      const response = await fetch(`/api/systemadmin/bugReport/updateStatus/${report_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

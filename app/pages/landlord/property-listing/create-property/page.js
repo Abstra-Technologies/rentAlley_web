@@ -1,22 +1,30 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LandlordLayout from "../../../../../components/navigation/sidebar-landlord";
 import { useRouter } from "next/navigation";
 import StepCounter from "../../../../../components/step-counter";
 import { StepOne } from "../../../../../components/landlord/step1";
 import { StepTwo } from "../../../../../components/landlord/step2";
 import { StepThree } from "../../../../../components/landlord/step3";
+import { StepFive } from "../../../../../components/landlord/step5";
 import { StepFour } from "../../../../../components/landlord/step4";
+
 import axios from "axios";
-import usePropertyStore from "../../../../../zustand/propertyStore";
-import useAuth from "../../../../../hooks/useSession";
+import usePropertyStore from "../../../../../zustand/property/usePropertyStore";
+import useAuthStore from "../../../../../zustand/authStore";
 import useSWRMutation from "swr/mutation";
 import Swal from "sweetalert2";
 
 export default function AddNewProperty() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
+
+  useEffect(() => {
+      if (!user && !admin) {
+        fetchSession();
+      }
+  }, [user, admin]);
 
   const {
     property,
@@ -114,24 +122,6 @@ export default function AddNewProperty() {
         return false;
       }
 
-      if (!property.lateFee || property.lateFee < 0) {
-        Swal.fire(
-          "Missing Late Fee",
-          "Please enter a valid late fee amount (0 or higher).",
-          "error"
-        );
-        return false;
-      }
-
-      if (!property.assocDues || property.assocDues < 0) {
-        Swal.fire(
-          "Missing Association Dues",
-          "Please enter a valid association dues amount (0 or higher).",
-          "error"
-        );
-        return false;
-      }
-
       if (!property.minStay || property.minStay <= 0) {
         Swal.fire(
           "Missing Minimum Stay",
@@ -141,17 +131,7 @@ export default function AddNewProperty() {
         return false;
       }
 
-      if (
-        !property.paymentFrequency ||
-        property.paymentFrequency.trim() === ""
-      ) {
-        Swal.fire(
-          "Missing Payment Frequency",
-          "Please select a payment frequency.",
-          "error"
-        );
-        return false;
-      }
+  
 
       if (
         !property.utilityBillingType ||
@@ -180,6 +160,39 @@ export default function AddNewProperty() {
     }
 
     if (step === 4) {
+     if (
+        !property.paymentFrequency ||
+        property.paymentFrequency.trim() === ""
+      ) {
+        Swal.fire(
+          "Missing Payment Frequency",
+          "Please select a payment frequency.",
+          "error"
+        );
+        return false;
+      }
+
+            if (!property.lateFee || property.lateFee < 0) {
+        Swal.fire(
+          "Missing Late Fee",
+          "Please enter a valid late fee amount (0 or higher).",
+          "error"
+        );
+        return false;
+      }
+
+      if (!property.assocDues || property.assocDues < 0) {
+        Swal.fire(
+          "Missing Association Dues",
+          "Please enter a valid association dues amount (0 or higher).",
+          "error"
+        );
+        return false;
+      }
+
+    }
+
+    if (step === 5) {
       if (
         !occPermit?.file ||
         !mayorPermit?.file ||
@@ -228,13 +241,12 @@ export default function AddNewProperty() {
         return false;
       }
     }
-
     return true;
   };
 
   const nextStep = () => {
     if (validateStep()) {
-      setStep((prev) => Math.min(prev + 1, 4));
+      setStep((prev) => Math.min(prev + 1, 5));
     }
   };
 
@@ -250,8 +262,9 @@ export default function AddNewProperty() {
       .post(url, arg, { headers: { "Content-Type": "application/json" } })
       .then((res) => res.data);
   };
+
   const { trigger, isMutating } = useSWRMutation(
-    `/api/propertyListing/propListing?landlord_id=${user?.landlord_id}`,
+    `/api/propertyListing/createNewProperty?landlord_id=${user?.landlord_id}`,
     sendPropertyData
   );
 
@@ -277,7 +290,7 @@ export default function AddNewProperty() {
 
     try {
       const { data } = await axios.post(
-        `/api/propertyListing/propPhotos`,
+        `/api/propertyListing/uploadPropertyPhotos`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -317,7 +330,7 @@ export default function AddNewProperty() {
 
     try {
       const { data } = await axios.post(
-        "/api/propertyListing/propVerify",
+        "/api/propertyListing/propertyVerification",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -417,6 +430,8 @@ export default function AddNewProperty() {
         return <StepThree />;
       case 4:
         return <StepFour />;
+      case 5:
+        return <StepFive />;
       default:
         return <div>Invalid Step</div>;
     }
@@ -446,7 +461,7 @@ export default function AddNewProperty() {
                     Back
                   </button>
                 )}
-                {step < 4 ? (
+                {step < 5 ? (
                   <button
                     onClick={nextStep}
                     className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 

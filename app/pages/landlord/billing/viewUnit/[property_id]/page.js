@@ -1,3 +1,5 @@
+
+//  to be removed.
 "use client";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -9,7 +11,6 @@ import Swal from "sweetalert2";
 
 export default function ViewUnits() {
   const { property_id } = useParams();
-
   const [units, setUnits] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,17 +33,15 @@ export default function ViewUnits() {
       try {
         setLoading(true);
 
-        const res = await axios.get(`/api/landlord/billing/getUnitDetails`, {
-          params: { property_id },
-          headers: { "Cache-Control": "no-cache" },
-        });
-
-        console.log("Fetched units:", res.data);
+        // const res = await axios.get(`/api/landlord/billing/getUnitDetails`, {
+        //   params: { property_id },
+        //   headers: { "Cache-Control": "no-cache" },
+        // });
 
         const unitBillingPromises = res.data.map(async (unit) => {
           try {
             const billingRes = await axios.get(
-              `/api/landlord/billing/getUnitBillingStatus`,
+              `/api/landlord/billing/getUnitDetails/billingStatus`,
               {
                 params: { unit_id: unit.unit_id },
               }
@@ -64,6 +63,7 @@ export default function ViewUnits() {
         const unitsWithBillingStatus = await Promise.all(unitBillingPromises);
 
         setUnits(unitsWithBillingStatus);
+        
       } catch (error) {
         console.error(
           "Failed to fetch units:",
@@ -114,6 +114,7 @@ export default function ViewUnits() {
         );
       }
     }
+    
     fetchBillingData();
     fetchData();
   }, [property_id]);
@@ -394,6 +395,7 @@ export default function ViewUnits() {
             </div>
           </div>
         )}
+
       </div>
     </LandlordLayout>
   );

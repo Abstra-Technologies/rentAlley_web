@@ -3,4 +3,7 @@ export const PROPERTY_TYPES = [
   { value: "duplex", label: "Duplex" },
   { value: "townhouse", label: "Townhouse" },
   { value: "house", label: "House" },
+  { value: "Warehouse", label: "Warehouse" },
+  { value: "office_space", label: "Office Space" },
+  { value: "dormitory", label: "Dormitory" },
 ];

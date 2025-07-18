@@ -2,8 +2,7 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
-import usePropertyStore from "../../../../zustand/propertyStore";
-import useAuth from "../../../../hooks/useSession";
+import usePropertyStore from "../../../../zustand/property/usePropertyStore";
 import Image from "next/image";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -17,10 +16,11 @@ import {
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import useAuthStore from "../../../../zustand/authStore";
 
 const PropertyListingPage = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { fetchSession, user, admin } = useAuthStore();
   const { properties, fetchAllProperties, loading, error } = usePropertyStore();
   const [isVerified, setIsVerified] = useState(null);
   const [showVerifyPopup, setShowVerifyPopup] = useState(false);
@@ -31,6 +31,14 @@ const PropertyListingPage = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [pendingApproval, setPendingApproval] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  
+  useEffect(() => {
+      // Fetch session only if user/admin is not already available
+      if (!user && !admin) {
+        fetchSession();
+      }
+    }, [user, admin]);
+
   useEffect(() => {
     if (user?.landlord_id) {
       fetchAllProperties(user?.landlord_id);
@@ -47,46 +55,58 @@ const PropertyListingPage = () => {
     }
   }, [properties, isVerified]);
 
-  useEffect(() => {
-    if (user?.userType === "landlord") {
-      setIsVerified(null);
-      setIsFetchingVerification(true);
+useEffect(() => {
+  if (user?.userType === "landlord") {
+    console.log("[DEBUG] Landlord detected. Starting verification & subscription checks.");
+    setIsVerified(null);
+    setIsFetchingVerification(true);
 
-      axios
-        .get(`/api/landlord/verification-status?user_id=${user?.user_id}`)
-        .then((response) => {
-          console.log("Fetched Verification Status:", response.data);
+    // Fetch Verification Status
+    axios
+      .get(`/api/landlord/verification-upload/status?user_id=${user?.user_id}`)
+      .then((response) => {
+        console.log("[DEBUG] Fetched Verification Status:", response.data);
+        const status = response.data.verification_status || "";
+        const isVerified = status.toLowerCase() === "verified";
+        console.log("[DEBUG] Interpreted isVerified:", isVerified);
+        setIsVerified(isVerified);
+      })
+      .catch((err) => {
+        console.error("[ERROR] Failed to fetch landlord verification status:", err);
+      })
+      .finally(() => {
+        console.log("[DEBUG] Verification status fetch completed.");
+        setIsFetchingVerification(false);
+      });
 
-          const status = response.data.verification_status || "";
-          setIsVerified(status.toLowerCase() === "verified");
-        })
-        .catch((err) => {
-          console.error("Failed to fetch landlord verification status:", err);
-        })
-        .finally(() => {
-          setIsFetchingVerification(false);
-        });
+    // Subscription Checking
+    setFetchingSubscription(true);
+    console.log("[DEBUG] Checking subscription for landlord_id:", user?.landlord_id);
 
-      setFetchingSubscription(true);
-      axios
-        .get(`/api/subscription/getCurrentPlan/${user?.landlord_id}`)
-        .then((response) => {
-          setSubscription(response.data);
-        })
-        .catch((err) => {
-          if (err.response && err.response.status === 404) {
-            setErrorMsg(
-              "You are not subscribed. Please choose a plan to add properties."
-            );
-          } else {
-            setErrorMsg(
-              "Failed to fetch subscription details. Please try again later."
-            );
-          }
-        })
-        .finally(() => setFetchingSubscription(false));
-    }
-  }, [user]);
+    axios
+      .get(`/api/landlord/subscription/active/${user?.landlord_id}`)
+      .then((response) => {
+        console.log("[DEBUG] Fetched Subscription:", response.data);
+        setSubscription(response.data);
+      })
+      .catch((err) => {
+        console.error("[ERROR] Failed to fetch subscription:", err);
+        if (err.response && err.response.status === 404) {
+          console.log("[WARN] No active subscription found.");
+          setErrorMsg("You are not subscribed. Please choose a plan to add properties.");
+        } else {
+          setErrorMsg("Failed to fetch subscription details. Please try again later.");
+        }
+      })
+      .finally(() => {
+        console.log("[DEBUG] Subscription check completed.");
+        setFetchingSubscription(false);
+      });
+  } else {
+    console.log("[DEBUG] User is not a landlord or user is undefined.");
+  }
+}, [user]);
+
 
   const handleEdit = (propertyId, event) => {
     event.stopPropagation();
@@ -166,7 +186,7 @@ const PropertyListingPage = () => {
 
       try {
         const response = await fetch(
-          `/api/propertyListing/propListing?id=${propertyId}`,
+          `/api/propertyListing/deletePropertyListing/${propertyId}`,
           {
             method: "DELETE",
           }
@@ -253,7 +273,7 @@ const PropertyListingPage = () => {
                 <p className="text-gray-600 text-sm hidden md:block">
                   <span className="font-medium">
                     {properties.length}/
-                    {subscription.listingLimits.maxProperties}
+                    {subscription?.listingLimits?.maxProperties}
                   </span>{" "}
                   properties used
                 </p>
@@ -336,7 +356,7 @@ const PropertyListingPage = () => {
 
         {/* Alerts Section */}
         {subscription &&
-          properties.length >= subscription.listingLimits.maxProperties && (
+          properties.length >= subscription?.listingLimits?.maxProperties && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md mb-6">
               <div className="flex items-center">
                 <ExclamationCircleIcon className="h-6 w-6 text-red-500 mr-3" />
@@ -378,14 +398,29 @@ const PropertyListingPage = () => {
           {properties.length === 0 ? (
             // Empty state remains the same
             <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-              {/* ... */}
+                <BuildingOffice2Icon className="h-12 w-12 text-gray-400 mb-2" />
+    <p className="text-gray-600 mb-2">No properties found.</p>
+    <button
+      className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+      onClick={handleAddProperty}
+      disabled={
+        isFetchingVerification ||
+        fetchingSubscription ||
+        !isVerified ||
+        !subscription ||
+        subscription?.is_active !== 1 ||
+        isNavigating
+      }
+    >
+      Add Your First Property
+    </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map((property, index) => {
                 const isDisabled =
                   subscription &&
-                  index >= subscription.listingLimits.maxProperties;
+                  index >= subscription?.listingLimits?.maxProperties;
 
                 return (
                   <div

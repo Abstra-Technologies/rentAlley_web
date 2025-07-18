@@ -1,17 +1,65 @@
-import React, { useEffect } from "react";
-import usePropertyStore from "../../zustand/propertyStore";
+import React, { useEffect, useRef } from "react";
+import usePropertyStore from "../../zustand/property/usePropertyStore";
 import axios from "axios";
 import { PROPERTY_TYPES } from "../../constant/propertyTypes";
 import { PROVINCES_PHILIPPINES } from "../../constant/provinces";
 
 export const StepOne = () => {
   const { property, setProperty } = usePropertyStore();
+  const streetRef = useRef(null);
 
   useEffect(() => {
     if (!property.propertyType && PROPERTY_TYPES.length > 0) {
       setProperty({ propertyType: PROPERTY_TYPES[0].value });
     }
   }, [property.propertyType, setProperty]);
+
+ useEffect(() => {
+    if (!window.google || !streetRef.current) return;
+
+    const autocomplete = new window.google.maps.places.Autocomplete(
+      streetRef.current,
+      {
+        types: ["geocode"],
+        componentRestrictions: { country: "ph" },
+      }
+    );
+
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      const address = extractAddressComponents(place);
+
+      setProperty({
+        ...property,
+        street: place.name || "",
+        city: address.city || "",
+        province: address.province || "",
+        brgyDistrict: address.barangay || "",
+        zipCode: address.zip || "",
+      });
+    });
+  }, [property, setProperty]);
+
+  // Helper to extract fields from Google's address components
+  const extractAddressComponents = (place) => {
+    const components = place.address_components || [];
+    const result = {
+      barangay: "",
+      city: "",
+      province: "",
+      zip: "",
+    };
+
+    for (const comp of components) {
+      const types = comp.types;
+      if (types.includes("postal_code")) result.zip = comp.long_name;
+      if (types.includes("administrative_area_level_1")) result.province = comp.long_name;
+      if (types.includes("administrative_area_level_2")) result.city = comp.long_name;
+      if (types.includes("sublocality_level_1") || types.includes("neighborhood")) result.barangay = comp.long_name;
+    }
+
+    return result;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,6 +119,7 @@ export const StepOne = () => {
             Street Address
           </label>
           <input
+            ref={streetRef}
             type="text"
             name="street"
             value={property.street || ""}
@@ -80,26 +129,21 @@ export const StepOne = () => {
           />
         </div>
 
-        <div>
+         <div>
           <label className="block text-sm font-medium text-gray-700">
             Barangay No. / District No.
           </label>
           <input
-            type="number"
+            type="text"
             name="brgyDistrict"
             value={property.brgyDistrict || ""}
             onChange={handleChange}
             placeholder="Enter barangay or district number"
-            min={0}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 mb-3"
           />
-
-          <div className="p-3 mb-2 bg-blue-100 border-l-4 border-blue-500 text-blue-700 text-sm rounded">
-            <p>Barangay No. / District No. must be a number.</p>
-          </div>
         </div>
 
-        <div>
+       <div>
           <label className="block text-sm font-medium text-gray-700">
             City / Municipality
           </label>
@@ -123,7 +167,6 @@ export const StepOne = () => {
             value={property.zipCode || ""}
             onChange={handleChange}
             placeholder="Enter zip code"
-            min={0}
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
