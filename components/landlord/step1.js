@@ -3,10 +3,15 @@ import usePropertyStore from "../../zustand/property/usePropertyStore";
 import axios from "axios";
 import { PROPERTY_TYPES } from "../../constant/propertyTypes";
 import { PROVINCES_PHILIPPINES } from "../../constant/provinces";
-
+import { useState } from "react";
+import dynamic from "next/dynamic";
+const PropertyMap = dynamic(() => import("../propertyMap"), {
+  ssr: false, // 💡 disables SSR for this component
+});
 export const StepOne = () => {
   const { property, setProperty } = usePropertyStore();
   const streetRef = useRef(null);
+  const [coords, setCoords] = useState({ lat: null, lng: null });
 
   useEffect(() => {
     if (!property.propertyType && PROPERTY_TYPES.length > 0) {
@@ -113,7 +118,10 @@ export const StepOne = () => {
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-
+ <PropertyMap setCoords={setCoords} />
+      <p className="mt-2 text-sm text-gray-600">
+        Selected Location: {coords.lat}, {coords.lng}
+      </p>
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Street Address

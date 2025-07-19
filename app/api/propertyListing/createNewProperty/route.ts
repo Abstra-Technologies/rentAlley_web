@@ -28,8 +28,6 @@ export async function POST(req) {
       minStay,
       lateFee,
       assocDues,
-      secDeposit,
-      advancedPayment,
       paymentFrequency,
       // New fields
       flexiPayEnabled = 0,
@@ -67,8 +65,6 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
       minStay || null,
       lateFee || 0.0,
       assocDues || 0.0,
-      secDeposit || null,
-      advancedPayment || null,
       paymentFrequency || null,
       flexiPayEnabled,
       JSON.stringify(propertyPreferences || []),
@@ -85,10 +81,10 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
         landlord_id, property_name, property_type, amenities, street,
         brgy_district, city, zip_code, province, total_units,
         utility_billing_type, description, floor_area,
-        min_stay, late_fee, assoc_dues, sec_deposit, advanced_payment,
+        min_stay, late_fee, assoc_dues,
         payment_frequency, flexipay_enabled, property_preferences,accepted_payment_methods,latitude, longitude,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?, NOW(), NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       values
     );
 
