@@ -130,18 +130,14 @@ export const StepOne = () => {
         </div>
 
          <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Barangay No. / District No.
-          </label>
-          <input
-            type="text"
-            name="brgyDistrict"
-            value={property.brgyDistrict || ""}
-            onChange={handleChange}
-            placeholder="Enter barangay or district number"
-            className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 mb-3"
-          />
-        </div>
+            <label className="block text-sm text-gray-600">Barangay/District</label>
+            <input
+              type="text"
+              value={property.brgyDistrict || ""}
+              
+              className="w-full p-2 bg-gray-100 border border-gray-200 rounded"
+            />
+          </div>
 
        <div>
           <label className="block text-sm font-medium text-gray-700">
@@ -171,26 +167,15 @@ export const StepOne = () => {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Province
-          </label>
-          <select
-            name="province"
-            value={property.province || ""}
-            onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm text-lg py-2 px-4 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="" disabled>
-              Select Province
-            </option>
-            {PROVINCES_PHILIPPINES.map((province) => (
-              <option key={province.value} value={province.value}>
-                {province.label}
-              </option>
-            ))}
-          </select>
-        </div>
+       <div>
+            <label className="block text-sm text-gray-600">Province</label>
+            <input
+              type="text"
+              value={property.province || ""}
+              
+              className="w-full p-2 bg-gray-100 border border-gray-200 rounded"
+            />
+          </div>
       </form>
     </div>
   );

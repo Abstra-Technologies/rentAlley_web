@@ -37,6 +37,19 @@ export async function POST(req) {
       propertyPreferences = [],
     } = body;
 
+
+const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, Philippines`;
+
+    // 🔍 Fetch coordinates from OpenStreetMap Nominatim API
+    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`, {
+      headers: { "User-Agent": "hestia-property-app/1.0" },
+    });
+
+    const geoData = await geoRes.json();
+    const lat = geoData[0]?.lat || null;
+    const lon = geoData[0]?.lon || null;
+
+
     const values = [
       landlord_id,
       propertyName,
@@ -59,11 +72,11 @@ export async function POST(req) {
       paymentFrequency || null,
       flexiPayEnabled,
       JSON.stringify(propertyPreferences || []),
-      JSON.stringify(paymentMethodsAccepted || [])
+      JSON.stringify(paymentMethodsAccepted || []),
+       lat,
+      lon
     ];
 
-
-console.log("paymentMethodsAccepted:", paymentMethodsAccepted);
 
     await connection.beginTransaction();
 
@@ -73,9 +86,9 @@ console.log("paymentMethodsAccepted:", paymentMethodsAccepted);
         brgy_district, city, zip_code, province, total_units,
         utility_billing_type, description, floor_area,
         min_stay, late_fee, assoc_dues, sec_deposit, advanced_payment,
-        payment_frequency, flexipay_enabled, property_preferences,accepted_payment_methods,
+        payment_frequency, flexipay_enabled, property_preferences,accepted_payment_methods,latitude, longitude,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?, NOW(), NOW())`,
       values
     );
 

@@ -1,6 +1,16 @@
 
 ## DEVELOPMENT SERVER DOCUMENTATION
 
+### AI Python Backend
+pip install -r requirements.txt (This helps you re-install later)
+python3 -m venv venv
+source venv/bin/activate
+
+### Running FastAPI
+cd backend
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+
 Reminders:
 
 1. Make sure that **".env"** file is loaded.
