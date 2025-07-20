@@ -45,7 +45,7 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
 
     const geoData = await geoRes.json();
     const lat = geoData[0]?.lat || null;
-    const lon = geoData[0]?.lon || null;
+    const lng = geoData[0]?.lon || null;
 
 
     const values = [
@@ -69,8 +69,8 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
       flexiPayEnabled,
       JSON.stringify(propertyPreferences || []),
       JSON.stringify(paymentMethodsAccepted || []),
-       lat,
-      lon
+      lat,
+      lng,
     ];
 
 

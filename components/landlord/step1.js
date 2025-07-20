@@ -1,13 +1,12 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import usePropertyStore from "../../zustand/property/usePropertyStore";
-import axios from "axios";
 import { PROPERTY_TYPES } from "../../constant/propertyTypes";
-import { PROVINCES_PHILIPPINES } from "../../constant/provinces";
-import { useState } from "react";
 import dynamic from "next/dynamic";
+
 const PropertyMap = dynamic(() => import("../propertyMap"), {
-  ssr: false, // 💡 disables SSR for this component
+  ssr: false,
 });
+
 export const StepOne = () => {
   const { property, setProperty } = usePropertyStore();
   const streetRef = useRef(null);
@@ -19,7 +18,7 @@ export const StepOne = () => {
     }
   }, [property.propertyType, setProperty]);
 
- useEffect(() => {
+  useEffect(() => {
     if (!window.google || !streetRef.current) return;
 
     const autocomplete = new window.google.maps.places.Autocomplete(
@@ -45,7 +44,6 @@ export const StepOne = () => {
     });
   }, [property, setProperty]);
 
-  // Helper to extract fields from Google's address components
   const extractAddressComponents = (place) => {
     const components = place.address_components || [];
     const result = {
@@ -80,10 +78,7 @@ export const StepOne = () => {
 
       <form className="space-y-4">
         <div>
-          <label
-            htmlFor="propertyType"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700">
             Property Type
           </label>
           <select
@@ -102,10 +97,7 @@ export const StepOne = () => {
         </div>
 
         <div>
-          <label
-            htmlFor="propertyName"
-            className="block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="propertyName" className="block text-sm font-medium text-gray-700">
             Property Name
           </label>
           <input
@@ -118,14 +110,43 @@ export const StepOne = () => {
             className="w-full p-2 border border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
- <PropertyMap setCoords={setCoords} />
-      <p className="mt-2 text-sm text-gray-600">
-        Selected Location: {coords.lat}, {coords.lng}
-      </p>
+
+       <PropertyMap
+  setFields={({ lat, lng, address, barangay, city, province, region, postcode }) => {
+    console.log("Setting form fields from map:", {
+      lat,
+      lng,
+      address,
+      barangay,
+      city,
+      province: region,
+      postcode
+    });
+
+    setCoords({ lat, lng });
+
+    setProperty({
+      ...property,
+      lat,
+      lng,
+      street: address,
+      brgyDistrict: barangay,
+      city,
+      province: region,
+      zipCode: postcode || " ",
+
+    });
+  }}
+/>
+
+
+
+        <p className="mt-2 text-sm text-gray-600">
+          Selected Location: {coords.lat}, {coords.lng}
+        </p>
+
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Street Address
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Street Address</label>
           <input
             ref={streetRef}
             type="text"
@@ -137,20 +158,18 @@ export const StepOne = () => {
           />
         </div>
 
-         <div>
-            <label className="block text-sm text-gray-600">Barangay/District</label>
-            <input
-              type="text"
-              value={property.brgyDistrict || ""}
-              
-              className="w-full p-2 bg-gray-100 border border-gray-200 rounded"
-            />
-          </div>
+        <div>
+          <label className="block text-sm text-gray-600">Barangay/District</label>
+          <input
+            type="text"
+            value={property.brgyDistrict || ""}
+            readOnly
+            className="w-full p-2 bg-gray-100 border border-gray-200 rounded"
+          />
+        </div>
 
-       <div>
-          <label className="block text-sm font-medium text-gray-700">
-            City / Municipality
-          </label>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">City / Municipality</label>
           <input
             type="text"
             name="city"
@@ -162,9 +181,7 @@ export const StepOne = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            ZIP Code
-          </label>
+          <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
           <input
             type="number"
             name="zipCode"
@@ -175,15 +192,15 @@ export const StepOne = () => {
           />
         </div>
 
-       <div>
-            <label className="block text-sm text-gray-600">Province</label>
-            <input
-              type="text"
-              value={property.province || ""}
-              
-              className="w-full p-2 bg-gray-100 border border-gray-200 rounded"
-            />
-          </div>
+        <div>
+          <label className="block text-sm text-gray-600">Province</label>
+          <input
+            type="text"
+            value={property.province || ""}
+            readOnly
+            className="w-full p-2 bg-gray-100 border border-gray-200 rounded"
+          />
+        </div>
       </form>
     </div>
   );

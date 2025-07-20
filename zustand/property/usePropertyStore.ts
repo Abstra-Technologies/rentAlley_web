@@ -25,7 +25,9 @@ const initialPropertyState = {
   availBeds: 0,
   flexiPayEnabled: 0,
   paymentMethodsAccepted:[] ,
-  propertyPreferences:[]
+  propertyPreferences:[],
+  lat: 0,
+  lng: 0,
 };
 
 const usePropertyStore = create((set) => ({
