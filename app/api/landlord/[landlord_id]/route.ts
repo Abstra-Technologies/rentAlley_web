@@ -3,14 +3,10 @@ import { NextResponse } from "next/server";
 import { NextRequest } from 'next/server';
 
 export async function GET(
-    req: NextRequest,
-    context: {
-      params: {
-        landlord_id: string;
-      };
-    }
+    request: Request,
+    { params }: { params: Promise<{ landlord_id: string }> }
 ) {
-  const { landlord_id } = context.params;
+  const { landlord_id } = await params;
   try {
     const query = "SELECT landlord_id FROM Landlord WHERE landlord_id = ?";
     const [rows] = await db.execute(query, [landlord_id]);
