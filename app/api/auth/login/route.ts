@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
         [user.user_id, otp]
       );
 
-      await sendOtpEmail(email, otp);
+      await sendOtpEmail(email, otp.toString());
       response.cookies.set("pending_2fa", "true", { httpOnly: true, path: "/" });
 
       return NextResponse.json({
