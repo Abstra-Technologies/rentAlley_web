@@ -2,10 +2,7 @@ import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 // PUT: Update Bug Report Status
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { report_id: string } }
-) {
+export async function PUT(req: NextRequest, { params }) {
   const report_id = params.report_id;
 
   try {
