@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function GET(req) {
+export async function GET(req:NextRequest) {
   const { searchParams } = new URL(req.url);
   const unit_id = searchParams.get("unit_id");
 
