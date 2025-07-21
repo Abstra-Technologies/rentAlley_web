@@ -2,10 +2,11 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { NextRequest } from 'next/server';
 
-export async function GET(req: NextRequest, { params }) {
-
-  const { landlord_id } = params;
-
+export async function GET(
+    req: NextRequest,
+    context: { params: { landlord_id: string } }
+) {
+  const { landlord_id } = context.params;
   try {
     const query = "SELECT landlord_id FROM Landlord WHERE landlord_id = ?";
     const [rows] = await db.execute(query, [landlord_id]);
