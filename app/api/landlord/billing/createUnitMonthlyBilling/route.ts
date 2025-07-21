@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"; // adjust path if needed
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest} from "next/server";
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
