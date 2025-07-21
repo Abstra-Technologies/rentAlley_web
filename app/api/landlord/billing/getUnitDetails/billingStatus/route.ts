@@ -1,5 +1,10 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { RowDataPacket } from "mysql2";
+
+interface BillCountResult extends RowDataPacket {
+  bill_count: number;
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [billingData] = await db.query(
+    const [rows] = await db.query<BillCountResult[]>(
       `SELECT COUNT(*) AS bill_count
        FROM Billing
        WHERE unit_id = ?
@@ -18,7 +23,7 @@ export async function GET(req: NextRequest) {
       [unit_id]
     );
 
-    const hasBillForThisMonth = billingData[0]?.bill_count > 0;
+    const hasBillForThisMonth = rows[0]?.bill_count > 0;
 
     return NextResponse.json({ unit_id, hasBillForThisMonth });
   } catch (error) {
