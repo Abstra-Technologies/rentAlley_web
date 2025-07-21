@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"; // adjust path if needed
 import { NextResponse, NextRequest} from "next/server";
+import { ResultSetHeader, FieldPacket } from "mysql2";
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
         dueDate,
         total_amount_due || 0,
       ]
-    );
+    ) as [ResultSetHeader, FieldPacket[]];
 
     const billingId = billingResult.insertId;
 
