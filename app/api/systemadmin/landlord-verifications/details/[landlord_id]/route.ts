@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest, { params }: { params: { landlord_id: string } }) {
+export async function GET(req: NextRequest, { params }) {
   const landlordId = params.landlord_id;
 
   if (!landlordId) {
