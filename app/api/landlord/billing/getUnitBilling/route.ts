@@ -22,7 +22,7 @@ export async function GET(req:NextRequest) {
 
     const unit = unitResult[0];
 
-    const [propertyResult] = await db.execute(
+    const [propertyResult] = await db.execute<RowDataPacket[]>(
       `SELECT * FROM Property WHERE property_id = ?`,
       [unit.property_id]
     );
