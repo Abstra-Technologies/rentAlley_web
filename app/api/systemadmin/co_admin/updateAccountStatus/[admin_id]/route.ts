@@ -52,10 +52,7 @@ export async function DELETE(req: NextRequest, { params }) {
   }
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { admin_id: string } }
-) {
+export async function PATCH(req: NextRequest, { params }) {
   try {
     const currentAdminId = await getCurrentAdminId(req);
     const targetAdminId = parseInt(params.admin_id);
