@@ -2,7 +2,10 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { NextRequest } from 'next/server';
 
-export async function GET(req: NextRequest, { params }) {
+export async function GET(
+    req: NextRequest,
+    { params }: { params: { landlord_id: string } }
+) {
   const { landlord_id } = params;
 
   try {
