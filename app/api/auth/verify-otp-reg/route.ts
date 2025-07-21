@@ -12,7 +12,7 @@ const dbConfig = {
 };
 
 export async function POST(req: NextRequest) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
 
   console.log("Received Token:", token);
