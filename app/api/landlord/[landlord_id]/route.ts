@@ -2,10 +2,14 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { NextRequest } from 'next/server';
 
-export async function GET(
-    req: NextRequest,
-    { params }: { params: { landlord_id: string } }
-) {
+type Context = {
+  params: {
+    landlord_id: string;
+  };
+};
+
+export async function GET(req: NextRequest, context: Context) {
+
   const { landlord_id } = params;
 
   try {
