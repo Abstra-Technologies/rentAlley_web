@@ -20,10 +20,7 @@ async function getCurrentAdminId(req: NextRequest) {
   return decoded.admin_id;
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { admin_id: string } }
-) {
+export async function DELETE(req: NextRequest, { params }) {
   try {
     const currentAdminId = await getCurrentAdminId(req);
     const targetAdminId = parseInt(params.admin_id);
