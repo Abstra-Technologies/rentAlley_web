@@ -5,12 +5,10 @@ import { parse } from "cookie";
 import { decryptData } from "@/crypto/encrypt";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { admin_id: string } }
-) {
+export async function GET(req: NextRequest, { params }) {
   try {
     const admin_id = params.admin_id;
+
     const cookieHeader = req.headers.get("cookie");
     const cookies = cookieHeader ? parse(cookieHeader) : {};
     const token = cookies.token;
