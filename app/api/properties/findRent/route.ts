@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
           p.street,
           p.flexipay_enabled,
           p.province,
+          p.latitude, 
+          p.longitude,
           pv.status AS verification_status,
           (SELECT pp.photo_url FROM PropertyPhoto pp WHERE pp.property_id = p.property_id LIMIT 1) AS encrypted_property_photo,
           MIN(u.rent_amount) AS rent_amount

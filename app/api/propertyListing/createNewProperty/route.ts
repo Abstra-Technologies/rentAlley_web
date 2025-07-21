@@ -76,7 +76,7 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
 
     await connection.beginTransaction();
 
-   await connection.execute(
+   const [result] = await connection.execute(
       `INSERT INTO Property (
         landlord_id, property_name, property_type, amenities, street,
         brgy_district, city, zip_code, province, total_units,
@@ -94,6 +94,8 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
     return NextResponse.json(
       {
         message: "Property created successfully",
+        propertyID: result.insertId
+
       },
       { status: 201 }
     );

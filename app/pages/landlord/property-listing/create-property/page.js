@@ -374,7 +374,9 @@ export default function AddNewProperty() {
     try {
       const propertyData = { ...property, landlord_id: user?.landlord_id };
       const createdProperty = await trigger(propertyData);
+      console.log('created property: ', createdProperty);
       const propertyID = createdProperty.propertyID;
+      console.log('property id:', propertyID);
 
       const photoUploadPromise =
         photos.length > 0 ? await uploadPhotos(propertyID) : Promise.resolve();
