@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
+import type { RowDataPacket, FieldPacket } from 'mysql2';
 
 const SECRET_KEY = process.env.ENCRYPTION_SECRET;
 
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
     `;
 
     console.log("Executing query with landlord_id:", landlord_id);
-    const [announcements] = await db.execute(query, [landlord_id]);
+    const [announcements]: [RowDataPacket[], FieldPacket[]] = await db.execute(query, [landlord_id]);
     console.log("Raw announcements:", announcements);
 
     const decryptedAnnouncements = announcements.map((announcement: any) => {
