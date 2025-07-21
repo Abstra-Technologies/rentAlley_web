@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { NextRequest } from 'next/server';
 
-export async function GET(req, { params }) {
+export async function GET(req: NextRequest, { params }) {
   const { landlord_id } = params;
 
   try {
