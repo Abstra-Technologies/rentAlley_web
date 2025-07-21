@@ -77,6 +77,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (status === 'Verified') {
+      const verifiedTitle = 'Property Verified';
+      const verifiedBody = '🎉 Congratulations! Your property has been verified. You’ve earned 50 FlexiPoints.';
+
+      await connection.execute(
+          `INSERT INTO Notification (user_id, title, body, is_read, created_at)
+         VALUES (?, ?, ?, 0, NOW())`,
+          [user_id, verifiedTitle, verifiedBody]
+      );
+
+      await connection.execute(
+          `UPDATE User SET points = points + 50, has_new_points_alert = 1 WHERE user_id = ?`,
+          [user_id]
+      );
+    }
+
     const newAttempts = status === 'Rejected' ? attempts + 1 : attempts;
 
     const [result]: any = await connection.execute(
