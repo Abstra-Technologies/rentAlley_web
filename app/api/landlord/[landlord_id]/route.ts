@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { NextRequest } from 'next/server';
-import type { RowDataPacket } from 'mysql2';
+import type { RowDataPacket, FieldPacket } from 'mysql2';
 
 export async function GET(
     request: Request,
@@ -10,7 +10,10 @@ export async function GET(
   const { landlord_id } = await params;
   try {
     const query = "SELECT landlord_id FROM Landlord WHERE landlord_id = ?";
-    const [rows]: [RowDataPacket[]] = await db.execute(query, [landlord_id]);
+    const [rows, fields]: [RowDataPacket[], FieldPacket[]] = await db.execute(
+        'SELECT landlord_id FROM Landlord WHERE landlord_id = ?',
+        [landlord_id]
+    );
 
     if (rows.length === 0) {
       return NextResponse.json(
