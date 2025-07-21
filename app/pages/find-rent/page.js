@@ -20,7 +20,7 @@ const markerIcon = new L.Icon({
   iconAnchor: [12, 41],
   popupAnchor: [0, -41],
 });
-
+import MapView from "../../../components/mapView";
 
 export default function PropertySearch() {
   const [allProperties, setAllProperties] = useState([]);
@@ -32,6 +32,7 @@ export default function PropertySearch() {
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState(null);
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [visibleMaps, setVisibleMaps] = useState({});
 
 
 
@@ -63,13 +64,13 @@ export default function PropertySearch() {
   }, []);
 
 
-  const handleCardClick = (property) => {
-    setSelectedCoords({
-      lat: parseFloat(property.latitude),
-      lng: parseFloat(property.longitude),
-    });
-    setSelectedProperty(property);
+  const handleToggleMap = (propertyId) => {
+    setVisibleMaps((prev) => ({
+      ...prev,
+      [propertyId]: !prev[propertyId],
+    }));
   };
+
 
   const handleViewDetails = (propertyId) => {
     Swal.fire({
@@ -245,6 +246,13 @@ export default function PropertySearch() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                {selectedCoords && (
+                    <div className="mb-4">
+                      <MapView coords={selectedCoords} />
+                    </div>
+                )}
+
                 {filteredProperties.map((property) => {
                   return (
                       <div>
@@ -327,31 +335,52 @@ export default function PropertySearch() {
                           >
                             View Details
                           </button>
-                            <button
-                                className="mt-2 px-4 py-1 text-sm bg-blue-500 text-white rounded"
-                                onClick={() => handleCardClick(property)}
-                            >
-                                View Map
-                            </button>
+                          <button
+                              className="mt-2 px-4 py-1 text-sm bg-blue-500 text-white rounded"
+                              onClick={() => handleToggleMap(property.property_id)}
+                          >
+                            View Map
+                          </button>
 
-                            {selectedProperty?.propertyID === property.propertyID && selectedCoords && (
-                                <div className="mt-4">
-                                    <h3 className="font-semibold">Map Location:</h3>
-                                    <iframe
-                                        width="100%"
-                                        height="250"
-                                        style={{ border: 0 }}
-                                        loading="lazy"
-                                        allowFullScreen
-                                        src={`https://maps.google.com/maps?q=${selectedCoords.lat},${selectedCoords.lng}&z=15&output=embed`}
+
+                          {visibleMaps[property.property_id] && (
+                              <div className="mt-2 h-64">
+                                {property.latitude && property.longitude ? (
+                                    <MapView
+                                        coords={{
+                                          lat: parseFloat(property.latitude),
+                                          lng: parseFloat(property.longitude),
+                                        }}
                                     />
-                                </div>
-                            )}
+
+                                ) : (
+                                    <div className="text-red-500 mt-2">Invalid coordinates</div>
+                                )}
+                              </div>
+                          )}
+
+
+                          {/*{selectedProperty?.property_id === property.property_id && selectedCoords && (*/}
+                          {/*    <div className="mt-4">*/}
+                          {/*      <h3 className="font-semibold">Map Location:</h3>*/}
+                          {/*      <iframe*/}
+                          {/*          width="100%"*/}
+                          {/*          height="250"*/}
+                          {/*          style={{ border: 0 }}*/}
+                          {/*          loading="lazy"*/}
+                          {/*          allowFullScreen*/}
+                          {/*          src={`https://maps.google.com/maps?q=${selectedCoords.lat},${selectedCoords.lng}&z=15&output=embed`}*/}
+                          {/*      />*/}
+                          {/*    </div>*/}
+                          {/*)}*/}
+
 
                         </div>
                       </div>
                   );
                 })}
+
+
               </div>
             </>
         )}
