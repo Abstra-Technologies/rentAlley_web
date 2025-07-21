@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { NextRequest } from 'next/server';
+import { RowDataPacket } from "mysql2";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -24,7 +25,9 @@ export async function GET(request: NextRequest) {
       [landlord_id]
     );
 
+    // @ts-ignore
     return NextResponse.json(rows[0]);
+
   } catch (error) {
     console.error("Error fetching tenant count:", error);
     return NextResponse.json(
