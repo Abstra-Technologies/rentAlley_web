@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { RowDataPacket } from "mysql2";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [rows] = await db.execute(
+    const [rows] = await db.execute<RowDataPacket[]>(
       `
       SELECT 
         COUNT(CASE WHEN U.status = 'occupied' THEN 1 END) AS occupied_units,
