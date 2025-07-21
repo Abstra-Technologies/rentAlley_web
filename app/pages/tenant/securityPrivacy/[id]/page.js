@@ -1,7 +1,7 @@
 "use client";
 
 import SideNavProfile from "../../../../../components/navigation/sidebar-profile";
-import SecurityPage from "../../../../../components/securityPrivacy";
+import SecurityPage from "../../../../../components/Commons/securityPrivacy";
 
 export default function userSecurityPrivacy() {
     return ( 
