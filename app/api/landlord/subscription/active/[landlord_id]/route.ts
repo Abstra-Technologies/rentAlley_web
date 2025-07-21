@@ -29,11 +29,8 @@ const listingLimits = {
   },
 };
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { landlord_id: string } }
-) {
-  const landlord_id = params.landlord_id;
+export async function GET(req: NextRequest, { params }) {
+  const { landlord_id } = params;
 
   if (!landlord_id) {
     return NextResponse.json(
