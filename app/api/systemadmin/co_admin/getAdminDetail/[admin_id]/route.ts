@@ -59,10 +59,7 @@ export async function GET(req: NextRequest, { params }) {
   }
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { admin_id: string } }
-) {
+export async function PATCH(req: NextRequest, { params }) {
   try {
     const admin_id = params.admin_id;
     const body = await req.json();
