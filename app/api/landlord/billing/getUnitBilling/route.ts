@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
+import { RowDataPacket } from "mysql2";
 
 export async function GET(req:NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,7 +11,7 @@ export async function GET(req:NextRequest) {
   }
 
   try {
-    const [unitResult] = await db.execute(
+    const [unitResult] = await db.execute<RowDataPacket[]>(
       `SELECT * FROM Unit WHERE unit_id = ?`,
       [unit_id]
     );
