@@ -4,9 +4,9 @@ import { NextRequest } from 'next/server';
 
 export async function GET(
     req: NextRequest,
-    context: { params: { landlord_id: string } }
+    { params }: { params: Record<string, string> }
 ) {
-  const { landlord_id } = context.params;
+  const landlord_id = params.landlord_id;
   try {
     const query = "SELECT landlord_id FROM Landlord WHERE landlord_id = ?";
     const [rows] = await db.execute(query, [landlord_id]);
