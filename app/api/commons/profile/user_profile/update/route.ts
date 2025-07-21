@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { encryptData } from "@/crypto/encrypt";
 import { NextResponse } from "next/server";
+import { NextRequest } from 'next/server';
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
     const cookieStore = cookies();
     const token = cookieStore.get("token")?.value;
