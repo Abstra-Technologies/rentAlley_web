@@ -4,8 +4,9 @@ import { jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 
 // DELETE /api/propertyListing/:id
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }) {
   const { id } = params;
+
   let connection;
 
   try {
