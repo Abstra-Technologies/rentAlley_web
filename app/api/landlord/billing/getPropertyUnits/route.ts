@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { RowDataPacket, FieldPacket } from "mysql2";
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     const [properties] = await db.query(
       "SELECT * FROM Property WHERE landlord_id = ?",
       [landlordId]
-    );
+    ) as [RowDataPacket[], FieldPacket[]];
 
     console.log("Fetched properties:", properties);
 
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
     const [units] = await db.query(
       "SELECT * FROM Unit WHERE property_id IN (?)",
       [propertyIds]
-    );
+    )  as [RowDataPacket[], FieldPacket[]];
 
     console.log("Fetched units:", units);
 
