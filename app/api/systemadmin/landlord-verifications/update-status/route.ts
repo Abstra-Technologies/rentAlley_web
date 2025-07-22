@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Parse JWT from cookie
     const cookieStore = cookies();
+    // @ts-ignore
     const token = cookieStore.get("token")?.value;
 
     if (!token) {

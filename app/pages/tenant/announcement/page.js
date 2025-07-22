@@ -1,17 +1,27 @@
 "use client";
-import { useSearchParams } from "next/navigation";
-import useAuth from "../../../../hooks/useSession";
+
+import { Suspense } from "react";
 import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 import Announcements from "../../../../components/annoucemen/announcementList";
+import { useSearchParams } from "next/navigation";
 
-export default function TenantAnnouncements() {
-  const { user } = useAuth();
+function AnnouncementWrapper() {
   const searchParams = useSearchParams();
   const agreementId = searchParams.get("agreement_id");
 
+  const { user } = useAuth();
+
   return (
-    <TenantLayout agreement_id={agreementId}>
-      <Announcements user_id={user?.user_id} agreement_id={agreementId} />
-    </TenantLayout>
+      <TenantLayout agreement_id={agreementId}>
+        <Announcements user_id={user?.user_id} agreement_id={agreementId} />
+      </TenantLayout>
+  );
+}
+
+export default function TenantAnnouncements() {
+  return (
+      <Suspense fallback={<div>Loading announcements...</div>}>
+        <AnnouncementWrapper />
+      </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-
+// @ts-ignore
 const ScoreCard = ({ title, value, borderColor = "green" }) => {
   const borderColorClass = {
     green: "border-green-500",

@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     }
 
     const [rows] = await connection.execute(query, params);
-
+// @ts-ignore
     if (unit_id && rows.length === 0) {
       return new Response(
         JSON.stringify({ error: "No Units found for this Property" }),

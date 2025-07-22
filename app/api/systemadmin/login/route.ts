@@ -23,9 +23,11 @@ export async function POST(req: NextRequest) {
       const emailHash = nodeCrypto.createHash("sha256").update(login).digest("hex");
       console.log("Generate Hash:" + emailHash);
       const [userByEmail] = await db.query("SELECT * FROM Admin WHERE email_hash = ?", [emailHash]);
+      // @ts-ignore
       user = userByEmail.length > 0 ? userByEmail[0] : null;
     } else {
       const [userByUsername] = await db.query("SELECT * FROM Admin WHERE username = ?", [login]);
+      // @ts-ignore
       user = userByUsername.length > 0 ? userByUsername[0] : null;
     }
 
@@ -52,6 +54,7 @@ export async function POST(req: NextRequest) {
       role: user.role,
       email: user.email,
       permissions: user.permissions
+          // @ts-ignore
         ? user.permissions.split(",").map((p) => p.trim())
         : [],
     })

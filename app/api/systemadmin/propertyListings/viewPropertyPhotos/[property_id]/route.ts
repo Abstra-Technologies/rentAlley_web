@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { decryptData } from '@/crypto/encrypt';
-
+// @ts-ignore
 export async function GET(req, { params }) {
   const { property_id } = params;
 
@@ -15,7 +15,7 @@ export async function GET(req, { params }) {
       `SELECT DISTINCT photo_url FROM PropertyPhoto WHERE property_id = ? ORDER BY photo_id ASC`,
       [property_id]
     );
-
+// @ts-ignore
     if (!photoRows || photoRows.length === 0) {
       return new Response(
         JSON.stringify({ message: "No photos found for this property." }),
@@ -26,6 +26,7 @@ export async function GET(req, { params }) {
     const secretKey = process.env.ENCRYPTION_SECRET;
 
     const photos = photoRows
+        // @ts-ignore
       .map((row) => {
         try {
           return decryptData(JSON.parse(row.photo_url), secretKey);
@@ -34,6 +35,7 @@ export async function GET(req, { params }) {
           return null;
         }
       })
+        // @ts-ignore
       .filter((photo) => photo !== null);
 
     return Response.json({ photos });

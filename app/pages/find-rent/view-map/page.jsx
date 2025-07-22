@@ -1,26 +1,15 @@
 'use client';
+import dynamic from 'next/dynamic';
+
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
+import { useMap } from 'react-leaflet';
+
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
-
-// Fix default marker icon
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: '/leaflet/marker-icon-2x.png',
-    iconUrl: '/marker.png',
-    shadowUrl: '/leaflet/marker-shadow.png',
-});
-
-const userIcon = new L.Icon({
-    iconUrl: "https://cdn-icons-png.flaticon.com/512/4872/4872521.png", // sample pin
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-    className: 'animate-pulse',
-});
-
 
 // Center map to user's location
 function FlyToUserLocation({ coords }) {
@@ -36,10 +25,38 @@ function FlyToUserLocation({ coords }) {
 export default function PropertyMapPage() {
     const [userCoords, setUserCoords] = useState(null);
     const [properties, setProperties] = useState([]);
+    const [userIcon, setUserIcon] = useState(null);
+
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const L = require('leaflet');
+
+            // Fix leaflet marker icons only after client-side mount
+            delete L.Icon.Default.prototype._getIconUrl;
+            L.Icon.Default.mergeOptions({
+                iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+                iconUrl: '/marker.png',
+                shadowUrl: '/leaflet/marker-shadow.png',
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        const icon = new L.Icon({
+            iconUrl: "https://cdn-icons-png.flaticon.com/512/4872/4872521.png",
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32],
+            className: 'animate-pulse',
+        });
+        setUserIcon(icon);
+    }, []);
+
 
     // Get user location
     useEffect(() => {
-        if (navigator.geolocation) {
+        if (typeof window !== 'undefined' && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((pos) => {
                 setUserCoords({
                     lat: pos.coords.latitude,
@@ -48,6 +65,8 @@ export default function PropertyMapPage() {
             });
         }
     }, []);
+
+
 
     // Load properties (adjust your API endpoint)
     useEffect(() => {

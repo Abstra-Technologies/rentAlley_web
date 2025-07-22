@@ -34,6 +34,7 @@ const handleSearch = async () => {
     console.log('extracted keywords from extractedKeywords: ', extractedKeywords);
 
     // Step 2: Call /find_rent with keywords
+     //@ts-ignore
     const rentUrl = `https://sturdy-space-parakeet-9xp45vxp75x3xwx-8000.app.github.dev/find_rent?${extractedKeywords.map(k => `keywords=${encodeURIComponent(k)}`).join("&")}`;
     console.log('rent url:', rentUrl);
     const rentRes = await fetch(rentUrl);

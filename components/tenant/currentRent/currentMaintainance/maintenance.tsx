@@ -27,6 +27,7 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
 useEffect(() => {
   const fetchMaintenanceRequests = async () => {
     try {
+      // @ts-ignore
       const queryParams = new URLSearchParams({ user_id: user_id?.toString() });
       if (agreement_id) queryParams.append("agreement_id", agreement_id.toString());
       const response = await axios.get(

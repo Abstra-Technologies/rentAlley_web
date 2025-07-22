@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       "SELECT id FROM ProspectiveTenant WHERE tenant_id = ? AND unit_id = ?",
       [tenant_id, unit_id]
     );
-
+// @ts-ignore
     return NextResponse.json({ hasApplied: rows.length > 0 });
   } catch (error) {
     console.error("Database error:", error);

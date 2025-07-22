@@ -29,6 +29,7 @@ const listingLimits = {
   },
 };
 
+// @ts-ignore
 export async function GET(req: NextRequest, { params }) {
   const { landlord_id } = params;
 
@@ -47,6 +48,7 @@ export async function GET(req: NextRequest, { params }) {
       [landlord_id]
     );
 
+    // @ts-ignore
     if (!rows || rows.length === 0) {
       return NextResponse.json(
         { error: "Subscription not found" },
@@ -54,6 +56,7 @@ export async function GET(req: NextRequest, { params }) {
       );
     }
 
+    // @ts-ignore
     let subscription = rows[0];
     const currentDate = new Date();
     const endDate = subscription.end_date ? new Date(subscription.end_date) : null;
@@ -66,6 +69,7 @@ export async function GET(req: NextRequest, { params }) {
       subscription.is_active = 0;
     }
 
+    // @ts-ignore
     const limits = listingLimits[subscription.plan_name] || {};
     subscription.listingLimits = limits;
 

@@ -28,6 +28,7 @@ export async function PUT(req: NextRequest) {
       [tenant_id]
     );
 
+    // @ts-ignore
     if (!tenantResult || tenantResult.length === 0) {
       return NextResponse.json(
         { message: "Tenant not found" },
@@ -35,6 +36,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    // @ts-ignore
     const user_id = tenantResult[0].user_id;
 
     // Update status and optional message

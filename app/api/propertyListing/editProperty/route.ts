@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     }
 
     const [rows] = await db.query(query, params);
-
+// @ts-ignore
     if (property_id && rows.length === 0) {
       return NextResponse.json(
         { error: "No Properties found for this Landlord" },

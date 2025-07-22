@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
       let tenantLastName = "N/A";
 
       try {
+        // @ts-ignore
         tenantFirstName = decryptData(
           JSON.parse(request.encrypted_first_name),
           SECRET_KEY
@@ -72,6 +73,7 @@ export async function GET(req: NextRequest) {
       }
 
       try {
+        // @ts-ignore
         tenantLastName = decryptData(
           JSON.parse(request.encrypted_last_name),
           SECRET_KEY

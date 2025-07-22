@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
     const { id, billingPeriod, electricityTotal, electricityRate, waterTotal, waterRate } = await req.json();
 
@@ -34,7 +34,7 @@ export async function POST(req) {
 }
 
 // Getting Rates
-export async function GET(req) {
+export async function GET(req:NextRequest) {
   const { searchParams } = new URL(req.url);
   const property_id = searchParams.get("id");
 

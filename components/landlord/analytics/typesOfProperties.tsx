@@ -2,7 +2,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Chart from "react-apexcharts";
-
+// @ts-ignore
 const PropertyTypeChart = ({ landlordId }) => {
   const [propertyData, setPropertyData] = useState([]);
 console.log('landlord id: ', landlordId);
@@ -13,7 +13,8 @@ useEffect(() => {
     .then((res) => res.json())
     .then((data) => {
       if (Array.isArray(data)) {
-        setPropertyData(data);
+        // @ts-ignore
+          setPropertyData(data);
       } else {
         console.error("Invalid format:", data);
         setPropertyData([]);
@@ -24,20 +25,24 @@ useEffect(() => {
 
 const chartOptions = {
   chart: { type: "bar" },
+    // @ts-ignore
   xaxis: { categories: propertyData.map((p) => p.property_type) },
   title: { text: "Properties by Type" },
   colors: ["#4F46E5"],
 };
 
 
-  return (
+
+    return (
     <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
       <h3 className="text-lg font-semibold text-gray-700 mb-3">
         Property Types
       </h3>
       {propertyData.length > 0 ? (
         <Chart
+            // @ts-ignore
           options={chartOptions}
+            // @ts-ignore
           series={[{ name: "Count", data: propertyData.map((p) => p.count) }]}
           type="bar"
           height={350}

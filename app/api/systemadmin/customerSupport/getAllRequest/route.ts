@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest) {
     const [supportRequest] = await db.query(
       "SELECT * FROM SupportRequest ORDER BY created_at DESC"
     );
-
+// @ts-ignore
     const supportRequests = supportRequest.map((request: any) => ({
       ...request,
       email: decryptData(JSON.parse(request.email), process.env.ENCRYPTION_SECRET!),

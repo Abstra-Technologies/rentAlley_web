@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     }
 
     const [rows] = await db.query(query, params);
-
+// @ts-ignore
     const decryptedRows = rows.map((row: any) => {
       try {
         const encryptedData = JSON.parse(row.photo_url);

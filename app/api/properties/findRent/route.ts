@@ -12,34 +12,34 @@ export async function GET(req: NextRequest) {
 
   try {
     let query = `
-      SELECT 
-          p.property_id,
-          p.property_name,
-          p.city,
-          p.street,
-          p.flexipay_enabled,
-          p.province,
-          p.latitude, 
-          p.longitude,
-          pv.status AS verification_status,
-          (SELECT pp.photo_url FROM PropertyPhoto pp WHERE pp.property_id = p.property_id LIMIT 1) AS encrypted_property_photo,
-          MIN(u.rent_amount) AS rent_amount
+      SELECT
+        p.property_id,
+        p.property_name,
+        p.city,
+        p.street,
+        p.flexipay_enabled,
+        p.province,
+        p.latitude,
+        p.longitude,
+        pv.status AS verification_status,
+        (SELECT pp.photo_url FROM PropertyPhoto pp WHERE pp.property_id = p.property_id LIMIT 1) AS encrypted_property_photo,
+        MIN(u.rent_amount) AS rent_amount
       FROM Property p
-      JOIN PropertyVerification pv ON p.property_id = pv.property_id
-      LEFT JOIN Unit u ON p.property_id = u.property_id
+             JOIN PropertyVerification pv ON p.property_id = pv.property_id
+             LEFT JOIN Unit u ON p.property_id = u.property_id
       WHERE pv.status = 'Verified' AND p.status = 'active'
     `;
 
     const queryParams: (string | number)[] = [];
 
-    if (minPrice || maxPrice) {
+    if (minPrice) {
       query += ` AND u.rent_amount >= ?`;
-      queryParams.push(Number(minPrice) || 0);
+      queryParams.push(Number(minPrice));
+    }
 
-      if (maxPrice) {
-        query += ` AND u.rent_amount <= ?`;
-        queryParams.push(Number(maxPrice));
-      }
+    if (maxPrice) {
+      query += ` AND u.rent_amount <= ?`;
+      queryParams.push(Number(maxPrice));
     }
 
     if (searchQuery) {
@@ -50,13 +50,15 @@ export async function GET(req: NextRequest) {
 
     query += ` GROUP BY p.property_id;`;
 
-    const [properties] = await db.execute(query, queryParams);
+    const result = await db.execute(query, queryParams);
+    const properties = Array.isArray(result[0]) ? result[0] : [];
+    console.log("Raw DB result:", result);
 
     const decryptedProperties = properties.map((property: any) => ({
       ...property,
       property_photo: property.encrypted_property_photo
-        ? decryptData(JSON.parse(property.encrypted_property_photo), SECRET_KEY!)
-        : null,
+          ? decryptData(JSON.parse(property.encrypted_property_photo), SECRET_KEY!)
+          : null,
     }));
 
     return NextResponse.json(decryptedProperties);

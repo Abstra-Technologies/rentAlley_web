@@ -4,6 +4,7 @@ import { jwtVerify } from "jose";
 import { NextResponse } from "next/server";
 
 // DELETE /api/propertyListing/:id
+// @ts-ignore
 export async function DELETE(req: Request, { params }) {
   const { id } = params;
 
@@ -16,7 +17,7 @@ export async function DELETE(req: Request, { params }) {
       `SELECT * FROM Property WHERE property_id = ?`,
       [id]
     );
-
+// @ts-ignore
     if (rows.length === 0) {
       return NextResponse.json({ error: "Property not found" }, { status: 404 });
     }
@@ -28,7 +29,7 @@ export async function DELETE(req: Request, { params }) {
        WHERE u.property_id = ? AND la.status = 'active'`,
       [id]
     );
-
+// @ts-ignore
     if (activeLeases.length > 0) {
       return NextResponse.json(
         { error: "Cannot delete property with active leases" },

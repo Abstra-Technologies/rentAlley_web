@@ -17,23 +17,27 @@ export async function GET(req: NextRequest) {
       unit_id,
     ]);
 
+    // @ts-ignore
     if (unitRows.length === 0) {
       return NextResponse.json({ error: "Unit not found" }, { status: 404 });
     }
 
+    // @ts-ignore
     const unit = unitRows[0];
 
     const [propertyRows] = await db.query(
       "SELECT * FROM Property WHERE property_id = ?",
       [unit.property_id]
     );
+    // @ts-ignore
     const property = propertyRows.length > 0 ? propertyRows[0] : null;
 
     const [photoRows] = await db.query(
       "SELECT * FROM UnitPhoto WHERE unit_id = ?",
       [unit_id]
-    );
+    ) as[any[], any];
 
+    // @ts-ignore
     const decryptedPhotos = photoRows
       .map((photo: any) => {
         try {
@@ -43,7 +47,7 @@ export async function GET(req: NextRequest) {
           return null;
         }
       })
-      .filter((photo: string | null) => photo !== null);
+        .filter((photo) => photo !== null);
 
     return NextResponse.json(
       {

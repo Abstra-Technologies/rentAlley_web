@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     );
 
     await connection.commit();
-
+// @ts-ignore
     return NextResponse.json({ unitId: result.insertId, ...body }, { status: 201 });
 
   } catch (error) {

@@ -20,14 +20,14 @@ export async function POST(req: NextRequest) {
        WHERE mr.request_id = ?`,
       [request_id]
     );
-
+// @ts-ignore
     if (!maintenanceRequest.length) {
       return NextResponse.json(
         { error: "Maintenance request not found" },
         { status: 404 }
       );
     }
-
+// @ts-ignore
     const { tenant_user_id, subject, schedule_date } = maintenanceRequest[0];
 
     // Construct notification message

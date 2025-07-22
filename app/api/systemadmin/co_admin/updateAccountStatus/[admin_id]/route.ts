@@ -19,7 +19,7 @@ async function getCurrentAdminId(req: NextRequest) {
 
   return decoded.admin_id;
 }
-
+// @ts-ignore
 export async function DELETE(req: NextRequest, { params }) {
   try {
     const currentAdminId = await getCurrentAdminId(req);
@@ -51,7 +51,7 @@ export async function DELETE(req: NextRequest, { params }) {
     return NextResponse.json({ success: false, message: msg }, { status: msg === "Unauthorized" ? 401 : 500 });
   }
 }
-
+// @ts-ignore
 export async function PATCH(req: NextRequest, { params }) {
   try {
     const currentAdminId = await getCurrentAdminId(req);

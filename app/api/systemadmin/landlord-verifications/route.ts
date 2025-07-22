@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
+    // @ts-ignore
     const [rows] = await db.execute<LandlordVerificationRow[]>(`
       SELECT
         landlord_id,

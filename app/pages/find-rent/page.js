@@ -1,5 +1,5 @@
 "use client";
-
+import dynamic from 'next/dynamic';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -12,15 +12,10 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
 
-const markerIcon = new L.Icon({
-  iconUrl: "/marker.png",
-  iconSize: [30, 30],
-  iconAnchor: [12, 41],
-  popupAnchor: [0, -41],
+const DynamicMapView = dynamic(() => import('../../../components/mapView'), {
+  ssr: false,
 });
-import MapView from "../../../components/mapView";
 
 export default function PropertySearch() {
   const [allProperties, setAllProperties] = useState([]);
@@ -33,8 +28,7 @@ export default function PropertySearch() {
   const [selectedCoords, setSelectedCoords] = useState(null);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [visibleMaps, setVisibleMaps] = useState({});
-
-
+  const [markerIcon, setMarkerIcon] = useState(null);
 
   const priceRanges = [
     { label: "All Prices", min: "", max: "" },
@@ -63,6 +57,19 @@ export default function PropertySearch() {
     fetchProperties();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const L = require('leaflet');
+
+      const icon = new L.Icon({
+        iconUrl: "/marker.png",
+        iconSize: [30, 30],
+        iconAnchor: [12, 41],
+        popupAnchor: [0, -41],
+      });
+      setMarkerIcon(icon);
+    }
+  }, []);
 
   const handleToggleMap = (propertyId) => {
     setVisibleMaps((prev) => ({
@@ -91,40 +98,47 @@ export default function PropertySearch() {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const queryParam = params.get("searchQuery");
-    const locationParam = params.get("location");
-    const typeParam = params.get("type");
+    // Run only on client
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const queryParam = params.get("searchQuery");
+      const locationParam = params.get("location");
+      const typeParam = params.get("type");
 
-    if (queryParam) setSearchQuery(queryParam);
-    if (locationParam) setLocation(locationParam);
-    if (typeParam) setType(typeParam);
+      if (queryParam) setSearchQuery(queryParam);
+      if (locationParam) setLocation(locationParam);
+      if (typeParam) setType(typeParam);
+    }
+  }, []);
 
+  useEffect(() => {
     const filtered = allProperties.filter((property) => {
       const matchesSearch =
-        searchQuery === "" ||
-        property.property_name
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        property.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.province.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.street.toLowerCase().includes(searchQuery.toLowerCase());
+          searchQuery === "" ||
+          property.property_name
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase()) ||
+          property.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          property.province.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          property.street.toLowerCase().includes(searchQuery.toLowerCase());
 
       const selectedRange = priceRanges.find(
-        (range) => range.label === priceRange
+          (range) => range.label === priceRange
       );
       const minPrice = selectedRange?.min || 0;
       const maxPrice = selectedRange?.max || Infinity;
 
       const matchesPrice =
-        priceRange === "" ||
-        (property.rent_amount >= minPrice && property.rent_amount <= maxPrice);
+          priceRange === "" ||
+          (property.rent_amount >= minPrice &&
+              property.rent_amount <= maxPrice);
 
       return matchesSearch && matchesPrice;
     });
 
     setFilteredProperties(filtered);
   }, [searchQuery, priceRange, allProperties]);
+
 
   if (loading)
     return <p className="text-center text-lg">Loading properties...</p>;
@@ -241,7 +255,7 @@ export default function PropertySearch() {
         ) : (
             <>
               <div className="mb-4 text-gray-600">
-                Found {filteredProperties.length} propert
+                Found {filteredProperties.length} property
                 {filteredProperties.length === 1 ? "y" : "ies"}
               </div>
 
@@ -249,7 +263,7 @@ export default function PropertySearch() {
 
                 {selectedCoords && (
                     <div className="mb-4">
-                      <MapView coords={selectedCoords} />
+                      <DynamicMapView  coords={selectedCoords} />
                     </div>
                 )}
 
@@ -346,7 +360,7 @@ export default function PropertySearch() {
                           {visibleMaps[property.property_id] && (
                               <div className="mt-2 h-64">
                                 {property.latitude && property.longitude ? (
-                                    <MapView
+                                    <DynamicMapView
                                         coords={{
                                           lat: parseFloat(property.latitude),
                                           lng: parseFloat(property.longitude),

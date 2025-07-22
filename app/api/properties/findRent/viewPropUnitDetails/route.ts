@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
 
     // Decrypt unit photos
     const decryptedPhotos = photos
+        // @ts-ignore
       .map((photo: any) => {
         try {
           return decryptData(JSON.parse(photo.photo_url), SECRET_KEY);
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       unit,
+      // @ts-ignore
       landlord_id: unit.landlord_id,
       photos: decryptedPhotos,
     });

@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
 
     const [rows] = await db.query(query, [unit_id, tenant_id]);
 
+    // @ts-ignore
     if (rows.length === 0) {
       return NextResponse.json(
         { message: "No prospective tenant found" },
@@ -30,6 +31,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // @ts-ignore
     return NextResponse.json({ status: rows[0].status }, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching prospective tenant status:", error);

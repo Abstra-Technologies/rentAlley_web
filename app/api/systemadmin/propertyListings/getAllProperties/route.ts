@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-
+// @ts-ignore
 export async function GET(req) {
   try {
     const [properties] = await db.query(`

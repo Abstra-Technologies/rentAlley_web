@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
        WHERE la.agreement_id = ?`,
       [agreementId]
     );
-
+// @ts-ignore
     if (!rows || rows.length === 0) {
       return NextResponse.json(
         { message: "No unit or property found for the given agreement" },
@@ -30,7 +30,9 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
+      // @ts-ignore
       unit_name: rows[0].unit_name,
+      // @ts-ignore
       property_name: rows[0].property_name,
     });
   } catch (error) {

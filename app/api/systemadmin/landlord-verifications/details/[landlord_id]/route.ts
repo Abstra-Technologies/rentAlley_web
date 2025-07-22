@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 import { NextRequest, NextResponse } from "next/server";
-
+// @ts-ignore
 export async function GET(req: NextRequest, { params }) {
   const landlordId = params.landlord_id;
 

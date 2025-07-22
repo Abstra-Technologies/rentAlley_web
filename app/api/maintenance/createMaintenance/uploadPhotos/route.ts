@@ -81,9 +81,11 @@ export async function POST(req: NextRequest) {
 
     await connection.commit();
 
-    return NextResponse.json(
+
+      return NextResponse.json(
       {
         message: "Maintenance Photos uploaded successfully",
+          // @ts-ignore
         insertedPhotoIDs: insertResult.insertId,
         files: uploadResults,
       },

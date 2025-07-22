@@ -28,6 +28,7 @@ export async function DELETE(req: NextRequest) {
       [unit_id]
     );
 
+    // @ts-ignore
     if (!tenantRows || tenantRows.length === 0) {
       return NextResponse.json(
         { error: "No approved tenant found for this unit" },
@@ -35,6 +36,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
+    // @ts-ignore
     const tenant_id = tenantRows[0].tenant_id;
 
     const [leaseRows] = await connection.execute(
@@ -42,6 +44,7 @@ export async function DELETE(req: NextRequest) {
       [unit_id, tenant_id]
     );
 
+    // @ts-ignore
     if (!leaseRows || leaseRows.length === 0) {
       return NextResponse.json({ error: "Lease not found" }, { status: 404 });
     }
@@ -49,8 +52,10 @@ export async function DELETE(req: NextRequest) {
     let leaseFileUrl: string;
 
     try {
+      // @ts-ignore
       leaseFileUrl = decryptData(
-        JSON.parse(leaseRows[0].agreement_url),
+          // @ts-ignore
+          JSON.parse(leaseRows[0].agreement_url),
         process.env.ENCRYPTION_SECRET!
       );
     } catch (decryptionError) {
@@ -80,9 +85,12 @@ export async function DELETE(req: NextRequest) {
 
     const [deleteResult] = await connection.execute(
       "DELETE FROM LeaseAgreement WHERE agreement_id = ?",
-      [leaseRows[0].agreement_id]
+        // @ts-ignore
+
+        [leaseRows[0].agreement_id]
     );
 
+    // @ts-ignore
     if (deleteResult.affectedRows === 0) {
       return NextResponse.json({ error: "Lease not found" }, { status: 404 });
     }

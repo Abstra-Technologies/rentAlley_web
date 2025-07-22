@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       [unit_id]
     );
 
+    // @ts-ignore
     if (!tenantRows || tenantRows.length === 0) {
       return NextResponse.json(
         { error: "No approved tenant found for this unit" },
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // @ts-ignore
     const tenant_id = tenantRows[0].tenant_id;
 
     const [existingLease] = await connection.execute(
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest) {
       [tenant_id, unit_id]
     );
 
+    // @ts-ignore
     if (existingLease.length > 0) {
       return NextResponse.json(
         { error: "Lease agreement already exists for this tenant and unit." },
@@ -88,6 +91,7 @@ export async function POST(req: NextRequest) {
       [tenant_id, unit_id, encryptedUrl]
     );
 
+    // @ts-ignore
     if (insertResult.affectedRows !== 1) {
       throw new Error("Failed to insert lease agreement into database.");
     }

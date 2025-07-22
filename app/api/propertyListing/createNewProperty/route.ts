@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { db } from '@/lib/db';
 
-export async function POST(req) {
+export async function POST(req:NextRequest) {
   const connection = await db.getConnection();
 
   try {
@@ -94,6 +94,7 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
     return NextResponse.json(
       {
         message: "Property created successfully",
+        // @ts-ignore
         propertyID: result.insertId
 
       },

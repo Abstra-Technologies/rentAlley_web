@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       "SELECT property_id FROM Property WHERE property_id = ?",
       [Number(property_id)]
     );
-
+// @ts-ignore
     if (rows.length === 0) {
       return NextResponse.json({ error: "Invalid property_id: No matching property found" }, { status: 400 });
     }

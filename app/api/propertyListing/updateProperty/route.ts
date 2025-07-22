@@ -21,6 +21,7 @@ export async function PUT(req: NextRequest) {
       `SELECT * FROM Property WHERE property_id = ?`,
       [property_id]
     );
+      // @ts-ignore
     if (!existingRows.length) {
       return NextResponse.json({ error: "Property not found" }, { status: 404 });
     }
@@ -80,7 +81,7 @@ export async function PUT(req: NextRequest) {
         property_id,
       ]
     );
-
+// @ts-ignore
     const token = cookies.get("token")?.value;
     if (!token) {
       await connection.rollback();

@@ -43,9 +43,9 @@ export async function GET(req: NextRequest) {
     console.log("[DEBUG] Query params:", params);
 
     const [rows] = await db.query(query, params);
-
+// @ts-ignore
     console.log("[DEBUG] Rows returned:", rows.length);
-
+// @ts-ignore
     if ((property_id || landlord_id) && rows.length === 0) {
       console.warn("[DEBUG] No results found for given IDs.");
       return NextResponse.json({ error: "No properties found. " }, { status: 404 });

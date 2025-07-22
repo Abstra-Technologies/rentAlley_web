@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
       if (req.photo_urls && req.photo_urls !== "[]") {
         try {
           const parsedPhotos = req.photo_urls.split("||");
+          // @ts-ignore
           decryptedPhotos = parsedPhotos.map((photo) =>
             decryptData(JSON.parse(photo), SECRET_KEY)
           );

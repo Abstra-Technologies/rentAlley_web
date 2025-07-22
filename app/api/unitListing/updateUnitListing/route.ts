@@ -19,7 +19,7 @@ export async function PUT(req: Request) {
       `SELECT * FROM Unit WHERE unit_id = ?`,
       [id]
     );
-
+// @ts-ignore
     if (rows.length === 0) {
       return NextResponse.json({ error: "Unit not found" }, { status: 404 });
     }

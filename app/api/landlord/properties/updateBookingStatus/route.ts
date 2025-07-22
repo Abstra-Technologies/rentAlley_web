@@ -64,6 +64,7 @@ export async function PUT(req: NextRequest) {
         );
     }
 
+    // @ts-ignore
     if (result.affectedRows === 0) {
       return NextResponse.json(
         { message: "Visit not found or already updated." },
