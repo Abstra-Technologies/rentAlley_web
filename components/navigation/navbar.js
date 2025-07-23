@@ -8,25 +8,25 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 
 const Navbar = () => {
-  const { user, admin, loading, signOut, signOutAdmin, fetchSession } = useAuthStore();
+  const { user, admin, loading, signOut, signOutAdmin, fetchSession } =
+    useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasLease, setHasLease] = useState(null);
-const router = useRouter();
+  const router = useRouter();
 
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
-useEffect(() => {
+  useEffect(() => {
     if (!user && !admin) {
       fetchSession();
     }
   }, [user, admin]);
-
 
   useEffect(() => {
     if (user?.userType === "tenant" && user?.tenant_id) {
@@ -124,13 +124,12 @@ useEffect(() => {
       router.push("/pages/admin_login");
     } else {
       await signOut();
-router.push("/pages/auth/login");
+      router.push("/pages/auth/login");
     }
     setDropdownOpen(false);
   };
 
   const getNavigationLinks = () => {
-    
     if (admin) {
       return [{ href: "/pages/system_admin/dashboard", label: "Dashboard" }];
     }
@@ -152,7 +151,6 @@ router.push("/pages/auth/login");
         { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/contact-us", label: "Contact Us" },
         { href: "/pages/tenant/my-unit", label: "Dashboard" },
-
       ];
     }
 
@@ -317,13 +315,9 @@ router.push("/pages/auth/login");
                         </Link>
                       </div>
                     )}
-
                   </div>
                 )}
               </div>
-                <div>
-                  Earned Points: {user?.points ?? 0}
-                </div>
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={toggleDropdown}
@@ -376,6 +370,19 @@ router.push("/pages/auth/login");
                         {user?.email || admin?.email || ""}
                       </p>
                     </div>
+                    <div className="px-4 py-2 border-b border-gray-100 bg-gradient-to-r from-yellow-50 to-yellow-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">
+                          Reward Points
+                        </span>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-lg font-bold text-yellow-600">
+                            {user?.points ?? 0}
+                          </span>
+                          <span className="text-yellow-500">⭐</span>
+                        </div>
+                      </div>
+                    </div>
 
                     {user?.userType === "tenant" && !hasLease ? (
                       <div
@@ -399,14 +406,16 @@ router.push("/pages/auth/login");
                         Dashboard (Restricted)
                       </div>
                     ) : (
-                    <Link
-  href={
-    user?.userType === "tenant"
-      ? "/pages/tenant/my-unit"
-      : `/pages/${user?.userType || "system_admin"}/dashboard`
-  }
-  className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
->
+                      <Link
+                        href={
+                          user?.userType === "tenant"
+                            ? "/pages/tenant/my-unit"
+                            : `/pages/${
+                                user?.userType || "system_admin"
+                              }/dashboard`
+                        }
+                        className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
+                      >
                         <svg
                           className="w-4 h-4 mr-2"
                           fill="none"
