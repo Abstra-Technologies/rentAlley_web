@@ -31,13 +31,13 @@ const PropertyListingPage = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [pendingApproval, setPendingApproval] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  
+
   useEffect(() => {
-      // Fetch session only if user/admin is not already available
-      if (!user && !admin) {
-        fetchSession();
-      }
-    }, [user, admin]);
+    // Fetch session only if user/admin is not already available
+    if (!user && !admin) {
+      fetchSession();
+    }
+  }, [user, admin]);
 
   useEffect(() => {
     if (user?.landlord_id) {
@@ -55,58 +55,71 @@ const PropertyListingPage = () => {
     }
   }, [properties, isVerified]);
 
-useEffect(() => {
-  if (user?.userType === "landlord") {
-    console.log("[DEBUG] Landlord detected. Starting verification & subscription checks.");
-    setIsVerified(null);
-    setIsFetchingVerification(true);
+  useEffect(() => {
+    if (user?.userType === "landlord") {
+      console.log(
+        "[DEBUG] Landlord detected. Starting verification & subscription checks."
+      );
+      setIsVerified(null);
+      setIsFetchingVerification(true);
 
-    // Fetch Verification Status
-    axios
-      .get(`/api/landlord/verification-upload/status?user_id=${user?.user_id}`)
-      .then((response) => {
-        console.log("[DEBUG] Fetched Verification Status:", response.data);
-        const status = response.data.verification_status || "";
-        const isVerified = status.toLowerCase() === "verified";
-        console.log("[DEBUG] Interpreted isVerified:", isVerified);
-        setIsVerified(isVerified);
-      })
-      .catch((err) => {
-        console.error("[ERROR] Failed to fetch landlord verification status:", err);
-      })
-      .finally(() => {
-        console.log("[DEBUG] Verification status fetch completed.");
-        setIsFetchingVerification(false);
-      });
+      // Fetch Verification Status
+      axios
+        .get(
+          `/api/landlord/verification-upload/status?user_id=${user?.user_id}`
+        )
+        .then((response) => {
+          console.log("[DEBUG] Fetched Verification Status:", response.data);
+          const status = response.data.verification_status || "";
+          const isVerified = status.toLowerCase() === "verified";
+          console.log("[DEBUG] Interpreted isVerified:", isVerified);
+          setIsVerified(isVerified);
+        })
+        .catch((err) => {
+          console.error(
+            "[ERROR] Failed to fetch landlord verification status:",
+            err
+          );
+        })
+        .finally(() => {
+          console.log("[DEBUG] Verification status fetch completed.");
+          setIsFetchingVerification(false);
+        });
 
-    // Subscription Checking
-    setFetchingSubscription(true);
-    console.log("[DEBUG] Checking subscription for landlord_id:", user?.landlord_id);
+      // Subscription Checking
+      setFetchingSubscription(true);
+      console.log(
+        "[DEBUG] Checking subscription for landlord_id:",
+        user?.landlord_id
+      );
 
-    axios
-      .get(`/api/landlord/subscription/active/${user?.landlord_id}`)
-      .then((response) => {
-        console.log("[DEBUG] Fetched Subscription:", response.data);
-        setSubscription(response.data);
-      })
-      .catch((err) => {
-        console.error("[ERROR] Failed to fetch subscription:", err);
-        if (err.response && err.response.status === 404) {
-          console.log("[WARN] No active subscription found.");
-          setErrorMsg("You are not subscribed. Please choose a plan to add properties.");
-        } else {
-          setErrorMsg("Failed to fetch subscription details. Please try again later.");
-        }
-      })
-      .finally(() => {
-        console.log("[DEBUG] Subscription check completed.");
-        setFetchingSubscription(false);
-      });
-  } else {
-    console.log("[DEBUG] User is not a landlord or user is undefined.");
-  }
-}, [user]);
-
+      axios
+        .get(`/api/landlord/subscription/active/${user?.landlord_id}`)
+        .then((response) => {
+          console.log("[DEBUG] Fetched Subscription:", response.data);
+          setSubscription(response.data);
+        })
+        .catch((err) => {
+          console.error("[ERROR] Failed to fetch subscription:", err);
+          if (err.response && err.response.status === 404) {
+            console.log("[WARN] No active subscription found.");
+            setErrorMsg(
+              "You are not subscribed. Please choose a plan to add properties."
+            );
+          } else {
+            setErrorMsg(
+              "Failed to fetch subscription details. Please try again later."
+            );
+          }
+        })
+        .finally(() => {
+          console.log("[DEBUG] Subscription check completed.");
+          setFetchingSubscription(false);
+        });
+    } else {
+      console.log("[DEBUG] User is not a landlord or user is undefined.");
+    }
+  }, [user]);
 
   const handleEdit = (propertyId, event) => {
     event.stopPropagation();
@@ -398,22 +411,22 @@ useEffect(() => {
           {properties.length === 0 ? (
             // Empty state remains the same
             <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                <BuildingOffice2Icon className="h-12 w-12 text-gray-400 mb-2" />
-    <p className="text-gray-600 mb-2">No properties found.</p>
-    <button
-      className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-      onClick={handleAddProperty}
-      disabled={
-        isFetchingVerification ||
-        fetchingSubscription ||
-        !isVerified ||
-        !subscription ||
-        subscription?.is_active !== 1 ||
-        isNavigating
-      }
-    >
-      Add Your First Property
-    </button>
+              <BuildingOffice2Icon className="h-12 w-12 text-gray-400 mb-2" />
+              <p className="text-gray-600 mb-2">No properties found.</p>
+              <button
+                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                onClick={handleAddProperty}
+                disabled={
+                  isFetchingVerification ||
+                  fetchingSubscription ||
+                  !isVerified ||
+                  !subscription ||
+                  subscription?.is_active !== 1 ||
+                  isNavigating
+                }
+              >
+                Add Your First Property
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
