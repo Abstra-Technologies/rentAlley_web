@@ -5,7 +5,7 @@ import LoadingScreen from "../loadingScreen";
 const PropertyTypeChart = dynamic(() => import("../landlord/analytics/typesOfProperties"), { ssr: false });
 const TenantOccupationChart = dynamic(() => import("../landlord/analytics/tenantOccupation"), { ssr: false });
 const ScoreCard = dynamic(() => import("../landlord/analytics/scoreCards"), { ssr: false });
-
+const PropertyUtilitiesChart = dynamic(() => import("../landlord/analytics/propertyUtilityRates"), { ssr: false });
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
   loading: () => <p>Loading Chart...</p>,
@@ -24,7 +24,6 @@ const LandlordPropertyChart = () => {
   const [totalRequests, setTotalRequests] = useState(0);
   const [totalReceivables, setTotalReceivables] = useState(0);
   const [utilityTrend, setUtilityTrend] = useState([]);
-  const [utilityRates, setUtilityRates] = useState([]);
 
   useEffect(() => {
     if (!user) {
@@ -96,7 +95,7 @@ const LandlordPropertyChart = () => {
       .catch((error) => console.error("Error fetching total tenants:", error));
 
     fetch(
-      `/api/analytics/landlord/getNumberMaintenanceRequestsperMonth?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/getNumberofTotalMaintenance?landlord_id=${user.landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -128,18 +127,6 @@ const LandlordPropertyChart = () => {
         setUtilityTrend(data);
       })
       .catch((error) => console.error("Error fetching utility trend:", error));
-
-    fetch(
-      `/api/analytics/landlord/getAverageUtilityRate?landlord_id=${user.landlord_id}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Average Utility Rate Data:", data);
-        setUtilityRates(data);
-      })
-      .catch((error) =>
-        console.error("Error fetching utility rate data:", error)
-      );
 
 
   }, [fetchSession, user]);
@@ -244,34 +231,6 @@ const LandlordPropertyChart = () => {
     },
   ];
 
-  const propertyIds = [
-    ...new Set(utilityRates.map((item) => item.property_id)),
-  ];
-
-  const waterRates = propertyIds.map(
-    (id) =>
-      utilityRates.find(
-        (item) => item.property_id === id && item.utility_type === "water"
-      )?.avg_rate_consumed || 0
-  );
-  const electricityRates = propertyIds.map(
-    (id) =>
-      utilityRates.find(
-        (item) => item.property_id === id && item.utility_type === "electricity"
-      )?.avg_rate_consumed || 0
-  );
-
-  const chartOptionsPropertyUtilities = {
-    chart: { type: "bar" },
-    xaxis: { categories: propertyIds.map((id) => `Property ${id}`) },
-    title: { text: "Average Utility Rate per Property", align: "center" },
-  };
-
-  const seriesPropertyUtilities = [
-    { name: "Water (cu.m)", data: waterRates },
-    { name: "Electricity (kWh)", data: electricityRates },
-  ];
-
   return (
     <div className="p-6 bg-gray-50 rounded-lg">
       {loading ? (
@@ -295,14 +254,11 @@ const LandlordPropertyChart = () => {
               </p>
             </div>
 
-            <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-red-500 transition-all hover:shadow-md">
-              <h3 className="text-sm font-medium text-gray-500">
-                Total Maintenance Requests
-              </h3>
-              <p className="text-2xl font-bold text-gray-800 mt-2">
-                {totalRequests || 0}
-              </p>
-            </div>
+            <ScoreCard
+                title="Total Maintenance Request"
+                value={totalRequests}
+                borderColor="red"
+            />
 
            <ScoreCard
               title="Total Current Tenants"
@@ -318,21 +274,7 @@ const LandlordPropertyChart = () => {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Property Utilities
-              </h3>
-              {waterRates.length > 0 && electricityRates.length > 0 ? (
-                <Chart
-                  options={chartOptionsPropertyUtilities}
-                  series={seriesPropertyUtilities}
-                  type="bar"
-                  height={350}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No data available</p>
-                </div>
-              )}
+              <PropertyUtilitiesChart landlordId={user.landlord_id} />
             </div>
           </div>
 
