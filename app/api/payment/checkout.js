@@ -2,7 +2,7 @@
 import axios from "axios";
 import mysql from "mysql2/promise";
 
-
+// to be deleted.
 export default async function subscriptionCheckout(req, res) {
 
     const { amount, description, email, firstName, lastName, redirectUrl, landlord_id, plan_name } = req.body;

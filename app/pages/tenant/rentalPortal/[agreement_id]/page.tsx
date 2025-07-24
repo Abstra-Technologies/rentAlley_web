@@ -12,8 +12,6 @@ import TenantPendingPaymentWidget from "../../../../../components/tenant/Pending
 import TenantPropertyChart from "../../../../../components/analytics/tenantAnalytics";
 import axios from "axios";
 
-
-
 export default function RentPortalPage() {
   const { user, fetchSession, loading } = useAuthStore();
   const [dataLoading, setDataLoading] = useState(true);
@@ -61,8 +59,11 @@ export default function RentPortalPage() {
     );
   }
 
-  return (
-<TenantLayout agreement_id={agreementId}>
+    // @ts-ignore
+    return (
+        // @ts-ignore
+
+        <TenantLayout agreement_id={agreementId}>
       <div className="p-6 bg-gray-50 min-h-screen">
         <div>
           <h1 className="text-2xl font-bold text-blue-800">Rental Portal</h1>
@@ -77,7 +78,7 @@ export default function RentPortalPage() {
           Welcome, {user?.firstName} {user?.lastName}! Here you can manage all your rent-related activity.
         </p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* <TenantPendingPaymentWidget tenant_id={tenantId || user?.tenant_id} /> */}
             <LeaseAgreementWidget agreement_id={agreementId} />
         </div>

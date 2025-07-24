@@ -98,7 +98,7 @@ export default function ProfilePage() {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("/api/profile/profilepic", formData, {
+      const response = await axios.post("/api/profile/uploadProfilePic", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setProfilePicture(response.data.imageUrl);

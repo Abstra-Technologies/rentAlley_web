@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 // Define listing limits per plan
 const listingLimits = {
   "Free Plan": {
-    maxProperties: 1,
+    maxProperties: 5,
     maxUnits: 2,
     maxMaintenanceRequest: 5,
     maxReports: 3,
@@ -12,8 +12,8 @@ const listingLimits = {
     maxProspect: 3,
   },
   "Standard Plan": {
-    maxProperties: 5,
-    maxUnits: 2,
+    maxProperties: 10,
+    maxUnits: 5,
     maxMaintenanceRequest: 10,
     maxReports: Infinity,
     maxBilling: 10,

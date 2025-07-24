@@ -22,6 +22,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Swal from "sweetalert2";
 import UnitCard from  '@/components/landlord/properties/unitCards';
+import { FaFile } from "react-icons/fa";
+import TenantOutsidePortalNav from '../../../../components/navigation/TenantOutsidePortalNav';
 
 export default function MyUnit() {
   const { fetchSession, user } = useAuthStore();
@@ -135,6 +137,7 @@ const getSelectedPaymentItemsPerUnit = () => {
       [type]: !prev[type],
     }));
   };
+
 // Combine the items and totals from each unit.
 // Flatten the array of items.
 // Sum the totalAmounts.
@@ -187,7 +190,7 @@ const handlePayment = async () => {
 
       console.log("Sending payment request:", payload);
 
-      const response = await axios.post("/api/tenant/RegPayment", payload);
+      const response = await axios.post("/api/tenant/initialPayment", payload);
 
       if (response.status === 200) {
         window.location.href = response.data.checkoutUrl;
@@ -238,44 +241,7 @@ console.log('unit payment', unitPaymentItems);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <div className="hidden w-64 border-r border-gray-200 bg-white py-6 px-4 md:block">
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-indigo-900">My Rental</h2>
-          <p className="text-sm text-gray-500">Manage your rental property</p>
-        </div>
-
-        <nav>
-          <ul className="space-y-2">
-            <li className="rounded-md bg-indigo-50">
-              <a
-                href="#"
-                className="flex items-center space-x-3 rounded-md p-3 font-medium text-indigo-900"
-              >
-                <HomeIcon className="h-5 w-5" />
-                <span>Current Units</span>
-              </a>
-            </li>
-            <li>
-              <a
-                href="#"
-                className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100"
-              >
-                <ClockIcon className="h-5 w-5" />
-                <span>Unit History</span>
-              </a>
-            </li>
-            <li>
-              <Link
-                href="#"
-                className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100"
-              >
-                <CreditCardIcon className="h-5 w-5" />
-                <span>Payment History</span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </div>
+      <TenantOutsidePortalNav />
 
       <div className="flex-1 px-4 py-6 md:px-8 md:py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">

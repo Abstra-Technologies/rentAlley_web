@@ -28,8 +28,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const lease = leaseResults[0];
-console.log('lease detail:', lease);
+    const lease = JSON.parse(JSON.stringify(leaseResults[0]));
+
+    console.log('lease detail:', lease);
     return NextResponse.json({ lease });
 
   } catch (error) {

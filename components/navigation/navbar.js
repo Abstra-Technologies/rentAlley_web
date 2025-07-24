@@ -151,6 +151,7 @@ const Navbar = () => {
     if (!user) {
       return [
         { href: "/pages/about-us", label: "About Us" },
+        { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/partner", label: "Partner" },
         { href: "/pages/contact-us", label: "Contact Us" },
       ];
@@ -162,8 +163,6 @@ const Navbar = () => {
         { href: "/pages/tenant/visit-history", label: "My Schedule" },
         { href: "/pages/tenant/chat", label: "Chat" },
         { href: "/pages/tenant/inbox", label: "Inbox" },
-        { href: "/pages/find-rent", label: "Find Rent" },
-        { href: "/pages/contact-us", label: "Contact Us" },
         { href: "/pages/tenant/my-unit", label: "Dashboard" },
       ];
     }
@@ -172,7 +171,6 @@ const Navbar = () => {
       return [
         { href: "/pages/landlord/inbox", label: "Inbox" },
         { href: "/pages/landlord/dashboard", label: "Dashboard" },
-        { href: "/pages/find-rent", label: "Find Rent" },
       ];
     }
 

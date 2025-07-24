@@ -14,8 +14,6 @@ const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
 
-
-
 export default function LoginPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -23,12 +21,6 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
-
-
-
-
-
 
 function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -58,7 +50,7 @@ function Login() {
 
         switch (data.userType) {
           case "tenant":
-            return router.replace("/pages/find-rent");
+            return router.replace("/pages/tenant/my-unit");
           case "landlord":
             return router.replace("/pages/landlord/dashboard");
           case "admin":

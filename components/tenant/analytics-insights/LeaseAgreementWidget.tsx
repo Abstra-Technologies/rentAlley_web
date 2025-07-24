@@ -22,13 +22,15 @@ export default function LeaseAgreementWidget({ agreement_id }: LeaseAgreementWid
     async function fetchLease() {
       try {
         const response = await axios.get<{ lease: LeaseAgreement }>(
-          `/api/tenant/dashboard/getLeaseWidget?agreement_id=${agreement_id}`
+            `/api/tenant/dashboard/getLeaseWidget?agreement_id=${agreement_id}`
         );
-        setLease(response.data.lease);
-        console.log("Lease data:", response.data.lease);
+        console.log("Raw lease response:", response.data);
+        // @ts-ignore
+        setLease(response.data.lease[0]); // set the array
       } catch (err: any) {
+        console.error("Error fetching lease:", err);
         setError(
-          err.response?.data?.message || "Failed to fetch lease agreement."
+            err.response?.data?.message || "Failed to fetch lease agreement."
         );
       } finally {
         setLoading(false);
@@ -38,17 +40,19 @@ export default function LeaseAgreementWidget({ agreement_id }: LeaseAgreementWid
     if (agreement_id) fetchLease();
   }, [agreement_id]);
 
-const formatDate = (date: string | Date): string => {
-  try {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch (err) {
-    return "Invalid date";
-  }
-};
+
+  const formatDate = (date: string | Date): string => {
+    if (!date) return "N/A";
+    try {
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch (err) {
+      return "Invalid date";
+    }
+  };
 
 
   if (loading) return <p>Loading lease details...</p>;

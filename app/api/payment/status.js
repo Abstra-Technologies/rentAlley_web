@@ -1,6 +1,6 @@
 
 import mysql from "mysql2/promise";
-
+// to be dleted.
 export default async function paymentSuccessSubscrition(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method Not Allowed" });

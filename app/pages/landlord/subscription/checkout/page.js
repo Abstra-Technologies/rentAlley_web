@@ -105,7 +105,7 @@ export default function CheckoutPage() {
         }
 
         try {
-            const response = await axios.post("/api/payment/checkout", {
+            const response = await axios.post("/api/payment/checkout-payment", {
                 amount,
                 description: planName,
                 email: user.email,
