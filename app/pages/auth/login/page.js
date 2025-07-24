@@ -31,16 +31,6 @@ function Login() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-
-  useEffect(() => {
-    sessionStorage.removeItem("pending2FA");
-    window.history.replaceState(null, "", "/pages/auth/login");
-
-    if (user || admin) {
-      router.replace(user ? "/" : "/pages/admin/dashboard");
-    }
-  }, [user, admin]);
-
   const redirectBasedOnUserType = async () => {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
@@ -63,6 +53,20 @@ function Login() {
       console.error("Redirection failed:", error);
     }
   };
+
+  useEffect(() => {
+    sessionStorage.removeItem("pending2FA");
+    window.history.replaceState(null, "", "/pages/auth/login");
+
+    if (user || admin) {
+      redirectBasedOnUserType();
+    }
+
+  }, [user, admin]);
+
+  if (user || admin) {
+    return <div className="flex justify-center items-center h-screen">Redirecting...</div>;
+  }
 
   const handleChange = (e) => {
     const { id, value } = e.target;

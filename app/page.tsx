@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { FaSearch, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
 import { HiBadgeCheck } from "react-icons/hi";
 import Footer from "../components/navigation/footer";
+import LoadingScreen from "@/components/loadingScreen";
 
 interface Property {
   property_id: number;
@@ -30,6 +31,41 @@ export default function SplashScreen() {
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [recentProperties, setRecentProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    async function redirectIfAuthenticated() {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          console.log("User type detected:", data.userType);
+
+          switch (data.userType) {
+            case "tenant":
+              return router.replace("/pages/tenant/my-unit");
+            case "landlord":
+              return router.replace("/pages/landlord/dashboard");
+            case "admin":
+              return router.replace("/pages/admin/dashboard");
+            default:
+              return router.replace("/pages/auth/login");
+          }
+        } else {
+          setCheckingAuth(false);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setCheckingAuth(false); // Not logged in
+      }
+    }
+
+    redirectIfAuthenticated();
+  }, []);
+
+  if (checkingAuth) {
+    return <LoadingScreen />;
+  }
 
   useEffect(() => {
     async function fetchProperties() {
