@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
-            subject: `RENTAHAN Support Request Update: ${issue}`,
+            subject: `HESTIA Support Request Update: ${issue}`,
             text: `Hello ${email},\n${message}\n\nThank you,\nSupport Team`,
         };
 

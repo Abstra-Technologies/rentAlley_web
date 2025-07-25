@@ -311,7 +311,7 @@ export default function SplashScreen() {
               Search, Find, and Invest in Good Properties with Us
             </h2>
             <p className="mb-6 opacity-80">
-              Discover your perfect rental property with Rentahan. We provide a
+              Discover your perfect rental property with Hestia. We provide a
               curated selection of quality homes, apartments, and condominiums
               across the Philippines, making property hunting simple and
               stress-free.
@@ -332,7 +332,7 @@ export default function SplashScreen() {
                 className="object-cover rounded-lg"
               />
               <h4 className="absolute bottom-4 right-4 bg-white bg-opacity-80 text-2xl font-bold text-blue-600 text-center px-4 py-2 rounded-lg shadow-lg">
-                Rentahan
+                Hestia
               </h4>
             </div>
           </div>

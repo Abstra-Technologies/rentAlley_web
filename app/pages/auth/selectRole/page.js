@@ -27,7 +27,7 @@ export default function RegisterAs() {
       <div className="relative z-10 bg-white p-10 rounded-2xl shadow-lg w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <div className="text-3xl font-bold text-blue-600">Rentahan</div>
+          <div className="text-3xl font-bold text-blue-600">Hestia</div>
         </div>
 
         {/* "Register As" Heading */}

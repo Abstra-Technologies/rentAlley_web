@@ -71,7 +71,7 @@ export default function SideNavAdmin({ admin }) {
         <div className="flex items-center space-x-2">
           <Home className="w-6 h-6 text-blue-600" />
           <span className="text-xl font-semibold text-blue-600">
-            Rentahan Admin Portal
+            Hestia Admin Portal
           </span>
         </div>
       </div>

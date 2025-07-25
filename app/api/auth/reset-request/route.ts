@@ -79,7 +79,7 @@ async function sendOtpEmail(toEmail: string, otp: string) {
   await transporter.sendMail({
     from: process.env.EMAIL_USER!,
     to: toEmail,
-    subject: "Rentahan: Reset Password OTP",
+    subject: "Hestia: Reset Password OTP",
     text: `Your OTP is: ${otp}`,
   });
 

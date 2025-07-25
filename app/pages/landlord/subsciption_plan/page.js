@@ -57,7 +57,7 @@ export default function LandlordSubscriptionPlan() {
                   </h2>
                 </div>
                 <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  Rentahan offers a flexible upgrade policy for subscription
+                  Hestia offers a flexible upgrade policy for subscription
                   plans. If you choose to upgrade your plan before the current
                   billing cycle ends, the additional cost will be pro-rated
                   based on the remaining days of your subscription. This ensures
@@ -121,7 +121,7 @@ export default function LandlordSubscriptionPlan() {
                   </h2>
                 </div>
                 <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  Rentahan does not offer refunds for subscriptions once a
+                  Hestia does not offer refunds for subscriptions once a
                   payment has been processed.
                 </p>
               </div>

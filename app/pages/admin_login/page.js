@@ -174,7 +174,7 @@ export default function LoginAdmin() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 shadow-md rounded-lg w-full max-w-md">
         <h1 className="text-3xl font-bold text-center text-blue-600 mb-2">
-          Rentahan
+          Hestia
         </h1>
         <h2 className="text-xl font-semibold text-center text-blue-500 mb-6">
           Admin Login

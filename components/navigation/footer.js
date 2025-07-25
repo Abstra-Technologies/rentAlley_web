@@ -12,7 +12,7 @@ const Footer = () => {
       <div className="container mx-auto max-w-6xl px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           <div>
-            <h2 className="text-2xl font-bold mb-4">Rentahan</h2>
+            <h2 className="text-2xl font-bold mb-4">Hestia</h2>
             <p className="text-gray-400 mb-4">
               Finding your perfect rental property has never been easier.
             </p>
@@ -53,7 +53,7 @@ const Footer = () => {
             <address className="not-italic text-gray-400">
               <p className="mb-2">123 Property Street, Manila</p>
               <p className="mb-2">Philippines, 1000</p>
-              <p className="mb-2">Email: info@rentahan.com</p>
+              <p className="mb-2">Email: info@hestia.com</p>
               <p>Phone: +63 123 456 7890</p>
             </address>
           </div>
@@ -101,7 +101,7 @@ const Footer = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm mb-4 md:mb-0">
-            Copyright © 2025 Rentahan. All rights reserved.
+            Copyright © 2025 Hestia. All rights reserved.
           </p>
           <p className="text-gray-400 text-sm">
             Designed by IS Students in De La Salle College of Saint Benilde

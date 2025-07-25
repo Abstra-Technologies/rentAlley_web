@@ -150,7 +150,7 @@ async function sendOtpEmail(email: string, otp: string) {
   await transporter.sendMail({
     from: process.env.EMAIL_USER!,
     to: email,
-    subject: "Your Rentahan 2FA OTP Code",
+    subject: "Your Hestia 2FA OTP Code",
     text: `Your OTP Code is: ${otp}\nThis code will expire in 10 minutes.`,
   });
 

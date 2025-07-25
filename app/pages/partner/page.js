@@ -11,7 +11,7 @@ export default function Partner() {
           </span>
           <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
             <span className="block">Grow Your Business</span>
-            <span className="block text-blue-600">With Rentahan</span>
+            <span className="block text-blue-600">With Hestia</span>
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-500">
             Join our network of property management professionals and expand
@@ -118,7 +118,7 @@ export default function Partner() {
                 </h3>
                 <p className="text-gray-600">
                   Start referring clients, earning commissions, and growing your
-                  business with Rentahan's powerful tools.
+                  business with Hestia's powerful tools.
                 </p>
               </div>
             </div>
@@ -143,7 +143,7 @@ export default function Partner() {
               <p className="text-sm text-gray-500">
                 Or contact our partnership team at{" "}
                 <span className="text-blue-600 font-medium">
-                  partners@rentahan.com
+                  partners@hestia.com
                 </span>
               </p>
             </div>

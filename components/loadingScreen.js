@@ -26,7 +26,7 @@ const LoadingScreen = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7 }}
             >
-                Rentahan
+                Hestia
             </motion.h1>
 
             {/* Tagline with Smooth Appear */}
