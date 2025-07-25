@@ -61,11 +61,14 @@ function Login() {
     if (user || admin) {
       redirectBasedOnUserType();
     }
-
   }, [user, admin]);
 
   if (user || admin) {
-    return <div className="flex justify-center items-center h-screen">Redirecting...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Redirecting...
+      </div>
+    );
   }
 
   const handleChange = (e) => {
@@ -195,9 +198,15 @@ function Login() {
         />
 
         <div className="relative z-10 bg-white p-10 rounded-2xl shadow-lg w-full max-w-lg">
-          <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">
-            Rentahan
-          </h1>
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/hestia-logo-b.svg"
+              alt="Hestia Logo blue"
+              width={80}
+              height={60}
+              className="object-contain" 
+            />
+          </div>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
