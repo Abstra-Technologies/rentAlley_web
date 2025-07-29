@@ -100,8 +100,7 @@ function Register() {
       "User Clicked Google Sign-Up",
       1
     );
-
-    router.push(`/api/auth/google?userType=${role}`);
+    router.push(`/api/auth/googleSignUp?userType=${role}`);
   };
 
   useEffect(() => {

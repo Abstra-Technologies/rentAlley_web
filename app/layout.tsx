@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-    title: "RentAlley",
+    title: "Hestia Rent360",
     description: "Your App Description",
 };
 
