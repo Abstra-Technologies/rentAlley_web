@@ -207,6 +207,7 @@ const Navbar = () => {
       console.error("Error marking all notifications as read:", error);
     }
   };
+  
 
   return (
     <>
@@ -625,7 +626,7 @@ const Navbar = () => {
               <div className="flex items-center justify-between p-4 border-b border-blue-500">
                 <div className="flex items-center space-x-2">
                   <span className="text-2xl">🏠</span>
-                  <span className="text-lg font-bold">Rentahan</span>
+                  <span className="text-lg font-bold">Hestia</span>
                 </div>
                 <button
                   onClick={() => setMenuOpen(false)}
