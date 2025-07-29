@@ -48,39 +48,63 @@ export async function PUT(req: NextRequest) {
       totalUnits,
       floorArea,
       utilityBillingType,
-      petFriendly,
       minStay,
       assocDues,
       paymentFrequency,
       lateFee,
+        flexiPayEnabled,
+        paymentMethodsAccepted ,
+        propertyPreferences,
     } = body;
 
-    await connection.execute(
-      `UPDATE Property SET
-        property_name = ?, property_type = ?, amenities = ?, street = ?, brgy_district = ?,
-        city = ?, zip_code = ?, province = ?, total_units = ?, utility_billing_type = ?, description = ?, floor_area = ?, pet_friendly = ?, min_stay = ?, assoc_dues = ?, late_fee = ?, payment_frequency = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE property_id = ?`,
-      [
-        propertyName,
-        propertyType,
-        amenities ? amenities.join(",") : null,
-        street,
-        Number(brgyDistrict),
-        city,
-        zipCode,
-        province,
-        totalUnits,
-        utilityBillingType,
-        propDesc,
-        floorArea,
-        petFriendly,
-        minStay,
-        assocDues,
-        lateFee,
-        paymentFrequency,
-        property_id,
-      ]
-    );
+      await connection.execute(
+          `UPDATE Property SET
+                               property_name = ?,
+                               property_type = ?,
+                               amenities = ?,
+                               street = ?,
+                               brgy_district = ?,
+                               city = ?,
+                               zip_code = ?,
+                               province = ?,
+                               total_units = ?,
+                               utility_billing_type = ?,
+                               description = ?,
+                               floor_area = ?,
+                               min_stay = ?,
+                               assoc_dues = ?,
+                               late_fee = ?,
+                               payment_frequency = ?,
+                               flexipay_enabled = ?,
+                               property_preferences = ?,
+                               accepted_payment_methods = ?,
+                               updated_at = CURRENT_TIMESTAMP
+           WHERE property_id = ?`,
+          [
+              propertyName,
+              propertyType,
+              amenities ? amenities.join(",") : null,
+              street,
+              Number(brgyDistrict),
+              city,
+              zipCode,
+              province,
+              totalUnits,
+              utilityBillingType,
+              propDesc,
+              floorArea,
+              minStay,
+              assocDues,
+              lateFee,
+              paymentFrequency,
+              flexiPayEnabled || false,
+              propertyPreferences ? JSON.stringify(propertyPreferences) : null,
+              paymentMethodsAccepted ? JSON.stringify(paymentMethodsAccepted) : null,
+              property_id,
+          ]
+      );
+
+
 // @ts-ignore
     const token = cookies.get("token")?.value;
     if (!token) {

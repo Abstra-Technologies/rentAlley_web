@@ -230,7 +230,7 @@ export default function PropertyDetails() {
                   <p className="text-gray-600">{property.units.length} units</p>
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-700">Floor Area</h3>
+                  <h3 className="font-medium text-gray-700">Total Property Floor Area</h3>
                   <p className="text-gray-600">{property.floor_area} sqm</p>
                 </div>
                 <div>
@@ -273,8 +273,10 @@ export default function PropertyDetails() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
       </svg>
     </div>
-  )}
 
+
+  )}
+                  <h3 className="font-medium text-gray-700 mb-3">Rental Payment Details</h3>
 {property?.payment_methods?.length > 0 && (
   <div className="ml-2 mt-1 flex flex-wrap gap-2">
     {property.payment_methods.map((method) => (

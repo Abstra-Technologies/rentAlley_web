@@ -12,14 +12,14 @@ import { PAYMENT_FREQUENCIES } from "../../../../../../constant/paymentFrequency
 import { PROVINCES_PHILIPPINES } from "../../../../../../constant/provinces";
 import { UTILITY_BILLING_TYPES } from "../../../../../../constant/utilityBillingType";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
+import { PROPERTY_PREFERENCES } from "../../../../../../constant/propertyPreferences";
+import { PAYMENT_METHODS } from "../../../../../../constant/paymentMethods";
 
 const EditProperty = () => {
   const router = useRouter();
   const params = useParams();
   const { id } = params;
-
   const { updateProperty, setProperty } = usePropertyStore();
-
   const [formData, setFormData] = useState({
     propertyName: "",
     street: "",
@@ -36,10 +36,12 @@ const EditProperty = () => {
     paymentFrequency: "",
     minStay: "",
     lateFee: "",
-    petFriendly: false,
     bedSpacing: false,
     availBeds: "",
     assocDues: "",
+    flexiPayEnabled: 0,
+    paymentMethodsAccepted:[] ,
+    propertyPreferences:[],
   });
 
   const [photos, setPhotos] = useState([]);
@@ -75,7 +77,8 @@ const EditProperty = () => {
             : "",
           minStay: propertyData?.min_stay || 0,
           lateFee: propertyData?.late_fee || 0,
-          petFriendly: propertyData?.pet_friendly === 1,
+          propertyPreferences: JSON.parse(propertyData.property_preferences || "[]"),
+          paymentMethodsAccepted: JSON.parse(propertyData.accepted_payment_methods || "[]"),
           assocDues: propertyData?.assoc_dues || 0,
           propertyType: PROPERTY_TYPES.some(
             (p) => p.value === propertyData?.property_type
@@ -97,7 +100,7 @@ const EditProperty = () => {
       fetchProperty();
     }
   }, [id]);
-
+console.log('form data', formData);
   useEffect(() => {
     const fetchPhotos = async () => {
       if (!id) return;
@@ -135,6 +138,57 @@ const EditProperty = () => {
 
     setFormData((prev) => ({ ...prev, amenities: newAmenities }));
     setProperty({ amenities: newAmenities });
+  };
+
+  const handlePropertyPreferenceChange = (key) => {
+    const currentPreferences = Array.isArray(formData.propertyPreferences)
+        ? formData.propertyPreferences
+        : [];
+    const index = currentPreferences.indexOf(key);
+
+    const newPreferences =
+        index > -1
+            ? [
+              ...currentPreferences.slice(0, index),
+              ...currentPreferences.slice(index + 1),
+            ]
+            : [...currentPreferences, key];
+
+    setFormData((prev) => ({ ...prev, propertyPreferences: newPreferences }));
+    setProperty((prev) => ({ ...prev, propertyPreferences: newPreferences }));
+  };
+
+
+  const handlePaymentMethodChange = (key) => {
+    const currentMethods = Array.isArray(formData.paymentMethodsAccepted)
+        ? formData.paymentMethodsAccepted
+        : [];
+    const index = currentMethods.indexOf(key);
+
+    const newMethods =
+        index > -1
+            ? [...currentMethods.slice(0, index), ...currentMethods.slice(index + 1)]
+            : [...currentMethods, key];
+
+    setFormData((prev) => ({
+      ...prev,
+      paymentMethodsAccepted: newMethods,
+    }));
+    setProperty((prev) => ({
+      ...prev,
+      paymentMethodsAccepted: newMethods,
+    }));
+  };
+
+  const handleFlexiPayToggle = (checked) => {
+    setFormData((prev) => ({
+      ...prev,
+      flexiPayEnabled: checked,
+    }));
+    setProperty((prev) => ({
+      ...prev,
+      flexiPayEnabled: checked,
+    }));
   };
 
   const handleChange = (e) => {
@@ -250,6 +304,8 @@ const EditProperty = () => {
     router.push("/pages/landlord/property-listing");
   };
 
+
+
   return (
     <LandlordLayout>
       <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10 relative">
@@ -312,7 +368,7 @@ const EditProperty = () => {
               Barangay / District
             </label>
             <input
-              type="number"
+              type="text"
               name="brgyDistrict"
               id="brgyDistrict"
               value={formData.brgyDistrict || ""}
@@ -554,19 +610,28 @@ const EditProperty = () => {
           </div>
 
           {/* Pet-Friendly Checkbox */}
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              name="petFriendly"
-              id="petFriendly"
-              checked={formData.petFriendly}
-              onChange={handleChange}
-              className="h-6 w-6"
-            />
-            <label htmlFor="petFriendly" className="text-gray-700">
-              Pet-Friendly
+          <div className="space-y-2">
+            <label className="block text-gray-700 font-medium mb-1">
+              Property Preferences/Rules
             </label>
+
+            <div className="space-y-2">
+              {PROPERTY_PREFERENCES.map((preference) => (
+                  <label key={preference.key}>
+                    <input
+                        type="checkbox"
+                        checked={formData.propertyPreferences?.includes(preference.key)}
+                        onChange={() => handlePropertyPreferenceChange(preference.key)}
+                    />
+                    {preference.label}
+                  </label>
+              ))}
+
+
+            </div>
           </div>
+
+
 
           {/* Payment Frequency */}
           <div>
@@ -596,6 +661,47 @@ const EditProperty = () => {
               ))}
             </select>
           </div>
+
+          <div className="space-y-2">
+            <label className="block text-gray-700 font-medium mb-1">
+              Payment Methods Accepted
+            </label>
+
+            <div className="space-y-2">
+              {PAYMENT_METHODS.map((method) => (
+                  <label key={method.key} className="block">
+                    <input
+                        type="checkbox"
+                        checked={
+                            Array.isArray(formData.paymentMethodsAccepted) &&
+                            formData.paymentMethodsAccepted.includes(method.key)
+                        }
+                        onChange={() => handlePaymentMethodChange(method.key)}
+                    />
+                    {method.label}
+                  </label>
+              ))}
+
+            </div>
+          </div>
+
+
+          <label className="flex items-start gap-3 mt-4">
+            <input
+                type="checkbox"
+                checked={formData.flexiPayEnabled || false}
+                onChange={(e) => handleFlexiPayToggle(e.target.checked)}
+                className="mt-1"
+            />
+            <span>
+    <span className="font-medium text-gray-800">Allow FlexiPay Payment?</span>
+    <p className="text-sm text-gray-600">
+      FlexiPay allows tenants to make partial payments until the due date.
+    </p>
+  </span>
+          </label>
+
+
 
           {/* Upload Property Photos */}
           <div>

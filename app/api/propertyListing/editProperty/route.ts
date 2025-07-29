@@ -38,7 +38,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(rows, { status: 200 });
+    // @ts-ignore
+    const parsedRows = rows.map((row) => ({
+      ...row,
+      propertyPreferences: row.property_preferences
+          ? JSON.parse(row.property_preferences)
+          : [],
+      paymentMethodsAccepted: row.accepted_payment_methods
+          ? JSON.parse(row.accepted_payment_methods)
+          : [],
+    }));
+
+    return NextResponse.json(parsedRows, { status: 200 });
   } catch (error) {
     console.error("Error fetching property listings:", error);
     return NextResponse.json(
