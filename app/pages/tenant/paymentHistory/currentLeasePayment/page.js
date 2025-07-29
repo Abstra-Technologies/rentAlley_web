@@ -2,17 +2,27 @@
 import TenantLeasePayments from "../../../../../components/tenant/currentLeasePaymentHistory";
 import useAuth from "../../../../../hooks/useSession";
 import TenantLayout from "../../../../../components/navigation/sidebar-tenant";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function TenantPaymentsPage() {
+function TenantPaymentsContent() {
   const { user } = useAuth();
-  const tenant_id = user?.tenant_id;
-
+    const searchParams = useSearchParams();
+    const agreementId = searchParams.get("agreement_id");
   return (
     <TenantLayout>
       <div className="p-6 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">My Payments</h1>
-        <TenantLeasePayments tenant_id={tenant_id} />
+        <h1 className="text-2xl font-bold mb-4">My Payments History</h1>
+        <TenantLeasePayments  agreement_id={agreementId} />
       </div>
     </TenantLayout>
   );
+}
+
+export default function TenantPayments(){
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <TenantPaymentsContent />
+        </Suspense>
+    );
 }

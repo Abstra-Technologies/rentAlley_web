@@ -2,14 +2,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-export default function TenantLeasePayments({ tenant_id }) {
+export default function TenantLeasePayments({ agreement_id }) {
   const [payments, setPayments] = useState([]);
   const [lease, setLease] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!tenant_id) return;
 
     const fetchPayments = async () => {
       setLoading(true);
@@ -17,8 +16,9 @@ export default function TenantLeasePayments({ tenant_id }) {
 
       try {
         const res = await axios.get(
-          `/api/tenant/payment/currentLease?tenant_id=${tenant_id}`
+          `/api/tenant/payment/currentPaymentHistory?agreement_id=${agreement_id}`
         );
+
         console.log(res.data);
         if (res.status === 200) {
           setLease(res.data.leaseAgreement || null);
@@ -38,7 +38,7 @@ export default function TenantLeasePayments({ tenant_id }) {
     };
 
     fetchPayments();
-  }, [tenant_id]);
+  }, []);
 
   // Status components with improved UI
   if (loading) {

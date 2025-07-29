@@ -11,8 +11,6 @@ function TenantMaintenanceContent() {
   const searchParams = useSearchParams();
   const agreementId = searchParams.get("agreement_id");
 
-  console.log("maintenance home page id: ", agreementId);
-
   return (
       <TenantLayout agreement_id={agreementId}>
         <MaintenanceRequestList

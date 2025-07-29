@@ -60,17 +60,17 @@ export default function UnitCard({
     router.push(`/pages/tenant/rentalPortal/${unit.agreement_id}`);
   };
 
-
 const unitRequiresSecurity = Number(unit.sec_deposit) > 0;
 const unitRequiresAdvanced = Number(unit.advanced_payment) > 0;
+const unitPaidSecurity = unit.is_security_deposit_paid;
+const unitPaidAdvance = unit.is_advance_payment_paid;
 
-const unitPaidSecurity = Boolean(unit.is_security_deposit_paid);
-const unitPaidAdvance = Boolean(unit.is_advance_payment_paid);
 
 const allPaymentsMade =
   (!unitRequiresSecurity || unitPaidSecurity) &&
   (!unitRequiresAdvanced || unitPaidAdvance);
 
+console.log('all payment made: ', allPaymentsMade);
 
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-md">
@@ -151,9 +151,7 @@ const allPaymentsMade =
                 <CurrencyDollarIcon className="h-5 w-5 text-indigo-500 mr-2" />
                 <p className="text-sm text-gray-500">Security Deposit</p>
               </div>
-              <p className="text-xl font-bold text-indigo-600">
-                ₱{Number(unit.sec_deposit || 0).toLocaleString()}
-              </p>
+
             </div>
 
             {requiresSecurity && (
@@ -212,7 +210,7 @@ const allPaymentsMade =
           </div>
         </div>
 
-        {canPayViaMaya && (
+        {canPayViaMaya && !allPaymentsMade && (
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Pay through Maya</h3>
             <button
@@ -243,7 +241,7 @@ const allPaymentsMade =
           </div>
         )}
 
-        {(pendingSecurity || pendingAdvanced) && (
+        {(pendingSecurity || pendingAdvanced) && !allPaymentsMade && (
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-2 mt-4">Other Payment Option</h3>
             <button

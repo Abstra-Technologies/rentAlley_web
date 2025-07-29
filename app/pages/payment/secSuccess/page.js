@@ -57,14 +57,14 @@ function SecSuccess() {
         });
 
         // Update Lease Agreement Payment Status
-        const response = await axios.post("/api/payment/update-lease", {
+        const response = await axios.post("/api/payment/update-secAdv-lease", {
           agreement_id,
           paymentTypes,
           totalAmount,
           requestReferenceNumber,
         });
 
-        setMessage("Your payment was successful! Lease agreement updated.");
+        setMessage("Your payment for security deposit and advanced payment was successful.");
         setProcessedData(response.data);
       } catch (error) {
         console.error(
