@@ -43,14 +43,19 @@ export default function SplashScreen() {
 
           switch (data.userType) {
             case "tenant":
-              return router.replace("/pages/tenant/my-unit");
+              router.replace("/pages//tenant/my-unit");
+              return;
             case "landlord":
-              return router.replace("/pages/landlord/dashboard");
+              router.replace("/pages/landlord/dashboard");
+              return;
             case "admin":
-              return router.replace("/pages/admin/dashboard");
+              router.replace("/pages//admin/dashboard");
+              return;
             default:
-              return router.replace("/pages/auth/login");
+              router.replace("/pages/auth/login");
+              return;
           }
+
         } else {
           setCheckingAuth(false);
         }
@@ -62,10 +67,6 @@ export default function SplashScreen() {
 
     redirectIfAuthenticated();
   }, []);
-
-  if (checkingAuth) {
-    return <LoadingScreen />;
-  }
 
   useEffect(() => {
     async function fetchProperties() {
@@ -90,6 +91,10 @@ export default function SplashScreen() {
     fetchProperties();
   }, []);
 
+
+  if (checkingAuth) {
+    return <LoadingScreen />;
+  }
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     router.push(`/pages/find-rent?searchQuery=${searchQuery}`);
