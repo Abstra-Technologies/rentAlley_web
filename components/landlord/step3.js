@@ -10,6 +10,7 @@ import { PROPERTY_PREFERENCES } from "../../constant/propertyPreferences";
 export function StepThree() {
   const { property, photos, setProperty, setPhotos } = usePropertyStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const onDrop = (acceptedFiles) => {
     const newPhotos = acceptedFiles.map((file) => ({
@@ -48,41 +49,58 @@ export function StepThree() {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
-const handleGenerateDescription = async () => {
-  const prompt = `Generate a friendly and appealing property description for a rental listing. Include basic highlights like location, amenities, and suitable tenants. Keep it under 3 paragraphs.`;
+  const handleGenerateDescription = async () => {
+    setLoading(true);
 
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "deepseek/deepseek-r1:free", // ✅ or "deepseek/deepseek-chat", depending on model
-        messages: [
-          { role: "system", content: "You are a helpful assistant that writes rental property descriptions." },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
+    const {
+      propertyName,
+      propertyType,
+      amenities,
+      street,
+      brgyDistrict,
+      city,
+      zipCode,
+      province,
+    } = property;
 
-    const data = await response.json();
-    console.log("AI response:", data); // ✅ See full shape
+    const prompt = `Generate a compelling property description for a listing with the following details:
+- Name: ${propertyName}
+- Type: ${propertyType}
+- Amenities: ${amenities?.join(", ") || "None"}
+- Location: ${street}, ${brgyDistrict}, ${city}, ${zipCode}, ${province}
 
-    const aiText = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.content;
+Make it sound appealing, ideal for renters, and professional in tone.`;
+    console.log("🧠 AI Prompt:\n", prompt);
 
-    if (aiText && aiText.trim().length > 0) {
-      setProperty({ propDesc: aiText.trim() });
-    } else {
-      alert("AI response was empty. Try again.");
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "deepseek/deepseek-r1:free",
+          messages: [
+            { role: "system", content: "You are a helpful real estate assistant." },
+            { role: "user", content: prompt }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      const aiText = data?.choices?.[0]?.message?.content?.trim();
+
+      if (aiText) {
+        setProperty({ ...property, propDesc: aiText });
+      }
+    } catch (error) {
+      console.error("AI generation error:", error);
+      alert("Failed to generate description. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("AI generation error:", err);
-    alert("Failed to generate description.");
-  }
-};
-
+  };
   const handleCheckboxChange = (method) => {
     const accepted = property.propertyPreferences || [];
     const newList = accepted.includes(method)
@@ -123,10 +141,11 @@ const handleGenerateDescription = async () => {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-1">
+            <label className="block text-gray-700 font-medium mb-1" htmlFor="description">
               Description (Max 3 paragraphs)
             </label>
              <textarea
+                 id='description'
     name="propDesc"
     value={property.propDesc || ""}
     onChange={handleChange}
@@ -138,9 +157,8 @@ const handleGenerateDescription = async () => {
              <button
     type="button"
     onClick={handleGenerateDescription}
-    className="mt-2 text-sm text-blue-600 hover:underline"
-  >
-    ✨ Generate with AI
+    className="mt-2 text-sm text-blue-600 hover:underline">
+                 {loading ? "Generating..." : "✨ Generate with AI"}
   </button>
   {/* <pre className="text-xs text-gray-400 mt-2">{JSON.stringify(property.propDesc)}</pre> */}
 
