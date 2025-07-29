@@ -39,15 +39,17 @@ export async function PUT(req: Request) {
       secDeposit,
       advancedPayment,
       status,
+        amenities,
     } = body;
 
     await connection.beginTransaction();
+    const amenityString = Array.isArray(amenities) ? amenities.join(",") : amenities || "";
 
     const [result] = await connection.execute(
       `UPDATE Unit SET
         unit_name = ?, unit_size = ?, bed_spacing = ?,
         avail_beds = ?, rent_amount = ?, furnish = ?, status = ?, 
-        sec_deposit = ?, advanced_payment = ?, updated_at = CURRENT_TIMESTAMP
+        sec_deposit = ?, advanced_payment = ?, amenities = ?, updated_at = CURRENT_TIMESTAMP
        WHERE unit_id = ?`,
       [
         unitName,
@@ -59,6 +61,7 @@ export async function PUT(req: Request) {
         status ?? "unoccupied",
         secDeposit,
         advancedPayment,
+        amenityString,
         id,
       ]
     );

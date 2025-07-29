@@ -16,7 +16,6 @@ export async function GET() {
   const token = (await cookieStore).get("token")?.value;
 
   if (!token) {
-    console.warn("[User Fetch] No token found in cookies. Returning guest session.");
     return NextResponse.json({ user: null }, { status: 200 });
   }
 
@@ -115,10 +114,8 @@ export async function GET() {
         }, { status: 200 });
       }
     }
-
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   } catch (error) {
-    console.error("[User Fetch] Token verification or DB error:", error);
     return NextResponse.json({ error: "Invalid session" }, { status: 401 });
   }
 }

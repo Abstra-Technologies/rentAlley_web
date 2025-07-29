@@ -7,6 +7,7 @@ import furnishingTypes from "../../../../../../../../constant/furnishingTypes";
 import { AiOutlineArrowLeft } from "react-icons/ai";
 import LandlordLayout from "../../../../../../../../components/navigation/sidebar-landlord";
 import Image from "next/image";
+import AmenitiesSelector from "../../../../../../../../components/landlord/properties/unitAmenities";
 
 const EditUnit = () => {
   const router = useRouter();
@@ -24,6 +25,7 @@ const EditUnit = () => {
     secDeposit: "",
     advancedPayment: "",
     status: "unoccupied",
+    amenities: [],
   });
   const [newPhotos, setNewPhotos] = useState([]);
 
@@ -54,6 +56,8 @@ const EditUnit = () => {
             furnish: furnishingTypes.some((p) => p.value === unitData.furnish)
               ? unitData.furnish
               : "",
+            amenities:unitData.amenities?
+                unitData.amenities.split(",").map((amenities) => amenities.trim()):[],
           });
         } else {
           console.warn("No unit found for the given unit ID.");
@@ -82,6 +86,28 @@ const EditUnit = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  const handleAmenityChange = (amenity) => {
+    const currentAmenities = Array.isArray(formData.amenities)
+        ? formData.amenities
+        : [];
+    const amenityIndex = currentAmenities.indexOf(amenity);
+
+    let newAmenities;
+
+    if (amenityIndex > -1) {
+      newAmenities = [
+        ...currentAmenities.slice(0, amenityIndex),
+        ...currentAmenities.slice(amenityIndex + 1),
+      ];
+    } else {
+      // Amenity doesn't exist, so add it
+      newAmenities = [...currentAmenities, amenity];
+    }
+
+    setFormData((prev) => ({ ...prev, amenities: newAmenities }));
+    setProperty({ amenities: newAmenities });
   };
 
   // ✅ Handle file selection
@@ -273,6 +299,13 @@ const EditUnit = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="mb-6">
+            <AmenitiesSelector
+                selectedAmenities={formData.amenities}
+                onAmenityChange={handleAmenityChange}
+            />
           </div>
 
           {/* Bed Spacing */}
