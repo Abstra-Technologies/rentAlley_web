@@ -33,7 +33,6 @@ const PropertyListingPage = () => {
   const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
-    // Fetch session only if user/admin is not already available
     if (!user && !admin) {
       fetchSession();
     }
@@ -57,9 +56,6 @@ const PropertyListingPage = () => {
 
   useEffect(() => {
     if (user?.userType === "landlord") {
-      console.log(
-        "[DEBUG] Landlord detected. Starting verification & subscription checks."
-      );
       setIsVerified(null);
       setIsFetchingVerification(true);
 
@@ -69,10 +65,8 @@ const PropertyListingPage = () => {
           `/api/landlord/verification-upload/status?user_id=${user?.user_id}`
         )
         .then((response) => {
-          console.log("[DEBUG] Fetched Verification Status:", response.data);
           const status = response.data.verification_status || "";
           const isVerified = status.toLowerCase() === "verified";
-          console.log("[DEBUG] Interpreted isVerified:", isVerified);
           setIsVerified(isVerified);
         })
         .catch((err) => {
@@ -82,16 +76,11 @@ const PropertyListingPage = () => {
           );
         })
         .finally(() => {
-          console.log("[DEBUG] Verification status fetch completed.");
           setIsFetchingVerification(false);
         });
 
       // Subscription Checking
       setFetchingSubscription(true);
-      console.log(
-        "[DEBUG] Checking subscription for landlord_id:",
-        user?.landlord_id
-      );
 
       axios
         .get(`/api/landlord/subscription/active/${user?.landlord_id}`)
@@ -429,6 +418,7 @@ const PropertyListingPage = () => {
               </button>
             </div>
           ) : (
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map((property, index) => {
                 const isDisabled =

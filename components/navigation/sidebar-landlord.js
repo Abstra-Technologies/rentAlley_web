@@ -21,12 +21,12 @@ const menuItems = [
   {
     href: "/pages/landlord/property-listing",
     icon: Building,
-    label: "Property Listing",
+    label: "My Properties",
   },
   {
     href: "/pages/landlord/booking-appointment",
     icon: Calendar,
-    label: "Visit Schedule",
+    label: "My Bookings",
   },
   {
     href: "/pages/landlord/list_of_tenants",
@@ -40,12 +40,12 @@ const menuItems = [
     label: "Maintenance",
   },
   { href: "/pages/landlord/announcement", icon: Bell, label: "Announcements" },
-  { href: "/pages/landlord/billing", icon: CreditCard, label: "Billing" },
-  {
-    href: "/pages/landlord/payments",
-    icon: CreditCard,
-    label: "Payment History",
-  },
+  // { href: "/pages/landlord/billing", icon: CreditCard, label: "Billing" },
+  // {
+  //   href: "/pages/landlord/payments",
+  //   icon: CreditCard,
+  //   label: "Payment History",
+  // },
 
   { href: "/pages/commons/bug-report", icon: Bug, label: "Report a Bug" },
 ];

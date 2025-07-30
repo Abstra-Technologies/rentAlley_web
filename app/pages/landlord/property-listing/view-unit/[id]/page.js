@@ -18,6 +18,7 @@ import useAuthStore from "../../../../../../zustand/authStore";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FaCheckCircle } from "react-icons/fa";
+import PropertyDocumentsTab from "../../../../../../components/landlord//properties/PropertyDocumentsTab";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
@@ -40,10 +41,14 @@ const ViewUnitPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [hasBillingForMonth, setHasBillingForMonth] = useState(false);
   const [unitBillingStatus, setUnitBillingStatus] = useState({});
+  const [propertyDetails, setPropertyDetails] = useState(null);
+  const [activeTab, setActiveTab] = useState("units");
+
+
+
 
   useEffect(() => {
     if (!id) return;
-
     async function fetchBillingData_PropertyUtility() {
       try {
         const response = await axios.get(
@@ -85,6 +90,7 @@ const ViewUnitPage = () => {
       }
     }
     fetchBillingData_PropertyUtility();
+    fetchPropertyDetails();
   }, [id]);
 
  useEffect(() => {
@@ -184,8 +190,6 @@ useEffect(() => {
   fetchUnitBillingStatus();
 }, [units]);
 
-
-  
   const handleEditUnit = (unitId) => {
     router.push(
       `/pages/landlord/property-listing/view-unit/${id}/edit-unit/${unitId}`
@@ -277,6 +281,17 @@ useEffect(() => {
     }
   };
 
+  async function fetchPropertyDetails() {
+    try {
+      const response = await axios.get("/api/propertyListing/getPropDetailsById", {
+        params: { id },
+      });
+      setPropertyDetails(response.data.property);
+    } catch (error) {
+      console.error("Failed to fetch property details:", error);
+    }
+  }
+
   if (error)
     return (
       <LandlordLayout>
@@ -299,7 +314,7 @@ useEffect(() => {
             <h1 className="text-2xl font-bold text-blue-600">
               {isLoading
                 ? "Loading..."
-                : property?.property_name || "Property Details"}
+                : propertyDetails?.property_name || "Property Details"}
             </h1>
           </div>
           <p className="text-gray-600 mb-4">Manage units for this property</p>
@@ -365,13 +380,40 @@ useEffect(() => {
             )}
         </div>
 
+
+        <div className="flex gap-4 border-b border-gray-200 mb-6">
+          <button
+              onClick={() => setActiveTab("units")}
+              className={`pb-2 px-4 font-medium ${
+                  activeTab === "units"
+                      ? "border-b-2 border-blue-600 text-blue-600"
+                      : "text-gray-500 hover:text-gray-700"
+              }`}
+          >
+           Property Units
+          </button>
+          <button
+              onClick={() => setActiveTab("documents")}
+              className={`pb-2 px-4 font-medium ${
+                  activeTab === "documents"
+                      ? "border-b-2 border-blue-600 text-blue-600"
+                      : "text-gray-500 hover:text-gray-700"
+              }`}
+          >
+            Documents / Permits
+          </button>
+        </div>
+
+
+        {/* Tabbed part of the page section units, and property documents */}
+
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
             <HomeIcon className="h-5 w-5 mr-2 text-blue-600" />
             Available Units
           </h2>
-
-          {isLoading ? (
+          {activeTab === "units" && (
+          isLoading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-pulse flex space-x-4">
                 <div className="rounded-full bg-gray-200 h-12 w-12"></div>
@@ -544,8 +586,17 @@ useEffect(() => {
                 Add Your First Unit
               </button>
             </div>
+          )
           )}
+
         </div>
+
+        {activeTab === "documents" && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <PropertyDocumentsTab propertyId={id} />
+            </div>
+        )}
+
  {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -686,6 +737,7 @@ useEffect(() => {
             </div>
           </div>
         )}
+
       </div>
     </LandlordLayout>
   );
