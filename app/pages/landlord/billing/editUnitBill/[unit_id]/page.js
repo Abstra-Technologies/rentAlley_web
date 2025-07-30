@@ -35,7 +35,7 @@ export default function EditUnitBill() {
     const fetchCurrentMonthBill = async () => {
       try {
         const res = await fetch(
-          `/api/landlord/billing/getBillById?unit_id=${unit_id}`
+          `/api/landlord/billing/getUnitBillThisMonth?unit_id=${unit_id}`
         );
         const data = await res.json();
 
@@ -66,7 +66,7 @@ export default function EditUnitBill() {
     const fetchConcessionaireData = async () => {
       try {
         const res = await fetch(
-          `/api/landlord/billing/getConcessionaireRates?unit_id=${unit_id}`
+          `/api/landlord/billing/getUtilityRateThisMonth?unit_id=${unit_id}`
         );
         const concessionaireData = await res.json();
 
@@ -132,7 +132,7 @@ export default function EditUnitBill() {
     e.preventDefault();
 
     try {
-      const response = await fetch("/api/landlord/billing/updateBill", {
+      const response = await fetch("/api/landlord/billing/updateBilling", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ billing_id: bill.billing_id, ...formData }),
@@ -144,7 +144,7 @@ export default function EditUnitBill() {
           title: "Success!",
           text: "Billing updated successfully!",
         }).then(() => {
-          router.push(`/pages/landlord/billing`);
+          router.back();
         });
       } else {
         Swal.fire({
@@ -168,7 +168,7 @@ export default function EditUnitBill() {
     <LandlordLayout>
       <div className="max-w-xl mx-auto p-4 sm:p-6 bg-white rounded-xl shadow-sm">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">
-          Edit Billing for{" "}
+          Edit Billing  {unit_id} {" "}
           {new Date(bill.billing_period).toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
