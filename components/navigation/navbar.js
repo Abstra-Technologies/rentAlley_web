@@ -160,6 +160,7 @@ const Navbar = () => {
     if (user?.userType === "tenant") {
       return [
         { href: "/pages/tenant/my-unit", label: "My Unit" },
+        { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/tenant/visit-history", label: "My Schedule" },
         { href: "/pages/tenant/chat", label: "Chat" },
         { href: "/pages/tenant/inbox", label: "Inbox" },
