@@ -25,14 +25,16 @@ const LandlordPropertyChart = () => {
   const [totalReceivables, setTotalReceivables] = useState(0);
   const [utilityTrend, setUtilityTrend] = useState([]);
 
+  if (!user?.landlord_id) {
+    fetchSession();
+  }
+  const landlord_id = user.landlord_id;
+
   useEffect(() => {
-    if (!user) {
-      fetchSession();
-      return;
-    }
+
 
     fetch(
-      `/api/analytics/landlord/propertyVisitsPerMonth?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/propertyVisitsPerMonth?landlord_id=${landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -42,7 +44,7 @@ const LandlordPropertyChart = () => {
       .catch((error) => console.error("Error fetching visit data:", error));
 
     fetch(
-      `/api/analytics/landlord/occupancyRateProperty?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/occupancyRateProperty?landlord_id=${landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -60,7 +62,7 @@ const LandlordPropertyChart = () => {
       });
 
     fetch(
-      `/api/analytics/landlord/getMaintenanceCategories?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/getMaintenanceCategories?landlord_id=${landlord_id}`
     )
       .then((res) => res.json())
       .then((result) => {
@@ -75,7 +77,7 @@ const LandlordPropertyChart = () => {
       });
 
     fetch(
-      `/api/analytics/landlord/getPaymentsPerMonth?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/getPaymentsPerMonth?landlord_id=${landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -85,7 +87,7 @@ const LandlordPropertyChart = () => {
       .catch((error) => console.error("Error fetching payment data:", error));
 
     fetch(
-      `/api/analytics/landlord/getTotalTenants?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -95,7 +97,7 @@ const LandlordPropertyChart = () => {
       .catch((error) => console.error("Error fetching total tenants:", error));
 
     fetch(
-      `/api/analytics/landlord/getNumberofTotalMaintenance?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/getNumberofTotalMaintenance?landlord_id=${landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -107,7 +109,7 @@ const LandlordPropertyChart = () => {
       );
 
     fetch(
-      `/api/analytics/landlord/getTotalReceivables?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -119,7 +121,7 @@ const LandlordPropertyChart = () => {
       );
 
     fetch(
-      `/api/analytics/landlord/getMonthlyUtilityTrend?landlord_id=${user.landlord_id}`
+      `/api/analytics/landlord/getMonthlyUtilityTrend?landlord_id=${landlord_id}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -245,14 +247,12 @@ const LandlordPropertyChart = () => {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-            <div className="p-5 bg-white rounded-xl shadow-sm border-l-4 border-blue-500 transition-all hover:shadow-md">
-              <h3 className="text-sm font-medium text-gray-500">
-                Total Receivables
-              </h3>
-              <p className="text-2xl font-bold text-gray-800 mt-2">
-                ₱{totalReceivables?.toLocaleString() || 0}
-              </p>
-            </div>
+
+            <ScoreCard
+                title="Total Receivables for the Month"
+                value={totalReceivables}
+                borderColor="red"
+            />
 
             <ScoreCard
                 title="Total Maintenance Request"
@@ -270,11 +270,11 @@ const LandlordPropertyChart = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <TenantOccupationChart landlordId={user.landlord_id} />
+              <TenantOccupationChart landlordId={landlord_id} />
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <PropertyUtilitiesChart landlordId={user.landlord_id} />
+              <PropertyUtilitiesChart landlordId={landlord_id} />
             </div>
           </div>
 
@@ -299,7 +299,7 @@ const LandlordPropertyChart = () => {
 
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
              
-                  <PropertyTypeChart landlordId={user.landlord_id} />
+                  <PropertyTypeChart landlordId={landlord_id} />
             </div>
           </div>
 

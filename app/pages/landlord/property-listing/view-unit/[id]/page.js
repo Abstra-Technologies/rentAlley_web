@@ -499,7 +499,7 @@ useEffect(() => {
                         }}
                       >
                         <ClipboardDocumentListIcon className="h-4 w-4 mr-1" />
-                        Tenant Requests
+                        Prospective Leads
                       </button>
                       <div className="flex space-x-2">
                         <button
