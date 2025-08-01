@@ -19,6 +19,10 @@ export const metadata = {
     title: "Hestia Rent360",
     description: "Your App Description",
     manifest: '/manifest.json',
+    icons: {
+        icon: '/Hestia-logo-b.svg',
+        apple: '/Hestia-logo-b.svg'
+    },
 };
 
 export default function RootLayout({
@@ -31,7 +35,7 @@ export default function RootLayout({
         <Head>
             <link rel="manifest" href="/manifest.json" />
             <meta name="theme-color" content="#ffffff" />
-            <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+            <link rel="apple-touch-icon" href="/Hestia-logo-b.svg" />
         </Head>
         <body>
         <ClientLayout>
