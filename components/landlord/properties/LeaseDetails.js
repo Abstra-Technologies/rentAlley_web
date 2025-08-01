@@ -155,7 +155,7 @@ const LeaseDetails = ({ unitId }) => {
       setIsLoading(false);
     }
   };
-
+  //  change this function . wrong logic
   const handleDeleteLease = async () => {
     Swal.fire({
       title: "Are you sure?",
@@ -204,21 +204,21 @@ const LeaseDetails = ({ unitId }) => {
   };
 
   const handleSaveLease = async () => {
-    // if (!startDate || !endDate) {
-    //   Swal.fire("Error", "Start and end date are required", "error");
-    //   return;
-    // }
+    if (!startDate || !endDate) {
+      Swal.fire("Error", "Start and end date are required", "error");
+      return;
+    }
 
-    // if (endDate <= startDate) {
-    //   Swal.fire("Error", "End date must be after start date", "error");
-    //   return;
-    // }
+    if (endDate <= startDate) {
+      Swal.fire("Error", "End date must be after start date", "error");
+      return;
+    }
 
     try {
       // 1. Upload file if provided
       if (leaseFile) {
         const formData = new FormData();
-        formData.append("file", leaseFile);
+        formData.append("leaseFile", leaseFile);
         formData.append("unit_id", unitId || "");
 
         const uploadRes = await fetch("/api/leaseAgreement/uploadUnitLease", {
@@ -227,34 +227,37 @@ const LeaseDetails = ({ unitId }) => {
         });
 
         if (!uploadRes.ok) {
-          throw new Error(`File upload failed with status ${uploadRes.status}`);
+          const errorText = await uploadRes.text(); // get error details for debugging
+          console.error("Upload failed:", errorText);
+          Swal.fire("Error", "File upload failed", "error");
+          return; // STOP here if upload failed
         }
       }
 
-      // 2. Save dates
-      // const leaseDateRes = await fetch(
-      //   "/api/leaseAgreement/updateLeaseDateSet",
-      //   {
-      //     method: "PUT",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify({
-      //       unit_id: unitId,
-      //       start_date: startDate,
-      //       end_date: endDate,
-      //     }),
-      //   }
-      // );
+      // 2. Save dates only if upload (or no upload) succeeded
+      const leaseDateRes = await fetch(
+          "/api/leaseAgreement/updateLeaseDateSet",
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              unit_id: unitId,
+              start_date: startDate,
+              end_date: endDate,
+            }),
+          }
+      );
 
-      // if (!leaseDateRes.ok) {
-      //   throw new Error(
-      //     `Lease date update failed with status ${leaseDateRes.status}`
-      //   );
-      // }
+      if (!leaseDateRes.ok) {
+        const errorText = await leaseDateRes.text(); // optional for logging
+        console.error("Lease date update failed:", errorText);
+        throw new Error(`Lease date update failed with status ${leaseDateRes.status}`);
+      }
 
       Swal.fire("Success", "Lease saved successfully", "success");
-      fetchLeaseDetails?.(); // Optional refresh
+      fetchLeaseDetails?.();
     } catch (error) {
       console.error(error);
       Swal.fire("Error", "Failed to save lease", "error");
@@ -581,12 +584,12 @@ const LeaseDetails = ({ unitId }) => {
                           </Link>
                         </div>
                       </div>
-                      <button
-                        onClick={handleDeleteLease}
-                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                      >
-                        Delete Lease
-                      </button>
+                      {/*<button*/}
+                      {/*  onClick={handleDeleteLease}*/}
+                      {/*  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"*/}
+                      {/*>*/}
+                      {/*  Delete Lease*/}
+                      {/*</button>*/}
                     </div>
                   </div>
                 ) : (

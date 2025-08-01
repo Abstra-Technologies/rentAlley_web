@@ -1,7 +1,7 @@
 "use client";
 
-import SideNavProfile from "../../../../../components/navigation/sidebar-profile";
-import ProfilePage from "../../../../../components/Commons/profilePage";
+import SideNavProfile from "../../../../components/navigation/sidebar-profile";
+import ProfilePage from "../../../../components/Commons/profilePage";
 
 
 export default function userProfile() {
@@ -12,6 +12,5 @@ export default function userProfile() {
             <ProfilePage />
           </div>
         </div>
-
     );
 }

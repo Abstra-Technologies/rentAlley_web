@@ -11,9 +11,12 @@ import {
 } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
 import SideNavProfile from "../navigation/sidebar-profile";
+import useAuthStore from "../../zustand/authStore";
+import ChangePasswordModal from "../Commons/setttings/changePassword";
+import TwoFactorToggle from "../Commons/setttings/TwoFactorToggle";
 
 export default function SecurityPage() {
-  const { user, loading, error } = useAuth();
+  const { user, loading, error } = useAuthStore();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -152,75 +155,9 @@ export default function SecurityPage() {
         <h1 className="text-3xl font-semibold text-blue-600 mb-8">
           Security & Privacy
         </h1>
-        <div className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4 text-center">
-            Change Password
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Current Password
-              </label>
-              <input
-                type="password"
-                name="currentPassword"
-                value={formData.currentPassword}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-md"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                New Password
-              </label>
-              <input
-                type="password"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-md"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Re-type New Password
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full p-2 border rounded-md"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
-            >
-              Update Password
-            </button>
-          </form>
-
-
-
-
-          <div className="mt-6 p-4 border rounded-md">
-            <h2 className="text-xl font-semibold">Two-Factor Authentication</h2>
-            <p className="text-sm text-gray-600">
-              Enable or disable 2FA for added security.
-            </p>
-            <button
-              onClick={handle2FAToggle}
-              className={`mt-4 px-4 py-2 text-white rounded ${
-                user.is_2fa_enabled ? "bg-red-600" : "bg-green-600"
-              }`}
-            >
-              {user.is_2fa_enabled ? "Disable 2FA" : "Enable 2FA"}
-            </button>
-          </div>
+        <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md">
+          <ChangePasswordModal userId={user?.id} />
+          <TwoFactorToggle user_id={user.user_id} />
         </div>
       </div>
   );

@@ -12,6 +12,8 @@ import {
 import { Menu, X, History } from "lucide-react";
 import useAuthStore from "../../zustand/authStore";
 import { logEvent } from "../../utils/gtag";
+import { IoSettings } from "react-icons/io5";
+import { IoIosNotifications } from "react-icons/io";
 
 export default function SideNavProfile() {
   const { user } = useAuthStore();
@@ -24,14 +26,14 @@ export default function SideNavProfile() {
 
   const menuItems = [
     {
-      href: `/pages/${user?.userType}/profile/${user?.user_id}`,
+      href: `/pages/${user?.userType}/profile`,
       icon: UserIcon,
       label: "Profile",
       onClick: () =>
         logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1),
     },
     {
-      href: `/pages/${user?.userType}/securityPrivacy/${user?.user_id}`,
+      href: `/pages/${user?.userType}/securityPrivacy`,
       icon: ShieldCheckIcon,
       label: "Security & Privacy",
       onClick: () =>
@@ -41,6 +43,13 @@ export default function SideNavProfile() {
           "Clicked Security & Privacy Link",
           1
         ),
+    },
+    {
+      href: `/pages/commons/settings/${user?.user_id}`,
+      icon: IoIosNotifications,
+      label: "Notifications",
+      onClick: () =>
+          logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1),
     },
     ...(user?.userType === "landlord"
       ? [
@@ -52,16 +61,7 @@ export default function SideNavProfile() {
           },
         ]
       : []),
-    ...(user?.userType === "tenant"
-      ? [
-          {
-            href: "/pages/tenant/visit-history",
-            icon: History,
-            label: "Scheduled visits",
-            onClick: () => {},
-          },
-        ]
-      : []),
+
     {
       href: "#",
       icon: ArrowRightOnRectangleIcon,

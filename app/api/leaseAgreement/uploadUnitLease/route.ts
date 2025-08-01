@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const unit_id = formData.get("unit_id")?.toString();
-
+console.log('unit id', unit_id);
     if (!unit_id) {
       return NextResponse.json(
         { error: "unit_id is required" },
