@@ -36,7 +36,7 @@ const LeaseDetails = ({ unitId }) => {
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
-    const [leaseFile, setLeaseFile] = useState(null);
+  const [leaseFile, setLeaseFile] = useState(null);
 
   useEffect(() => {
     fetchLeaseDetails();
@@ -80,7 +80,7 @@ const LeaseDetails = ({ unitId }) => {
       console.error("Error fetching unit details:", error);
     }
   };
-//  Property Status Get
+  //  Property Status Get
   const fetchStatus = async () => {
     try {
       const response = await axios.get(
@@ -183,7 +183,11 @@ const LeaseDetails = ({ unitId }) => {
 
   const handleGenerateCode = async () => {
     if (!propertyName || !unitId) {
-      Swal.fire("Missing Info", "Property name or Unit ID is missing.", "error");
+      Swal.fire(
+        "Missing Info",
+        "Property name or Unit ID is missing.",
+        "error"
+      );
       return;
     }
 
@@ -200,41 +204,24 @@ const LeaseDetails = ({ unitId }) => {
   };
 
   const handleSaveLease = async () => {
-    if (!startDate || !endDate) {
-      Swal.fire("Error", "Start and end date are required", "error");
-      return;
-    }
+    // if (!startDate || !endDate) {
+    //   Swal.fire("Error", "Start and end date are required", "error");
+    //   return;
+    // }
 
-    if (endDate <= startDate) {
-      Swal.fire("Error", "End date must be after start date", "error");
-      return;
-    }
+    // if (endDate <= startDate) {
+    //   Swal.fire("Error", "End date must be after start date", "error");
+    //   return;
+    // }
 
     try {
-      // 1. Save dates using fetch
-      const leaseDateRes = await fetch("/api/leaseAgreement/updateLeaseDateSet", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          unit_id: unitId,
-          start_date: startDate,
-          end_date: endDate,
-        }),
-      });
-
-      if (!leaseDateRes.ok) {
-        throw new Error(`Lease date update failed with status ${leaseDateRes.status}`);
-      }
-
-      // 2. Upload file only if provided
+      // 1. Upload file if provided
       if (leaseFile) {
         const formData = new FormData();
         formData.append("file", leaseFile);
         formData.append("unit_id", unitId || "");
 
-        const uploadRes = await fetch("/api/leaseAgreement/upload", {
+        const uploadRes = await fetch("/api/leaseAgreement/uploadUnitLease", {
           method: "POST",
           body: formData,
         });
@@ -243,6 +230,28 @@ const LeaseDetails = ({ unitId }) => {
           throw new Error(`File upload failed with status ${uploadRes.status}`);
         }
       }
+
+      // 2. Save dates
+      // const leaseDateRes = await fetch(
+      //   "/api/leaseAgreement/updateLeaseDateSet",
+      //   {
+      //     method: "PUT",
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //     body: JSON.stringify({
+      //       unit_id: unitId,
+      //       start_date: startDate,
+      //       end_date: endDate,
+      //     }),
+      //   }
+      // );
+
+      // if (!leaseDateRes.ok) {
+      //   throw new Error(
+      //     `Lease date update failed with status ${leaseDateRes.status}`
+      //   );
+      // }
 
       Swal.fire("Success", "Lease saved successfully", "success");
       fetchLeaseDetails?.(); // Optional refresh
@@ -285,49 +294,57 @@ const LeaseDetails = ({ unitId }) => {
           </div>
         </div>
 
-
         {!tenant && (
-            <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-4 rounded-md mb-6">
-              <p className="font-semibold mb-2">No current tenant assigned to this unit.</p>
-              <p className="mb-4">
-                Share this invite code with your current tenant so they can register and be linked to the unit.
-              </p>
+          <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-4 rounded-md mb-6">
+            <p className="font-semibold mb-2">
+              No current tenant assigned to this unit.
+            </p>
+            <p className="mb-4">
+              Share this invite code with your current tenant so they can
+              register and be linked to the unit.
+            </p>
 
-              {!inviteCode ? (
+            {!inviteCode ? (
+              <button
+                onClick={handleGenerateCode}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium"
+              >
+                Generate Invite Code
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    readOnly
+                    value={inviteCode}
+                    className="w-full max-w-xs bg-white border border-gray-300 px-4 py-2 rounded text-gray-700 font-mono"
+                  />
                   <button
-                      onClick={handleGenerateCode}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium"
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteCode);
+                      Swal.fire(
+                        "Copied!",
+                        "Invite code copied to clipboard.",
+                        "success"
+                      );
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium"
                   >
-                    Generate Invite Code
+                    Copy Code
                   </button>
-              ) : (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <input
-                          type="text"
-                          readOnly
-                          value={inviteCode}
-                          className="w-full max-w-xs bg-white border border-gray-300 px-4 py-2 rounded text-gray-700 font-mono"
-                      />
-                      <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(inviteCode);
-                            Swal.fire("Copied!", "Invite code copied to clipboard.", "success");
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium"
-                      >
-                        Copy Code
-                      </button>
-                    </div>
-                    <button
-                        className="mt-4 text-blue-600 underline hover:text-blue-800"
-                        onClick={() => router.push(`/landlord/prospectives/${unitId}`)}
-                    >
-                      Or view prospective tenants
-                    </button>
-                  </>
-              )}
-            </div>
+                </div>
+                <button
+                  className="mt-4 text-blue-600 underline hover:text-blue-800"
+                  onClick={() =>
+                    router.push(`/landlord/prospectives/${unitId}`)
+                  }
+                >
+                  Or view prospective tenants
+                </button>
+              </>
+            )}
+          </div>
         )}
         {/* tabs */}
         <div className="flex border-b">
@@ -538,7 +555,6 @@ const LeaseDetails = ({ unitId }) => {
                       />
                     </div>
                   </div>
-
                 </div>
 
                 {lease?.agreement_url ? (
@@ -583,8 +599,8 @@ const LeaseDetails = ({ unitId }) => {
                 )}
 
                 <button
-                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded ml-2"
-                    onClick={() => handleSaveLease()}
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded ml-2"
+                  onClick={() => handleSaveLease()}
                 >
                   Save Lease
                 </button>

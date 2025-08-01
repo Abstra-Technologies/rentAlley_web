@@ -29,12 +29,18 @@ export async function POST(req: NextRequest) {
     const unit_id = formData.get("unit_id")?.toString();
 
     if (!unit_id) {
-      return NextResponse.json({ error: "unit_id is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "unit_id is required" },
+        { status: 400 }
+      );
     }
 
     const file = formData.get("leaseFile") as File | null;
     if (!file) {
-      return NextResponse.json({ error: "No lease file uploaded" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No lease file uploaded" },
+        { status: 400 }
+      );
     }
 
     const connection = await db.getConnection();
@@ -99,7 +105,9 @@ export async function POST(req: NextRequest) {
     await connection.commit();
     connection.release();
 
-    return NextResponse.json({ message: "Lease agreement uploaded successfully." });
+    return NextResponse.json({
+      message: "Lease agreement uploaded successfully.",
+    });
   } catch (error: any) {
     console.error("Upload Error:", error);
     return NextResponse.json(
