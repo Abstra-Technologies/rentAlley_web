@@ -25,8 +25,14 @@ const LandlordPropertyChart = () => {
   const [totalReceivables, setTotalReceivables] = useState(0);
   const [utilityTrend, setUtilityTrend] = useState([]);
 
+  useEffect(() => {
+    if (!user?.landlord_id) {
+      fetchSession();
+    }
+  }, [user, fetchSession]);
+
   if (!user?.landlord_id) {
-    fetchSession();
+    return <LoadingScreen />; // Or return null while waiting
   }
   const landlord_id = user.landlord_id;
 
