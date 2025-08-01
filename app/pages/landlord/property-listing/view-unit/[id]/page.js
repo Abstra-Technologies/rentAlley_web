@@ -359,12 +359,13 @@ useEffect(() => {
           >
             <span>Property Utility</span>
           </button>
-{hasBillingForMonth && (
-  <div className="flex items-center text-green-600 gap-1">
-<FaCheckCircle size='20' />
-    <span className="text-sm">Utility bill already issued for this month</span>
-  </div>
-)}
+
+          {hasBillingForMonth && (
+            <div className="flex items-center text-green-600 gap-1">
+          <FaCheckCircle size='20' />
+              <span className="text-sm">Utility bill already issued for this month</span>
+            </div>
+          )}
 
           {subscription &&
             units?.length >= subscription.listingLimits.maxUnits && (
@@ -428,7 +429,6 @@ useEffect(() => {
             </div>
           ) : units && units.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              
               {units.map((unit) => (
                 <div
                   key={unit?.unit_id}

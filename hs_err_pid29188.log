@@ -18,7 +18,7 @@
 #     to set the Java Heap base and to place the Java Heap above 32GB virtual address.
 # This output file may be truncated or incomplete.
 #
-#  Out of Memory Error (os_windows.cpp:3898), pid=24972, tid=26648
+#  Out of Memory Error (os_windows.cpp:3898), pid=29188, tid=29736
 #
 # JRE version:  (21.0.6+9) (build )
 # Java VM: OpenJDK 64-Bit Server VM (21.0.6+9-b631.42, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
@@ -30,13 +30,13 @@
 Command Line: git4idea.http.GitAskPassApp Username for 'https://github.com': 
 
 Host: AMD Ryzen 9 5900HS with Radeon Graphics        , 16 cores, 15G,  Windows 11 , 64 bit Build 26100 (10.0.26100.2702)
-Time: Thu Jul 31 10:40:00 2025 Malay Peninsula Standard Time elapsed time: 0.014148 seconds (0d 0h 0m 0s)
+Time: Fri Aug  1 09:00:33 2025 Malay Peninsula Standard Time elapsed time: 0.023967 seconds (0d 0h 0m 0s)
 
 ---------------  T H R E A D  ---------------
 
-Current thread (0x000001a19cd2d9e0):  JavaThread "Unknown thread" [_thread_in_vm, id=26648, stack(0x00000073dbc00000,0x00000073dbd00000) (1024K)]
+Current thread (0x000001b4775a7180):  JavaThread "Unknown thread" [_thread_in_vm, id=29736, stack(0x0000002cddf00000,0x0000002cde000000) (1024K)]
 
-Stack: [0x00000073dbc00000,0x00000073dbd00000]
+Stack: [0x0000002cddf00000,0x0000002cde000000]
 Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
 V  [jvm.dll+0x6e5d39]
 V  [jvm.dll+0x8c4133]
@@ -65,22 +65,22 @@ C  [ntdll.dll+0xdf36c]
 ---------------  P R O C E S S  ---------------
 
 Threads class SMR info:
-_java_thread_list=0x00007ffb59e8a148, length=0, elements={
+_java_thread_list=0x00007ffdcc6ca148, length=0, elements={
 }
 
 Java Threads: ( => current thread )
 Total: 0
 
 Other Threads:
-  0x000001a19f2046b0 WorkerThread "GC Thread#0"                     [id=26772, stack(0x00000073dbd00000,0x00000073dbe00000) (1024K)]
-  0x000001a19f215a90 ConcurrentGCThread "G1 Main Marker"            [id=28100, stack(0x00000073dbe00000,0x00000073dbf00000) (1024K)]
-  0x000001a19f216c30 WorkerThread "G1 Conc#0"                       [id=4520, stack(0x00000073dbf00000,0x00000073dc000000) (1024K)]
+  0x000001b4776043b0 WorkerThread "GC Thread#0"                     [id=30388, stack(0x0000002cde000000,0x0000002cde100000) (1024K)]
+  0x000001b477614910 ConcurrentGCThread "G1 Main Marker"            [id=3744, stack(0x0000002cde100000,0x0000002cde200000) (1024K)]
+  0x000001b477617040 WorkerThread "G1 Conc#0"                       [id=31952, stack(0x0000002cde200000,0x0000002cde300000) (1024K)]
 
-[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffb59578de7]
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffdcbdb8de7]
 VM state: not at safepoint (not fully initialized)
 
 VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
-[0x00007ffb59efeb30] Heap_lock - owner thread: 0x000001a19cd2d9e0
+[0x00007ffdcc73eb30] Heap_lock - owner thread: 0x000001b4775a7180
 
 Heap address: 0x0000000709800000, size: 3944 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
 
@@ -99,16 +99,16 @@ Heap:
 
 Heap Regions: E=young(eden), S=young(survivor), O=old, HS=humongous(starts), HC=humongous(continues), CS=collection set, F=free, TAMS=top-at-mark-start, PB=parsable bottom
 
-Card table byte_map: [0x000001a1b3170000,0x000001a1b3930000] _byte_map_base: 0x000001a1af924000
+Card table byte_map: [0x000001b47c560000,0x000001b47cd20000] _byte_map_base: 0x000001b478d14000
 
-Marking Bits: (CMBitMap*) 0x000001a19f204cb0
- Bits: [0x000001a1b3930000, 0x000001a1b76d0000)
+Marking Bits: (CMBitMap*) 0x000001b4776049b0
+ Bits: [0x000001b40f000000, 0x000001b412da0000)
 
 GC Heap History (0 events):
 No events
 
 Dll operation events (1 events):
-Event: 0.009 Loaded shared library C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\java.dll
+Event: 0.015 Loaded shared library C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\java.dll
 
 Deoptimization events (0 events):
 No events
@@ -142,41 +142,41 @@ No events
 
 
 Dynamic libraries:
-0x00007ff6e29d0000 - 0x00007ff6e29da000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\java.exe
-0x00007ffbd2b60000 - 0x00007ffbd2dc3000 	C:\WINDOWS\SYSTEM32\ntdll.dll
-0x00007ffbd0b10000 - 0x00007ffbd0bd8000 	C:\WINDOWS\System32\KERNEL32.DLL
-0x00007ffbd0230000 - 0x00007ffbd05e4000 	C:\WINDOWS\System32\KERNELBASE.dll
-0x00007ffbca700000 - 0x00007ffbca79c000 	C:\WINDOWS\SYSTEM32\apphelp.dll
-0x00007ffbd0820000 - 0x00007ffbd096b000 	C:\WINDOWS\System32\ucrtbase.dll
-0x00007ffbc8920000 - 0x00007ffbc893b000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\VCRUNTIME140.dll
-0x00007ffbb2ad0000 - 0x00007ffbb2ae8000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\jli.dll
-0x00007ffbd16e0000 - 0x00007ffbd18a9000 	C:\WINDOWS\System32\USER32.dll
-0x00007ffbd0970000 - 0x00007ffbd0997000 	C:\WINDOWS\System32\win32u.dll
-0x00007ffbbfdc0000 - 0x00007ffbc0050000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.2702_none_3e069454e335fc5e\COMCTL32.dll
-0x00007ffbd2910000 - 0x00007ffbd293a000 	C:\WINDOWS\System32\GDI32.dll
-0x00007ffbd1630000 - 0x00007ffbd16d9000 	C:\WINDOWS\System32\msvcrt.dll
-0x00007ffbcffa0000 - 0x00007ffbd00cb000 	C:\WINDOWS\System32\gdi32full.dll
-0x00007ffbd05f0000 - 0x00007ffbd0693000 	C:\WINDOWS\System32\msvcp_win.dll
-0x00007ffbd1000000 - 0x00007ffbd102f000 	C:\WINDOWS\System32\IMM32.DLL
-0x00007ffbc89f0000 - 0x00007ffbc89fc000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\vcruntime140_1.dll
-0x00007ffbaca50000 - 0x00007ffbacadd000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\msvcp140.dll
-0x00007ffb59230000 - 0x00007ffb59ff1000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\server\jvm.dll
-0x00007ffbd2850000 - 0x00007ffbd2903000 	C:\WINDOWS\System32\ADVAPI32.dll
-0x00007ffbd2560000 - 0x00007ffbd2606000 	C:\WINDOWS\System32\sechost.dll
-0x00007ffbd1a50000 - 0x00007ffbd1b66000 	C:\WINDOWS\System32\RPCRT4.dll
-0x00007ffbd23e0000 - 0x00007ffbd2454000 	C:\WINDOWS\System32\WS2_32.dll
-0x00007ffbcfda0000 - 0x00007ffbcfdee000 	C:\WINDOWS\SYSTEM32\POWRPROF.dll
-0x00007ffbcd780000 - 0x00007ffbcd7b6000 	C:\WINDOWS\SYSTEM32\WINMM.dll
-0x00007ffbcb1c0000 - 0x00007ffbcb1cb000 	C:\WINDOWS\SYSTEM32\VERSION.dll
-0x00007ffbcfd80000 - 0x00007ffbcfd94000 	C:\WINDOWS\SYSTEM32\UMPDC.dll
-0x00007ffbcece0000 - 0x00007ffbcecfa000 	C:\WINDOWS\SYSTEM32\kernel.appcore.dll
-0x00007ffbc88d0000 - 0x00007ffbc88da000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\jimage.dll
-0x00007ffbcd4d0000 - 0x00007ffbcd711000 	C:\WINDOWS\SYSTEM32\DBGHELP.DLL
-0x00007ffbd0c60000 - 0x00007ffbd0fde000 	C:\WINDOWS\System32\combase.dll
-0x00007ffbd2940000 - 0x00007ffbd2a16000 	C:\WINDOWS\System32\OLEAUT32.dll
-0x00007ffbcd740000 - 0x00007ffbcd779000 	C:\WINDOWS\SYSTEM32\dbgcore.DLL
-0x00007ffbd0190000 - 0x00007ffbd0229000 	C:\WINDOWS\System32\bcryptPrimitives.dll
-0x00007ffbbfb30000 - 0x00007ffbbfb50000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\java.dll
+0x00007ff685fd0000 - 0x00007ff685fda000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\java.exe
+0x00007ffe47720000 - 0x00007ffe47983000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ffe46880000 - 0x00007ffe46948000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007ffe45070000 - 0x00007ffe45424000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x00007ffe40ec0000 - 0x00007ffe40f5c000 	C:\WINDOWS\SYSTEM32\apphelp.dll
+0x00007ffe44e60000 - 0x00007ffe44fab000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007ffe2e6c0000 - 0x00007ffe2e6db000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\VCRUNTIME140.dll
+0x00007ffe33c00000 - 0x00007ffe33c18000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\jli.dll
+0x00007ffe466b0000 - 0x00007ffe46879000 	C:\WINDOWS\System32\USER32.dll
+0x00007ffe44fb0000 - 0x00007ffe44fd7000 	C:\WINDOWS\System32\win32u.dll
+0x00007ffe2fdf0000 - 0x00007ffe30080000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.2702_none_3e069454e335fc5e\COMCTL32.dll
+0x00007ffe470c0000 - 0x00007ffe470ea000 	C:\WINDOWS\System32\GDI32.dll
+0x00007ffe45430000 - 0x00007ffe4555b000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007ffe45560000 - 0x00007ffe45609000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ffe44ad0000 - 0x00007ffe44b73000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00007ffe474d0000 - 0x00007ffe474ff000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007ffe391a0000 - 0x00007ffe391ac000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\vcruntime140_1.dll
+0x00007ffdcdd50000 - 0x00007ffdcdddd000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\msvcp140.dll
+0x00007ffdcba70000 - 0x00007ffdcc831000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\server\jvm.dll
+0x00007ffe46df0000 - 0x00007ffe46ea3000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007ffe46eb0000 - 0x00007ffe46f56000 	C:\WINDOWS\System32\sechost.dll
+0x00007ffe46590000 - 0x00007ffe466a6000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00007ffe47560000 - 0x00007ffe475d4000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007ffe44960000 - 0x00007ffe449ae000 	C:\WINDOWS\SYSTEM32\POWRPROF.dll
+0x00007ffe417c0000 - 0x00007ffe417f6000 	C:\WINDOWS\SYSTEM32\WINMM.dll
+0x00007ffe3de90000 - 0x00007ffe3de9b000 	C:\WINDOWS\SYSTEM32\VERSION.dll
+0x00007ffe44940000 - 0x00007ffe44954000 	C:\WINDOWS\SYSTEM32\UMPDC.dll
+0x00007ffe43b80000 - 0x00007ffe43b9a000 	C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+0x00007ffe30300000 - 0x00007ffe3030a000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\jimage.dll
+0x00007ffe41530000 - 0x00007ffe41771000 	C:\WINDOWS\SYSTEM32\DBGHELP.DLL
+0x00007ffe45e70000 - 0x00007ffe461ee000 	C:\WINDOWS\System32\combase.dll
+0x00007ffe45610000 - 0x00007ffe456e6000 	C:\WINDOWS\System32\OLEAUT32.dll
+0x00007ffe41780000 - 0x00007ffe417b9000 	C:\WINDOWS\SYSTEM32\dbgcore.DLL
+0x00007ffe44b80000 - 0x00007ffe44c19000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+0x00007ffe2a260000 - 0x00007ffe2a280000 	C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\java.dll
 
 dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
 symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin;C:\WINDOWS\SYSTEM32;C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.2702_none_3e069454e335fc5e;C:\Program Files\JetBrains\WebStorm 2024.3.3\jbr\bin\server
@@ -236,7 +236,7 @@ JNI global refs: 0, weak refs: 0
 JNI global refs memory usage: 0, weak refs: 0
 
 Process memory usage:
-Resident Set Size: 13948K (0% of 16153756K total physical memory with 2195352K free physical memory)
+Resident Set Size: 13932K (0% of 16153756K total physical memory with 2004600K free physical memory)
 
 OOME stack traces (most recent first):
 Classloader memory used:
@@ -245,17 +245,17 @@ Classloader memory used:
 
 OS:
  Windows 11 , 64 bit Build 26100 (10.0.26100.2702)
-OS uptime: 0 days 0:51 hours
+OS uptime: 0 days 0:42 hours
 Hyper-V role detected
 
 CPU: total 16 (initial active 16) (16 cores per cpu, 2 threads per core) family 25 model 80 stepping 0 microcode 0xa50000c, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4a, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, sha, fma, vzeroupper, clflush, clflushopt, hv, rdtscp, rdpid, fsrm, f16c, cet_ss
 Processor Information for the first 16 processors :
   Max Mhz: 3301, Current Mhz: 3301, Mhz Limit: 3301
 
-Memory: 4k page, system-wide physical 15775M (2143M free)
-TotalPageFile size 27803M (AvailPageFile size 59M)
+Memory: 4k page, system-wide physical 15775M (1957M free)
+TotalPageFile size 29197M (AvailPageFile size 29M)
 current process WorkingSet (physical memory assigned to process): 13M, peak: 13M
-current process commit charge ("private bytes"): 71M, peak: 318M
+current process commit charge ("private bytes"): 70M, peak: 318M
 
 vm_info: OpenJDK 64-Bit Server VM (21.0.6+9-b631.42) for windows-amd64 JRE (21.0.6+9-b631.42), built on 2025-04-08 by "builduser" with MS VC++ 16.10 / 16.11 (VS2019)
 

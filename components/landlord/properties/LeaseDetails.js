@@ -36,6 +36,7 @@ const LeaseDetails = ({ unitId }) => {
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
+    const [leaseFile, setLeaseFile] = useState(null);
 
   useEffect(() => {
     fetchLeaseDetails();
@@ -43,8 +44,6 @@ const LeaseDetails = ({ unitId }) => {
     fetchStatus();
     fetchUnitDetails();
   }, [unitId]);
-
-
 
   const formatDate = (dateString) => {
     if (!dateString) {
@@ -136,23 +135,6 @@ const LeaseDetails = ({ unitId }) => {
     }
   };
 
-  const handleFileUpload = async (file) => {
-    const formData = new FormData();
-    formData.append("leaseFile", file);
-    formData.append("unit_id", unitId);
-
-    try {
-      await axios.post(`/api/leaseAgreement/uploadUnitLease`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      Swal.fire("Success", "Lease agreement uploaded successfully", "success");
-      fetchLeaseDetails();
-    } catch (error) {
-      console.error("Error uploading lease file:", error);
-      Swal.fire("Error", "Failed to upload lease agreement", "error");
-    }
-  };
-
   const fetchTenantDetails = async () => {
     setIsLoading(true);
     try {
@@ -171,42 +153,6 @@ const LeaseDetails = ({ unitId }) => {
       setError("Failed to load tenant information");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  //  update start and end date will ttrigger to active lease when filled.
-  const handleUpdateLease = async () => {
-    if (!startDate || !endDate) {
-      Swal.fire({
-        title: "Error",
-        text: "Start date and End date cannot be empty!",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
-
-    if (endDate <= startDate) {
-      Swal.fire({
-        title: "Error",
-        text: "End date must be after the start date!",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
-
-    try {
-await axios.put(`/api/leaseAgreement/updateLeaseDates`, {
-  unit_id: unitId,
-  start_date: startDate,
-  end_date: endDate,
-});
-      Swal.fire("Success", "Lease dates updated successfully", "success");
-      fetchLeaseDetails();
-    } catch (error) {
-      console.error("Error updating lease:", error);
-      Swal.fire("Error", "Failed to update lease dates", "error");
     }
   };
 
@@ -250,6 +196,59 @@ await axios.put(`/api/leaseAgreement/updateLeaseDates`, {
     } catch (err) {
       console.error("Error generating invite code:", err);
       Swal.fire("Error", "Failed to generate invite code", "error");
+    }
+  };
+
+  const handleSaveLease = async () => {
+    if (!startDate || !endDate) {
+      Swal.fire("Error", "Start and end date are required", "error");
+      return;
+    }
+
+    if (endDate <= startDate) {
+      Swal.fire("Error", "End date must be after start date", "error");
+      return;
+    }
+
+    try {
+      // 1. Save dates using fetch
+      const leaseDateRes = await fetch("/api/leaseAgreement/updateLeaseDateSet", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          unit_id: unitId,
+          start_date: startDate,
+          end_date: endDate,
+        }),
+      });
+
+      if (!leaseDateRes.ok) {
+        throw new Error(`Lease date update failed with status ${leaseDateRes.status}`);
+      }
+
+      // 2. Upload file only if provided
+      if (leaseFile) {
+        const formData = new FormData();
+        formData.append("file", leaseFile);
+        formData.append("unit_id", unitId || "");
+
+        const uploadRes = await fetch("/api/leaseAgreement/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error(`File upload failed with status ${uploadRes.status}`);
+        }
+      }
+
+      Swal.fire("Success", "Lease saved successfully", "success");
+      fetchLeaseDetails?.(); // Optional refresh
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "Failed to save lease", "error");
     }
   };
 
@@ -330,11 +329,7 @@ await axios.put(`/api/leaseAgreement/updateLeaseDates`, {
               )}
             </div>
         )}
-
-
-
-
-
+        {/* tabs */}
         <div className="flex border-b">
           <button
             className={`px-4 py-3 font-medium text-sm ${
@@ -370,7 +365,6 @@ await axios.put(`/api/leaseAgreement/updateLeaseDates`, {
       </div>
 
       {activeTab === "details" && (
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
@@ -544,12 +538,7 @@ await axios.put(`/api/leaseAgreement/updateLeaseDates`, {
                       />
                     </div>
                   </div>
-                  <button
-                    onClick={handleUpdateLease}
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4"
-                  >
-                    Update Lease Dates
-                  </button>
+
                 </div>
 
                 {lease?.agreement_url ? (
@@ -589,9 +578,16 @@ await axios.put(`/api/leaseAgreement/updateLeaseDates`, {
                     <p className="text-sm text-gray-500 mb-2">
                       Upload Lease Agreement:
                     </p>
-                    <LeaseUpload onFileUpload={handleFileUpload} />
+                    <LeaseUpload setLeaseFile={setLeaseFile} />
                   </div>
                 )}
+
+                <button
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded ml-2"
+                    onClick={() => handleSaveLease()}
+                >
+                  Save Lease
+                </button>
 
                 <div className="mt-6 border-t pt-4">
                   <p className="text-sm text-gray-500 mb-2">Unit Status:</p>
