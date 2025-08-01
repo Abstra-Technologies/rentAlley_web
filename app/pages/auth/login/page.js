@@ -190,7 +190,7 @@ function Login() {
     <>
       <div className="relative flex justify-center items-center min-h-screen bg-gray-100 overflow-hidden">
         <Image
-          src="/Hestia-logo-b.svg"
+          src="/images/hero-section.jpeg"
           alt="Cityscape view of high-rise buildings"
           fill
           className="absolute inset-0 object-cover brightness-75"
@@ -200,7 +200,7 @@ function Login() {
         <div className="relative z-10 bg-white p-10 rounded-2xl shadow-lg w-full max-w-lg">
           <div className="flex justify-center mb-6">
             <Image
-              src="/hestia-logo-b.svg"
+              src="/Hestia-logo-b.svg"
               alt="Hestia Logo blue"
               width={80}
               height={60}
