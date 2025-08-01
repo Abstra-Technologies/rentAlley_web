@@ -29,8 +29,6 @@ const useAuthStore = create(
             }
           };
 
-    
-
           return {
             user_id: data.user_id || null,
             firstName: safeParse(data.firstName)

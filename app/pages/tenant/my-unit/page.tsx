@@ -9,6 +9,7 @@ import TenantOutsidePortalNav from "../../../../components/navigation/TenantOuts
 import { ChatBubbleLeftRightIcon, PencilSquareIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { IoChatboxEllipsesSharp } from "react-icons/io5";
+import InstallPrompt from "@/components/Commons/installPrompt";
 
 interface Unit {
     unit_id: string;
