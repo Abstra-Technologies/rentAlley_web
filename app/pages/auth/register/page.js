@@ -47,14 +47,15 @@ const registerSchema = z
       .regex(/^\d{11}$/, "Mobile Number must be 11 digits"),
     email: z.string().email("Invalid email address"),
     password: z
-      .string()
-      .min(8, "Password must be 8 characters long")
-      .refine(
-        (value) => /^[a-zA-Z0-9]+$/.test(value),
-        "Password must contain only letters and numbers"
-      ),
+        .string()
+        .min(8, "Password must be at least 8 characters long")
+        // Allow any character, but you can refine further if needed
+        .refine(
+            (value) => /^[\w!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(value),
+            "Password contains invalid characters"
+        ),
 
-    confirmPassword: z.string().min(6, "Confirm Password must be the same."),
+    confirmPassword: z.string().min(8, "Confirm Password must be the same."),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

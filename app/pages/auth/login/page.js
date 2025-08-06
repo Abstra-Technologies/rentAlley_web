@@ -9,6 +9,7 @@ import useAuthStore from "../../../../zustand/authStore";
 import { logEvent } from "../../../../utils/gtag";
 import Footer from "../../../../components/navigation/footer";
 import Image from "next/image";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -31,6 +32,9 @@ function Login() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+  const [captchaToken, setCaptchaToken] = useState(null);
+
+
   const redirectBasedOnUserType = async () => {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
@@ -117,7 +121,10 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    if (!captchaToken) {
+      Swal.fire("CAPTCHA Required", "Please verify you're not a robot.", "warning");
+      return;
+    }
     logEvent(
       "Login Attempt",
       "User Interaction",
@@ -265,6 +272,14 @@ function Login() {
                 Forgot Password?
               </Link>
             </p>
+
+            <div className="flex justify-center mt-4">
+              <ReCAPTCHA
+                  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "your-site-key"}
+                  onChange={(token) => setCaptchaToken(token)}
+              />
+            </div>
+
 
             <button
               type="submit"

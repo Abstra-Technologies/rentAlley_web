@@ -72,7 +72,7 @@ export default function VerifyOTP() {
       const userType = response.data.userType;
       setTimeout(() => {
         if (userType === "tenant") {
-          router.push("/");
+          router.push("/pages/tenant/my-unit");
         } else if (userType === "landlord") {
           router.push("/pages/landlord/dashboard");
         }

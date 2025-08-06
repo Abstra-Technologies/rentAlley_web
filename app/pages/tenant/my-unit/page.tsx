@@ -50,7 +50,7 @@ export default function MyUnit() {
                 const res = await axios.get(`/api/tenant/activeRent?tenantId=${user?.tenant_id}`);
                 setUnits(res.data);
             } catch (err: any) {
-                Swal.fire("Error", err.response?.data?.message || "Failed to load units", "error");
+                Swal.fire("Warning", err.response?.data?.message || "Failed to load units", "warning");
             } finally {
                 setLoading(false);
             }
