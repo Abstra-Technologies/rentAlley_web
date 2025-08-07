@@ -62,6 +62,40 @@ export default function MyUnit() {
 
     if (loading) return <p className="text-center mt-10">Loading your units...</p>;
 
+    const handleUploadProof = async (unitId: string) => {
+        const { value: file } = await Swal.fire({
+            title: "Upload Proof of Payment",
+            input: "file",
+            inputAttributes: {
+                accept: "image/*,application/pdf",
+                "aria-label": "Upload your payment proof",
+            },
+            showCancelButton: true,
+            confirmButtonText: "Upload",
+        });
+
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("unit_id", unitId);
+        formData.append("tenant_id", user?.tenant_id || "");
+
+        try {
+            const res = await axios.post("/api/tenant/payment/uploadProofPayment", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (res.status === 200) {
+                Swal.fire("Uploaded", "Your proof of payment has been submitted!", "success");
+            } else {
+                throw new Error("Upload failed");
+            }
+        } catch (err) {
+            console.error(err);
+            Swal.fire("Error", "Failed to upload proof of payment.", "error");
+        }
+    };
 
     const handleUnitPayment = async (unitId: string) => {
         const unit = units.find(u => u.unit_id === unitId);
@@ -205,12 +239,23 @@ export default function MyUnit() {
                                             )}
 
                                             {(!unit.is_security_deposit_paid || !unit.is_advance_payment_paid) ? (
-                                                <button
-                                                    onClick={() => handleUnitPayment(unit?.unit_id)}
-                                                    className="mt-2 w-full py-2 px-4 text-white bg-green-600 rounded-lg hover:bg-green-700 transition"
-                                                >
-                                                    Pay through Maya
-                                                </button>
+                                                <div className="mt-2 space-y-2">
+                                                    {/* Pay through Maya button */}
+                                                    <button
+                                                        onClick={() => handleUnitPayment(unit?.unit_id)}
+                                                        className="w-full py-2 px-4 text-white bg-green-600 rounded-lg hover:bg-green-700 transition"
+                                                    >
+                                                        Pay through Maya
+                                                    </button>
+
+                                                    {/* Upload Proof of Payment button */}
+                                                    <button
+                                                        onClick={() => handleUploadProof(unit?.unit_id)}
+                                                        className="w-full py-2 px-4 text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition"
+                                                    >
+                                                        Upload Proof of Payment
+                                                    </button>
+                                                </div>
                                             ) : (
                                                 <button
                                                     onClick={() => router.push(`/pages/tenant/rentalPortal/${unit?.agreement_id}`)}

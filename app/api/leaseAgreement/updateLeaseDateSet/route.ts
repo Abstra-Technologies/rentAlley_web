@@ -17,8 +17,6 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        console.log(`startdate ${start_date}`)
-
         const startDate = new Date(start_date);
         const endDate = new Date(end_date);
 
@@ -29,34 +27,51 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        const [tenantRows] = await connection.execute(
-            "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
-            [unit_id]
-        );
-console.log('teenant rows:', tenantRows);
-        // @ts-ignore
-        if (tenantRows.length === 0) {
-            return NextResponse.json(
-                { error: "No approved tenant found for this unit" },
-                { status: 404 }
-            );
-        }
-
-        // @ts-ignore
-        const tenant_id = tenantRows[0].tenant_id;
-console.log('tenant_id:', tenant_id);
         await connection.beginTransaction();
 
-        const [result] = await connection.execute(
-            `UPDATE LeaseAgreement 
-       SET start_date = ?, end_date = ?, status = 'active' 
-       WHERE unit_id = ? AND tenant_id = ?`,
+        // 1. Try to get tenant_id from LeaseAgreement (pending or draft)
+        const [leaseRows]: any = await connection.execute(
+            `SELECT tenant_id FROM LeaseAgreement 
+             WHERE unit_id = ? AND status IN ('pending') 
+             LIMIT 1`,
+            [unit_id]
+        );
+
+        let tenant_id: string | null = null;
+
+        if (leaseRows.length > 0) {
+            tenant_id = leaseRows[0].tenant_id;
+            console.log('Using tenant_id from LeaseAgreement:', tenant_id);
+        } else {
+            // 2. Fallback to ProspectiveTenant
+            const [prospectiveRows]: any = await connection.execute(
+                `SELECT tenant_id FROM ProspectiveTenant 
+                 WHERE unit_id = ? AND status = 'approved' 
+                 LIMIT 1`,
+                [unit_id]
+            );
+
+            if (prospectiveRows.length === 0) {
+                return NextResponse.json(
+                    { error: "No pending lease or approved tenant found" },
+                    { status: 404 }
+                );
+            }
+
+            tenant_id = prospectiveRows[0].tenant_id;
+            console.log('Using tenant_id from ProspectiveTenant:', tenant_id);
+        }
+
+        // Proceed with updating LeaseAgreement
+        const [result]: any = await connection.execute(
+            `UPDATE LeaseAgreement
+             SET start_date = ?, end_date = ?, status = 'active'
+             WHERE unit_id = ? AND tenant_id = ?`,
             [start_date, end_date, unit_id, tenant_id]
         );
 
         await connection.commit();
 
-        // @ts-ignore
         if (result.affectedRows === 0) {
             return NextResponse.json(
                 { error: "No lease agreement found to update" },

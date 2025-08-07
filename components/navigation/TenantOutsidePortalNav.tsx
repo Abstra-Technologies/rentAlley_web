@@ -1,5 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
+import { MdOutlineRssFeed } from "react-icons/md";
 
 import Link from 'next/link';
 import {
@@ -20,6 +21,9 @@ export default function TenantOutsidePortalNav() {
         router.push('/pages/tenant/my-unit');
     };
 
+    const handleFeedClick = () => {
+        router.push('/pages/tenant/feeds');
+    };
 
     return (
         <div className="hidden w-64 border-r border-gray-200 bg-white py-6 px-4 md:block">
@@ -30,6 +34,15 @@ export default function TenantOutsidePortalNav() {
 
             <nav>
                 <ul className="space-y-2">
+                    <li>
+                        <button
+                            onClick={handleFeedClick}
+                            className="flex w-full items-center space-x-3 rounded-md p-3 text-left text-gray-700 hover:bg-gray-100"
+                        >
+                            <MdOutlineRssFeed className="h-5 w-5" />
+                            <span>My Feeds</span>
+                        </button>
+                    </li>
                     <li>
                         <button
                             onClick={handleMyUnitsClick}

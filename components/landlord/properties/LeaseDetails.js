@@ -136,6 +136,7 @@ const LeaseDetails = ({ unitId }) => {
     }
   };
 
+  // this
   const fetchTenantDetails = async () => {
     setIsLoading(true);
     try {
