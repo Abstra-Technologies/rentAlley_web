@@ -37,6 +37,7 @@ const LeaseDetails = ({ unitId }) => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [leaseFile, setLeaseFile] = useState(null);
+  const [inviteEmail, setInviteEmail] = useState("");
 
   useEffect(() => {
     fetchLeaseDetails();
@@ -181,25 +182,24 @@ const LeaseDetails = ({ unitId }) => {
     });
   };
 
-  const handleGenerateCode = async () => {
-    if (!propertyName || !unitId) {
-      Swal.fire(
-        "Missing Info",
-        "Property name or Unit ID is missing.",
-        "error"
-      );
-      return;
-    }
-
-    try {
-      const res = await axios.post("/api/invite", {
+  const handleSendInvite = async () => {
+    const res = await fetch("/api/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: inviteEmail,
         unitId,
         propertyName,
-      });
-      setInviteCode(res.data.code);
-    } catch (err) {
-      console.error("Error generating invite code:", err);
-      Swal.fire("Error", "Failed to generate invite code", "error");
+        unitName,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      Swal.fire("Sent!", "Invitation email sent to tenant.", "success");
+    } else {
+      Swal.fire("Error", data.error || "Could not send invite.", "error");
     }
   };
 
@@ -298,57 +298,39 @@ const LeaseDetails = ({ unitId }) => {
         </div>
 
         {!tenant && (
-          <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-4 rounded-md mb-6">
-            <p className="font-semibold mb-2">
-              No current tenant assigned to this unit.
-            </p>
-            <p className="mb-4">
-              Share this invite code with your current tenant so they can
-              register and be linked to the unit.
-            </p>
+            <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-4 rounded-md mb-6">
+              <p className="font-semibold mb-2">
+                No current tenant assigned to this unit.
+              </p>
+              <p className="mb-4">
+                Send an invitation to the tenant’s email so they can register and be linked to the unit.
+              </p>
 
-            {!inviteCode ? (
-              <button
-                onClick={handleGenerateCode}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium"
-              >
-                Generate Invite Code
-              </button>
-            ) : (
-              <>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="text"
-                    readOnly
-                    value={inviteCode}
-                    className="w-full max-w-xs bg-white border border-gray-300 px-4 py-2 rounded text-gray-700 font-mono"
-                  />
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(inviteCode);
-                      Swal.fire(
-                        "Copied!",
-                        "Invite code copied to clipboard.",
-                        "success"
-                      );
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium"
-                  >
-                    Copy Code
-                  </button>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <input
+                    type="email"
+                    placeholder="Tenant's email address"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="w-full sm:max-w-xs bg-white border border-gray-300 px-4 py-2 rounded text-gray-700"
+                />
                 <button
-                  className="mt-4 text-blue-600 underline hover:text-blue-800"
-                  onClick={() =>
-                    router.push(`/landlord/prospectives/${unitId}`)
-                  }
+                    onClick={handleSendInvite}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium"
                 >
-                  Or view prospective tenants
+                  Send Invite
                 </button>
-              </>
-            )}
-          </div>
+              </div>
+
+              <button
+                  className="mt-4 text-blue-600 underline hover:text-blue-800"
+                  onClick={() => router.push(`/landlord/prospectives/${unitId}`)}
+              >
+                Or view prospective tenants
+              </button>
+            </div>
         )}
+
         {/* tabs */}
         <div className="flex border-b">
           <button

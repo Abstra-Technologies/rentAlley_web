@@ -8,13 +8,39 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { email, password } = body;
+  const { email, password, captchaToken } = body;
 
-  if (!email || !password) {
+  if (!email || !password || !captchaToken) {
     return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
   }
 
+  const captchaSecret = process.env.RECAPTCHA_SECRET_KEY!;
+  const verifyCaptchaURL = "https://www.google.com/recaptcha/api/siteverify";
+
+  const params = new URLSearchParams();
+  params.append("secret", captchaSecret);
+  params.append("response", captchaToken);
+console.log(captchaSecret);
+
+
   try {
+
+    const captchaRes = await fetch(verifyCaptchaURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params,
+    });
+
+    const captchaData = await captchaRes.json();
+
+    if (!captchaData.success) {
+      return NextResponse.json(
+          { error: "CAPTCHA verification failed. Please try again." },
+          { status: 403 }
+      );
+    }
+
+
     const emailHash = nodeCrypto.createHash("sha256").update(email).digest("hex");
     const [users]: any[] = await db.query("SELECT * FROM User WHERE emailHashed = ?", [emailHash]);
 

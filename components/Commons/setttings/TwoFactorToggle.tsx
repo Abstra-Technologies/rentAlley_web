@@ -13,7 +13,7 @@ const TwoFactorToggle = ({ user_id }: TwoFactorToggleProps) => {
 
     const fetch2FAStatus = async () => {
         try {
-            const res = await fetch(`/api/auth/get-user-2fa-status?user_id=${user_id}`);
+            const res = await fetch(`/api/auth/get2faStatus?user_id=${user_id}`);
             const data = await res.json();
             setIs2FAEnabled(data.is_2fa_enabled);
         } catch (err) {
@@ -31,7 +31,7 @@ const TwoFactorToggle = ({ user_id }: TwoFactorToggleProps) => {
         const newStatus = !is2FAEnabled;
 
         try {
-            const res = await fetch("/api/auth/toggle-2fa", {
+            const res = await fetch("/api/auth/toggle2fa", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ user_id, enable_2fa: newStatus }),

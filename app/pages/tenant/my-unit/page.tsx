@@ -49,6 +49,8 @@ export default function MyUnit() {
             try {
                 const res = await axios.get(`/api/tenant/activeRent?tenantId=${user?.tenant_id}`);
                 setUnits(res.data);
+                console.log('res', res);
+                console.log('res', res.data);
             } catch (err: any) {
                 Swal.fire("Warning", err.response?.data?.message || "Failed to load units", "warning");
             } finally {
@@ -160,8 +162,15 @@ export default function MyUnit() {
         <div className="flex min-h-screen bg-gray-50">
             <TenantOutsidePortalNav />
             <div className="max-w-7xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold mb-6">My Current Rented Units</h1>
-
+                <h1 className="text-2xl font-semibold mb-6">My Current Rented Units {user?.tenant_id}</h1>
+                <button
+                    className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200"
+                    onClick={() => {
+                        router.push("/pages/tenant/viewInvites");
+                    }}
+                >
+                    View Invitations
+                </button>
                 {units.length === 0 ? (
                     <p className="text-gray-500">You currently have no active leases.</p>
                 ) : (
@@ -189,10 +198,10 @@ export default function MyUnit() {
 
                                         <div className="mt-4 flex flex-col gap-2">
                                             {!unit.is_security_deposit_paid && (
-                                                <p className="text-sm text-red-500">Security Deposit: {unit.sec_deposit}</p>
+                                                <p className="text-sm text-red-500">Security Deposit: {unit?.sec_deposit}</p>
                                             )}
                                             {!unit.is_advance_payment_paid && (
-                                                <p className="text-sm text-red-500">Advance Payment: {unit.advanced_payment}</p>
+                                                <p className="text-sm text-red-500">Advance Payment: {unit?.advanced_payment}</p>
                                             )}
 
                                             {(!unit.is_security_deposit_paid || !unit.is_advance_payment_paid) ? (

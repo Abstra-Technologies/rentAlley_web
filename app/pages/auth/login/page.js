@@ -149,7 +149,7 @@ function Login() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, captchaToken }),
         credentials: "include",
       });
 
@@ -168,6 +168,7 @@ function Login() {
           Swal.fire("2FA Required", "OTP sent to your email.", "info");
           setIsLoggingIn(false);
           return router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
+
         } else {
           Swal.fire("Success", "Login successful!", "success");
           await fetchSession();

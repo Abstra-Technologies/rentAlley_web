@@ -72,7 +72,7 @@ export default function Verify2FA() {
     e.preventDefault();
 
     try {
-      const res = await fetch("/api/auth/verify-2fa-otp", {
+      const res = await fetch("/api/auth/verify2faCode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id, otp }),
@@ -105,7 +105,7 @@ export default function Verify2FA() {
     setIsResending(true);
     setResendMessage("");
     try {
-      const res = await fetch("/api/auth/resend-2fa-otp", {
+      const res = await fetch("/api/auth/resend2fa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id }),
