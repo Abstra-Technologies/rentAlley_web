@@ -86,7 +86,6 @@ const useAuthStore = create(
             return data;
           }
 
-
           return {
             admin_id: data.admin_id || null,
             username: data.username || "N/A",
@@ -124,6 +123,19 @@ const useAuthStore = create(
           loading: false,
         })),
 
+      updateUser: (updatedData) =>
+        set((state) => {
+          if (!state.user) return state;
+
+          return {
+            ...state,
+            user: {
+              ...state.user,
+              ...updatedData,
+            },
+          };
+        }),
+
       logout: () => set({ user: null, admin: null, loading: false }),
 
       fetchSession: async () => {
@@ -135,7 +147,7 @@ const useAuthStore = create(
           });
 
           if (!response.ok) {
-            console.warn("[AuthStore]  No active session found.");
+            console.warn("[AuthStore] No active session found.");
             set({ user: null, admin: null, loading: false });
             return;
           }
@@ -160,48 +172,48 @@ const useAuthStore = create(
             set({ user: null, admin: null, loading: false });
           }
         } catch (error) {
-          console.error("[AuthStore]Session fetch failed:", error);
+          console.error("[AuthStore] Session fetch failed:", error);
           set({ user: null, admin: null, loading: false });
         }
       },
+
       signOut: async () => {
-    try {
-      const res = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+        try {
+          const res = await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "include",
+          });
 
-      if (!res.ok) {
-        console.warn("[AuthStore] Failed to log out user.");
-        window.location.href = "/pages/auth/login";
+          if (!res.ok) {
+            console.warn("[AuthStore] Failed to log out user.");
+            window.location.href = "/pages/auth/login";
+          }
 
-      }
+          set({ user: null, admin: null, loading: false });
+        } catch (error) {
+          console.error("[AuthStore] signOut error:", error);
+          set({ user: null, admin: null, loading: false });
+        }
+      },
 
-      set({ user: null, admin: null, loading: false });
-    } catch (error) {
-      console.error("[AuthStore] signOut error:", error);
-      set({ user: null, admin: null, loading: false });
-    }
-  },
-  signOutAdmin: async () => {
-    try {
-      const res = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      signOutAdmin: async () => {
+        try {
+          const res = await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "include",
+          });
 
-      if (!res.ok) {
-        console.warn("[AuthStore] Failed to log out admin.");
-      }
+          if (!res.ok) {
+            console.warn("[AuthStore] Failed to log out admin.");
+          }
 
-      set({ admin: null, user: null, loading: false });
+          set({ admin: null, user: null, loading: false });
           window.location.href = "/pages/admin_login";
-
-    } catch (error) {
-      console.error("[AuthStore] signOutAdmin error:", error);
-      set({ admin: null, user: null, loading: false });
-    }
-  },
+        } catch (error) {
+          console.error("[AuthStore] signOutAdmin error:", error);
+          set({ admin: null, user: null, loading: false });
+        }
+      },
     }),
     {
       name: "auth-storage",
