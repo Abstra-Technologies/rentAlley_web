@@ -62,7 +62,11 @@ export default function MyUnit() {
 
     if (loading) return <p className="text-center mt-10">Loading your units...</p>;
 
-    const handleUploadProof = async (unitId: string) => {
+    const handleUploadProof = async (
+        unitId: string,
+        agreementId: string,
+        amountPaid: number
+    ) => {
         const { value: file } = await Swal.fire({
             title: "Upload Proof of Payment",
             input: "file",
@@ -80,11 +84,19 @@ export default function MyUnit() {
         formData.append("file", file);
         formData.append("unit_id", unitId);
         formData.append("tenant_id", user?.tenant_id || "");
+        formData.append("agreement_id", agreementId);
+        formData.append("amount_paid", String(amountPaid));
 
         try {
-            const res = await axios.post("/api/tenant/payment/uploadProofPayment", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            const res = await axios.post(
+                "/api/tenant/payment/uploadProofPayment",
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
 
             if (res.status === 200) {
                 Swal.fire("Uploaded", "Your proof of payment has been submitted!", "success");
@@ -190,7 +202,7 @@ export default function MyUnit() {
             didClose: () => router.push(chatUrl),
         });
     };
-
+    const toNumber = (val: any) => Number(val) || 0;
 
     return (
         <div className="flex min-h-screen bg-gray-50">
@@ -231,31 +243,32 @@ export default function MyUnit() {
                                         <p className="text-xs text-gray-500">Lease: {unit.start_date} to {unit.end_date}</p>
 
                                         <div className="mt-4 flex flex-col gap-2">
-                                            {!unit.is_security_deposit_paid && (
-                                                <p className="text-sm text-red-500">Security Deposit: {unit?.sec_deposit}</p>
-                                            )}
-                                            {!unit.is_advance_payment_paid && (
-                                                <p className="text-sm text-red-500">Advance Payment: {unit?.advanced_payment}</p>
-                                            )}
-
                                             {(!unit.is_security_deposit_paid || !unit.is_advance_payment_paid) ? (
-                                                <div className="mt-2 space-y-2">
-                                                    {/* Pay through Maya button */}
-                                                    <button
-                                                        onClick={() => handleUnitPayment(unit?.unit_id)}
-                                                        className="w-full py-2 px-4 text-white bg-green-600 rounded-lg hover:bg-green-700 transition"
-                                                    >
-                                                        Pay through Maya
-                                                    </button>
-
-                                                    {/* Upload Proof of Payment button */}
-                                                    <button
-                                                        onClick={() => handleUploadProof(unit?.unit_id)}
-                                                        className="w-full py-2 px-4 text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition"
-                                                    >
-                                                        Upload Proof of Payment
-                                                    </button>
-                                                </div>
+                                                unit.has_pending_proof ? (
+                                                    <p className="mt-2 text-yellow-600 font-medium text-sm">Proof of payment submitted. Awaiting landlord confirmation.</p>
+                                                ) : (
+                                                    <div className="mt-2 space-y-2">
+                                                        <button
+                                                            onClick={() => handleUnitPayment(unit.unit_id)}
+                                                            className="w-full py-2 px-4 text-white bg-green-600 rounded-lg hover:bg-green-700 transition"
+                                                        >
+                                                            Pay through Maya
+                                                        </button>
+                                                        <button
+                                                            onClick={() =>
+                                                                handleUploadProof(
+                                                                    unit.unit_id,
+                                                                    unit.agreement_id,
+                                                                    toNumber(!unit.is_security_deposit_paid ? unit.sec_deposit : 0) +
+                                                                    toNumber(!unit.is_advance_payment_paid ? unit.advanced_payment : 0)
+                                                                )
+                                                            }
+                                                            className="w-full py-2 px-4 text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition"
+                                                        >
+                                                            Upload Proof of Payment
+                                                        </button>
+                                                    </div>
+                                                )
                                             ) : (
                                                 <button
                                                     onClick={() => router.push(`/pages/tenant/rentalPortal/${unit?.agreement_id}`)}

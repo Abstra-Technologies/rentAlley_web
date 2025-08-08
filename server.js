@@ -12,7 +12,7 @@ const crypto = require("node:crypto");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require("dotenv").config({ path: ".env" });
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pool = require("./src/lib/chat-db");
+const pool = require("./lib/chat-db");
 // const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
@@ -252,7 +252,7 @@ io.on("connection", (socket) => {
     });
 });
 
-const PORT = process.env.CHAT_PORT || 4000;
+const PORT = process.env.CHAT_PORT || 3001;
 server.listen(4000, () => {
     console.log(`Socket.io server running on port ${PORT}`);
 });

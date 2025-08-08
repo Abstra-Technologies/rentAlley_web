@@ -69,7 +69,7 @@ export async function POST(req: Request) {
             [
                 agreement_id,
                 parseFloat(amount_paid),
-                2, // payment_method_id = 2 (Manual Upload)
+                5, // payment_method_id = 2 (Manual Upload)
                 fileUrl,
             ]
         );

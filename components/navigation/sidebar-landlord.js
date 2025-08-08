@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import Swal from "sweetalert2";
+import { MdOutlinePayments } from "react-icons/md";
 
 const menuItems = [
   { href: "/pages/landlord/dashboard", icon: Home, label: "Dashboard" },
@@ -33,12 +34,18 @@ const menuItems = [
     icon: Calendar,
     label: "My Tenants",
   },
+  {
+    href: "/pages/landlord/payments/review",
+    icon: MdOutlinePayments,
+    label: "Payment Review",
+  },
   { href: "/pages/landlord/chat", icon: MessageSquareMore, label: "Chats" },
   {
     href: "/pages/landlord/maintenance-request",
     icon: Wrench,
     label: "Maintenance",
   },
+
   { href: "/pages/landlord/announcement", icon: Bell, label: "Announcements" },
   // { href: "/pages/landlord/billing", icon: CreditCard, label: "Billing" },
   // {

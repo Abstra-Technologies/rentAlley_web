@@ -54,6 +54,17 @@ export async function GET(req: NextRequest) {
 
       // @ts-ignore
       if (!unitDetails || unitDetails.length === 0) continue;
+
+      const [pendingPayment] = await db.query(
+          `SELECT COUNT(*) as pending_count
+   FROM Payment
+   WHERE agreement_id = ? AND payment_status = 'pending' AND payment_type = 'initial_payment'`,
+          [lease.agreement_id]
+      );
+
+      // @ts-ignore
+      const hasPendingProof = pendingPayment?.[0]?.pending_count > 0;
+
       // @ts-ignore
       const unit = unitDetails[0];
 
@@ -62,6 +73,7 @@ export async function GET(req: NextRequest) {
           [lease.unit_id]
       );
 
+      // @ts-ignore
       const decryptedPhotos = unitPhotos.length > 0
           // @ts-ignore
           ? unitPhotos.map((photo) => {
@@ -88,6 +100,8 @@ export async function GET(req: NextRequest) {
         city: unit.city,
         province: unit.province,
         zip_code: unit.zip_code,
+        has_pending_proof: hasPendingProof,
+
       });
     }
 

@@ -31,9 +31,7 @@ const LandlordPropertyChart = () => {
     }
   }, [user, fetchSession]);
 
-  if (!user?.landlord_id) {
-    return <LoadingScreen />; // Or return null while waiting
-  }
+
   const landlord_id = user.landlord_id;
 
   useEffect(() => {
@@ -154,6 +152,9 @@ const LandlordPropertyChart = () => {
     "Dec",
   ];
 
+  if (!user?.landlord_id) {
+    return <LoadingScreen />; // Or return null while waiting
+  }
   // Ensure `monthlyVisits` is always an array before mapping
   const visitData = (monthlyVisits || []).map((item) => ({
     month: months[item.month - 1],
