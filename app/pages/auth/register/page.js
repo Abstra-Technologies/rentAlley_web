@@ -31,11 +31,11 @@ const registerSchema = z
     firstName: z
       .string()
       .nonempty("First Name is required")
-      .regex(/^[A-Za-z]+$/, "First Name must only contain letters"),
+      .regex(/^[A-Za-z ]+$/, "First Name must only contain letters"),
     lastName: z
       .string()
       .nonempty("Last Name is required")
-      .regex(/^[A-Za-z]+$/, "Last Name must only contain letters"),
+      .regex(/^[A-Za-z ]+$/, "Last Name must only contain letters"),
     dob: z
       .string()
       .nonempty("Date of Birth is required")
