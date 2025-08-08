@@ -7,13 +7,13 @@ import LandlordPropertyChart from "../../../../components/analytics/landlordAnal
 import PointsEarnedAlert from "../../../../components/Commons/alertPoints";
 
 export default function LandlordDashboard() {
+
   const { user, admin, loading,fetchSession } = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
   const [pointMessage, setPointMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
   const prevPointsRef = useRef(null);
-
-    const router = useRouter();
+  const router = useRouter();
 
   useEffect(() => {
       if (!user && !admin) {
@@ -34,7 +34,6 @@ export default function LandlordDashboard() {
 
                 return () => clearTimeout(timer);
             }
-
             // update ref after checking
             prevPointsRef.current = user.points;
         }
@@ -44,7 +43,6 @@ export default function LandlordDashboard() {
   return (
     <LandlordLayout>
         {showAlert && <PointsEarnedAlert points={user.points} />}
-
         <div>
         <LandlordPropertyChart />
       </div>
