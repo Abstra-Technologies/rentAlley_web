@@ -31,10 +31,10 @@ const LandlordPropertyChart = () => {
     }
   }, [user, fetchSession]);
 
+  const landlord_id = user?.landlord_id;
 
   useEffect(() => {
     if (!user?.landlord_id) return;
-    const landlord_id = user?.landlord_id;
 
     fetch(
       `/api/analytics/landlord/propertyVisitsPerMonth?landlord_id=${landlord_id}`

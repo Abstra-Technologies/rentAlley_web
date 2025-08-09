@@ -19,7 +19,7 @@ export default function ReceivedMessagesLandlord() {
     const fetchReceivedMessages = async () => {
       try {
         const response = await axios.get(
-          `/api/chats/received?landlordId=${landlordId}`
+          `/api/chats/landlord/getMessages?landlordId=${landlordId}`
         );
         setReceivedMessages(response.data);
       } catch (error) {

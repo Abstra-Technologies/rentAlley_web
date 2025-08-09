@@ -21,7 +21,10 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: [
+            "https://hestia-chat-client.onrender.com",
+            "http://localhost:3000"
+        ],
         methods: ["GET", "POST"],
     },
 });

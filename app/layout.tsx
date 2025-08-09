@@ -40,7 +40,7 @@ export default function RootLayout({
         <body>
         <ClientLayout>
             {children}
-            <InstallPrompt />
+            {/*<InstallPrompt />*/}
 
             {/* <FeedbackWidget /> */}
         </ClientLayout>

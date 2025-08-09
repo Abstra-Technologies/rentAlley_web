@@ -10,21 +10,28 @@ const socket = io(
   { autoConnect: true }
 );
 
-export default function ChatComponent() {
+export default function ChatComponent({ userId, preselectedChat }) {
   const [chatList, setChatList] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const { user } = useAuthStore();
-
-  const userId = user?.user_id;
+  //
+  // const userId = user?.user_id
+console.log('preselectedChat', preselectedChat
+);
+  useEffect(() => {
+    if (preselectedChat) {
+      setSelectedChat(preselectedChat);
+    }
+  }, [preselectedChat]);
+console.log('selectedChat', selectedChat);
 
   useEffect(() => {
     const fetchChats = async () => {
       try {
         console.log("Fetching chats...");
-        const response = await axios.get(`/api/chats/chat?userId=${userId}`);
-        console.log("Chat List API Response:", response.data);
+        const response = await axios.get(`/api/chats/getListofChats?userId=${userId}`);
         setChatList(response.data);
       } catch (error) {
         console.error("Error fetching chats:", error);
@@ -33,6 +40,7 @@ export default function ChatComponent() {
 
     if (userId) fetchChats();
   }, [userId]);
+
 
   useEffect(() => {
     if (!selectedChat || !selectedChat.chat_room) {

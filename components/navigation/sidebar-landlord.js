@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { MdOutlinePayments } from "react-icons/md";
+import { BsFilePersonFill } from "react-icons/bs";
 
 const menuItems = [
   { href: "/pages/landlord/dashboard", icon: Home, label: "Dashboard" },
@@ -31,7 +32,7 @@ const menuItems = [
   },
   {
     href: "/pages/landlord/list_of_tenants",
-    icon: Calendar,
+    icon: BsFilePersonFill,
     label: "My Tenants",
   },
   {

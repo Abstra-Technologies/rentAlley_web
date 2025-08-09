@@ -10,6 +10,7 @@ import { ChatBubbleLeftRightIcon, PencilSquareIcon, XCircleIcon } from "@heroico
 import Image from "next/image";
 import { IoChatboxEllipsesSharp } from "react-icons/io5";
 import InstallPrompt from "@/components/Commons/installPrompt";
+import { useChatStore } from "@/zustand/chatStore";
 
 interface Unit {
     unit_id: string;
@@ -184,14 +185,17 @@ export default function MyUnit() {
     };
 
     const handleContactLandlord = () => {
-        // @ts-ignore
         if (!units?.[0]?.landlord_id) return;
 
-        // @ts-ignore
         const chatRoom = `chat_${[user?.user_id, units[0].landlord_id].sort().join("_")}`;
 
-        // @ts-ignore
-        const chatUrl = `/pages/commons/chat?chat_room=${chatRoom}&landlord_id=${units[0].landlord_id}`;
+        // Save the chat info in global store
+        useChatStore.getState().setPreselectedChat({
+            chat_room: chatRoom,
+            landlord_id: units[0].landlord_id,
+            name: units[0].landlord_name || "Landlord",
+            tenant_id: user?.tenant_id || null,
+        });
 
         Swal.fire({
             title: "Redirecting...",
@@ -199,9 +203,11 @@ export default function MyUnit() {
             icon: "info",
             timer: 1500,
             showConfirmButton: false,
-            didClose: () => router.push(chatUrl),
+            didClose: () => router.push("/pages/tenant/chat"), // No query params
         });
     };
+
+
     const toNumber = (val: any) => Number(val) || 0;
 
     return (

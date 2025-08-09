@@ -12,7 +12,6 @@ const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000")
 
 export default function LandlordChatPage() {
     const { user, admin, fetchSession, loading } = useAuthStore();
-
     const userId = user?.user_id;
     return (
         <LandlordLayout>
