@@ -98,15 +98,26 @@ export default function ProfilePage() {
     formData.append("file", file);
 
     try {
-      const response = await axios.post("/api/profile/uploadProfilePic", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setProfilePicture(response.data.imageUrl);
+      const response = await axios.post(
+        "/api/profile/uploadProfilePic",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      const newImageUrl = response.data.imageUrl;
+      setProfilePicture(newImageUrl);
       setProfileData((prev) => ({
         ...prev,
-        profilePicture: response.data.imageUrl,
+        profilePicture: newImageUrl,
       }));
-      console.log("Image uploaded:", response.data.imageUrl);
+
+      useAuthStore.getState().updateUser({
+        profilePicture: newImageUrl,
+      });
+
+      console.log("Image uploaded:", newImageUrl);
     } catch (error) {
       console.error("Upload failed:", error);
     }

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const TIMER_DURATION = 10 * 60; // 10 minutes in seconds
+const TIMER_DURATION = 5 * 60; // 5 minutes
 
 export default function VerifyOTP() {
   const [otp, setOtp] = useState("");
@@ -70,13 +70,13 @@ export default function VerifyOTP() {
       );
       toast.success(response.data.message);
       const userType = response.data.userType;
+
       setTimeout(() => {
         if (userType === "tenant") {
-          router.push("/pages/tenant/my-unit");
+          window.location.href = "/pages/tenant/my-unit";
         } else if (userType === "landlord") {
-          router.push("/pages/landlord/dashboard");
+          window.location.href = "/pages/landlord/dashboard";
         }
-        window.location.reload();
       }, 2000);
     } catch (error) {
       toast.error(error.response?.data?.message || "OTP verification failed");
