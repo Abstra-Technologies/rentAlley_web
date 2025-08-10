@@ -6,6 +6,11 @@ const PropertyTypeChart = dynamic(() => import("../landlord/analytics/typesOfPro
 const TenantOccupationChart = dynamic(() => import("../landlord/analytics/tenantOccupation"), { ssr: false });
 const ScoreCard = dynamic(() => import("../landlord/analytics/scoreCards"), { ssr: false });
 const PropertyUtilitiesChart = dynamic(() => import("../landlord/analytics/propertyUtilityRates"), { ssr: false });
+const MaintenanceCategoriesChart = dynamic(() => import("../landlord/analytics/getMaintenanceCategory"), { ssr: false });
+const PaymentsPerMonthChart = dynamic(() => import("../landlord/analytics/MonthlyPaymentsChart"), { ssr: false });
+const UtilityTrendsChart = dynamic(() => import("../landlord/analytics/utilityTrend"), { ssr: false });
+import Link from "next/link";
+
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
   loading: () => <p>Loading Chart...</p>,
@@ -19,11 +24,9 @@ const LandlordPropertyChart = () => {
   const [loading, setLoading] = useState(true);
   const [totalUnits, setTotalUnits] = useState(0);
   const [data, setData] = useState([]);
-  const [paymentData, setPaymentData] = useState([]);
   const [totalTenants, setTotalTenants] = useState(0);
   const [totalRequests, setTotalRequests] = useState(0);
   const [totalReceivables, setTotalReceivables] = useState(0);
-  const [utilityTrend, setUtilityTrend] = useState([]);
 
   useEffect(() => {
     if (!user?.landlord_id) {
@@ -64,30 +67,7 @@ const LandlordPropertyChart = () => {
         setLoading(false);
       });
 
-    fetch(
-      `/api/analytics/landlord/getMaintenanceCategories?landlord_id=${landlord_id}`
-    )
-      .then((res) => res.json())
-      .then((result) => {
-        if (result.categories) {
-          setData(result.categories);
-        }
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching maintenance categories:", error);
-        setLoading(false);
-      });
 
-    fetch(
-      `/api/analytics/landlord/getPaymentsPerMonth?landlord_id=${landlord_id}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Payment Data:", data);
-        setPaymentData(data);
-      })
-      .catch((error) => console.error("Error fetching payment data:", error));
 
     fetch(
       `/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`
@@ -122,17 +102,6 @@ const LandlordPropertyChart = () => {
       .catch((error) =>
         console.error("Error fetching total receivables:", error)
       );
-
-    fetch(
-      `/api/analytics/landlord/getMonthlyUtilityTrend?landlord_id=${landlord_id}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Utility Trend Data:", data);
-        setUtilityTrend(data);
-      })
-      .catch((error) => console.error("Error fetching utility trend:", error));
-
 
   }, [fetchSession, user]);
 
@@ -189,56 +158,6 @@ const LandlordPropertyChart = () => {
   };
   const chartSeries = [occupancyRate];
 
-  const chartOptionsMaintenanceCategories = {
-    chart: { type: "pie" },
-    labels: data.map((item) => item.category),
-    title: { text: "Maintenance Request Categories", align: "center" },
-  };
-  const chartSeriesMaintenance = data.map((item) => item.count);
-
-  const monthsUtility = [...new Set(utilityTrend.map((item) => item.month))];
-  const waterData = monthsUtility.map(
-    (month) =>
-      utilityTrend.find(
-        (item) => item.month === month && item.utility_type === "water"
-      )?.total_expense || 0
-  );
-  const electricityData = monthsUtility.map(
-    (month) =>
-      utilityTrend.find(
-        (item) => item.month === month && item.utility_type === "electricity"
-      )?.total_expense || 0
-  );
-
-  const chartOptionsUtilityTrends = {
-    chart: { type: "line" },
-    xaxis: { categories: monthsUtility },
-    title: { text: "Monthly Utility Expenses Trend", align: "center" },
-  };
-  const seriesUtilityTrends = [
-    { name: "Water", data: waterData },
-    { name: "Electricity", data: electricityData },
-  ];
-
-  const chartOptionsPayment = {
-    chart: {
-      type: "bar",
-    },
-    xaxis: {
-      categories: paymentData.map((item) => item.month),
-    },
-    title: {
-      text: "Monthly Payments Received",
-      align: "center",
-    },
-  };
-  const seriesPayment = [
-    {
-      name: "Total Payments Received",
-      data: paymentData.map((item) => item.total_received),
-    },
-  ];
-
   return (
     <div className="p-6 bg-gray-50 rounded-lg">
       {loading ? (
@@ -286,27 +205,17 @@ const LandlordPropertyChart = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Utility Trends
-              </h3>
-              {utilityTrend.length > 0 ? (
-                <Chart
-                  options={chartOptionsUtilityTrends}
-                  series={seriesUtilityTrends}
-                  type="line"
-                  height={350}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No data available</p>
-                </div>
-              )}
+              <PropertyUtilitiesChart landlordId={landlord_id} />
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-             
-                  <PropertyTypeChart landlordId={landlord_id} />
-            </div>
+            <Link
+                href={`/pages/landlord/analytics/detailed/utility-trends?landlord_id=${landlord_id}`}
+                className="block"
+            >
+              <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer">
+                <UtilityTrendsChart landlordId={landlord_id} />
+              </div>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -357,44 +266,9 @@ const LandlordPropertyChart = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <MaintenanceCategoriesChart landlordId={landlord_id} />
             <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Maintenance Requests
-              </h3>
-              {loading ? (
-                <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
-              ) : data.length > 0 ? (
-                <Chart
-                  options={chartOptionsMaintenanceCategories}
-                  series={chartSeriesMaintenance}
-                  type="pie"
-                  height={300}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No data available</p>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Payment Analysis
-              </h3>
-              {paymentData.length > 0 ? (
-                <Chart
-                  options={chartOptionsPayment}
-                  series={seriesPayment}
-                  type="bar"
-                  height={350}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No data available</p>
-                </div>
-              )}
+                <PaymentsPerMonthChart landlordId={landlord_id}/>
             </div>
           </div>
         </>
