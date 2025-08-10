@@ -52,7 +52,6 @@ export async function GET(req: NextRequest) {
 
     const result = await db.execute(query, queryParams);
     const properties = Array.isArray(result[0]) ? result[0] : [];
-    console.log("Raw DB result:", result);
 
     const decryptedProperties = properties.map((property: any) => ({
       ...property,

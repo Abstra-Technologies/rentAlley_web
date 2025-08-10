@@ -196,7 +196,7 @@ function Login() {
 
   return (
     <>
-      <div className="relative flex justify-center items-center min-h-screen bg-gray-100 overflow-hidden">
+      <div className="relative flex justify-center items-center min-h-[100vh] bg-gray-100 overflow-hidden px-4 py-8 sm:py-12">
         <Image
           src="/images/hero-section.jpeg"
           alt="Cityscape view of high-rise buildings"
@@ -205,7 +205,7 @@ function Login() {
           priority
         />
 
-        <div className="relative z-10 bg-white p-10 rounded-2xl shadow-lg w-full max-w-lg">
+        <div className="relative z-10 bg-white p-6 sm:p-10 rounded-2xl shadow-lg w-full max-w-md sm:max-w-lg mx-auto">
           <div className="flex justify-center mb-6">
             <Image
               src="/Hestia-logo-b.svg"
