@@ -9,6 +9,9 @@ const PropertyUtilitiesChart = dynamic(() => import("../landlord/analytics/prope
 const MaintenanceCategoriesChart = dynamic(() => import("../landlord/analytics/getMaintenanceCategory"), { ssr: false });
 const PaymentsPerMonthChart = dynamic(() => import("../landlord/analytics/MonthlyPaymentsChart"), { ssr: false });
 const UtilityTrendsChart = dynamic(() => import("../landlord/analytics/utilityTrend"), { ssr: false });
+const RevenuePerformanceChart = dynamic(() => import("../landlord/analytics/revenuePerformance"), { ssr: false });
+const UpcomingVisitsWidget = dynamic(() => import("../landlord/properties/propertyVisit"), { ssr: false });
+
 import Link from "next/link";
 
 const Chart = dynamic(() => import("react-apexcharts"), {
@@ -66,7 +69,6 @@ const LandlordPropertyChart = () => {
         console.error("Error fetching occupancy rate data:", error);
         setLoading(false);
       });
-
 
 
     fetch(
@@ -164,33 +166,31 @@ const LandlordPropertyChart = () => {
         <LoadingScreen />
       ) : (
         <>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Property Management Dashboard
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Overview of your property portfolio
-          </p>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
 
             <ScoreCard
-                title="Total Receivables for the Month"
+                title="Upcoming payments"
                 value={totalReceivables}
                 borderColor="red"
             />
 
             <ScoreCard
-                title="Total Maintenance Request"
+                title="Pending Maintenance Request"
                 value={totalRequests}
                 borderColor="red"
             />
 
            <ScoreCard
-              title="Total Current Tenants"
+              title="Total Active Tenants"
               value={totalTenants}
               borderColor="green"
             />
 
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <RevenuePerformanceChart landlordId={landlord_id} />
+            <UpcomingVisitsWidget landlordId={landlord_id} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

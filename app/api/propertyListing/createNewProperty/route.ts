@@ -21,7 +21,6 @@ export async function POST(req:NextRequest) {
       city,
       zipCode,
       province,
-      totalUnits,
       utilityBillingType,
       propDesc,
       floorArea,
@@ -58,7 +57,6 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
       city || null,
       zipCode || null,
       province || null,
-      totalUnits || 1,
       utilityBillingType,
       propDesc || null,
       floorArea,
@@ -79,12 +77,12 @@ const address = `${street}, ${brgyDistrict}, ${city}, ${province}, ${zipCode}, P
    const [result] = await connection.execute(
       `INSERT INTO Property (
         landlord_id, property_name, property_type, amenities, street,
-        brgy_district, city, zip_code, province, total_units,
+        brgy_district, city, zip_code, province,
         utility_billing_type, description, floor_area,
         min_stay, late_fee, assoc_dues,
         payment_frequency, flexipay_enabled, property_preferences,accepted_payment_methods,latitude, longitude,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       values
     );
 

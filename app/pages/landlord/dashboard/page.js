@@ -14,12 +14,24 @@ export default function LandlordDashboard() {
   const [showAlert, setShowAlert] = useState(false);
   const prevPointsRef = useRef(null);
   const router = useRouter();
+  const [greeting, setGreeting] = useState("");
+
+    function getGreeting() {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good Morning";
+        if (hour < 18) return "Good Afternoon";
+        return "Good evening";
+    }
 
   useEffect(() => {
       if (!user && !admin) {
         fetchSession();
       }
     }, [user, admin]);
+
+    useEffect(() => {
+        setGreeting(getGreeting());
+    }, []);
 
     useEffect(() => {
         if (!loading && user?.points != null) {
@@ -40,12 +52,18 @@ export default function LandlordDashboard() {
     }, [user?.points, loading]);
 
 
-  return (
-    <LandlordLayout>
-        {showAlert && <PointsEarnedAlert points={user.points} />}
-        <div>
-        <LandlordPropertyChart />
-      </div>
-    </LandlordLayout>
-  );
+    return (
+        <LandlordLayout>
+            {showAlert && <PointsEarnedAlert points={user.points} />}
+            <div>
+
+                <h2 className="text-3xl font-semibold mb-4">
+                    {greeting}, {user?.firstName + user?.lastName}
+                    <p className='font-normal text-sm'>Manage your properties, inquiries, and performance</p>
+                </h2>
+
+                <LandlordPropertyChart />
+            </div>
+        </LandlordLayout>
+    );
 }

@@ -41,7 +41,6 @@ export async function middleware(req) {
 
   try {
     const decoded = await verifyToken(token);
-    console.log("Decoded Token:", decoded);
 
     if (!decoded) {
       if (req.nextUrl.pathname.startsWith("/pages/tenant")) {

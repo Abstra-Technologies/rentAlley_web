@@ -17,6 +17,7 @@ import {
 import Swal from "sweetalert2";
 import { MdOutlinePayments } from "react-icons/md";
 import { BsFilePersonFill } from "react-icons/bs";
+import { IoAnalytics } from "react-icons/io5";
 
 const menuItems = [
   { href: "/pages/landlord/dashboard", icon: Home, label: "Dashboard" },
@@ -38,7 +39,12 @@ const menuItems = [
   {
     href: "/pages/landlord/payments/review",
     icon: MdOutlinePayments,
-    label: "Payment Review",
+    label: "Payments",
+  },
+  {
+    href: "/pages/landlord/payments/",
+    icon: IoAnalytics,
+    label: "Performance",
   },
   { href: "/pages/landlord/chat", icon: MessageSquareMore, label: "Chats" },
   {

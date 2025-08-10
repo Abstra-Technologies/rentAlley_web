@@ -1,7 +1,8 @@
+import { FaDog, FaSmoking, FaUtensils, FaClock, FaUserFriends } from "react-icons/fa";
+
 export const PROPERTY_PREFERENCES = [
-  { key: "petFriendly", label: "Pets Allowed" },
-  { key: "smokingAllowed", label: "Smoking Allowed" },
-  { key: "allowsCooking", label: "Cooking Allowed" },
-  { key: "hasCurfew", label: "Has Curfew" },
-  { key: "visitorsAllowed", label: "Visitors Allowed" },
+  { key: "petFriendly", label: "Pets Allowed", icon: FaDog },
+  { key: "smokingAllowed", label: "Smoking Allowed", icon: FaSmoking },
+  { key: "hasCurfew", label: "Has Curfew", icon: FaClock },
+  { key: "visitorsAllowed", label: "Visitors Allowed", icon: FaUserFriends },
 ];

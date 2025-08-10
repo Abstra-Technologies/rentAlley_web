@@ -73,24 +73,31 @@ export const StepOne = () => {
         </p>
 
         <form className="space-y-4">
+
           <div>
-            <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Property Type
             </label>
-            <select
-                id="propertyType"
-                name="propertyType"
-                value={property.propertyType || ""}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm text-lg py-2 px-4 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {PROPERTY_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {PROPERTY_TYPES.map((type) => {
+                const isSelected = property.propertyType === type.value;
+                return (
+                    <button
+                        type="button"
+                        key={type.value}
+                        onClick={() => setProperty({ ...property, propertyType: type.value })}
+                        className={`flex flex-col items-center justify-center p-4 border rounded-lg shadow-sm text-lg transition 
+            ${isSelected ? "bg-blue-500 text-white border-blue-500" : "bg-white text-gray-700 border-gray-300"}
+            hover:border-blue-400 hover:bg-blue-50`}
+                    >
+                      <span className="text-2xl mb-1">{type.icon}</span>
+                      <span className="text-sm">{type.label}</span>
+                    </button>
+                );
+              })}
+            </div>
           </div>
+
 
           <div>
             <label htmlFor="propertyName" className="block text-sm font-medium text-gray-700">

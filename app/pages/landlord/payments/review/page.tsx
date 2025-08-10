@@ -24,7 +24,7 @@ type Payment = {
     payment_status: 'pending' | 'confirmed' | 'failed' ;
 };
 
-export default function PaymentReviewPage() {
+export default function PaymentReviewPageWidget() {
     const [payments, setPayments] = useState<Payment[]>([]);
     const { user } = useAuthStore();
 

@@ -101,45 +101,26 @@ Make it sound appealing, ideal for renters, and professional in tone.`;
       setLoading(false);
     }
   };
-  const handleCheckboxChange = (method) => {
-    const accepted = property.propertyPreferences || [];
-    const newList = accepted.includes(method)
-      ? accepted.filter((m) => m !== method)
-      : [...accepted, method];
 
-    setProperty({ ...property, propertyPreferences: newList });
+  const togglePreference = (key) => {
+    const current = property.propertyPreferences || [];
+    setProperty({
+      ...property,
+      propertyPreferences: current.includes(key)
+          ? current.filter((item) => item !== key)
+          : [...current, key],
+    });
   };
+
 
   return (
     <div className="space-y-8">
       <div className="p-6 border rounded-md shadow-md">
-        <h2 className="text-2xl font-bold mb-2">Add a property details</h2>
+        <h2 className="text-2xl font-bold mb-2">Add  property details</h2>
         <p className="text-gray-500 mb-4">
           You can always change your property details later.
         </p>
         <div className="space-y-4">
-          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-md">
-            <p className="font-medium">
-              If the property is rented as a whole, then the unit count is 1 by
-              default.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Total Units
-            </label>
-            <input
-              type="number"
-              name="totalUnits"
-              value={property.totalUnits || ""}
-              onChange={handleChange}
-              placeholder="2"
-              min="1"
-              className="w-full p-2 border rounded"
-            />
-          </div>
-
           <div>
             <label className="block text-gray-700 font-medium mb-1" htmlFor="description">
               Description (Max 3 paragraphs)
@@ -167,7 +148,7 @@ Make it sound appealing, ideal for renters, and professional in tone.`;
           <div className="flex items-center space-x-2">
             <div className="flex-grow">
               <label className="block text-gray-700 font-medium mb-1">
-                Total Property Size 
+                Total Property Size (in sqm)
               </label>
               <input
                 type="number"
@@ -182,26 +163,31 @@ Make it sound appealing, ideal for renters, and professional in tone.`;
             <span className="text-gray-500">sqm</span>
           </div>
 
-<div className="space-y-2">
-  <label className="block text-gray-700 font-medium mb-1">
-    Property Preferences/Rules
-  </label>
+          <div className="space-y-2">
+            <label className="block text-gray-700 font-medium mb-1">
+              Property Preferences / Rules
+            </label>
 
-   <div className="space-y-2">
-            {PROPERTY_PREFERENCES.map((method) => (
-              <label key={method.key} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={(property.propertyPreferences || []).includes(method.key)}
-                  onChange={() => handleCheckboxChange(method.key)}
-                  className="h-4 w-4"
-                />
-                <span>{method.label}</span>
-              </label>
-            ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {PROPERTY_PREFERENCES.map((pref) => {
+                const Icon = pref.icon;
+                const isSelected = (property.propertyPreferences || []).includes(pref.key);
+                return (
+                    <button
+                        type="button"
+                        key={pref.key}
+                        onClick={() => togglePreference(pref.key)}
+                        className={`flex flex-col items-center justify-center p-4 border rounded-lg shadow-sm text-sm transition 
+                ${isSelected ? "bg-blue-500 text-white border-blue-500" : "bg-white text-gray-700 border-gray-300"}
+                hover:border-blue-400 hover:bg-blue-50`}
+                    >
+                      <Icon className="text-2xl mb-1" />
+                      {pref.label}
+                    </button>
+                );
+              })}
+            </div>
           </div>
-</div>
-
  <div>
               <label className="text-gray-700 font-medium flex items-center space-x-2 mt-4">
                 <span>Utility Billing Type</span>

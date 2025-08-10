@@ -13,7 +13,6 @@ const initialPropertyState = {
   province: "",
   propDesc: "",
   floorArea: 0,
-  totalUnits: "",
   utilityBillingType: "",
   minStay: 0,
   secDeposit: 0,
@@ -94,7 +93,6 @@ const usePropertyStore = create((set) => ({
       ),
     })),
 
-  // Simple setters
     // @ts-ignore
   setPhotos: (photos) => set({ photos }),
     // @ts-ignore
