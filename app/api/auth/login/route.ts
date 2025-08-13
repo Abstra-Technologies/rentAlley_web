@@ -8,7 +8,7 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { email, password, captchaToken } = body;
+  const { email, password, captchaToken, rememberMe } = body;
 
   if (!email || !password || !captchaToken) {
     return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
@@ -20,11 +20,9 @@ export async function POST(req: NextRequest) {
   const params = new URLSearchParams();
   params.append("secret", captchaSecret);
   params.append("response", captchaToken);
-console.log(captchaSecret);
-
 
   try {
-
+    // ✅ Verify CAPTCHA
     const captchaRes = await fetch(verifyCaptchaURL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -32,7 +30,6 @@ console.log(captchaSecret);
     });
 
     const captchaData = await captchaRes.json();
-
     if (!captchaData.success) {
       return NextResponse.json(
           { error: "CAPTCHA verification failed. Please try again." },
@@ -40,18 +37,16 @@ console.log(captchaSecret);
       );
     }
 
-
+    // ✅ Lookup user
     const emailHash = nodeCrypto.createHash("sha256").update(email).digest("hex");
     const [users]: any[] = await db.query("SELECT * FROM User WHERE emailHashed = ?", [emailHash]);
-
     if (!users || users.length === 0) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
     const user = users[0];
 
-    //#region FOR GOOGLE, ACCOUNT STATUS: DEACTIVATED, SUSPENDED VALIDATIONS
-
+    // ✅ Account checks
     if (user.google_id) {
       return NextResponse.json({
         error: "Your account is linked with Google Sign-In. Please log in using Google.",
@@ -70,15 +65,19 @@ console.log(captchaSecret);
       }, { status: 403 });
     }
 
-    //#endregion
-
+    // ✅ Password check
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
+    // ✅ Decrypt names
     const firstName = await decryptData(JSON.parse(user.firstName), process.env.ENCRYPTION_SECRET!);
     const lastName = await decryptData(JSON.parse(user.lastName), process.env.ENCRYPTION_SECRET!);
+
+    // ✅ JWT expiration time based on rememberMe
+    const jwtExpiry = rememberMe ? "7d" : "2h";
+    const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 7 : undefined; // cookie persistence
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
     const token = await new SignJWT({
@@ -87,49 +86,46 @@ console.log(captchaSecret);
       firstName,
       lastName,
     })
-      .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("2h")
-      .setIssuedAt()
-      .setSubject(user.user_id)
-      .sign(secret);
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime(jwtExpiry)
+        .setIssuedAt()
+        .setSubject(user.user_id)
+        .sign(secret);
 
     const response = NextResponse.json(
-      {
-        message: "Login successful",
-        token,
-        user: {
-          userID: user.user_id,
-          firstName,
-          lastName,
-          email,
-          userType: user.userType,
+        {
+          message: "Login successful",
+          token,
+          user: {
+            userID: user.user_id,
+            firstName,
+            lastName,
+            email,
+            userType: user.userType,
+          },
         },
-      },
-      { status: 200 }
+        { status: 200 }
     );
 
-    const isDev = process.env.NODE_ENV === "production";
+    const isProd = process.env.NODE_ENV === "production";
     response.cookies.set("token", token, {
       httpOnly: true,
-      secure: !isDev,
+      secure: isProd,
       path: "/",
       sameSite: "lax",
+      ...(cookieMaxAge ? { maxAge: cookieMaxAge } : {}), // persistent if rememberMe
     });
 
-//#region FOR 2FA ENABLED SIGNED - IN.
+    // ✅ Handle 2FA
     if (user.is_2fa_enabled) {
       const otp = Math.floor(100000 + Math.random() * 900000);
-      const nowUTC8 = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" })
-      );
-      const expiresAtUTC8 = new Date(nowUTC8.getTime() + 10 * 60 * 1000);
 
       await db.query("SET time_zone = '+08:00'");
       await db.query(
-        `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
+          `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
          VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))
          ON DUPLICATE KEY UPDATE token = VALUES(token), created_at = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)`,
-        [user.user_id, otp]
+          [user.user_id, otp]
       );
 
       await sendOtpEmail(email, otp.toString());
@@ -142,26 +138,21 @@ console.log(captchaSecret);
         userType: user.userType,
       }, { status: 200 });
     }
-//#endregion 
-    
 
-//#region ACTIVITY LOG 
+    // ✅ Activity log
     const action = "User logged in";
     const timestamp = new Date().toISOString();
     await db.query(
-      "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)",
-      [user.user_id, action, timestamp]
+        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)",
+        [user.user_id, action, timestamp]
     );
-//#endregion
 
     return response;
-    
   } catch (error: any) {
     console.error("Error during signin:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-
 
 async function sendOtpEmail(email: string, otp: string) {
   const transporter = nodemailer.createTransport({

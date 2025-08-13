@@ -33,6 +33,7 @@ function Login() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const [captchaToken, setCaptchaToken] = useState(null);
+  const [rememberMe, setRememberMe] = useState(false);
 
 
   const redirectBasedOnUserType = async () => {
@@ -149,7 +150,7 @@ function Login() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, captchaToken }),
+        body: JSON.stringify({ ...formData, captchaToken, rememberMe  }),
         credentials: "include",
       });
 
@@ -291,6 +292,20 @@ function Login() {
             >
               Login
             </button>
+
+            <div className="flex items-center">
+              <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="mr-2"
+              />
+              <label htmlFor="rememberMe" className="text-sm text-gray-700">
+                Remember Me
+              </label>
+            </div>
+
 
             <p className="text-center text-sm mt-3">
               <Link

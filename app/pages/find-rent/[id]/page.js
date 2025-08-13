@@ -15,6 +15,9 @@ import { BsImageAlt, BsCheckCircleFill } from "react-icons/bs";
 import { MdVerified, MdOutlineApartment } from "react-icons/md";
 import { IoArrowBackOutline } from "react-icons/io5";
 import Swal from "sweetalert2";
+import { FaMapMarkerAlt } from "react-icons/fa";
+import MapView from "../../../../components/landlord/properties/mapViewProp";
+import LandlordCard from "../../../../components/landlord/properties/LandlordCard";
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -23,6 +26,8 @@ export default function PropertyDetails() {
   const [selectedUnitId, setSelectedUnitId] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedUnit, setSelectedUnit] = useState(null);
+  const [nearby, setNearby] = useState(null);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -50,6 +55,23 @@ export default function PropertyDetails() {
       }
     }
     fetchPropertyDetails();
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchNearbyPlaces = async () => {
+      try {
+        const res = await fetch(`/api/properties/findRent/nearbyPlaces?id=${id}`);
+        if (!res.ok) throw new Error("Failed to fetch nearby places");
+        const data = await res.json();
+        setNearby(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchNearbyPlaces();
   }, [id]);
 
   const handleUnitSelection = (unitId) => {
@@ -225,10 +247,7 @@ export default function PropertyDetails() {
                       .join(" ")}
                   </p>
                 </div>
-                <div>
-                  <h3 className="font-medium text-gray-700">Total Units</h3>
-                  <p className="text-gray-600">{property.units.length} units</p>
-                </div>
+
                 <div>
                   <h3 className="font-medium text-gray-700">Total Property Floor Area</h3>
                   <p className="text-gray-600">{property.floor_area} sqm</p>
@@ -274,9 +293,10 @@ export default function PropertyDetails() {
       </svg>
     </div>
 
-
   )}
                   <h3 className="font-medium text-gray-700 mb-3">Rental Payment Details</h3>
+
+
 {property?.payment_methods?.length > 0 && (
   <div className="ml-2 mt-1 flex flex-wrap gap-2">
     {property.payment_methods.map((method) => (
@@ -294,6 +314,44 @@ export default function PropertyDetails() {
                 </div>
               )}
             </div>
+
+            {/* Nearby Places */}
+            {nearby && (
+                <div className="bg-white rounded-xl shadow-sm p-6 mb-6 pl-12 relative">
+                  <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
+                    <FaMapMarkerAlt className="mr-2 text-green-500" />
+                    Nearby Places
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed mb-4">
+                    {nearby.summary}
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {nearby.places.slice(0, 10).map((place, idx) => (
+                        <div
+                            key={idx}
+                            className="flex items-center bg-gray-50 rounded-lg overflow-hidden shadow-sm"
+                        >
+                          {place.photoUrl ? (
+                              <img
+                                  src={place.photoUrl}
+                                  alt={place.name}
+                                  className="w-24 h-24 object-cover"
+                              />
+                          ) : (
+                              <div className="w-24 h-24 bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
+                                No Image
+                              </div>
+                          )}
+                          <div className="p-3">
+                            <p className="font-semibold text-gray-800">{place.name}</p>
+                            <p className="text-gray-500 text-sm">{place.vicinity || place.address}</p>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+            )}
 
             {/* Property Description */}
             {property?.description && (
@@ -434,6 +492,9 @@ export default function PropertyDetails() {
               )}
             </div>
           </div>
+
+
+
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
               <h2 className="text-xl font-bold mb-4 text-blue-800">
@@ -470,6 +531,25 @@ export default function PropertyDetails() {
             </div>
           </div>
         </div>
+        {property?.latitude && property?.longitude && (
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6 pl-12 relative">
+              <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
+                <FaMapMarkerAlt className="mr-2 text-green-500" />
+                Location
+              </h2>
+
+              <div className="mb-3">
+                <MapView lat={property.latitude} lng={property.longitude} height="320px" />
+              </div>
+
+              <p className="text-sm text-gray-600">
+                Lat: {property.latitude}, Lng: {property.longitude}
+              </p>
+            </div>
+        )}
+
+        <LandlordCard landlord={property?.landlord} />
+
       </div>
     </div>
   );
