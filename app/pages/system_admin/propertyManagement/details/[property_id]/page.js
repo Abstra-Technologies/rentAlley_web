@@ -16,7 +16,6 @@ export default function PropertyDetails() {
   const params = useParams();
   const router = useRouter();
   const property_id = params.property_id;
-console.log('gotten property id:', property_id)
   useEffect(() => {
     if (!property_id) return;
 

@@ -83,10 +83,8 @@ export async function middleware(req) {
 
       if (requiredPermissionKey) {
         const requiredPermission = permissionMapping[requiredPermissionKey];
-        console.log("Required Permission:", requiredPermission);
 
         if (!permissions.includes(requiredPermission)) {
-          console.error("Access Denied - Missing Permission:", requiredPermission);
           return NextResponse.redirect(new URL("/pages/error/accessDenied", req.url));
         }
       }

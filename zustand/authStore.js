@@ -147,13 +147,11 @@ const useAuthStore = create(
           });
 
           if (!response.ok) {
-            console.warn("[AuthStore] No active session found.");
             set({ user: null, admin: null, loading: false });
             return;
           }
 
           const data = await response.json();
-          console.log("[AuthStore] Received session data:", data);
 
           if (data.admin_id) {
             set((state) => ({
@@ -168,11 +166,9 @@ const useAuthStore = create(
               loading: false,
             }));
           } else {
-            console.warn("[AuthStore] Unknown session structure.");
             set({ user: null, admin: null, loading: false });
           }
         } catch (error) {
-          console.error("[AuthStore] Session fetch failed:", error);
           set({ user: null, admin: null, loading: false });
         }
       },
@@ -191,7 +187,6 @@ const useAuthStore = create(
 
           set({ user: null, admin: null, loading: false });
         } catch (error) {
-          console.error("[AuthStore] signOut error:", error);
           set({ user: null, admin: null, loading: false });
         }
       },

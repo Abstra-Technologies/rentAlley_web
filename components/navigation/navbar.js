@@ -364,7 +364,7 @@ const Navbar = () => {
                     />
                     <div className="hidden xl:block">
                       <div className="text-sm font-medium leading-none">
-                        {user?.firstName || admin?.firstName || "User"}
+                        {user?.firstName || admin?.first_name + admin?.last_name}
                       </div>
                       <div className="text-xs text-blue-100">
                         {user?.userType || "Admin"}
@@ -392,7 +392,7 @@ const Navbar = () => {
                     <div className="absolute right-0 top-12 w-56 bg-white text-black rounded-lg shadow-xl py-2 z-10 transition-all duration-300 transform origin-top-right">
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-semibold text-gray-900">
-                          {user?.firstName || admin?.firstName || "User"}
+                          {user?.firstName || admin?.first_name + ' ' + admin?.last_name || "Guest"}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
                           {user?.email || admin?.email || ""}
@@ -489,7 +489,7 @@ const Navbar = () => {
                         </Link>
                       )}
 
-                      {user.userType === "tenant" && (
+                      {user?.userType === "tenant" && (
                           <Link
                               href={`/pages/tenant/digital-passport`}
                               className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"

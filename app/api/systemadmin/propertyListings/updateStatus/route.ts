@@ -2,10 +2,10 @@ import { NextRequest } from 'next/server';
 import mysql from 'mysql2/promise';
 import { parse } from 'cookie';
 import { jwtVerify } from 'jose';
+import { POINTS } from '@/constant/pointSystem/points';
 
 export async function POST(req: NextRequest) {
   try {
-    // Parse cookies manually from headers
     const cookieHeader = req.headers.get('cookie') || '';
     const cookies = parse(cookieHeader);
 
@@ -79,17 +79,19 @@ export async function POST(req: NextRequest) {
 
     if (status === 'Verified') {
       const verifiedTitle = 'Property Verified';
-      const verifiedBody = '🎉 Congratulations! Your property has been verified. You’ve earned 50 FlexiPoints.';
+      const verifiedBody = `🎉 Congratulations! Your property has been verified. You’ve earned ${POINTS.PROPERTY_VERIFIED} FlexiPoints.`;
 
       await connection.execute(
           `INSERT INTO Notification (user_id, title, body, is_read, created_at)
-         VALUES (?, ?, ?, 0, NOW())`,
+           VALUES (?, ?, ?, 0, NOW())`,
           [user_id, verifiedTitle, verifiedBody]
       );
 
       await connection.execute(
-          `UPDATE User SET points = points + 50, has_new_points_alert = 1 WHERE user_id = ?`,
-          [user_id]
+          `UPDATE User
+           SET points = points + ?
+           WHERE user_id = ?`,
+          [POINTS.PROPERTY_VERIFIED, user_id]
       );
     }
 

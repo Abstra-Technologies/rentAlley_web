@@ -45,9 +45,9 @@ export default function SideNavProfile() {
         ),
     },
     {
-      href: `/pages/commons/settings/${user?.user_id}`,
+      href: `/pages/commons/settings`,
       icon: IoIosNotifications,
-      label: "Notifications",
+      label: "Other Settings",
       onClick: () =>
           logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1),
     },
