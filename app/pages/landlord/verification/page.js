@@ -24,32 +24,6 @@ import {
 } from "react-icons/fi";
 import LoadingScreen from "../../../../components/loadingScreen";
 
-// Google Places Autocomplete Hook
-const useGooglePlaces = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (window.google && window.google.maps) {
-      setIsLoaded(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&libraries=places`;
-    script.async = true;
-    script.onload = () => setIsLoaded(true);
-    document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        document.head.removeChild(script);
-      }
-    };
-  }, []);
-
-  return isLoaded;
-};
-
 // Enhanced Image Quality Checker
 const checkImageQuality = (imageData) => {
   return new Promise((resolve) => {
@@ -132,14 +106,13 @@ export default function LandlordDashboard() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [suggestions, setSuggestions] = useState([]);
 
   const [imageQuality, setImageQuality] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [captureGuidance, setCaptureGuidance] = useState("");
   const [autoCapture, setAutoCapture] = useState(false);
   const [captureCountdown, setCaptureCountdown] = useState(0);
-
-  const isGoogleLoaded = useGooglePlaces();
 
   const steps = [
     {
@@ -181,25 +154,6 @@ export default function LandlordDashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (isGoogleLoaded && addressInputRef.current) {
-      const autocomplete = new window.google.maps.places.Autocomplete(
-        addressInputRef.current,
-        {
-          types: ["address"],
-          componentRestrictions: { country: "us" },
-        }
-      );
-
-      autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (place.formatted_address) {
-          setAddress(place.formatted_address);
-        }
-      });
-    }
-  }, [isGoogleLoaded]);
-
-  useEffect(() => {
     let interval;
     if (captureCountdown > 0) {
       interval = setInterval(() => {
@@ -214,6 +168,26 @@ export default function LandlordDashboard() {
     }
     return () => clearInterval(interval);
   }, [captureCountdown]);
+  // auto location completion.
+  useEffect(() => {
+    if (!address) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+              address
+          )}&format=json&addressdetails=1&limit=5`
+      )
+          .then((res) => res.json())
+          .then((data) => setSuggestions(data))
+          .catch((err) => console.error(err));
+    }, 300); // debounce typing
+
+    return () => clearTimeout(timer);
+  }, [address]);
 
   if (dataLoading) return <LoadingScreen />;
   if (error)
@@ -391,6 +365,8 @@ export default function LandlordDashboard() {
     return isStepComplete(currentStep);
   };
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -487,6 +463,7 @@ export default function LandlordDashboard() {
           <div className="p-8">
 
             {currentStep === 1 && (
+
               <div className="space-y-6">
                 <div className="flex items-center mb-6">
                   <FiUser className="w-6 h-6 text-blue-500 mr-3" />
@@ -502,11 +479,11 @@ export default function LandlordDashboard() {
                       Full Legal Name
                     </label>
                     <input
-                      type="text"
-                      value={fullName}
-                      readOnly
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
-                      placeholder="Your full legal name"
+                        type="text"
+                        value={fullName || ""} // use state, allow empty string
+                        onChange={(e) => setFullName(e.target.value)} // update state on edit
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                        placeholder="Your full legal name"
                     />
                   </div>
 
@@ -516,37 +493,45 @@ export default function LandlordDashboard() {
                       Date of Birth
                     </label>
                     <input
-                      type="date"
-                      value={
-                        user.birthDate
-                          ? new Date(user.birthDate).toISOString().split("T")[0]
-                          : ""
-                      }
-                      readOnly
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                        type="date"
+                        onChange={(e) => setDateOfBirth(e.target.value)}
+                        value={dateOfBirth || ""} // <-- use state, allow empty string
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
                     />
+
                   </div>
 
-                  <div className="md:col-span-2 space-y-2">
+                  <div className="md:col-span-2 space-y-2 relative">
                     <label className="flex items-center text-sm font-medium text-gray-700">
                       <FiMapPin className="w-4 h-4 mr-2 text-gray-400" />
                       Home Address
                     </label>
                     <input
-                      ref={addressInputRef}
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Start typing your address..."
+                        ref={addressInputRef}
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Start typing your address..."
                     />
-                    {!isGoogleLoaded && (
-                      <p className="text-sm text-gray-500 flex items-center">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500 mr-2"></div>
-                        Loading address autocomplete...
-                      </p>
+                    {address.length > 0 && (
+                        <ul className="absolute z-10 bg-white border border-gray-200 w-full rounded-xl max-h-60 overflow-auto mt-1">
+                          {suggestions.map((item, idx) => (
+                              <li
+                                  key={idx}
+                                  onClick={() => {
+                                    setAddress(item.display_name);
+                                    setSuggestions([]);
+                                  }}
+                                  className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                              >
+                                {item.display_name}
+                              </li>
+                          ))}
+                        </ul>
                     )}
                   </div>
+
 
                   <div className="md:col-span-2 space-y-2">
                     <label className="flex items-center text-sm font-medium text-gray-700">

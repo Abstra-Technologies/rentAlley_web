@@ -10,7 +10,6 @@ export async function GET(req: NextRequest) {
     const code = searchParams.get("code");
 
     if (!code) {
-        console.error("[Google OAuth] Missing authorization code.");
         return NextResponse.json({ error: "Authorization code is required" }, { status: 400 });
     }
 
@@ -22,7 +21,6 @@ export async function GET(req: NextRequest) {
             JWT_SECRET,
         } = process.env;
 
-        console.log("[Google OAuth] Exchanging authorization code for tokens...");
 
         const tokenResponse = await axios.post(
             "https://oauth2.googleapis.com/token",
@@ -39,7 +37,6 @@ export async function GET(req: NextRequest) {
         );
 
         const { access_token } = tokenResponse.data;
-        console.log("[Google OAuth] Token received.");
 
         const userInfoResponse = await axios.get(
             "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -49,7 +46,6 @@ export async function GET(req: NextRequest) {
         );
 
         const user = userInfoResponse.data;
-        console.log("[Google OAuth] User Info:", user);
 
         const emailHash = crypto
             .createHash("sha256")
@@ -95,7 +91,6 @@ export async function GET(req: NextRequest) {
                 [dbUser.user_id, otp]
             );
 
-            console.log("Sending OTP to:", dbUser.email);
             await sendOtpEmail(dbUser.email, otp);
 
             const pending2fa = NextResponse.redirect(
@@ -133,7 +128,6 @@ export async function GET(req: NextRequest) {
             sameSite: "lax",
         });
 
-        console.log("[Google OAuth] Login successful.");
         return response;
     } catch (error: any) {
         console.error("[Google OAuth] Error:", error.response?.data || error.message);
