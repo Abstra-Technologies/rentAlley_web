@@ -4,16 +4,51 @@ import { useEffect } from "react";
 import Script from "next/script";
 import Navbar from "../components/navigation/navbar";
 import useAuthStore from "../zustand/authStore";
+import { getToken, onMessage } from "firebase/messaging";
+// @ts-ignore
+import { messaging } from "../lib/firebase";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { fetchSession, user, admin } = useAuthStore();
 
    useEffect(() => {
-    // Fetch session only if user/admin is not already available
     if (!user && !admin) {
       fetchSession();
     }
   }, [user, admin]);
+
+   const user_id = user?.user_id;
+
+    useEffect(() => {
+        if (!user?.user_id) return;
+        Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+                // @ts-ignore
+                getToken(messaging, { vapidKey: "BA1lJSSud0mm0aBsNycy4wW0Q7uzfS7MDYaXnNGZIxf7XrO4kpqb2u7-1cwVSn8DxO___OVEcA_34r1kmXEHwSI" })
+                    .then((currentToken) => {
+                        if (currentToken) {// Send token to backend
+                            fetch("/api/auth/save-fcm-token", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    token: currentToken,
+                                    userId: user_id, // or admin?.id
+                                    platform: "web"
+
+                                }),
+                            });
+                        }
+                    })
+                    .catch((err) => console.log("Error getting token:", err));
+            }
+        });
+
+        // @ts-ignore
+        onMessage(messaging, (payload) => {
+            console.log("Message received in foreground:", payload);
+            // optionally show notification UI here
+        });
+    }, [user]);
 
   useEffect(() => {
     const existingScript = document.getElementById("google-maps");
