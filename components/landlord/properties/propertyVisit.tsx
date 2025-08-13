@@ -19,6 +19,7 @@ export default function UpcomingVisitsWidget({ landlordId }) {
                 const data = await res.json();
                 setVisits(data);
             } catch (err) {
+                // @ts-ignore
                 setError(err.message);
             } finally {
                 setLoading(false);
@@ -42,9 +43,9 @@ export default function UpcomingVisitsWidget({ landlordId }) {
                 <ul className="space-y-3">
                     {visits.map((visit) => (
                         <li key={visit?.visit_id} className="border-b pb-2 last:border-b-0">
-                            <div className="font-semibold">{visit?.unit_name}</div>
+                            <div className="font-semibold">{visit?.property_name} - {visit?.unit_name}</div>
                             <div>
-                                Tenant: <span className="italic">{visit?.tenant_name || "N/A"}</span>
+                                Tenant: <span className="italic">{visit?.tenant_name}</span>
                             </div>
                             <div>
                                 Date: {new Date(visit?.visit_date).toLocaleDateString()}{" "}

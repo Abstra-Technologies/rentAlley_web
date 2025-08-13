@@ -42,6 +42,7 @@ export async function GET() {
           u.is_2fa_enabled,
           u.phoneNumber,
           u.birthDate,
+          u.points,
           t.tenant_id,
           l.landlord_id,
           l.is_verified,

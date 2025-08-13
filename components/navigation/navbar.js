@@ -26,8 +26,10 @@ const Navbar = () => {
     if (!user && !admin) {
       fetchSession();
     }
+    fetchNotifications();
   }, [user, admin]);
 
+  //  check tenant if have exisiting lease.
   useEffect(() => {
     if (user?.userType === "tenant" && user?.tenant_id) {
       const fetchLeaseStatus = async () => {
@@ -41,7 +43,6 @@ const Navbar = () => {
           setHasLease(false);
         }
       };
-
       fetchLeaseStatus();
     }
   }, [user?.tenant_id]);
@@ -54,7 +55,7 @@ const Navbar = () => {
 
     try {
       const res = await fetch(
-        `/api/notification/get-notification?userId=${userId}`
+        `/api/notification/getNotifications?userId=${userId}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -397,6 +398,9 @@ const Navbar = () => {
                         <p className="text-xs text-gray-500 truncate">
                           {user?.email || admin?.email || ""}
                         </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user?.user_id}
+                        </p>
                       </div>
 
                       {/* Points Section */}
@@ -408,7 +412,7 @@ const Navbar = () => {
                             </span>
                             <div className="flex items-center space-x-1">
                               <span className="text-lg font-bold text-yellow-600">
-                                {user?.points ?? 0}
+                                {user?.points}
                               </span>
                               <span className="text-yellow-500">⭐</span>
                             </div>
