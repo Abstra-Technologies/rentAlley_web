@@ -1,11 +1,7 @@
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
-import { redis } from "@/lib/redis"; // <-- new Redis client
+import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
-
-// Cache key changes when minPrice, maxPrice, or searchQuery changes — so filters don’t clash.
-// Cache stores already decrypted data → faster subsequent loads.
-// TTL is short (ex: 10) so stale data is minimal.
 
 const SECRET_KEY = process.env.ENCRYPTION_SECRET;
 
@@ -15,7 +11,7 @@ export async function GET(req: NextRequest) {
   const maxPrice = searchParams.get("maxPrice");
   const searchQuery = searchParams.get("searchQuery");
 
-  // Create a unique cache key based on filters
+  // Unique cache key based on filters
   const cacheKey = `properties:${minPrice || "any"}:${maxPrice || "any"}:${searchQuery || "any"}`;
 
   try {
@@ -23,10 +19,10 @@ export async function GET(req: NextRequest) {
     const cached = await redis.get(cacheKey);
     if (cached) {
       console.log("⚡ Serving from Redis cache");
-      return NextResponse.json(cached);
+      // @ts-ignore
+      return NextResponse.json(JSON.parse(cached));
     }
 
-    // 2️⃣ Build SQL query
     let query = `
       SELECT
         p.property_id,
@@ -38,12 +34,18 @@ export async function GET(req: NextRequest) {
         p.latitude,
         p.longitude,
         pv.status AS verification_status,
-        (SELECT pp.photo_url FROM PropertyPhoto pp WHERE pp.property_id = p.property_id LIMIT 1) AS encrypted_property_photo,
+        (SELECT pp.photo_url
+         FROM PropertyPhoto pp
+         WHERE pp.property_id = p.property_id
+         LIMIT 1) AS encrypted_property_photo,
         MIN(u.rent_amount) AS rent_amount
       FROM Property p
-             JOIN PropertyVerification pv ON p.property_id = pv.property_id
-             LEFT JOIN Unit u ON p.property_id = u.property_id
-      WHERE pv.status = 'Verified' AND p.status = 'active'
+             JOIN PropertyVerification pv
+                  ON p.property_id = pv.property_id
+             JOIN Unit u
+                  ON p.property_id = u.property_id
+      WHERE pv.status = 'Verified'
+        AND p.status = 'active'
     `;
 
     const queryParams: (string | number)[] = [];
@@ -66,7 +68,7 @@ export async function GET(req: NextRequest) {
 
     query += ` GROUP BY p.property_id;`;
 
-    // 3️⃣ Query MySQL
+    // 3️⃣ Execute query
     const result = await db.execute(query, queryParams);
     const properties = Array.isArray(result[0]) ? result[0] : [];
 
@@ -78,8 +80,8 @@ export async function GET(req: NextRequest) {
           : null,
     }));
 
-    // 5️⃣ Store in Redis for short TTL (10s)
-    await redis.set(cacheKey, decryptedProperties, { ex: 10 });
+    // 5️⃣ Cache in Redis for 10 seconds
+    await redis.set(cacheKey, JSON.stringify(decryptedProperties), { ex: 10 });
 
     return NextResponse.json(decryptedProperties);
   } catch (error) {
