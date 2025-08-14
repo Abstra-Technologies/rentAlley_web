@@ -1,6 +1,11 @@
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
+import { redis } from "@/lib/redis"; // <-- new Redis client
 import { NextRequest, NextResponse } from "next/server";
+
+// Cache key changes when minPrice, maxPrice, or searchQuery changes — so filters don’t clash.
+// Cache stores already decrypted data → faster subsequent loads.
+// TTL is short (ex: 10) so stale data is minimal.
 
 const SECRET_KEY = process.env.ENCRYPTION_SECRET;
 
@@ -10,7 +15,18 @@ export async function GET(req: NextRequest) {
   const maxPrice = searchParams.get("maxPrice");
   const searchQuery = searchParams.get("searchQuery");
 
+  // Create a unique cache key based on filters
+  const cacheKey = `properties:${minPrice || "any"}:${maxPrice || "any"}:${searchQuery || "any"}`;
+
   try {
+    // 1️⃣ Try Redis cache first
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      console.log("⚡ Serving from Redis cache");
+      return NextResponse.json(cached);
+    }
+
+    // 2️⃣ Build SQL query
     let query = `
       SELECT
         p.property_id,
@@ -50,15 +66,20 @@ export async function GET(req: NextRequest) {
 
     query += ` GROUP BY p.property_id;`;
 
+    // 3️⃣ Query MySQL
     const result = await db.execute(query, queryParams);
     const properties = Array.isArray(result[0]) ? result[0] : [];
 
+    // 4️⃣ Decrypt property photos
     const decryptedProperties = properties.map((property: any) => ({
       ...property,
       property_photo: property.encrypted_property_photo
           ? decryptData(JSON.parse(property.encrypted_property_photo), SECRET_KEY!)
           : null,
     }));
+
+    // 5️⃣ Store in Redis for short TTL (10s)
+    await redis.set(cacheKey, decryptedProperties, { ex: 10 });
 
     return NextResponse.json(decryptedProperties);
   } catch (error) {
