@@ -37,12 +37,12 @@ const menuItems = [
     label: "My Tenants",
   },
   {
-    href: "/pages/landlord/payments/review",
+    href: "/pages/landlord/payments",
     icon: MdOutlinePayments,
     label: "Payments",
   },
   {
-    href: "/pages/landlord/payments/",
+    href: "/pages/landlord",
     icon: IoAnalytics,
     label: "Performance",
   },
