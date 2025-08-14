@@ -1,12 +1,12 @@
 "use client";
 import TenantLeasePayments from "../../../../../components/tenant/currentLeasePaymentHistory";
-import useAuth from "../../../../../hooks/useSession";
+import useAuthStore from "../../../../../zustand/authStore";
 import TenantLayout from "../../../../../components/navigation/sidebar-tenant";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 function TenantPaymentsContent() {
-  const { user } = useAuth();
+    const { user, fetchSession, loading } = useAuthStore();
     const searchParams = useSearchParams();
     const agreementId = searchParams.get("agreement_id");
   return (

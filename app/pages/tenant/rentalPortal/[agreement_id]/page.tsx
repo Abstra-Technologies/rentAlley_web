@@ -17,7 +17,7 @@ import PaymentHistoryWidget from "@/components/tenant/analytics-insights/payment
 import AnnouncementWidget from "@/components/tenant/analytics-insights/announcementWidgets";
 
 export default function RentPortalPage() {
-  const { user, fetchSession, loading } = useAuthStore();
+  const { user, fetchSession } = useAuthStore();
   const [dataLoading, setDataLoading] = useState(true);
   const router = useRouter();
   const params = useParams();
@@ -37,21 +37,6 @@ export default function RentPortalPage() {
 
     if (agreementId) fetchUnitName();
   }, [agreementId]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setDataLoading(true);
-      try {
-        await fetchSession();
-      } catch (error) {
-        console.error("Error fetching session:", error);
-      } finally {
-        setDataLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [user?.tenantId]);
 
 //   if (loading || dataLoading) return <LoadingScreen />;
 
