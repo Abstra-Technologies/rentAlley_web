@@ -6,11 +6,15 @@ import useAuthStore from "../../../../../zustand/authStore";
 import { useEffect, useState } from "react";
 import LoadingScreen from "../../../../../components/loadingScreen";
 import Announcements from "../../../../../components/annoucemen/announcement";
-import LeaseAgreementWidget from "../../../../../components/tenant/analytics-insights/LeaseAgreementWidget";
+import LeaseDurationTracker from "../../../../../components/tenant/analytics-insights/LeaseAgreementWidget";
 import TenantBillingTable from "../../../../../components/tenant/TenantBillingTable";
 import TenantPendingPaymentWidget from "../../../../../components/tenant/PendingPaymentWidget";
 import TenantPropertyChart from "../../../../../components/analytics/tenantAnalytics";
 import axios from "axios";
+import PaymentDueWidget from "@/components/tenant/analytics-insights/paymentDue";
+import OverduePaymentWidget from "@/components/tenant/analytics-insights/overDuePayment";
+import PaymentHistoryWidget from "@/components/tenant/analytics-insights/paymentHistoryWidget";
+import AnnouncementWidget from "@/components/tenant/analytics-insights/announcementWidgets";
 
 export default function RentPortalPage() {
   const { user, fetchSession, loading } = useAuthStore();
@@ -59,29 +63,46 @@ export default function RentPortalPage() {
     );
   }
 
-    // @ts-ignore
     return (
         // @ts-ignore
 
         <TenantLayout agreement_id={agreementId}>
       <div className="p-6 bg-gray-50 min-h-screen">
         <div>
-          <h1 className="text-2xl font-bold text-blue-800">Rental Portal</h1>
-          <p className="mt-2 text-lg">
-            Property: <span className="font-semibold">{unitInfo?.property_name}</span>
-          </p>
-          <p className="text-lg">
-            Unit: <span className="font-semibold">{unitInfo?.unit_name}</span>
-          </p>
+          <h1 className="text-2xl font-bold text-blue-800">{unitInfo?.property_name} Unit {unitInfo?.unit_name} Portal </h1>
         </div>
         <p className="text-sm text-gray-600 mb-6">
-          Welcome, {user?.firstName} {user?.lastName}! Here you can manage all your rent-related activity.
+          Manage all your rent-related activity here, for this unit.
         </p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* <TenantPendingPaymentWidget tenant_id={tenantId || user?.tenant_id} /> */}
-            <LeaseAgreementWidget agreement_id={agreementId} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-2xl shadow-md border border-gray-200 transition-transform transform hover:scale-105 hover:shadow-lg">
+            <LeaseDurationTracker agreement_id={agreementId} />
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-md border border-gray-200 transition-transform transform hover:scale-105 hover:shadow-lg">
+            <PaymentDueWidget agreement_id={agreementId} />
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-md border border-gray-200 transition-transform transform hover:scale-105 hover:shadow-lg">
+            <OverduePaymentWidget agreement_id={agreementId} />
+          </div>
         </div>
+
+        {/*2 columns*/}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mt-3">
+          <div className="w-full bg-white rounded-2xl shadow-md border border-gray-200 transition-transform transform hover:shadow-lg">
+            <PaymentHistoryWidget agreement_id={agreementId} />
+          </div>
+          <div className="w-full bg-white rounded-2xl shadow-md border border-gray-200 transition-transform transform hover:shadow-lg">
+            <AnnouncementWidget agreement_id={agreementId} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        </div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           {/* <TenantBillingTable tenant_id={tenantId || user?.tenant_id} />

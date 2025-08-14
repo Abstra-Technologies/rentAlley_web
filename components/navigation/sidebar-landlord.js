@@ -29,7 +29,7 @@ const menuItems = [
   {
     href: "/pages/landlord/booking-appointment",
     icon: Calendar,
-    label: "My Bookings",
+    label: "Bookings",
   },
   {
     href: "/pages/landlord/list_of_tenants",

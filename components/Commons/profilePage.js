@@ -21,6 +21,8 @@ import axios from "axios";
 import { logEvent } from "../../utils/gtag";
 import DeleteAccountButton from "../authentication/deleteAccountButton";
 import useAuthStore from "../../zustand/authStore";
+import TenantDetails from "../../components/tenant/profile/profileData";
+
 
 export default function ProfilePage() {
   const { user, loading, error } = useAuthStore();
@@ -255,7 +257,7 @@ export default function ProfilePage() {
 
               <div className="text-center sm:text-left flex-1">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  Welcome back, {user?.firstName}!
+                  {user?.firstName}
                 </h2>
                 <p className="text-blue-100 mb-4 capitalize">
                   {user?.userType} Account
@@ -356,7 +358,10 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+            {user?.userType === "tenant" && <TenantDetails userId={user?.user_id} />}
           </div>
+
+
 
           <div className="bg-gray-50 px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             <DeleteAccountButton user_id={user_id} userType={userType} />

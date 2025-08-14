@@ -16,7 +16,7 @@ import { IoSettings } from "react-icons/io5";
 import { IoIosNotifications } from "react-icons/io";
 
 export default function SideNavProfile() {
-  const { user } = useAuthStore();
+  const { user, signOutAdmin, signOut } = useAuthStore();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -66,7 +66,15 @@ export default function SideNavProfile() {
       href: "#",
       icon: ArrowRightOnRectangleIcon,
       label: "Logout",
-      onClick: () => {},
+      onClick: () => {
+        if (!user) return;
+        // If userType exists, it's a regular user; otherwise, it's an admin
+        if (user?.userType) {
+          signOut(); // regular user logout
+        } else {
+          signOutAdmin(); // admin logout
+        }
+      },
     },
   ];
 

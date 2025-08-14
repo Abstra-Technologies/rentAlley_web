@@ -43,30 +43,31 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
     }, 1000);
   };
 
-  // ✅ Menu items that dynamically inject agreement_id
   const menuItems = [
-    { slug: "dashboard", icon: Home, label: "Dashboard" },
+    { slug: "rentalPortal", icon: Home, label: "Dashboard" },
     { slug: "announcement", icon: Bell, label: "Announcements" },
-    { slug: "chat", icon: MessageCircle, label: "Chats" },
+    { slug: "maintenance", icon: Wrench, label: "Maintenance Request" },
+    { slug: "billing", icon: CreditCard, label: "Billing Statement" },
     {
       slug: "paymentHistory/currentLeasePayment",
       icon: ReceiptText,
       label: "Payment History",
     },
-    { slug: "maintenance", icon: Wrench, label: "Maintenance Request" },
-    { slug: "billing", icon: CreditCard, label: "Billing Payment" },
   ].map(({ slug, ...rest }) => {
-    const href = agreement_id
-      ? `/pages/tenant/${slug}?agreement_id=${agreement_id}`
-      : `/pages/tenant/${slug}`;
+    let href = `/pages/tenant/${slug}`;
+    if (slug === "rentalPortal" && agreement_id) {
+      href = `/pages/tenant/${slug}/${agreement_id}`; // special case for dashboard
+    } else if (agreement_id) {
+      href = `/pages/tenant/${slug}?agreement_id=${agreement_id}`;
+    }
     return { href, ...rest };
   });
+
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
       {/* Mobile Header */}
       <div className="md:hidden p-4 bg-white shadow-sm flex justify-between items-center">
-        <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
         <button
           onClick={toggleMobileMenu}
           className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
@@ -84,7 +85,6 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
               } md:block w-full md:w-64 bg-white shadow-lg md:min-h-screen`}
           >
             <div className="hidden md:block p-6">
-              <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
             </div>
 
             <nav className="px-4 py-2 md:py-0">

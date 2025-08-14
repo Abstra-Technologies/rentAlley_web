@@ -124,7 +124,7 @@ export default function MyUnit() {
             items.push({
                 name: "Security Deposit",
                 type: "SECURITY_DEPOSIT",
-                amount: Number(unit.sec_deposit), // ✅ ensure it's a number
+                amount: Number(unit.sec_deposit),
             });
         }
 
@@ -132,7 +132,7 @@ export default function MyUnit() {
             items.push({
                 name: "Advance Payment",
                 type: "ADVANCE_PAYMENT",
-                amount: Number(unit.advanced_payment), // ✅ ensure it's a number
+                amount: Number(unit.advanced_payment),
             });
         }
 
@@ -214,7 +214,7 @@ export default function MyUnit() {
         <div className="flex min-h-screen bg-gray-50">
             <TenantOutsidePortalNav />
             <div className="max-w-7xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold mb-6">My Current Rented Units {user?.tenant_id}</h1>
+                <h1 className="text-2xl font-semibold mb-6">My Current Units</h1>
                 <button
                     className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200"
                     onClick={() => {

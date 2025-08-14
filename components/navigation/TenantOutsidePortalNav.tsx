@@ -40,7 +40,7 @@ export default function TenantOutsidePortalNav() {
                             className="flex w-full items-center space-x-3 rounded-md p-3 text-left text-gray-700 hover:bg-gray-100"
                         >
                             <MdOutlineRssFeed className="h-5 w-5" />
-                            <span>My Feeds</span>
+                            <span>Feeds</span>
                         </button>
                     </li>
                     <li>
@@ -51,15 +51,6 @@ export default function TenantOutsidePortalNav() {
                             <RiCommunityFill className="h-5 w-5" />
                             <span>My Units</span>
                         </button>
-                    </li>
-                    <li>
-                        <Link
-                            href="#"
-                            className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100"
-                        >
-                            <ClockIcon className="h-5 w-5" />
-                            <span>Unit History</span>
-                        </Link>
                     </li>
                     <li>
                         <button
@@ -75,8 +66,8 @@ export default function TenantOutsidePortalNav() {
                             href="#"
                             className="flex items-center space-x-3 rounded-md p-3 text-gray-700 hover:bg-gray-100"
                         >
-                            <CreditCardIcon className="h-5 w-5" />
-                            <span>Payment History</span>
+                            <ClockIcon className="h-5 w-5" />
+                            <span>Unit History</span>
                         </Link>
                     </li>
                 </ul>

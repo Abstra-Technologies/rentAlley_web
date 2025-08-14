@@ -157,7 +157,6 @@ export default function TenantLeasePayments({ agreement_id }) {
   return (
     <div className="p-6 max-w-3xl mx-auto bg-gray-50 rounded-lg shadow-sm">
       <h1 className="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">
-        Payments for Active Lease
       </h1>
 
       <h2 className="text-xl font-semibold mt-6 mb-3 text-gray-700">

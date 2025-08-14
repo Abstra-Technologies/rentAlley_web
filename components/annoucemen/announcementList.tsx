@@ -75,7 +75,6 @@ useEffect(() => {
         <ul className="space-y-4">
           {announcements.map((announcement) => (
             <li
-                // @ts-ignore
                 key={announcement?.unique_id}
               className="p-5 border border-gray-200 rounded-xl shadow-sm bg-gray-50 transition"
             >
