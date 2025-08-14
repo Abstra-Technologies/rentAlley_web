@@ -26,7 +26,6 @@ const UserSettingsPage = () => {
 
             <div className="max-w-4xl mx-auto p-4">
                 <h1 className="text-2xl font-bold mb-4">Other Settings</h1>
-
                 {user_id && <NotificationManager user_id={user_id} />}
             </div>
         </div>

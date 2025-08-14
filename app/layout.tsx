@@ -5,6 +5,7 @@ import FeedbackWidget from "../components/feedback/FeedbackWidget";
 import "leaflet/dist/leaflet.css";
 import InstallPrompt from "@/components/Commons/installPrompt";
 import Head from "next/head";
+import CookiesPermission from "@/components/Commons/setttings/cookiesPermission";
 const geistSans = Geist({
     variable: "--font-geist-sans",
     subsets: ["latin"],
@@ -41,6 +42,7 @@ export default function RootLayout({
         <ClientLayout>
             {children}
             {/*<InstallPrompt />*/}
+            <CookiesPermission />
 
             {/* <FeedbackWidget /> */}
         </ClientLayout>
