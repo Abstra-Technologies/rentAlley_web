@@ -39,10 +39,22 @@ const PropertyListingPage = () => {
   }, [user, admin]);
 
   useEffect(() => {
+    console.log("[DEBUG] User object:", user);
+    console.log("[DEBUG] Landlord ID:", user?.landlord_id);
+    console.log("[DEBUG] User type:", user?.userType);
+    console.log("[DEBUG] Full user object:", JSON.stringify(user, null, 2));
+
     if (user?.landlord_id) {
+      console.log(
+        "[DEBUG] Calling fetchAllProperties with landlord_id:",
+        user?.landlord_id
+      );
       fetchAllProperties(user?.landlord_id);
+    } else {
+      console.log("[DEBUG] No landlord_id found, not fetching properties");
+      console.log("[DEBUG] User keys:", Object.keys(user || {}));
     }
-  }, [user?.landlord_id]);
+  }, [user?.landlord_id, fetchAllProperties]);
 
   useEffect(() => {
     if (properties.length > 0) {
@@ -53,6 +65,19 @@ const PropertyListingPage = () => {
       setPendingApproval(hasUnverifiedProperties);
     }
   }, [properties, isVerified]);
+
+  useEffect(() => {
+    console.log("[DEBUG] Properties state updated:", properties);
+    console.log("[DEBUG] Properties length:", properties.length);
+    console.log("[DEBUG] Loading state:", loading);
+    console.log("[DEBUG] Error state:", error);
+  }, [properties, loading, error]);
+
+  useEffect(() => {
+    console.log("[DEBUG] Auth state - User:", user);
+    console.log("[DEBUG] Auth state - Admin:", admin);
+    console.log("[DEBUG] User type:", user?.userType);
+  }, [user, admin]);
 
   useEffect(() => {
     if (user?.userType === "landlord") {
@@ -418,7 +443,6 @@ const PropertyListingPage = () => {
               </button>
             </div>
           ) : (
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map((property, index) => {
                 const isDisabled =
