@@ -1,257 +1,188 @@
 "use client";
-import { useEffect, useState } from "react";
-import usePropertyStore from "../../../../../../zustand/property/usePropertyStore";
-import axios from "axios";
-import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
-import AmenitiesSelector from "../../../../../../components/amenities-selector";
-import Swal from "sweetalert2";
-import { AiOutlineArrowLeft } from "react-icons/ai";
-import { PROPERTY_TYPES } from "../../../../../../constant/propertyTypes";
-import { PAYMENT_FREQUENCIES } from "../../../../../../constant/paymentFrequency";
-import { PROVINCES_PHILIPPINES } from "../../../../../../constant/provinces";
-import { UTILITY_BILLING_TYPES } from "../../../../../../constant/utilityBillingType";
+import React, { useState, useEffect } from "react";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
-import { PROPERTY_PREFERENCES } from "../../../../../../constant/propertyPreferences";
-import { PAYMENT_METHODS } from "../../../../../../constant/paymentMethods";
+import { useRouter, useParams } from "next/navigation";
+import StepCounter4 from "../../../../../../components/landlord/properties/editProperty/stepCounter";
+import { StepOneEdit } from "../../../../../../components/landlord/properties/editProperty/stepOne";
+import { StepTwoEdit } from "../../../../../../components/landlord/properties/editProperty/stepTwo";
+import { StepThreeEdit } from "../../../../../../components/landlord/properties/editProperty/stepThree";
+import { StepFourEdit } from "../../../../../../components/landlord/properties/editProperty/stepFour";
+import axios from "axios";
+import useEditPropertyStore from "../../../../../../zustand/property/useEditPropertyStore";
+import useAuthStore from "../../../../../../zustand/authStore";
+import Swal from "sweetalert2";
 
-const EditProperty = () => {
+export default function EditProperty() {
   const router = useRouter();
   const params = useParams();
-  const { id } = params;
-  const { updateProperty, setProperty } = usePropertyStore();
-  const [formData, setFormData] = useState({
-    propertyName: "",
-    street: "",
-    brgyDistrict: "",
-    city: "",
-    province: "",
-    zipCode: "",
-    propertyType: "",
-    amenities: [],
-    propDesc: "",
-    floorArea: "",
-    totalUnits: "",
-    utilityBillingType: "",
-    paymentFrequency: "",
-    minStay: "",
-    lateFee: "",
-    bedSpacing: false,
-    availBeds: "",
-    assocDues: "",
-    flexiPayEnabled: 0,
-    paymentMethodsAccepted:[] ,
-    propertyPreferences:[],
-  });
-
-  const [photos, setPhotos] = useState([]);
+  const propertyId = params?.id;
   const [loading, setLoading] = useState(false);
 
+  const [step, setStep] = useState(1);
+  const { fetchSession, user, admin } = useAuthStore();
+
+  const {
+    setProperty,
+    setPhotos,
+  } = useEditPropertyStore();
+
   useEffect(() => {
-    const fetchProperty = async () => {
-      try {
-        const response = await axios.get(
-          `/api/propertyListing/editProperty?property_id=${id}`
-        );
-        console.log("Fetched Property Data:", response.data);
-        const propertyData = response.data[0];
-
-        setFormData({
-          propertyName: propertyData?.property_name || "",
-          propDesc: propertyData?.description || "",
-          floorArea: propertyData?.floor_area || "",
-          totalUnits: propertyData?.total_units || 1,
-          street: propertyData?.street || "",
-          brgyDistrict: propertyData?.brgy_district || "",
-          city: propertyData?.city || "",
-          province: propertyData?.province || "",
-          zipCode: propertyData?.zip_code || "",
-          // Convert amenities string to array
-          amenities: propertyData?.amenities
-            ? propertyData.amenities.split(",").map((amenity) => amenity.trim())
-            : [],
-          utilityBillingType: UTILITY_BILLING_TYPES.some(
-            (p) => p.value === propertyData?.utility_billing_type
-          )
-            ? propertyData?.utility_billing_type
-            : "",
-          minStay: propertyData?.min_stay || 0,
-          lateFee: propertyData?.late_fee || 0,
-          propertyPreferences: JSON.parse(propertyData.property_preferences || "[]"),
-          paymentMethodsAccepted: JSON.parse(propertyData.accepted_payment_methods || "[]"),
-          assocDues: propertyData?.assoc_dues || 0,
-          propertyType: PROPERTY_TYPES.some(
-            (p) => p.value === propertyData?.property_type
-          )
-            ? propertyData?.property_type
-            : "",
-          paymentFrequency: PAYMENT_FREQUENCIES.some(
-            (p) => p.value === propertyData?.payment_frequency
-          )
-            ? propertyData?.payment_frequency
-            : "",
-        });
-      } catch (error) {
-        console.error("Error fetching property:", error);
-      }
-    };
-
-    if (id) {
-      fetchProperty();
+    if (!user && !admin) {
+      fetchSession();
     }
-  }, [id]);
-console.log('form data', formData);
+  }, [user, admin]);
+
+  // Load property data when editing
   useEffect(() => {
-    const fetchPhotos = async () => {
-      if (!id) return;
-      try {
-        const { data } = await axios.get(
-          `/api/propertyListing/propertyPhotos?property_id=${id}`
+    if (propertyId) {
+      axios
+          .get(`/api/propertyListing/editProperty?property_id=${propertyId}`)
+          .then((res) => {
+            const data = res.data;
+            if (data.length > 0) {
+              const propertyData = data[0]; // take the first property
+              console.log('propertyData',propertyData);
+              setProperty(propertyData);
+              // Optional: If you have separate files/photos
+              setPhotos(propertyData.photos || []);
+
+            } else {
+              console.warn("No property found with this ID");
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to load property data:", err);
+            Swal.fire("Error", "Unable to load property details.", "error");
+            router.push("/pages/landlord/property-listing");
+          });
+    }
+  }, [propertyId]);
+
+  const validateStep = (step) => {
+    const { property, photos } =
+        useEditPropertyStore.getState();
+
+    if (step === 1) {
+      if (
+          !property.propertyName ||
+          !property.street ||
+          !property.brgyDistrict ||
+          !property.city ||
+          !property.province ||
+          !property.zipCode
+      ) {
+        Swal.fire(
+            "Missing Details",
+            "Please fill in all property details before proceeding.",
+            "warning"
         );
-
-        setPhotos(data);
-      } catch (error) {
-        console.error("Error fetching photos:", error);
+        return false;
       }
-    };
 
-    fetchPhotos();
-  }, [id]);
-
-  const handleAmenityChange = (amenity) => {
-    const currentAmenities = Array.isArray(formData.amenities)
-      ? formData.amenities
-      : [];
-    const amenityIndex = currentAmenities.indexOf(amenity);
-
-    let newAmenities;
-
-    if (amenityIndex > -1) {
-      newAmenities = [
-        ...currentAmenities.slice(0, amenityIndex),
-        ...currentAmenities.slice(amenityIndex + 1),
-      ];
-    } else {
-      // Amenity doesn't exist, so add it
-      newAmenities = [...currentAmenities, amenity];
+      const zipCodePattern = /^\d{4}$/;
+      if (!zipCodePattern.test(property.zipCode)) {
+        Swal.fire(
+            "Invalid ZIP Code",
+            "Zip Code must be exactly 4 digits.",
+            "error"
+        );
+        return false;
+      }
     }
 
-    setFormData((prev) => ({ ...prev, amenities: newAmenities }));
-    setProperty({ amenities: newAmenities });
-  };
+    if (step === 3) {
+      if (photos.length === 0 || photos.length < 3) {
+        Swal.fire(
+            "Insufficient Photos",
+            "Please upload at least three property photos.",
+            "warning"
+        );
+        return false;
+      }
 
-  const handlePropertyPreferenceChange = (key) => {
-    const currentPreferences = Array.isArray(formData.propertyPreferences)
-        ? formData.propertyPreferences
-        : [];
-    const index = currentPreferences.indexOf(key);
+      // if (!property.propDesc || property.propDesc.trim().length === 0) {
+      //   Swal.fire("Missing Description", "Please enter the description of the property", "error");
+      //   return false;
+      // }
 
-    const newPreferences =
-        index > -1
-            ? [
-              ...currentPreferences.slice(0, index),
-              ...currentPreferences.slice(index + 1),
-            ]
-            : [...currentPreferences, key];
+      if (!property.floorArea || property.floorArea <= 0) {
+        Swal.fire("Missing Floor Area", "Please enter the floor area of the property", "error");
+        return false;
+      }
 
-    setFormData((prev) => ({ ...prev, propertyPreferences: newPreferences }));
-    setProperty((prev) => ({ ...prev, propertyPreferences: newPreferences }));
-  };
+      if (!property.minStay || property.minStay <= 0) {
+        Swal.fire(
+            "Missing Minimum Stay",
+            "Please enter the minimum stay duration (in months).",
+            "error"
+        );
+        return false;
+      }
 
+      if (!property.utilityBillingType || property.utilityBillingType.trim() === "") {
+        Swal.fire(
+            "Missing Utility Billing Type",
+            "Please select a utility billing type.",
+            "error"
+        );
+        return false;
+      }
 
-  const handlePaymentMethodChange = (key) => {
-    const currentMethods = Array.isArray(formData.paymentMethodsAccepted)
-        ? formData.paymentMethodsAccepted
-        : [];
-    const index = currentMethods.indexOf(key);
-
-    const newMethods =
-        index > -1
-            ? [...currentMethods.slice(0, index), ...currentMethods.slice(index + 1)]
-            : [...currentMethods, key];
-
-    setFormData((prev) => ({
-      ...prev,
-      paymentMethodsAccepted: newMethods,
-    }));
-    setProperty((prev) => ({
-      ...prev,
-      paymentMethodsAccepted: newMethods,
-    }));
-  };
-
-  const handleFlexiPayToggle = (checked) => {
-    setFormData((prev) => ({
-      ...prev,
-      flexiPayEnabled: checked,
-    }));
-    setProperty((prev) => ({
-      ...prev,
-      flexiPayEnabled: checked,
-    }));
-  };
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const handleFileChange = (e) => {
-    const uploadedFiles = Array.from(e.target.files);
-
-    const newPhotos = uploadedFiles.map((file) => ({
-      photo_id: null,
-      photo_url: URL.createObjectURL(file),
-      file: file,
-      isNew: true,
-    }));
-
-    setPhotos((prevPhotos) => [...prevPhotos, ...newPhotos]);
-  };
-
-  const handleDeletePhoto = async (photoId, index) => {
-    if (photoId === null) {
-      setPhotos((prevPhotos) => {
-        const newPhotos = [...prevPhotos];
-        const nullIdPhotos = newPhotos.filter((p) => p.photo_id === null);
-        if (nullIdPhotos.length > 0) {
-          const photoToRemove = nullIdPhotos[index % nullIdPhotos.length];
-          return newPhotos.filter((p) => p !== photoToRemove);
-        }
-        return newPhotos;
-      });
-      return;
-    }
-
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to recover this photo!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axios.delete(
-            `/api/propertyListing/propPhotos?photo_id=${photoId}`
+      const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+      for (let photo of photos) {
+        if (!allowedImageTypes.includes(photo.file?.type)) {
+          Swal.fire(
+              "Invalid File Type",
+              "Only image files (JPEG, PNG, WEBP) are allowed for property photos.",
+              "error"
           );
-          setPhotos(photos.filter((photo) => photo.photo_id !== photoId));
-          Swal.fire("Deleted!", "Your photo has been deleted.", "success");
-        } catch (error) {
-          console.error("Error deleting photo:", error);
-          Swal.fire("Error", "Failed to delete photo.", "error");
+          return false;
         }
       }
-    });
+    }
+
+    if (step === 4) {
+      if (!property.paymentFrequency || property.paymentFrequency.trim() === "") {
+        Swal.fire(
+            "Missing Payment Frequency",
+            "Please select a payment frequency.",
+            "error"
+        );
+        return false;
+      }
+
+      if (property.lateFee == null || property.lateFee < 0) {
+        Swal.fire(
+            "Missing Late Fee",
+            "Please enter a valid late fee amount (0 or higher).",
+            "error"
+        );
+        return false;
+      }
+
+      if (property.assocDues == null || property.assocDues < 0) {
+        Swal.fire(
+            "Missing Association Dues",
+            "Please enter a valid association dues amount (0 or higher).",
+            "error"
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const nextStep = () => {
+    if (validateStep()) setStep((prev) => Math.min(prev + 1, 4));
+  };
+
+  const prevStep = () => {
+    setStep((prev) => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     Swal.fire({
       title: "Are you sure?",
       text: "Do you want to save these changes?",
@@ -263,33 +194,36 @@ console.log('form data', formData);
     }).then(async (result) => {
       if (result.isConfirmed) {
         setLoading(true);
-        try {
-          await axios.put(`/api/propertyListing/updateProperty?property_id=${id}`, {
-            ...formData,
-            petFriendly: formData.petFriendly ? 1 : 0,
-          });
-          updateProperty(id, formData);
 
+        const { property, photos } = useEditPropertyStore.getState();
+
+        try {
+          // Update property data
+          await axios.put(
+              `/api/propertyListing/updateProperty?property_id=${propertyId}`,
+              property
+          );
+
+          // Upload new photos if any
           const newPhotos = photos.filter((photo) => photo.isNew && photo.file);
 
           if (newPhotos.length > 0) {
             const formDataPhotos = new FormData();
-            formDataPhotos.append("property_id", id);
+            formDataPhotos.append("property_id", propertyId);
 
             newPhotos.forEach((photo) => {
               formDataPhotos.append("photos", photo.file);
             });
 
-            await axios.post(
-              "/api/propertyListing/uploadPropertyPhotos",
-              formDataPhotos,
-              {
-                headers: { "Content-Type": "multipart/form-data" },
-              }
-            );
+            await axios.post("/api/propertyListing/uploadPropertyPhotos", formDataPhotos, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
           }
-          Swal.fire("Saved!", "Your property has been updated.", "success");
-          router.push("/pages/landlord/property-listing");
+
+          Swal.fire("Saved!", "Your property has been updated.", "success").then(() => {
+            router.push("/pages/landlord/property-listing");
+          });
+
         } catch (error) {
           console.error("Error updating property:", error);
           Swal.fire("Error", "Failed to update property.", "error");
@@ -304,480 +238,58 @@ console.log('form data', formData);
     router.push("/pages/landlord/property-listing");
   };
 
-
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return <StepOneEdit propertyId={propertyId} />;
+      case 2:
+        return <StepTwoEdit />;
+      case 3:
+        return <StepThreeEdit propertyId={propertyId} />;
+      case 4:
+        return <StepFourEdit />;
+      default:
+        return <div>Invalid Step</div>;
+    }
+  };
 
   return (
-    <LandlordLayout>
-      <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10 relative">
-        {/* Back Icon Button */}
-        <button
-          onClick={() => router.back()}
-          className="absolute top-2 left-2 flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-        >
-          <AiOutlineArrowLeft size={30} />
-          <span className="text-sm font-medium">Back</span>
-        </button>
-
-        <h2 className="text-2xl font-semibold text-gray-700 mb-4 text-center">
-          Edit Property
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Property Name */}
-          <div>
-            <label
-              htmlFor="propertyName"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Property Name
-            </label>
-            <input
-              type="text"
-              id="propertyName"
-              name="propertyName"
-              value={formData.propertyName || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Street Address */}
-          <div>
-            <label
-              htmlFor="street"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Street Address
-            </label>
-            <input
-              type="text"
-              name="street"
-              id="street"
-              value={formData.street || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Barangay / District */}
-          <div>
-            <label
-              htmlFor="brgyDistrict"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Barangay / District
-            </label>
-            <input
-              type="text"
-              name="brgyDistrict"
-              id="brgyDistrict"
-              value={formData.brgyDistrict || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* City / Municipality */}
-          <div>
-            <label
-              htmlFor="city"
-              className="block text-sm font-medium text-gray-700"
-            >
-              City / Municipality
-            </label>
-            <input
-              type="text"
-              name="city"
-              id="city"
-              value={formData.city || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Province */}
-          <div>
-            <label
-              htmlFor="province"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Province
-            </label>
-            <select
-              name="province"
-              id="province"
-              value={formData.province || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            >
-              <option value="" disabled>
-                Select Province
-              </option>
-              {PROVINCES_PHILIPPINES.map((province) => (
-                <option key={province.value} value={province.value}>
-                  {province.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* ZIP Code */}
-          <div>
-            <label
-              htmlFor="zipCode"
-              className="block text-sm font-medium text-gray-700"
-            >
-              ZIP Code
-            </label>
-            <input
-              type="number"
-              name="zipCode"
-              id="zipCode"
-              value={formData.zipCode || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Property Type */}
-          <div>
-            <label
-              htmlFor="propertyType"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Property Type
-            </label>
-            <select
-              name="propertyType"
-              value={formData.propertyType}
-              onChange={handleChange}
-              className="border rounded px-3 py-2 w-full"
-            >
-              <option value="" disabled>
-                Select Property Type
-              </option>
-              {PROPERTY_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Amenities */}
-          <div className="mb-6">
-            <AmenitiesSelector
-              selectedAmenities={formData.amenities || []}
-              onAmenityChange={handleAmenityChange}
-            />
-          </div>
-
-          {/* Total Units */}
-          <div>
-            <label
-              htmlFor="totalUnits"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Number of Units
-            </label>
-            <input
-              type="text"
-              name="totalUnits"
-              id="totalUnits"
-              value={formData.totalUnits || 1}
-              min={1}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Property Description */}
-          <div>
-            <label
-              htmlFor="propDesc"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Description
-            </label>
-            <textarea
-              name="propDesc"
-              id="propDesc"
-              value={formData.propDesc || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            ></textarea>
-          </div>
-
-          {/* Floor Area */}
-          <div>
-            <label
-              htmlFor="floorArea"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Floor Area (sqm)
-            </label>
-            <input
-              type="number"
-              name="floorArea"
-              id="floorArea"
-              value={formData.floorArea || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Utility Billing Type */}
-          <div>
-            <label
-              htmlFor="utilityBillingType"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Utility Billing Type
-            </label>
-            <select
-              name="utilityBillingType"
-              id="utilityBillingType"
-              value={formData.utilityBillingType || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            >
-              <option value="" disabled>
-                Select Utility Billing Type
-              </option>
-              {UTILITY_BILLING_TYPES.map((utilityBillingType) => (
-                <option
-                  key={utilityBillingType.value}
-                  value={utilityBillingType.value}
-                >
-                  {utilityBillingType.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Minimum Stay (Months) */}
-          <div>
-            <label
-              htmlFor="minStay"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Minimum Stay (Months)
-            </label>
-            <input
-              type="number"
-              name="minStay"
-              id="minStay"
-              value={formData.minStay || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Late Fee (%) */}
-          <div>
-            <label
-              htmlFor="lateFee"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Late Fee (%)
-            </label>
-            <input
-              type="number"
-              name="lateFee"
-              id="lateFee"
-              value={formData.lateFee || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Rent Payment */}
-          <div>
-            <label
-              htmlFor="assocDues"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Association Dues
-            </label>
-            <input
-              type="number"
-              name="assocDues"
-              id="assocDues"
-              value={formData.assocDues}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-
-          {/* Pet-Friendly Checkbox */}
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium mb-1">
-              Property Preferences/Rules
-            </label>
-
-            <div className="space-y-2">
-              {PROPERTY_PREFERENCES.map((preference) => (
-                  <label key={preference.key}>
-                    <input
-                        type="checkbox"
-                        checked={formData.propertyPreferences?.includes(preference.key)}
-                        onChange={() => handlePropertyPreferenceChange(preference.key)}
-                    />
-                    {preference.label}
-                  </label>
-              ))}
-
-
-            </div>
-          </div>
-
-
-
-          {/* Payment Frequency */}
-          <div>
-            <label
-              htmlFor="paymentFrequency"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Payment Frequency
-            </label>
-            <select
-              name="paymentFrequency"
-              id="paymentFrequency"
-              value={formData.paymentFrequency || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            >
-              <option value="" disabled>
-                Select Payment Frequency
-              </option>
-              {PAYMENT_FREQUENCIES.map((paymentFrequency) => (
-                <option
-                  key={paymentFrequency.value}
-                  value={paymentFrequency.value}
-                >
-                  {paymentFrequency.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-gray-700 font-medium mb-1">
-              Payment Methods Accepted
-            </label>
-
-            <div className="space-y-2">
-              {PAYMENT_METHODS.map((method) => (
-                  <label key={method.key} className="block">
-                    <input
-                        type="checkbox"
-                        checked={
-                            Array.isArray(formData.paymentMethodsAccepted) &&
-                            formData.paymentMethodsAccepted.includes(method.key)
-                        }
-                        onChange={() => handlePaymentMethodChange(method.key)}
-                    />
-                    {method.label}
-                  </label>
-              ))}
-
-            </div>
-          </div>
-
-
-          <label className="flex items-start gap-3 mt-4">
-            <input
-                type="checkbox"
-                checked={formData.flexiPayEnabled || false}
-                onChange={(e) => handleFlexiPayToggle(e.target.checked)}
-                className="mt-1"
-            />
-            <span>
-    <span className="font-medium text-gray-800">Allow FlexiPay Payment?</span>
-    <p className="text-sm text-gray-600">
-      FlexiPay allows tenants to make partial payments until the due date.
-    </p>
-  </span>
-          </label>
-
-
-
-          {/* Upload Property Photos */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Property Photos
-            </label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-              className="mt-2"
-            />
-          </div>
-
-          {/* Display Existing Photos */}
-          {photos.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-600">Existing Photos:</p>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {photos?.map((photo, index) => (
-                  <div
-                    key={
-                      photo?.photo_id
-                        ? `existing-${photo.photo_id}`
-                        : `new-${index}`
-                    }
-                    className="relative"
-                  >
-                    {photo?.photo_url ? (
-                      <Image
-                        src={photo.photo_url}
-                        alt="Property"
-                        width={100}
-                        height={80}
-                        className="w-full h-20 object-cover rounded-md"
-                      />
-                    ) : (
-                      <div className="w-full h-20 bg-gray-200 flex items-center justify-center text-gray-500">
-                        No Image
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full text-xs"
-                      onClick={() => handleDeletePhoto(photo.photo_id, index)}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+      <div className="min-h-screen bg-gray-100">
+        <LandlordLayout>
+          <div className="flex">
+            <main className="flex-1 p-8">
+              <StepCounter4 currentStep={step} />
+              <div className="bg-white p-6 rounded-lg shadow-md mt-6">
+                {renderStep()}
+                <div className="flex justify-between mt-6">
+                  {step > 1 && (
+                      <button
+                          onClick={prevStep}
+                          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                      >
+                        Back
+                      </button>
+                  )}
+                  {step < 4 ? (
+                      <button
+                          onClick={nextStep}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                      >
+                        Next
+                      </button>
+                  ) : (
+                      <button
+                          onClick={handleSubmit}
+                          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                      >
+                        Update
+                      </button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex space-x-4 mt-6">
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              disabled={loading}
-            >
-              {loading ? "Saving..." : "Save Changes"}
-            </button>
-            <button
-              type="button"
-              className="bg-white text-gray-700 border border-gray-500 px-4 py-2 rounded-md hover:bg-gray-200"
-              onClick={handleCancel}
-            >
-              Cancel
-            </button>
+            </main>
           </div>
-        </form>
+        </LandlordLayout>
       </div>
-    </LandlordLayout>
   );
-};
-
-export default EditProperty;
+}

@@ -122,16 +122,13 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!captchaToken) {
       Swal.fire("CAPTCHA Required", "Please verify you're not a robot.", "warning");
       return;
     }
-    logEvent(
-      "Login Attempt",
-      "User Interaction",
-      "User Submitted Login Form",
-      1
-    );
+
+    logEvent("Login Attempt", "User Interaction", "User Submitted Login Form", 1);
 
     try {
       loginSchema.parse(formData);
@@ -142,15 +139,13 @@ function Login() {
         text: "Please wait while we verify your credentials.",
         allowOutsideClick: false,
         allowEscapeKey: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
+        didOpen: () => Swal.showLoading(),
       });
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, captchaToken, rememberMe  }),
+        body: JSON.stringify({ ...formData, captchaToken, rememberMe }),
         credentials: "include",
       });
 
@@ -158,42 +153,41 @@ function Login() {
       console.log("API Response:", data);
 
       if (response.ok) {
-        logEvent(
-          "Login Success",
-          "Authentication",
-          "User Successfully Logged In",
-          1
-        );
+        logEvent("Login Success", "Authentication", "User Successfully Logged In", 1);
 
         if (data.requires_otp) {
           Swal.fire("2FA Required", "OTP sent to your email.", "info");
-          setIsLoggingIn(false);
           return router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
-
         } else {
           Swal.fire("Success", "Login successful!", "success");
           await fetchSession();
-          setIsLoggingIn(false);
           return await redirectBasedOnUserType();
         }
       } else {
-        logEvent(
-          "Login Failed",
-          "Authentication",
-          "User Entered Incorrect Credentials",
-          1
-        );
+        logEvent("Login Failed", "Authentication", "User Entered Incorrect Credentials", 1);
         setErrorMessage(data.error || "Invalid credentials");
         Swal.fire("Error", data.error || "Invalid credentials", "error");
+
+        // Reset CAPTCHA
+        if (window.grecaptcha) {
+          window.grecaptcha.reset();
+        }
+        setCaptchaToken("");
       }
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage("Something went wrong. Please try again.");
       Swal.fire("Error", "Something went wrong. Please try again.", "error");
+
+      if (window.grecaptcha) {
+        window.grecaptcha.reset();
+      }
+      setCaptchaToken("");
     } finally {
       setIsLoggingIn(false);
     }
   };
+
 
   return (
     <>

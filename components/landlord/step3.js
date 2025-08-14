@@ -1,5 +1,5 @@
 import usePropertyStore from "../../zustand/property/usePropertyStore";
-import { FaImage } from "react-icons/fa"; // Import checkmark icon from react-icons
+import { FaImage } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
 import { UTILITY_BILLING_TYPES } from "../../constant/utilityBillingType";
 import { PAYMENT_FREQUENCIES } from "../../constant/paymentFrequency";
