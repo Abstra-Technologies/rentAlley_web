@@ -42,7 +42,7 @@ const menuItems = [
     label: "Payments",
   },
   {
-    href: "/pages/landlord",
+    href: "/pages/landlord/analytics/performance",
     icon: IoAnalytics,
     label: "Performance",
   },
