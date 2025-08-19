@@ -125,107 +125,33 @@ const usePropertyStore = create<PropertyStore>()((set, get) => ({
       };
     }),
 
-  fetchAllProperties: async (landlordId: string | number) => {
-    console.log(
-      "[DEBUG] fetchAllProperties called with landlordId:",
-      landlordId
-    );
-
-    if (!landlordId) {
-      console.error("[ERROR] No landlordId provided to fetchAllProperties");
-      set({ error: "No landlord ID provided", loading: false });
-      return;
-    }
-
-    // Set loading state
+  fetchAllProperties: async (landlordId) => {
     set({ loading: true, error: null });
 
     try {
-      console.log(
-        "[DEBUG] Making API call to:",
-        `/api/propertyListing/${landlordId}`
-      );
+      // Fetch all properties and only the first photo for each property
+      const [propertiesRes, photosRes] = await Promise.all([
+        axios.get(`/api/propertyListing/getAllpropertyListing?landlord_id=${landlordId}`),
+        axios.get("/api/propertyListing/propertyPhotos"),
+      ]);
 
-      const response = await axios.get(`/api/propertyListing/${landlordId}`);
+      // Ensure each property gets its correct first photo
+      const propertiesWithPhotos = propertiesRes.data.map((property) => {
+        const propertyPhoto = photosRes.data.find(
+            (photo) => photo.property_id === property.property_id
+        );
 
-      console.log("[DEBUG] API response status:", response.status);
-      console.log("[DEBUG] API response data:", response.data);
-
-      // Handle different response formats
-      let fetchedProperties: any[] = [];
-
-      if (Array.isArray(response.data)) {
-        fetchedProperties = response.data;
-      } else if (response.data && Array.isArray(response.data.properties)) {
-        fetchedProperties = response.data.properties;
-      } else if (
-        response.data &&
-        response.data.data &&
-        Array.isArray(response.data.data)
-      ) {
-        fetchedProperties = response.data.data;
-      } else {
-        console.warn("[WARN] Unexpected response format:", response.data);
-        fetchedProperties = [];
-      }
-
-      console.log("[DEBUG] Setting properties in store:", fetchedProperties);
-
-      // Update store with fetched properties
-      set({
-        properties: fetchedProperties,
-        loading: false,
-        error: null,
+        return {
+          ...property,
+          photos: propertyPhoto ? [propertyPhoto] : [],
+        };
       });
-    } catch (error: unknown) {
-      console.error("[ERROR] Failed to fetch properties:", error);
 
-      // FIXED: Handle 404 as normal case for new landlords
-      if (axios.isAxiosError(error)) {
-        console.error("[ERROR] Error response:", error.response?.data);
-        console.error("[ERROR] Error status:", error.response?.status);
-
-        if (error.response?.status === 404) {
-          // 404 is NORMAL for new landlords - they have no properties yet
-          console.log(
-            "[INFO] No properties found (404) - this is normal for new landlords"
-          );
-          set({
-            properties: [], 
-            loading: false,
-            error: null,
-          });
-          return;
-        } else if (error.response?.status === 401) {
-          set({
-            error: "Unauthorized access",
-            loading: false,
-            properties: [],
-          });
-          return;
-        } else if (error.response?.data?.message) {
-          set({
-            error: error.response.data.message,
-            loading: false,
-            properties: [],
-          });
-          return;
-        }
-      }
-
-      let errorMessage = "Failed to fetch properties";
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      set({
-        error: errorMessage,
-        loading: false,
-        properties: [],
-      });
+      set({ properties: propertiesWithPhotos, loading: false });
+    } catch (err) {
+      set({ error: err.message, loading: false });
     }
   },
-
   updateProperty: (id: string | number, updatedData: any) =>
     set((state: PropertyStore) => ({
       properties: state.properties.map((p: any) =>
