@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db"; // Adjust path to your DB connection
+import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -22,7 +22,6 @@ export async function GET(req: NextRequest) {
         city,
         province,
         zip_code,
-        total_units,
         floor_area,
         amenities,
         utility_billing_type,
@@ -35,10 +34,12 @@ export async function GET(req: NextRequest) {
             [property_id]
         );
 
+        // @ts-ignore
         if (!result || result.length === 0) {
             return NextResponse.json({ error: "Property not found" }, { status: 404 });
         }
 
+        // @ts-ignore
         const property = result[0];
 
         // Format amenity string to array if needed

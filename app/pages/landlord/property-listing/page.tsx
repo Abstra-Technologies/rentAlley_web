@@ -106,7 +106,6 @@ const PropertyListingPage = () => {
         `/pages/landlord/property-listing/view-unit/${property.property_id}`
     );
   });
-// @ts-ignore
   // @ts-ignore
   const handleAddProperty = () => {
     // 1. Verification check
@@ -166,9 +165,6 @@ const PropertyListingPage = () => {
     router.push(`/pages/landlord/property-listing/create-property`);
   };
 
-
-
-// @ts-ignore
   // @ts-ignore
   const handleDelete = useCallback(
       async (propertyId, event) => {
@@ -451,7 +447,7 @@ const PropertyListingPage = () => {
           {pendingApproval && (
               <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-lg mb-4">
                 <strong>Pending Approval:</strong> Some properties are under review.
-                You cannot add units until they are verified.
+                You can add units, though your property will not be visible to the public.
               </div>
           )}
 
@@ -619,21 +615,10 @@ const PropertyListingPage = () => {
                             <div className="mt-auto pt-4 border-t border-gray-100">
                               <div className="flex justify-between">
                                 <button
-                                    className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                                        property?.verification_status !== "Verified"
-                                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                            : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                                    }`}
-                                    onClick={
-                                      !isLocked &&
-                                      property?.verification_status === "Verified"
-                                          ? (event) => handleView(property, event)
-                                          : undefined
-                                    }
-                                    disabled={
-                                        isLocked ||
-                                        property?.verification_status !== "Verified"
-                                    }
+                                    className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors 
+    bg-blue-50 text-blue-600 hover:bg-blue-100
+  `}
+                                    onClick={(event) => handleView(property, event)}
                                 >
                                   <HomeIcon className="h-4 w-4 mr-1"/>
                                   View Units

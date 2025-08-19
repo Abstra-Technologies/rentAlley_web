@@ -13,15 +13,23 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Fetch properties with raw SQL (MySQL/Postgres style)
+        // Join Property with PropertyVerification
         const [properties] = await db.query(
-            "SELECT * FROM Property WHERE landlord_id = ?",
+            `
+      SELECT 
+        p.*, 
+        pv.status AS verification_status
+      FROM Property p
+      LEFT JOIN PropertyVerification pv 
+        ON p.property_id = pv.property_id
+      WHERE p.landlord_id = ?
+      `,
             [landlordId]
         );
 
         return NextResponse.json(properties);
     } catch (error) {
-        console.error("Error fetching properties:", error);
+        console.error("Error fetching properties with verification:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }
