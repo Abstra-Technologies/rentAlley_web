@@ -163,7 +163,7 @@ export default function ProfilePage() {
             Verified Landlord
           </div>
         );
-      case "1": // pending
+      case "pending": // pending
         return (
           <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
             <Clock className="w-4 h-4 mr-1.5" />

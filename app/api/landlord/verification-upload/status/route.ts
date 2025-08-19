@@ -17,24 +17,39 @@ export async function GET(req: NextRequest) {
   });
 
   try {
-    const [rows]: any = await db.execute(
-      `SELECT landlord_id, is_verified FROM Landlord WHERE user_id = ?`,
-      [user_id]
+    // Get landlord_id first
+    const [landlordRows]: any = await db.execute(
+        `SELECT landlord_id FROM Landlord WHERE user_id = ?`,
+        [user_id]
     );
 
-    if (rows.length === 0) {
+    if (landlordRows.length === 0) {
       await db.end();
       return NextResponse.json({ message: "Landlord not found" }, { status: 404 });
     }
 
-    const { is_verified } = rows[0];
-    const verificationStatus = is_verified === 1 ? "verified" : "not verified";
+    const { landlord_id } = landlordRows[0];
+
+    // Get latest verification status from LandlordVerification
+    const [verificationRows]: any = await db.execute(
+        `SELECT status 
+       FROM LandlordVerification 
+       WHERE landlord_id = ? 
+       ORDER BY updated_at DESC 
+       LIMIT 1`,
+        [landlord_id]
+    );
+
+    let verificationStatus = "not verified"; // default if no records
+    if (verificationRows.length > 0) {
+      verificationStatus = verificationRows[0].status;
+    }
 
     await db.end();
     return NextResponse.json({ verification_status: verificationStatus }, { status: 200 });
   } catch (error) {
     console.error("Database Error:", error);
     await db.end();
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ message: "Database Server Error" }, { status: 500 });
   }
 }
