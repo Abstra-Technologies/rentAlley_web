@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing property_id" }, { status: 400 });
   }
 
-  const files = formData.getAll("photos");
-console.log('file', files)
+  const files = formData.getAll("files");
+  console.log('file', files)
   if (files.length === 0) {
     return NextResponse.json({ error: "No files uploaded" }, { status: 400 });
   }

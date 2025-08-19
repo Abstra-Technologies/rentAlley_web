@@ -56,7 +56,7 @@ const PropertyListingPage = () => {
   useEffect(() => {
     if (user?.userType !== "landlord") return;
 
-    setVerificationStatus(null); // store the exact status instead of just true/false
+    setVerificationStatus(null);
     setIsFetchingVerification(true);
 
     const fetchVerificationAndSubscription = async () => {
@@ -107,19 +107,65 @@ const PropertyListingPage = () => {
     );
   });
 // @ts-ignore
+  // @ts-ignore
   const handleAddProperty = () => {
-    // @ts-ignore
-    if (
-        !isVerified ||
-        !subscription ||
-        subscription?.is_active !== 1 ||
-        properties.length >= (subscription?.listingLimits?.maxProperties || 0)
-    ) {
+    // 1. Verification check
+    if (verificationStatus !== "approved") {
+      Swal.fire(
+          "Verification Required",
+          "Your account must be verified before adding a property.",
+          "warning"
+      );
       return;
     }
+
+    // 2. Subscription check
+    if (!subscription) {
+      Swal.fire(
+          "No Subscription",
+          "You need an active subscription to add properties.",
+          "info"
+      );
+      return;
+    }
+
+    if (subscription?.is_active !== 1) {
+      Swal.fire(
+          "Inactive Subscription",
+          "Your subscription is not active. Please renew or upgrade.",
+          "error"
+      );
+      return;
+    }
+
+    // 3. Property limit check
+    if (
+        properties.length >= (subscription?.listingLimits?.maxProperties || 0)
+    ) {
+      Swal.fire(
+          "Limit Reached",
+          "You’ve reached the maximum number of properties allowed in your current plan.",
+          "error"
+      );
+      return;
+    }
+
+    // 4. Pending approval check (optional — block or just warn)
+    if (pendingApproval) {
+      Swal.fire(
+          "Pending Approval",
+          "Some of your properties are still pending approval. You may add another, but approval may take longer.",
+          "info"
+      );
+      // Depending on your rule, you can either `return;` here or allow navigation
+      // return;
+    }
+
+    // ✅ All checks passed → navigate
     setIsNavigating(true);
     router.push(`/pages/landlord/property-listing/create-property`);
   };
+
 
 
 // @ts-ignore
