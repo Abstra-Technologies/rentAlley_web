@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
 
         const response = NextResponse.redirect(
             dbUser.userType === "tenant"
-                ? `${process.env.NEXT_PUBLIC_BASE_URL}/`
+                ? `${process.env.NEXT_PUBLIC_BASE_URL}/pages/tenant/my-unit`
                 : `${process.env.NEXT_PUBLIC_BASE_URL}/pages/landlord/dashboard`
         );
 
