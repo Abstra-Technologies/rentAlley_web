@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { CiBellOn } from "react-icons/ci";
@@ -7,29 +7,748 @@ import useAuthStore from "../../zustand/authStore";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
+// Enhanced Notification Hook
+const useNotifications = (user, admin) => {
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const intervalRef = useRef(null);
+  const lastFetchRef = useRef(0);
+
+  const fetchNotifications = useCallback(
+    async (showLoading = true) => {
+      if (!user && !admin) return;
+
+      const userId = user?.user_id || admin?.admin_id;
+      if (!userId) return;
+
+      // Prevent too frequent calls
+      const now = Date.now();
+      if (now - lastFetchRef.current < 5000) return; // 5 second cooldown
+      lastFetchRef.current = now;
+
+      if (showLoading) setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `/api/notification/getNotifications?userId=${userId}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch notifications: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Sort notifications by date (newest first)
+        const sortedNotifications = data.sort(
+          (a, b) =>
+            new Date(b.created_at || b.timestamp) -
+            new Date(a.created_at || a.timestamp)
+        );
+
+        setNotifications(sortedNotifications);
+
+        // Calculate unread count
+        const unread = sortedNotifications.filter((n) => !n.is_read).length;
+        setUnreadCount(unread);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        setError("Failed to load notifications");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, admin]
+  );
+
+  // Initial fetch and periodic updates
+  useEffect(() => {
+    fetchNotifications();
+
+    // Set up periodic refresh (every 30 seconds)
+    intervalRef.current = setInterval(() => {
+      fetchNotifications(false);
+    }, 30000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [fetchNotifications]);
+
+  const markAsRead = useCallback(async (notificationId) => {
+    try {
+      const response = await fetch("/api/notification/mark-read", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: notificationId }),
+      });
+
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notificationId ? { ...n, is_read: true } : n
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  }, []);
+
+  const markAllAsRead = useCallback(async () => {
+    const unreadNotifications = notifications.filter((n) => !n.is_read);
+    if (unreadNotifications.length === 0) return;
+
+    try {
+      const response = await fetch("/api/notification/mark-all-read", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: unreadNotifications.map((n) => n.id),
+        }),
+      });
+
+      if (response.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  }, [notifications]);
+
+  const deleteNotification = useCallback(
+    async (notificationId) => {
+      try {
+        const response = await fetch(
+          `/api/notification/delete/${notificationId}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (response.ok) {
+          const deletedNotification = notifications.find(
+            (n) => n.id === notificationId
+          );
+          setNotifications((prev) =>
+            prev.filter((n) => n.id !== notificationId)
+          );
+
+          if (deletedNotification && !deletedNotification.is_read) {
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+          }
+        }
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+      }
+    },
+    [notifications]
+  );
+
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    error,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  };
+};
+
+// Enhanced Notification Item Component
+const NotificationItem = ({ notification, onMarkRead, onDelete, onClick }) => {
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return "Just now";
+
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 2592000)
+      return `${Math.floor(diffInSeconds / 86400)}d ago`;
+
+    return date.toLocaleDateString();
+  };
+
+  const handleClick = () => {
+    if (!notification.is_read) {
+      onMarkRead(notification.id);
+    }
+    onClick?.(notification);
+  };
+
+  return (
+    <div
+      className={`relative group hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+        !notification.is_read ? "bg-blue-50 border-l-4 border-l-blue-500" : ""
+      }`}
+      onClick={handleClick}
+    >
+      <div className="px-4 py-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <div
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  notification.is_read ? "bg-gray-300" : "bg-blue-500"
+                }`}
+              ></div>
+              <p
+                className={`text-sm font-medium text-gray-900 truncate ${
+                  !notification.is_read ? "font-semibold" : ""
+                }`}
+              >
+                {notification.title}
+              </p>
+            </div>
+
+            <p className="text-xs text-gray-600 mt-1 line-clamp-2 ml-4">
+              {notification.body}
+            </p>
+
+            <div className="flex items-center justify-between mt-2 ml-4">
+              <p className="text-xs text-gray-400">
+                {formatTimeAgo(
+                  notification.created_at || notification.timestamp
+                )}
+              </p>
+
+              {notification.type && (
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${
+                    notification.type === "urgent"
+                      ? "bg-red-100 text-red-700"
+                      : notification.type === "info"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {notification.type}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Action buttons - shown on hover */}
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center space-x-1 ml-2">
+            {!notification.is_read && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkRead(notification.id);
+                }}
+                className="p-1 hover:bg-blue-100 rounded-full transition-colors duration-200"
+                title="Mark as read"
+              >
+                <svg
+                  className="w-3 h-3 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </button>
+            )}
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(notification.id);
+              }}
+              className="p-1 hover:bg-red-100 rounded-full transition-colors duration-200"
+              title="Delete notification"
+            >
+              <svg
+                className="w-3 h-3 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Desktop Notification Dropdown
+const NotificationDropdown = ({
+  notifications,
+  unreadCount,
+  loading,
+  error,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onDelete,
+  onRefresh,
+  user,
+}) => {
+  const [filter, setFilter] = useState("all"); // all, unread, read
+
+  const filteredNotifications = notifications.filter((notification) => {
+    if (filter === "unread") return !notification.is_read;
+    if (filter === "read") return notification.is_read;
+    return true;
+  });
+
+  return (
+    <div className="absolute right-0 mt-2 w-80 lg:w-96 bg-white text-black rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-gray-200 p-4">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-gray-800 font-bold text-base">Notifications</h3>
+          {unreadCount > 0 && (
+            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200 disabled:opacity-50"
+            title="Refresh notifications"
+          >
+            <svg
+              className={`w-4 h-4 text-gray-600 ${
+                loading ? "animate-spin" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
+
+          {notifications.length > 0 && unreadCount > 0 && (
+            <button
+              onClick={onMarkAllAsRead}
+              className="text-xs text-blue-600 hover:text-blue-800 transition-colors duration-200 px-2 py-1 hover:bg-blue-50 rounded"
+            >
+              Mark all read
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      {notifications.length > 0 && (
+        <div className="flex border-b border-gray-200">
+          {[
+            { key: "all", label: "All", count: notifications.length },
+            { key: "unread", label: "Unread", count: unreadCount },
+            {
+              key: "read",
+              label: "Read",
+              count: notifications.length - unreadCount,
+            },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
+              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                filter === tab.key
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
+                  : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+              }`}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {error ? (
+          <div className="p-4 text-center">
+            <div className="text-red-500 mb-2">
+              <svg
+                className="w-8 h-8 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+            <button
+              onClick={onRefresh}
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              Try again
+            </button>
+          </div>
+        ) : loading && notifications.length === 0 ? (
+          <div className="p-6 space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="flex space-x-3">
+                  <div className="w-2 h-2 bg-gray-200 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredNotifications.length === 0 ? (
+          <div className="p-6 text-gray-600 text-center flex flex-col items-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+              <CiBellOn className="w-6 h-6 text-gray-400" />
+            </div>
+            <p className="text-sm font-medium mb-1">
+              {filter === "unread"
+                ? "No unread notifications"
+                : filter === "read"
+                ? "No read notifications"
+                : "No notifications yet"}
+            </p>
+            <p className="text-xs text-gray-500">
+              {filter === "all" &&
+                "You'll see notifications here when you receive them"}
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {filteredNotifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onMarkRead={onMarkAsRead}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      {notifications.length > 0 && (
+        <div className="border-t border-gray-200 p-3">
+          <Link
+            href={`/pages/${user?.userType}/inbox`}
+            className="block text-center text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 py-1 hover:bg-blue-50 rounded"
+          >
+            View all notifications
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Enhanced Mobile Notification Dropdown
+const MobileNotificationDropdown = ({
+  notifications,
+  unreadCount,
+  loading,
+  error,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onDelete,
+  onRefresh,
+  onClose,
+  user,
+}) => {
+  return (
+    <div className="md:hidden fixed top-14 sm:top-16 left-0 right-0 bg-white text-black shadow-lg z-40 max-h-96 flex flex-col border-b border-gray-200">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-gray-200 p-4">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-gray-800 font-bold text-base">Notifications</h3>
+          {unreadCount > 0 && (
+            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200"
+          >
+            <svg
+              className={`w-4 h-4 text-gray-600 ${
+                loading ? "animate-spin" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
+
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors duration-200"
+          >
+            <svg
+              className="w-4 h-4 text-gray-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      {notifications.length > 0 && unreadCount > 0 && (
+        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+          <button
+            onClick={onMarkAllAsRead}
+            className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+          >
+            Mark all {unreadCount} as read
+          </button>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {error ? (
+          <div className="p-4 text-center">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+            <button
+              onClick={onRefresh}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Try again
+            </button>
+          </div>
+        ) : loading && notifications.length === 0 ? (
+          <div className="p-4 space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="p-6 text-gray-600 text-center">
+            <CiBellOn className="w-10 h-10 text-gray-400 mb-2 mx-auto" />
+            <p className="text-sm">No new notifications</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onMarkRead={onMarkAsRead}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      {notifications.length > 0 && (
+        <div className="border-t border-gray-200 p-3">
+          <Link
+            href={`/pages/${user?.userType}/inbox`}
+            className="block text-center text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 py-2"
+            onClick={onClose}
+          >
+            View all notifications →
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Enhanced Notification Section Component
+const NotificationSection = ({ user, admin }) => {
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    error,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications(user, admin);
+
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notificationRef = useRef(null);
+
+  const handleRefresh = () => {
+    fetchNotifications(true);
+  };
+
+  const handleToggleNotifications = () => {
+    setNotifOpen(!notifOpen);
+  };
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setNotifOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <>
+      {/* Desktop Notification Button */}
+      <div className="hidden md:block relative" ref={notificationRef}>
+        <button
+          onClick={handleToggleNotifications}
+          className="relative focus:outline-none p-2 hover:bg-blue-600 rounded-full transition-all duration-200 group"
+          aria-label="Notifications"
+        >
+          <CiBellOn className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium animate-pulse">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+          {loading && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          )}
+        </button>
+
+        {notifOpen && (
+          <NotificationDropdown
+            notifications={notifications}
+            unreadCount={unreadCount}
+            loading={loading}
+            error={error}
+            onMarkAsRead={markAsRead}
+            onMarkAllAsRead={markAllAsRead}
+            onDelete={deleteNotification}
+            onRefresh={handleRefresh}
+            user={user}
+          />
+        )}
+      </div>
+
+      {/* Mobile Notification Button */}
+      <div className="md:hidden relative">
+        <button
+          onClick={handleToggleNotifications}
+          className="relative focus:outline-none p-2 hover:bg-blue-600 rounded-full transition-colors duration-200"
+          aria-label="Notifications"
+        >
+          <CiBellOn className="w-6 h-6" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[16px] h-[16px] flex items-center justify-center font-medium">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Notification Dropdown */}
+      {notifOpen && (
+        <MobileNotificationDropdown
+          notifications={notifications}
+          unreadCount={unreadCount}
+          loading={loading}
+          error={error}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onDelete={deleteNotification}
+          onRefresh={handleRefresh}
+          onClose={() => setNotifOpen(false)}
+          user={user}
+        />
+      )}
+    </>
+  );
+};
+
+// Main Navbar Component
 const Navbar = () => {
   const { user, admin, loading, signOut, signOutAdmin, fetchSession } =
     useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [hasLease, setHasLease] = useState(null);
   const router = useRouter();
 
   const dropdownRef = useRef(null);
-  const notificationRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
   useEffect(() => {
     if (!user && !admin) {
       fetchSession();
     }
-    fetchNotifications();
   }, [user, admin]);
 
-  //  check tenant if have exisiting lease.
+  // Check tenant if have existing lease
   useEffect(() => {
     if (user?.userType === "tenant" && user?.tenant_id) {
       const fetchLeaseStatus = async () => {
@@ -47,38 +766,10 @@ const Navbar = () => {
     }
   }, [user?.tenant_id]);
 
-  const fetchNotifications = async () => {
-    if (!user && !admin) return;
-
-    const userId = user?.user_id || admin?.admin_id;
-    if (!userId) return;
-
-    try {
-      const res = await fetch(
-        `/api/notification/getNotifications?userId=${userId}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data);
-      } else {
-        console.error("Failed to fetch notifications:", res.status);
-      }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
-      }
-
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target)
-      ) {
-        setNotifOpen(false);
       }
 
       if (
@@ -100,7 +791,6 @@ const Navbar = () => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setMenuOpen(false);
-        setNotifOpen(false);
       }
     };
 
@@ -125,12 +815,6 @@ const Navbar = () => {
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
-    if (notifOpen) setNotifOpen(false);
-  };
-
-  const toggleNotifications = () => {
-    setNotifOpen(!notifOpen);
-    if (dropdownOpen) setDropdownOpen(false);
   };
 
   const handleLogout = async () => {
@@ -164,7 +848,6 @@ const Navbar = () => {
         { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/tenant/visit-history", label: "My Bookings" },
         { href: "/pages/tenant/chat", label: "Chat" },
-        // { href: "/pages/tenant/inbox", label: "Inbox" },
       ];
     }
 
@@ -179,36 +862,6 @@ const Navbar = () => {
   };
 
   const navigationLinks = getNavigationLinks();
-
-  const markAllAsRead = async () => {
-    if (!notifications.length) return;
-
-    try {
-      const unreadNotifications = notifications.filter((n) => !n.is_read);
-      if (unreadNotifications.length === 0) {
-        return;
-      }
-
-      const res = await fetch("/api/notification/mark-all-read", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ids: unreadNotifications.map((n) => n.id) }),
-      });
-
-      if (!res.ok) {
-        console.error("Failed to mark all notifications as read:", res.status);
-        return;
-      }
-
-      setNotifications(notifications.map((n) => ({ ...n, is_read: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-    }
-  };
-  
 
   return (
     <>
@@ -273,78 +926,8 @@ const Navbar = () => {
             ) : (
               // Authenticated Desktop Actions
               <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
-                {/* Notifications */}
-                <div className="relative" ref={notificationRef}>
-                  <button
-                    onClick={toggleNotifications}
-                    className="relative focus:outline-none p-1.5 lg:p-2 hover:bg-blue-600 rounded-full transition-colors duration-200"
-                    aria-label="Notifications"
-                  >
-                    <CiBellOn className="w-5 h-5 lg:w-6 lg:h-6" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 lg:h-5 lg:w-5 flex items-center justify-center transition-all duration-300">
-                        {unreadCount > 99 ? "99+" : unreadCount}
-                      </span>
-                    )}
-                  </button>
-
-                  {notifOpen && (
-                    <div className="absolute right-0 mt-2 w-72 lg:w-80 bg-white text-black rounded-lg shadow-xl py-2 z-10 transition-all duration-300 transform origin-top-right">
-                      <div className="flex justify-between items-center border-b px-4 pb-2">
-                        <h3 className="text-gray-800 font-bold text-sm lg:text-base">
-                          Notifications
-                        </h3>
-                        {notifications.length > 0 && (
-                          <button
-                            className="text-xs text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                            onClick={markAllAsRead}
-                          >
-                            Mark all as read
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="max-h-80 lg:max-h-96 overflow-y-auto">
-                        {notifications.length === 0 ? (
-                          <div className="px-4 py-6 text-gray-600 text-center flex flex-col items-center">
-                            <CiBellOn className="w-8 h-8 lg:w-10 lg:h-10 text-gray-400 mb-2" />
-                            <p className="text-sm">No new notifications</p>
-                          </div>
-                        ) : (
-                          notifications.map((notif) => (
-                            <div
-                              key={notif?.id}
-                              className="border-b hover:bg-gray-50 cursor-pointer transition-colors duration-200"
-                            >
-                              <div className="px-4 py-3">
-                                <p className="font-semibold text-gray-800 text-sm">
-                                  {notif?.title}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                                  {notif?.body}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  Just now
-                                </p>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      {notifications.length > 0 && (
-                        <div className="px-4 pt-2 border-t">
-                          <Link
-                            href={`/pages/${user.userType}/inbox`}
-                            className="text-sm text-blue-600 hover:text-blue-800 block text-center transition-colors duration-200"
-                          >
-                            View all notifications
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                {/* Enhanced Notifications */}
+                <NotificationSection user={user} admin={admin} />
 
                 {/* User Dropdown */}
                 <div className="relative" ref={dropdownRef}>
@@ -365,7 +948,8 @@ const Navbar = () => {
                     />
                     <div className="hidden xl:block">
                       <div className="text-sm font-medium leading-none">
-                        {user?.firstName || admin?.first_name + admin?.last_name}
+                        {user?.firstName ||
+                          admin?.first_name + admin?.last_name}
                       </div>
                       <div className="text-xs text-blue-100">
                         {user?.userType || "Admin"}
@@ -393,7 +977,9 @@ const Navbar = () => {
                     <div className="absolute right-0 top-12 w-56 bg-white text-black rounded-lg shadow-xl py-2 z-10 transition-all duration-300 transform origin-top-right">
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-semibold text-gray-900">
-                          {user?.firstName || admin?.first_name + ' ' + admin?.last_name || "Guest"}
+                          {user?.firstName ||
+                            admin?.first_name + " " + admin?.last_name ||
+                            "Guest"}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
                           {user?.email || admin?.email || ""}
@@ -494,26 +1080,26 @@ const Navbar = () => {
                       )}
 
                       {user?.userType === "tenant" && (
-                          <Link
-                              href={`/pages/tenant/digital-passport`}
-                              className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
+                        <Link
+                          href={`/pages/tenant/digital-passport`}
+                          className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
+                        >
+                          <svg
+                            className="w-4 h-4 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
                           >
-                            <svg
-                                className="w-4 h-4 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M12 12c2.28 0 4.09-1.8 4.09-4.09 0-2.28-1.8-4.09-4.09-4.09s-4.09 1.8-4.09 4.09C7.91 10.2 9.72 12 12 12zm0 2c-3.31 0-6 2.69-6 6h12c0-3.31-2.69-6-6-6z"
-                              />
-                            </svg>
-                            My Digital Passport
-                          </Link>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M12 12c2.28 0 4.09-1.8 4.09-4.09 0-2.28-1.8-4.09-4.09-4.09s-4.09 1.8-4.09 4.09C7.91 10.2 9.72 12 12 12zm0 2c-3.31 0-6 2.69-6 6h12c0-3.31-2.69-6-6-6z"
+                            />
+                          </svg>
+                          My Digital Passport
+                        </Link>
                       )}
 
                       {admin && (
@@ -532,7 +1118,7 @@ const Navbar = () => {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth="2"
-                              d="M16 7a4 4 0 11-8 0 4 4 0 008 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                             ></path>
                           </svg>
                           View Profile
@@ -570,20 +1156,7 @@ const Navbar = () => {
             {/* Mobile Actions */}
             <div className="md:hidden flex items-center space-x-1 sm:space-x-2">
               {(user || admin) && (
-                <div className="relative" ref={notificationRef}>
-                  <button
-                    onClick={toggleNotifications}
-                    className="relative focus:outline-none p-1.5 sm:p-2 hover:bg-blue-600 rounded-full transition-colors duration-200"
-                    aria-label="Notifications"
-                  >
-                    <CiBellOn className="w-5 h-5 sm:w-6 sm:h-6" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center transition-all duration-300">
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                <NotificationSection user={user} admin={admin} />
               )}
 
               <button
@@ -785,7 +1358,7 @@ const Navbar = () => {
                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                           ></path>
                         </svg>
-                         Profile and Settings
+                        Profile and Settings
                       </Link>
                     )}
 
@@ -843,63 +1416,6 @@ const Navbar = () => {
           </div>
         )}
       </nav>
-
-      {/* Mobile Notifications Dropdown */}
-      {notifOpen && (
-        <div className="md:hidden fixed top-14 sm:top-16 left-0 right-0 bg-white text-black px-4 py-3 shadow-lg z-30 max-h-96 overflow-y-auto transition-all duration-300 transform origin-top">
-          <div className="flex justify-between items-center border-b pb-2 mb-3">
-            <h3 className="text-gray-800 font-bold text-sm sm:text-base">
-              Notifications
-            </h3>
-            {notifications.length > 0 && (
-              <button
-                className="text-xs text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                onClick={markAllAsRead}
-              >
-                Mark all as read
-              </button>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            {notifications.length === 0 ? (
-              <div className="py-8 text-gray-600 text-center flex flex-col items-center">
-                <CiBellOn className="w-10 h-10 text-gray-400 mb-2" />
-                <p className="text-sm">No new notifications</p>
-              </div>
-            ) : (
-              notifications.map((notif) => (
-                <div
-                  key={notif?.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors duration-200 pb-2 last:border-b-0"
-                >
-                  <div className="py-2">
-                    <p className="font-semibold text-gray-800 text-sm">
-                      {notif?.title}
-                    </p>
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                      {notif?.body}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">Just now</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {notifications.length > 0 && (
-            <div className="pt-3 border-t border-gray-200 mt-3">
-              <Link
-                href={`/pages/${user?.userType}/inbox`}
-                className="text-sm text-blue-600 hover:text-blue-800 block text-center transition-colors duration-200 py-2"
-                onClick={() => setNotifOpen(false)}
-              >
-                View all notifications
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
     </>
   );
 };
