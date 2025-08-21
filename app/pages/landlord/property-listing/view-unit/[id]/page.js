@@ -45,8 +45,6 @@ const ViewUnitPage = () => {
   const [activeTab, setActiveTab] = useState("units");
 
 
-
-
   useEffect(() => {
     if (!id) return;
     async function fetchBillingData_PropertyUtility() {
@@ -308,80 +306,104 @@ useEffect(() => {
   return (
     <LandlordLayout>
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center space-x-2 mb-2">
-            <BuildingOffice2Icon className="h-6 w-6 text-blue-600" />
-            <h1 className="text-2xl font-bold text-blue-600">
-              {isLoading
-                ? "Loading..."
-                : propertyDetails?.property_name || "Property Details"}
-            </h1>
-          </div>
-          <p className="text-gray-600 mb-4">Manage units for this property</p>
-          {subscription && (
-            <p className="text-gray-600 text-sm mb-2">
-              <span className="font-medium">
-                {units?.length}/{subscription.listingLimits.maxUnits}
-              </span>{" "}
-              units used
-            </p>
-          )}
-          <button
-            className={`flex items-center px-4 py-2 rounded-md font-bold transition-colors ${
-              loadingSubscription ||
-              !subscription ||
-              units?.length >= subscription?.listingLimits?.maxUnits
-                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-            onClick={handleAddUnitClick}
-            disabled={
-              loadingSubscription ||
-              !subscription ||
-              units?.length >= subscription?.listingLimits?.maxUnits
-            }
-          >
-            <PlusCircleIcon className="h-5 w-5 mr-2" />
-            Add New Unit
-          </button>
 
-          {/*  Billing Management */}
-        <button
-  onClick={() => setBillingMode(!billingMode)}
-  className="mt-2 mb-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
->
-  {billingMode ? "Exit Billing Mode" : "Enter Billing Mode"}
-</button>
-
-        <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-indigo-600 text-white px-4 py-2.5 rounded-md shadow hover:bg-indigo-700 transition-colors flex items-center gap-2"
-          >
-            <span>Property Utility</span>
-          </button>
-
-          {hasBillingForMonth && (
-            <div className="flex items-center text-green-600 gap-1">
-          <FaCheckCircle size='20' />
-              <span className="text-sm">Utility bill already issued for this month</span>
+        {/* HEADER */}
+        <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border border-gray-200">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-4">
+            <BuildingOffice2Icon className="h-7 w-7 text-blue-600" />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {isLoading
+                    ? "Loading..."
+                    : propertyDetails?.property_name || "Property Details"}
+              </h1>
+              <p className="text-gray-500 text-sm">Manage units and utilities</p>
             </div>
-          )}
+          </div>
 
-          {subscription &&
-            units?.length >= subscription.listingLimits.maxUnits && (
-              <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                <div className="flex items-center">
-                  <ExclamationCircleIcon className="h-6 w-6 text-red-600 mr-2" />
-                  <p className="font-semibold">
-                    You have reached your unit limit. Upgrade your plan to add
-                    more.
-                  </p>
+          {/* Subscription Usage */}
+          {subscription && (
+              <div className="mb-4">
+                <p className="text-gray-600 text-sm">
+        <span className="font-semibold">
+          {units?.length}/{subscription.listingLimits.maxUnits}
+        </span>{" "}
+                  units used
+                </p>
+                <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
+                  <div
+                      className="h-2 bg-blue-600 rounded-full"
+                      style={{
+                        width: `${
+                            (units?.length / subscription.listingLimits.maxUnits) * 100
+                        }%`,
+                      }}
+                  />
                 </div>
               </div>
-            )}
+          )}
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3 mb-4">
+            <button
+                className={`flex items-center px-4 py-2 rounded-md font-semibold transition-colors ${
+                    loadingSubscription ||
+                    !subscription ||
+                    units?.length >= subscription?.listingLimits?.maxUnits
+                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+                onClick={handleAddUnitClick}
+                disabled={
+                    loadingSubscription ||
+                    !subscription ||
+                    units?.length >= subscription?.listingLimits?.maxUnits
+                }
+            >
+              <PlusCircleIcon className="h-5 w-5 mr-2" />
+              Add Unit
+            </button>
+
+            <button
+                onClick={() => setBillingMode(!billingMode)}
+                className="px-4 py-2 rounded-md font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+            >
+              {billingMode ? "Exit Billing Mode" : "Enter Billing Mode"}
+            </button>
+
+            <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-4 py-2 rounded-md font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+            >
+              Property Utility
+            </button>
+          </div>
+
+          {/* Billing Status */}
+          {hasBillingForMonth && (
+              <div className="flex items-center gap-2 text-green-600 mb-3">
+                <FaCheckCircle size={20} />
+                <span className="text-sm">
+        Utility bill already issued for this month
+      </span>
+              </div>
+          )}
+
+          {/* Limit Warning */}
+          {subscription && units?.length >= subscription.listingLimits.maxUnits && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2">
+                <ExclamationCircleIcon className="h-6 w-6 text-red-600 mt-0.5" />
+                <p className="text-sm font-medium">
+                  You have reached your unit limit.{" "}
+                  <span className="font-semibold">Upgrade your plan</span> to add more
+                  units.
+                </p>
+              </div>
+          )}
         </div>
 
-
+        {/* TABS NAVIGATION */}
         <div className="flex gap-4 border-b border-gray-200 mb-6">
           <button
               onClick={() => setActiveTab("units")}

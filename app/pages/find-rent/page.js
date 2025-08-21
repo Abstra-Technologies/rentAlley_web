@@ -26,6 +26,7 @@ import { MdVerified, MdClose } from "react-icons/md";
 import { HiOutlineAdjustments } from "react-icons/hi";
 import Swal from "sweetalert2";
 import axios from "axios";
+import { logEvent } from "../../../utils/gtag";
 
 // Dynamic imports for map components
 const MapContainer = dynamic(
@@ -221,8 +222,19 @@ export default function PropertySearch() {
   };
 
   const handleViewUnitDetails = (unitId) => {
+    // Log the event before navigation
+    logEvent({
+      action: "view_unit_details",
+      params: {
+        property_id: selectedProperty.property_id,
+        unit_id: unitId,
+      },
+    });
+
+    // Navigate to the unit details page
     router.push(`/pages/find-rent/${selectedProperty.property_id}/${unitId}`);
   };
+
 
   const handleViewPropertyDetails = () => {
     router.push(`/pages/find-rent/${selectedProperty.property_id}`);

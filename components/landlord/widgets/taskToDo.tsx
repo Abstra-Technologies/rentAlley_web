@@ -1,11 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CheckCircle, Clock, Wrench, FileText, Home } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 export default function TaskWidget({ landlordId }: { landlordId: string }) {
     const [tasks, setTasks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    console.log('landlord id task:', landlordId);
 
     useEffect(() => {
         fetch(`/api/landlord/tasks?landlordId=${landlordId}`)
@@ -23,34 +22,21 @@ export default function TaskWidget({ landlordId }: { landlordId: string }) {
         setTasks(tasks.map((t) => (t.id === id ? { ...t, status: "completed" } : t)));
     };
 
-    const getIcon = (type: string) => {
-        switch (type) {
-            case "visit":
-                return <Home className="w-4 h-4 text-blue-500" />;
-            case "payment":
-                return <FileText className="w-4 h-4 text-green-500" />;
-            case "maintenance":
-                return <Wrench className="w-4 h-4 text-orange-500" />;
-            case "agreement":
-                return <Clock className="w-4 h-4 text-purple-500" />;
-            default:
-                return <Clock className="w-4 h-4 text-gray-400" />;
-        }
-    };
-
-    if (loading) return <p className="text-sm text-gray-500">Loading tasks...</p>;
-
     return (
-        <div className="fixed bottom-4 right-4 bg-white shadow-xl rounded-2xl w-80 p-4 border border-gray-200">
+        <div className="bg-white shadow-xl rounded-2xl w-full max-w-xl p-4 border border-gray-200">
             <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
-                📌 Tasks
+                📌 Pending Tasks
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
           {tasks.length}
         </span>
             </h3>
 
-            {tasks.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-6">✅ All tasks completed</p>
+            {loading ? (
+                <p className="text-sm text-gray-500 text-center py-6">Loading tasks...</p>
+            ) : tasks.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-6">
+                    ✅ All tasks completed
+                </p>
             ) : (
                 <ul className="space-y-2 max-h-64 overflow-y-auto pr-1">
                     {tasks.map((task) => (
@@ -61,25 +47,28 @@ export default function TaskWidget({ landlordId }: { landlordId: string }) {
                             }`}
                         >
                             <div className="flex items-center gap-2">
-                                {getIcon(task.type)}
+                                {/* Example: replace with getIcon(task.type) */}
+                                <span className="w-5 h-5 text-gray-500">📍</span>
                                 <span
                                     className={`text-sm ${
-                                        task.status === "completed" ? "line-through text-gray-400" : "text-gray-800"
+                                        task.status === "completed"
+                                            ? "line-through text-gray-400"
+                                            : "text-gray-800"
                                     }`}
                                 >
                   {task.label || task.title}
                 </span>
                             </div>
 
-                            {task.status !== "completed" && (
-                                <button
-                                    onClick={() => markComplete(task.id)}
-                                    className="flex items-center gap-1 text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-lg transition"
-                                >
-                                    <CheckCircle className="w-3 h-3" />
-                                    Done
-                                </button>
-                            )}
+                            {/*{task.status !== "completed" && (*/}
+                            {/*    <button*/}
+                            {/*        onClick={() => markComplete(task.id)}*/}
+                            {/*        className="flex items-center gap-1 text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-lg transition"*/}
+                            {/*    >*/}
+                            {/*        <CheckCircle className="w-3 h-3" />*/}
+                            {/*        Done*/}
+                            {/*    </button>*/}
+                            {/*)}*/}
                         </li>
                     ))}
                 </ul>

@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
         // 1. Pending property visits
         const [visits] = await db.query(
             `
-      SELECT pv.visit_id, u.unit_name, pv.visit_date, pv.visit_time
+      SELECT pv.visit_id, u.unit_name, pv.visit_date, pv.visit_time, p.property_name
       FROM PropertyVisit pv
       JOIN Unit u ON pv.unit_id = u.unit_id
       JOIN Property p ON u.property_id = p.property_id
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         // 2. Maintenance requests not yet completed
         const [maintenance] = await db.query(
             `
-      SELECT mr.request_id, u.unit_name, mr.subject, mr.status
+      SELECT mr.request_id, u.unit_name, mr.subject, mr.status, p.property_name
       FROM MaintenanceRequest mr
       JOIN Unit u ON mr.unit_id = u.unit_id
       JOIN Property p ON u.property_id = p.property_id
@@ -65,13 +65,13 @@ export async function GET(req: NextRequest) {
             ...visits.map((v: any) => ({
                 type: "visit",
                 id: v.visit_id,
-                label: `Property visit request for ${v.unit_name} on ${v.visit_date} at ${v.visit_time}`,
+                label: `Property visit request for unit ${v.unit_name} ${v.property_name} on ${v.visit_date} at ${v.visit_time}`,
             })),
             // @ts-ignore
             ...maintenance.map((m: any) => ({
                 type: "maintenance",
                 id: m.request_id,
-                label: `Maintenance request "${m.subject}" in ${m.unit_name} is ${m.status}`,
+                label: `Maintenance request "${m.subject}" in unit ${m.unit_name} ${m.property_name} is ${m.status}`,
             })),
             // @ts-ignore
             ...payments.map((p: any) => ({

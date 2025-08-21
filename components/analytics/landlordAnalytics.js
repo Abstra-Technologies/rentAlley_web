@@ -191,12 +191,12 @@ const LandlordPropertyChart = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <RevenuePerformanceChart landlordId={landlord_id} />
-            <UpcomingVisitsWidget landlordId={landlord_id} />
+            <TaskWidget landlordId={user?.landlord_id} />
           </div>
 
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <TaskWidget landlordId={user?.landlord_id} />
+            <UpcomingVisitsWidget landlordId={landlord_id} />
           </div>
 
 
