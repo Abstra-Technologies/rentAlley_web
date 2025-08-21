@@ -123,9 +123,9 @@ const LandlordPropertyChart = () => {
     "Dec",
   ];
 
-  if (!user?.landlord_id) {
-    return <LoadingScreen />; // Or return null while waiting
-  }
+  // if (!user?.landlord_id) {
+  //   return <LoadingScreen />; // Or return null while waiting
+  // }
   // Ensure `monthlyVisits` is always an array before mapping
   const visitData = (monthlyVisits || []).map((item) => ({
     month: months[item.month - 1],
@@ -164,7 +164,9 @@ const LandlordPropertyChart = () => {
   return (
     <div className="p-6 bg-gray-50 rounded-lg">
       {loading ? (
-        <LoadingScreen />
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+            <LoadingScreen />
+          </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
