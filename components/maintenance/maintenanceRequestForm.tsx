@@ -9,6 +9,8 @@ import { MAINTENANCE_CATEGORIES } from "../../constant/maintenanceCategories";
 import Swal from "sweetalert2";
 import { z } from "zod";
 import { io } from "socket.io-client";
+import useAuthStore from "@/zustand/authStore";
+import { BackButton } from "../navigation/backButton";
 
 const maintenanceRequestSchema = z.object({
     category: z.string().min(1, "Category is required"),
@@ -25,7 +27,7 @@ type ValidationErrors = {
 };
 
 export default function MaintenanceRequestForm() {
-    const { user } = useAuth();
+    const { user } = useAuthStore();
     const router = useRouter();
     const searchParams = useSearchParams();
     const agreement_id = searchParams.get("agreement_id");
@@ -129,7 +131,9 @@ export default function MaintenanceRequestForm() {
     };
 
     return (
-        <TenantLayout>
+        <TenantLayout agreement_id={agreement_id}>
+            <BackButton label='Back'></BackButton>
+
             <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
                 <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg md:max-w-2xl">
                     <h2 className="text-2xl font-semibold text-center mb-4 text-blue-600">

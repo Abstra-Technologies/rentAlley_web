@@ -11,6 +11,7 @@ const PaymentsPerMonthChart = dynamic(() => import("../landlord/analytics/Monthl
 const UtilityTrendsChart = dynamic(() => import("../landlord/analytics/utilityTrend"), { ssr: false });
 const RevenuePerformanceChart = dynamic(() => import("../landlord/analytics/revenuePerformance"), { ssr: false });
 const UpcomingVisitsWidget = dynamic(() => import("../landlord/properties/propertyVisit"), { ssr: false });
+const TaskWidget = dynamic(() => import("../landlord/widgets/taskToDo"), { ssr: false });
 
 import Link from "next/link";
 
@@ -193,84 +194,94 @@ const LandlordPropertyChart = () => {
             <UpcomingVisitsWidget landlordId={landlord_id} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <TenantOccupationChart landlordId={landlord_id} />
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <PropertyUtilitiesChart landlordId={landlord_id} />
-            </div>
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <PropertyUtilitiesChart landlordId={landlord_id} />
-            </div>
-
-            <Link
-                href={`/pages/landlord/analytics/detailed/utility-trends?landlord_id=${landlord_id}`}
-                className="block"
-            >
-              <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer">
-                <UtilityTrendsChart landlordId={landlord_id} />
-              </div>
-            </Link>
+            <TaskWidget landlordId={user?.landlord_id} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Property Visits
-              </h3>
-              {visitData.length > 0 ? (
-                <Chart
-                  options={chartOptionsVisits}
-                  series={[
-                    {
-                      name: "Visits",
-                      data: visitData.map((item) => item.visitCount),
-                    },
-                  ]}
-                  type="bar"
-                  height={350}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No data available</p>
-                </div>
-              )}
-            </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-              <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                Occupancy Rate Overall Property
-              </h3>
-              {loading ? (
-                <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
-              ) : totalUnits > 0 ? (
-                <Chart
-                  options={chartOptionsOccupancy}
-                  series={chartSeries}
-                  type="radialBar"
-                  height={250}
-                />
-              ) : (
-                <div className="flex justify-center items-center h-64">
-                  <p className="text-gray-500">No data available</p>
-                </div>
-              )}
-            </div>
-          </div>
+          {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">*/}
+          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
+          {/*    <TenantOccupationChart landlordId={landlord_id} />*/}
+          {/*  </div>*/}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MaintenanceCategoriesChart landlordId={landlord_id} />
-            <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-                <PaymentsPerMonthChart landlordId={landlord_id}/>
-            </div>
-          </div>
+          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
+          {/*    <PropertyUtilitiesChart landlordId={landlord_id} />*/}
+          {/*  </div>*/}
+          {/*</div>*/}
+
+          {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">*/}
+          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
+          {/*    <PropertyUtilitiesChart landlordId={landlord_id} />*/}
+          {/*  </div>*/}
+
+          {/*  <Link*/}
+          {/*      href={`/pages/landlord/analytics/detailed/utility-trends?landlord_id=${landlord_id}`}*/}
+          {/*      className="block"*/}
+          {/*  >*/}
+          {/*    <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow cursor-pointer">*/}
+          {/*      <UtilityTrendsChart landlordId={landlord_id} />*/}
+          {/*    </div>*/}
+          {/*  </Link>*/}
+          {/*</div>*/}
+
+          {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">*/}
+          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
+          {/*    <h3 className="text-lg font-semibold text-gray-700 mb-3">*/}
+          {/*      Property Visits*/}
+          {/*    </h3>*/}
+          {/*    {visitData.length > 0 ? (*/}
+          {/*      <Chart*/}
+          {/*        options={chartOptionsVisits}*/}
+          {/*        series={[*/}
+          {/*          {*/}
+          {/*            name: "Visits",*/}
+          {/*            data: visitData.map((item) => item.visitCount),*/}
+          {/*          },*/}
+          {/*        ]}*/}
+          {/*        type="bar"*/}
+          {/*        height={350}*/}
+          {/*      />*/}
+          {/*    ) : (*/}
+          {/*      <div className="flex justify-center items-center h-64">*/}
+          {/*        <p className="text-gray-500">No data available</p>*/}
+          {/*      </div>*/}
+          {/*    )}*/}
+          {/*  </div>*/}
+
+          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
+          {/*    <h3 className="text-lg font-semibold text-gray-700 mb-3">*/}
+          {/*      Occupancy Rate Overall Property*/}
+          {/*    </h3>*/}
+          {/*    {loading ? (*/}
+          {/*      <div className="flex justify-center items-center h-64">*/}
+          {/*        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>*/}
+          {/*      </div>*/}
+          {/*    ) : totalUnits > 0 ? (*/}
+          {/*      <Chart*/}
+          {/*        options={chartOptionsOccupancy}*/}
+          {/*        series={chartSeries}*/}
+          {/*        type="radialBar"*/}
+          {/*        height={250}*/}
+          {/*      />*/}
+          {/*    ) : (*/}
+          {/*      <div className="flex justify-center items-center h-64">*/}
+          {/*        <p className="text-gray-500">No data available</p>*/}
+          {/*      </div>*/}
+          {/*    )}*/}
+          {/*  </div>*/}
+          {/*</div>*/}
+
+          {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">*/}
+          {/*  <MaintenanceCategoriesChart landlordId={landlord_id} />*/}
+          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
+          {/*      <PaymentsPerMonthChart landlordId={landlord_id}/>*/}
+          {/*  </div>*/}
+          {/*</div>*/}
+
+
+
+
         </>
       )}
     </div>
