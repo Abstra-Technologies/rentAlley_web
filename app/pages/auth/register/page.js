@@ -211,145 +211,168 @@ function Register() {
 
   return (
       <>
-        <div className="relative flex items-center justify-center min-h-screen bg-gray-100 overflow-hidden px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <Image
-              src="/images/hero-section.jpeg"
-              alt="Cityscape view of high-rise buildings"
-              fill
-              className="absolute inset-0 object-cover brightness-75"
-              priority
-          />
+        <div className="min-h-screen flex flex-col lg:flex-row">
+          {/* Left Hero Image (Large screens) */}
+          <div className="hidden lg:flex flex-1 relative">
+            <Image
+                src="/images/hero-section.jpeg"
+                alt="Cityscape view of high-rise buildings"
+                fill
+                className="object-cover brightness-75"
+                priority
+            />
+          </div>
 
-          <div className="relative z-10 bg-white p-6 sm:p-10 rounded-2xl shadow-lg w-full max-w-lg sm:max-w-2xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl font-bold text-center text-blue-600 mb-4">
-              Hestia
-            </h1>
-            <h1 className="text-xl sm:text-2xl font-semibold text-center mb-6">
-              Register as {role}
-            </h1>
-            {error && (
-                <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm sm:text-base">
-                  {error}
-                </div>
-            )}
-
-            <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
-              {[
-                { id: "firstName", label: "First Name", placeholder: "Juan" },
-                { id: "lastName", label: "Last Name", placeholder: "Gonzalez" },
-                { id: "dob", label: "Date of Birth", type: "date" },
-                {
-                  id: "mobileNumber",
-                  label: "Mobile Number",
-                  placeholder: "09XXXXXXXXX",
-                  type: "tel",
-                },
-                {
-                  id: "email",
-                  label: "Email Address",
-                  placeholder: "juan@email.com",
-                  type: "email",
-                },
-                {
-                  id: "password",
-                  label: "Password",
-                  placeholder: "••••••••",
-                  type: "password",
-                },
-                {
-                  id: "confirmPassword",
-                  label: "Confirm Password",
-                  placeholder: "••••••••",
-                  type: "password",
-                },
-              ].map(({ id, label, placeholder, type = "text" }) => (
-                  <div key={id}>
-                    <label
-                        htmlFor={id}
-                        className="block text-sm sm:text-base font-medium text-gray-700"
-                    >
-                      {label}
-                    </label>
-                    <input
-                        type={type}
-                        id={id}
-                        value={formData[id]}
-                        onChange={handleChange}
-                        className="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                        placeholder={placeholder || ""}
-                    />
-                    {errors[id] && (
-                        <p className="text-red-500 text-xs sm:text-sm mt-1">{errors[id]}</p>
-                    )}
-                  </div>
-              ))}
-
-              <div className="flex items-center text-xs sm:text-sm text-gray-700">
-                <input
-                    type="checkbox"
-                    id="terms"
-                    checked={agreeToTerms}
-                    onChange={handleCheckboxChange}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="terms" className="ml-2">
-                  By signing up, you agree to our{" "}
-                  <Link
-                      href="/pages/terms-services"
-                      className="text-blue-600 hover:underline"
-                  >
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                      href="/pages/terms-services"
-                      className="text-blue-600 hover:underline"
-                  >
-                    Privacy Policy
-                  </Link>
-                  .
-                </label>
-              </div>
-
-              <button
-                  type="submit"
-                  className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all text-sm sm:text-base"
-              >
-                Create Account
-              </button>
-            </form>
-
-            <div className="flex items-center my-6">
-              <div className="border-t border-gray-300 flex-grow"></div>
-              <span className="mx-3 text-gray-500 font-medium text-sm sm:text-base">or</span>
-              <div className="border-t border-gray-300 flex-grow"></div>
+          {/* Form Container */}
+          <div className="flex-1 flex justify-center items-center relative bg-gray-100 lg:bg-white">
+            {/* Mobile background hero image */}
+            <div className="absolute inset-0 lg:hidden">
+              <Image
+                  src="/images/hero-section.jpeg"
+                  alt="Cityscape view of high-rise buildings"
+                  fill
+                  className="object-cover brightness-75"
+                  priority
+              />
             </div>
 
-            <button
-                type="button"
-                onClick={handleGoogleSignup}
-                className="w-full py-3 px-4 border border-gray-300 rounded-lg flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"
-            >
-              <GoogleLogo />
-              <span className="ml-2 font-medium text-gray-700 text-sm sm:text-base">
-            Sign up with Google
-          </span>
-            </button>
-            {error_2 && (
-                <p className="text-red-600 text-sm mt-2">{decodeURIComponent(error_2)}</p>
-            )}
+            {/* Form Box */}
+            <div className="relative z-10 w-full mt-2 mb-2 max-w-lg sm:max-w-2xl mx-4 sm:mx-auto p-6 sm:p-10 bg-white rounded-2xl shadow-lg">
+              <h1 className="text-3xl sm:text-4xl font-bold text-center text-blue-600 mb-4">
+                Hestia
+              </h1>
+              <h2 className="text-xl sm:text-2xl font-semibold text-center mb-6">
+                Register as {role}
+              </h2>
 
-            <p className="mt-6 text-center text-sm sm:text-base text-gray-500">
-              Already have an account?{" "}
-              <Link
-                  href="/pages/auth/login"
-                  className="text-blue-600 hover:underline font-medium"
+              {error && (
+                  <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm sm:text-base">
+                    {error}
+                  </div>
+              )}
+
+              <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
+                {[
+                  { id: "firstName", label: "First Name", placeholder: "Juan" },
+                  { id: "lastName", label: "Last Name", placeholder: "Gonzalez" },
+                  { id: "dob", label: "Date of Birth", type: "date" },
+                  {
+                    id: "mobileNumber",
+                    label: "Mobile Number",
+                    placeholder: "09XXXXXXXXX",
+                    type: "tel",
+                  },
+                  {
+                    id: "email",
+                    label: "Email Address",
+                    placeholder: "juan@email.com",
+                    type: "email",
+                  },
+                  {
+                    id: "password",
+                    label: "Password",
+                    placeholder: "••••••••",
+                    type: "password",
+                  },
+                  {
+                    id: "confirmPassword",
+                    label: "Confirm Password",
+                    placeholder: "••••••••",
+                    type: "password",
+                  },
+                ].map(({ id, label, placeholder, type = "text" }) => (
+                    <div key={id}>
+                      <label
+                          htmlFor={id}
+                          className="block text-sm sm:text-base font-medium text-gray-700"
+                      >
+                        {label}
+                      </label>
+                      <input
+                          type={type}
+                          id={id}
+                          value={formData[id]}
+                          onChange={handleChange}
+                          className="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                          placeholder={placeholder || ""}
+                      />
+                      {errors[id] && (
+                          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors[id]}</p>
+                      )}
+                    </div>
+                ))}
+
+                <div className="flex items-center text-xs sm:text-sm text-gray-700">
+                  <input
+                      type="checkbox"
+                      id="terms"
+                      checked={agreeToTerms}
+                      onChange={handleCheckboxChange}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="terms" className="ml-2">
+                    By signing up, you agree to our{" "}
+                    <Link
+                        href="/pages/terms-services"
+                        className="text-blue-600 hover:underline"
+                    >
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link
+                        href="/pages/terms-services"
+                        className="text-blue-600 hover:underline"
+                    >
+                      Privacy Policy
+                    </Link>
+                    .
+                  </label>
+                </div>
+
+                <button
+                    type="submit"
+                    className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all text-sm sm:text-base"
+                >
+                  Create Account
+                </button>
+              </form>
+
+              {/* Divider */}
+              <div className="flex items-center my-6">
+                <div className="border-t border-gray-300 flex-grow"></div>
+                <span className="mx-3 text-gray-500 font-medium text-sm sm:text-base">or</span>
+                <div className="border-t border-gray-300 flex-grow"></div>
+              </div>
+
+              {/* Google Signup */}
+              <button
+                  type="button"
+                  onClick={handleGoogleSignup}
+                  className="w-full py-3 px-4 border border-gray-300 rounded-lg flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"
               >
-                Login here
-              </Link>
-            </p>
+                <GoogleLogo />
+                <span className="ml-2 font-medium text-gray-700 text-sm sm:text-base">
+                Sign up with Google
+              </span>
+              </button>
+
+              {error_2 && (
+                  <p className="text-red-600 text-sm mt-2">{decodeURIComponent(error_2)}</p>
+              )}
+
+              <p className="mt-6 text-center text-sm sm:text-base text-gray-500">
+                Already have an account?{" "}
+                <Link
+                    href="/pages/auth/login"
+                    className="text-blue-600 hover:underline font-medium"
+                >
+                  Login here
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
+
         <Footer />
       </>
   );
