@@ -68,13 +68,13 @@ function Login() {
     }
   }, [user, admin]);
 
-  if (user || admin) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        Redirecting...
-      </div>
-    );
-  }
+  // if (user || admin) {
+  //   return (
+  //     <div className="flex justify-center items-center h-screen">
+  //       Redirecting...
+  //     </div>
+  //   );
+  // }
 
   const handleChange = (e) => {
     const { id, value } = e.target;
