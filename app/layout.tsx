@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import InstallPrompt from "@/components/Commons/installPrompt";
 import Head from "next/head";
 import CookiesPermission from "@/components/Commons/setttings/cookiesPermission";
+import PushInit from "@/components/notification/pushNotifMobile";
 const geistSans = Geist({
     variable: "--font-geist-sans",
     subsets: ["latin"],
@@ -43,7 +44,7 @@ export default function RootLayout({
             {children}
             {/*<InstallPrompt />*/}
             <CookiesPermission />
-
+            <PushInit />
             {/* <FeedbackWidget /> */}
         </ClientLayout>
         </body>

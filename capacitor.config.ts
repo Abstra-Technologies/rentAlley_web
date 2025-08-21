@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Hestia Rent360',
   webDir: 'public',
   server: {
-    url: 'https://rent-alley-web.vercel.app/', // your deployed SSR Next.js URL
+    url: 'https://rent-alley-web.vercel.app/',
   }
 };
 
