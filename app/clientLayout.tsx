@@ -4,66 +4,125 @@ import { useEffect } from "react";
 import Script from "next/script";
 import Navbar from "../components/navigation/navbar";
 import useAuthStore from "../zustand/authStore";
+
+// Web FCM
 import { getToken, onMessage } from "firebase/messaging";
 // @ts-ignore
 import { messaging } from "../lib/firebase";
 
+// Capacitor
+import { Device } from "@capacitor/device";
+import { PushNotifications } from "@capacitor/push-notifications";
+
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const { fetchSession, user, admin } = useAuthStore();
-
-   useEffect(() => {
-    if (!user && !admin) {
-      fetchSession();
-    }
-  }, [user, admin]);
-
-   const user_id = user?.user_id;
+    const { fetchSession, user, admin } = useAuthStore();
 
     useEffect(() => {
-        if (!user?.user_id) return;
-        Notification.requestPermission().then((permission) => {
-            if (permission === "granted") {
+        if (!user && !admin) {
+            fetchSession();
+        }
+    }, [user, admin]);
+
+    const user_id = user?.user_id ?? admin?.id;
+
+    useEffect(() => {
+        if (!user_id) return;
+
+        async function setupPush() {
+            const info = await Device.getInfo();
+            const platform = info.platform; // "web" | "ios" | "android"
+
+            console.log("📱 Running on:", platform);
+
+            if (platform === "web") {
+                // -------------------
+                // 🔔 Web Push (Firebase)
+                // -------------------
+                Notification.requestPermission().then((permission) => {
+                    if (permission === "granted") {
+                        // @ts-ignore
+                        getToken(messaging, {
+                            vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+                        })
+                            .then((currentToken) => {
+                                if (currentToken) {
+                                    fetch("/api/auth/save-fcm-token", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            token: currentToken,
+                                            userId: user_id,
+                                            platform: "web",
+                                        }),
+                                    });
+                                }
+                            })
+                            .catch((err) => console.log("Error getting token:", err));
+                    }
+                });
+
+                // Foreground message listener
                 // @ts-ignore
-                getToken(messaging, { vapidKey: "BA1lJSSud0mm0aBsNycy4wW0Q7uzfS7MDYaXnNGZIxf7XrO4kpqb2u7-1cwVSn8DxO___OVEcA_34r1kmXEHwSI" })
-                    .then((currentToken) => {
-                        if (currentToken) {// Send token to backend
-                            fetch("/api/auth/save-fcm-token", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    token: currentToken,
-                                    userId: user_id, // or admin?.id
-                                    platform: "web"
+                onMessage(messaging, (payload) => {
+                    console.log("📩 Web push received:", payload);
+                });
+            } else {
+                // -------------------
+                // 📲 Native Push (Capacitor)
+                // -------------------
+                let permStatus = await PushNotifications.checkPermissions();
+                if (permStatus.receive !== "granted") {
+                    permStatus = await PushNotifications.requestPermissions();
+                }
 
-                                }),
-                            });
-                        }
-                    })
-                    .catch((err) => console.log("Error getting token:", err));
+                if (permStatus.receive === "granted") {
+                    await PushNotifications.register();
+                }
+
+                PushNotifications.addListener("registration", async (token) => {
+                    console.log("📲 Push token:", token.value);
+
+                    await fetch("/api/auth/save-fcm-token", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            token: token.value,
+                            userId: user_id,
+                            platform,
+                        }),
+                    });
+                });
+
+                PushNotifications.addListener("registrationError", (err) => {
+                    console.error("❌ Registration error:", err.error);
+                });
+
+                PushNotifications.addListener("pushNotificationReceived", (notification) => {
+                    console.log("📩 Push received:", notification);
+                });
+
+                PushNotifications.addListener("pushNotificationActionPerformed", (notification) => {
+                    console.log("👉 Push action performed:", notification.notification);
+                });
             }
-        });
+        }
 
-        // @ts-ignore
-        onMessage(messaging, (payload) => {
-            console.log("Message received in foreground:", payload);
-            // optionally show notification UI here
-        });
-    }, [user]);
+        setupPush();
+    }, [user_id]);
 
-  useEffect(() => {
-    const existingScript = document.getElementById("google-maps");
+    // Google Maps injection
+    useEffect(() => {
+        const existingScript = document.getElementById("google-maps");
+        if (!existingScript) {
+            const script = document.createElement("script");
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&libraries=places`;
+            script.id = "google-maps";
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+    }, []);
 
-    if (!existingScript) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&libraries=places`;
-      script.id = "google-maps";
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-  }, []);
-
-  
     return (
         <>
             {/* Google Analytics */}

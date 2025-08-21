@@ -2,11 +2,18 @@
 
 import { useEffect } from "react";
 import { PushNotifications } from "@capacitor/push-notifications";
+import { Device } from "@capacitor/device";
 
 export default function PushInit() {
     useEffect(() => {
         async function setupPush() {
             try {
+                // Detect platform (android, ios, web)
+                const info = await Device.getInfo();
+                const platform = info.platform; // "ios" | "android" | "web"
+
+                console.log("📱 Running on:", platform);
+
                 let permStatus = await PushNotifications.checkPermissions();
 
                 if (permStatus.receive !== "granted") {
@@ -18,9 +25,22 @@ export default function PushInit() {
                 }
 
                 // Registration success → get FCM token
-                PushNotifications.addListener("registration", (token) => {
+                PushNotifications.addListener("registration", async (token) => {
                     console.log("📲 Push token:", token.value);
-                    // TODO: send to your backend
+
+                    try {
+                        await fetch("/api/fcm/register", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                userId: 123, // TODO: replace with logged-in user ID
+                                token: token.value,
+                                platform, // save whether it's android/ios/web
+                            }),
+                        });
+                    } catch (err) {
+                        console.error("Error sending token to backend:", err);
+                    }
                 });
 
                 PushNotifications.addListener("registrationError", (err) => {

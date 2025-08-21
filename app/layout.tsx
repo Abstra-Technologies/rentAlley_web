@@ -44,7 +44,6 @@ export default function RootLayout({
             {children}
             {/*<InstallPrompt />*/}
             <CookiesPermission />
-            <PushInit />
             {/* <FeedbackWidget /> */}
         </ClientLayout>
         </body>
