@@ -45,15 +45,9 @@ const MaintenanceRequestPage = () => {
           `/api/landlord/subscription/active/${user?.landlord_id}`
         );
         setSubscription(response.data);
+        console.log('maintenance request data limit: ', response.data);
       } catch (error) {
         console.error("Error fetching subscription:", error);
-        setSubscription({
-          plan_name: "Free Plan",
-          is_active: 1,
-          listingLimits: {
-            maxMaintenanceRequest: 5,
-          },
-        });
       }
     };
 
@@ -185,25 +179,6 @@ const MaintenanceRequestPage = () => {
     setShowModal(true);
   };
 
-  const getPlanDetails = () => {
-    if (!subscription) return { name: "Loading...", limit: "..." };
-
-    const { plan_name } = subscription;
-    const { maxMaintenanceRequest } = subscription.listingLimits || {
-      maxMaintenanceRequest: 5,
-    };
-
-    return {
-      name: plan_name,
-      limit:
-        maxMaintenanceRequest === Infinity
-          ? "Unlimited"
-          : maxMaintenanceRequest,
-    };
-  };
-
-  const planDetails = getPlanDetails();
-
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <SearchParamsWrapper setActiveTab={setActiveTab} />
@@ -214,12 +189,14 @@ const MaintenanceRequestPage = () => {
           </h1>
           <div className="text-sm bg-blue-50 p-2 rounded border border-blue-200">
             <span className="font-medium">Subscription:</span>{" "}
-            {planDetails.name}
+            {subscription?.plan_name}
             <span className="mx-2">|</span>
             <span className="font-medium">Request Limit:</span>{" "}
-            {planDetails.limit}
+            {subscription?.listingLimits?.maxMaintenanceRequest}
           </div>
         </div>
+
+
         {hiddenRequestCount > 0 && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700">
             <strong>Note:</strong> {hiddenRequestCount} maintenance request
@@ -229,6 +206,7 @@ const MaintenanceRequestPage = () => {
             plan.
           </div>
         )}
+
         <div className="mb-6 border-b border-gray-200 bg-white rounded-t-lg flex">
           {["pending", "scheduled", "in-progress", "completed"].map((tab) => (
             <button
@@ -244,6 +222,7 @@ const MaintenanceRequestPage = () => {
             </button>
           ))}
         </div>
+
         {loading ? (
           <div className="text-center py-8">Loading requests...</div>
         ) : visibleRequests.length === 0 ? (

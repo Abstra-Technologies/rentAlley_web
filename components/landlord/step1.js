@@ -10,7 +10,6 @@ export const StepOne = () => {
   const [addressQuery, setAddressQuery] = useState("");
   const [addressResults, setAddressResults] = useState([]);
 
-  // Set default property type if not set
   useEffect(() => {
     if (!property.propertyType && PROPERTY_TYPES.length > 0) {
       setProperty({ propertyType: PROPERTY_TYPES[0].value });
@@ -114,23 +113,27 @@ export const StepOne = () => {
             />
           </div>
 
-          <PropertyMap
-              coordinates={coords.lat && coords.lng ? [coords.lat, coords.lng] : null}
-              setFields={({ lat, lng, address, barangay, city, province, region, postcode }) => {
-                setCoords({ lat, lng });
-                setProperty({
-                  ...property,
-                  lat,
-                  lng,
-                  street: address,
-                  brgyDistrict: barangay,
-                  city,
-                  province: region,
-                  zipCode: postcode || "",
-                });
-                setAddressQuery(address);
-              }}
-          />
+          <div className="relative overflow-hidden h-[400px] w-full rounded-lg border z-0">
+
+            <PropertyMap
+                coordinates={coords.lat && coords.lng ? [coords.lat, coords.lng] : null}
+                setFields={({ lat, lng, address, barangay, city, province, region, postcode }) => {
+                  setCoords({ lat, lng });
+                  setProperty({
+                    ...property,
+                    lat,
+                    lng,
+                    street: address,
+                    brgyDistrict: barangay,
+                    city,
+                    province: region,
+                    zipCode: postcode || "",
+                  });
+                  setAddressQuery(address);
+                }}
+            />
+          </div>
+
 
           <p className="mt-2 text-sm text-gray-600">
             Selected Location: {coords.lat}, {coords.lng}
@@ -165,8 +168,8 @@ export const StepOne = () => {
             <label className="block text-sm text-gray-600">Barangay/District</label>
             <input
                 type="text"
+                onChange={handleChange}
                 value={property.brgyDistrict || ""}
-                readOnly
                 className="w-full p-2 bg-gray-100 border border-gray-200 rounded"
             />
           </div>

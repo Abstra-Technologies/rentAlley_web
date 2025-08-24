@@ -26,10 +26,7 @@ export default async function getAnnouncements(req, res) {
 
         query += ` ORDER BY created_at DESC`;
 
-        console.log("Executing Query:", query);
-        // The database query  returns a nested array.
         const announcements = await db.query(query);
-        console.log("Announcements Retrieved:", announcements);
 
         return res.status(200).json(announcements[0] || []);
     } catch (error) {

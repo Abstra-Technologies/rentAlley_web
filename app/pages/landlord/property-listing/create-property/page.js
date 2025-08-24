@@ -17,8 +17,18 @@ import Swal from "sweetalert2";
 
 export default function AddNewProperty() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => {
+    // Try to get the saved step from localStorage
+    const savedStep = typeof window !== "undefined" ? localStorage.getItem("addPropertyStep") : null;
+    return savedStep ? Number(savedStep) : 1;
+  });
   const { fetchSession, user, admin } = useAuthStore();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("addPropertyStep", String(step));
+    }
+  }, [step]);
 
   useEffect(() => {
       if (!user && !admin) {
@@ -394,6 +404,8 @@ export default function AddNewProperty() {
         text: "Your property listing has been successfully submitted.",
         icon: "success",
       }).then(() => {
+        reset();
+        localStorage.removeItem("addPropertyStep");
         router.push("/pages/landlord/property-listing/review-listing");
       });
     } catch (error) {
@@ -463,6 +475,33 @@ export default function AddNewProperty() {
                     Back
                   </button>
                 )}
+
+                <div className="flex space-x-2">
+                  <button
+                      onClick={() => {
+                        Swal.fire({
+                          title: "Cancel Property Listing?",
+                          text: "All entered data will be lost.",
+                          icon: "warning",
+                          showCancelButton: true,
+                          confirmButtonText: "Yes, cancel",
+                          cancelButtonText: "No, stay",
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            reset();
+                            localStorage.removeItem("addPropertyStep");
+                            router.push("/pages/landlord/property-listing");
+                          }
+                        });
+                      }}
+                      disabled={isMutating}
+                      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+
                 {step < 5 ? (
                   <button
                     onClick={nextStep}

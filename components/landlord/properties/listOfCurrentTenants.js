@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { router, useRouter } from "next/navigation";
 import LandlordLayout from "../../navigation/sidebar-landlord";
+import LoadingScreen from "../../loadingScreen";
 
 export default function TenantList({ landlord_id }) {
   const [tenants, setTenants] = useState([]);
@@ -33,8 +34,12 @@ export default function TenantList({ landlord_id }) {
     router.push(`/pages/landlord/list_of_tenants/${tenant_id}`);
   };
 
-  if (!landlord_id) return <p>Please provide a valid landlord ID.</p>;
-  if (loading) return <p>Loading tenants...</p>;
+  if (loading) return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+        <LoadingScreen message = 'Fetching your current tenants, please wait...'/>
+      </div>
+  )
+
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (

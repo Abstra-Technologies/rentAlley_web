@@ -5,6 +5,9 @@ import Link from "next/link";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import useAuthStore from "../../../../zustand/authStore";
 import Swal from "sweetalert2";
+import LoadingScreen from "../../../../components/loadingScreen";
+
+
 export default function AnnouncementsList() {
   const router = useRouter();
   const { fetchSession, user, admin } = useAuthStore();
@@ -53,6 +56,12 @@ export default function AnnouncementsList() {
   const handleCreate = () => {
     router.push(`/pages/landlord/announcement/create-announcement`);
   };
+
+  if(loading) return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+        <LoadingScreen message = 'Fetching your announcements, please wait...'/>
+      </div>
+  )
 
 
   const uniqueProperties = [

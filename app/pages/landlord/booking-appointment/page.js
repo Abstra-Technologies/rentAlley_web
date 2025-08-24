@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Calendar, Clock, Home, User, XCircle, AlertT
 import LandlordLayout from '../../../../components/navigation/sidebar-landlord';
 import axios from 'axios';
 import useAuthStore from "../../../../zustand/authStore";
+import LoadingScreen from "../../../../components/loadingScreen";
 
 const BookingAppointment = () => {
   const { fetchSession, user, admin } = useAuthStore();
@@ -137,11 +138,9 @@ const BookingAppointment = () => {
 
   if (loading) {
     return (
-      <LandlordLayout>
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+          <LoadingScreen message = 'Fetching your booking, please wait...'/>
         </div>
-      </LandlordLayout>
     );
   }
 
