@@ -5,6 +5,7 @@ import { useEffect, useState, Suspense } from "react";
 import useAuthStore from "../../../../zustand/authStore";
 import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 import TenantBilling from "../../../../components/tenant/billing/currentBilling";
+import PreviousBilling from "../../../../components/tenant/billing/prevBillingList";
 
 function BillingContent() {
   const { user, fetchSession } = useAuthStore();
@@ -29,14 +30,16 @@ function BillingContent() {
     return <div className="p-4 text-center text-gray-500">Loading...</div>;
   }
 
-  console.log("[DEBUG] Passing user_id to TenantBilling:", user.user_id);
-
   return (
       <TenantLayout agreement_id={agreementId}>
         <TenantBilling agreement_id={agreementId} user_id={user.user_id} />
+        <PreviousBilling agreement_id={agreementId} user_id={user.user_id} />
       </TenantLayout>
   );
 }
+
+
+
 
 export default function TenantBillingPage() {
   return (

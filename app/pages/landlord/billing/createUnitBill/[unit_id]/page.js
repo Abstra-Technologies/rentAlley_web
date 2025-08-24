@@ -221,7 +221,7 @@ export default function CreateUnitBill() {
     <LandlordLayout>
       <div className="p-6 max-w-3xl mx-auto bg-white rounded-xl shadow-sm">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">
-          Unit {unit?.unit_name} - Billing
+          {property?.property_name} Unit {unit?.unit_name} - Billing
         </h1>
 
         {/* Show Billing Rates */}

@@ -24,6 +24,7 @@ import FBShareButton from "../../../../../../components/landlord/properties/shar
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 const ViewUnitPage = () => {
+
   const { id } = useParams();
   const router = useRouter();
   const { fetchSession, user, admin } = useAuthStore();
@@ -45,7 +46,7 @@ const ViewUnitPage = () => {
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [activeTab, setActiveTab] = useState("units");
 
-
+  // Billing Status
   useEffect(() => {
     if (!id) return;
     async function fetchBillingData_PropertyUtility() {
@@ -147,6 +148,7 @@ const ViewUnitPage = () => {
     }
   };
 
+  // get property Overall Details
   const { data: property } = useSWR(
     id ? `/api/propertyListing/viewDetailedProperty/${id}` : null,
     fetcher
@@ -286,6 +288,7 @@ useEffect(() => {
         params: { id },
       });
       setPropertyDetails(response.data.property);
+      console.log('property details:', response.data.property);
     } catch (error) {
       console.error("Failed to fetch property details:", error);
     }
@@ -308,45 +311,73 @@ useEffect(() => {
     <LandlordLayout>
       <div className="min-h-screen bg-gray-50 p-6">
 
-        {/* HEADER */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border border-gray-200">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-4">
-            <BuildingOffice2Icon className="h-7 w-7 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">
-                {isLoading
-                    ? "Loading..."
-                    : propertyDetails?.property_name || "Property Details"}
-              </h1>
-              <p className="text-gray-500 text-sm">Manage units and utilities</p>
+        {/* HEADER PART */}
+        <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border flex flex-col md:flex-row gap-6">
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <BuildingOffice2Icon className="h-7 w-7 text-blue-600" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">
+                  {isLoading
+                      ? "Loading..."
+                      : propertyDetails?.property_name || "Property Details"}
+                </h1>
+                <p className="text-gray-500 text-lg">Take control of your units efficiently </p>
+              </div>
             </div>
+
+            {/* Subscription Usage */}
+            {subscription && (
+                <div className="mb-4">
+                  <p className="text-gray-600 text-sm">
+                        <span className="font-semibold">
+                          {units?.length}/{subscription.listingLimits.maxUnits}
+                        </span>{" "}
+                    units used
+                  </p>
+                  <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
+                    <div
+                        className="h-2 bg-blue-600 rounded-full"
+                        style={{
+                          width: `${(units?.length / subscription.listingLimits.maxUnits) * 100}%`,
+                        }}
+                    />
+                  </div>
+                </div>
+            )}
+
+            {/* Billing Status */}
+            {hasBillingForMonth && (
+                <div className="flex items-center gap-2 text-green-600 mb-3">
+                  <FaCheckCircle size={20} />
+                  <span className="text-sm">
+                          Property Utility Rates is already set for this month.
+                  </span>
+                </div>
+            )}
+
+            {/* Limit Warning */}
+            {subscription && units?.length >= subscription.listingLimits.maxUnits && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2">
+                  <ExclamationCircleIcon className="h-6 w-6 text-red-600 mt-0.5" />
+                  <p className="text-sm font-medium">
+                    You have reached your unit limit.{" "}
+                    <span className="font-semibold">Upgrade your plan</span> to add more
+                    units.
+                  </p>
+                </div>
+            )}
+
+            {/* FB Share */}
+            {propertyDetails && (
+                <FBShareButton url={`https://rent-alley-web.vercel.app/pages/find-rent/${propertyDetails?.property_id}`} />
+            )}
           </div>
 
-          {/* Subscription Usage */}
-          {subscription && (
-              <div className="mb-4">
-                <p className="text-gray-600 text-sm">
-        <span className="font-semibold">
-          {units?.length}/{subscription.listingLimits.maxUnits}
-        </span>{" "}
-                  units used
-                </p>
-                <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
-                  <div
-                      className="h-2 bg-blue-600 rounded-full"
-                      style={{
-                        width: `${
-                            (units?.length / subscription.listingLimits.maxUnits) * 100
-                        }%`,
-                      }}
-                  />
-                </div>
-              </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex flex-wrap gap-3 mb-4">
+          {/* Sidebar Buttons */}
+          <div className="flex flex-col gap-3 w-full md:w-48">
             <button
                 className={`flex items-center px-4 py-2 rounded-md font-semibold transition-colors ${
                     loadingSubscription ||
@@ -373,41 +404,25 @@ useEffect(() => {
               {billingMode ? "Exit Billing Mode" : "Enter Billing Mode"}
             </button>
 
-            {billingMode && (
-            <button
-                onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 rounded-md font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-            >
-              Set Utility Rate
-            </button>)}
+            {/* Billing Actions base on type */}
+            <div className="flex flex-col gap-3">
+              {billingMode && propertyDetails?.utility_billing_type === "submetered" && (
+                  <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="px-4 py-2 rounded-md font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                  >
+                    Set Utility Rate
+                  </button>
+              )}
+              {/* For non-submetered types, show auto-bill info */}
+              {billingMode && propertyDetails?.utility_billing_type !== "submetered" && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                    Utility bills are only generated for submetered properties. For utilities included in the rent or paid directly to the concessionaire, billing are created automatically.
+                  </div>
+              )}
+            </div>
 
           </div>
-
-          {propertyDetails && (
-              <FBShareButton url={`https://rent-alley-web.vercel.app/pages/find-rent/${propertyDetails?.property_id}`} />
-          )}
-
-          {/* Billing Status */}
-          {hasBillingForMonth && (
-              <div className="flex items-center gap-2 text-green-600 mb-3">
-                <FaCheckCircle size={20} />
-                <span className="text-sm">
-        Utility bill already issued for this month
-      </span>
-              </div>
-          )}
-
-          {/* Limit Warning */}
-          {subscription && units?.length >= subscription.listingLimits.maxUnits && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2">
-                <ExclamationCircleIcon className="h-6 w-6 text-red-600 mt-0.5" />
-                <p className="text-sm font-medium">
-                  You have reached your unit limit.{" "}
-                  <span className="font-semibold">Upgrade your plan</span> to add more
-                  units.
-                </p>
-              </div>
-          )}
         </div>
 
         {/* TABS NAVIGATION */}
@@ -444,190 +459,190 @@ useEffect(() => {
           </button>
         </div>
 
-
         {/* Tabbed part of the page section units, and property documents */}
-
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
             <HomeIcon className="h-5 w-5 mr-2 text-blue-600" />
             Available Units
           </h2>
+
+          {/* Unit Tabs */}
           {activeTab === "units" && (
-          isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-pulse flex space-x-4">
-                <div className="rounded-full bg-gray-200 h-12 w-12"></div>
-                <div className="flex-1 space-y-4 py-1">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : units && units.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {units.map((unit) => (
-                <div
-                  key={unit?.unit_id}
-                  className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                >
-
-                  {unitBillingStatus[unit.unit_id] && (
-  <div className="text-green-600 flex items-center gap-1 ml-4 mt-2">
-    <FaCheckCircle size={18} />
-    <span className="text-sm">Billed this month</span>
-  </div>
-)}
-
-
-                 <button
-  onClick={() =>
-    router.push(
-      `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unit.unit_id}`
-    )
-  }
-  className="px-3 py-1 text-sm border rounded hover:bg-gray-100"
->
-  View Unit Details
-</button>
-
-
-                  <div className="h-32 bg-blue-50 flex items-center justify-center cursor-pointer">
-                    <div className="text-center">
-                      <HomeIcon className="h-12 w-12 text-blue-600 mx-auto" />
-                      <h3 className="text-xl font-bold text-gray-800">
-                        Unit {unit?.unit_name}
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <p className="text-sm text-gray-600">
-                        Size:{" "}
-                        <span className="font-medium">
-                          {unit?.unit_size} sqm
-                        </span>
-                      </p>
-                      <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          unit?.status === "Occupied"
-                            ? "bg-green-100 text-green-800"
-                            : unit?.status === "Unoccupied"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-orange-100 text-orange-800"
-                        }`}
-                      >
-                        {unit?.status.charAt(0).toUpperCase() +
-                          unit?.status.slice(1)}
-                      </span>
-                    </div>
-
-                    <hr className="my-3" />
-
-                    <div className="flex justify-between items-center">
-                      <button
-                        className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(
-                            `/pages/landlord/property-listing/view-unit/tenant-req/${unit.unit_id}`
-                          );
-                        }}
-                      >
-                        <ClipboardDocumentListIcon className="h-4 w-4 mr-1" />
-                        Prospective Leads
-                      </button>
-                      <div className="flex space-x-2">
-                        <button
-                          className="p-2 text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditUnit(unit.unit_id);
-                          }}
-                          aria-label="Edit unit"
-                        >
-                          <PencilSquareIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteUnit(unit.unit_id);
-                          }}
-                          aria-label="Delete unit"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
+              isLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-pulse flex space-x-4">
+                    <div className="rounded-full bg-gray-200 h-12 w-12"></div>
+                    <div className="flex-1 space-y-4 py-1">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
                       </div>
                     </div>
                   </div>
-
-                  {billingMode && (
-  <div className="mt-5 grid grid-cols-2 gap-3">
-    <Link
-      href={`/pages/landlord/billing/billingHistory/${unit.unit_id}`}
-      className="col-span-2"
-    >
-      <button className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-200 transition-colors font-medium">
-        Billing History
-      </button>
-    </Link>
-
-    <Link
-      href={`/pages/landlord/billing/payments/${unit.unit_id}`}
-      className="col-span-2"
-    >
-      <button className="w-full bg-blue-50 text-blue-700 px-4 py-2 rounded-md border border-blue-200 hover:bg-blue-100 transition-colors font-medium">
-        View Payments
-      </button>
-    </Link>
-
-    {unitBillingStatus[unit.unit_id] ? (
-      <Link
-        href={`/pages/landlord/billing/editUnitBill/${unit?.unit_id}`}
-        className="col-span-2"
-      >
-        <button className="w-full bg-amber-50 text-amber-700 px-4 py-2 rounded-md border border-amber-200 hover:bg-amber-100 transition-colors font-medium">
-          Edit Unit Bill
-        </button>
-      </Link>
-    ) : (
-      <Link
-        href={`/pages/landlord/billing/createUnitBill/${unit?.unit_id}`}
-        className="col-span-2"
-      >
-        <button className="w-full bg-green-50 text-green-700 px-4 py-2 rounded-md border border-green-200 hover:bg-green-100 transition-colors font-medium">
-          Create Unit Bill
-        </button>
-      </Link>
-    )}
-  </div>
-                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-              <HomeIcon className="h-12 w-12 text-gray-400 mb-3" />
-              <p className="text-gray-500 text-lg font-medium mb-2">
-                No Units Available
-              </p>
-              <p className="text-gray-400 text-sm mb-4">
-                Add your first unit to get started
-              </p>
-              <button
-                className="px-4 py-2 text-sm text-blue-600 bg-white border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
-                onClick={handleAddUnitClick}
-              >
-                Add Your First Unit
-              </button>
-            </div>
-          )
-          )}
+              ) : units && units.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {units.map((unit) => (
+                    <div
+                      key={unit?.unit_id}
+                      className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                    >
+                      {unitBillingStatus[unit.unit_id] && (
+                            <div className="text-green-600 flex items-center gap-1 ml-4 mt-2">
+                              <FaCheckCircle size={18} />
+                              <span className="text-sm">Billed this month</span>
+                            </div>
+                      )}
+                     <button
+                            onClick={() =>
+                              router.push(
+                                `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unit.unit_id}`
+                              )
+                            }
+                            className="px-3 py-1 text-sm border rounded hover:bg-gray-100"
+                        >
+                        View Unit Details
+                     </button>
 
+                      <div className="h-32 bg-blue-50 flex items-center justify-center cursor-pointer">
+                          <div className="text-center">
+                            <HomeIcon className="h-12 w-12 text-blue-600 mx-auto" />
+                            <h3 className="text-xl font-bold text-gray-800">
+                              Unit {unit?.unit_name}
+                            </h3>
+                          </div>
+                      </div>
+
+                      <div className="p-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <p className="text-sm text-gray-600">
+                              Size:{" "}
+                              <span className="font-medium">
+                                {unit?.unit_size} sqm
+                              </span>
+                            </p>
+                                <span
+                                  className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                                    unit?.status === "Occupied"
+                                      ? "bg-green-100 text-green-800"
+                                      : unit?.status === "Unoccupied"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-orange-100 text-orange-800"
+                                  }`}
+                                >
+                                  {unit?.status.charAt(0).toUpperCase() +
+                                    unit?.status.slice(1)}
+                                </span>
+                        </div>
+
+                        <hr className="my-3" />
+
+                        <div className="flex justify-between items-center">
+
+                          <button
+                              className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(
+                                  `/pages/landlord/property-listing/view-unit/tenant-req/${unit.unit_id}`
+                                );
+                              }}
+                            >
+                              <ClipboardDocumentListIcon className="h-4 w-4 mr-1" />
+                              Prospective Leads
+                          </button>
+
+                          <div className="flex space-x-2">
+                            <button
+                              className="p-2 text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditUnit(unit.unit_id);
+                              }}
+                              aria-label="Edit unit"
+                            >
+                              <PencilSquareIcon className="h-5 w-5" />
+                            </button>
+
+                            <button
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteUnit(unit.unit_id);
+                              }}
+                              aria-label="Delete unit"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+
+                          </div>
+                        </div>
+                      </div>
+
+                      {billingMode && (
+                              <div className="mt-5 grid grid-cols-2 gap-3">
+                                        <Link
+                                          href={`/pages/landlord/billing/billingHistory/${unit.unit_id}`}
+                                          className="col-span-2"
+                                        >
+                                          <button className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-200 transition-colors font-medium">
+                                            Billing History
+                                          </button>
+                                        </Link>
+
+                                        <Link
+                                          href={`/pages/landlord/billing/payments/${unit.unit_id}`}
+                                          className="col-span-2"
+                                        >
+                                          <button className="w-full bg-blue-50 text-blue-700 px-4 py-2 rounded-md border border-blue-200 hover:bg-blue-100 transition-colors font-medium">
+                                            View Payments
+                                          </button>
+                                        </Link>
+
+                            {unitBillingStatus[unit.unit_id] ? (
+                              <Link
+                                href={`/pages/landlord/billing/editUnitBill/${unit?.unit_id}`}
+                                className="col-span-2"
+                              >
+                                <button className="w-full bg-amber-50 text-amber-700 px-4 py-2 rounded-md border border-amber-200 hover:bg-amber-100 transition-colors font-medium">
+                                  Edit Unit Bill
+                                </button>
+                              </Link>
+                            ) : (
+                              <Link
+                                href={`/pages/landlord/billing/createUnitBill/${unit?.unit_id}`}
+                                className="col-span-2"
+                              >
+                                <button className="w-full bg-green-50 text-green-700 px-4 py-2 rounded-md border border-green-200 hover:bg-green-100 transition-colors font-medium">
+                                  Create Unit Bill
+                                </button>
+                              </Link>
+                            )}
+                      </div>
+                      )}
+
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                  <HomeIcon className="h-12 w-12 text-gray-400 mb-3" />
+                  <p className="text-gray-500 text-lg font-medium mb-2">
+                    No Units Available
+                  </p>
+                  <p className="text-gray-400 text-sm mb-4">
+                    Add your first unit to get started
+                  </p>
+                  <button
+                    className="px-4 py-2 text-sm text-blue-600 bg-white border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                    onClick={handleAddUnitClick}
+                  >
+                    Add Your First Unit
+                  </button>
+                </div>
+              )
+              )}
         </div>
 
         {activeTab === "documents" && (
@@ -642,7 +657,6 @@ useEffect(() => {
                 Engagement Analytics
               </h2>
 
-              {/* Example - replace with GA API / your analytics fetch */}
               <p className="text-gray-600 mb-4">
                 Below are engagement insights for this property (views, clicks, shares).
               </p>
@@ -666,7 +680,7 @@ useEffect(() => {
             </div>
         )}
 
-
+        {/*modal for property utility rate for sub-metered */}
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">

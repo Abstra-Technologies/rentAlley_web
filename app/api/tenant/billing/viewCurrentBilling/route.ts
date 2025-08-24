@@ -7,9 +7,6 @@ export async function GET(req: NextRequest) {
   const userId = searchParams.get("user_id");
 
   try {
-    console.log("🔍 Incoming:", { agreementId, userId });
-
-    // 🔁 If only user_id is provided, get latest agreement
     if (!agreementId && userId) {
       const [agreements] = await db.query(
         `SELECT agreement_id FROM LeaseAgreement WHERE tenant_id = ? ORDER BY start_date DESC LIMIT 1`,

@@ -21,20 +21,6 @@ export async function POST(req: NextRequest) {
       total_amount_due,
     } = body;
 
-    console.log(
-      unit_id,
-      readingDate,
-      waterPrevReading,
-      waterCurrentReading,
-      electricityPrevReading,
-      electricityCurrentReading,
-      totalWaterAmount,
-      totalElectricityAmount,
-      penaltyAmount,
-      discountAmount,
-      dueDate
-    );
-
     const [billingResult] = await db.execute(
       `INSERT INTO Billing (
         unit_id, billing_period, total_water_amount, total_electricity_amount,

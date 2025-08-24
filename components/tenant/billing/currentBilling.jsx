@@ -14,10 +14,8 @@ export default function TenantBilling({ agreement_id, user_id }) {
 
   const router = useRouter();
 
-
 useEffect(() => {
   if (!user_id) {
-    console.warn("⚠️ user_id is undefined, skipping fetch.");
     return;
   }
 
@@ -35,12 +33,9 @@ useEffect(() => {
         ...(rawMeterReadings.electricity || []),
       ];
 // The spread syntax ... is used to extract the elements of each array into a single new array.
-
-
       setBillingData(billings);
-      setMeterReadings(flatReadings); // ✅ Flat array now
+      setMeterReadings(flatReadings);
     } catch (err) {
-      console.error("❌ Error fetching billing data:", err);
       setError("Failed to fetch billing data.");
     } finally {
       setLoading(false);
