@@ -19,6 +19,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FaCheckCircle } from "react-icons/fa";
 import PropertyDocumentsTab from "../../../../../../components/landlord//properties/PropertyDocumentsTab";
+import FBShareButton from "../../../../../../components/landlord/properties/shareToFacebook";
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
@@ -380,6 +381,10 @@ useEffect(() => {
             </button>
           </div>
 
+          {propertyDetails && (
+              <FBShareButton url={`https://rent-alley-web.vercel.app/pages/find-rent/${propertyDetails?.property_id}`} />
+          )}
+
           {/* Billing Status */}
           {hasBillingForMonth && (
               <div className="flex items-center gap-2 text-green-600 mb-3">
@@ -424,6 +429,16 @@ useEffect(() => {
               }`}
           >
             Documents / Permits
+          </button>
+          <button
+              onClick={() => setActiveTab("analytics")}
+              className={`pb-2 px-4 font-medium ${
+                  activeTab === "analytics"
+                      ? "border-b-2 border-blue-600 text-blue-600"
+                      : "text-gray-500 hover:text-gray-700"
+              }`}
+          >
+            Engagement Analytics
           </button>
         </div>
 
@@ -619,7 +634,38 @@ useEffect(() => {
             </div>
         )}
 
- {isModalOpen && (
+        {activeTab === "analytics" && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Engagement Analytics
+              </h2>
+
+              {/* Example - replace with GA API / your analytics fetch */}
+              <p className="text-gray-600 mb-4">
+                Below are engagement insights for this property (views, clicks, shares).
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-700">Page Views</h3>
+                  <p className="text-2xl font-bold text-blue-900 mt-2">1,240</p>
+                </div>
+
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-green-700">Inquiries</h3>
+                  <p className="text-2xl font-bold text-green-900 mt-2">56</p>
+                </div>
+
+                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <h3 className="text-lg font-semibold text-purple-700">Shares</h3>
+                  <p className="text-2xl font-bold text-purple-900 mt-2">19</p>
+                </div>
+              </div>
+            </div>
+        )}
+
+
+        {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
               <div className="p-5 border-b border-gray-200">

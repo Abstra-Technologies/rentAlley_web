@@ -11,8 +11,6 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "User ID is required" }, { status: 400 });
         }
 
-        console.log("Fetching notifications for user:", userId);
-
         // @ts-ignore
         const [notifications] = await db.query(
             `SELECT id, title, body, is_read, created_at 

@@ -18,6 +18,8 @@ import Swal from "sweetalert2";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import MapView from "../../../../components/landlord/properties/mapViewProp";
 import LandlordCard from "../../../../components/landlord/properties/LandlordCard";
+import Head from "next/head";
+
 
 export default function PropertyDetails() {
   const { id } = useParams();
@@ -142,6 +144,26 @@ export default function PropertyDetails() {
   const amenities = parseAmenities(property.amenities);
 
   return (
+      <>
+
+        <Head>
+          <title>{property?.property_name} | Rent Alley</title>
+          <meta name="description" content={property?.description || "Find rental property"} />
+
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content={pageUrl} />
+          <meta property="og:title" content={property?.property_name} />
+          <meta property="og:description" content={property?.description || "Find rental property"} />
+          <meta property="og:image" content={mainImage} />
+          <meta property="og:site_name" content="Rent Alley" />
+
+          {/* Twitter card */}
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={property?.property_name} />
+          <meta name="twitter:description" content={property?.description || "Find rental property"} />
+          <meta name="twitter:image" content={mainImage} />
+        </Head>
+
     <div className="bg-gray-50 min-h-screen pb-16">
       <div className="w-full bg-white shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
@@ -159,6 +181,7 @@ export default function PropertyDetails() {
       </div>
 
       <div className="container mx-auto px-4 py-6">
+
         {property?.property_photo && property?.property_photo.length > 0 ? (
           <div className="relative">
             <div className="w-full h-96 rounded-xl overflow-hidden shadow-lg relative">
@@ -552,5 +575,7 @@ export default function PropertyDetails() {
 
       </div>
     </div>
+
+      </>
   );
 }

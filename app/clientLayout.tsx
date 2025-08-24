@@ -123,6 +123,30 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         }
     }, []);
 
+    // -------------------
+    // 📌 Facebook SDK injection (Step 1)
+    // -------------------
+    useEffect(() => {
+        if (document.getElementById("facebook-jssdk")) return;
+
+        const script = document.createElement("script");
+        script.id = "facebook-jssdk";
+        script.src = "https://connect.facebook.net/en_US/sdk.js";
+        script.async = true;
+        document.body.appendChild(script);
+
+        script.onload = () => {
+            // @ts-ignore
+            window.FB?.init({
+                appId: process.env.NEXT_PUBLIC_FB_APP_ID, // 👈 Your FB App ID
+                autoLogAppEvents: true,
+                xfbml: true,
+                version: "v19.0",
+            });
+            console.log("✅ Facebook SDK initialized");
+        };
+    }, []);
+
     return (
         <>
             {/* Google Analytics */}
@@ -144,6 +168,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           `,
                 }}
             />
+            <div id="fb-root"></div> {/* Needed for Facebook SDK */}
             <Navbar />
             {children}
         </>

@@ -19,18 +19,21 @@ import Link from "next/link";
 import useAuthStore from "../../../../zustand/authStore";
 import LoadingScreen from "@/components/loadingScreen";
 import PropertyCard from "@/components/landlord/properties/propertyCards";
+import FBShareButton from "@/components/landlord/properties/shareToFacebook";
 
 const PropertyListingPage = () => {
     const router = useRouter();
     const {fetchSession, user, admin} = useAuthStore();
     const {properties, fetchAllProperties, loading, error} = usePropertyStore();
-
     const [verificationStatus, setVerificationStatus] = useState<string>("not verified");
     const [isFetchingVerification, setIsFetchingVerification] = useState(true);
     const [fetchingSubscription, setFetchingSubscription] = useState(true);
     const [subscription, setSubscription] = useState(null);
     const [pendingApproval, setPendingApproval] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
+
+    const [searchQuery, setSearchQuery] = useState("");
+
 
     useEffect(() => {
         if (!user && !admin) {
@@ -228,6 +231,14 @@ const PropertyListingPage = () => {
         properties.length >= (subscription?.listingLimits?.maxProperties || 0) ||
         isNavigating;
 
+    const filteredProperties = properties.filter((property) => {
+        const query = searchQuery.toLowerCase();
+        return (
+            property?.property_name?.toLowerCase().includes(query) ||
+            property?.address?.toLowerCase().includes(query) ||
+            property?.property_id?.toString().includes(query)
+        );
+    });
 
     return (
         <LandlordLayout>
@@ -453,10 +464,20 @@ const PropertyListingPage = () => {
                     </div>
                 )}
 
+                <div className="mb-6 flex justify-center">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search your property by name"
+                        className="w-full md:w-1/2 px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                </div>
+
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-                    {properties.length > 0 ? (
-                        properties.map((property, index) => (
+                    {filteredProperties.length > 0 ? (
+                        filteredProperties.map((property, index) => (
                             <PropertyCard
                                 key={property.property_id}
                                 property={property}
@@ -469,10 +490,13 @@ const PropertyListingPage = () => {
                         ))
                     ) : (
                         <p className="col-span-full text-center text-gray-500">
-                            No properties found.
+                            No matching properties found.
                         </p>
                     )}
                 </div>
+
+
+
             </div>
         </LandlordLayout>
 );
