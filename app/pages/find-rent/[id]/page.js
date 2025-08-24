@@ -145,25 +145,6 @@ export default function PropertyDetails() {
 
   return (
       <>
-
-        <Head>
-          <title>{property?.property_name} | Rent Alley</title>
-          <meta name="description" content={property?.description || "Find rental property"} />
-
-          <meta property="og:type" content="website" />
-          <meta property="og:url" content={pageUrl} />
-          <meta property="og:title" content={property?.property_name} />
-          <meta property="og:description" content={property?.description || "Find rental property"} />
-          <meta property="og:image" content={mainImage} />
-          <meta property="og:site_name" content="Rent Alley" />
-
-          {/* Twitter card */}
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content={property?.property_name} />
-          <meta name="twitter:description" content={property?.description || "Find rental property"} />
-          <meta name="twitter:image" content={mainImage} />
-        </Head>
-
     <div className="bg-gray-50 min-h-screen pb-16">
       <div className="w-full bg-white shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">

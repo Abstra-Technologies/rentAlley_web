@@ -58,7 +58,6 @@ function Login() {
   useEffect(() => {
     sessionStorage.removeItem("pending2FA");
     window.history.replaceState(null, "", "/pages/auth/login");
-
     if (user || admin) {
       redirectBasedOnUserType();
     }
@@ -84,7 +83,7 @@ function Login() {
     setErrorMessage("");
     try {
       logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1);
-      await router.push("/api/auth/google-login");
+      router.push("/api/auth/google-login");
     } catch (err: any) {
       console.error("Google Sign-In Error:", err.message);
       setErrorMessage("Google sign-in failed. Please try again.");
@@ -119,7 +118,6 @@ function Login() {
 
       if (response.ok) {
         logEvent("Login Success", "Authentication", "User Successfully Logged In", 1);
-
         if (data.requires_otp) {
           router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
         } else {

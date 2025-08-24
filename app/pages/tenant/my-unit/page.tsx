@@ -39,11 +39,17 @@ interface Unit {
 }
 
 export default function MyUnit() {
-    const { user } = useAuthStore();
+    const { user, admin, fetchSession } = useAuthStore();
     const router = useRouter();
     const [units, setUnits] = useState<Unit[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingPayment, setLoadingPayment] = useState(false);
+
+    useEffect(() => {
+        if (!user && !admin) {
+            fetchSession();
+        }
+    }, [user, admin]);
 
     useEffect(() => {
         const fetchUnits = async () => {

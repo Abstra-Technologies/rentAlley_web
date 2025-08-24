@@ -121,7 +121,7 @@ export default function PropertyUnitDetailedPage() {
   }
 
   const isOccupied = unit.status === "occupied";
-  const amenities = property ? parseAmenities(property.amenities) : [];
+  const amenities = unit ? parseAmenities(unit.amenities) : [];
 
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
@@ -273,7 +273,7 @@ export default function PropertyUnitDetailedPage() {
                     Security Deposit
                   </h3>
                   <p className="text-gray-600">
-                    ₱{unit?.sec_deposit?.toLocaleString()}
+                    ₱{unit?.sec_deposit}
                   </p>
                 </div>
                 <div>
@@ -281,82 +281,18 @@ export default function PropertyUnitDetailedPage() {
                     Advanced Payment
                   </h3>
                   <p className="text-gray-600">
-                    ₱{unit?.advanced_payment?.toLocaleString()}
+                    ₱{unit?.advanced_payment}
                   </p>
                 </div>
               </div>
-
-              {/* Unit Features */}
-              <div className="mt-6">
-                <h3 className="font-medium text-gray-700 mb-3">
-                  Unit Features
-                </h3>
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                    <FaRuler className="mr-2" />
-                    <span>{unit?.unit_size} sqm</span>
-                  </div>
-                  <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                    <FaCouch className="mr-2" />
-                    <span>
-                      {unit?.furnish
-                        ?.split("_")
-                        .map(
-                          (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                        )
-                        .join(" ")}
-                    </span>
-                  </div>
-                  {unit?.bed_spacing !== 0 && (
-                    <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                      <FaBed className="mr-2" />
-                      <span>{unit?.avail_beds} Beds Available</span>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
-
-            {/* Property Information */}
-            {property && (
-              <div className="bg-white rounded-xl shadow-sm p-6 mb-6 pl-12 relative">
-                <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
-                  <FaHome className="mr-2 text-blue-500" />
-                  Property Information
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-medium text-gray-700">Property Type</h3>
-                    <p className="text-gray-600">
-                      {property?.property_type?.charAt(0).toUpperCase() +
-                        property?.property_type?.slice(1)}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-700">
-                      Total Floor Area
-                    </h3>
-                    <p className="text-gray-600">{property?.floor_area} sqm</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-700">Minimum Stay</h3>
-                    <p className="text-gray-600">{property?.min_stay} month</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-700">Late Fee</h3>
-                    <p className="text-gray-600">{property?.late_fee}%</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Property Amenities */}
             {amenities.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm p-6 mb-6 pl-12 relative">
                 <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
                   <FaInfoCircle className="mr-2 text-blue-500" />
-                  Property Amenities
+                  Unit Amenities
                 </h2>
 
                 <div className="flex flex-wrap gap-3">
@@ -371,58 +307,6 @@ export default function PropertyUnitDetailedPage() {
                   ))}
                 </div>
 
-                {/* Payment Options */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {property?.flexipay_enabled === 1 && (
-                    <div className="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full flex items-center gap-1">
-                      <span>FlexiPay</span>
-                      <svg
-                        className="w-3 h-3 text-green-600"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  )}
-
-                  {property?.payment_methods?.length > 0 && (
-                    <>
-                      {property.payment_methods.map((method) => (
-                        <span
-                          key={method.method_id}
-                          className="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full"
-                        >
-                          {method.method_name}
-                        </span>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Property Description */}
-            {property?.description && (
-              <div className="bg-white rounded-xl shadow-sm p-6 mb-6 pl-12 relative">
-                <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
-                  <FaInfoCircle className="mr-2 text-blue-500" />
-                  Property Description
-                </h2>
-                <p className="text-gray-600 leading-relaxed">
-                  {property.description.split("\n").map((line, index) => (
-                    <span key={index}>
-                      {line}
-                      <br />
-                    </span>
-                  ))}
-                </p>
               </div>
             )}
           </div>

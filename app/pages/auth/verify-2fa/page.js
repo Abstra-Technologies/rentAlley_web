@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 
-const TIMER_DURATION = 10 * 60; // 10 minutes in seconds
+const TIMER_DURATION = 10 * 60;
 
 const SearchParamsWrapper = ({ setUserId }) => {
   const searchParams = useSearchParams();
@@ -83,15 +83,17 @@ export default function Verify2FA() {
 
       if (res.ok) {
         await Swal.fire("Success", "OTP verified successfully!", "success");
-        localStorage.removeItem("pending_2fa");
 
         if (data.user.userType === "tenant") {
-          router.push("/");
+          router.push("/pages/tenant/my-unit");
         } else if (data.user.userType === "landlord") {
           router.push("/pages/landlord/dashboard");
         } else {
           setMessage("Invalid user type.");
         }
+
+        localStorage.removeItem("pending_2fa");
+
       } else {
         setMessage(data.error || "Invalid OTP.");
       }
