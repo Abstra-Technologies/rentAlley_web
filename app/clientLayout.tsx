@@ -23,35 +23,38 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     useEffect(() => {
         if (!user_id) return;
 
-        async function setupWebPush() {
-            Notification.requestPermission().then((permission) => {
-                if (permission === "granted") {
-                    // @ts-ignore
-                    getToken(messaging, {
-                        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-                    })
-                        .then((currentToken) => {
-                            if (currentToken) {
-                                fetch("/api/auth/save-fcm-token", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        token: currentToken,
-                                        userId: user_id
-                                    }),
-                                });
-                            }
-                        })
-                        .catch((err) => console.log("Error getting token:", err));
-                }
-            });
+        const setupWebPush = async () => {
+            if ("serviceWorker" in navigator) {
+                try {
+                    // Register service worker
+                    const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+                        scope: "/",
+                    });
 
-            // Foreground message listener
-            // @ts-ignore
-            onMessage(messaging, (payload) => {
-                console.log("📩 Web push received:", payload);
-            });
-        }
+                    console.log("✅ SW registered:", registration);
+
+                    // ✅ Use registration in getToken
+                    const token = await getToken(messaging, {
+                        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+                        serviceWorkerRegistration: registration,
+                    });
+
+                    if (token) {
+                        console.log("📲 FCM Token:", token);
+                    } else {
+                        console.warn("⚠️ No registration token available. Request permission?");
+                    }
+
+                    // Listen for foreground messages
+                    onMessage(messaging, (payload) => {
+                        console.log("📩 Message received in foreground:", payload);
+                    });
+
+                } catch (err) {
+                    console.error("🔥 SW registration failed:", err);
+                }
+            }
+        };
 
         setupWebPush();
     }, [user_id]);
