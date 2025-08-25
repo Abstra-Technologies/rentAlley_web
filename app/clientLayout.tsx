@@ -4,15 +4,10 @@ import { useEffect } from "react";
 import Script from "next/script";
 import Navbar from "../components/navigation/navbar";
 import useAuthStore from "../zustand/authStore";
-
 // Web FCM
 import { getToken, onMessage } from "firebase/messaging";
 // @ts-ignore
 import { messaging } from "../lib/firebase";
-
-// Capacitor
-import { Device } from "@capacitor/device";
-import { PushNotifications } from "@capacitor/push-notifications";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
     const { fetchSession, user, admin } = useAuthStore();
@@ -28,86 +23,37 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     useEffect(() => {
         if (!user_id) return;
 
-        async function setupPush() {
-            const info = await Device.getInfo();
-            const platform = info.platform; // "web" | "ios" | "android"
-
-            console.log("📱 Running on:", platform);
-
-            if (platform === "web") {
-                // -------------------
-                // 🔔 Web Push (Firebase)
-                // -------------------
-                Notification.requestPermission().then((permission) => {
-                    if (permission === "granted") {
-                        // @ts-ignore
-                        getToken(messaging, {
-                            vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+        async function setupWebPush() {
+            Notification.requestPermission().then((permission) => {
+                if (permission === "granted") {
+                    // @ts-ignore
+                    getToken(messaging, {
+                        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+                    })
+                        .then((currentToken) => {
+                            if (currentToken) {
+                                fetch("/api/auth/save-fcm-token", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        token: currentToken,
+                                        userId: user_id
+                                    }),
+                                });
+                            }
                         })
-                            .then((currentToken) => {
-                                if (currentToken) {
-                                    fetch("/api/auth/save-fcm-token", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                            token: currentToken,
-                                            userId: user_id,
-                                            platform: "web",
-                                        }),
-                                    });
-                                }
-                            })
-                            .catch((err) => console.log("Error getting token:", err));
-                    }
-                });
-
-                // Foreground message listener
-                // @ts-ignore
-                onMessage(messaging, (payload) => {
-                    console.log("📩 Web push received:", payload);
-                });
-            } else {
-                // -------------------
-                // 📲 Native Push (Capacitor)
-                // -------------------
-                let permStatus = await PushNotifications.checkPermissions();
-                if (permStatus.receive !== "granted") {
-                    permStatus = await PushNotifications.requestPermissions();
+                        .catch((err) => console.log("Error getting token:", err));
                 }
+            });
 
-                if (permStatus.receive === "granted") {
-                    await PushNotifications.register();
-                }
-
-                PushNotifications.addListener("registration", async (token) => {
-                    console.log("📲 Push token:", token.value);
-
-                    await fetch("/api/auth/save-fcm-token", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            token: token.value,
-                            userId: user_id,
-                            platform,
-                        }),
-                    });
-                });
-
-                PushNotifications.addListener("registrationError", (err) => {
-                    console.error("❌ Registration error:", err.error);
-                });
-
-                PushNotifications.addListener("pushNotificationReceived", (notification) => {
-                    console.log("📩 Push received:", notification);
-                });
-
-                PushNotifications.addListener("pushNotificationActionPerformed", (notification) => {
-                    console.log("👉 Push action performed:", notification.notification);
-                });
-            }
+            // Foreground message listener
+            // @ts-ignore
+            onMessage(messaging, (payload) => {
+                console.log("📩 Web push received:", payload);
+            });
         }
 
-        setupPush();
+        setupWebPush();
     }, [user_id]);
 
     // Google Maps injection
@@ -123,9 +69,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         }
     }, []);
 
-    // -------------------
-    // 📌 Facebook SDK injection (Step 1)
-    // -------------------
+    // Facebook SDK injection
     useEffect(() => {
         if (document.getElementById("facebook-jssdk")) return;
 
@@ -138,7 +82,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         script.onload = () => {
             // @ts-ignore
             window.FB?.init({
-                appId: process.env.NEXT_PUBLIC_FB_APP_ID, // 👈 Your FB App ID
+                appId: process.env.NEXT_PUBLIC_FB_APP_ID,
                 autoLogAppEvents: true,
                 xfbml: true,
                 version: "v19.0",

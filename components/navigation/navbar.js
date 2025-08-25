@@ -830,7 +830,7 @@ const Navbar = () => {
 
   const getNavigationLinks = () => {
     if (admin) {
-      return [{ href: "/pages/system_admin/dashboard", label: "Dashboard" }];
+      return [{ href: "/system_admin/dashboard", label: "Dashboard" }];
     }
 
     if (!user) {

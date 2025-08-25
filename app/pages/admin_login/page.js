@@ -25,7 +25,7 @@ export default function LoginAdmin() {
         const data = await res.json();
 
         if (data.isLoggedIn) {
-          router.replace("/pages/system_admin/dashboard");
+          router.replace("/system_admin/dashboard");
         }
       } catch (error) {
         console.error("Session check failed:", error);

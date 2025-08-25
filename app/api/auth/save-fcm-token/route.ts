@@ -1,25 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db"; // your existing MySQL connection
-import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: NextRequest) {
     try {
-        const { userId, token, platform } = await req.json();
-        if (!userId || !token || !platform) {
+        const { userId, token } = await req.json();
+        if (!userId || !token) {
             return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
         }
 
-        const id = uuidv4();
-
         const sql = `
-      INSERT INTO FCM_Token (id, user_id, token, platform)
-      VALUES (?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-        token = VALUES(token),
-        platform = VALUES(platform),
-        updatedAt = CURRENT_TIMESTAMP
-    `;
-        await db.execute(sql, [id, userId, token, platform]);
+            UPDATE User
+            SET fcm_token = ?, updatedAt = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        `;
+
+        const [result]: any = await db.execute(sql, [token, userId]);
+
+        if (result.affectedRows === 0) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (err) {
