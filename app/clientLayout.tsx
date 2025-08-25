@@ -20,6 +20,27 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
     const user_id = user?.user_id ?? admin?.id;
 
+    async function refreshFcmToken() {
+        try {
+            // @ts-ignore
+            const currentToken = await getToken(messaging, {
+                vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+            });
+
+            if (currentToken) {
+                await fetch("/api/save-fcm-token", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token: currentToken }),
+                });
+            } else {
+                console.log("⚠️ No FCM token, user might have blocked notifications");
+            }
+        } catch (err) {
+            console.error("Error fetching FCM token", err);
+        }
+    }
+
     useEffect(() => {
         if (!user_id) return;
 
@@ -34,6 +55,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     console.log("✅ SW registered:", registration);
 
                     // ✅ Use registration in getToken
+                    // @ts-ignore
                     const token = await getToken(messaging, {
                         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
                         serviceWorkerRegistration: registration,
@@ -46,6 +68,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     }
 
                     // Listen for foreground messages
+                    // @ts-ignore
                     onMessage(messaging, (payload) => {
                         console.log("📩 Message received in foreground:", payload);
                     });
@@ -56,6 +79,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             }
         };
 
+
+        refreshFcmToken();
         setupWebPush();
     }, [user_id]);
 
