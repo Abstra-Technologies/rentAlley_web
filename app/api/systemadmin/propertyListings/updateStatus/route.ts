@@ -3,13 +3,24 @@ import mysql from 'mysql2/promise';
 import { parse } from 'cookie';
 import { jwtVerify } from 'jose';
 import { POINTS } from '@/constant/pointSystem/points';
-import { admin } from "@/lib/firebaseAdmin";
+import webpush from 'web-push';
+
+// 🔑 Web Push keys (generate with web-push CLI if not yet)
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
+
+// Configure web-push
+webpush.setVapidDetails(
+    'mailto:your-email@example.com',
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+);
 
 export async function POST(req: NextRequest) {
     try {
+        // 🔐 JWT validation
         const cookieHeader = req.headers.get('cookie') || '';
         const cookies = parse(cookieHeader);
-
         const token = cookies.token;
         if (!token) {
             return new Response(JSON.stringify({ success: false, message: 'Unauthorized' }), { status: 401 });
@@ -29,12 +40,13 @@ export async function POST(req: NextRequest) {
             return new Response(JSON.stringify({ success: false, message: 'Invalid Token Data' }), { status: 401 });
         }
 
+        // 📌 Parse input
         const { property_id, status, message } = await req.json();
-
         if (!property_id || !status) {
             return new Response(JSON.stringify({ message: 'Missing required fields' }), { status: 400 });
         }
 
+        // 📌 Connect DB
         const connection = await mysql.createConnection({
             host: process.env.DB_HOST!,
             user: process.env.DB_USER!,
@@ -43,6 +55,7 @@ export async function POST(req: NextRequest) {
             timezone: '+08:00',
         });
 
+        // 📌 Find landlord user
         const [rows]: any = await connection.execute(
             `SELECT pv.status, pv.attempts, l.user_id
              FROM PropertyVerification pv
@@ -65,12 +78,10 @@ export async function POST(req: NextRequest) {
             return new Response(JSON.stringify({ message: 'Landlord not found for this property.' }), { status: 500 });
         }
 
-        // Handle maximum rejection attempts
+        // 📌 Handle notifications + points
         if (currentStatus === 'Rejected' && attempts >= 2) {
             const notificationTitle = `Property ${status}`;
-            const notificationBody = `Your property listing has been ${status.toLowerCase()} twice, you cannot resend documents again. ${
-                message ? `Message: ${message}` : ''
-            }`;
+            const notificationBody = `Your property listing has been ${status.toLowerCase()} twice. ${message ? `Message: ${message}` : ''}`;
 
             await connection.execute(
                 `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
@@ -83,33 +94,26 @@ export async function POST(req: NextRequest) {
             const verifiedBody = `🎉 Congratulations! Your property has been verified. You’ve earned ${POINTS.PROPERTY_VERIFIED} FlexiPoints.`;
 
             await connection.execute(
-                `INSERT INTO Notification (user_id, title, body, is_read, created_at)
-                 VALUES (?, ?, ?, 0, NOW())`,
+                `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
                 [user_id, verifiedTitle, verifiedBody]
             );
 
             await connection.execute(
-                `UPDATE User
-                 SET points = points + ?
-                 WHERE user_id = ?`,
+                `UPDATE User SET points = points + ? WHERE user_id = ?`,
                 [POINTS.PROPERTY_VERIFIED, user_id]
             );
         }
 
         const newAttempts = status === 'Rejected' ? attempts + 1 : attempts;
 
-        const [result]: any = await connection.execute(
+        await connection.execute(
             `UPDATE PropertyVerification
              SET status = ?, admin_message = ?, reviewed_by = ?, attempts = ?
              WHERE property_id = ?`,
             [status, message || null, currentadmin_id, newAttempts, property_id]
         );
 
-        if (result.affectedRows === 0) {
-            await connection.end();
-            return new Response(JSON.stringify({ message: 'Property not found' }), { status: 404 });
-        }
-
+        // 📌 Always insert a Notification
         const notificationTitle = `Property ${status}`;
         const notificationBody = `Your property listing has been ${status.toLowerCase()}. ${message ? `Message: ${message}` : ''}`;
 
@@ -118,57 +122,51 @@ export async function POST(req: NextRequest) {
             [user_id, notificationTitle, notificationBody]
         );
 
-        // Fetch active FCM tokens
-        const [tokensRows]: any = await connection.execute(
-            `SELECT fcm_token FROM User WHERE user_id = ? AND fcm_token IS NOT NULL`,
+        // 🔔 Fetch push subscriptions
+        const [subs]: any = await connection.execute(
+            `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
             [user_id]
         );
 
-        const fcmTokens = tokensRows.map((row: any) => row.fcm_token);
+        await connection.end();
 
-        console.log('fcm token: ', fcmTokens);
+        if (subs.length > 0) {
+            const payload = JSON.stringify({
+                title: notificationTitle,
+                body: notificationBody,
+                url: "/", // where user should go when clicking
+            });
 
-        if (fcmTokens.length > 0) {
-            const messagePayload = {
-                data: {
-                    title: notificationTitle,
-                    body: notificationBody,
-                    click_action: "/",
-                },
-                tokens: fcmTokens,
-            };
+            for (const sub of subs) {
+                const subscription = {
+                    endpoint: sub.endpoint,
+                    keys: {
+                        p256dh: sub.p256dh,
+                        auth: sub.auth,
+                    },
+                };
 
-            try {
-                const response = await admin.messaging().sendEachForMulticast(messagePayload);
+                try {
+                    await webpush.sendNotification(subscription, payload);
+                    console.log("✅ Sent push notification:", sub.endpoint);
+                } catch (err: any) {
+                    console.error("❌ Failed push:", err);
 
-                for (let i = 0; i < response.responses.length; i++) {
-                    const res = response.responses[i];
-                    if (!res.success) {
-                        console.error("❌ Failed token:", fcmTokens[i], res.error);
-
-                        if (res.error?.code === "messaging/registration-token-not-registered") {
-                            try {
-                                // instead of deleting user, just clear token
-                                await connection.execute(
-                                    `UPDATE User SET fcm_token = NULL WHERE fcm_token = ?`,
-                                    [fcmTokens[i]]
-                                );
-                                console.log("🗑️ Cleared dead token:", fcmTokens[i]);
-                            } catch (err) {
-                                console.error("DB update error:", err);
-                            }
-                        }
+                    // If subscription is no longer valid, remove it
+                    if (err.statusCode === 410 || err.statusCode === 404) {
+                        const conn = await mysql.createConnection({
+                            host: process.env.DB_HOST!,
+                            user: process.env.DB_USER!,
+                            password: process.env.DB_PASSWORD!,
+                            database: process.env.DB_NAME!,
+                        });
+                        await conn.execute(`DELETE FROM user_push_subscriptions WHERE endpoint = ?`, [sub.endpoint]);
+                        await conn.end();
+                        console.log("🗑️ Removed invalid subscription:", sub.endpoint);
                     }
                 }
-
-                console.log("✅ Notifications sent:", response.successCount);
-                console.log("❌ Failed:", response.failureCount);
-            } catch (err) {
-                console.error("🔥 Error sending notification:", err);
             }
         }
-
-        await connection.end();
 
         return new Response(
             JSON.stringify({
@@ -179,8 +177,6 @@ export async function POST(req: NextRequest) {
         );
     } catch (error: any) {
         console.error('Error updating property status:', error);
-        return new Response(JSON.stringify({ message: 'Error updating property status' }), {
-            status: 500,
-        });
+        return new Response(JSON.stringify({ message: 'Error updating property status' }), { status: 500 });
     }
 }
