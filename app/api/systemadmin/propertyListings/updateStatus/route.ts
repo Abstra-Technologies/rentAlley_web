@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
           `SELECT fcm_token FROM User WHERE user_id = ?`,
           [user_id]
       );
-      const fcmTokens = tokensRows.map((row: any) => row.token);
+      const fcmTokens = tokensRows.map((row: any) => row.fcm_token);
 
       console.log('fcm token: ', fcmTokens);
 
