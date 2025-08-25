@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
 
       // Fetch active FCM tokens
       const [tokensRows]: any = await connection.execute(
-          `SELECT token FROM FCM_Token WHERE user_id = ? AND active = 1`,
+          `SELECT fcm_token FROM User WHERE user_id = ?`,
           [user_id]
       );
       const fcmTokens = tokensRows.map((row: any) => row.token);
