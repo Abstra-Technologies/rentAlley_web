@@ -18,7 +18,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             const storedToken = localStorage.getItem("fcm_token");
             if (storedToken === token) return; // ✅ Already saved, no need
 
-            await fetch("/api/save-fcm-token", {
+            await fetch("/api/auth/save-fcm-token", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token }),
