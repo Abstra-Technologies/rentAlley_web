@@ -3,6 +3,7 @@ import mysql from 'mysql2/promise';
 import { parse } from 'cookie';
 import { jwtVerify } from 'jose';
 import { POINTS } from '@/constant/pointSystem/points';
+import { fcmAdmin } from "@/lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
       const verifiedBody = `🎉 Congratulations! Your property has been verified. You’ve earned ${POINTS.PROPERTY_VERIFIED} FlexiPoints.`;
 
       await connection.execute(
-          `INSERT INTO Notification (user_id, title, body, is_read, created_at)
+          `INSERT INTO Notification (user_id, title, body, is_read, created_at)\
            VALUES (?, ?, ?, 0, NOW())`,
           [user_id, verifiedTitle, verifiedBody]
       );
@@ -116,6 +117,21 @@ export async function POST(req: NextRequest) {
       `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
       [user_id, notificationTitle, notificationBody]
     );
+
+      // Fetch active FCM tokens
+      const [tokensRows]: any = await connection.execute(
+          `SELECT token FROM FCM_Token WHERE user_id = ? AND active = 1`,
+          [user_id]
+      );
+      const fcmTokens = tokensRows.map((row: any) => row.token);
+
+      if (fcmTokens.length > 0) {
+          // @ts-ignore
+          await fcmAdmin.sendMulticast({
+              notification: { title: notificationTitle, body: notificationBody },
+              tokens: fcmTokens,
+          });
+      }
 
     await connection.end();
 

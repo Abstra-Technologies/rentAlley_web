@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
+import nextPwa from "next-pwa";
 
-const nextConfig: NextConfig = {
+const baseConfig: NextConfig = {
   env: {
     ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
   },
@@ -12,27 +13,52 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   //   disable type cheking on build.
   },
-  images: {
-    domains: [
-      "upload.wikimedia.org",
-      "rentalley-bucket.s3.ap-southeast-1.amazonaws.com",
-      "lh3.googleusercontent.com",
-      "encrypted-tbn0.gstatic.com",
-      "mir-s3-cdn-cf.behance.net",
-    ],
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "rentahanbucket.s3.us-east-1.amazonaws.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "upload.wikimedia.org",
-        pathname: "/**",
-      },
-    ],
-  },
+    images: {
+        remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "upload.wikimedia.org",
+                pathname: "/**",
+            },
+            {
+                protocol: "https",
+                hostname: "rentalley-bucket.s3.ap-southeast-1.amazonaws.com",
+                pathname: "/**",
+            },
+            {
+                protocol: "https",
+                hostname: "lh3.googleusercontent.com",
+                pathname: "/**",
+            },
+            {
+                protocol: "https",
+                hostname: "encrypted-tbn0.gstatic.com",
+                pathname: "/**",
+            },
+            {
+                protocol: "https",
+                hostname: "mir-s3-cdn-cf.behance.net",
+                pathname: "/**",
+            },
+            {
+                protocol: "https",
+                hostname: "rentahanbucket.s3.us-east-1.amazonaws.com",
+                pathname: "/**",
+            },
+        ],
+    },
+
 };
+
+
+const withPWA = nextPwa({
+    dest: "public",
+    register: true,
+    sw: "firebase-messaging-sw.js",
+});
+
+// @ts-ignore
+const nextConfig: NextConfig = withPWA(baseConfig);
+
 
 export default nextConfig;

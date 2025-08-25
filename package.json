@@ -55,7 +55,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "firebase": "^11.10.0",
-    "firebase-admin": "^13.1.0",
+    "firebase-admin": "^13.4.0",
     "flatted": "^3.3.2",
     "formidable": "^3.5.2",
     "framer-motion": "^12.4.7",
