@@ -10,4 +10,5 @@ if (!admin.apps.length) {
     });
 }
 
-export const fcmAdmin = admin.messaging();
+export { admin };
+

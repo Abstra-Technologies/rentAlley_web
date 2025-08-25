@@ -3,7 +3,7 @@ import mysql from 'mysql2/promise';
 import { parse } from 'cookie';
 import { jwtVerify } from 'jose';
 import { POINTS } from '@/constant/pointSystem/points';
-import { fcmAdmin } from "@/lib/firebaseAdmin";
+import { admin } from "@/lib/firebaseAdmin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -125,15 +125,34 @@ export async function POST(req: NextRequest) {
       );
       const fcmTokens = tokensRows.map((row: any) => row.token);
 
+      console.log('fcm token: ', fcmTokens);
+
       if (fcmTokens.length > 0) {
-          // @ts-ignore
-          await fcmAdmin.sendMulticast({
-              notification: { title: notificationTitle, body: notificationBody },
+          const message = {
+              notification: {
+                  title: notificationTitle,
+                  body: notificationBody,
+              },
               tokens: fcmTokens,
-          });
+          };
+
+          try {
+              const response = await admin.messaging().sendEachForMulticast(message);
+              console.log("✅ Notifications sent:", response.successCount);
+              console.log("❌ Failed:", response.failureCount);
+
+              response.responses.forEach((res, idx) => {
+                  if (!res.success) {
+                      console.error(`Error sending to ${fcmTokens[idx]}:`, res.error);
+                  }
+              });
+          } catch (err) {
+              console.error("🔥 Error sending notification:", err);
+          }
       }
 
-    await connection.end();
+
+      await connection.end();
 
     return new Response(
       JSON.stringify({
