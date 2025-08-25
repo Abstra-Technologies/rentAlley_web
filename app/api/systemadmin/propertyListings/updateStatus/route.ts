@@ -129,9 +129,10 @@ export async function POST(req: NextRequest) {
 
       if (fcmTokens.length > 0) {
           const message = {
-              notification: {
+              data: {
                   title: notificationTitle,
                   body: notificationBody,
+                  click_action: "/",
               },
               tokens: fcmTokens,
           };

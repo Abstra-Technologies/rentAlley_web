@@ -14,15 +14,13 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-    console.log('Received background message ', payload);
+    console.log("Received background message ", payload);
 
-    const notificationTitle = payload.notification?.title || "New Notification";
+    const notificationTitle = payload.data.title;
     const notificationOptions = {
-        body: payload.notification?.body || "You have a new message",
-        icon: '/icon.png', // optional: add your app icon here
-        data: {
-            url: payload.notification?.click_action || '/' // default to homepage
-        }
+        body: payload.data.body,
+        icon: "/icon.png",
+        data: { url: payload.data.click_action || "/" }
     };
 
     self.registration.showNotification(notificationTitle, notificationOptions);
