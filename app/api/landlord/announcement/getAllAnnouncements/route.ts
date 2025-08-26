@@ -40,9 +40,7 @@ export async function GET(req: NextRequest) {
       ORDER BY a.created_at DESC;
     `;
 
-    console.log("Executing query with landlord_id:", landlord_id);
     const [announcements]: [RowDataPacket[], FieldPacket[]] = await db.execute(query, [landlord_id]);
-    console.log("Raw announcements:", announcements);
 
     const decryptedAnnouncements = announcements.map((announcement: any) => {
       try {
@@ -59,7 +57,6 @@ export async function GET(req: NextRequest) {
           created_at: announcement.created_at,
         };
       } catch (error) {
-        console.error("Error decrypting announcement:", error, announcement);
         return {
           ...announcement,
           subject: "Error decrypting",
@@ -67,8 +64,6 @@ export async function GET(req: NextRequest) {
         };
       }
     });
-
-    console.log("Decrypted announcements:", decryptedAnnouncements);
     return NextResponse.json(decryptedAnnouncements);
   } catch (error: any) {
     console.error("Detailed error in get-announcements:", error);

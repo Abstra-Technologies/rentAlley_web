@@ -11,13 +11,14 @@ export default function CreateAnnouncement() {
   const [properties, setProperties] = useState([]);
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    property: "",
+      properties: [],
     subject: "",
     description: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+    const [uploadedImages, setUploadedImages] = useState([]);
 
   useEffect(() => {
     async function fetchProperties() {
@@ -56,18 +57,30 @@ export default function CreateAnnouncement() {
     }
   }, [user]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear any existing errors when user starts typing
-    if (error) setError("");
-  };
+    const handleChange = (e) => {
+        const { name, value, options } = e.target;
+
+        if (name === "properties") {
+            const selected = Array.from(options)
+                .filter((o) => o.selected)
+                .map((o) => o.value);
+
+            setFormData((prev) => ({
+                ...prev,
+                properties: selected,
+            }));
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
+
+        if (error) setError("");
+    };
 
   const validateForm = () => {
-    if (!formData.property) {
+    if (formData.properties.length === 0) {
       setError("Please select a property");
       return false;
     }
@@ -82,70 +95,77 @@ export default function CreateAnnouncement() {
     return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    if (!validateForm()) return;
+        if (!validateForm()) return;
 
-    setSaving(true);
-    setError("");
+        setSaving(true);
+        setError("");
 
-    try {
-      const response = await fetch(
-        "/api/landlord/announcement/createAnnouncement",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            property_id: formData.property,
-            subject: formData.subject,
-            description: formData.description,
-            landlord_id: user.landlord_id,
-          }),
+        try {
+            const formDataToSend = new FormData();
+            formData.properties.forEach((id) =>
+                formDataToSend.append("property_ids[]", id)
+            );
+            formDataToSend.append("subject", formData.subject);
+            formDataToSend.append("description", formData.description);
+            formDataToSend.append("landlord_id", user.landlord_id);
+
+            uploadedImages.forEach((file) => {
+                formDataToSend.append("images", file);
+            });
+
+            const response = await fetch(
+                "/api/landlord/announcement/createAnnouncement",
+                {
+                    method: "POST",
+                    body: formDataToSend,
+                }
+            );
+
+            const data = await response.json();
+
+            if (response.ok) {
+                await Swal.fire({
+                    icon: "success",
+                    title: "Success!",
+                    text: "Announcement created successfully.",
+                    confirmButtonColor: "#3B82F6",
+                    timer: 2000,
+                    timerProgressBar: true,
+                });
+
+                // Reset form
+                setFormData({
+                    properties: [],
+                    subject: "",
+                    description: "",
+                });
+                setUploadedImages([]);
+
+                router.push("/pages/landlord/announcement");
+            } else {
+                throw new Error(data.message || "Failed to create announcement");
+            }
+        } catch (error) {
+            console.error("Error creating announcement:", error);
+            setError(error.message || "Failed to create announcement");
+            Swal.fire({
+                icon: "error",
+                title: "Creation Failed",
+                text:
+                    error.message || "Failed to create announcement. Please try again.",
+                confirmButtonColor: "#3B82F6",
+            });
+        } finally {
+            setSaving(false);
         }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        await Swal.fire({
-          icon: "success",
-          title: "Success!",
-          text: "Announcement created successfully.",
-          confirmButtonColor: "#3B82F6",
-          timer: 2000,
-          timerProgressBar: true,
-        });
-
-        // Reset form
-        setFormData({
-          property: "",
-          subject: "",
-          description: "",
-        });
-
-        router.push("/pages/landlord/announcement");
-      } else {
-        throw new Error(data.message || "Failed to create announcement");
-      }
-    } catch (error) {
-      console.error("Error creating announcement:", error);
-      setError(error.message || "Failed to create announcement");
-      Swal.fire({
-        icon: "error",
-        title: "Creation Failed",
-        text:
-          error.message || "Failed to create announcement. Please try again.",
-        confirmButtonColor: "#3B82F6",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+    };
 
   const handleCancel = () => {
     const hasContent =
-      formData.property ||
+        formData.properties.length > 0 ||
       formData.subject.trim() ||
       formData.description.trim();
 
@@ -168,6 +188,32 @@ export default function CreateAnnouncement() {
       router.push("/pages/landlord/announcement");
     }
   };
+
+  const toggleProperty = (propertyId) => {
+        const idStr = String(propertyId);
+        setFormData((prev) => {
+            const alreadySelected = prev.properties.includes(idStr);
+            return {
+                ...prev,
+                properties: alreadySelected
+                    ? prev.properties.filter((id) => id !== idStr)
+                    : [...prev.properties, idStr],
+            };
+        });
+        if (error) setError("");
+    };
+    // Select all / Clear all
+
+    const toggleSelectAll = () => {
+        if (formData.properties.length === properties.length) {
+            // currently all selected -> clear
+            setFormData((prev) => ({ ...prev, properties: [] }));
+        } else {
+            const allIds = properties.map((p) => String(p.property_id));
+            setFormData((prev) => ({ ...prev, properties: allIds }));
+        }
+        if (error) setError("");
+    };
 
   // Loading skeleton
   const LoadingSkeleton = () => (
@@ -194,7 +240,20 @@ export default function CreateAnnouncement() {
     </div>
   );
 
-  if (loading) {
+    const handleImageUpload = (e) => {
+        if (e.target.files) {
+            // Convert FileList → Array
+            setUploadedImages((prev) => [...prev, ...Array.from(e.target.files)]);
+        }
+    };
+
+    const handleDeleteImage = (index) => {
+        setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    };
+
+
+
+    if (loading) {
     return (
       <LandlordLayout>
         <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8">
@@ -326,51 +385,72 @@ export default function CreateAnnouncement() {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Property Selection */}
-                <div>
-                  <label
-                    htmlFor="property"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Property *
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="property"
-                      name="property"
-                      value={formData.property}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
-                      required
-                    >
-                      <option value="">Select a property</option>
-                      {properties.map((property) => (
-                        <option
-                          key={property.property_id}
-                          value={property.property_id}
-                        >
-                          {property.property_name}
-                        </option>
-                      ))}
-                    </select>
-                    <svg
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Choose which property this announcement applies to
-                  </p>
-                </div>
+                  {/* Multi Property Selection */}
+                  <div>
+                      <label
+                          htmlFor="properties"
+                          className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                          Properties *
+                      </label>
 
+                      <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm text-gray-500">
+                              Select one or more properties for this announcement
+                          </p>
+                          <button
+                              type="button"
+                              onClick={toggleSelectAll}
+                              className="text-sm text-blue-600 hover:underline"
+                          >
+                              {formData.properties.length === properties.length &&
+                              properties.length > 0
+                                  ? "Clear all"
+                                  : "Select all"}
+                          </button>
+                      </div>
+
+                      <div className="border rounded-lg p-2 max-h-56 overflow-y-auto bg-white">
+                          {properties.length === 0 ? (
+                              <p className="text-sm text-gray-500 p-3">
+                                  No properties found.
+                              </p>
+                          ) : (
+                              properties.map((property) => {
+                                  const idStr = String(property.property_id);
+                                  return (
+                                      <label
+                                          key={idStr}
+                                          className="flex items-center space-x-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                                      >
+                                          <input
+                                              type="checkbox"
+                                              value={idStr}
+                                              checked={formData.properties.includes(idStr)}
+                                              onChange={() => toggleProperty(idStr)}
+                                              className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                              aria-checked={formData.properties.includes(idStr)}
+                                          />
+                                          <div className="flex-1 min-w-0">
+                                              <div className="text-sm font-medium text-gray-800 truncate">
+                                                  {property.property_name}
+                                              </div>
+                                              {property.address && (
+                                                  <div className="text-xs text-gray-500 truncate">
+                                                      {property.address}
+                                                  </div>
+                                              )}
+                                          </div>
+                                      </label>
+                                  );
+                              })
+                          )}
+                      </div>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                          Scroll to see more properties
+                      </p>
+                  </div>
                 {/* Subject Input */}
                 <div>
                   <label
@@ -422,7 +502,41 @@ export default function CreateAnnouncement() {
                   </div>
                 </div>
 
-                {/* Form Actions */}
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Upload Images
+                      </label>
+                      <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleImageUpload}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+
+                      {/* Preview section */}
+                      {uploadedImages.length > 0 && (
+                          <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {uploadedImages.map((file, index) => (
+                                  <div
+                                      key={index}
+                                      className="relative rounded-lg overflow-hidden border border-gray-200"
+                                  >
+                                      <img
+                                          src={URL.createObjectURL(file)}
+                                          alt={`Preview ${index}`}
+                                          className="h-32 w-full object-cover"
+                                      />
+                                      <button onClick={() => handleDeleteImage(index)}>Delete</button>
+                                  </div>
+                              ))}
+                          </div>
+                      )}
+                  </div>
+
+
+
+                  {/* Form Actions */}
                 <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
                   <button
                     type="button"

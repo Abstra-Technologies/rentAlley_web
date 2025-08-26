@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
       { status: 400 }
     );
   }
-
   try {
     const query = `
       SELECT property_id, property_name
@@ -27,9 +26,7 @@ export async function GET(req: NextRequest) {
       ORDER BY property_name;
     `;
 
-    console.log("Executing query with landlord_id:", landlord_id);
     const [properties] = await db.execute(query, [landlord_id]);
-    console.log("Retrieved properties:", properties);
 
     const decryptedProperties = (properties as any[]).map((property) => ({
       ...property,
@@ -40,7 +37,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(decryptedProperties);
   } catch (error: any) {
-    console.error("Error fetching properties:", error);
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }

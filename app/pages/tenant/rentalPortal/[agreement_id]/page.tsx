@@ -15,6 +15,9 @@ import PaymentDueWidget from "@/components/tenant/analytics-insights/paymentDue"
 import OverduePaymentWidget from "@/components/tenant/analytics-insights/overDuePayment";
 import PaymentHistoryWidget from "@/components/tenant/analytics-insights/paymentHistoryWidget";
 import AnnouncementWidget from "@/components/tenant/analytics-insights/announcementWidgets";
+import MoveInChecklist from "@/components/tenant/currentRent/MoveInChecklist";
+
+
 
 export default function RentPortalPage() {
   const { user, fetchSession } = useAuthStore();
@@ -23,6 +26,7 @@ export default function RentPortalPage() {
   const params = useParams();
   const [unitInfo, setUnitInfo] = useState<{ unit_name: string; property_name: string } | null>(null);
   const agreementId = params?.agreement_id;
+  const [moveInStatus, setMoveInStatus] = useState<'pending' | 'completed' | null>(null);
 
 
  useEffect(() => {
@@ -38,6 +42,20 @@ export default function RentPortalPage() {
     if (agreementId) fetchUnitName();
   }, [agreementId]);
 
+    useEffect(() => {
+        const fetchMoveInStatus = async () => {
+            if (!agreementId) return;
+            try {
+                const response = await axios.get(`/api/tenant/activeRent/moveInChecklistStatus?agreement_id=${agreementId}`);
+                setMoveInStatus(response.data.status); // expected 'pending' or 'completed'
+                console.log('moveInStatus', response.data.status);
+            } catch (error) {
+                console.error("Failed to fetch move-in checklist status:", error);
+            }
+        };
+        if (agreementId) fetchMoveInStatus();
+    }, [agreementId]);
+
 //   if (loading || dataLoading) return <LoadingScreen />;
 
   if (!user) {
@@ -50,7 +68,6 @@ export default function RentPortalPage() {
 
     return (
         // @ts-ignore
-
         <TenantLayout agreement_id={agreementId}>
       <div className="p-6 bg-gray-50 min-h-screen">
         <div>
@@ -59,6 +76,12 @@ export default function RentPortalPage() {
         <p className="text-sm text-gray-600 mb-6">
           Manage all your rent-related activity here, for this unit.
         </p>
+
+          {moveInStatus !== 'completed' && (
+              <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-6 mt-6">
+                  <MoveInChecklist agreement_id={agreementId} />
+              </div>
+          )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-white rounded-2xl shadow-md border border-gray-200 transition-transform transform hover:scale-105 hover:shadow-lg">
