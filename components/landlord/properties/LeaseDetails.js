@@ -5,12 +5,13 @@ import LeaseUpload from "./LeaseUpload";
 import Image from "next/image";
 import Link from "next/link";
 import Swal from "sweetalert2";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaCheckCircle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import {
   DocumentTextIcon,
   EnvelopeIcon,
   IdentificationIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import {
   HiOutlineBriefcase,
@@ -81,7 +82,7 @@ const LeaseDetails = ({ unitId }) => {
       console.error("Error fetching unit details:", error);
     }
   };
-  //  Property Status Get
+
   const fetchStatus = async () => {
     try {
       const response = await axios.get(
@@ -136,7 +137,6 @@ const LeaseDetails = ({ unitId }) => {
     }
   };
 
-  // this
   const fetchTenantDetails = async () => {
     setIsLoading(true);
     try {
@@ -157,7 +157,7 @@ const LeaseDetails = ({ unitId }) => {
       setIsLoading(false);
     }
   };
-  //  change this function . wrong logic
+
   const handleDeleteLease = async () => {
     Swal.fire({
       title: "Are you sure?",
@@ -216,7 +216,6 @@ const LeaseDetails = ({ unitId }) => {
     }
 
     try {
-      // 1. Upload file if provided
       if (leaseFile) {
         const formData = new FormData();
         formData.append("leaseFile", leaseFile);
@@ -228,33 +227,34 @@ const LeaseDetails = ({ unitId }) => {
         });
 
         if (!uploadRes.ok) {
-          const errorText = await uploadRes.text(); // get error details for debugging
+          const errorText = await uploadRes.text();
           console.error("Upload failed:", errorText);
           Swal.fire("Error", "File upload failed", "error");
-          return; // STOP here if upload failed
+          return;
         }
       }
 
-      // 2. Save dates only if upload (or no upload) succeeded
       const leaseDateRes = await fetch(
-          "/api/leaseAgreement/updateLeaseDateSet",
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              unit_id: unitId,
-              start_date: startDate,
-              end_date: endDate,
-            }),
-          }
+        "/api/leaseAgreement/updateLeaseDateSet",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            unit_id: unitId,
+            start_date: startDate,
+            end_date: endDate,
+          }),
+        }
       );
 
       if (!leaseDateRes.ok) {
         const errorText = await leaseDateRes.text(); // optional for logging
         console.error("Lease date update failed:", errorText);
-        throw new Error(`Lease date update failed with status ${leaseDateRes.status}`);
+        throw new Error(
+          `Lease date update failed with status ${leaseDateRes.status}`
+        );
       }
 
       Swal.fire("Success", "Lease saved successfully", "success");
@@ -266,378 +266,462 @@ const LeaseDetails = ({ unitId }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
+      {/* Enhanced Back Button */}
       <button
         onClick={() => router.back()}
-        className="flex items-center text-blue-600 hover:text-blue-800 mb-6"
+        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4 sm:mb-6 p-2 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
       >
-        <FaArrowLeft className="h-4 w-4 mr-1" />
-        Back
+        <ArrowLeftIcon className="h-4 w-4" />
+        <span className="hidden sm:inline">Back to Units</span>
+        <span className="sm:hidden">Back</span>
       </button>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-        <div className="h-48 bg-gray-200 relative">
+      {/* Enhanced Header Section */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-4 sm:mb-6 border border-gray-200">
+        <div className="relative h-48 sm:h-56 bg-gradient-to-r from-blue-600 to-purple-600">
           {unitPhoto ? (
             <Image
               src={unitPhoto}
               alt="Unit Photo"
               layout="fill"
               objectFit="cover"
-              className="rounded-t-lg"
+              className="rounded-t-2xl"
             />
           ) : (
-            <div className="w-full h-48 bg-gray-300 flex items-center justify-center">
-              No Image Available
+            <div className="w-full h-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
+              <div className="text-center text-white">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <UserIcon className="h-8 w-8" />
+                </div>
+                <p className="text-white/80">No Image Available</p>
+              </div>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 flex flex-col justify-end p-6">
-            <h1 className="text-white text-2xl font-bold">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+            <h1 className="text-white text-xl sm:text-2xl font-bold mb-1">
               {propertyName || "Property Name"}
             </h1>
-            <p className="text-white text-lg">Unit {unitName || "Unit Name"}</p>
+            <p className="text-white/90 text-sm sm:text-base">
+              Unit {unitName || "Unit Name"}
+            </p>
+            {/* Status Badge */}
+            <div className="mt-3">
+              <span
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
+                  status === "occupied"
+                    ? "bg-green-100 text-green-800 border border-green-200"
+                    : "bg-red-100 text-red-800 border border-red-200"
+                }`}
+              >
+                {status === "occupied" ? "Occupied" : "Available"}
+              </span>
+            </div>
           </div>
         </div>
 
+        {/* No Tenant Warning */}
         {!tenant && (
-            <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-4 rounded-md mb-6">
-              <p className="font-semibold mb-2">
-                No current tenant assigned to this unit.
-              </p>
-              <p className="mb-4">
-                Send an invitation to the tenant’s email so they can register and be linked to the unit.
-              </p>
+          <div className="p-4 sm:p-6 bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mt-0.5">
+                <EnvelopeIcon className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-amber-800 mb-2">
+                  No Tenant Assigned
+                </h3>
+                <p className="text-amber-700 text-sm mb-4">
+                  Send an invitation to connect a tenant to this unit. They'll
+                  receive an email with registration instructions.
+                </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                <input
-                    type="email"
-                    placeholder="Tenant's email address"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="w-full sm:max-w-xs bg-white border border-gray-300 px-4 py-2 rounded text-gray-700"
-                />
-                <button
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="email"
+                      placeholder="Enter tenant's email address"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="w-full bg-white border border-amber-200 px-4 py-2.5 rounded-xl text-gray-700 focus:ring-2 focus:ring-amber-300 focus:border-amber-400 outline-none transition-all"
+                    />
+                  </div>
+                  <button
                     onClick={handleSendInvite}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium"
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    Send Invite
+                  </button>
+                </div>
+
+                <button
+                  className="mt-3 text-blue-600 hover:text-blue-800 underline font-medium text-sm"
+                  onClick={() =>
+                    router.push(`/landlord/prospectives/${unitId}`)
+                  }
                 >
-                  Send Invite
+                  View prospective tenants instead
                 </button>
               </div>
-
-              <button
-                  className="mt-4 text-blue-600 underline hover:text-blue-800"
-                  onClick={() => router.push(`/landlord/prospectives/${unitId}`)}
-              >
-                Or view prospective tenants
-              </button>
             </div>
+          </div>
         )}
 
-        {/* tabs */}
-        <div className="flex border-b">
-          <button
-            className={`px-4 py-3 font-medium text-sm ${
-              activeTab === "details"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("details")}
-          >
-            Renter Details
-          </button>
-          <button
-            className={`px-4 py-3 font-medium text-sm ${
-              activeTab === "maintenance"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("maintenance")}
-          >
-            Maintenance Request History
-          </button>
-          <button
-            className={`px-4 py-3 font-medium text-sm ${
-              activeTab === "history"
-                ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("history")}
-          >
-            Tenant History
-          </button>
+        {/* Enhanced Tab Navigation */}
+        <div className="border-t border-gray-200">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            {[
+              { id: "details", label: "Tenant Details", icon: UserIcon },
+              {
+                id: "maintenance",
+                label: "Maintenance",
+                icon: DocumentTextIcon,
+              },
+              { id: "history", label: "History", icon: DocumentTextIcon },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-all duration-200 ${
+                    activeTab === tab.id
+                      ? "text-blue-600 border-blue-600 bg-blue-50/50"
+                      : "text-gray-500 hover:text-gray-700 border-transparent hover:bg-gray-50"
+                  }`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
+      {/* Tab Content */}
       {activeTab === "details" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-start mb-4">
-                <div className="w-16 h-16 rounded-full bg-gray-200 mr-4 overflow-hidden flex-shrink-0 flex items-center justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Tenant Information Card */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gray-100 overflow-hidden flex-shrink-0 shadow-md">
                   {tenant?.profilePicture ? (
                     <Image
                       src={tenant?.profilePicture}
                       alt="Profile"
-                      width={64}
-                      height={64}
-                      className="w-full h-full rounded-full object-cover object-center border-2 border-gray-300 shadow-lg"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-full border-2 border-gray-300 shadow-lg bg-gray-200 flex items-center justify-center">
-                      <UserIcon className="h-8 w-8 text-gray-500" />{" "}
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                      <UserIcon className="h-8 w-8 text-gray-500" />
                     </div>
                   )}
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    {tenant?.firstName} {tenant?.lastName}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
+                    {tenant
+                      ? `${tenant?.firstName} ${tenant?.lastName}`
+                      : "No Tenant Assigned"}
                   </h2>
-                  <p className="text-gray-500 text-sm">
-                    Date of Birth: {formatDate(tenant?.birthDate)}
-                  </p>
+                  {tenant?.birthDate && (
+                    <p className="text-gray-500 text-sm">
+                      Born: {formatDate(tenant?.birthDate)}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div className="space-y-3 mt-6">
-                <div className="flex items-start">
-                  <EnvelopeIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Email Address:</p>
-                    <p className="text-gray-800 font-medium">{tenant?.email}</p>
-                  </div>
-                </div>
+              {tenant ? (
+                <div className="space-y-4">
+                  {[
+                    {
+                      icon: EnvelopeIcon,
+                      label: "Email",
+                      value: tenant?.email,
+                    },
+                    {
+                      icon: PhoneIcon,
+                      label: "Phone",
+                      value: tenant?.phoneNumber,
+                    },
+                    {
+                      icon: HiOutlineBriefcase,
+                      label: "Occupation",
+                      value: tenant?.occupation,
+                    },
+                    {
+                      icon: HiOutlineCurrencyDollar,
+                      label: "Monthly Income",
+                      value: tenant?.monthlyIncome?.replace("_", "-"),
+                    },
+                    {
+                      icon: HiOutlineUser,
+                      label: "Employment",
+                      value: tenant?.employmentType,
+                    },
+                    {
+                      icon: MapPinIcon,
+                      label: "Address",
+                      value: tenant?.address,
+                    },
+                  ].map((item, index) => {
+                    const Icon = item.icon;
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"
+                      >
+                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 mt-0.5">
+                          <Icon className="h-4 w-4 text-gray-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                            {item.label}
+                          </p>
+                          <p className="text-gray-800 font-medium break-words">
+                            {item.value || "Not provided"}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
 
-                <div className="flex items-start">
-                  <PhoneIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Mobile Number:</p>
-                    <p className="text-gray-800 font-medium">
-                      {tenant?.phoneNumber}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <HiOutlineBriefcase className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Occupation:</p>
-                    <p className="text-gray-800 font-medium">
-                      {tenant?.occupation}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <HiOutlineCurrencyDollar className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Monthly Income:</p>
-                    <p className="text-gray-800 font-medium">
-                      {tenant?.monthlyIncome?.replace("_", "-")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <HiOutlineUser className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Employment Status:</p>
-                    <p className="text-gray-800 font-medium">
-                      {tenant?.employmentType}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <MapPinIcon className="h-5 w-5 text-gray-500 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">Address:</p>
-                    <p className="text-gray-800 font-medium">
-                      {tenant?.address}
-                    </p>
-                  </div>
-                </div>
-
-                {tenant?.validId ? (
-                  <div className="mb-6">
-                    <p className="text-sm text-gray-500 mb-2">
-                      Valid Government ID:
-                    </p>
-                    <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-md bg-blue-100 text-blue-500 flex items-center justify-center mr-3">
-                          <IdentificationIcon className="h-6 w-6" />
+                  {/* Valid ID Section */}
+                  {tenant?.validId ? (
+                    <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <IdentificationIcon className="h-6 w-6 text-blue-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-700">
-                            Tenant's Valid ID
+                          <p className="font-semibold text-blue-800 mb-1">
+                            Government ID
                           </p>
                           <Link
                             href={tenant?.validId}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-blue-500 hover:underline"
+                            className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
                           >
-                            View Government ID
+                            View Verification Document
                           </Link>
                         </div>
+                        <FaCheckCircle className="text-green-500 h-5 w-5" />
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <p className="text-gray-500 mb-4">No valid ID available</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Lease Agreement
-              </h2>
-              <>
-                <div className="mb-6">
-                  <p className="text-md text-gray-500 mb-2">Lease Dates:</p>
-
-                  {lease?.start_date && lease?.end_date && (
-                    <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
-                      <p className="text-gray-700 text-md mb-2">
-                        Start Date: {formatDate(lease.start_date)}
-                      </p>
-                      <p className="text-gray-700 text-md">
-                        End Date: {formatDate(lease.end_date)}
+                  ) : (
+                    <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <p className="text-gray-500 text-center">
+                        No ID verification available
                       </p>
                     </div>
                   )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <UserIcon className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500">
+                    No tenant information available
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        htmlFor="startDate"
-                        className="block text-gray-700 text-sm font-bold mb-2"
-                      >
-                        Start Date:
-                      </label>
-                      <input
-                        type="date"
-                        id="startDate"
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
+          {/* Lease Agreement Card  */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
+                  <DocumentTextIcon className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Lease Agreement
+                </h2>
+              </div>
+
+              {/* Current Lease Dates Display */}
+              {lease?.start_date && lease?.end_date && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                  <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                    <FaCheckCircle className="text-green-600" />
+                    Active Lease Period
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-white p-3 rounded-lg shadow-sm">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                        Start Date
+                      </p>
+                      <p className="text-gray-800 font-semibold">
+                        {formatDate(lease.start_date)}
+                      </p>
                     </div>
-                    <div>
-                      <label
-                        htmlFor="endDate"
-                        className="block text-gray-700 text-sm font-bold mb-2"
-                      >
-                        End Date:
-                      </label>
-                      <input
-                        type="date"
-                        id="endDate"
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                      />
+                    <div className="bg-white p-3 rounded-lg shadow-sm">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                        End Date
+                      </p>
+                      <p className="text-gray-800 font-semibold">
+                        {formatDate(lease.end_date)}
+                      </p>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {lease?.agreement_url ? (
+              {/* Date Input Section */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-800 mb-4">
+                  Set Lease Dates
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500 mb-2">
-                      Lease Agreement:
-                    </p>
-                    <div className="p-3 bg-gray-50 rounded-md border border-gray-200 flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-md bg-green-100 text-green-500 flex items-center justify-center mr-3">
-                          <DocumentTextIcon className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">
-                            Current Lease Agreement
-                          </p>
-                          <Link
-                            href={lease.agreement_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-500 hover:underline"
-                          >
-                            View Lease Agreement
-                          </Link>
-                        </div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Lease Document Section */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-800 mb-4">
+                  Lease Document
+                </h3>
+                {lease?.agreement_url ? (
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <DocumentTextIcon className="h-6 w-6 text-blue-600" />
                       </div>
-                      {/*<button*/}
-                      {/*  onClick={handleDeleteLease}*/}
-                      {/*  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"*/}
-                      {/*>*/}
-                      {/*  Delete Lease*/}
-                      {/*</button>*/}
+                      <div className="flex-1">
+                        <p className="font-semibold text-blue-800 mb-1">
+                          Current Lease Agreement
+                        </p>
+                        <Link
+                          href={lease.agreement_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                        >
+                          View Agreement Document
+                        </Link>
+                      </div>
+                      <FaCheckCircle className="text-green-500 h-5 w-5" />
                     </div>
                   </div>
                 ) : (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-2">
-                      Upload Lease Agreement:
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <p className="text-sm font-medium text-gray-700 mb-3">
+                      Upload New Lease Agreement
                     </p>
                     <LeaseUpload setLeaseFile={setLeaseFile} />
                   </div>
                 )}
+              </div>
 
+              {/* Action Buttons */}
+              <div className="space-y-3">
                 <button
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded ml-2"
-                  onClick={() => handleSaveLease()}
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+                  onClick={handleSaveLease}
                 >
-                  Save Lease
+                  Save Lease Agreement
                 </button>
 
-                <div className="mt-6 border-t pt-4">
-                  <p className="text-sm text-gray-500 mb-2">Unit Status:</p>
-                  <button
-                    className={`px-4 py-2 text-white font-medium rounded-lg shadow-md transition duration-300 disabled:opacity-50 ${
-                      status === "occupied"
-                        ? "bg-yellow-500 hover:bg-yellow-600"
-                        : "bg-green-500 hover:bg-green-600"
-                    }`}
-                    onClick={toggleUnitStatus}
-                    disabled={isUpdatingStatus}
-                  >
-                    {isUpdatingStatus
-                      ? "Updating..."
-                      : status === "occupied"
-                      ? "Mark as Unoccupied"
-                      : "Mark as Occupied"}
-                  </button>
-                </div>
-              </>
+                <button
+                  className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
+                    status === "occupied"
+                      ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                      : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                  }`}
+                  onClick={toggleUnitStatus}
+                  disabled={isUpdatingStatus}
+                >
+                  {isUpdatingStatus
+                    ? "Updating Status..."
+                    : status === "occupied"
+                    ? "Mark as Unoccupied"
+                    : "Mark as Occupied"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Maintenance Tab */}
       {activeTab === "maintenance" && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Maintenance Request History
-          </h2>
-          <p className="text-gray-500 text-center py-6">
-            No maintenance requests found
-          </p>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-md">
+              <DocumentTextIcon className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">
+              Maintenance Requests
+            </h2>
+          </div>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <DocumentTextIcon className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-gray-500 font-medium mb-2">
+              No Maintenance Requests
+            </p>
+            <p className="text-gray-400 text-sm">
+              All maintenance requests will appear here
+            </p>
+          </div>
         </div>
       )}
 
+      {/* History Tab */}
       {activeTab === "history" && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Tenant History
-          </h2>
-          <p className="text-gray-500 text-center py-6">
-            No previous tenant history for this unit
-          </p>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md">
+              <DocumentTextIcon className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">Tenant History</h2>
+          </div>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <UserIcon className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-gray-500 font-medium mb-2">
+              No Previous Tenants
+            </p>
+            <p className="text-gray-400 text-sm">
+              Historical tenant information will appear here
+            </p>
+          </div>
         </div>
       )}
     </div>
   );
 };
-
 export default LeaseDetails;
