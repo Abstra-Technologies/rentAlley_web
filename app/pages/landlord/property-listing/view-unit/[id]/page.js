@@ -13,6 +13,7 @@ import {
   PencilSquareIcon,
   TrashIcon,
   ExclamationCircleIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import useAuthStore from "../../../../../../zustand/authStore";
 import { useSearchParams } from "next/navigation";
@@ -24,7 +25,6 @@ import FBShareButton from "../../../../../../components/landlord/properties/shar
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 const ViewUnitPage = () => {
-
   const { id } = useParams();
   const router = useRouter();
   const { fetchSession, user, admin } = useAuthStore();
@@ -93,7 +93,7 @@ const ViewUnitPage = () => {
     fetchPropertyDetails();
   }, [id]);
 
- useEffect(() => {
+  useEffect(() => {
     if (!user && !admin) {
       fetchSession();
     }
@@ -159,37 +159,44 @@ const ViewUnitPage = () => {
     fetcher
   );
 
-const {
-  data: units,
-  error,
-  isLoading,
-} = useSWR(id ? `/api/unitListing/getUnitListings?property_id=${id}` : null, fetcher);
+  const {
+    data: units,
+    error,
+    isLoading,
+  } = useSWR(
+    id ? `/api/unitListing/getUnitListings?property_id=${id}` : null,
+    fetcher
+  );
 
-//  Get Unit Billing Status
-useEffect(() => {
-  const fetchUnitBillingStatus = async () => {
-    if (!units || units.length === 0) return;
+  //  Get Unit Billing Status
+  useEffect(() => {
+    const fetchUnitBillingStatus = async () => {
+      if (!units || units.length === 0) return;
 
-    const statusMap = {};
+      const statusMap = {};
 
-    await Promise.all(
-      units.map(async (unit) => {
-        try {
-          const response = await axios.get(
-            `/api/landlord/billing/getUnitDetails/billingStatus?unit_id=${unit.unit_id}`
-          );
-          statusMap[unit.unit_id] = response.data?.hasBillForThisMonth || false;
-        } catch (error) {
-          console.error(`Error fetching billing status for unit ${unit.unit_id}`, error);
-        }
-      })
-    );
+      await Promise.all(
+        units.map(async (unit) => {
+          try {
+            const response = await axios.get(
+              `/api/landlord/billing/getUnitDetails/billingStatus?unit_id=${unit.unit_id}`
+            );
+            statusMap[unit.unit_id] =
+              response.data?.hasBillForThisMonth || false;
+          } catch (error) {
+            console.error(
+              `Error fetching billing status for unit ${unit.unit_id}`,
+              error
+            );
+          }
+        })
+      );
 
-    setUnitBillingStatus(statusMap);
-  };
+      setUnitBillingStatus(statusMap);
+    };
 
-  fetchUnitBillingStatus();
-}, [units]);
+    fetchUnitBillingStatus();
+  }, [units]);
 
   const handleEditUnit = (unitId) => {
     router.push(
@@ -284,11 +291,14 @@ useEffect(() => {
 
   async function fetchPropertyDetails() {
     try {
-      const response = await axios.get("/api/propertyListing/getPropDetailsById", {
-        params: { id },
-      });
+      const response = await axios.get(
+        "/api/propertyListing/getPropDetailsById",
+        {
+          params: { id },
+        }
+      );
       setPropertyDetails(response.data.property);
-      console.log('property details:', response.data.property);
+      console.log("property details:", response.data.property);
     } catch (error) {
       console.error("Failed to fetch property details:", error);
     }
@@ -297,8 +307,8 @@ useEffect(() => {
   if (error)
     return (
       <LandlordLayout>
-        <div className="min-h-screen bg-gray-50 p-6">
-          <div className="bg-white p-8 rounded-lg shadow-md">
+        <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
             <p className="text-red-500 text-center">
               Failed to load units. Please try again later.
             </p>
@@ -309,418 +319,543 @@ useEffect(() => {
 
   return (
     <LandlordLayout>
-      <div className="min-h-screen bg-gray-50 p-6">
-
-        {/* HEADER PART */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border flex flex-col md:flex-row gap-6">
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <BuildingOffice2Icon className="h-7 w-7 text-blue-600" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
+        {/* HEADER PART - Mobile Optimized */}
+        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 border border-gray-100">
+          {/* Header Content */}
+          <div className="mb-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl shadow-md">
+                <BuildingOffice2Icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 leading-tight">
                   {isLoading
-                      ? "Loading..."
-                      : propertyDetails?.property_name || "Property Details"}
+                    ? "Loading..."
+                    : propertyDetails?.property_name || "Property Details"}
                 </h1>
-                <p className="text-gray-500 text-lg">Take control of your units efficiently </p>
+                <p className="text-gray-500 text-sm sm:text-base mt-1">
+                  Manage your rental units efficiently
+                </p>
               </div>
             </div>
 
-            {/* Subscription Usage */}
+            {/* Subscription Usage - Mobile Friendly */}
             {subscription && (
-                <div className="mb-4">
-                  <p className="text-gray-600 text-sm">
-                        <span className="font-semibold">
-                          {units?.length}/{subscription.listingLimits.maxUnits}
-                        </span>{" "}
-                    units used
-                  </p>
-                  <div className="w-full h-2 bg-gray-200 rounded-full mt-1">
-                    <div
-                        className="h-2 bg-blue-600 rounded-full"
-                        style={{
-                          width: `${(units?.length / subscription.listingLimits.maxUnits) * 100}%`,
-                        }}
-                    />
-                  </div>
-                </div>
-            )}
-
-            {/* Billing Status */}
-            {hasBillingForMonth && (
-                <div className="flex items-center gap-2 text-green-600 mb-3">
-                  <FaCheckCircle size={20} />
-                  <span className="text-sm">
-                          Property Utility Rates is already set for this month.
+              <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Unit Usage
+                  </span>
+                  <span className="text-sm font-semibold text-blue-700">
+                    {units?.length}/{subscription.listingLimits.maxUnits}
                   </span>
                 </div>
-            )}
-
-            {/* Limit Warning */}
-            {subscription && units?.length >= subscription.listingLimits.maxUnits && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2">
-                  <ExclamationCircleIcon className="h-6 w-6 text-red-600 mt-0.5" />
-                  <p className="text-sm font-medium">
-                    You have reached your unit limit.{" "}
-                    <span className="font-semibold">Upgrade your plan</span> to add more
-                    units.
-                  </p>
+                <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
+                    style={{
+                      width: `${Math.min(
+                        (units?.length / subscription.listingLimits.maxUnits) *
+                          100,
+                        100
+                      )}%`,
+                    }}
+                  />
                 </div>
+              </div>
             )}
 
-            {/* FB Share */}
-            {propertyDetails && (
-                <FBShareButton url={`https://rent-alley-web.vercel.app/pages/find-rent/${propertyDetails?.property_id}`} />
-            )}
-          </div>
-
-          {/* Sidebar Buttons */}
-          <div className="flex flex-col gap-3 w-full md:w-48">
-            <button
-                className={`flex items-center px-4 py-2 rounded-md font-semibold transition-colors ${
-                    loadingSubscription ||
-                    !subscription ||
-                    units?.length >= subscription?.listingLimits?.maxUnits
-                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-                onClick={handleAddUnitClick}
-                disabled={
-                    loadingSubscription ||
-                    !subscription ||
-                    units?.length >= subscription?.listingLimits?.maxUnits
-                }
-            >
-              <PlusCircleIcon className="h-5 w-5 mr-2" />
-              Add Unit
-            </button>
-
-            <button
-                onClick={() => setBillingMode(!billingMode)}
-                className="px-4 py-2 rounded-md font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-            >
-              {billingMode ? "Exit Billing Mode" : "Enter Billing Mode"}
-            </button>
-
-            {/* Billing Actions base on type */}
-            <div className="flex flex-col gap-3">
-              {billingMode && propertyDetails?.utility_billing_type === "submetered" && (
-                  <button
-                      onClick={() => setIsModalOpen(true)}
-                      className="px-4 py-2 rounded-md font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-                  >
-                    Set Utility Rate
-                  </button>
+            {/* Status Indicators - Stacked on Mobile */}
+            <div className="space-y-3">
+              {hasBillingForMonth && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200">
+                  <FaCheckCircle
+                    className="text-green-600 flex-shrink-0"
+                    size={18}
+                  />
+                  <span className="text-sm text-green-700 font-medium">
+                    Property utility rates set for this month
+                  </span>
+                </div>
               )}
-              {/* For non-submetered types, show auto-bill info */}
-              {billingMode && propertyDetails?.utility_billing_type !== "submetered" && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
-                    Utility bills are only generated for submetered properties. For utilities included in the rent or paid directly to the concessionaire, billing are created automatically.
-                  </div>
-              )}
-            </div>
 
-          </div>
-        </div>
-
-        {/* TABS NAVIGATION */}
-        <div className="flex gap-4 border-b border-gray-200 mb-6">
-          <button
-              onClick={() => setActiveTab("units")}
-              className={`pb-2 px-4 font-medium ${
-                  activeTab === "units"
-                      ? "border-b-2 border-blue-600 text-blue-600"
-                      : "text-gray-500 hover:text-gray-700"
-              }`}
-          >
-           Property Units
-          </button>
-          <button
-              onClick={() => setActiveTab("documents")}
-              className={`pb-2 px-4 font-medium ${
-                  activeTab === "documents"
-                      ? "border-b-2 border-blue-600 text-blue-600"
-                      : "text-gray-500 hover:text-gray-700"
-              }`}
-          >
-            Documents / Permits
-          </button>
-          <button
-              onClick={() => setActiveTab("analytics")}
-              className={`pb-2 px-4 font-medium ${
-                  activeTab === "analytics"
-                      ? "border-b-2 border-blue-600 text-blue-600"
-                      : "text-gray-500 hover:text-gray-700"
-              }`}
-          >
-            Engagement Analytics
-          </button>
-        </div>
-
-        {/* Tabbed part of the page section units, and property documents */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <HomeIcon className="h-5 w-5 mr-2 text-blue-600" />
-            Available Units
-          </h2>
-
-          {/* Unit Tabs */}
-          {activeTab === "units" && (
-              isLoading ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-pulse flex space-x-4">
-                    <div className="rounded-full bg-gray-200 h-12 w-12"></div>
-                    <div className="flex-1 space-y-4 py-1">
-                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                      <div className="space-y-2">
-                        <div className="h-4 bg-gray-200 rounded"></div>
-                        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                      </div>
+              {subscription &&
+                units?.length >= subscription.listingLimits.maxUnits && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-start gap-3">
+                    <ExclamationCircleIcon className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Unit limit reached</p>
+                      <p className="text-xs text-red-600 mt-1">
+                        Upgrade your plan to add more units
+                      </p>
                     </div>
                   </div>
+                )}
+            </div>
+          </div>
+
+          {/* Action Buttons - Mobile Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <button
+              className={`flex items-center justify-center px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                loadingSubscription ||
+                !subscription ||
+                units?.length >= subscription?.listingLimits?.maxUnits
+                  ? "bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200"
+                  : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg active:scale-95"
+              }`}
+              onClick={handleAddUnitClick}
+              disabled={
+                loadingSubscription ||
+                !subscription ||
+                units?.length >= subscription?.listingLimits?.maxUnits
+              }
+            >
+              <PlusCircleIcon className="h-5 w-5 mr-2" />
+              <span className="text-sm">Add Unit</span>
+            </button>
+
+            <button
+              onClick={() => setBillingMode(!billingMode)}
+              className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 ${
+                billingMode
+                  ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800"
+                  : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
+              }`}
+            >
+              <span className="text-sm">
+                {billingMode ? "Exit Billing" : "Billing Mode"}
+              </span>
+            </button>
+
+            {/* Utility Rate Button - Conditional */}
+            {billingMode &&
+              propertyDetails?.utility_billing_type === "submetered" && (
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-4 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
+                >
+                  <span className="text-sm">Set Utility Rate</span>
+                </button>
+              )}
+
+            {/* FB Share Button */}
+            {propertyDetails && (
+              <div className="flex items-center">
+                <FBShareButton
+                  url={`https://rent-alley-web.vercel.app/pages/find-rent/${propertyDetails?.property_id}`}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Non-submetered Info */}
+          {billingMode &&
+            propertyDetails?.utility_billing_type !== "submetered" && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                <p className="text-sm text-green-800">
+                  <span className="font-semibold">Auto-billing active:</span>{" "}
+                  Utility bills are generated automatically for non-submetered
+                  properties.
+                </p>
+              </div>
+            )}
+        </div>
+
+        {/* TABS NAVIGATION - Mobile Scrollable */}
+        <div className="mb-4 sm:mb-6">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide bg-white rounded-xl p-1 shadow-md border border-gray-100">
+            {[
+              { id: "units", label: "Units", icon: HomeIcon },
+              {
+                id: "documents",
+                label: "Documents",
+                icon: ClipboardDocumentListIcon,
+              },
+              {
+                id: "analytics",
+                label: "Analytics",
+                icon: BuildingOffice2Icon,
+              },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                    activeTab === tab.id
+                      ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* CONTENT SECTIONS */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          {/* Units Tab */}
+          {activeTab === "units" && (
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg shadow-sm">
+                  <HomeIcon className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Available Units
+                </h2>
+              </div>
+
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="bg-gray-200 rounded-2xl h-48"></div>
+                      <div className="p-4 space-y-3">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : units && units.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {units.map((unit) => (
                     <div
                       key={unit?.unit_id}
-                      className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                      className="group bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
                     >
-                      {unitBillingStatus[unit.unit_id] && (
-                            <div className="text-green-600 flex items-center gap-1 ml-4 mt-2">
-                              <FaCheckCircle size={18} />
-                              <span className="text-sm">Billed this month</span>
-                            </div>
-                      )}
-                     <button
+                      {/* Unit Header */}
+                      <div className="relative">
+                        <div className="h-32 sm:h-36 bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center cursor-pointer group-hover:from-blue-600 group-hover:to-blue-700 transition-all duration-300">
+                          <div className="text-center text-white">
+                            <HomeIcon className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2" />
+                            <h3 className="text-lg sm:text-xl font-bold">
+                              Unit {unit?.unit_name}
+                            </h3>
+                          </div>
+                        </div>
+
+                        {/* Billing Status Badge */}
+                        {unitBillingStatus[unit.unit_id] && (
+                          <div className="absolute top-3 left-3 flex items-center gap-1 bg-green-500 text-white px-2 py-1 rounded-full shadow-md">
+                            <FaCheckCircle size={14} />
+                            <span className="text-xs font-medium">Billed</span>
+                          </div>
+                        )}
+
+                        {/* Status Badge */}
+                        <div className="absolute top-3 right-3">
+                          <span
+                            className={`px-3 py-1 text-xs font-semibold rounded-full shadow-md ${
+                              unit?.status === "Occupied"
+                                ? "bg-green-100 text-green-800"
+                                : unit?.status === "Unoccupied"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-orange-100 text-orange-800"
+                            }`}
+                          >
+                            {unit?.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Unit Content */}
+                      <div className="p-4">
+                        {/* Unit Info */}
+                        <div className="mb-4">
+                          <p className="text-sm text-gray-600 mb-2">
+                            <span className="font-medium text-gray-800">
+                              Size:
+                            </span>{" "}
+                            {unit?.unit_size} sqm
+                          </p>
+
+                          <button
                             onClick={() =>
                               router.push(
                                 `/pages/landlord/property-listing/view-unit/${id}/unit-details/${unit.unit_id}`
                               )
                             }
-                            className="px-3 py-1 text-sm border rounded hover:bg-gray-100"
-                        >
-                        View Unit Details
-                     </button>
-
-                      <div className="h-32 bg-blue-50 flex items-center justify-center cursor-pointer">
-                          <div className="text-center">
-                            <HomeIcon className="h-12 w-12 text-blue-600 mx-auto" />
-                            <h3 className="text-xl font-bold text-gray-800">
-                              Unit {unit?.unit_name}
-                            </h3>
-                          </div>
-                      </div>
-
-                      <div className="p-4">
-                        <div className="flex justify-between items-center mb-3">
-                            <p className="text-sm text-gray-600">
-                              Size:{" "}
-                              <span className="font-medium">
-                                {unit?.unit_size} sqm
-                              </span>
-                            </p>
-                                <span
-                                  className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                                    unit?.status === "Occupied"
-                                      ? "bg-green-100 text-green-800"
-                                      : unit?.status === "Unoccupied"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-orange-100 text-orange-800"
-                                  }`}
-                                >
-                                  {unit?.status.charAt(0).toUpperCase() +
-                                    unit?.status.slice(1)}
-                                </span>
+                            className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200 text-sm border border-gray-200"
+                          >
+                            View Unit Details
+                          </button>
                         </div>
 
-                        <hr className="my-3" />
+                        <hr className="border-gray-200 mb-4" />
 
-                        <div className="flex justify-between items-center">
-
+                        {/* Action Buttons */}
+                        <div className="space-y-3">
                           <button
-                              className="flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(
-                                  `/pages/landlord/property-listing/view-unit/tenant-req/${unit.unit_id}`
-                                );
-                              }}
-                            >
-                              <ClipboardDocumentListIcon className="h-4 w-4 mr-1" />
-                              Prospective Leads
+                            className="w-full flex items-center justify-center px-3 py-2.5 text-sm text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200 font-medium"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(
+                                `/pages/landlord/property-listing/view-unit/tenant-req/${unit.unit_id}`
+                              );
+                            }}
+                          >
+                            <ClipboardDocumentListIcon className="h-4 w-4 mr-2" />
+                            Prospective Leads
                           </button>
 
-                          <div className="flex space-x-2">
+                          {/* Edit/Delete Actions */}
+                          <div className="flex gap-2">
                             <button
-                              className="p-2 text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
+                              className="flex-1 p-2.5 text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors border border-orange-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEditUnit(unit.unit_id);
                               }}
                               aria-label="Edit unit"
                             >
-                              <PencilSquareIcon className="h-5 w-5" />
+                              <PencilSquareIcon className="h-4 w-4 mx-auto" />
                             </button>
 
                             <button
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                              className="flex-1 p-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteUnit(unit.unit_id);
                               }}
                               aria-label="Delete unit"
                             >
-                              <TrashIcon className="h-5 w-5" />
+                              <TrashIcon className="h-4 w-4 mx-auto" />
                             </button>
-
                           </div>
                         </div>
-                      </div>
 
-                      {billingMode && (
-                              <div className="mt-5 grid grid-cols-2 gap-3">
-                                        <Link
-                                          href={`/pages/landlord/billing/billingHistory/${unit.unit_id}`}
-                                          className="col-span-2"
-                                        >
-                                          <button className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-200 transition-colors font-medium">
-                                            Billing History
-                                          </button>
-                                        </Link>
+                        {/* Billing Mode Actions */}
+                        {billingMode && (
+                          <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                            <Link
+                              href={`/pages/landlord/billing/billingHistory/${unit.unit_id}`}
+                              className="block"
+                            >
+                              <button className="w-full bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors font-medium text-sm">
+                                Billing History
+                              </button>
+                            </Link>
 
-                                        <Link
-                                          href={`/pages/landlord/billing/payments/${unit.unit_id}`}
-                                          className="col-span-2"
-                                        >
-                                          <button className="w-full bg-blue-50 text-blue-700 px-4 py-2 rounded-md border border-blue-200 hover:bg-blue-100 transition-colors font-medium">
-                                            View Payments
-                                          </button>
-                                        </Link>
+                            <Link
+                              href={`/pages/landlord/billing/payments/${unit.unit_id}`}
+                              className="block"
+                            >
+                              <button className="w-full bg-blue-50 text-blue-700 px-3 py-2 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors font-medium text-sm">
+                                View Payments
+                              </button>
+                            </Link>
 
                             {unitBillingStatus[unit.unit_id] ? (
                               <Link
                                 href={`/pages/landlord/billing/editUnitBill/${unit?.unit_id}`}
-                                className="col-span-2"
+                                className="block"
                               >
-                                <button className="w-full bg-amber-50 text-amber-700 px-4 py-2 rounded-md border border-amber-200 hover:bg-amber-100 transition-colors font-medium">
+                                <button className="w-full bg-amber-50 text-amber-700 px-3 py-2 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors font-medium text-sm">
                                   Edit Unit Bill
                                 </button>
                               </Link>
                             ) : (
                               <Link
                                 href={`/pages/landlord/billing/createUnitBill/${unit?.unit_id}`}
-                                className="col-span-2"
+                                className="block"
                               >
-                                <button className="w-full bg-green-50 text-green-700 px-4 py-2 rounded-md border border-green-200 hover:bg-green-100 transition-colors font-medium">
+                                <button className="w-full bg-green-50 text-green-700 px-3 py-2 rounded-lg border border-green-200 hover:bg-green-100 transition-colors font-medium text-sm">
                                   Create Unit Bill
                                 </button>
                               </Link>
                             )}
+                          </div>
+                        )}
                       </div>
-                      )}
-
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                  <HomeIcon className="h-12 w-12 text-gray-400 mb-3" />
-                  <p className="text-gray-500 text-lg font-medium mb-2">
+                <div className="flex flex-col items-center justify-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-300">
+                  <div className="bg-white p-4 rounded-2xl shadow-md mb-4">
+                    <HomeIcon className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600 text-lg font-semibold mb-2">
                     No Units Available
                   </p>
-                  <p className="text-gray-400 text-sm mb-4">
-                    Add your first unit to get started
+                  <p className="text-gray-400 text-sm mb-6 text-center max-w-sm">
+                    Start building your rental portfolio by adding your first
+                    unit
                   </p>
                   <button
-                    className="px-4 py-2 text-sm text-blue-600 bg-white border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                    className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
                     onClick={handleAddUnitClick}
                   >
                     Add Your First Unit
                   </button>
                 </div>
-              )
               )}
-        </div>
+            </div>
+          )}
 
-        {activeTab === "documents" && (
-            <div className="bg-white rounded-lg shadow-md p-6">
+          {/* Documents Tab */}
+          {activeTab === "documents" && (
+            <div className="p-4 sm:p-6">
               <PropertyDocumentsTab propertyId={id} />
             </div>
-        )}
+          )}
 
-        {activeTab === "analytics" && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Engagement Analytics
-              </h2>
+          {/* Analytics Tab */}
+          {activeTab === "analytics" && (
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2 rounded-lg shadow-sm">
+                  <BuildingOffice2Icon className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Engagement Analytics
+                </h2>
+              </div>
 
-              <p className="text-gray-600 mb-4">
-                Below are engagement insights for this property (views, clicks, shares).
+              <p className="text-gray-600 mb-6">
+                Track how your property performs with detailed engagement
+                insights.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-blue-700">Page Views</h3>
-                  <p className="text-2xl font-bold text-blue-900 mt-2">1,240</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl shadow-sm">
+                  <h3 className="text-lg font-bold text-blue-700 mb-2">
+                    Page Views
+                  </h3>
+                  <p className="text-3xl font-bold text-blue-900 mb-1">1,240</p>
+                  <p className="text-xs text-blue-600">+12% from last month</p>
                 </div>
 
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-green-700">Inquiries</h3>
-                  <p className="text-2xl font-bold text-green-900 mt-2">56</p>
+                <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-2xl shadow-sm">
+                  <h3 className="text-lg font-bold text-green-700 mb-2">
+                    Inquiries
+                  </h3>
+                  <p className="text-3xl font-bold text-green-900 mb-1">56</p>
+                  <p className="text-xs text-green-600">+8% from last month</p>
                 </div>
 
-                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                  <h3 className="text-lg font-semibold text-purple-700">Shares</h3>
-                  <p className="text-2xl font-bold text-purple-900 mt-2">19</p>
+                <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl shadow-sm">
+                  <h3 className="text-lg font-bold text-purple-700 mb-2">
+                    Shares
+                  </h3>
+                  <p className="text-3xl font-bold text-purple-900 mb-1">19</p>
+                  <p className="text-xs text-purple-600">+3% from last month</p>
                 </div>
               </div>
             </div>
-        )}
+          )}
+        </div>
 
-        {/*modal for property utility rate for sub-metered */}
+        {/* Enhanced Modal for Property Utility Rate */}
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <div className="p-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Property Utility
-                </h2>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-200">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white p-5 border-b border-gray-200 rounded-t-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-sm">
+                    <BuildingOffice2Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Property Utility Rates
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
               </div>
-              
-              <div className="p-5">
+
+              <div className="p-5 space-y-6">
+                {/* Current Billing Status */}
                 {billingData ? (
-                  <div className="mb-6 p-4 bg-green-50 rounded-md border border-green-200">
-                    <h3 className="font-medium text-green-700 mb-2">Billing set for this month</h3>
-                    <p className="text-gray-700 mb-3">Period: <span className="font-medium">{billingForm?.billingPeriod}</span></p>
-                    
-                    <div className="grid grid-cols-2 gap-4 mt-3">
-                      <div className="p-3 bg-white rounded-md border border-gray-200">
-                        <h4 className="text-sm uppercase text-gray-500 font-semibold mb-2">Electricity</h4>
-                        <p className="text-gray-800 font-medium">₱{billingData.find(b => b.utility_type === "electricity")?.total_billed_amount || "N/A"}</p>
-                        <p className="text-xs text-gray-500 mt-1">{billingData.find(b => b.utility_type === "electricity")?.rate_consumed || "N/A"} kWh</p>
+                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FaCheckCircle className="text-green-600" size={18} />
+                      <h3 className="font-bold text-green-800">
+                        Current Billing Period
+                      </h3>
+                    </div>
+                    <p className="text-gray-700 mb-4 font-medium">
+                      Period:{" "}
+                      <span className="text-green-800">
+                        {billingForm?.billingPeriod}
+                      </span>
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 bg-white rounded-xl border border-green-100 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                          <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wide">
+                            Electricity
+                          </h4>
+                        </div>
+                        <p className="text-xl font-bold text-gray-800 mb-1">
+                          ₱
+                          {billingData.find(
+                            (b) => b.utility_type === "electricity"
+                          )?.total_billed_amount || "N/A"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {billingData.find(
+                            (b) => b.utility_type === "electricity"
+                          )?.rate_consumed || "N/A"}{" "}
+                          kWh
+                        </p>
                       </div>
-                      
-                      <div className="p-3 bg-white rounded-md border border-gray-200">
-                        <h4 className="text-sm uppercase text-gray-500 font-semibold mb-2">Water</h4>
-                        <p className="text-gray-800 font-medium">₱{billingData.find(b => b.utility_type === "water")?.total_billed_amount || "N/A"}</p>
-                        <p className="text-xs text-gray-500 mt-1">{billingData.find(b => b.utility_type === "water")?.rate_consumed || "N/A"} cu. meters</p>
+
+                      <div className="p-4 bg-white rounded-xl border border-green-100 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                          <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wide">
+                            Water
+                          </h4>
+                        </div>
+                        <p className="text-xl font-bold text-gray-800 mb-1">
+                          ₱
+                          {billingData.find((b) => b.utility_type === "water")
+                            ?.total_billed_amount || "N/A"}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {billingData.find((b) => b.utility_type === "water")
+                            ?.rate_consumed || "N/A"}{" "}
+                          cu. meters
+                        </p>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-md border border-gray-200">
-                    <p className="text-gray-600 text-center">
+                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 text-center">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <BuildingOffice2Icon className="h-6 w-6 text-gray-400" />
+                    </div>
+                    <p className="text-gray-600 font-medium">
                       No billing data found for this month
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Set up your utility rates below
                     </p>
                   </div>
                 )}
-                
-                <form className="space-y-5" onSubmit={handleSaveOrUpdateBilling}>
+
+                {/* Form Section */}
+                <form
+                  className="space-y-6"
+                  onSubmit={handleSaveOrUpdateBilling}
+                >
                   <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-1">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
                       Billing Period
                     </label>
                     <input
@@ -728,100 +863,118 @@ useEffect(() => {
                       value={billingForm.billingPeriod}
                       onChange={handleInputChange}
                       type="date"
-                      className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                      className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
                     />
                   </div>
-                  
-                  <div className="p-4 bg-blue-50 rounded-md border border-blue-100">
-                    <h3 className="text-md font-semibold text-blue-800 mb-3">
-                      Electricity
-                    </h3>
-                    <div className="space-y-3">
+
+                  {/* Electricity Section */}
+                  <div className="p-5 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl border border-yellow-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center shadow-sm">
+                        <span className="text-white font-bold text-sm">⚡</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-orange-800">
+                        Electricity
+                      </h3>
+                    </div>
+                    <div className="space-y-4">
                       <div>
-                        <label className="block text-gray-700 text-sm font-medium mb-1">
+                        <label className="block text-gray-700 text-sm font-semibold mb-2">
                           Total Amount Billed
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                            ₱
+                          </span>
                           <input
                             type="number"
                             name="electricityTotal"
                             value={billingForm.electricityTotal}
                             onChange={handleInputChange}
-                            className="w-full border border-gray-300 rounded-md p-2.5 pl-7 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                            className="w-full border border-yellow-300 rounded-xl p-3 pl-8 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-500 outline-none transition-all duration-200 bg-white"
+                            placeholder="0.00"
                           />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-gray-700 text-sm font-medium mb-1">
-                          Rate this month (kWh)
+                        <label className="block text-gray-700 text-sm font-semibold mb-2">
+                          Consumption (kWh)
                         </label>
                         <input
                           type="number"
                           name="electricityRate"
                           value={billingForm.electricityRate}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                          className="w-full border border-yellow-300 rounded-xl p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-500 outline-none transition-all duration-200 bg-white"
+                          placeholder="0"
                         />
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="p-4 bg-cyan-50 rounded-md border border-cyan-100">
-                    <h3 className="text-md font-semibold text-cyan-800 mb-3">
-                      Water
-                    </h3>
-                    <div className="space-y-3">
+
+                  {/* Water Section */}
+                  <div className="p-5 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl border border-cyan-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
+                        <span className="text-white font-bold text-sm">💧</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-cyan-800">Water</h3>
+                    </div>
+                    <div className="space-y-4">
                       <div>
-                        <label className="block text-gray-700 text-sm font-medium mb-1">
+                        <label className="block text-gray-700 text-sm font-semibold mb-2">
                           Total Amount Billed
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₱</span>
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                            ₱
+                          </span>
                           <input
                             type="number"
                             name="waterTotal"
                             value={billingForm.waterTotal}
                             onChange={handleInputChange}
-                            className="w-full border border-gray-300 rounded-md p-2.5 pl-7 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                            className="w-full border border-cyan-300 rounded-xl p-3 pl-8 focus:ring-2 focus:ring-cyan-300 focus:border-cyan-500 outline-none transition-all duration-200 bg-white"
+                            placeholder="0.00"
                           />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-gray-700 text-sm font-medium mb-1">
-                          Rate this month (cu. meters)
+                        <label className="block text-gray-700 text-sm font-semibold mb-2">
+                          Consumption (cubic meters)
                         </label>
                         <input
                           type="number"
                           name="waterRate"
                           value={billingForm.waterRate}
                           onChange={handleInputChange}
-                          className="w-full border border-gray-300 rounded-md p-2.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none"
+                          className="w-full border border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-300 focus:border-cyan-500 outline-none transition-all duration-200 bg-white"
+                          placeholder="0"
                         />
                       </div>
                     </div>
                   </div>
                 </form>
               </div>
-              
-              <div className="p-5 border-t border-gray-200 flex justify-end gap-3">
+
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 bg-white p-5 border-t border-gray-200 rounded-b-2xl flex flex-col sm:flex-row gap-3 sm:justify-end">
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium order-2 sm:order-1"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveOrUpdateBilling}
-                  className="px-5 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg font-semibold order-1 sm:order-2"
                 >
-                  {isEditing ? "Update Utility Info" : "Save Utility Info"}
+                  {hasBillingForMonth ? "Update Rates" : "Save Rates"}
                 </button>
               </div>
             </div>
           </div>
         )}
-
       </div>
     </LandlordLayout>
   );
