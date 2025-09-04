@@ -7,7 +7,6 @@ import useAuthStore from "../../zustand/authStore";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
-// Enhanced Notification Hook
 const useNotifications = (user, admin) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -1192,26 +1191,34 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
+        {/* Enhanced Mobile Menu Overlay */}
         {menuOpen && (
-          <div className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity duration-300">
+          <div className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-60 transition-opacity duration-300 backdrop-blur-sm">
             <div
               ref={mobileMenuRef}
-              className="fixed inset-y-0 right-0 max-w-xs w-full bg-blue-600 shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto"
+              className="fixed inset-y-0 right-0 max-w-sm w-full bg-gradient-to-b from-blue-600 to-blue-700 shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto"
             >
-              {/* Mobile Menu Header */}
-              <div className="flex items-center justify-between p-4 border-b border-blue-500">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">🏠</span>
-                  <span className="text-lg font-bold">Hestia</span>
+              {/* Enhanced Mobile Menu Header */}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-blue-500/30 bg-blue-600/50 backdrop-blur-sm">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <Image
+                      src="/Hestia-logo.svg"
+                      alt="Hestia Logo"
+                      width={80}
+                      height={20}
+                      priority
+                      className="brightness-0 invert"
+                    />
+                  </div>
                 </div>
                 <button
                   onClick={() => setMenuOpen(false)}
-                  className="p-2 rounded-md hover:bg-blue-700 transition-colors duration-200"
+                  className="p-2 rounded-lg hover:bg-white/20 transition-all duration-200 backdrop-blur-sm"
                   aria-label="Close menu"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1226,86 +1233,143 @@ const Navbar = () => {
                 </button>
               </div>
 
-              {/* Mobile Menu Content */}
-              <div className="px-4 py-3 space-y-1">
-                {/* User Info Section */}
+              {/* Enhanced Mobile Menu Content */}
+              <div className="px-4 sm:px-6 py-4 space-y-2">
+                {/* Enhanced User Info Section */}
                 {(user || admin) && (
-                  <div className="flex items-center space-x-3 p-3 bg-blue-700 rounded-lg mb-4">
-                    <Image
-                      src={
-                        user?.profilePicture ||
-                        admin?.profile_picture ||
-                        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                      }
-                      alt="Profile"
-                      width={48}
-                      height={48}
-                      className="w-12 h-12 object-cover rounded-full border-2 border-white"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-white truncate">
-                        {user?.firstName || admin?.firstName || "User"}
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/20">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        <Image
+                          src={
+                            user?.profilePicture ||
+                            admin?.profile_picture ||
+                            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                          }
+                          alt="Profile"
+                          width={56}
+                          height={56}
+                          className="w-14 h-14 object-cover rounded-full border-3 border-white/30 shadow-lg"
+                        />
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
                       </div>
-                      <div className="text-sm text-blue-100 truncate">
-                        {user?.email || admin?.email || ""}
-                      </div>
-                      {user && (
-                        <div className="text-xs text-yellow-300 mt-1">
-                          ⭐ {user?.points ?? 0} points
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-white text-lg truncate">
+                          {user?.firstName || admin?.firstName || "User"}
                         </div>
-                      )}
+                        <div className="text-sm text-blue-100 truncate opacity-90">
+                          {user?.email || admin?.email || ""}
+                        </div>
+                        {user && (
+                          <div className="flex items-center space-x-1 mt-2">
+                            <div className="bg-yellow-500/20 px-2 py-1 rounded-lg border border-yellow-400/30">
+                              <span className="text-yellow-200 text-xs font-medium">
+                                ⭐ {user?.points ?? 0} points
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* Navigation Links */}
-                {navigationLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="flex items-center py-3 px-3 rounded-md hover:bg-blue-700 transition-colors duration-200 text-white"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-
-                {/* Auth Actions for Non-authenticated Users */}
-                {!user && !admin ? (
-                  <div className="flex flex-col space-y-3 pt-4 border-t border-blue-500 mt-4">
+                {/* Enhanced Navigation Links */}
+                <div className="space-y-1">
+                  {navigationLinks.map((link, index) => (
                     <Link
-                      href="/pages/auth/login"
-                      className="flex items-center justify-center py-3 bg-white text-blue-600 rounded-md font-medium transition-colors duration-200 hover:bg-gray-100"
+                      key={link.href}
+                      href={link.href}
+                      className="flex items-center py-3 px-4 rounded-xl hover:bg-white/10 transition-all duration-200 text-white group border border-transparent hover:border-white/20"
                       onClick={() => setMenuOpen(false)}
                     >
+                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-3 group-hover:bg-white/30 transition-colors">
+                        <span className="text-white text-sm font-medium">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <span className="font-medium">{link.label}</span>
+                      <svg
+                        className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100 transition-opacity"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Enhanced Auth Actions for Non-authenticated Users */}
+                {!user && !admin ? (
+                  <div className="flex flex-col space-y-3 pt-6 border-t border-white/20 mt-6">
+                    <Link
+                      href="/pages/auth/login"
+                      className="flex items-center justify-center py-3 bg-white text-blue-600 rounded-xl font-semibold transition-all duration-200 hover:bg-gray-100 shadow-lg"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                        />
+                      </svg>
                       Login
                     </Link>
                     <Link
                       href="/pages/auth/selectRole"
-                      className="flex items-center justify-center py-3 bg-blue-800 rounded-md font-medium transition-colors duration-200 hover:bg-blue-900"
+                      className="flex items-center justify-center py-3 bg-white/20 backdrop-blur-sm rounded-xl font-semibold transition-all duration-200 hover:bg-white/30 border border-white/30"
                       onClick={() => setMenuOpen(false)}
                     >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                        />
+                      </svg>
                       Register
                     </Link>
                   </div>
                 ) : (
-                  /* User Actions for Authenticated Users */
-                  <div className="pt-4 border-t border-blue-500 mt-4 space-y-1">
+                  /* Enhanced User Actions for Authenticated Users */
+                  <div className="pt-6 border-t border-white/20 mt-6 space-y-1">
                     {user?.userType === "tenant" && !hasLease ? (
-                      <div className="flex items-center py-3 px-3 text-gray-300 cursor-not-allowed">
-                        <svg
-                          className="w-5 h-5 mr-3"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                          ></path>
-                        </svg>
+                      <div className="flex items-center py-3 px-4 text-white/50 cursor-not-allowed rounded-xl border border-white/10">
+                        <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mr-3">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                            />
+                          </svg>
+                        </div>
                         Dashboard (Restricted)
                       </div>
                     ) : (
@@ -1317,72 +1381,38 @@ const Navbar = () => {
                                 user?.userType || "system_admin"
                               }/dashboard`
                         }
-                        className="flex items-center py-3 px-3 rounded-md hover:bg-blue-700 transition-colors duration-200"
+                        className="flex items-center py-3 px-4 rounded-xl hover:bg-white/10 transition-all duration-200 group border border-transparent hover:border-white/20"
                         onClick={() => setMenuOpen(false)}
                       >
+                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-3 group-hover:bg-white/30 transition-colors">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                            />
+                          </svg>
+                        </div>
+                        <span className="font-medium">View Profile</span>
                         <svg
-                          className="w-5 h-5 mr-3"
+                          className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100 transition-opacity"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
                         >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth="2"
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                          ></path>
+                            d="M9 5l7 7-7 7"
+                          />
                         </svg>
-                        Dashboard
-                      </Link>
-                    )}
-
-                    {user && (
-                      <Link
-                        href={`/pages/${user.userType}/profile/${user.user_id}`}
-                        className="flex items-center py-3 px-3 rounded-md hover:bg-blue-700 transition-colors duration-200"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <svg
-                          className="w-5 h-5 mr-3"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          ></path>
-                        </svg>
-                        Profile and Settings
-                      </Link>
-                    )}
-
-                    {admin && (
-                      <Link
-                        href={`/pages/system_admin/profile/${admin.admin_id}`}
-                        className="flex items-center py-3 px-3 rounded-md hover:bg-blue-700 transition-colors duration-200"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <svg
-                          className="w-5 h-5 mr-3"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                          ></path>
-                        </svg>
-                        View Profile
                       </Link>
                     )}
 
@@ -1391,26 +1421,37 @@ const Navbar = () => {
                         handleLogout();
                         setMenuOpen(false);
                       }}
-                      className="flex items-center w-full py-3 px-3 rounded-md text-red-200 hover:bg-red-700 hover:text-white transition-colors duration-200 mt-2"
+                      className="flex items-center w-full py-3 px-4 rounded-xl text-red-200 hover:bg-red-500/20 hover:text-white transition-all duration-200 mt-4 group border border-red-400/20 hover:border-red-400/40"
                     >
-                      <svg
-                        className="w-5 h-5 mr-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        ></path>
-                      </svg>
-                      Logout
+                      <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center mr-3 group-hover:bg-red-500/30 transition-colors">
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                          />
+                        </svg>
+                      </div>
+                      <span className="font-medium">Logout</span>
                     </button>
                   </div>
                 )}
+
+                {/* Enhanced Footer */}
+                <div className="mt-8 pt-6 border-t border-white/20">
+                  <div className="text-center text-white/60 text-sm">
+                    <p className="mb-2">Hestia Rental Platform</p>
+                    <p className="text-xs opacity-75">
+                      Making rental simple & secure
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
