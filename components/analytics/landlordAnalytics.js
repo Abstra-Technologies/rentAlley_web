@@ -12,6 +12,7 @@ const UtilityTrendsChart = dynamic(() => import("../landlord/analytics/utilityTr
 const RevenuePerformanceChart = dynamic(() => import("../landlord/analytics/revenuePerformance"), { ssr: false });
 const UpcomingVisitsWidget = dynamic(() => import("../landlord/properties/propertyVisit"), { ssr: false });
 const TaskWidget = dynamic(() => import("../landlord/widgets/taskToDo"), { ssr: false });
+import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
 
 import Link from "next/link";
 
@@ -94,17 +95,6 @@ const LandlordPropertyChart = () => {
         console.error("Error fetching maintenance request count:", error)
       );
 
-    fetch(
-      `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Total Receivables:", data?.total_receivables);
-        setTotalReceivables(data?.total_receivables);
-      })
-      .catch((error) =>
-        console.error("Error fetching total receivables:", error)
-      );
 
   }, [fetchSession, user]);
 
@@ -169,25 +159,21 @@ const LandlordPropertyChart = () => {
           </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-1 gap-5 mb-8">
 
-            <ScoreCard
-                title="Upcoming payments"
-                value={totalReceivables}
-                borderColor="red"
-            />
+              <PaymentSummaryCard landlord_id={user?.landlord_id} />
 
-            <ScoreCard
-                title="Pending Maintenance Request"
-                value={totalRequests}
-                borderColor="red"
-            />
+           {/* <ScoreCard*/}
+           {/*     title="Pending Maintenance Request"*/}
+           {/*     value={totalRequests}*/}
+           {/*     borderColor="red"*/}
+           {/* />*/}
 
-           <ScoreCard
-              title="Total Active Tenants"
-              value={totalTenants}
-              borderColor="green"
-            />
+           {/*<ScoreCard*/}
+           {/*   title="Total Active Tenants"*/}
+           {/*   value={totalTenants}*/}
+           {/*   borderColor="green"*/}
+           {/* />*/}
 
           </div>
 

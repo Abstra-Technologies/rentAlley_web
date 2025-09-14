@@ -156,11 +156,11 @@ export default function ProfilePage() {
 
   const getVerificationBadge = () => {
     switch (verificationStatus) {
-      case "verified":
+      case "approved":
         return (
           <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
             <CheckCircle2 className="w-4 h-4 mr-1.5" />
-            Verified Landlord
+            Verified
           </div>
         );
       case "pending": // pending

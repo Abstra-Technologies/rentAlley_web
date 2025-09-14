@@ -27,17 +27,13 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
 
   return (
     <div>
-      <h1>Your Subscription Plan, {user?.firstName}</h1>
       <div>
         {subscription && subscription.plan_name ? (
           <div className="bg-white shadow rounded-lg p-4">
-            <h2 className="text-xl font-semibold text-blue-600">
-              Your Subscription
-            </h2>
+              <h2 className="text-xl font-semibold text-blue-600">
+              <strong></strong> {subscription?.plan_name}
+              </h2>
 
-            <p>
-              <strong>Plan Name:</strong> {subscription?.plan_name}
-            </p>
             <p>
               <strong>Start Date:</strong>{" "}
               {subscription?.start_date

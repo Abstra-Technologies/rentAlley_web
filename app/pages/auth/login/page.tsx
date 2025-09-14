@@ -202,7 +202,7 @@ function Login() {
                 <h1 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
                   Welcome to
                   <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-                    Hestia
+                    UpKeep
                   </span>
                 </h1>
                 <p className="text-lg xl:text-xl text-blue-100 mb-8 leading-relaxed">
