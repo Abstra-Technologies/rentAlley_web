@@ -13,7 +13,11 @@ const LoadingScreen = ({ message = "Fetching properties..." }) => {
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 className="relative"
             >
-                <HomeIcon className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 text-white drop-shadow-lg" />
+                <img
+                    src="/upkeep.png" // replace with your image path
+                    alt="UpKeep Logo"
+                    className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain rounded-lg drop-shadow-lg select-none"
+                />
 
                 <motion.span
                     className="absolute inset-0 rounded-full bg-white opacity-20 blur-xl"
@@ -24,12 +28,12 @@ const LoadingScreen = ({ message = "Fetching properties..." }) => {
 
             {/* App Name */}
             <motion.h1
-                className="mt-6 text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-wide drop-shadow"
+                className="mt-6 text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-wide drop-shadow select-none"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7 }}
             >
-                Hestia
+                UpKeep
             </motion.h1>
 
             {/* Tagline */}
@@ -39,7 +43,7 @@ const LoadingScreen = ({ message = "Fetching properties..." }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.9 }}
             >
-                Making rental management easier and hassle-free.
+               "Manage less. Live more."
             </motion.p>
 
             {/* Dynamic Message */}

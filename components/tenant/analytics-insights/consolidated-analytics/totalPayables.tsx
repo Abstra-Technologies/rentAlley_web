@@ -47,19 +47,37 @@ export default function TenantPayables({ tenant_id }: { tenant_id: number | unde
 
     return (
         <div className="space-y-4 w-full">
-            <div className="p-4 bg-blue-100 rounded-lg shadow">
-                <h2 className="text-xl font-bold">Total Payable</h2>
-                <p className="text-2xl font-semibold">{data.total.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</p>
+            <div className="p-4 bg-blue-500 rounded-lg shadow text-white text-center">
+                <h2 className="text-xl">Total Payable</h2>
+                <p className="text-4xl font-semibold">
+                    {data.total.toLocaleString("en-PH", {
+                        style: "currency",
+                        currency: "PHP",
+                    })}
+                </p>
             </div>
 
             <div className="space-y-2">
-                {data.details.map(unit => (
-                    <div key={unit.unit_id} className="p-4 border rounded-lg">
-                        <h3 className="font-bold">{unit.unit_name} - {unit.property_name}</h3>
-                        <p className="font-semibold">Total Due: {unit.total_due.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</p>
+                {data.details.map((unit) => (
+                    <div
+                        key={unit.unit_id}
+                        className="p-3 border rounded-lg flex items-center justify-between"
+                    >
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-800">
+                                {unit.unit_name} - {unit.property_name}
+                            </h3>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-700">
+                            {unit.total_due.toLocaleString("en-PH", {
+                                style: "currency",
+                                currency: "PHP",
+                            })}
+                        </p>
                     </div>
                 ))}
             </div>
         </div>
     );
+
 }

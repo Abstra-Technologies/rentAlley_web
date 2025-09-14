@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-    title: "Hestia Rent360",
+    title: "UpKeep",
     description: "Your Rental Partner.",
     manifest: '/manifest.json',
     icons: {

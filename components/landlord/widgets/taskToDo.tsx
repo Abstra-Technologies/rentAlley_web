@@ -42,33 +42,56 @@ export default function TaskWidget({ landlordId }: { landlordId: string }) {
                     {tasks.map((task) => (
                         <li
                             key={task.id}
-                            className={`flex justify-between items-center p-2 rounded-lg hover:bg-gray-50 transition ${
+                            className={`flex justify-between items-center p-3 rounded-xl border bg-white hover:bg-gray-50 shadow-sm transition ${
                                 task.status === "completed" ? "opacity-60" : ""
                             }`}
                         >
-                            <div className="flex items-center gap-2">
-                                {/* Example: replace with getIcon(task.type) */}
-                                <span className="w-5 h-5 text-gray-500">📍</span>
-                                <span
-                                    className={`text-sm ${
-                                        task.status === "completed"
-                                            ? "line-through text-gray-400"
-                                            : "text-gray-800"
-                                    }`}
-                                >
-                  {task.label || task.title}
-                </span>
+                            {/* Left side */}
+                            <div className="flex items-center gap-3">
+                                {/* Icon holder */}
+                                <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                                    📍
+                                </div>
+
+                                {/* Task text */}
+                                <div className="flex flex-col">
+          <span
+              className={`text-sm ${
+                  task.status === "completed"
+                      ? "line-through text-gray-400"
+                      : "text-gray-800"
+              }`}
+          >
+            {task.label || task.title}
+          </span>
+                                    {task.time && (
+                                        <span className="text-xs text-gray-500">
+                                            {new Date(task.time)
+                                                .toLocaleTimeString("en-US", {
+                                                    hour: "numeric",
+                                                    minute: "2-digit",
+                                                    hour12: true,
+                                                })
+                                                .replace(" ", "")
+                                                .toLowerCase()} {/* e.g. 8:00am */}
+                                          </span>
+                                    )}
+
+
+                                </div>
                             </div>
 
-                            {/*{task.status !== "completed" && (*/}
-                            {/*    <button*/}
-                            {/*        onClick={() => markComplete(task.id)}*/}
-                            {/*        className="flex items-center gap-1 text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-lg transition"*/}
-                            {/*    >*/}
-                            {/*        <CheckCircle className="w-3 h-3" />*/}
-                            {/*        Done*/}
-                            {/*    </button>*/}
-                            {/*)}*/}
+                            {/* Right side actions */}
+                            {/* Example: Restore the "Done" button if needed */}
+                            {/* {!task.status === "completed" && (
+        <button
+          onClick={() => markComplete(task.id)}
+          className="flex items-center gap-1 text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-lg transition"
+        >
+          <CheckCircle className="w-3 h-3" />
+          Done
+        </button>
+      )} */}
                         </li>
                     ))}
                 </ul>

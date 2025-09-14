@@ -121,8 +121,6 @@ export default function CheckoutPage() {
 
             });
 
-            console.log("✅ Debug - Checkout Response:", response.data);
-
             if (response.data.checkoutUrl) {
                 window.location.href = response.data.checkoutUrl;
             } else {
@@ -142,34 +140,72 @@ export default function CheckoutPage() {
 
     return (
         <Suspense fallback={<div>Loading Checkout...</div>}>
-            <SearchParamsWrapper setPlanId={setPlanId} setPlanName={setPlanName} setAmount={setAmount} />
-            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
-                <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-md text-center">
-                    <h1 className="text-2xl font-bold text-blue-600 mb-4">Checkout</h1>
+            <SearchParamsWrapper
+                setPlanId={setPlanId}
+                setPlanName={setPlanName}
+                setAmount={setAmount}
+            />
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 p-6">
+                <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md text-center border border-gray-100">
+                    {/* Header */}
+                    <h1 className="text-3xl font-extrabold text-blue-600 mb-6">
+                        Subscription Checkout
+                    </h1>
+
                     {planName && amount !== null ? (
                         <>
-                            <p className="text-gray-700 mb-4">
-                                You are subscribing to: <strong>{planName}</strong>
-                            </p>
-                            <p className="text-gray-700 mb-2">Landlord ID: <strong>{user.landlord_id}</strong></p>
-                            <p className="text-gray-700 mb-2">First Name: <strong>{user.firstName}</strong></p>
-                            <p className="text-gray-700 mb-2">Last Name: <strong>{user.lastName}</strong></p>
-                            <p className="text-gray-700 mb-2">Email: <strong>{user.email}</strong></p>
-                            <p className="text-gray-900 font-semibold mb-4">Total: ₱{amount}</p>
+                            <div className="space-y-3 mb-6 text-left">
+                                <p className="text-gray-700">
+                                    You are subscribing to:{" "}
+                                    <span className="font-semibold text-gray-900">{planName}</span>
+                                </p>
+
+                                <p className="text-gray-700">
+                                    First Name:{" "}
+                                    <span className="font-medium text-gray-900">
+                  {user.firstName}
+                </span>
+                                </p>
+                                <p className="text-gray-700">
+                                    Last Name:{" "}
+                                    <span className="font-medium text-gray-900">
+                  {user.lastName}
+                </span>
+                                </p>
+                                <p className="text-gray-700">
+                                    Email:{" "}
+                                    <span className="font-medium text-gray-900">{user.email}</span>
+                                </p>
+                                <p className="text-lg font-bold text-blue-700 border-t pt-4">
+                                    Total: ₱{amount}
+                                </p>
+                            </div>
+
+                            {/* Primary button */}
                             <button
                                 onClick={handleCheckout}
                                 disabled={processing}
-                                className={`px-4 py-2 rounded-md text-white ${processing ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}
+                                className={`w-full px-5 py-3 rounded-xl text-white font-semibold transition ${
+                                    processing
+                                        ? "bg-gray-400 cursor-not-allowed"
+                                        : "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg"
+                                }`}
                             >
-                                {processing ? "Processing..." : amount === 0 ? "Activate Free Plan" : "Pay Now"}
+                                {processing
+                                    ? "Processing..."
+                                    : amount === 0
+                                        ? "Activate Free Plan"
+                                        : "Pay Now"}
                             </button>
                         </>
                     ) : (
                         <p className="text-red-500">No plan selected. Redirecting...</p>
                     )}
+
+                    {/* Secondary button */}
                     <button
-                        onClick={() => router.push("/pages/landlord/subscription")}
-                        className="w-full mt-4 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                        onClick={() => router.back()}
+                        className="w-full mt-4 px-5 py-3 rounded-xl text-gray-700 bg-gray-200 hover:bg-gray-300 font-medium transition"
                     >
                         Go Back
                     </button>
@@ -177,4 +213,5 @@ export default function CheckoutPage() {
             </div>
         </Suspense>
     );
+
 }

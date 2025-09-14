@@ -51,7 +51,6 @@ export default function LandlordDashboard() {
         }
     }, [user?.points, loading]);
 
-
     return (
         <LandlordLayout>
             {showAlert && <PointsEarnedAlert points={user.points} />}
