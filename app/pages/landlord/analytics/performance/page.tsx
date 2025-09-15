@@ -1,14 +1,31 @@
 'use client'
 import dynamic from "next/dynamic";
-const TenantOccupationChart = dynamic(() => import("../../../../../components/landlord/analytics/tenantOccupation"), { ssr: false });
+
+const TenantOccupationChart = dynamic(
+    () => import("../../../../../components/landlord/analytics/tenantOccupation"),
+    { ssr: false }
+);
+
+const PropertyUtilitiesChart = dynamic(
+    () => import("../../../../../components/landlord/analytics/propertyUtilityRates"),
+    { ssr: false }
+);
+
+const MaintenanceCategoriesChart = dynamic(
+    () => import("../../../../../components/landlord/analytics/getMaintenanceCategory"),
+    { ssr: false }
+);
+
+const PaymentsPerMonthChart = dynamic(
+    () => import("../../../../../components/landlord/analytics/MonthlyPaymentsChart"),
+    { ssr: false }
+);
+
 import ActiveListingsCard from "@/components/landlord/analytics/activeListings";
 import PendingListingsCard from "@/components/landlord/analytics/getPendingListings";
 import LandlordLayout from "@/components/navigation/sidebar-landlord";
 import useAuthStore from "@/zustand/authStore";
 import { useEffect, useState } from "react";
-import PropertyUtilitiesChart from "@/components/landlord/analytics/propertyUtilityRates";
-import MaintenanceCategoriesChart from "@/components/landlord/analytics/getMaintenanceCategory";
-import PaymentsPerMonthChart from "@/components/landlord/analytics/MonthlyPaymentsChart";
 import ScoreCard from "@/components/landlord/analytics/scoreCards";
 
 export default function PropertyPerformancePage() {
@@ -45,9 +62,7 @@ export default function PropertyPerformancePage() {
             .catch((error) =>
                 console.error("Error fetching maintenance request count:", error)
             );
-
-
-    });
+    },[user?.landlord_id]);
 
 
     return (
