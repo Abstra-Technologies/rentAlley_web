@@ -3,7 +3,6 @@ import dynamic from "next/dynamic";
 import useAuthStore from "../../zustand/authStore";
 import LoadingScreen from "../loadingScreen";
 const PropertyTypeChart = dynamic(() => import("../landlord/analytics/typesOfProperties"), { ssr: false });
-const TenantOccupationChart = dynamic(() => import("../landlord/analytics/tenantOccupation"), { ssr: false });
 const ScoreCard = dynamic(() => import("../landlord/analytics/scoreCards"), { ssr: false });
 const PropertyUtilitiesChart = dynamic(() => import("../landlord/analytics/propertyUtilityRates"), { ssr: false });
 const MaintenanceCategoriesChart = dynamic(() => import("../landlord/analytics/getMaintenanceCategory"), { ssr: false });
@@ -84,18 +83,6 @@ const LandlordPropertyChart = () => {
       })
       .catch((error) => console.error("Error fetching total tenants:", error));
 
-    fetch(
-      `/api/analytics/landlord/getNumberofTotalMaintenance?landlord_id=${landlord_id}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Total Maintenance Requests:", data?.total_requests);
-        setTotalRequests(data?.total_requests);
-      })
-      .catch((error) =>
-        console.error("Error fetching maintenance request count:", error)
-      );
-
 
   }, [fetchSession, user]);
 
@@ -164,17 +151,7 @@ const LandlordPropertyChart = () => {
 
               <PaymentSummaryCard landlord_id={user?.landlord_id} />
 
-           {/* <ScoreCard*/}
-           {/*     title="Pending Maintenance Request"*/}
-           {/*     value={totalRequests}*/}
-           {/*     borderColor="red"*/}
-           {/* />*/}
 
-           {/*<ScoreCard*/}
-           {/*   title="Total Active Tenants"*/}
-           {/*   value={totalTenants}*/}
-           {/*   borderColor="green"*/}
-           {/* />*/}
 
           </div>
 
@@ -195,15 +172,7 @@ const LandlordPropertyChart = () => {
             </div>
 
 
-          {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">*/}
-          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
-          {/*    <TenantOccupationChart landlordId={landlord_id} />*/}
-          {/*  </div>*/}
 
-          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
-          {/*    <PropertyUtilitiesChart landlordId={landlord_id} />*/}
-          {/*  </div>*/}
-          {/*</div>*/}
 
           {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">*/}
           {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
@@ -266,16 +235,6 @@ const LandlordPropertyChart = () => {
           {/*    )}*/}
           {/*  </div>*/}
           {/*</div>*/}
-
-          {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">*/}
-          {/*  <MaintenanceCategoriesChart landlordId={landlord_id} />*/}
-          {/*  <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">*/}
-          {/*      <PaymentsPerMonthChart landlordId={landlord_id}/>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
-
-
-
 
         </>
       )}

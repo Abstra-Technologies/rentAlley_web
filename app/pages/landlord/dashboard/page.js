@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import LandlordPropertyChart from "../../../../components/analytics/landlordAnalytics";
 import PointsEarnedAlert from "../../../../components/Commons/alertPoints";
+import LandlordProfileStatus from "../../../../components/landlord/profile/LandlordProfileStatus"
+
 
 export default function LandlordDashboard() {
 
@@ -58,8 +60,11 @@ export default function LandlordDashboard() {
 
                 <h2 className="gradient-header">
                     {greeting}, {user?.firstName + user?.lastName}
-                    <p className='font-normal text-sm'>Manage your properties, inquiries, and performance</p>
+                    <p className='font-normal text-sm'>Simplifying property management, empowering landlords.</p>
                 </h2>
+                <div className="mt-4">
+                    <LandlordProfileStatus landlord_id={user?.landlord_id} />
+                </div>
 
                 <LandlordPropertyChart />
             </div>

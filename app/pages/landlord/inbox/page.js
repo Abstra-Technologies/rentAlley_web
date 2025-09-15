@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import useAuth from "../../../../hooks/useSession";
+import useAuthStore from "../../../../zustand/authStore";
 import {
   Bell,
   CheckCircle,
@@ -151,7 +151,7 @@ export default function LandlordNotificationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all"); // all, unread, read
-  const { user } = useAuth();
+  const { user } = useAuthStore();
 
   const fetchNotifications = useCallback(
     async (showLoading = true) => {

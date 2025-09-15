@@ -117,29 +117,33 @@ const LandlordLayout = ({ children }) => {
             {menuItems.map(({ href, icon: Icon, label }) => {
               const isActive = pathname === href;
               return (
-                <li key={href}>
-                  <button
-                    onClick={() => handleNavigation(label, href)}
-                    className={`
-                      flex items-center w-full px-4 py-3 rounded-lg text-gray-700 transition-all duration-200
-                      ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 font-bold"
-                          : "hover:bg-gray-100"
-                      }
-                    `}
-                  >
-                    <Icon
-                      className={`w-5 h-5 mr-3 ${
-                        isActive ? "text-blue-700" : "text-gray-500"
-                      }`}
-                    />
-                    <span>{label}</span>
-                    {isActive && (
-                      <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>
-                    )}
-                  </button>
-                </li>
+                  <li key={href} className="relative group">
+                      <button
+                          onClick={() => handleNavigation(label, href)}
+                          className={`
+      flex items-center w-full px-4 py-3 rounded-lg text-gray-700 transition-all duration-200
+      ${isActive ? "bg-blue-50 text-blue-700 font-bold" : "hover:bg-gray-100"}
+    `}
+                      >
+                          {/* Gradient indicator line (hover only) */}
+                          <span
+                              className={`
+        absolute left-0 top-0 h-full w-1 rounded-r 
+        bg-gradient-to-b from-blue-600 via-teal-500 to-emerald-400
+        opacity-0 group-hover:opacity-100 transition-opacity duration-300
+      `}
+                          ></span>
+
+                          <Icon
+                              className={`w-5 h-5 mr-3 ${isActive ? "text-blue-700" : "text-gray-500"}`}
+                          />
+                          <span>{label}</span>
+                          {isActive && (
+                              <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>
+                          )}
+                      </button>
+                  </li>
+
               );
             })}
           </ul>

@@ -1,85 +1,71 @@
+
 "use client";
 import React, { useEffect, useState } from "react";
-import Chart from "react-apexcharts";
-// @ts-ignore
-const TenantOccupationChart = ({ landlordId }) => {
-  const [occupationData, setOccupationData] = useState([]);
+import { BarChart } from "@mui/x-charts/BarChart";
 
-  useEffect(() => {
-    if (!landlordId) return;
+const TenantOccupationChart = ({ landlordId }: { landlordId: number }) => {
+    const [occupationData, setOccupationData] = useState<any[]>([]);
 
-    fetch(`/api/analytics/landlord/getTenantOccupations?landlord_id=${landlordId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          // @ts-ignore
-          setOccupationData(data);
-        } else {
-          console.error("Invalid format:", data);
-          setOccupationData([]);
-        }
-      })
-      .catch((error) =>
-        console.error("Error fetching tenant occupation data:", error)
-      );
-  }, [landlordId]);
+    useEffect(() => {
+        if (!landlordId) return;
 
-  const labelsOccupation =
-    occupationData.length > 0
-        // @ts-ignore
-      ? occupationData.map((item) => item.occupation || "Unknown")
-      : ["No Data"];
+        fetch(`/api/analytics/landlord/getTenantOccupations?landlord_id=${landlordId}`)
+            .then((res) => res.json())
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    setOccupationData(data);
+                } else {
+                    console.error("Invalid format:", data);
+                    setOccupationData([]);
+                }
+            })
+            .catch((error) =>
+                console.error("Error fetching tenant occupation data:", error)
+            );
+    }, [landlordId]);
 
-  const seriesOccupation =
-    occupationData.length > 0
-        // @ts-ignore
-      ? occupationData.map((item) => item.tenant_count)
-      : [0];
+    const labelsOccupation =
+        occupationData.length > 0
+            ? occupationData.map((item) => item.occupation || "Unknown")
+            : ["No Data"];
 
-  const chartOptionsOccupation = {
-    chart: {
-      type: "pie",
-    },
-    labels: labelsOccupation,
-    title: {
-      text: "Tenant Occupation Distribution",
-      align: "center",
-    },
-    legend: {
-      position: "bottom",
-    },
-    tooltip: {
-      y: {
-        // @ts-ignore
-        formatter: (val, opts) => {
-          const occupationName = labelsOccupation[opts.seriesIndex];
-          return `${occupationName}: ${val} Tenants`;
-        },
-      },
-    },
-    colors: ["#10B981", "#60A5FA", "#FBBF24", "#F87171", "#A78BFA"], // example palette
-  };
+    const seriesOccupation =
+        occupationData.length > 0
+            ? occupationData.map((item) => item.tenant_count)
+            : [0];
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-      <h3 className="text-lg font-semibold text-gray-700 mb-3">
-        Tenant Occupations
-      </h3>
-      {occupationData.length > 0 ? (
-        <Chart
-            // @ts-ignore
-          options={chartOptionsOccupation}
-          series={seriesOccupation}
-          type="pie"
-          height={350}
-        />
-      ) : (
-        <div className="flex justify-center items-center h-64">
-          <p className="text-gray-500">No data available</p>
+    return (
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-all">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800">
+                    Tenant Occupations
+                </h3>
+                {occupationData.length > 0 && (
+                    <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+            {occupationData.reduce((a, b) => a + (b.tenant_count || 0), 0)} tenants
+          </span>
+                )}
+            </div>
+
+            {/* Chart */}
+            {occupationData.length > 0 ? (
+                <BarChart
+                    yAxis={[{ scaleType: "band", data: labelsOccupation }]} // ✅ categorical axis
+                    series={[{ data: seriesOccupation, color: "#10B981" }]}
+                    layout="horizontal"
+                    height={420}
+                />
+            ) : (
+                <div className="flex flex-col justify-center items-center h-64 text-center">
+                    <p className="text-gray-500">No tenant occupation data available</p>
+                    <p className="text-xs text-gray-400">
+                        Once tenants are onboarded, their occupations will appear here.
+                    </p>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default TenantOccupationChart;

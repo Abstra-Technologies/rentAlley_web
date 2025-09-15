@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,6 +7,7 @@ import Chart from 'react-apexcharts';
 
 type UtilityRate = {
     property_id: number;
+    property_name: string; // ✅ add property_name here
     utility_type: 'water' | 'electricity';
     avg_rate_consumed: number;
 };
@@ -19,34 +22,42 @@ export default function PropertyUtilitiesChart({ landlordId }: Props) {
     useEffect(() => {
         if (!landlordId) return;
 
-        fetch(`/api/analytics/landlord/getAveragePropertyUtilityRate?landlord_id=${landlordId}`)
+        fetch(
+            `/api/analytics/landlord/getAveragePropertyUtilityRate?landlord_id=${landlordId}`
+        )
             .then((res) => res.json())
             .then((data) => {
                 console.log('Average Utility Rate Data:', data);
                 setUtilityRates(data);
             })
-            .catch((error) => console.error('Error fetching utility rate data:', error));
+            .catch((error) =>
+                console.error('Error fetching utility rate data:', error)
+            );
     }, [landlordId]);
 
-    const propertyIds = [...new Set(utilityRates.map((item) => item.property_id))];
+    // ✅ get unique property names instead of IDs
+    const propertyNames = [
+        ...new Set(utilityRates.map((item) => item.property_name)),
+    ];
 
-    const waterRates = propertyIds.map(
-        (id) =>
+    const waterRates = propertyNames.map(
+        (name) =>
             utilityRates.find(
-                (item) => item.property_id === id && item.utility_type === 'water'
+                (item) => item.property_name === name && item.utility_type === 'water'
             )?.avg_rate_consumed || 0
     );
 
-    const electricityRates = propertyIds.map(
-        (id) =>
+    const electricityRates = propertyNames.map(
+        (name) =>
             utilityRates.find(
-                (item) => item.property_id === id && item.utility_type === 'electricity'
+                (item) =>
+                    item.property_name === name && item.utility_type === 'electricity'
             )?.avg_rate_consumed || 0
     );
 
     const chartOptionsPropertyUtilities = {
         chart: { type: 'bar' },
-        xaxis: { categories: propertyIds.map((id) => `Property ${id}`) },
+        xaxis: { categories: propertyNames }, // ✅ use property names
         title: { text: 'Average Utility Rate per Property', align: 'center' },
     };
 
@@ -57,7 +68,9 @@ export default function PropertyUtilitiesChart({ landlordId }: Props) {
 
     return (
         <div className="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">Property Utilities</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">
+                Property Utility Rate
+            </h3>
             {waterRates.length > 0 && electricityRates.length > 0 ? (
                 <Chart
                     // @ts-ignore
@@ -74,3 +87,4 @@ export default function PropertyUtilitiesChart({ landlordId }: Props) {
         </div>
     );
 }
+
