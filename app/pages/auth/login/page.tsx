@@ -188,7 +188,7 @@ function Login() {
         <main className="flex-1 flex">
           {/* Hero Section - Hidden on mobile, visible on desktop */}
           <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/90 to-purple-700/90 z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-700/90 to-emerald-600/90 z-10"></div>
             <Image
               src="/images/hero-section.jpeg"
               alt="Modern cityscape with high-rise buildings"
@@ -199,11 +199,12 @@ function Login() {
             />
             <div className="relative z-20 flex flex-col justify-center items-start p-12 xl:p-16 text-white">
               <div className="max-w-md">
-                <h1 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
+                <h1 className="text-xl xl:text-5xl font-bold mb-6 leading-tight">
                   Welcome to
-                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-                    UpKeep
-                  </span>
+                    <span className="block select-none typographica text-transparent text-9xl leading-[1.4] bg-clip-text bg-gradient-to-r from-emerald-400 to-lime-300 drop-shadow-[2px_2px_2px_rgba(0,0,0,0.4)]">
+                      UpKyp
+                    </span>
+
                 </h1>
                 <p className="text-lg xl:text-xl text-blue-100 mb-8 leading-relaxed">
                   Your trusted partner in property management. Streamline your
@@ -272,10 +273,11 @@ function Login() {
                       className="object-contain"
                     />
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white lg:text-gray-900 mb-2">
-                    Welcome Back
-                  </h2>
-                  <p className="text-blue-200 lg:text-gray-600">
+                    <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-700 to-emerald-600 bg-clip-text text-transparent mb-2">
+                        Welcome Back
+                    </h2>
+
+                    <p className="text-blue-200 lg:text-gray-600">
                     Sign in to access your account
                   </p>
                 </div>
@@ -512,11 +514,12 @@ function Login() {
                     </div>
 
                     {/* Login Button */}
-                    <button
-                      type="submit"
-                      disabled={isLoggingIn || !captchaToken}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-400 disabled:to-blue-400 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:shadow-md transform hover:scale-[1.02] disabled:transform-none"
-                    >
+                      <button
+                          type="submit"
+                          disabled={isLoggingIn || !captchaToken}
+                          className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 disabled:from-blue-400 disabled:to-emerald-400 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:shadow-md transform hover:scale-[1.02] disabled:transform-none"
+                      >
+
                       {isLoggingIn ? (
                         <>
                           <svg

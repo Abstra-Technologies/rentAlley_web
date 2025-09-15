@@ -56,7 +56,7 @@ export default function LandlordDashboard() {
             {showAlert && <PointsEarnedAlert points={user.points} />}
             <div>
 
-                <h2 className="text-3xl font-semibold mb-4">
+                <h2 className="gradient-header">
                     {greeting}, {user?.firstName + user?.lastName}
                     <p className='font-normal text-sm'>Manage your properties, inquiries, and performance</p>
                 </h2>

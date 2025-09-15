@@ -1,6 +1,6 @@
 {
-  "name": "Hestia Rent360",
-  "short_name": "Hestia",
+  "name": "UpKeep",
+  "short_name": "Upkeep",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -8,12 +8,12 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/Hestia-logo-b.svg",
+      "src": "/upkeep_blue.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/Hestia-logo-b.svg",
+      "src": "/upkeep_blue.png",
       "sizes": "512x512",
       "type": "image/png"
     }

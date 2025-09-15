@@ -90,7 +90,7 @@ const LandlordLayout = ({ children }) => {
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
       <div className="md:hidden p-4 bg-white shadow-sm flex justify-between items-center">
-        <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
+        <h1 className="text-xl font-bold text-blue-900">UpKeep </h1>
         <button
           onClick={toggleMobileMenu}
           className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
@@ -109,7 +109,7 @@ const LandlordLayout = ({ children }) => {
         } md:block w-full md:w-64 bg-white shadow-lg md:min-h-screen`}
       >
         <div className="hidden md:block p-6">
-          <h1 className="text-xl font-bold text-blue-900">Rent Management</h1>
+          <h1 className="text-xl font-bold text-blue-900">UpKeep</h1>
         </div>
 
         <nav className="px-4 py-2 md:py-0">

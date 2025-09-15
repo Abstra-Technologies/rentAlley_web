@@ -14,8 +14,26 @@
   }
 }
 
+@font-face {
+    font-family: "Typographica";
+    src: url("../public/fonts/typographica.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+.typographica {
+    font-family: "Typographica", sans-serif;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Gradient text utility for headers */
+/* Gradient header style */
+.gradient-header {
+    @apply text-4xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent;
+}
+

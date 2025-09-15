@@ -7,6 +7,7 @@ import InstallPrompt from "@/components/Commons/installPrompt";
 import Head from "next/head";
 import CookiesPermission from "@/components/Commons/setttings/cookiesPermission";
 import PushInit from "@/components/notification/pushNotifMobile";
+
 const geistSans = Geist({
     variable: "--font-geist-sans",
     subsets: ["latin"],
@@ -18,12 +19,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-    title: "UpKeep",
-    description: "Your Rental Partner.",
+    title: "UpKyp",
+    description: "Manage Less. Live More. Your Rental Management Partner",
     manifest: '/manifest.json',
     icons: {
-        icon: '/Hestia-logo-b.svg',
-        apple: '/Hestia-logo-b.svg'
+        icon: '/upkeep_blue.png',
+        apple: '/upkeep_blue.png'
     },
 };
 
