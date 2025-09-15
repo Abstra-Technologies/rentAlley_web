@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent, MouseEvent } from "react";
+import { useState, useEffect, FormEvent, MouseEvent, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,8 @@ import { FaSearch, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
 import { HiBadgeCheck } from "react-icons/hi";
 import Footer from "../components/navigation/footer";
 import LoadingScreen from "@/components/loadingScreen";
+import HeroText from "@/components/ui/hero";
+
 
 interface Property {
   property_id: number;
@@ -32,6 +34,35 @@ export default function SplashScreen() {
   const [recentProperties, setRecentProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (titleRef.current && subtitleRef.current) {
+      const tl = gsap.timeline();
+
+      // Animate the heading word by word
+      tl.from(titleRef.current.children, {
+        y: 80,
+        opacity: 0,
+        stagger: 0.15,
+        duration: 0.8,
+        ease: "power4.out",
+      });
+
+      // Animate subtitle after title finishes
+      tl.from(
+          subtitleRef.current,
+          {
+            y: 30,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out",
+          },
+          "-=0.3"
+      );
+    }
+  }, []);
 
   useEffect(() => {
     async function redirectIfAuthenticated() {
@@ -175,23 +206,20 @@ export default function SplashScreen() {
   return (
     <div className="flex flex-col min-h-screen">
       <div className="relative h-[500px]">
+
         <div className="absolute inset-0">
           <Image
             src="/images/hero-section.jpeg"
             alt="Cityscape view of high-rise buildings"
             fill
-            className="object-cover brightness-75"
+            className="object-cover brightness-50"
             priority
           />
         </div>
+
         <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-white">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
-            Rent with No Compromises
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-2xl text-center">
-            Enjoy a home that offers everything you've been searching for, all
-            in one place.
-          </p>
+
+         <HeroText />
 
           <form
             onSubmit={handleSearch}
@@ -221,6 +249,8 @@ export default function SplashScreen() {
             </div>
           </form>
         </div>
+
+
       </div>
 
       <section className="py-12 px-4">

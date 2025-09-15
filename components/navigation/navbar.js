@@ -836,6 +836,8 @@ const Navbar = () => {
       return [
         { href: "/pages/about-us", label: "About Us" },
         { href: "/pages/find-rent", label: "Find Rent" },
+        { href: "/pages/public/download", label: "Download App" },
+
         { href: "/pages/partner", label: "Partner" },
         { href: "/pages/contact-us", label: "Contact Us" },
       ];

@@ -9,7 +9,6 @@
     "lint": "next lint",
     "prepare": "simple-git-hooks",
     "chat": "node server.js"
-
   },
   "simple-git-hooks": {
     "commit-msg": "npx --no -- commitlint --edit"
@@ -33,6 +32,7 @@
     "@cometchat/chat-uikit-react": "^6.1.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@gsap/react": "^2.1.2",
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.2.0",
     "@knocklabs/client": "^0.12.0-rc.3.0",
@@ -64,6 +64,7 @@
     "formidable": "^3.5.2",
     "framer-motion": "^12.4.7",
     "googleapis": "^144.0.0",
+    "gsap": "^3.13.0",
     "html-to-image": "^1.11.13",
     "install": "^0.13.0",
     "ioredis": "^5.7.0",
