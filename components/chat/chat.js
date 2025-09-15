@@ -27,6 +27,7 @@ console.log('preselectedChat', preselectedChat
   }, [preselectedChat]);
 console.log('selectedChat', selectedChat);
 
+  //  get all chats list
   useEffect(() => {
     const fetchChats = async () => {
       try {
@@ -43,12 +44,14 @@ console.log('selectedChat', selectedChat);
 
 
   useEffect(() => {
+
     if (!selectedChat || !selectedChat.chat_room) {
       console.log("Waiting for user to select a chat...");
       return;
     }
 
     console.log("Joining chat room:", selectedChat.chat_room);
+
     socket.emit("joinRoom", { chatRoom: selectedChat.chat_room });
 
     const handleLoadMessages = (loadedMessages) => {
@@ -120,41 +123,87 @@ console.log('selectedChat', selectedChat);
     <div className="flex flex-col lg:flex-row bg-gray-100 h-screen w-full p-0">
       <div className="w-full lg:w-1/3 bg-white p-4 rounded-none lg:rounded-lg shadow-md overflow-y-auto h-[40vh] lg:h-full border-r">
         <h1 className="text-xl font-semibold mb-4">Chats</h1>
+
+
         {chatList.length === 0 ? (
-          <p className="text-center text-gray-500">No chats available</p>
+            <p className="text-center text-gray-500">No chats available</p>
         ) : (
-          <ul className="space-y-1">
-            {chatList.map((chat) => (
-              <li
-                key={chat.chat_room}
-                className={`p-3 rounded-lg cursor-pointer transition-all duration-200 flex justify-between items-center ${
-                  selectedChat?.chat_room === chat.chat_room
-                    ? "bg-blue-500 text-white font-semibold"
-                    : "hover:bg-gray-100"
-                }`}
-                onClick={() => setSelectedChat(chat)}
-              >
-                <div className="truncate">
-                  <p className="font-semibold">{chat.name}</p>
-                  <p className="text-sm text-gray-500 truncate w-40">
-                    {chat.lastMessage || "No messages yet"}
-                  </p>
-                </div>
-                <span className="text-xs text-gray-400">🗨️</span>
-              </li>
-            ))}
-          </ul>
+            <ul className="space-y-1">
+              {chatList.map((chat) => (
+                  <li
+                      key={chat.chat_room}
+                      className={`p-3 rounded-lg cursor-pointer transition-all duration-200 flex items-center ${
+                          selectedChat?.chat_room === chat.chat_room
+                              ? "bg-blue-500 text-white font-semibold"
+                              : "hover:bg-gray-100"
+                      }`}
+                      onClick={() => setSelectedChat(chat)}
+                  >
+                    {/* Profile Picture */}
+                    <img
+                        src={chat.profilePicture || "/default-avatar.png"}
+                        alt={chat.name}
+                        className="w-10 h-10 rounded-full object-cover mr-3 border border-gray-200"
+                    />
+
+                    {/* Chat Info */}
+                    <div className="flex-1 truncate">
+                      <p
+                          className={`font-semibold ${
+                              selectedChat?.chat_room === chat.chat_room
+                                  ? "text-white"
+                                  : "text-gray-900"
+                          }`}
+                      >
+                        {chat.name}
+                      </p>
+                      <p
+                          className={`text-sm truncate w-40 ${
+                              selectedChat?.chat_room === chat.chat_room
+                                  ? "text-blue-100"
+                                  : "text-gray-500"
+                          }`}
+                      >
+                        {chat.lastMessage || "No messages yet"}
+                      </p>
+                    </div>
+
+                    {/* Chat Icon */}
+                    <span
+                        className={`text-xs ${
+                            selectedChat?.chat_room === chat.chat_room
+                                ? "text-white"
+                                : "text-gray-400"
+                        }`}
+                    >
+          🗨️
+        </span>
+                  </li>
+              ))}
+            </ul>
         )}
+
+
       </div>
 
+
       <div className="flex-1 bg-white p-4 lg:rounded-lg shadow-md flex flex-col h-[60vh] lg:h-full w-full">
+
         {selectedChat ? (
+
           <>
-            <h2 className="text-lg font-semibold mb-3 border-b pb-2">
+            <h2 className="text-lg font-semibold mb-3 border-b pb-2 flex items-center gap-2">
+              <img
+                  src={selectedChat.profilePicture || "/default-avatar.png"}
+                  alt={selectedChat.name}
+                  className="w-8 h-8 rounded-full object-cover border"
+              />
               Chat with {selectedChat.name}
             </h2>
 
+
             <div className="flex-1 overflow-y-auto p-2 space-y-3">
+
               {messages.length === 0 ? (
                 <p className="text-center text-gray-500">No messages yet</p>
               ) : (
@@ -165,13 +214,13 @@ console.log('selectedChat', selectedChat);
                       msg.sender_id === userId ? "justify-end" : "justify-start"
                     }`}
                   >
-                    {msg.sender_id !== userId && (
-                      <img
-                        src={msg.profilePicture}
-                        alt="User profile"
-                        className="w-8 h-8 lg:w-10 lg:h-10 rounded-full"
-                      />
-                    )}
+                    {/*{msg.sender_id !== userId && (*/}
+                    {/*  <img*/}
+                    {/*    src={msg.profilePicture}*/}
+                    {/*    alt="User profile"*/}
+                    {/*    className="w-8 h-8 lg:w-10 lg:h-10 rounded-full"*/}
+                    {/*  />*/}
+                    {/*)}*/}
                     <div
                       className={`px-4 py-2 max-w-[75%] lg:max-w-xs text-white rounded-lg shadow-md relative text-sm ${
                         msg.sender_id === userId ? "bg-blue-500" : "bg-gray-700"

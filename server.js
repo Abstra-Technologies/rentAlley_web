@@ -52,6 +52,7 @@ const encryptMessage = (message) => {
 
     return { encrypted, iv: iv.toString("hex") };
 };
+
 const decryptMessage = (encryptedMessage, iv) => {
     if (!encryptedMessage || !iv) {
         console.error("Decryption Error: Missing encrypted message or IV.");
@@ -98,8 +99,8 @@ io.on("connection", (socket) => {
                 message: decryptMessage(msg.encrypted_message, msg.iv),
                 timestamp: msg.timestamp,
             }));
-
             io.to(chatRoom).emit("loadMessages", decryptedMessages);
+
         } catch (error) {
             console.error("Error loading messages:", error.message);
         }
@@ -250,6 +251,7 @@ io.on("connection", (socket) => {
             console.error("Error sending message:", error);
         }
     });
+
     socket.on("disconnect", () => {
         console.log(`User disconnected: ${socket.id}`);
     });
