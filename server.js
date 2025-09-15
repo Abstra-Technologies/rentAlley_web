@@ -22,7 +22,7 @@ const server = createServer(app);
 const io = new Server(server, {
     cors: {
         origin: [
-            "https://hestia-chat-client.onrender.com",
+            "https://rentalley-web.onrender.com",
             "http://localhost:3000"
         ],
         methods: ["GET", "POST"],
@@ -256,6 +256,6 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.CHAT_PORT || 3001;
-server.listen(4000, () => {
+server.listen(PORT, () => {
     console.log(`Socket.io server running on port ${PORT}`);
 });
