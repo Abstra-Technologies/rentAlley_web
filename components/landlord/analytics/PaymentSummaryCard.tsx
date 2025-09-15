@@ -58,21 +58,27 @@ export default function PaymentSummaryCard({
         { name: "Pending", value: pending },
         { name: "Overdue", value: overdue },
     ];
-    const COLORS = ["#16a34a", "#3b82f6", "#dc2626"]; // green, blue, red
+
+    const COLORS = ["#22c55e", "#3b82f6", "#fb923c"];
+// emerald-500, blue-500, red-500
 
     return (
-        <div className="rounded-2xl border border-white/20 bg-white/30 backdrop-blur-lg shadow-lg p-10 flex items-center justify-between">
-            {/* Upcoming */}
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80 backdrop-blur-xl shadow-xl p-10 flex items-center justify-between">
+
+        {/* Upcoming */}
             <div className="text-center flex-1">
-                <p className="text-3xl font-bold text-blue-600 drop-shadow-sm">
+                <p className="text-3xl font-bold text-sky-300 drop-shadow-md">
                     ₱{pending.toLocaleString()}
                 </p>
-                <p className="text-base text-gray-700">Upcoming</p>
+                <p className="text-base text-gray-200">Upcoming</p>
 
-                <p className="text-3xl font-bold text-red-600 mt-6 drop-shadow-sm">
+                <p
+                    className="text-4xl font-bold text-orange-400 mt-6 drop-shadow-md"
+                    style={{ WebkitTextStroke: "0.5px " }}
+                >
                     ₱{overdue.toLocaleString()}
                 </p>
-                <p className="text-base text-gray-700">Overdue</p>
+                <p className="text-base text-gray-200">Overdue</p>
             </div>
 
             {/* Chart */}
@@ -91,19 +97,21 @@ export default function PaymentSummaryCard({
                         ))}
                     </Pie>
                 </PieChart>
-                <p className="text-base font-medium text-gray-800 mt-2">
+                <p className="text-base font-medium text-gray-100 mt-2">
                     {new Date().toLocaleString("en-US", { month: "long" })}
                 </p>
-                <p className="text-sm text-gray-600">₱{total.toLocaleString()} Total</p>
+                <p className="text-sm text-gray-300">₱{total.toLocaleString()} Total</p>
             </div>
 
             {/* Collected */}
             <div className="text-center flex-1">
-                <p className="text-3xl font-bold text-green-600 drop-shadow-sm">
+                <p className="text-3xl font-bold text-emerald-300 drop-shadow-md">
                     ₱{collected.toLocaleString()}
                 </p>
-                <p className="text-base text-gray-700">Collected</p>
+                <p className="text-base text-gray-200">Collected</p>
             </div>
         </div>
     );
+
+
 }

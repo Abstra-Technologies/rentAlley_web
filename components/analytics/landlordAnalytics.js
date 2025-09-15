@@ -13,6 +13,7 @@ const RevenuePerformanceChart = dynamic(() => import("../landlord/analytics/reve
 const UpcomingVisitsWidget = dynamic(() => import("../landlord/properties/propertyVisit"), { ssr: false });
 const TaskWidget = dynamic(() => import("../landlord/widgets/taskToDo"), { ssr: false });
 import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
+import TenantActivity  from "../landlord/widgets/TenantActivity";
 
 import Link from "next/link";
 
@@ -177,15 +178,21 @@ const LandlordPropertyChart = () => {
 
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <RevenuePerformanceChart landlordId={landlord_id} />
-            <TaskWidget landlordId={user?.landlord_id} />
-          </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div className="lg:col-span-2">
+                    <RevenuePerformanceChart landlordId={landlord_id} />
+                </div>
+                <div className="lg:col-span-1">
+                    <TaskWidget landlordId={user?.landlord_id} />
+                </div>
+            </div>
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <UpcomingVisitsWidget landlordId={landlord_id} />
-          </div>
+                <TenantActivity landlord_id={user?.landlord_id} />
+            </div>
 
 
           {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">*/}
