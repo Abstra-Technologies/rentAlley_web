@@ -5,7 +5,7 @@ import { HomeIcon } from "lucide-react";
 
 const LoadingScreen = ({ message = "Fetching properties..." }) => {
     return (
-        <div className="flex flex-col items-center justify-center w-full h-screen bg-gradient-to-br from-blue-800 to-blue-600 px-4">
+        <div className="flex flex-col items-center justify-center w-full h-screen bg-gradient-to-br from-blue-700 to-emerald-600 px-4">
             {/* Animated Home Icon */}
             <motion.div
                 initial={{ y: 0, scale: 0.95 }}
@@ -16,7 +16,7 @@ const LoadingScreen = ({ message = "Fetching properties..." }) => {
                 <img
                     src="/upkeep.png" // replace with your image path
                     alt="UpKeep Logo"
-                    className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain rounded-lg drop-shadow-lg select-none"
+                    className="w-24 h-24 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain rounded-lg drop-shadow-lg select-none"
                 />
 
                 <motion.span
@@ -28,12 +28,12 @@ const LoadingScreen = ({ message = "Fetching properties..." }) => {
 
             {/* App Name */}
             <motion.h1
-                className="mt-6 text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-wide drop-shadow select-none"
+                className="mt-6 typographica text-6xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-wide drop-shadow select-none"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7 }}
             >
-                UpKeep
+                UpKyp
             </motion.h1>
 
             {/* Tagline */}
