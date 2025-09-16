@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-    title: "UpKyp",
+    title: "Upkyp",
     description: "Manage Less. Live More. Your Rental Management Partner",
     manifest: '/manifest.json',
     icons: {
@@ -36,9 +36,10 @@ export default function RootLayout({
     return (
         <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
         <Head>
-            <link rel="manifest" href="/manifest.json" />
-            <meta name="theme-color" content="#ffffff" />
-            <link rel="apple-touch-icon" href="/Hestia-logo-b.svg" />
+            <link rel="manifest" href="/manifest.json"/>
+            <meta name="theme-color" content="#ffffff"/>
+
+            <link rel="apple-touch-icon" href="/Hestia-logo-b.svg"/>
         </Head>
         <body>
         <ClientLayout>
