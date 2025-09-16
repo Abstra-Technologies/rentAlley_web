@@ -105,6 +105,7 @@
     "react-leaflet": "^5.0.0",
     "react-pageflip": "^2.0.3",
     "react-pdf": "^9.2.1",
+    "react-quill-new": "^3.6.0",
     "react-router-dom": "^7.2.0",
     "react-toastify": "^11.0.3",
     "react-webcam": "^7.2.0",

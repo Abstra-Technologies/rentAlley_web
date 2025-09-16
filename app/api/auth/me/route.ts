@@ -43,7 +43,12 @@ export async function GET() {
           u.phoneNumber,
           u.birthDate,
           u.points,
+          u.civil_status,
+          u.occupation,
+          u.citizenship,
+          u.address,
           t.tenant_id,
+          u.address,
           l.landlord_id,
           l.is_verified,
           l.is_trial_used

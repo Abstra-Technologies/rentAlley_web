@@ -1,4 +1,7 @@
+
 "use client";
+import { CITIZENSHIPS } from "../../constant/citizenship";
+import  occupations  from "../../constant/occupations";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -22,10 +25,11 @@ import { logEvent } from "../../utils/gtag";
 import DeleteAccountButton from "../authentication/deleteAccountButton";
 import useAuthStore from "../../zustand/authStore";
 import TenantDetails from "../../components/tenant/profile/profileData";
+import LandlordDetails from "../../components/Commons/profile/landlordDetails";
 
 
 export default function ProfilePage() {
-  const { user, loading, error } = useAuthStore();
+  const { user, loading } = useAuthStore();
   const router = useRouter();
   const user_id = user?.user_id;
   const userType = user?.userType;
@@ -35,6 +39,11 @@ export default function ProfilePage() {
     lastName: "",
     phoneNumber: "",
     email: "",
+    civil_status:"",
+    occupation: "",
+    citizenship:"",
+    birthDate:"",
+    address: "",
   });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedFile, setSelectedFile] = useState(null);
@@ -49,7 +58,13 @@ export default function ProfilePage() {
     firstName: "",
     lastName: "",
     phoneNumber: "",
+    occupation: "",
+    citizenship:"",
+    civil_status:"",
+    address: "",
+
   });
+
 
   useEffect(() => {
     if (user) {
@@ -61,6 +76,12 @@ export default function ProfilePage() {
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         phoneNumber: user.phoneNumber || "",
+        occupation: user.occupation || '',
+        citizenship: user.citizenship || '',
+        civil_status: user.civil_status || '',
+        birthDate: user.birthDate || "",
+        address: user.address || "",
+
       });
     }
   }, [user]);
@@ -272,94 +293,274 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  First Name
-                </label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                    placeholder="Enter your first name"
-                  />
-                ) : (
-                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                    {profileData?.firstName}
-                  </div>
-                )}
-              </div>
+          <div className="p-8 space-y-10">
+            {/* General Information */}
+            <section>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                General Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* First Name */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    First Name
+                  </label>
+                  {editing ? (
+                      <input
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                          placeholder="Enter your first name"
+                      />
+                  ) : (
+                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                        {profileData?.firstName}
+                      </div>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Last Name
-                </label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                    placeholder="Enter your last name"
-                  />
-                ) : (
-                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                    {profileData?.lastName}
-                  </div>
-                )}
-              </div>
+                {/* Last Name */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Last Name
+                  </label>
+                  {editing ? (
+                      <input
+                          type="text"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                          placeholder="Enter your last name"
+                      />
+                  ) : (
+                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                        {profileData?.lastName}
+                      </div>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Email Address
-                  <span className="text-xs text-gray-500 font-normal ml-2">
-                    (Read-only)
-                  </span>
-                </label>
-                <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium">
-                  {profileData?.email}
+                {/* Civil Status */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Civil Status
+                  </label>
+                  {editing ? (
+                      <select
+                          name="civil_status"
+                          value={formData.civil_status}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      >
+                        <option value="single">Single</option>
+                        <option value="married">Married</option>
+                        <option value="widowed">Widowed</option>
+                        <option value="divorced">Divorced</option>
+                        <option value="separated">Separated</option>
+                        <option value="other">Other</option>
+                      </select>
+                  ) : (
+                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium capitalize">
+                        {profileData?.civil_status || "Not Provided"}
+                      </div>
+                  )}
+                </div>
+
+                {/* Birth Date */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Birth Date
+                  </label>
+                  {editing ? (
+                      <input
+                          type="date"
+                          name="birthDate"
+                          value={formData.birthDate || ""}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      />
+                  ) : (
+                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                        {profileData?.birthDate || "Not provided"}
+                      </div>
+                  )}
+                </div>
+
+                {/* Citizenship */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Citizenship
+                  </label>
+                  {editing ? (
+                      <select
+                          name="citizenship"
+                          value={formData.citizenship}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                 transition-all duration-200 bg-white"
+                      >
+                        {CITIZENSHIPS.map((c) => (
+                            <option key={c.value} value={c.value}>
+                              {c.label}
+                            </option>
+                        ))}
+                      </select>
+                  ) : (
+                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200
+                    rounded-lg text-gray-700">
+                        {
+                            CITIZENSHIPS.find((c) => c.value === profileData?.citizenship)?.label ||
+                            "Not provided"
+                        }
+                      </div>
+                  )}
+                </div>
+
+                {/* Occupation */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Occupation
+                  </label>
+                  {editing ? (
+                      <select
+                          name="occupation"
+                          value={formData.occupation}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                 transition-all duration-200 bg-white"
+                      >
+                        {occupations.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                        ))}
+                      </select>
+                  ) : (
+                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200
+                    rounded-lg text-gray-700">
+                        {
+                            occupations.find((o) => o.value === profileData?.occupation)?.label ||
+                            "Not provided"
+                        }
+                      </div>
+                  )}
+                </div>
+
+                {/* Address */}
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Address
+                  </label>
+                  {editing ? (
+                      <textarea
+                          name="address"
+                          value={formData.address}
+                          onChange={handleChange}
+                          rows={2}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg
+                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                 transition-all duration-200 bg-white"
+                          placeholder="Enter your full address"
+                      />
+                  ) : (
+                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200
+                    rounded-lg text-gray-700">
+                        {profileData?.address || "Not provided"}
+                      </div>
+                  )}
+                </div>
+
+              </div>
+            </section>
+
+            {/* Contact Information */}
+            <section>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Contact Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Email */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Email Address
+                    <span className="text-xs text-gray-500 font-normal ml-2">
+            (Read-only)
+          </span>
+                  </label>
+                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium">
+                    {profileData?.email}
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Phone Number
+                  </label>
+                  {editing ? (
+                      <input
+                          type="text"
+                          name="phoneNumber"
+                          value={formData.phoneNumber}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                          placeholder="Enter your phone number"
+                      />
+                  ) : (
+                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                        {profileData?.phoneNumber || "Not provided"}
+                      </div>
+                  )}
                 </div>
               </div>
+            </section>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Phone Number
-                </label>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                    placeholder="Enter your phone number"
-                  />
-                ) : (
-                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                    {profileData?.phoneNumber || "Not provided"}
+            {/* Account Settings */}
+            <section>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Account Settings
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Account Type
+                    <span className="text-xs text-gray-500 font-normal ml-2">
+            (Read-only)
+          </span>
+                  </label>
+                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium capitalize">
+                    {user?.userType}
                   </div>
-                )}
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  Account Type
-                  <span className="text-xs text-gray-500 font-normal ml-2">
-                    (Read-only)
-                  </span>
-                </label>
-                <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium capitalize">
-                  {user?.userType}
                 </div>
               </div>
-            </div>
-            {user?.userType === "tenant" && <TenantDetails userId={user?.user_id} />}
+            </section>
+
+
+
+            {/* Role-specific details */}
+            {user?.userType === "tenant" && (
+
+                <section>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Tenant Information</h3>
+                  {/*<TenantDetails userId={user?.user_id} />*/}
+                </section>
+
+            )}
+
+            {user?.userType === "landlord" && (
+
+                <section>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Landlord Information</h3>
+                  {/*<LandlordDetails landlord_id={user?.landlord_id} />*/}
+                </section>
+
+            )}
           </div>
+
 
 
 
@@ -400,6 +601,7 @@ export default function ProfilePage() {
               </button>
             )}
           </div>
+
         </div>
       </div>
     </div>

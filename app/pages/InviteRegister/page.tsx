@@ -74,7 +74,6 @@ import { Suspense } from 'react';
         }
     };
 
-
     if (loading || loadingInvite) return <div className="p-4 text-center">Loading...</div>;
 
     if (expired || !inviteDetails) {
@@ -85,20 +84,50 @@ import { Suspense } from 'react';
         );
     }
 
-    return (
-        <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded text-center">
-            <h1 className="text-2xl font-bold mb-2">You're invited to join</h1>
-            <p className="text-lg mb-4 font-medium">{inviteDetails.property_name}</p>
-            <p className="mb-6">Unit: <strong>{inviteDetails.unit_name}</strong></p>
-            <button
-                onClick={handleJoin}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
-            >
-                Join Unit
-            </button>
-        </div>
-    );
-}
+
+     return (
+         <div
+             className="min-h-screen flex items-center justify-center bg-gray-100 relative overflow-hidden"
+             style={{
+                 backgroundImage: `url(${inviteDetails.property_photo || "/placeholder.jpg"})`,
+                 backgroundSize: "cover",
+                 backgroundPosition: "center",
+             }}
+         >
+             {/* Overlay for readability */}
+             <div className="absolute inset-0 bg-black/50" />
+
+             {/* Centered card */}
+             <div className="relative z-10 max-w-md w-full mx-auto p-8 rounded-2xl text-center shadow-lg bg-white/90 backdrop-blur-sm">
+                 <h1 className="text-2xl font-bold text-gray-800 mb-2">You're Invited!</h1>
+                 <p className="text-gray-600 mb-6">
+                     You’ve been invited to join this unit as a tenant. Access your lease, payments, and updates all in one place.
+                 </p>
+
+                 <div className="bg-white border border-blue-200 rounded-xl p-4 mb-6 shadow-sm">
+                     <p className="text-lg font-semibold text-blue-800 mb-1">
+                         {inviteDetails.property_name}
+                     </p>
+                     <p className="text-gray-700">
+                         Unit:{" "}
+                         <span className="font-medium text-gray-900">
+            {inviteDetails.unit_name}
+          </span>
+                     </p>
+                 </div>
+                 <button
+                     onClick={handleJoin}
+                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-xl shadow-md hover:shadow-lg transition-all"
+                 >
+                     Accept Invitation & Join Unit
+                 </button>
+             </div>
+         </div>
+     );
+
+
+
+ }
 
 
 export default function InviteRegisterPage() {

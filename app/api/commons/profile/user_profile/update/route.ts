@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { firstName, lastName, phoneNumber } = body;
+    const { firstName, lastName, phoneNumber, civil_status, occupation, citizenship, address } = body;
 
     if (!firstName || !lastName) {
       return NextResponse.json({ error: "Must have first name or last name" }, { status: 400 });
@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
     const phoneEncrypted = phoneNumber ? JSON.stringify(await encryptData(phoneNumber, process.env.ENCRYPTION_SECRET)) : null;
 
     await db.query(
-      `UPDATE User SET firstName = ?, lastName = ?, phoneNumber = ? WHERE user_id = ?`,
-      [fnameEncrypted, lnameEncrypted, phoneEncrypted, userId]
+      `UPDATE User SET firstName = ?, lastName = ?, phoneNumber = ?,civil_status=?, occupation =?, citizenship=?, address=?   WHERE user_id = ?`,
+      [fnameEncrypted, lnameEncrypted, phoneEncrypted, civil_status, occupation, citizenship, address, userId]
     );
 
     await db.query(
