@@ -55,7 +55,6 @@ function FlyToUserLocation({ coords }) {
   }, [coords, map]);
   return null;
 }
-
 function FlyToProperty({ coords, zoom = 16 }) {
   const map = useMap();
   useEffect(() => {

@@ -497,8 +497,6 @@ export default function PropertyDetails() {
             </div>
           </div>
 
-
-
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
               <h2 className="text-xl font-bold mb-4 text-blue-800">
@@ -552,7 +550,7 @@ export default function PropertyDetails() {
             </div>
         )}
 
-        <LandlordCard landlord={property?.landlord} />
+        <LandlordCard landlord_id={property?.landlord_id} />
 
       </div>
     </div>

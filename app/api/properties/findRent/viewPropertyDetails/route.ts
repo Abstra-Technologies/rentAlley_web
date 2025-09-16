@@ -1,3 +1,5 @@
+
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
@@ -13,15 +15,38 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // 🔑 Get property and landlord info
     const [property] = await db.execute(
-        `SELECT p.* FROM Property p WHERE p.property_id = ?;`,
+        `SELECT 
+          p.*,
+          l.landlord_id,
+          u.firstName AS enc_firstName,
+          u.lastName AS enc_lastName
+       FROM Property p
+       JOIN Landlord l ON p.landlord_id = l.landlord_id
+       JOIN User u ON l.user_id = u.user_id
+       WHERE p.property_id = ?;`,
         [id]
     );
+
     // @ts-ignore
     if (!property.length) {
       return NextResponse.json({ message: "Property not found" }, { status: 404 });
     }
 
+    // Decrypt landlord name
+    let landlordFirstName = "";
+    let landlordLastName = "";
+    try {
+      // @ts-ignore
+      landlordFirstName = decryptData(JSON.parse(property[0].enc_firstName), SECRET_KEY);
+      // @ts-ignore
+      landlordLastName = decryptData(JSON.parse(property[0].enc_lastName), SECRET_KEY);
+    } catch (err) {
+      console.error("Decryption failed for landlord name:", err);
+    }
+
+    // 📸 Property photos
     const [propertyPhotos] = await db.execute(
         `SELECT photo_url FROM PropertyPhoto WHERE property_id = ?;`,
         [id]
@@ -39,6 +64,7 @@ export async function GET(req: NextRequest) {
         })
         .filter(Boolean);
 
+    // 🏘 Units
     const [units] = await db.execute(
         `SELECT * FROM Unit WHERE property_id = ?;`,
         [id]
@@ -69,23 +95,28 @@ export async function GET(req: NextRequest) {
       return {
         ...unit,
         photos: unitPhotosForThisUnit,
-        sec_deposit: unit.sec_deposit,        // added
-        advanced_payment: unit.advanced_payment, // added
+        sec_deposit: unit.sec_deposit,
+        advanced_payment: unit.advanced_payment,
       };
     });
 
+    // 💳 Payment methods
     const [paymentMethods] = await db.execute(
         `SELECT pm.method_id, m.method_name
-         FROM PropertyPaymentMethod pm
-                JOIN PaymentMethod m ON pm.method_id = m.method_id
-         WHERE pm.property_id = ?;`,
+       FROM PropertyPaymentMethod pm
+       JOIN PaymentMethod m ON pm.method_id = m.method_id
+       WHERE pm.property_id = ?;`,
         [id]
     );
-    console.log('payment methods:', paymentMethods);
 
+    // @ts-ignore
     return NextResponse.json({
       // @ts-ignore
       ...property[0],
+      landlord_id: property[0].landlord_id,
+      landlord_firstName: landlordFirstName,
+      landlord_lastName: landlordLastName,
+      landlord_fullName: `${landlordFirstName} ${landlordLastName}`,
       property_photo: decryptedPropertyPhotos,
       units: unitsWithPhotos,
       payment_methods: paymentMethods,
