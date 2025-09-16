@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import {
   FaFacebookF,
@@ -5,6 +6,7 @@ import {
   FaInstagram,
   FaLinkedinIn,
 } from "react-icons/fa";
+import Image from "next/image";
 
 const Footer = () => {
   return (
@@ -45,9 +47,13 @@ const Footer = () => {
             {/* Brand Section */}
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="mb-6">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-                  Hestia
-                </h2>
+                <Image
+                    src="/upkyptxt.png"
+                    alt="UpKyp Logo"
+                    width={130}
+                    height={32}
+                    priority
+                />
                 <p className="text-gray-300 leading-relaxed text-sm lg:text-base">
                   Finding your perfect rental property has never been easier. 
                   Your trusted partner in modern property management.
@@ -186,8 +192,8 @@ const Footer = () => {
           <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 text-gray-400 text-sm">
-                <p className="text-center sm:text-left">
-                  Copyright © 2025 Hestia. All rights reserved.
+                <p className="text-center sm:text-left select-none">
+                  Copyright © 2025 Upkyp. All rights reserved.
                 </p>
                 <div className="flex items-center space-x-4">
                   <Link href="/pages/privacy-policy" className="hover:text-white transition-colors duration-300">
@@ -199,12 +205,7 @@ const Footer = () => {
                   </Link>
                 </div>
               </div>
-              <div className="text-gray-400 text-sm text-center md:text-right">
-                <p className="flex items-center justify-center md:justify-end space-x-1">
-                  <span>Designed by IS Students in</span>
-                  <span className="text-blue-400 font-medium">De La Salle College of Saint Benilde</span>
-                </p>
-              </div>
+
             </div>
           </div>
         </div>
