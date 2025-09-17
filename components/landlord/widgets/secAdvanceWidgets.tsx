@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -48,17 +49,25 @@ export const PaidDepositsWidget: React.FC<Props> = ({ landlord_id }) => {
     if (!tenants.length) return <div className="p-4 border rounded">No tenants have paid yet.</div>;
 
     return (
-        <div className="p-4 border rounded shadow-sm w-72 bg-white">
-            <ul className="space-y-1 max-h-64 overflow-y-auto">
+        <div className="p-5 border rounded-lg shadow-md w-full max-w-md bg-white">
+            <ul className="divide-y divide-gray-200 max-h-72 overflow-y-auto">
                 {tenants.map((t) => (
-                    <li key={t.user_id} className="flex justify-between text-sm">
-            <span>
-              {t.firstName} {t.lastName} - {t.property_name} {t.unit_name}
+                    <li
+                        key={t.user_id}
+                        className="flex items-start gap-2 p-2 hover:bg-gray-50 rounded-md transition"
+                    >
+                        <div className="flex flex-col">
+            <span className="font-medium text-gray-800">
+              {t.firstName} {t.lastName}
             </span>
-
+                            <span className="text-xs text-gray-500">
+              {t.property_name} • {t.unit_name}
+            </span>
+                        </div>
                     </li>
                 ))}
             </ul>
         </div>
     );
+
 };

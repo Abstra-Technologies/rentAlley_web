@@ -1,3 +1,5 @@
+
+//  upload proeprtiy photos api route.ts TO BE DELETED
 import { NextRequest, NextResponse } from "next/server";
 import {
   S3Client,

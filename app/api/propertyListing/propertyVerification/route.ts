@@ -1,3 +1,5 @@
+
+//  upload property verificsation fovcumernt rtoute.ts TO BE DELETE
 import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { encryptData } from "@/crypto/encrypt";
@@ -40,47 +42,43 @@ async function uploadToS3(file: File, folder: string) {
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const property_id = formData.get("property_id")?.toString();
+  const docType = formData.get("docType")?.toString(); // business_permit | occupancy_permit | property_title
+  const submittedDoc = formData.get("submittedDoc") as File | null;
+  const indoorFile = formData.get("indoor") as File | null;
+  const outdoorFile = formData.get("outdoor") as File | null;
+  const govIdFile = formData.get("govID") as File | null;
 
-  if (!property_id) {
-    return NextResponse.json({ error: "Property ID is required" }, { status: 400 });
+  if (!property_id || !docType || !submittedDoc || !govIdFile || !indoorFile || !outdoorFile) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   const connection = await db.getConnection();
   try {
     const [rows] = await connection.execute(
-      "SELECT property_id FROM Property WHERE property_id = ?",
-      [Number(property_id)]
+        "SELECT property_id FROM Property WHERE property_id = ?",
+        [Number(property_id)]
     );
-// @ts-ignore
+    // @ts-ignore
     if (rows.length === 0) {
       return NextResponse.json({ error: "Invalid property_id: No matching property found" }, { status: 400 });
     }
 
     await connection.beginTransaction();
 
-    const occPermitFile = formData.get("occPermit") as File | null;
-    const mayorPermitFile = formData.get("mayorPermit") as File | null;
-    const indoorFile = formData.get("indoor") as File | null;
-    const outdoorFile = formData.get("outdoor") as File | null;
-    const govIdFile = formData.get("govID") as File | null;
-    const propTitleFile = formData.get("propTitle") as File | null;
-
-    const occPermitUrl = occPermitFile ? await uploadToS3(occPermitFile, "property-doc") : null;
-    const mayorPermitUrl = mayorPermitFile ? await uploadToS3(mayorPermitFile, "property-doc") : null;
-    const indoorPhoto = indoorFile ? await uploadToS3(indoorFile, "property-photo/indoor") : null;
-    const outdoorPhoto = outdoorFile ? await uploadToS3(outdoorFile, "property-photo/outdoor") : null;
-    const govID = govIdFile ? await uploadToS3(govIdFile, "property-photo/govId") : null;
-    const propTitle = propTitleFile ? await uploadToS3(propTitleFile, "property-doc") : null;
+    // Upload files
+    const submittedDocUrl = await uploadToS3(submittedDoc, "property-doc");
+    const govID = await uploadToS3(govIdFile, "property-photo/govId");
+    const indoorPhoto = await uploadToS3(indoorFile, "property-photo/indoor");
+    const outdoorPhoto = await uploadToS3(outdoorFile, "property-photo/outdoor");
 
     const query = `
       INSERT INTO PropertyVerification 
-        (property_id, occ_permit, mayor_permit, gov_id, property_title, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)
+        (property_id, doc_type, submitted_doc, gov_id, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts)
+      VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)
       ON DUPLICATE KEY UPDATE 
-        occ_permit = VALUES(occ_permit),
-        mayor_permit = VALUES(mayor_permit),
+        doc_type = VALUES(doc_type),
+        submitted_doc = VALUES(submitted_doc),
         gov_id = VALUES(gov_id),
-        property_title = VALUES(property_title),
         indoor_photo = VALUES(indoor_photo),
         outdoor_photo = VALUES(outdoor_photo),
         status = 'Pending',
@@ -90,10 +88,9 @@ export async function POST(req: NextRequest) {
 
     await connection.execute(query, [
       Number(property_id),
-      occPermitUrl,
-      mayorPermitUrl,
+      docType,
+      submittedDocUrl,
       govID,
-      propTitle,
       indoorPhoto,
       outdoorPhoto,
     ]);

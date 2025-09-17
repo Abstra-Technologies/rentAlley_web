@@ -1,3 +1,5 @@
+
+//  upload propertty details route RTO BE DELTED
 import { NextResponse, NextRequest } from "next/server";
 import { db } from '@/lib/db';
 

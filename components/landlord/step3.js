@@ -92,8 +92,10 @@ Make it sound appealing, ideal for renters, and professional in tone.`;
       const aiText = data?.choices?.[0]?.message?.content?.trim();
 
       if (aiText) {
-        setProperty({ ...property, propDesc: aiText });
+        // ✅ Only update description, don't overwrite whole property
+        setProperty({ propDesc: aiText });
       }
+
     } catch (error) {
       console.error("AI generation error:", error);
       alert("Failed to generate description. Please try again.");
