@@ -64,19 +64,13 @@ export default function TaskWidget({ landlordId }: { landlordId: string }) {
           >
             {task.label || task.title}
           </span>
-                                    {task.time && (
-                                        <span className="text-xs text-gray-500">
-                                            {new Date(task.time)
-                                                .toLocaleTimeString("en-US", {
-                                                    hour: "numeric",
-                                                    minute: "2-digit",
-                                                    hour12: true,
-                                                })
-                                                .replace(" ", "")
-                                                .toLowerCase()} {/* e.g. 8:00am */}
-                                          </span>
+                                    {task.date && (
+                                        <span className="text-xs text-gray-500">{task.date}</span>
                                     )}
 
+                                    {task.time && (
+                                        <span className="text-xs text-gray-500">{task.time}</span>
+                                    )}
 
                                 </div>
                             </div>

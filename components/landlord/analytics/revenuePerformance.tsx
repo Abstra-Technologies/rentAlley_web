@@ -8,6 +8,8 @@ import {
     ResponsiveContainer,
     LabelList,
     CartesianGrid,
+    Area,
+    AreaChart,
 } from "recharts";
 import axios from "axios";
 
@@ -52,6 +54,7 @@ const RevenuePerformanceChart = ({ landlordId }) => {
         );
     }
 
+    // @ts-ignore
     if (data.every((d) => d.revenue === 0)) {
         return (
             <div className="p-4 bg-white rounded-2xl shadow text-center">
@@ -66,10 +69,15 @@ const RevenuePerformanceChart = ({ landlordId }) => {
                 Revenue Performance Overview
             </h2>
 
-            {/* Mobile vs Desktop container */}
+            {/* Mobile view: Area Chart */}
             <ResponsiveContainer width="100%" height={200} className="sm:hidden">
-                {/* Mobile Style */}
-                <BarChart data={data} barSize={20}>
+                <AreaChart data={data}>
+                    <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="#E5E7EB" />
                     <XAxis
                         dataKey="month"
@@ -91,22 +99,21 @@ const RevenuePerformanceChart = ({ landlordId }) => {
                             borderRadius: "6px",
                             fontSize: "12px",
                         }}
-                        cursor={{ fill: "rgba(59, 130, 246, 0.05)" }}
+                        cursor={{ stroke: "#3B82F6", strokeWidth: 1, strokeDasharray: "3 3" }}
                     />
-                    <Bar dataKey="revenue" fill="#3B82F6" radius={[8, 8, 0, 0]}>
-                        <LabelList
-                            dataKey="revenue"
-                            position="top"
-                            formatter={(value: number) => formatCurrency(value)}
-                            fill="#374151"
-                            fontSize={10}
-                        />
-                    </Bar>
-                </BarChart>
+                    <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                    />
+                </AreaChart>
             </ResponsiveContainer>
 
+            {/* Desktop/Tablet view: Bar Chart */}
             <ResponsiveContainer width="100%" height={300} className="hidden sm:block">
-                {/* Desktop/Tablet Style */}
                 <BarChart data={data} barSize={35}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                     <XAxis
@@ -144,6 +151,7 @@ const RevenuePerformanceChart = ({ landlordId }) => {
             </ResponsiveContainer>
         </div>
     );
+
 
 };
 

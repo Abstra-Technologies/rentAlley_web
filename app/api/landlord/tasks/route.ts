@@ -60,30 +60,62 @@ export async function GET(req: NextRequest) {
         );
 
         // 🔄 Combine into single task list
+// 🔄 Combine into single task list
+
         const tasks = [
+            // Visits
             // @ts-ignore
-            ...visits.map((v: any) => ({
-                type: "visit",
-                id: v.visit_id,
-                label: `Property visit request for unit ${v.unit_name} ${v.property_name} on ${v.visit_date} at ${v.visit_time}`,
-            })),
+            ...visits.map((v: any) => {
+                const dateStr = new Date(v.visit_date).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                });
+
+                const timeStr = v.visit_time
+                    ? new Date(`1970-01-01T${v.visit_time}`).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                    })
+                    : null;
+
+                return {
+                    type: "visit",
+                    id: v.visit_id,
+                    label: `Visit request • ${v.unit_name} (${v.property_name})`,
+                    date: dateStr,
+                    time: timeStr,
+                };
+            }),
+
+            // Maintenance
             // @ts-ignore
             ...maintenance.map((m: any) => ({
                 type: "maintenance",
                 id: m.request_id,
-                label: `Maintenance request "${m.subject}" in unit ${m.unit_name} ${m.property_name} is ${m.status}`,
+                label: `Maintenance • "${m.subject}" • ${m.unit_name} (${m.property_name})`,
+                status: m.status,
             })),
+
+            // Payments
             // @ts-ignore
             ...payments.map((p: any) => ({
                 type: "payment",
                 id: p.payment_id,
-                label: `Pending ${p.payment_type} payment of ₱${p.amount_paid} (Agreement #${p.agreement_id})`,
+                label: `Payment • ₱${p.amount_paid} (${p.payment_type})`,
+                status: p.payment_status,
+                agreement: p.agreement_id,
             })),
+
+            // Agreements
             // @ts-ignore
             ...agreements.map((a: any) => ({
                 type: "agreement",
                 id: a.agreement_id,
-                label: `Pending lease agreement for ${a.unit_name} (${a.start_date} - ${a.end_date})`,
+                label: `Lease agreement • ${a.unit_name}`,
+                date: `${a.start_date} → ${a.end_date}`,
             })),
         ];
 
