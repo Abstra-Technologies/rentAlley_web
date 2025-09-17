@@ -1,10 +1,9 @@
+
 import mysql from "mysql2/promise";
-// THIS IS A CRON JOB.
-export default async function handler(req, res) {
-    if (req.method !== "POST") {
-        return res.status(405).json({ error: "Method Not Allowed. ONLY POST" });
-    }
+
+export async function POST() {
     console.log("Checking for expired subscriptions...");
+
     try {
         const connection = await mysql.createConnection({
             host: process.env.DB_HOST,
@@ -20,14 +19,17 @@ export default async function handler(req, res) {
             [today]
         );
 
+        // @ts-ignore
         if (expiredSubscriptions.length === 0) {
             console.log("No expired subscriptions found.");
             await connection.end();
-            return res.status(200).json({ message: "No expired subscriptions found." });
+            return Response.json({ message: "No expired subscriptions found." }, { status: 200 });
         }
 
+        // @ts-ignore
         console.log(`Downgrading ${expiredSubscriptions.length} expired subscriptions...`);
 
+        // @ts-ignore
         for (const { landlord_id } of expiredSubscriptions) {
             await connection.execute(
                 "UPDATE Subscription SET plan_name = 'Free Plan', is_active = 1, is_trial = 0, start_date= NOW(), end_date=0, payment_status = 'paid', updated_at = NOW() WHERE landlord_id = ?",
@@ -37,10 +39,18 @@ export default async function handler(req, res) {
         }
 
         await connection.end();
-        return res.status(200).json({ message: "Downgraded expired subscriptions successfully." });
+        return Response.json(
+            { message: "Downgraded expired subscriptions successfully." },
+            { status: 200 }
+        );
 
     } catch (error) {
         console.error("Error downgrading expired subscriptions:", error);
-        return res.status(500).json({ error: "Failed to downgrade expired subscriptions.", details: error.message });
+        // @ts-ignore
+
+        return Response.json(// @ts-ignore
+            { error: "Failed to downgrade expired subscriptions.", details: error.message },
+            { status: 500 }
+        );
     }
 }
