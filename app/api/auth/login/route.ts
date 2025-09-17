@@ -77,7 +77,9 @@ export async function POST(req: NextRequest) {
 
     // ✅ JWT expiration time based on rememberMe
     const jwtExpiry = rememberMe ? "7d" : "2h";
-    const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 7 : undefined; // cookie persistence
+    const cookieMaxAge = rememberMe
+        ? 60 * 60 * 24 * 7     // 7 days
+        : 60 * 60 * 2;         // 2 hours, still persistent (not session-only)
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
     const token = await new SignJWT({
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest) {
       secure: isProd,
       path: "/",
       sameSite: "lax",
-      ...(cookieMaxAge ? { maxAge: cookieMaxAge } : {}), // persistent if rememberMe
+      maxAge: cookieMaxAge,
     });
 
     // ✅ Handle 2FA
