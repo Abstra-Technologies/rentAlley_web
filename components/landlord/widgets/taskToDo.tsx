@@ -34,9 +34,17 @@ export default function TaskWidget({ landlordId }: { landlordId: string }) {
             {loading ? (
                 <p className="text-sm text-gray-500 text-center py-6">Loading tasks...</p>
             ) : tasks.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-6">
-                    ✅ All tasks completed
-                </p>
+                <div className="flex items-center justify-center py-10">
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center shadow-sm w-full">
+                        <div className="text-3xl mb-2">✅</div>
+                        <p className="text-sm font-semibold text-green-700">
+                            No pending tasks.
+                        </p>
+                        <p className="text-xs text-green-600 mt-1">
+                            You’re all caught up. Great job!
+                        </p>
+                    </div>
+                </div>
             ) : (
                 <ul className="space-y-2 max-h-64 overflow-y-auto pr-1">
                     {tasks.map((task) => (

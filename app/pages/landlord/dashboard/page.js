@@ -67,8 +67,6 @@ export default function LandlordDashboard() {
                     </p>
                 </div>
 
-
-
                 <div className="mt-4">
                     <LandlordProfileStatus landlord_id={user?.landlord_id} />
                 </div>

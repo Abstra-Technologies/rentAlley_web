@@ -56,8 +56,8 @@ export async function GET(req: NextRequest, { params }) {
     };
 
     const [paymentHistory] = await db.execute(
-      `
-        SELECT
+        `
+          SELECT
             payment_id,
             agreement_id,
             payment_type,
@@ -69,12 +69,13 @@ export async function GET(req: NextRequest, { params }) {
             created_at,
             updated_at,
             proof_of_payment
-        FROM Payment
-        WHERE agreement_id = (SELECT agreement_id FROM LeaseAgreement WHERE tenant_id = ?)
-        ORDER BY payment_date DESC
-      `,
-      [tenant_id]
+          FROM Payment
+          WHERE agreement_id IN (SELECT agreement_id FROM LeaseAgreement WHERE tenant_id = ?)
+          ORDER BY payment_date DESC
+        `,
+        [tenant_id]
     );
+
 
     return NextResponse.json({ tenant, paymentHistory });
   } catch (error: any) {
