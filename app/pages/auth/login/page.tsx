@@ -1,3 +1,4 @@
+
 "use client";
 import GoogleLogo from "../../../../components/google-logo";
 import Link from "next/link";
@@ -39,33 +40,9 @@ function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [focusedField, setFocusedField] = useState("");
 
-  const redirectBasedOnUserType = async () => {
-    try {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        switch (data.userType) {
-          case "tenant":
-            return router.replace("/pages/tenant/my-unit");
-          case "landlord":
-            return router.replace("/pages/landlord/dashboard");
-          case "admin":
-            return router.replace("/pages/admin/dashboard");
-          default:
-            return router.replace("/pages/auth/login");
-        }
-      }
-    } catch (error) {
-      console.error("Redirection failed:", error);
-    }
-  };
-
   useEffect(() => {
     sessionStorage.removeItem("pending2FA");
     window.history.replaceState(null, "", "/pages/auth/login");
-    if (user || admin) {
-      redirectBasedOnUserType();
-    }
   }, [user, admin]);
 
   useEffect(() => {
@@ -109,12 +86,12 @@ function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
+    // ✅ Validate form
     try {
       loginSchema.parse(formData);
     } catch (error: any) {
-      const fieldErrors = {};
-      error.errors.forEach((err) => {
+      const fieldErrors: Record<string, string> = {};
+      error.errors.forEach((err: any) => {
         fieldErrors[err.path[0]] = err.message;
       });
       setErrors(fieldErrors);
@@ -127,10 +104,10 @@ function Login() {
     }
 
     logEvent(
-      "Login Attempt",
-      "User Interaction",
-      "User Submitted Login Form",
-      1
+        "Login Attempt",
+        "User Interaction",
+        "User Submitted Login Form",
+        1
     );
 
     try {
@@ -148,23 +125,26 @@ function Login() {
 
       if (response.ok) {
         logEvent(
-          "Login Success",
-          "Authentication",
-          "User Successfully Logged In",
-          1
+            "Login Success",
+            "Authentication",
+            "User Successfully Logged In",
+            1
         );
+
         if (data.requires_otp) {
           router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
         } else {
           await fetchSession();
-          await redirectBasedOnUserType();
+          if (data.redirectUrl) {
+            router.replace(data.redirectUrl);
+          }
         }
       } else {
         logEvent(
-          "Login Failed",
-          "Authentication",
-          "User Entered Incorrect Credentials",
-          1
+            "Login Failed",
+            "Authentication",
+            "User Entered Incorrect Credentials",
+            1
         );
         setErrorMessage(data.error || "Invalid credentials");
 

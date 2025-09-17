@@ -141,6 +141,25 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </span>
                 </div>
 
+
+                <span
+                    className={`
+inline-block px-3 py-1 text-xs font-semibold rounded-full 
+    ${
+                        property?.verification_status === "Verified"
+                            ? "bg-green-100 text-green-700"
+                            : property?.verification_status === "Rejected"
+                                ? "bg-red-100 text-red-700"
+                                : property?.verification_status === "Pending"
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-gray-100 text-gray-600"
+                    }
+  `}
+                >
+  {property?.verification_status}
+</span>
+
+
                 {/* Actions */}
                 <div className="mt-auto pt-4 border-t border-gray-100">
                     <div className="flex justify-between">

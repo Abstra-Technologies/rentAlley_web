@@ -94,6 +94,19 @@ export async function POST(req: NextRequest) {
         .setSubject(user.user_id)
         .sign(secret);
 
+    let redirectUrl = "/pages/auth/login";
+    switch (user.userType) {
+      case "tenant":
+        redirectUrl = "/pages/tenant/my-unit";
+        break;
+      case "landlord":
+        redirectUrl = "/pages/landlord/dashboard";
+        break;
+      case "admin":
+        redirectUrl = "/pages/admin/dashboard";
+        break;
+    }
+
     const response = NextResponse.json(
         {
           message: "Login successful",
@@ -105,6 +118,7 @@ export async function POST(req: NextRequest) {
             email,
             userType: user.userType,
           },
+          redirectUrl,
         },
         { status: 200 }
     );
