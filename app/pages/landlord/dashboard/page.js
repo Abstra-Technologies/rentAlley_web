@@ -58,10 +58,17 @@ export default function LandlordDashboard() {
             {showAlert && <PointsEarnedAlert points={user.points} />}
             <div>
 
-                <h2 className="gradient-header">
-                    {greeting}, {user?.firstName + user?.lastName}
-                    <p className='font-normal text-sm'>Simplifying property management, empowering landlords.</p>
-                </h2>
+                <div className="text-center sm:text-left">
+                    <h2 className="gradient-header text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold leading-snug">
+                        {greeting}, {user?.firstName} {user?.lastName}
+                    </h2>
+                    <p className="font-normal text-xs sm:text-sm md:text-base lg:text-lg text-gray-600">
+                        Simplifying property management, empowering landlords.
+                    </p>
+                </div>
+
+
+
                 <div className="mt-4">
                     <LandlordProfileStatus landlord_id={user?.landlord_id} />
                 </div>

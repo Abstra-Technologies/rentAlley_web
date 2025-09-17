@@ -147,12 +147,8 @@ const LandlordPropertyChart = () => {
           </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-1 gap-5 mb-8">
-
-              <PaymentSummaryCard landlord_id={user?.landlord_id} />
-
-
-
+          <div className="grid grid-cols-1 sm:grid-cols-1 gap-5 mb-6">
+            <PaymentSummaryCard landlord_id={user?.landlord_id}/>
           </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

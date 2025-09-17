@@ -61,9 +61,52 @@ const RevenuePerformanceChart = ({ landlordId }) => {
     }
 
     return (
-        <div className="p-4 bg-white rounded-2xl shadow">
-            <h2 className="text-lg font-bold mb-4">Revenue Performance Overview</h2>
-            <ResponsiveContainer width="100%" height={300}>
+        <div className="p-3 sm:p-4 bg-white rounded-xl sm:rounded-2xl shadow">
+            <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">
+                Revenue Performance Overview
+            </h2>
+
+            {/* Mobile vs Desktop container */}
+            <ResponsiveContainer width="100%" height={200} className="sm:hidden">
+                {/* Mobile Style */}
+                <BarChart data={data} barSize={20}>
+                    <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="#E5E7EB" />
+                    <XAxis
+                        dataKey="month"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#6B7280", fontSize: 10 }}
+                    />
+                    <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={formatCurrency}
+                        tick={{ fill: "#6B7280", fontSize: 10 }}
+                    />
+                    <Tooltip
+                        formatter={(value) => formatCurrency(Number(value))}
+                        contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #E5E7EB",
+                            borderRadius: "6px",
+                            fontSize: "12px",
+                        }}
+                        cursor={{ fill: "rgba(59, 130, 246, 0.05)" }}
+                    />
+                    <Bar dataKey="revenue" fill="#3B82F6" radius={[8, 8, 0, 0]}>
+                        <LabelList
+                            dataKey="revenue"
+                            position="top"
+                            formatter={(value: number) => formatCurrency(value)}
+                            fill="#374151"
+                            fontSize={10}
+                        />
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+
+            <ResponsiveContainer width="100%" height={300} className="hidden sm:block">
+                {/* Desktop/Tablet Style */}
                 <BarChart data={data} barSize={35}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                     <XAxis
@@ -101,6 +144,7 @@ const RevenuePerformanceChart = ({ landlordId }) => {
             </ResponsiveContainer>
         </div>
     );
+
 };
 
 export default RevenuePerformanceChart;

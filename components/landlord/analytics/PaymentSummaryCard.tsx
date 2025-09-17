@@ -63,52 +63,83 @@ export default function PaymentSummaryCard({
 // emerald-500, blue-500, red-500
 
     return (
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80 backdrop-blur-xl shadow-xl p-10 flex items-center justify-between">
+        <div>
+            {/* Mobile Design (numbers only, stacked cards) */}
+            <div className="grid grid-cols-3 gap-3 sm:hidden">
+                <div className="rounded-xl bg-gradient-to-br from-sky-800/80 to-sky-600/80 p-3 text-center shadow">
+                    <p className="text-base font-bold text-sky-200 drop-shadow">
+                        ₱{pending.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-100">Upcoming</p>
+                </div>
 
-        {/* Upcoming */}
-            <div className="text-center flex-1">
-                <p className="text-3xl font-bold text-sky-300 drop-shadow-md">
-                    ₱{pending.toLocaleString()}
-                </p>
-                <p className="text-base text-gray-200">Upcoming</p>
+                <div className="rounded-xl bg-gradient-to-br from-orange-800/80 to-orange-600/80 p-3 text-center shadow">
+                    <p className="text-base font-bold text-orange-200 drop-shadow">
+                        ₱{overdue.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-100">Overdue</p>
+                </div>
 
-                <p
-                    className="text-4xl font-bold text-orange-400 mt-6 drop-shadow-md"
-                    style={{ WebkitTextStroke: "0.5px " }}
-                >
-                    ₱{overdue.toLocaleString()}
-                </p>
-                <p className="text-base text-gray-200">Overdue</p>
+                <div className="rounded-xl bg-gradient-to-br from-emerald-800/80 to-emerald-600/80 p-3 text-center shadow">
+                    <p className="text-base font-bold text-emerald-200 drop-shadow">
+                        ₱{collected.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-100">Collected</p>
+                </div>
             </div>
 
-            {/* Chart */}
-            <div className="flex flex-col items-center justify-center flex-1">
-                <PieChart width={200} height={200}>
-                    <Pie
-                        data={data}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={70}
-                        outerRadius={90}
-                        dataKey="value"
+            {/* Tablet/Desktop Design (with chart) */}
+            <div
+                className="hidden sm:flex rounded-2xl border border-white/10 bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80
+      backdrop-blur-xl shadow-xl p-6 md:p-10 flex-col md:flex-row items-center justify-between gap-6 md:gap-0"
+            >
+                {/* Upcoming */}
+                <div className="text-center flex-1">
+                    <p className="text-2xl md:text-3xl font-bold text-sky-300 drop-shadow-md">
+                        ₱{pending.toLocaleString()}
+                    </p>
+                    <p className="text-sm md:text-base text-gray-200">Upcoming</p>
+
+                    <p
+                        className="text-3xl md:text-4xl font-bold text-orange-400 mt-4 md:mt-6 drop-shadow-md"
+                        style={{ WebkitTextStroke: "0.5px" }}
                     >
-                        {data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                        ))}
-                    </Pie>
-                </PieChart>
-                <p className="text-base font-medium text-gray-100 mt-2">
-                    {new Date().toLocaleString("en-US", { month: "long" })}
-                </p>
-                <p className="text-sm text-gray-300">₱{total.toLocaleString()} Total</p>
-            </div>
+                        ₱{overdue.toLocaleString()}
+                    </p>
+                    <p className="text-sm md:text-base text-gray-200">Overdue</p>
+                </div>
 
-            {/* Collected */}
-            <div className="text-center flex-1">
-                <p className="text-3xl font-bold text-emerald-300 drop-shadow-md">
-                    ₱{collected.toLocaleString()}
-                </p>
-                <p className="text-base text-gray-200">Collected</p>
+                {/* Chart */}
+                <div className="flex flex-col items-center justify-center flex-1">
+                    <PieChart width={160} height={160} className="md:w-[200px] md:h-[200px]">
+                        <Pie
+                            data={data}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={70}
+                            dataKey="value"
+                        >
+                            {data.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                    <p className="text-sm md:text-base font-medium text-gray-100 mt-2">
+                        {new Date().toLocaleString("en-US", { month: "long" })}
+                    </p>
+                    <p className="text-sm md:text-base text-gray-300">
+                        ₱{total.toLocaleString()} Total
+                    </p>
+                </div>
+
+                {/* Collected */}
+                <div className="text-center flex-1">
+                    <p className="text-2xl md:text-3xl font-bold text-emerald-300 drop-shadow-md">
+                        ₱{collected.toLocaleString()}
+                    </p>
+                    <p className="text-sm md:text-base text-gray-200">Collected</p>
+                </div>
             </div>
         </div>
     );
