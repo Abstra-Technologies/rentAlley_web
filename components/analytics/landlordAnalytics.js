@@ -13,8 +13,7 @@ const UpcomingVisitsWidget = dynamic(() => import("../landlord/properties/proper
 const TaskWidget = dynamic(() => import("../landlord/widgets/taskToDo"), { ssr: false });
 import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
 import TenantActivity  from "../landlord/widgets/TenantActivity";
-
-import Link from "next/link";
+import ProspectiveTenantsWidget  from "../landlord/widgets/leads";
 
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -117,26 +116,6 @@ const LandlordPropertyChart = () => {
     colors: ["#6A0DAD"],
   };
 
-  const chartOptionsOccupancy = {
-    chart: {
-      type: "radialBar",
-    },
-    plotOptions: {
-      radialBar: {
-        hollow: { size: "60%" },
-        dataLabels: {
-          show: true,
-          name: { show: false },
-          value: {
-            fontSize: "22px",
-            fontWeight: "bold",
-            formatter: (val) => `${val}%`,
-          },
-        },
-      },
-    },
-    labels: ["Occupancy Rate of All Properties"],
-  };
   const chartSeries = [occupancyRate];
 
   return (
@@ -163,10 +142,14 @@ const LandlordPropertyChart = () => {
 
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <UpcomingVisitsWidget landlordId={landlord_id} />
-                <TenantActivity landlord_id={user?.landlord_id} />
+              <UpcomingVisitsWidget landlordId={landlord_id} />
+              <ProspectiveTenantsWidget landlordId={user?.landlord_id} />
+
             </div>
 
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <TenantActivity landlord_id={user?.landlord_id} />
+          </div>
 
 
 
