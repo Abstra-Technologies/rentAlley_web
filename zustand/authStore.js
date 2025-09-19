@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { decryptData } from "../crypto/encrypt";
-import { useRouter } from "next/navigation";
 
 const useAuthStore = create(
   persist(
