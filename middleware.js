@@ -28,6 +28,7 @@ const excludePages = [
   "/pages/system_admin/profile",
   "/pages/system_admin/supportIssues",
 
+
 ];
 
 export async function middleware(req) {
@@ -97,11 +98,11 @@ export async function middleware(req) {
   }
 }
 
-// export const config = {
-//   matcher: [
-//     "/pages/tenant/:path*",
-//     "/pages/landlord/:path*",
-//     "/pages/system_admin/:path*",
-//     "/pages/commons/:path*",
-//   ],
-// };
+export const config = {
+  matcher: [
+    "/pages/tenant/:path*",
+    "/pages/landlord/:path*",
+    "/pages/system_admin/:path*",
+    "/pages/commons/:path*",
+  ],
+};

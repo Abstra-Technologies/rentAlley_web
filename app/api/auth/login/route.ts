@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: isProd,
       path: "/",
-      sameSite: "none",
+      sameSite: "lax",
       maxAge: cookieMaxAge,
     });
 
