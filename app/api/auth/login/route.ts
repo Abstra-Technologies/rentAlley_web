@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error: any) {
     console.error("Error during signin:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${error}` }, { status: 500 });
   }
 }
 
