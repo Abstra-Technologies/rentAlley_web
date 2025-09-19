@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         { status: 200 }
     );
 
-    const isProd = process.env.NODE_ENV === "production";
+    const isProd = process.env.NODE_ENV === "development";
     response.cookies.set("token", token, {
       httpOnly: true,
       secure: isProd,
