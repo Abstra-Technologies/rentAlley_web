@@ -102,12 +102,13 @@ export default function LeaseEditor() {
     const handleSave = async () => {
         console.log("Final lease content:", content);
 
-        // You can POST this content to finalize API
-        const res = await fetch("/api/leaseAgreement/finalize", {
+        const res = await fetch("/api/leaseAgreement/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 unitId: searchParams.get("unitId"),
+                startDate: searchParams.get("startDate"),
+                endDate: searchParams.get("endDate"),
                 content,
             }),
         });
@@ -118,6 +119,7 @@ export default function LeaseEditor() {
             alert("Error saving lease.");
         }
     };
+
 
     return (
         <div className="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">

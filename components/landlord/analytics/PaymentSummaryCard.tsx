@@ -47,7 +47,7 @@ export default function PaymentSummaryCard({
 
     if (loading) {
         return (
-            <div className="p-6 text-gray-500 text-sm bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-4 text-gray-500 text-xs bg-white rounded-lg shadow-sm border border-gray-200">
                 Loading payment summary...
             </div>
         );
@@ -60,64 +60,62 @@ export default function PaymentSummaryCard({
     ];
 
     const COLORS = ["#22c55e", "#3b82f6", "#fb923c"];
-// emerald-500, blue-500, red-500
 
     return (
         <div>
-            {/* Mobile Design (numbers only, stacked cards) */}
-            <div className="grid grid-cols-3 gap-3 sm:hidden">
-                <div className="rounded-xl bg-gradient-to-br from-sky-800/80 to-sky-600/80 p-3 text-center shadow">
-                    <p className="text-base font-bold text-sky-200 drop-shadow">
+            {/* Mobile Design (compact stacked cards) */}
+            <div className="grid grid-cols-3 gap-2 sm:hidden">
+                <div className="rounded-lg bg-gradient-to-br from-sky-800/80 to-sky-600/80 p-2 text-center shadow">
+                    <p className="text-sm font-bold text-sky-200">
                         ₱{pending.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-100">Upcoming</p>
+                    <p className="text-[10px] text-gray-100">Upcoming</p>
                 </div>
 
-                <div className="rounded-xl bg-gradient-to-br from-orange-800/80 to-orange-600/80 p-3 text-center shadow">
-                    <p className="text-base font-bold text-orange-200 drop-shadow">
+                <div className="rounded-lg bg-gradient-to-br from-orange-800/80 to-orange-600/80 p-2 text-center shadow">
+                    <p className="text-sm font-bold text-orange-200">
                         ₱{overdue.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-100">Overdue</p>
+                    <p className="text-[10px] text-gray-100">Overdue</p>
                 </div>
 
-                <div className="rounded-xl bg-gradient-to-br from-emerald-800/80 to-emerald-600/80 p-3 text-center shadow">
-                    <p className="text-base font-bold text-emerald-200 drop-shadow">
+                <div className="rounded-lg bg-gradient-to-br from-emerald-800/80 to-emerald-600/80 p-2 text-center shadow">
+                    <p className="text-sm font-bold text-emerald-200">
                         ₱{collected.toLocaleString()}
                     </p>
-                    <p className="text-xs text-gray-100">Collected</p>
+                    <p className="text-[10px] text-gray-100">Collected</p>
                 </div>
             </div>
 
-            {/* Tablet/Desktop Design (with chart) */}
+            {/* Tablet/Desktop Design (compact with chart) */}
             <div
-                className="hidden sm:flex rounded-2xl border border-white/10 bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80
-      backdrop-blur-xl shadow-xl p-6 md:p-10 flex-col md:flex-row items-center justify-between gap-6 md:gap-0"
+                className="hidden sm:flex rounded-xl border border-white/10
+    bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80
+    backdrop-blur-xl shadow-lg p-6 md:p-10 flex-col md:flex-row
+    items-center justify-between gap-6 min-h-[280px]"
             >
-                {/* Upcoming */}
+                {/* Upcoming + Overdue */}
                 <div className="text-center flex-1">
-                    <p className="text-2xl md:text-3xl font-bold text-sky-300 drop-shadow-md">
+                    <p className="text-lg md:text-xl font-bold text-sky-300">
                         ₱{pending.toLocaleString()}
                     </p>
-                    <p className="text-sm md:text-base text-gray-200">Upcoming</p>
+                    <p className="text-xs md:text-sm text-gray-200">Upcoming</p>
 
-                    <p
-                        className="text-3xl md:text-4xl font-bold text-orange-400 mt-4 md:mt-6 drop-shadow-md"
-                        style={{ WebkitTextStroke: "0.5px" }}
-                    >
+                    <p className="text-xl md:text-2xl font-bold text-orange-400 mt-2 md:mt-4">
                         ₱{overdue.toLocaleString()}
                     </p>
-                    <p className="text-sm md:text-base text-gray-200">Overdue</p>
+                    <p className="text-xs md:text-sm text-gray-200">Overdue</p>
                 </div>
 
                 {/* Chart */}
                 <div className="flex flex-col items-center justify-center flex-1">
-                    <PieChart width={160} height={160} className="md:w-[200px] md:h-[200px]">
+                    <PieChart width={120} height={120} className="md:w-[150px] md:h-[150px]">
                         <Pie
                             data={data}
                             cx="50%"
                             cy="50%"
-                            innerRadius={50}
-                            outerRadius={70}
+                            innerRadius={35}
+                            outerRadius={55}
                             dataKey="value"
                         >
                             {data.map((entry, index) => (
@@ -125,24 +123,24 @@ export default function PaymentSummaryCard({
                             ))}
                         </Pie>
                     </PieChart>
-                    <p className="text-sm md:text-base font-medium text-gray-100 mt-2">
+                    <p className="text-xs md:text-sm font-medium text-gray-100 mt-1">
                         {new Date().toLocaleString("en-US", { month: "long" })}
                     </p>
-                    <p className="text-sm md:text-base text-gray-300">
+                    <p className="text-xs md:text-sm text-gray-300">
                         ₱{total.toLocaleString()} Total
                     </p>
                 </div>
 
                 {/* Collected */}
                 <div className="text-center flex-1">
-                    <p className="text-2xl md:text-3xl font-bold text-emerald-300 drop-shadow-md">
+                    <p className="text-lg md:text-xl font-bold text-emerald-300">
                         ₱{collected.toLocaleString()}
                     </p>
-                    <p className="text-sm md:text-base text-gray-200">Collected</p>
+                    <p className="text-xs md:text-sm text-gray-200">Collected</p>
                 </div>
             </div>
+
+
         </div>
     );
-
-
 }

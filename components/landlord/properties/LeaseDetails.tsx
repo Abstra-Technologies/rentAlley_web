@@ -25,6 +25,7 @@ import { UserIcon } from "lucide-react";
 // @ts-ignore
 const LeaseDetails = ({ unitId }) => {
   const router = useRouter();
+
   const [lease, setLease] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [startDate, setStartDate] = useState("");
@@ -806,5 +807,6 @@ const LeaseDetails = ({ unitId }) => {
       )}
     </div>
   );
+
 };
 export default LeaseDetails;

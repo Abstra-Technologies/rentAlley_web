@@ -34,9 +34,18 @@ body {
 /* Gradient text utility for headers */
 /* Gradient header style */
 .gradient-header {
-    @apply text-4xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent;
+    @apply text-4xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent  select-none;
 }
 
 .gradient-hero {
-    @apply text-xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent;
+    @apply text-3xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent;
+}
+
+/* styles/globals.css */
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
 }

@@ -6,6 +6,7 @@ import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import LandlordPropertyChart from "../../../../components/analytics/landlordAnalytics";
 import PointsEarnedAlert from "../../../../components/Commons/alertPoints";
 import LandlordProfileStatus from "../../../../components/landlord/profile/LandlordProfileStatus"
+import SendTenantInviteModal from "../../../../components/landlord/properties/sendInvite"
 
 
 export default function LandlordDashboard() {
@@ -58,14 +59,21 @@ export default function LandlordDashboard() {
             {showAlert && <PointsEarnedAlert points={user.points} />}
             <div>
 
-                <div className="text-center sm:text-left">
-                    <h2 className="gradient-header text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold leading-snug">
-                        {greeting}, {user?.firstName} {user?.lastName}
-                    </h2>
-                    <p className="font-normal text-xs sm:text-sm md:text-base lg:text-lg text-gray-600">
-                        Simplifying property management, empowering landlords.
-                    </p>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    {/* Greeting */}
+                    <div className="text-center sm:text-left">
+                        <h2 className="gradient-header text-sm sm:text-lg md:text-2xl lg:text-3xl font-bold leading-snug">
+                            {greeting}, {user?.firstName} {user?.lastName}
+                        </h2>
+                        <p className="font-normal text-xs sm:text-sm md:text-base lg:text-lg text-gray-600">
+                            Simplifying property management, empowering landlords.
+                        </p>
+                    </div>
+
+                    {/* Invite Tenant Button */}
+                    <SendTenantInviteModal landlord_id={user?.landlord_id} />
                 </div>
+
 
                 <div className="mt-4">
                     <LandlordProfileStatus landlord_id={user?.landlord_id} />

@@ -1,3 +1,4 @@
+
 import { db } from "@/lib/db";
 import { NextRequest } from "next/server";
 
@@ -11,25 +12,39 @@ export async function GET(req: NextRequest) {
   try {
     connection = await db.getConnection();
 
-    let query = `SELECT * FROM Unit WHERE 1=1`;
+    // Base query with LEFT JOIN on LeaseAgreement
+    let query = `
+      SELECT
+        u.*,
+        CASE
+          WHEN EXISTS (
+            SELECT 1 FROM LeaseAgreement la
+            WHERE la.unit_id = u.unit_id AND la.status = 'pending'
+          )
+            THEN 1 ELSE 0
+          END AS hasPendingLease
+      FROM Unit u
+      WHERE 1=1
+    `;
     const params: any[] = [];
 
     if (unit_id) {
-      query += ` AND unit_id = ?`;
+      query += ` AND u.unit_id = ?`;
       params.push(unit_id);
     }
 
     if (property_id) {
-      query += ` AND property_id = ?`;
+      query += ` AND u.property_id = ?`;
       params.push(property_id);
     }
 
     const [rows] = await connection.execute(query, params);
-// @ts-ignore
+
+    // @ts-ignore
     if (unit_id && rows.length === 0) {
       return new Response(
-        JSON.stringify({ error: "No Units found for this Property" }),
-        { status: 404 }
+          JSON.stringify({ error: "No Units found for this Property" }),
+          { status: 404 }
       );
     }
 
@@ -37,12 +52,12 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-    
+
   } catch (error) {
     console.error("Error fetching unit listings:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to fetch unit listings" }),
-      { status: 500 }
+        JSON.stringify({ error: "Failed to fetch unit listings" }),
+        { status: 500 }
     );
   } finally {
     if (connection) {
@@ -50,3 +65,4 @@ export async function GET(req: NextRequest) {
     }
   }
 }
+

@@ -552,18 +552,23 @@ const ViewUnitPage = () => {
 
                         {/* Status Badge */}
                         <div className="absolute top-3 right-3">
-                          <span
-                            className={`px-3 py-1 text-xs font-semibold rounded-full shadow-md ${
-                              unit?.status === "Occupied"
-                                ? "bg-green-100 text-green-800"
-                                : unit?.status === "Unoccupied"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-orange-100 text-orange-800"
-                            }`}
-                          >
-                            {unit?.status}
-                          </span>
+  <span
+      className={`px-3 py-1 text-xs font-semibold rounded-full shadow-md ${
+          unit?.status === "Occupied"
+              ? "bg-green-100 text-green-800"
+              : unit?.hasPendingLease
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-red-100 text-red-800"
+      }`}
+  >
+    {unit?.status === "Occupied"
+        ? "Occupied"
+        : unit?.hasPendingLease
+            ? "Pending Lease Agreement"
+            : "Unoccupied"}
+  </span>
                         </div>
+
                       </div>
 
                       {/* Unit Content */}

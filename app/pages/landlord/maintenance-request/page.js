@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useEffect, useState, Suspense } from "react";
 import {
@@ -246,7 +247,7 @@ const MaintenanceRequestPage = () => {
       <div className="p-3 sm:p-6 w-full bg-gray-50 min-h-screen">
         {/* Header */}
         <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-blue-900">
+          <h1 className="gradient-header">
             Maintenance Requests
           </h1>
           <div className="text-xs sm:text-sm bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">

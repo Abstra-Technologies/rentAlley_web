@@ -1,5 +1,4 @@
 
-
 "use client";
 import { useEffect, useState } from "react";
 
@@ -21,6 +20,7 @@ export default function TenantActivity({
 }) {
     const [activities, setActivities] = useState<TenantActivity[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showAll, setShowAll] = useState(false);
 
     useEffect(() => {
         if (!landlord_id) return;
@@ -57,6 +57,9 @@ export default function TenantActivity({
         );
     }
 
+    // Decide how many activities to show
+    const visibleActivities = showAll ? activities : activities.slice(0, 4);
+
     return (
         <div className="bg-white rounded-2xl shadow-md border border-gray-100">
             {/* Header */}
@@ -65,13 +68,15 @@ export default function TenantActivity({
                     Tenant Activity Log
                 </h2>
                 <span className="text-xs text-gray-500">
-        Showing latest 10 activities
-      </span>
+          {showAll
+              ? `Showing all ${activities.length} activities`
+              : `Showing latest 4 activities`}
+        </span>
             </div>
 
             {/* Activity Feed */}
             <div className="divide-y divide-gray-100">
-                {activities.slice(0, 10).map((act) => (
+                {visibleActivities.map((act) => (
                     <div
                         key={act.log_id}
                         className="px-6 py-4 flex items-center hover:bg-gray-50 transition"
@@ -86,9 +91,9 @@ export default function TenantActivity({
                         {/* Details */}
                         <div className="flex-1">
                             <p className="text-sm text-gray-800">
-              <span className="font-medium text-gray-900">
-                {act.firstName} {act.lastName}
-              </span>{" "}
+                <span className="font-medium text-gray-900">
+                  {act.firstName} {act.lastName}
+                </span>{" "}
                                 {act.action}
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
@@ -111,12 +116,17 @@ export default function TenantActivity({
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-3 border-t border-gray-200 text-center">
-                <button className="text-sm font-medium text-blue-600 hover:text-blue-800">
-                    View Full Activity
-                </button>
-            </div>
+            {activities.length > 4 && (
+                <div className="px-6 py-3 border-t border-gray-200 text-center">
+                    <button
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                        onClick={() => setShowAll(!showAll)}
+                    >
+                        {showAll ? "Show Less" : "Show More"}
+                    </button>
+                </div>
+            )}
         </div>
     );
-
 }
+

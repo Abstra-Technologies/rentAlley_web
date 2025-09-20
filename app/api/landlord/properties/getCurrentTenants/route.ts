@@ -26,8 +26,10 @@ export async function GET(req: NextRequest) {
         u.email,
         la.unit_id,
         la.start_date,
+        un.unit_name,
         p.property_name,
-        la.end_date
+        la.end_date,
+        la.status as lease_status
       FROM Tenant t
       JOIN LeaseAgreement la ON t.tenant_id = la.tenant_id
       JOIN Unit un ON la.unit_id = un.unit_id
