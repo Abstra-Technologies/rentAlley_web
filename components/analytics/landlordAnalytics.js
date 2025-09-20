@@ -11,6 +11,7 @@ const TaskWidget = dynamic(() => import("../landlord/widgets/taskToDo"), { ssr: 
 import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
 import TenantActivity  from "../landlord/widgets/TenantActivity";
 import ProspectiveTenantsWidget  from "../landlord/widgets/leads";
+import { useRouter } from "next/navigation";
 
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -19,7 +20,7 @@ const Chart = dynamic(() => import("react-apexcharts"), {
 
 const LandlordPropertyChart = () => {
   const { user, fetchSession } = useAuthStore();
-
+  const router = useRouter();
   const [monthlyVisits, setMonthlyVisits] = useState([]);
   const [occupancyRate, setOccupancyRate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -135,9 +136,17 @@ const LandlordPropertyChart = () => {
 
               {/* 2. Charts (Revenue + Occupancy side by side) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="bg-white rounded-xl shadow-sm p-5">
+                <div
+                    onClick={() =>
+                        router.push(
+                            `/pages/landlord/analytics/detailed/revenue`
+                        )
+                    }
+                    className="bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition"
+                >
                   <RevenuePerformanceChart landlordId={user?.landlord_id} />
                 </div>
+
                 <div className="bg-white rounded-xl shadow-sm p-5">
                   {/* occupancy/units widget */}
                   <TenantActivity landlord_id={user?.landlord_id} />
