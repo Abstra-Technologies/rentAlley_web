@@ -594,167 +594,155 @@ const LeaseDetails = ({ unitId }) => {
                 </h2>
               </div>
 
-              {/* Current Lease Dates Display */}
-              {lease?.start_date && lease?.end_date && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                  <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
-                    <FaCheckCircle className="text-green-600" />
-                    Active Lease Period
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="bg-white p-3 rounded-lg shadow-sm">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                        Start Date
-                      </p>
-                      <p className="text-gray-800 font-semibold">
-                        {formatDate(lease.start_date)}
-                      </p>
-                    </div>
-                    <div className="bg-white p-3 rounded-lg shadow-sm">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                        End Date
-                      </p>
-                      <p className="text-gray-800 font-semibold">
-                        {formatDate(lease.end_date)}
-                      </p>
-                    </div>
+              {!tenant ? (
+                  // 🔔 Warning if no tenant assigned
+                  <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 rounded-xl">
+                    <h3 className="font-semibold text-amber-800 mb-2">No Tenant Assigned</h3>
+                    <p className="text-amber-700 text-sm">
+                      You need to assign a tenant before creating or uploading a lease
+                      agreement. Please invite or approve a tenant for this unit.
+                    </p>
                   </div>
-                </div>
-              )}
-
-              {/* Date Input Section */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-800 mb-4">
-                  Set Lease Dates
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      End Date
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Lease Document Section */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Lease Document</h3>
-
-                {/* Selection Toggle */}
-                <div className="flex gap-3 mb-4">
-                  <button
-                      onClick={() => setLeaseMode("generate")}
-                      className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
-                          leaseMode === "generate"
-                              ? "bg-emerald-600 text-white border-emerald-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                  >
-                    Use System Template
-                  </button>
-                  <button
-                      onClick={() => setLeaseMode("upload")}
-                      className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
-                          leaseMode === "upload"
-                              ? "bg-green-600 text-white border-green-600"
-                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                  >
-                    Upload PDF
-                  </button>
-                </div>
-
-                {/* Existing Agreement Display */}
-                {lease?.agreement_url ? (
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                          <DocumentTextIcon className="h-6 w-6 text-blue-600" />
+              ) : (
+                  <>
+                    {/* Current Lease Dates Display */}
+                    {lease?.start_date && lease?.end_date && (
+                        <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                          <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                            <FaCheckCircle className="text-green-600" />
+                            Active Lease Period
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="bg-white p-3 rounded-lg shadow-sm">
+                              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                Start Date
+                              </p>
+                              <p className="text-gray-800 font-semibold">
+                                {formatDate(lease.start_date)}
+                              </p>
+                            </div>
+                            <div className="bg-white p-3 rounded-lg shadow-sm">
+                              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                End Date
+                              </p>
+                              <p className="text-gray-800 font-semibold">
+                                {formatDate(lease.end_date)}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-blue-800 mb-1">
-                            Current Lease Agreement
-                          </p>
-                          <Link
-                              href={lease.agreement_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
-                          >
-                            View Agreement Document
-                          </Link>
+                    )}
+
+                    {/* Date Input Section */}
+                    <div className="mb-6">
+                      <h3 className="font-semibold text-gray-800 mb-4">
+                        Set Lease Dates
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Start Date
+                          </label>
+                          <input
+                              type="date"
+                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
+                              value={startDate}
+                              onChange={(e) => setStartDate(e.target.value)}
+                          />
                         </div>
-                        <FaCheckCircle className="text-green-500 h-5 w-5" />
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            End Date
+                          </label>
+                          <input
+                              type="date"
+                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
+                              value={endDate}
+                              onChange={(e) => setEndDate(e.target.value)}
+                          />
+                        </div>
                       </div>
                     </div>
-                ) : leaseMode === "upload" ? (
-                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                      <p className="text-sm font-medium text-gray-700 mb-3">
-                        Upload New Lease Agreement
-                      </p>
-                      <LeaseUpload setLeaseFile={setLeaseFile} />
+
+                    {/* Lease Document Section */}
+                    <div className="mb-6">
+                      <h3 className="font-semibold text-gray-800 mb-4">Lease Document</h3>
+
+                      <div className="flex gap-3 mb-4">
+                        <button
+                            onClick={() => setLeaseMode("generate")}
+                            className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
+                                leaseMode === "generate"
+                                    ? "bg-emerald-600 text-white border-emerald-600"
+                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                            }`}
+                        >
+                          Use System Template
+                        </button>
+                        <button
+                            onClick={() => setLeaseMode("upload")}
+                            className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
+                                leaseMode === "upload"
+                                    ? "bg-green-600 text-white border-green-600"
+                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                            }`}
+                        >
+                          Upload PDF
+                        </button>
+                      </div>
+
+                      {lease?.agreement_url && (
+                          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-blue-800 mb-1">
+                                Current Lease Agreement
+                              </p>
+                              <Link
+                                  href={lease.agreement_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                              >
+                                View Agreement Document
+                              </Link>
+                            </div>
+                            <button
+                                onClick={handleDeleteLease}
+                                className="ml-4 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg shadow-sm transition"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                      )}
+
+
                     </div>
-                ) : null}
-              </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                {leaseMode === "generate" && (
-                    <button
-                        className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
-                        onClick={handleGenerateLease}
-                    >
-                      Generate Lease Agreement
-                    </button>
-                )}
+                    {/* Action Buttons */}
+                    <div className="space-y-3">
+                      {leaseMode === "generate" && (
+                          <button
+                              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50"
+                              onClick={handleGenerateLease}
+                          >
+                            Generate Lease Agreement
+                          </button>
+                      )}
 
-                {leaseMode === "upload" && (
-                    <button
-                        className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
-                        onClick={handleSaveLease}
-                    >
-                      Upload Lease Agreement
-                    </button>
-                )}
-
-                {/* Mark Unit Status Button */}
-                <button
-                    className={`w-full font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
-                        status === "occupied"
-                            ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-                            : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-                    }`}
-                    onClick={toggleUnitStatus}
-                    disabled={isUpdatingStatus}
-                >
-                  {isUpdatingStatus
-                      ? "Updating Status..."
-                      : status === "occupied"
-                          ? "Mark as Unoccupied"
-                          : "Mark as Occupied"}
-                </button>
-              </div>
-
-
+                      {leaseMode === "upload" && (
+                          <button
+                              className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50"
+                              onClick={handleSaveLease}
+                          >
+                            Upload Lease Agreement
+                          </button>
+                      )}
+                    </div>
+                  </>
+              )}
             </div>
           </div>
+
         </div>
       )}
 
@@ -809,4 +797,7 @@ const LeaseDetails = ({ unitId }) => {
   );
 
 };
+
+
+
 export default LeaseDetails;

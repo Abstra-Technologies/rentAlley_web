@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
         un.unit_name,
         p.property_name,
         la.end_date,
-        la.status as lease_status
+        la.status as lease_status,
+        la.agreement_url
       FROM Tenant t
       JOIN LeaseAgreement la ON t.tenant_id = la.tenant_id
       JOIN Unit un ON la.unit_id = un.unit_id
@@ -47,6 +48,9 @@ export async function GET(req: NextRequest) {
       email: decryptData(JSON.parse(tenant.email), SECRET_KEY),
       firstName: decryptData(JSON.parse(tenant.firstName), SECRET_KEY),
       lastName: decryptData(JSON.parse(tenant.lastName), SECRET_KEY),
+      agreement_url: tenant.agreement_url
+          ? decryptData(JSON.parse(tenant.agreement_url), SECRET_KEY)
+          : null,
     }));
 
     return NextResponse.json(decryptedTenants || []);

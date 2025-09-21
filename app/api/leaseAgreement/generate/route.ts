@@ -35,9 +35,12 @@ export async function POST(req: NextRequest) {
 
         await connection.beginTransaction();
 
-        // Step 1: Find tenant from LeaseAgreement (pending) or ProspectiveTenant
+        // Step 1: Find tenant
         const [leaseRows] = await connection.execute(
-            `SELECT agreement_id, tenant_id FROM LeaseAgreement WHERE unit_id = ? AND status = 'pending' LIMIT 1`,
+            `SELECT agreement_id, tenant_id
+             FROM LeaseAgreement
+             WHERE unit_id = ? AND status = 'pending'
+             LIMIT 1`,
             [unitId]
         );
 
@@ -51,7 +54,10 @@ export async function POST(req: NextRequest) {
             isFromLeaseAgreement = true;
         } else {
             const [ptRows] = await connection.execute(
-                `SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1`,
+                `SELECT tenant_id
+                 FROM ProspectiveTenant
+                 WHERE unit_id = ? AND status = 'approved'
+                 LIMIT 1`,
                 [unitId]
             );
 
@@ -66,7 +72,9 @@ export async function POST(req: NextRequest) {
 
         // Step 2: Prevent duplicate active lease
         const [existingLease] = await connection.execute(
-            `SELECT agreement_id FROM LeaseAgreement WHERE tenant_id = ? AND unit_id = ? AND status != 'pending'`,
+            `SELECT agreement_id
+             FROM LeaseAgreement
+             WHERE tenant_id = ? AND unit_id = ? AND status != 'pending'`,
             [tenant_id, unitId]
         );
 
@@ -111,15 +119,15 @@ export async function POST(req: NextRequest) {
         // Step 5: Insert or Update LeaseAgreement
         if (isFromLeaseAgreement && agreement_id) {
             await connection.execute(
-                `UPDATE LeaseAgreement 
-         SET agreement_url = ?, start_date = ?, end_date = ?, updated_at = NOW() 
-         WHERE agreement_id = ?`,
+                `UPDATE LeaseAgreement
+                 SET agreement_url = ?, start_date = ?, end_date = ?, updated_at = NOW()
+                 WHERE agreement_id = ?`,
                 [encryptedUrl, startDate, endDate, agreement_id]
             );
         } else {
             await connection.execute(
                 `INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, agreement_url, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+                 VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
                 [tenant_id, unitId, startDate, endDate, encryptedUrl]
             );
         }
@@ -127,8 +135,12 @@ export async function POST(req: NextRequest) {
         await connection.commit();
         connection.release();
 
+        // ✅ return fileBase64 in addition to signedUrl
         return NextResponse.json({
             message: "Lease agreement generated & uploaded successfully.",
+            fileBase64: Buffer.from(pdfBuffer).toString("base64"),
+            signedUrl: s3Url,
+            fileKey: s3Key,
         });
     } catch (error: any) {
         await connection.rollback();
@@ -140,3 +152,4 @@ export async function POST(req: NextRequest) {
         );
     }
 }
+

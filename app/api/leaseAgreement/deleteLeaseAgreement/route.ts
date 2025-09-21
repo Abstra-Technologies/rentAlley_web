@@ -23,100 +23,85 @@ export async function DELETE(req: NextRequest) {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    const [tenantRows] = await connection.execute(
-      "SELECT tenant_id FROM ProspectiveTenant WHERE unit_id = ? AND status = 'approved' LIMIT 1",
-      [unit_id]
+    // 🔑 Get lease (keep it, just clear file)
+    const [leaseRows]: any = await connection.execute(
+        "SELECT agreement_url, agreement_id, tenant_id FROM LeaseAgreement WHERE unit_id = ? LIMIT 1",
+        [unit_id]
     );
 
-    // @ts-ignore
-    if (!tenantRows || tenantRows.length === 0) {
-      return NextResponse.json(
-        { error: "No approved tenant found for this unit" },
-        { status: 404 }
-      );
-    }
-
-    // @ts-ignore
-    const tenant_id = tenantRows[0].tenant_id;
-
-    const [leaseRows] = await connection.execute(
-      "SELECT agreement_url, agreement_id FROM LeaseAgreement WHERE unit_id = ? AND tenant_id = ?",
-      [unit_id, tenant_id]
-    );
-
-    // @ts-ignore
     if (!leaseRows || leaseRows.length === 0) {
+      connection.release();
       return NextResponse.json({ error: "Lease not found" }, { status: 404 });
     }
 
-    let leaseFileUrl: string;
+    const lease = leaseRows[0];
+    const tenant_id = lease.tenant_id;
 
+    // If no URL, nothing to delete
+    if (!lease.agreement_url) {
+      connection.release();
+      return NextResponse.json({
+        success: true,
+        message: "No lease file attached to delete",
+      });
+    }
+
+    // 🔓 Decrypt file URL
+    let leaseFileUrl: string;
     try {
-      // @ts-ignore
       leaseFileUrl = decryptData(
-          // @ts-ignore
-          JSON.parse(leaseRows[0].agreement_url),
-        process.env.ENCRYPTION_SECRET!
+          JSON.parse(lease.agreement_url), // remove JSON.parse if you store raw ciphertext
+          process.env.ENCRYPTION_SECRET!
       );
     } catch (decryptionError) {
+      connection.release();
       console.error("Decryption Error:", decryptionError);
       return NextResponse.json(
-        { error: "Failed to decrypt lease file URL." },
-        { status: 500 }
+          { error: "Failed to decrypt lease file URL." },
+          { status: 500 }
       );
     }
 
-    const s3Key = new URL(leaseFileUrl).pathname.substring(1);
-
+    // 🗑️ Delete from S3
     try {
+      const s3Key = new URL(leaseFileUrl).pathname.substring(1);
       await s3Client.send(
-        new DeleteObjectCommand({
-          Bucket: process.env.NEXT_S3_BUCKET_NAME!,
-          Key: s3Key,
-        })
+          new DeleteObjectCommand({
+            Bucket: process.env.NEXT_S3_BUCKET_NAME!,
+            Key: s3Key,
+          })
       );
     } catch (s3Error) {
+      connection.release();
       console.error("S3 Deletion Error:", s3Error);
       return NextResponse.json(
-        { error: "Failed to delete lease file from S3." },
-        { status: 500 }
+          { error: "Failed to delete lease file from S3." },
+          { status: 500 }
       );
     }
 
-    const [deleteResult] = await connection.execute(
-      "DELETE FROM LeaseAgreement WHERE agreement_id = ?",
-        // @ts-ignore
-
-        [leaseRows[0].agreement_id]
-    );
-
-    // @ts-ignore
-    if (deleteResult.affectedRows === 0) {
-      return NextResponse.json({ error: "Lease not found" }, { status: 404 });
-    }
-
+    // ❌ Clear only the URL (keep lease record!)
     await connection.execute(
-      "UPDATE ProspectiveTenant SET status = 'pending' WHERE tenant_id = ? AND unit_id = ?",
-      [tenant_id, unit_id]
-    );
-
-    await connection.execute(
-      "UPDATE Unit SET status = 'unoccupied' WHERE unit_id = ?",
-      [unit_id]
+        "UPDATE LeaseAgreement SET agreement_url = NULL WHERE agreement_id = ?",
+        [lease.agreement_id]
     );
 
     await connection.commit();
     connection.release();
 
     return NextResponse.json({
-      message: "Lease agreement and related data deleted successfully",
+      success: true,
+      unit_id,
+      tenant_id,
+      message: "Lease file deleted successfully, record kept",
     });
   } catch (error: any) {
     if (connection) await connection.rollback();
-    console.error("Error deleting lease:", error);
+    if (connection) connection.release?.();
+    console.error("Error deleting lease file:", error);
     return NextResponse.json(
-      { error: "Internal server error", message: error.message },
-      { status: 500 }
+        { error: "Internal server error", message: error.message },
+        { status: 500 }
     );
   }
 }

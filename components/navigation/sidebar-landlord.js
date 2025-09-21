@@ -65,7 +65,7 @@ const LandlordLayout = ({ children }) => {
   };
 
   return (
-      <div className="flex flex-col md:flex-row h-screen">
+      <div className="flex h-screen">
         {/* Mobile Topbar */}
         <div className="md:hidden p-4 bg-white shadow-sm flex justify-between items-center">
           <h1 className="text-xl font-bold text-blue-900"> </h1>
@@ -77,17 +77,18 @@ const LandlordLayout = ({ children }) => {
           </button>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar (fixed, no scroll) */}
         <div
-            className={`${
-                isMobileMenuOpen ? "block" : "hidden"
-            } md:block w-full md:w-64 bg-white shadow-lg md:h-screen md:overflow-y-auto`}
+            className={`
+        ${isMobileMenuOpen ? "block" : "hidden"}
+        md:block w-full md:w-64 bg-white shadow-lg
+        h-screen
+      `}
         >
           <div className="hidden md:block p-6">
-            <h1 className="text-xl font-bold text-blue-900">UpKeep</h1>
           </div>
 
-          <nav className="px-4 py-2 md:py-0">
+          <nav className="px-4 py-2">
             <ul className="space-y-2">
               {menuItems.map(({ href, icon: Icon, label }) => {
                 const isActive = pathname === href;
@@ -100,15 +101,13 @@ const LandlordLayout = ({ children }) => {
                     ${isActive ? "bg-blue-50 text-blue-700 font-bold" : "hover:bg-gray-100"}
                   `}
                       >
-                        {/* Gradient indicator line (hover only) */}
-                        <span
-                            className={`
-                      absolute left-0 top-0 h-full w-1 rounded-r 
+                  <span
+                      className={`
+                      absolute left-0 top-0 h-full w-1 rounded-r
                       bg-gradient-to-b from-blue-600 via-teal-500 to-emerald-400
                       opacity-0 group-hover:opacity-100 transition-opacity duration-300
                     `}
-                        ></span>
-
+                  ></span>
                         <Icon
                             className={`w-5 h-5 mr-3 ${isActive ? "text-blue-700" : "text-gray-500"}`}
                         />
@@ -124,12 +123,10 @@ const LandlordLayout = ({ children }) => {
           </nav>
         </div>
 
-        {/* Content (scrollable) */}
-        {/* Content (scrollable but hidden scrollbar) */}
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto scrollbar-none">
+        {/* Content (scrollable only) */}
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
           {children}
         </div>
-
       </div>
   );
 

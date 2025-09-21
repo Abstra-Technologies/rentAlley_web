@@ -37,6 +37,11 @@ body {
     @apply text-4xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent  select-none;
 }
 
+.gardient-subtitle{
+    @apply text-xl text-gray-700 leading-tight select-none;
+
+}
+
 .gradient-hero {
     @apply text-3xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent;
 }

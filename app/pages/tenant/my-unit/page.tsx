@@ -11,6 +11,8 @@ import Image from "next/image";
 import { IoChatboxEllipsesSharp } from "react-icons/io5";
 import InstallPrompt from "@/components/Commons/installPrompt";
 import { useChatStore } from "@/zustand/chatStore";
+import LoadingScreen from "@/components/loadingScreen";
+import LeaseCounter from "@/components/tenant/analytics-insights/LeaseCounter";
 
 interface Unit {
     unit_id: string;
@@ -67,7 +69,11 @@ export default function MyUnit() {
         if (user?.tenant_id) fetchUnits();
     }, [user]);
 
-    if (loading) return <p className="text-center mt-10">Loading your units...</p>;
+    if (loading) return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+             <LoadingScreen message='Just a moment, getting things ready...' />;
+        </div>
+    );
 
     const handleUploadProof = async (
         unitId: string,
@@ -217,10 +223,11 @@ export default function MyUnit() {
     const toNumber = (val: any) => Number(val) || 0;
 
     return (
+        <>
         <div className="flex min-h-screen bg-gray-50">
             <TenantOutsidePortalNav />
             <div className="max-w-7xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-semibold mb-6">My Current Units</h1>
+                <h1 className="gradient-header">My Units</h1>
                 <button
                     className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200"
                     onClick={() => {
@@ -229,6 +236,11 @@ export default function MyUnit() {
                 >
                     View Invitations
                 </button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <LeaseCounter tenantId={user?.tenant_id} />
+                </div>
+
                 {units.length === 0 ? (
                     <p className="text-gray-500">You currently have no active leases.</p>
                 ) : (
@@ -309,5 +321,6 @@ export default function MyUnit() {
                 )}
             </div>
         </div>
+        </>
     );
 }

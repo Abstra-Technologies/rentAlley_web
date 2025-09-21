@@ -1,5 +1,4 @@
 
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
@@ -17,15 +16,15 @@ export async function GET(req: NextRequest) {
   try {
     // 🔑 Get property and landlord info
     const [property] = await db.execute(
-        `SELECT 
-          p.*,
-          l.landlord_id,
-          u.firstName AS enc_firstName,
-          u.lastName AS enc_lastName
-       FROM Property p
-       JOIN Landlord l ON p.landlord_id = l.landlord_id
-       JOIN User u ON l.user_id = u.user_id
-       WHERE p.property_id = ?;`,
+        `SELECT
+           p.*,
+           l.landlord_id,
+           u.firstName AS enc_firstName,
+           u.lastName AS enc_lastName
+         FROM Property p
+                JOIN Landlord l ON p.landlord_id = l.landlord_id
+                JOIN User u ON l.user_id = u.user_id
+         WHERE p.property_id = ?;`,
         [id]
     );
 
@@ -64,12 +63,20 @@ export async function GET(req: NextRequest) {
         })
         .filter(Boolean);
 
-    // 🏘 Units
+    // 🏘 Units with lease agreement info
     const [units] = await db.execute(
-        `SELECT * FROM Unit WHERE property_id = ?;`,
+        `SELECT
+           u.*,
+           la.status AS lease_status
+         FROM Unit u
+                LEFT JOIN LeaseAgreement la
+                          ON u.unit_id = la.unit_id
+                            AND la.status IN ('pending', 'active') -- block on active/pending leases
+         WHERE u.property_id = ?;`,
         [id]
     );
 
+    // Collect unit IDs for photos
     // @ts-ignore
     const unitIds = units.map((u: any) => u.unit_id).join(",") || "NULL";
 
@@ -77,6 +84,7 @@ export async function GET(req: NextRequest) {
         `SELECT unit_id, photo_url FROM UnitPhoto WHERE unit_id IN (${unitIds});`
     );
 
+    // Attach photos + effective status
     // @ts-ignore
     const unitsWithPhotos = units.map((unit: any) => {
       const unitPhotosForThisUnit = unitPhotos
@@ -92,23 +100,32 @@ export async function GET(req: NextRequest) {
           })
           .filter(Boolean);
 
+      // Mark effective occupancy
+      const effective_status =
+          unit.status === "occupied" || unit.lease_status
+              ? "occupied"
+              : "available";
+
       return {
         ...unit,
         photos: unitPhotosForThisUnit,
         sec_deposit: unit.sec_deposit,
         advanced_payment: unit.advanced_payment,
+        lease_status: unit.lease_status || null,
+        effective_status,
       };
     });
 
     // 💳 Payment methods
     const [paymentMethods] = await db.execute(
         `SELECT pm.method_id, m.method_name
-       FROM PropertyPaymentMethod pm
-       JOIN PaymentMethod m ON pm.method_id = m.method_id
-       WHERE pm.property_id = ?;`,
+         FROM PropertyPaymentMethod pm
+                JOIN PaymentMethod m ON pm.method_id = m.method_id
+         WHERE pm.property_id = ?;`,
         [id]
     );
 
+    // ✅ Response
     // @ts-ignore
     return NextResponse.json({
       // @ts-ignore

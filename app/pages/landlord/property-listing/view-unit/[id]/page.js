@@ -983,6 +983,7 @@ const ViewUnitPage = () => {
       </div>
     </LandlordLayout>
   );
+
 };
 
 export default ViewUnitPage;

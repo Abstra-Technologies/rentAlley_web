@@ -31,7 +31,7 @@ export default function AnnouncementFeed({ tenant_id }: { tenant_id: number | un
 
     return (
         <div className="w-full max-w-2xl mx-auto space-y-6">
-            <h2 className="text-xl font-bold mb-4">Announcements</h2>
+            <h2 className="text-xl font-bold mb-4"></h2>
 
             {announcements.length === 0 ? (
                 <p className="text-gray-500 text-center">No announcements available.</p>

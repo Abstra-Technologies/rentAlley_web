@@ -43,31 +43,11 @@ export default function ActiveRentConsolidatedCards({ tenant_id }: TenantFeedsCa
     if (loading) return <div>Loading...</div>;
 
     return (
-        <div className="space-y-4 w-full">
+        <div className="w-full p-6 bg-white shadow rounded-lg text-center">
             <h2 className="text-xl font-semibold mb-2">Active Rentals</h2>
-            <div className="text-lg mb-4">Total Active Units: {totalActive}</div>
-            <ul className="space-y-2 max-h-60 overflow-y-auto">
-                {units.map((unit) => (
-                    <li
-                        key={unit.unit_id}
-                        className="p-2 border rounded flex justify-between items-center"
-                    >
-                        <div>
-                            <div className="font-medium">{unit.unit_name}</div>
-                            <div className="text-sm text-gray-500">{unit.property_name}</div>
-                        </div>
-                        <span
-                            className={`text-xs px-2 py-1 rounded ${
-                                unit.status === "active"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-gray-100 text-gray-800"
-                            }`}
-                        >
-              {unit.status}
-            </span>
-                    </li>
-                ))}
-            </ul>
+            <p className="text-3xl font-bold text-green-600">{totalActive}</p>
+            <p className="text-sm text-gray-500">Total Active Units</p>
         </div>
     );
+
 }

@@ -16,6 +16,7 @@ type Contact = {
     property_name: string;
     unit_name: string;
     lease_status: string;
+    agreement_url: string;
 };
 
 export default function ContactsPage() {
@@ -45,12 +46,6 @@ export default function ContactsPage() {
     }, [user?.landlord_id]);
 
     const columns: MRT_ColumnDef<Contact>[] = [
-        // {
-        //     accessorFn: (row) => `${row.firstName} ${row.lastName}`,
-        //     id: "fullName",
-        //     header: "Tenant",
-        // },
-        // { accessorKey: "email", header: "Email" },
         {
             accessorFn: (row) => `${row.property_name} - ${row.unit_name}`,
             id: "propertyUnit",
@@ -87,18 +82,43 @@ export default function ContactsPage() {
                             backgroundColor: bg,
                         }}
                     >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
+          {status.charAt(0).toUpperCase() + status.slice(1)}
+        </span>
                 );
             },
-        }
+        },
+        {
+            accessorKey: "agreement_url",
+            header: "Document Link",
+            Cell: ({ cell }) => {
+                const url = cell.getValue<string>();
+                return url ? (
+                    <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline font-medium"
+                    >
+                        View
+                    </a>
+                ) : (
+                    <span className="text-gray-400 italic">N/A</span>
+                );
+            },
+        },
     ];
 
+
     return (
+        <div className="min-h-screen">
         <LandlordLayout>
-            <h1 className='gradient-hero'>
-                Lease Contracts
-            </h1>
+            <div className="mb-6">
+                <h1 className="gradient-header">Lease Contracts</h1>
+                <p className="gardient-subtitle">
+                    Manage, track, and monitor all your lease agreements in one place.
+                </p>
+            </div>
+
             <LeaseStatusInfo />
 
         <Box p={3}>
@@ -114,5 +134,6 @@ export default function ContactsPage() {
         </Box>
 
         </LandlordLayout>
+        </div>
     );
 }

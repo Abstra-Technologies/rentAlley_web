@@ -42,22 +42,32 @@ export default function PropertyDetails() {
         setProperty(data);
 
         if (data.units && data.units.length > 0) {
+          // ✅ Pick the first *truly available* unit
           const availableUnit = data.units.find(
-            (unit) => unit.status !== "occupied"
+              (unit: any) =>
+                  unit.effective_status === "available" &&
+                  (!unit.lease_status || !["occupied", "active"].includes(unit.lease_status))
           );
+
           if (availableUnit) {
             setSelectedUnitId(availableUnit.unit_id);
             setSelectedUnit(availableUnit);
+          } else {
+            // no available unit found
+            setSelectedUnitId(null);
+            setSelectedUnit(null);
           }
         }
-      } catch (error) {
-        console.error(error.message);
+      } catch (error: any) {
+        console.error("Error fetching property details:", error.message);
       } finally {
         setLoading(false);
       }
     }
+
     fetchPropertyDetails();
   }, [id]);
+
 
   useEffect(() => {
     if (!id) return;
@@ -392,105 +402,106 @@ export default function PropertyDetails() {
                 <>
                   {/* Units List */}
                   <div className="space-y-4">
+
                     {property.units.map((unit) => {
-                      const isOccupied = unit.status === "occupied";
+                      const isOccupied = unit.effective_status === "occupied"; // ✅ use effective_status
+
                       return (
-                        <div
-                          key={unit.unit_id}
-                          className={`border p-4 rounded-lg cursor-pointer transition hover:shadow-md ${
-                            isOccupied
-                              ? "border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100"
-                              : "border-green-200 hover:border-green-300 bg-green-50 hover:bg-green-100"
-                          }`}
-                          onClick={() => handleUnitSelection(unit.unit_id)}
-                        >
-                          <div className="flex flex-col md:flex-row md:items-center">
-                            {/* Unit Image */}
-                            <div className="w-full md:w-1/4 mb-4 md:mb-0">
-                              {unit.photos ? (
-                                <div className="relative h-28 w-full rounded-lg overflow-hidden">
-                                  <Image
-                                    src={unit.photos[0]}
-                                    alt={unit.unit_name}
-                                    fill
-                                    loading="lazy"
-                                    className="object-cover"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="h-28 w-full bg-gray-200 rounded-lg flex items-center justify-center">
-                                  <span className="text-gray-400 text-sm">
-                                    No Image
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Unit Details */}
-                            <div className="md:flex-1 md:ml-4">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-semibold text-lg">
-                                    {unit.unit_name}
-                                  </h3>
-                                  <div className="flex flex-wrap gap-3 mt-2">
-                                    <div className="flex items-center text-gray-600 text-sm">
-                                      <FaRuler className="mr-1" />
-                                      <span>{unit.unit_size} sqm</span>
+                          <div
+                              key={unit.unit_id}
+                              className={`border p-4 rounded-lg transition ${
+                                  isOccupied
+                                      ? "border-red-200 bg-red-50 opacity-60 cursor-not-allowed pointer-events-none"
+                                      : "border-green-200 hover:border-green-300 bg-green-50 hover:bg-green-100 cursor-pointer hover:shadow-md"
+                              }`}
+                              onClick={!isOccupied ? () => handleUnitSelection(unit.unit_id) : undefined}
+                          >
+                            <div className="flex flex-col md:flex-row md:items-center">
+                              {/* Unit Image */}
+                              <div className="w-full md:w-1/4 mb-4 md:mb-0">
+                                {unit.photos && unit.photos.length > 0 ? (
+                                    <div className="relative h-28 w-full rounded-lg overflow-hidden">
+                                      <Image
+                                          src={unit.photos[0]}
+                                          alt={unit.unit_name}
+                                          fill
+                                          loading="lazy"
+                                          className="object-cover"
+                                      />
                                     </div>
-                                    <div className="flex items-center text-gray-600 text-sm">
-                                      <FaCouch className="mr-1" />
-                                      <span>
-                                        {unit.furnish
-                                          .split("_")
-                                          .map(
-                                            (word) =>
-                                              word.charAt(0).toUpperCase() +
-                                              word.slice(1)
-                                          )
-                                          .join(" ")}
-                                      </span>
+                                ) : (
+                                    <div className="h-28 w-full bg-gray-200 rounded-lg flex items-center justify-center">
+                                      <span className="text-gray-400 text-sm">No Image</span>
                                     </div>
-                                  </div>
-                                </div>
-
-                                <div className="text-right">
-                                  <div className="font-bold text-lg text-blue-600">
-                                    ₱{unit.rent_amount.toLocaleString()}
-                                    <span className="text-sm text-gray-500">
-                                      {" "}
-                                      /month
-                                    </span>
-                                  </div>
-                                  <span
-                                    className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                                      isOccupied
-                                        ? "bg-red-100 text-red-600"
-                                        : "bg-green-100 text-green-600"
-                                    }`}
-                                  >
-                                    {isOccupied ? "Occupied" : "Available"}
-                                  </span>
-                                </div>
+                                )}
                               </div>
 
-                              {/* View Details Button */}
-                              <div className="mt-3 flex justify-end">
-                                <button
-                                  className={`px-4 py-1.5 rounded-md text-sm font-medium flex items-center transition ${
-                                    isOccupied
-                                      ? "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
-                                      : "bg-blue-600 text-white hover:bg-blue-700"
-                                  }`}
-                                >
-                                  View Details
-                                </button>
+                              {/* Unit Details */}
+                              <div className="md:flex-1 md:ml-4">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h3 className="font-semibold text-lg">{unit.unit_name}</h3>
+                                    <div className="flex flex-wrap gap-3 mt-2">
+                                      <div className="flex items-center text-gray-600 text-sm">
+                                        <FaRuler className="mr-1" />
+                                        <span>{unit.unit_size} sqm</span>
+                                      </div>
+                                      <div className="flex items-center text-gray-600 text-sm">
+                                        <FaCouch className="mr-1" />
+                                        <span>
+                    {unit.furnish
+                        .split("_")
+                        .map(
+                            (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                        )
+                        .join(" ")}
+                  </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <div className="font-bold text-lg text-blue-600">
+                                      ₱{unit.rent_amount.toLocaleString()}
+                                      <span className="text-sm text-gray-500"> /month</span>
+                                    </div>
+                                    <span
+                                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                                            isOccupied
+                                                ? "bg-red-100 text-red-600"
+                                                : "bg-green-100 text-green-600"
+                                        }`}
+                                    >
+             {isOccupied
+                 ? unit.lease_status === "active"
+                     ? "Active"
+                     : "Occupied"
+                 : "Available"}
+
+              </span>
+                                  </div>
+                                </div>
+
+                                {/* View Details Button */}
+                                <div className="mt-3 flex justify-end">
+                                  <button
+                                      disabled={isOccupied} // ✅ disable button if not available
+                                      className={`px-4 py-1.5 rounded-md text-sm font-medium flex items-center transition ${
+                                          isOccupied
+                                              ? "bg-white text-gray-600 border border-gray-300 cursor-not-allowed"
+                                              : "bg-blue-600 text-white hover:bg-blue-700"
+                                      }`}
+                                  >
+                                    View Details
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
                       );
                     })}
+
                   </div>
                 </>
               )}

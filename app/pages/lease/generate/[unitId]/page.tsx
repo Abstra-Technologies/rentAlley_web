@@ -4,14 +4,13 @@
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
-// Load Quill editor dynamically (fixes SSR issues)
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
-import 'react-quill-new/dist/quill.snow.css';
+import "react-quill-new/dist/quill.snow.css";
 import useAuthStore from "@/zustand/authStore";
 
 export default function LeaseEditor() {
     const searchParams = useSearchParams();
-    const { user, admin, loading,fetchSession } = useAuthStore();
+    const { user, admin, fetchSession } = useAuthStore();
 
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
@@ -22,12 +21,55 @@ export default function LeaseEditor() {
     const securityDeposit = searchParams.get("securityDeposit");
 
     const [content, setContent] = useState("");
+    const [generatedFileUrl, setGeneratedFileUrl] = useState<string | null>(null);
+    const [signUrl, setSignUrl] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [fileBase64, setFileBase64] = useState<string | null>(null);
 
     useEffect(() => {
         if (!user && !admin) {
             fetchSession();
         }
     }, [user, admin]);
+
+    useEffect(() => {
+        const regenerateSignUrl = async () => {
+            if (fileBase64 && user?.email) {
+                try {
+                    // fetch tenant email from API
+                    const tenantRes = await fetch(
+                        `/api/tenant/getByUnit?unitId=${searchParams.get("unitId")}`
+                    );
+                    const tenantData = await tenantRes.json();
+                    const tenantEmail = tenantData?.email || "tenant@upkyp.local";
+
+                    const res = await fetch(
+                        "/api/leaseAgreement/generate/sendToDocuSign",
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                unitId: searchParams.get("unitId"),
+                                landlordEmail: user.email,
+                                tenantEmail,
+                                fileBase64,
+                            }),
+                        }
+                    );
+
+                    const data = await res.json();
+                    if (res.ok) {
+                        setSignUrl(data.signUrl);
+                    }
+                } catch (err) {
+                    console.error("Failed to regenerate signing URL:", err);
+                }
+            }
+        };
+
+        regenerateSignUrl();
+    }, [fileBase64, user?.email, searchParams]);
+
 
     useEffect(() => {
         setContent(`
@@ -98,47 +140,130 @@ export default function LeaseEditor() {
     `);
     }, [tenantName, propertyName, unitName, startDate, endDate, monthlyRent, securityDeposit, user]);
 
-
+    // Step 1: Save lease + generate PDF
     const handleSave = async () => {
-        console.log("Final lease content:", content);
+        setLoading(true);
+        try {
+            const res = await fetch("/api/leaseAgreement/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    unitId: searchParams.get("unitId"),
+                    startDate,
+                    endDate,
+                    content,
+                }),
+            });
 
-        const res = await fetch("/api/leaseAgreement/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                unitId: searchParams.get("unitId"),
-                startDate: searchParams.get("startDate"),
-                endDate: searchParams.get("endDate"),
-                content,
-            }),
-        });
+            const data = await res.json();
+            if (res.ok) {
+                setGeneratedFileUrl(data.signedUrl);
+                setFileBase64(data.fileBase64); // 🔑 store base64 in state
 
-        if (res.ok) {
-            alert("Lease saved and PDF generated!");
-        } else {
-            alert("Error saving lease.");
+                // fetch tenant email
+                const tenantRes = await fetch(
+                    `/api/tenant/getByUnit?unitId=${searchParams.get("unitId")}`
+                );
+                const tenantData = await tenantRes.json();
+                const tenantEmail = tenantData?.email || "tenant@upkyp.local";
+
+                // trigger signing flow
+                await handleSendForSigning(data.fileBase64, tenantEmail);
+            } else {
+                alert(data.error || "Error saving lease.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Unexpected error generating lease.");
+        } finally {
+            setLoading(false);
         }
     };
+
+    // Step 2: Send to DocuSign
+    const handleSendForSigning = async (
+        fileBase64: string,
+        tenantEmail: string
+    ) => {
+        try {
+            const res = await fetch(
+                "/api/leaseAgreement/generate/sendToDocuSign",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        unitId: searchParams.get("unitId"),
+                        landlordEmail: user?.email,
+                        tenantEmail,
+                        fileBase64,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (res.ok) {
+                setSignUrl(data.signUrl); // embedded signing link
+            } else {
+                alert(data.error || "Error sending to DocuSign.");
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
 
 
     return (
         <div className="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">
             <h1 className="text-2xl font-bold mb-4">Review Lease Agreement</h1>
 
-            <ReactQuill
-                value={content}
-                onChange={setContent}
-                className="mb-6"
-                theme="snow"
-                style={{ minHeight: "300px" }}
-            />
+            {!generatedFileUrl && !signUrl && (
+                <>
+                    <ReactQuill
+                        value={content}
+                        onChange={setContent}
+                        className="mb-6"
+                        theme="snow"
+                        style={{ minHeight: "300px" }}
+                    />
+                    <button
+                        onClick={handleSave}
+                        disabled={loading}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+                    >
+                        {loading ? "Generating..." : "Generate Lease Agreement"}
+                    </button>
+                </>
+            )}
 
-            <button
-                onClick={handleSave}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
-            >
-                Finalize & Generate PDF
-            </button>
+            {/* Step 3: Preview generated PDF */}
+            {generatedFileUrl && !signUrl && (
+                <div className="mt-6">
+                    <h2 className="text-lg font-semibold mb-2">Generated Lease Preview</h2>
+                    <iframe
+                        src={generatedFileUrl}
+                        className="w-full h-[500px] border rounded"
+                    />
+                    <p className="text-gray-500 text-sm mt-2">
+                        Waiting to start signing flow...
+                    </p>
+                </div>
+            )}
+
+            {/* Step 4: Embedded signing */}
+            {signUrl && (
+                <div className="mt-6">
+                    <h2 className="text-xl font-semibold mb-4">Sign Lease Agreement</h2>
+                    <div className="w-full h-[85vh]">
+                        <iframe
+                            src={signUrl}
+                            className="w-full h-full border rounded-xl shadow-lg"
+                            style={{ minHeight: "700px" }}
+                        />
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
