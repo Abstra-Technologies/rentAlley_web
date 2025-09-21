@@ -164,7 +164,6 @@ const useNotifications = (user, admin) => {
   };
 };
 
-// Enhanced Notification Item Component
 const NotificationItem = ({ notification, onMarkRead, onDelete, onClick }) => {
   const formatTimeAgo = (dateString) => {
     if (!dateString) return "Just now";
@@ -298,7 +297,6 @@ const NotificationItem = ({ notification, onMarkRead, onDelete, onClick }) => {
   );
 };
 
-// Enhanced Desktop Notification Dropdown
 const NotificationDropdown = ({
   notifications,
   unreadCount,
@@ -481,7 +479,6 @@ const NotificationDropdown = ({
   );
 };
 
-// Enhanced Mobile Notification Dropdown
 const MobileNotificationDropdown = ({
   notifications,
   unreadCount,
@@ -620,7 +617,6 @@ const MobileNotificationDropdown = ({
   );
 };
 
-// Enhanced Notification Section Component
 const NotificationSection = ({ user, admin }) => {
   const {
     notifications,
@@ -665,12 +661,12 @@ const NotificationSection = ({ user, admin }) => {
       <div className="hidden md:block relative" ref={notificationRef}>
         <button
           onClick={handleToggleNotifications}
-          className="relative focus:outline-none p-2 hover:bg-blue-600 rounded-full transition-all duration-200 group"
+          className="relative focus:outline-none p-2 hover:bg-white/10 rounded-lg transition-all duration-200 group border border-transparent hover:border-white/20"
           aria-label="Notifications"
         >
           <CiBellOn className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium animate-pulse">
+            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium animate-pulse shadow-lg">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -698,12 +694,12 @@ const NotificationSection = ({ user, admin }) => {
       <div className="md:hidden relative">
         <button
           onClick={handleToggleNotifications}
-          className="relative focus:outline-none p-2 hover:bg-blue-600 rounded-full transition-colors duration-200"
+          className="relative focus:outline-none p-2 hover:bg-white/10 rounded-lg transition-colors duration-200 border border-transparent hover:border-white/20"
           aria-label="Notifications"
         >
           <CiBellOn className="w-6 h-6" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[16px] h-[16px] flex items-center justify-center font-medium">
+            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs rounded-full min-w-[16px] h-[16px] flex items-center justify-center font-medium shadow-lg">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -866,7 +862,7 @@ const Navbar = () => {
 
   return (
     <>
-        <nav className="bg-gradient-to-r from-blue-800 to-emerald-600 text-white shadow-lg sticky top-0 z-50">
+      <nav className="bg-gradient-to-r from-blue-800 to-emerald-600 text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo - Responsive sizing */}
@@ -909,17 +905,16 @@ const Navbar = () => {
                 <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-t-2 border-b-2 border-white"></div>
               </div>
             ) : !user && !admin ? (
-              // Unauthenticated Desktop Actions
-              <div className="hidden md:flex space-x-2 lg:space-x-4">
+              <div className="hidden md:flex space-x-2 lg:space-x-3">
                 <Link
                   href="/pages/auth/login"
-                  className="px-3 lg:px-4 py-2 bg-white text-blue-600 rounded-md font-medium transition-all duration-300 hover:bg-gray-100 hover:shadow-md text-sm lg:text-base"
+                  className="px-4 lg:px-6 py-2.5 bg-white text-blue-600 rounded-lg font-medium transition-all duration-300 hover:bg-blue-50 hover:shadow-lg hover:scale-105 text-sm lg:text-base border border-white/20 hover:border-blue-200"
                 >
                   Login
                 </Link>
                 <Link
                   href="/pages/auth/selectRole"
-                  className="px-3 lg:px-4 py-2 bg-blue-800 rounded-md font-medium transition-all duration-300 hover:bg-blue-900 hover:shadow-md text-sm lg:text-base"
+                  className="px-4 lg:px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105 text-sm lg:text-base border border-emerald-400/50 hover:border-emerald-300"
                 >
                   Register
                 </Link>
@@ -927,14 +922,12 @@ const Navbar = () => {
             ) : (
               // Authenticated Desktop Actions
               <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
-                {/* Enhanced Notifications */}
                 <NotificationSection user={user} admin={admin} />
 
-                {/* User Dropdown */}
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={toggleDropdown}
-                    className="flex items-center space-x-1 lg:space-x-2 focus:outline-none group"
+                    className="flex items-center space-x-1 lg:space-x-2 focus:outline-none group bg-white/10 hover:bg-white/20 rounded-lg p-2 transition-all duration-200 border border-white/20 hover:border-white/40"
                   >
                     <Image
                       src={
@@ -945,14 +938,14 @@ const Navbar = () => {
                       alt="Profile"
                       width={32}
                       height={32}
-                      className="w-8 h-8 lg:w-9 lg:h-9 object-cover rounded-full border-2 border-white transition-transform duration-300 group-hover:scale-110"
+                      className="w-8 h-8 lg:w-9 lg:h-9 object-cover rounded-full border-2 border-white/30 transition-transform duration-300 group-hover:scale-110 shadow-sm"
                     />
                     <div className="hidden xl:block">
                       <div className="text-sm font-medium leading-none">
                         {user?.firstName ||
                           admin?.first_name + admin?.last_name}
                       </div>
-                      <div className="text-xs text-blue-100">
+                      <div className="text-xs text-blue-100 opacity-80">
                         {user?.userType || "Admin"}
                       </div>
                     </div>
@@ -975,8 +968,8 @@ const Navbar = () => {
                   </button>
 
                   {dropdownOpen && (
-                    <div className="absolute right-0 top-12 w-56 bg-white text-black rounded-lg shadow-xl py-2 z-10 transition-all duration-300 transform origin-top-right">
-                      <div className="px-4 py-2 border-b border-gray-100">
+                    <div className="absolute right-0 top-12 w-56 bg-white text-black rounded-xl shadow-xl py-2 z-10 transition-all duration-300 transform origin-top-right border border-gray-100">
+                      <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-emerald-50">
                         <p className="text-sm font-semibold text-gray-900">
                           {user?.firstName ||
                             admin?.first_name + " " + admin?.last_name ||
@@ -985,23 +978,23 @@ const Navbar = () => {
                         <p className="text-xs text-gray-500 truncate">
                           {user?.email || admin?.email || ""}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-gray-400 truncate">
                           {user?.user_id}
                         </p>
                       </div>
 
                       {/* Points Section */}
                       {user && (
-                        <div className="px-4 py-2 border-b border-gray-100 bg-gradient-to-r from-yellow-50 to-yellow-100">
+                        <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-yellow-50 to-orange-50">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-gray-700">
                               Reward Points
                             </span>
                             <div className="flex items-center space-x-1">
-                              <span className="text-lg font-bold text-yellow-600">
+                              <span className="text-lg font-bold text-orange-600">
                                 {user?.points}
                               </span>
-                              <span className="text-yellow-500">⭐</span>
+                              <span className="text-orange-500">⭐</span>
                             </div>
                           </div>
                         </div>
@@ -1009,11 +1002,11 @@ const Navbar = () => {
 
                       {user?.userType === "tenant" && !hasLease ? (
                         <div
-                          className="flex items-center px-4 py-2 text-gray-400 cursor-not-allowed"
+                          className="flex items-center px-4 py-3 text-gray-400 cursor-not-allowed"
                           title="You need an active lease to access the dashboard"
                         >
                           <svg
-                            className="w-4 h-4 mr-2"
+                            className="w-4 h-4 mr-3"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1037,10 +1030,10 @@ const Navbar = () => {
                                   user?.userType || "system_admin"
                                 }/dashboard`
                           }
-                          className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
+                          className="flex items-center px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 transition-all duration-200 group"
                         >
                           <svg
-                            className="w-4 h-4 mr-2"
+                            className="w-4 h-4 mr-3 text-blue-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1053,17 +1046,17 @@ const Navbar = () => {
                               d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                             ></path>
                           </svg>
-                          Dashboard
+                          <span className="font-medium">Dashboard</span>
                         </Link>
                       )}
 
                       {user && (
                         <Link
                           href={`/pages/${user.userType}/profile`}
-                          className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
+                          className="flex items-center px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 transition-all duration-200 group"
                         >
                           <svg
-                            className="w-4 h-4 mr-2"
+                            className="w-4 h-4 mr-3 text-emerald-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1076,17 +1069,17 @@ const Navbar = () => {
                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                             ></path>
                           </svg>
-                          View Profile
+                          <span className="font-medium">View Profile</span>
                         </Link>
                       )}
 
                       {user?.userType === "tenant" && (
                         <Link
                           href={`/pages/tenant/digital-passport`}
-                          className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
+                          className="flex items-center px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 transition-all duration-200 group"
                         >
                           <svg
-                            className="w-4 h-4 mr-2"
+                            className="w-4 h-4 mr-3 text-purple-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1099,17 +1092,19 @@ const Navbar = () => {
                               d="M12 12c2.28 0 4.09-1.8 4.09-4.09 0-2.28-1.8-4.09-4.09-4.09s-4.09 1.8-4.09 4.09C7.91 10.2 9.72 12 12 12zm0 2c-3.31 0-6 2.69-6 6h12c0-3.31-2.69-6-6-6z"
                             />
                           </svg>
-                          My Digital Passport
+                          <span className="font-medium">
+                            My Digital Passport
+                          </span>
                         </Link>
                       )}
 
                       {admin && (
                         <Link
                           href={`/pages/system_admin/profile/${admin.admin_id}`}
-                          className="flex items-center px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
+                          className="flex items-center px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 transition-all duration-200 group"
                         >
                           <svg
-                            className="w-4 h-4 mr-2"
+                            className="w-4 h-4 mr-3 text-emerald-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1122,7 +1117,7 @@ const Navbar = () => {
                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                             ></path>
                           </svg>
-                          View Profile
+                          <span className="font-medium">View Profile</span>
                         </Link>
                       )}
 
@@ -1130,10 +1125,10 @@ const Navbar = () => {
 
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
+                        className="flex items-center w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-all duration-200 group"
                       >
                         <svg
-                          className="w-4 h-4 mr-2"
+                          className="w-4 h-4 mr-3 text-red-600"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1146,7 +1141,7 @@ const Navbar = () => {
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                           ></path>
                         </svg>
-                        Logout
+                        <span className="font-medium">Logout</span>
                       </button>
                     </div>
                   )}
@@ -1160,53 +1155,61 @@ const Navbar = () => {
                 <NotificationSection user={user} admin={admin} />
               )}
 
-              <button
-                onClick={toggleMenu}
-                className="mobile-menu-button text-white hover:text-gray-300 focus:outline-none p-1.5 sm:p-2 rounded-md hover:bg-blue-600 transition-colors duration-200"
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
-              >
-                <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
+              {user || admin ? (
+                <button
+                  onClick={toggleMenu}
+                  className="mobile-menu-button focus:outline-none p-1.5 sm:p-2 rounded-lg hover:bg-white/10 transition-all duration-200 border border-transparent hover:border-white/20"
+                  aria-label={menuOpen ? "Close menu" : "Open menu"}
                 >
-                  {menuOpen ? (
+                  <Image
+                    src={
+                      user?.profilePicture ||
+                      admin?.profile_picture ||
+                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                    }
+                    alt="Profile"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 object-cover rounded-full border-2 border-white/30 transition-transform duration-300 hover:scale-110 shadow-sm"
+                  />
+                </button>
+              ) : (
+                <button
+                  onClick={toggleMenu}
+                  className="mobile-menu-button focus:outline-none p-1.5 sm:p-2 rounded-lg hover:bg-white/10 transition-colors duration-200 border border-transparent hover:border-white/20"
+                  aria-label={menuOpen ? "Close menu" : "Open menu"}
+                >
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  )}
-                </svg>
-              </button>
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Enhanced Mobile Menu Overlay */}
         {menuOpen && (
           <div className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-60 transition-opacity duration-300 backdrop-blur-sm">
             <div
               ref={mobileMenuRef}
-              className="fixed inset-y-0 right-0 max-w-sm w-full bg-gradient-to-b from-blue-600 to-blue-700 shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto"
+              className="fixed inset-y-0 right-0 max-w-sm w-full bg-gradient-to-b from-blue-600 via-blue-700 to-emerald-600 shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto border-l-4 border-emerald-400"
             >
-              {/* Enhanced Mobile Menu Header */}
-              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-blue-500/30 bg-blue-600/50 backdrop-blur-sm">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-emerald-500/30 bg-gradient-to-r from-blue-600/80 to-emerald-600/80 backdrop-blur-sm">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <div className="p-2 bg-gradient-to-r from-white/20 to-white/15 rounded-xl backdrop-blur-sm border border-white/30 shadow-lg">
                     <Image
-                      src="/Hestia-logo.svg"
-                      alt="Hestia Logo"
+                      src="/upkyptxt.png"
+                      alt="UpKyp Logo"
                       width={80}
                       height={20}
                       priority
@@ -1216,7 +1219,7 @@ const Navbar = () => {
                 </div>
                 <button
                   onClick={() => setMenuOpen(false)}
-                  className="p-2 rounded-lg hover:bg-white/20 transition-all duration-200 backdrop-blur-sm"
+                  className="p-2 rounded-xl hover:bg-gradient-to-r hover:from-white/25 hover:to-white/20 transition-all duration-200 backdrop-blur-sm border border-white/30 hover:border-white/50 shadow-lg"
                   aria-label="Close menu"
                 >
                   <svg
@@ -1235,11 +1238,9 @@ const Navbar = () => {
                 </button>
               </div>
 
-              {/* Enhanced Mobile Menu Content */}
               <div className="px-4 sm:px-6 py-4 space-y-2">
-                {/* Enhanced User Info Section */}
                 {(user || admin) && (
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/20">
+                  <div className="bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/20 shadow-lg">
                     <div className="flex items-center space-x-4">
                       <div className="relative">
                         <Image
@@ -1253,7 +1254,7 @@ const Navbar = () => {
                           height={56}
                           className="w-14 h-14 object-cover rounded-full border-3 border-white/30 shadow-lg"
                         />
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-white shadow-sm"></div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-white text-lg truncate">
@@ -1264,7 +1265,7 @@ const Navbar = () => {
                         </div>
                         {user && (
                           <div className="flex items-center space-x-1 mt-2">
-                            <div className="bg-yellow-500/20 px-2 py-1 rounded-lg border border-yellow-400/30">
+                            <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 px-2 py-1 rounded-lg border border-yellow-400/30 backdrop-blur-sm">
                               <span className="text-yellow-200 text-xs font-medium">
                                 ⭐ {user?.points ?? 0} points
                               </span>
@@ -1276,16 +1277,15 @@ const Navbar = () => {
                   </div>
                 )}
 
-                {/* Enhanced Navigation Links */}
                 <div className="space-y-1">
                   {navigationLinks.map((link, index) => (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="flex items-center py-3 px-4 rounded-xl hover:bg-white/10 transition-all duration-200 text-white group border border-transparent hover:border-white/20"
+                      className="flex items-center py-4 px-4 rounded-xl hover:bg-gradient-to-r hover:from-white/10 hover:to-white/5 transition-all duration-200 text-white group border border-transparent hover:border-white/20 shadow-sm hover:shadow-lg"
                       onClick={() => setMenuOpen(false)}
                     >
-                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-3 group-hover:bg-white/30 transition-colors">
+                      <div className="w-10 h-10 bg-gradient-to-r from-white/20 to-white/10 rounded-xl flex items-center justify-center mr-3 group-hover:from-white/30 group-hover:to-white/20 transition-all border border-white/20 group-hover:border-white/40">
                         <span className="text-white text-sm font-medium">
                           {index + 1}
                         </span>
@@ -1308,16 +1308,15 @@ const Navbar = () => {
                   ))}
                 </div>
 
-                {/* Enhanced Auth Actions for Non-authenticated Users */}
                 {!user && !admin ? (
                   <div className="flex flex-col space-y-3 pt-6 border-t border-white/20 mt-6">
                     <Link
                       href="/pages/auth/login"
-                      className="flex items-center justify-center py-3 bg-white text-blue-600 rounded-xl font-semibold transition-all duration-200 hover:bg-gray-100 shadow-lg"
+                      className="flex items-center justify-center py-4 bg-white text-blue-600 rounded-xl font-semibold transition-all duration-200 hover:bg-blue-50 shadow-lg hover:shadow-xl border border-white/20"
                       onClick={() => setMenuOpen(false)}
                     >
                       <svg
-                        className="w-5 h-5 mr-2"
+                        className="w-5 h-5 mr-2 text-blue-600"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -1333,7 +1332,7 @@ const Navbar = () => {
                     </Link>
                     <Link
                       href="/pages/auth/selectRole"
-                      className="flex items-center justify-center py-3 bg-white/20 backdrop-blur-sm rounded-xl font-semibold transition-all duration-200 hover:bg-white/30 border border-white/30"
+                      className="flex items-center justify-center py-4 bg-gradient-to-r from-emerald-500 to-emerald-400 backdrop-blur-sm rounded-xl font-semibold transition-all duration-200 hover:from-emerald-400 hover:to-emerald-300 border border-emerald-400/50 shadow-lg hover:shadow-xl"
                       onClick={() => setMenuOpen(false)}
                     >
                       <svg
@@ -1353,11 +1352,10 @@ const Navbar = () => {
                     </Link>
                   </div>
                 ) : (
-                  /* Enhanced User Actions for Authenticated Users */
                   <div className="pt-6 border-t border-white/20 mt-6 space-y-1">
                     {user?.userType === "tenant" && !hasLease ? (
-                      <div className="flex items-center py-3 px-4 text-white/50 cursor-not-allowed rounded-xl border border-white/10">
-                        <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mr-3">
+                      <div className="flex items-center py-4 px-4 text-white/50 cursor-not-allowed rounded-xl border border-white/10 bg-white/5">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mr-3 border border-white/20">
                           <svg
                             className="w-4 h-4"
                             fill="none"
@@ -1372,7 +1370,9 @@ const Navbar = () => {
                             />
                           </svg>
                         </div>
-                        Dashboard (Restricted)
+                        <span className="font-medium">
+                          Dashboard (Restricted)
+                        </span>
                       </div>
                     ) : (
                       <Link
@@ -1383,12 +1383,12 @@ const Navbar = () => {
                                 user?.userType || "system_admin"
                               }/dashboard`
                         }
-                        className="flex items-center py-3 px-4 rounded-xl hover:bg-white/10 transition-all duration-200 group border border-transparent hover:border-white/20"
+                        className="flex items-center py-4 px-4 rounded-xl hover:bg-gradient-to-r hover:from-white/10 hover:to-white/5 transition-all duration-200 group border border-transparent hover:border-white/20 shadow-sm hover:shadow-lg"
                         onClick={() => setMenuOpen(false)}
                       >
-                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-3 group-hover:bg-white/30 transition-colors">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500/20 to-blue-400/20 rounded-xl flex items-center justify-center mr-3 group-hover:from-blue-500/30 group-hover:to-blue-400/30 transition-all border border-blue-400/30 group-hover:border-blue-400/40">
                           <svg
-                            className="w-4 h-4"
+                            className="w-4 h-4 text-blue-200"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1401,7 +1401,121 @@ const Navbar = () => {
                             />
                           </svg>
                         </div>
+                        <span className="font-medium">Dashboard</span>
+                        <svg
+                          className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100 transition-opacity"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </Link>
+                    )}
+
+                    {user && (
+                      <Link
+                        href={`/pages/${user.userType}/profile`}
+                        className="flex items-center py-4 px-4 rounded-xl hover:bg-gradient-to-r hover:from-white/10 hover:to-white/5 transition-all duration-200 group border border-transparent hover:border-white/20 shadow-sm hover:shadow-lg"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-r from-emerald-500/20 to-emerald-400/20 rounded-xl flex items-center justify-center mr-3 group-hover:from-emerald-500/30 group-hover:to-emerald-400/30 transition-all border border-emerald-400/30 group-hover:border-emerald-400/40">
+                          <svg
+                            className="w-4 h-4 text-emerald-200"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                        </div>
                         <span className="font-medium">View Profile</span>
+                        <svg
+                          className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100 transition-opacity"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </Link>
+                    )}
+
+                    {user?.userType === "tenant" && (
+                      <Link
+                        href={`/pages/tenant/digital-passport`}
+                        className="flex items-center py-4 px-4 rounded-xl hover:bg-gradient-to-r hover:from-white/10 hover:to-white/5 transition-all duration-200 group border border-transparent hover:border-white/20 shadow-sm hover:shadow-lg"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500/20 to-purple-400/20 rounded-xl flex items-center justify-center mr-3 group-hover:from-purple-500/30 group-hover:to-purple-400/30 transition-all border border-purple-400/30 group-hover:border-purple-400/40">
+                          <svg
+                            className="w-4 h-4 text-purple-200"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M12 12c2.28 0 4.09-1.8 4.09-4.09 0-2.28-1.8-4.09-4.09-4.09s-4.09 1.8-4.09 4.09C7.91 10.2 9.72 12 12 12zm0 2c-3.31 0-6 2.69-6 6h12c0-3.31-2.69-6-6-6z"
+                            />
+                          </svg>
+                        </div>
+                        <span className="font-medium">Digital Passport</span>
+                        <svg
+                          className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100 transition-opacity"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </Link>
+                    )}
+
+                    {admin && (
+                      <Link
+                        href={`/pages/system_admin/profile/${admin.admin_id}`}
+                        className="flex items-center py-4 px-4 rounded-xl hover:bg-gradient-to-r hover:from-white/10 hover:to-white/5 transition-all duration-200 group border border-transparent hover:border-white/20 shadow-sm hover:shadow-lg"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <div className="w-10 h-10 bg-gradient-to-r from-emerald-500/20 to-emerald-400/20 rounded-xl flex items-center justify-center mr-3 group-hover:from-emerald-500/30 group-hover:to-emerald-400/30 transition-all border border-emerald-400/30 group-hover:border-emerald-400/40">
+                          <svg
+                            className="w-4 h-4 text-emerald-200"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                        </div>
+                        <span className="font-medium">Admin Profile</span>
                         <svg
                           className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100 transition-opacity"
                           fill="none"
@@ -1423,11 +1537,11 @@ const Navbar = () => {
                         handleLogout();
                         setMenuOpen(false);
                       }}
-                      className="flex items-center w-full py-3 px-4 rounded-xl text-red-200 hover:bg-red-500/20 hover:text-white transition-all duration-200 mt-4 group border border-red-400/20 hover:border-red-400/40"
+                      className="flex items-center w-full py-4 px-4 rounded-xl text-red-200 hover:bg-gradient-to-r hover:from-red-500/20 hover:to-red-400/20 hover:text-white transition-all duration-200 mt-4 group border border-red-400/20 hover:border-red-400/40 shadow-sm hover:shadow-lg"
                     >
-                      <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center mr-3 group-hover:bg-red-500/30 transition-colors">
+                      <div className="w-10 h-10 bg-gradient-to-r from-red-500/20 to-red-400/20 rounded-xl flex items-center justify-center mr-3 group-hover:from-red-500/30 group-hover:to-red-400/30 transition-all border border-red-400/30 group-hover:border-red-400/40">
                         <svg
-                          className="w-4 h-4"
+                          className="w-4 h-4 text-red-200"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -1445,13 +1559,14 @@ const Navbar = () => {
                   </div>
                 )}
 
-                {/* Enhanced Footer */}
                 <div className="mt-8 pt-6 border-t border-white/20">
                   <div className="text-center text-white/60 text-sm">
-                    <p className="mb-2">Hestia Rental Platform</p>
-                    <p className="text-xs opacity-75">
-                      Making rental simple & secure
-                    </p>
+                    <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                      <p className="mb-2 font-medium">UpKyp Rental Platform</p>
+                      <p className="text-xs opacity-75">
+                        Making rental simple & secure
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
