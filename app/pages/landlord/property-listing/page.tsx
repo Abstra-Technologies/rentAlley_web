@@ -493,16 +493,37 @@ const PropertyListingPage = () => {
                     </div>
                 )}
 
+                {/*search bar*/}
                 <div className="mb-6 flex justify-center">
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search your property by name"
-                        className="w-full md:w-1/2 px-4 py-2 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
+                    <div className="relative w-full md:w-1/2 rounded-xl p-[2px] bg-gradient-to-r from-pink-500 via-blue-500 to-purple-500 animate-gradient">
+                        <div className="relative bg-white rounded-xl">
+      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+          <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"
+          />
+        </svg>
+      </span>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search your property by name..."
+                                className="w-full pl-10 pr-4 py-2 bg-transparent rounded-xl
+                   focus:outline-none"
+                            />
+                        </div>
+                    </div>
                 </div>
-
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
                     {filteredProperties.length > 0 ? (
