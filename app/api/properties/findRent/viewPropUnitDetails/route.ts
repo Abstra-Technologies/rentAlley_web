@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   try {
     // Fetch unit details and landlord_id
     const query = `
-      SELECT u.*, p.landlord_id 
+      SELECT u.*, p.landlord_id, u.rent_amount 
       FROM Unit u
       JOIN Property p ON u.property_id = p.property_id
       WHERE u.unit_id = ?

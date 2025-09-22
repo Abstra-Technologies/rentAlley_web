@@ -11,136 +11,88 @@ import useAuthStore from "@/zustand/authStore";
 export default function LeaseEditor() {
     const searchParams = useSearchParams();
     const { user, admin, fetchSession } = useAuthStore();
-
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
+    const formatDateForInput = (dateString: string | null) => {
+        if (!dateString) return "";
+        try {
+            return new Date(dateString).toISOString().split("T")[0];
+        } catch {
+            return "";
+        }
+    };
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    // search params
     const tenantName = searchParams.get("tenantName");
     const propertyName = searchParams.get("propertyName");
     const unitName = searchParams.get("unitName");
     const monthlyRent = searchParams.get("monthlyRent");
-    const securityDeposit = searchParams.get("securityDeposit");
-
+    // states
+    const [step, setStep] = useState(1);
+    const [depositAmount, setDepositAmount] = useState("");
+    const [advanceAmount, setAdvanceAmount] = useState("");
+    const [gracePeriod, setGracePeriod] = useState("3");
+    const [latePenalty, setLatePenalty] = useState("1000");
     const [content, setContent] = useState("");
     const [generatedFileUrl, setGeneratedFileUrl] = useState<string | null>(null);
     const [signUrl, setSignUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [fileBase64, setFileBase64] = useState<string | null>(null);
+    const [rentAmount, setRentAmount] = useState<string>("");
+    const [billingDueDay, setBillingDueDay] = useState("1");
+
 
     useEffect(() => {
-        if (!user && !admin) {
-            fetchSession();
-        }
-    }, [user, admin]);
+        const start = searchParams.get("startDate");
+        const end = searchParams.get("endDate");
 
+        if (start) setStartDate(formatDateForInput(start));
+        if (end) setEndDate(formatDateForInput(end));
+
+    }, [searchParams]);
+
+// Fetch rent amount from Unit table
     useEffect(() => {
-        const regenerateSignUrl = async () => {
-            if (fileBase64 && user?.email) {
-                try {
-                    // fetch tenant email from API
-                    const tenantRes = await fetch(
-                        `/api/tenant/getByUnit?unitId=${searchParams.get("unitId")}`
-                    );
-                    const tenantData = await tenantRes.json();
-                    const tenantEmail = tenantData?.email || "tenant@upkyp.local";
+        const fetchRentAmount = async () => {
+            const unitId = searchParams.get("unitId");
+            if (!unitId) return;
 
-                    const res = await fetch(
-                        "/api/leaseAgreement/generate/sendToDocuSign",
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                unitId: searchParams.get("unitId"),
-                                landlordEmail: user.email,
-                                tenantEmail,
-                                fileBase64,
-                            }),
-                        }
-                    );
-
-                    const data = await res.json();
-                    if (res.ok) {
-                        setSignUrl(data.signUrl);
-                    }
-                } catch (err) {
-                    console.error("Failed to regenerate signing URL:", err);
-                }
+            try {
+                const res = await fetch(`/api/properties/findRent/viewPropUnitDetails?rentId=${unitId}`);
+                if (!res.ok) throw new Error("Failed to fetch rent amount");
+                const data = await res.json();
+                setRentAmount(data?.unit?.rent_amount || "");
+            } catch (err) {
+                console.error("Error fetching rent amount:", err);
             }
         };
 
-        regenerateSignUrl();
-    }, [fileBase64, user?.email, searchParams]);
+        fetchRentAmount();
+    }, [searchParams]);
 
+    useEffect(() => {
+        if (!user && !admin) fetchSession();
+    }, [user, admin]);
 
+    // Auto-generate default contract when details change
     useEffect(() => {
         setContent(`
       <h2 style="text-align:center; margin-bottom:20px; font-weight: bolder">CONTRACT OF LEASE</h2>
-       <br>
-       <p style="text-align:left; margin-bottom:20px; font-weight: bold">KNOWN ALL MEN BY THESE PRESENTS:</p>
-        <br>
-      <p>This CONTRACT OF LEASE made and executed by and between:
-      <strong>${user?.lastName} ${user?.firstName} </strong>, 
-      of legal age, (Civil Status), Filipino national and a resident of (Complete Address), Philippines, hereinafter referred to as the <strong>LESSOR</strong>;</p>
-<br>
-      <p style="text-align: center">-and-</p>
-<br>
-      <p><strong>${tenantName || "(LESSEE'S FULL NAME)"}</strong>, of legal age, (Civil Status), Filipino national and a resident of (Complete Address), hereinafter referred to as the <strong>LESSEE</strong>;</p>
-
-      <h3 style="text-align: center; font-weight: bold" >WITNESSETH:</h3>
-      <br>
-      <p>The LESSOR is the owner of a residential house situated at <strong>${propertyName || "__________________"}</strong>, Unit <strong>${unitName || "____"}</strong>. The LESSOR hereby leases unto the LESSEE the above-mentioned premises, under the following terms and conditions:</p>
-        <br>
+      <p>This CONTRACT OF LEASE made and executed by and between:</p>
+      <p><strong>${user?.lastName} ${user?.firstName}</strong> (LESSOR)</p>
+      <p>-and-</p>
+      <p><strong>${tenantName || "LESSEE NAME"}</strong> (LESSEE)</p>
       <ol>
-        <li>That the term of this lease shall be for a period of ___ (__) months and will start on <strong>${startDate || "____"}</strong> until <strong>${endDate || "____"}</strong>, renewable upon agreement.</li>
-        <li>The monthly rental shall be <strong>${monthlyRent || "________"}</strong> PESOS, payable on the 1st of every month. Upon signing, the LESSEE shall pay one (1) month advance and one (1) month deposit of <strong>${securityDeposit || "________"}</strong>.</li>
-<li>
-  If any payment is late, a 
-  <span contenteditable="true" style="border-bottom:1px dashed #999; padding:0 6px; font-weight: bold">3</span> day grace period is granted. 
-  On the 
-  <span contenteditable="true" style="border-bottom:1px dashed #999; padding:0 6px;font-weight: bold">4</span> day, 
-  a penalty of 
-  <span contenteditable="true" style="border-bottom:1px dashed #999; padding:0 6px;font-weight: bold">₱1,000.00</span> 
-  per day shall apply.
-</li>
-        <li>The LESSEE agrees that the security deposit cannot be used in lieu of rental payments.</li>
-        <li>The LESSOR agrees to refund the deposit upon successful inspection, less damages or missing items.</li>
-        <li>The premises shall be used exclusively for residential purposes only.</li>
-        <li>The LESSEE shall keep the premises in good condition and shoulder damages caused during occupancy.</li>
-        <li>The LESSEE shall promptly pay electricity, water, and internet bills.</li>
-        <li>The LESSOR may enter and inspect the premises at reasonable hours with notice.</li>
-        <li>The LESSEE shall not store flammable or hazardous items inside the premises.</li>
-        <li>Non-payment of 1 month’s rent entitles the LESSOR to rescind this contract.</li>
-        <li>Pre-termination by the LESSEE forfeits the advance rental and deposit as liquidated damages.</li>
-        <li>Sub-leasing is strictly prohibited without written consent of the LESSOR.</li>
-        <li>The LESSEE must observe sanitary and electrical regulations imposed by local authorities.</li>
-        <li>Improvements made by the LESSEE shall be at their own expense.</li>
-        <li>The LESSEE is responsible for maintaining and cleaning air conditioning units.</li>
-        <li>All disputes shall be filed in the proper courts of __________ only.</li>
+        <li>Lease period: from <strong>${startDate || "____"}</strong> to <strong>${endDate || "____"}</strong>.</li>
+        <li>Monthly rent: <strong>${rentAmount || "____"}</strong>.</li>
+        <li>Security deposit: <strong>₱${depositAmount || "____"}</strong>.</li>
+        <li>Advance payment: <strong>₱${advanceAmount || "____"}</strong>.</li>
+        <li>Billing Due Date: <strong>Every ${billingDueDay} of the month.</strong>.</li>
+        <li>Grace period: <strong>${gracePeriod}</strong> days. Late penalty: <strong>₱${latePenalty}</strong> per day.</li>
       </ol>
-
-      <p style="margin-top:30px;">IN WITNESS WHEREOF, we hereunto set our hands this ____ day of __________ in the City/Province of __________, Philippines.</p>
-
-      <p style="margin-top:40px;">_________________________<br/>LESSOR</p>
-      <p>Lessor ID No. ____________</p>
-
-      <p style="margin-top:40px;">_________________________<br/>LESSEE</p>
-      <p>Lessee ID No. ____________</p>
-
-      <h3 style="margin-top:50px;">SIGNED IN THE PRESENCE OF:</h3>
-      <p>(Witness Name & Signature) ____________________</p>
-      <p>(Witness Name & Signature) ____________________</p>
-
-      <h3 style="margin-top:50px;">ACKNOWLEDGEMENT</h3>
-      <p>Republic of the Philippines)<br/>
-      City of __________ ) S.S.<br/>
-      x---------------------------------------x</p>
-
-      <p>BEFORE ME, a Notary Public for the City/Province of __________, personally appeared the parties, known to me and acknowledged that this contract is their free act and deed.</p>
-
-      <p>Doc No. _______; Page No. _______; Book No. _______; Series of 202__.</p>
     `);
-    }, [tenantName, propertyName, unitName, startDate, endDate, monthlyRent, securityDeposit, user]);
+    }, [tenantName, propertyName, unitName, startDate, endDate, monthlyRent, depositAmount, advanceAmount, gracePeriod, latePenalty, user]);
 
-    // Step 1: Save lease + generate PDF
+    // Step 3: Save lease + generate PDF
     const handleSave = async () => {
         setLoading(true);
         try {
@@ -151,6 +103,10 @@ export default function LeaseEditor() {
                     unitId: searchParams.get("unitId"),
                     startDate,
                     endDate,
+                    depositAmount,
+                    advanceAmount,
+                    gracePeriod,
+                    latePenalty,
                     content,
                 }),
             });
@@ -158,17 +114,11 @@ export default function LeaseEditor() {
             const data = await res.json();
             if (res.ok) {
                 setGeneratedFileUrl(data.signedUrl);
-                setFileBase64(data.fileBase64); // 🔑 store base64 in state
-
-                // fetch tenant email
-                const tenantRes = await fetch(
-                    `/api/tenant/getByUnit?unitId=${searchParams.get("unitId")}`
-                );
+                setFileBase64(data.fileBase64);
+                const tenantRes = await fetch(`/api/tenant/getByUnit?unitId=${searchParams.get("unitId")}`);
                 const tenantData = await tenantRes.json();
-                const tenantEmail = tenantData?.email || "tenant@upkyp.local";
-
-                // trigger signing flow
-                await handleSendForSigning(data.fileBase64, tenantEmail);
+                await handleSendForSigning(data.fileBase64, tenantData?.email || "tenant@upkyp.local");
+                setStep(4);
             } else {
                 alert(data.error || "Error saving lease.");
             }
@@ -180,90 +130,207 @@ export default function LeaseEditor() {
         }
     };
 
-    // Step 2: Send to DocuSign
-    const handleSendForSigning = async (
-        fileBase64: string,
-        tenantEmail: string
-    ) => {
+    // Step 4: Send to DocuSign
+    const handleSendForSigning = async (fileBase64: string, tenantEmail: string) => {
         try {
-            const res = await fetch(
-                "/api/leaseAgreement/generate/sendToDocuSign",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        unitId: searchParams.get("unitId"),
-                        landlordEmail: user?.email,
-                        tenantEmail,
-                        fileBase64,
-                    }),
-                }
-            );
+            const res = await fetch("/api/leaseAgreement/generate/sendToDocuSign", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    unitId: searchParams.get("unitId"),
+                    landlordEmail: user?.email,
+                    tenantEmail,
+                    fileBase64,
+                }),
+            });
 
             const data = await res.json();
-            if (res.ok) {
-                setSignUrl(data.signUrl); // embedded signing link
-            } else {
-                alert(data.error || "Error sending to DocuSign.");
-            }
+            if (res.ok) setSignUrl(data.signUrl);
         } catch (err) {
             console.error(err);
         }
     };
 
-
-
     return (
         <div className="max-w-3xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">
-            <h1 className="text-2xl font-bold mb-4">Review Lease Agreement</h1>
+            <h1 className="text-2xl font-bold mb-4">Lease Agreement Setup</h1>
 
-            {!generatedFileUrl && !signUrl && (
-                <>
-                    <ReactQuill
-                        value={content}
-                        onChange={setContent}
-                        className="mb-6"
-                        theme="snow"
-                        style={{ minHeight: "300px" }}
-                    />
-                    <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {loading ? "Generating..." : "Generate Lease Agreement"}
-                    </button>
-                </>
-            )}
+            {/* Step indicator */}
+            <div className="flex items-center mb-6 space-x-4">
+                {["Step 1. Financial Terms", "Step 2. Lease Dates", "Step 3. Review & Generate", "Step 4. Sign"].map((label, index) => (
+                    <div key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${step === index + 1 ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700"}`}>
+                        {label}
+                    </div>
+                ))}
+            </div>
 
-            {/* Step 3: Preview generated PDF */}
-            {generatedFileUrl && !signUrl && (
-                <div className="mt-6">
-                    <h2 className="text-lg font-semibold mb-2">Generated Lease Preview</h2>
-                    <iframe
-                        src={generatedFileUrl}
-                        className="w-full h-[500px] border rounded"
-                    />
-                    <p className="text-gray-500 text-sm mt-2">
-                        Waiting to start signing flow...
+            {/* Step 1: Financial Terms */}
+            {step === 1 && (
+                <div className="space-y-6">
+                    <h2 className="text-lg font-semibold text-gray-800">Financial Terms</h2>
+                    <p className="text-sm text-gray-500 mb-4">
+                        Set the payment requirements and penalties that apply to this lease.
                     </p>
+
+                    {/* Monthly Rent (Read-only) */}
+                    <label className="block">
+                        Monthly Rent (₱) (Read-only)
+                        <input
+                            type="number"
+                            className="w-full border rounded p-2 bg-gray-100 cursor-not-allowed"
+                            value={rentAmount}
+                            readOnly
+                        />
+                    </label>
+
+                    {/* Security Deposit */}
+                    <label className="block">
+                        Security Deposit (₱)
+                        <input
+                            type="number"
+                            className="w-full border rounded p-2"
+                            value={depositAmount}
+                            onChange={(e) => setDepositAmount(e.target.value)}
+                        />
+                    </label>
+
+                    {/* Advance Payment */}
+                    <label className="block">
+                        Advance Payment (₱)
+                        <input
+                            type="number"
+                            className="w-full border rounded p-2"
+                            value={advanceAmount}
+                            onChange={(e) => setAdvanceAmount(e.target.value)}
+                        />
+                    </label>
+
+                    {/* 🔹 Billing Due Date */}
+                    <label className="block">
+                        Billing Due Date
+                        <select
+                            className="w-full border rounded p-2"
+                            value={billingDueDay}
+                            onChange={(e) => setBillingDueDay(e.target.value)}
+                        >
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                <option key={day} value={day}>
+                                    {day}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Select which day of the month rent is due (default: 1st).
+                        </p>
+                    </label>
+
+                    {/* Penalty Terms */}
+                    <div className="mt-6">
+                        <h3 className="text-md font-semibold text-gray-800">Penalty Terms</h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                            If the tenant fails to pay rent on time, a grace period is granted.
+                            Once the grace period ends, a daily penalty charge will be applied.
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label className="block">
+                                Grace Period (days)
+                                <input
+                                    type="number"
+                                    className="w-full border rounded p-2"
+                                    value={gracePeriod}
+                                    onChange={(e) => setGracePeriod(e.target.value)}
+                                />
+                            </label>
+
+                            <label className="block">
+                                Late Penalty (₱/day)
+                                <input
+                                    type="number"
+                                    className="w-full border rounded p-2"
+                                    value={latePenalty}
+                                    onChange={(e) => setLatePenalty(e.target.value)}
+                                />
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                        onClick={() => setStep(2)}
+                        className="bg-blue-600 text-white px-6 py-2 rounded-lg"
+                    >
+                        Next
+                    </button>
                 </div>
             )}
 
-            {/* Step 4: Embedded signing */}
-            {signUrl && (
-                <div className="mt-6">
-                    <h2 className="text-xl font-semibold mb-4">Sign Lease Agreement</h2>
-                    <div className="w-full h-[85vh]">
-                        <iframe
-                            src={signUrl}
-                            className="w-full h-full border rounded-xl shadow-lg"
-                            style={{ minHeight: "700px" }}
+
+
+            {/* Step 2: Lease Dates */}
+            {step === 2 && (
+                <div className="space-y-4">
+                    <label className="block">
+                        Start Date
+                        <input
+                            type="date"
+                            className="w-full border rounded p-2"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
                         />
+                    </label>
+
+                    <label className="block">
+                        End Date
+                        <input
+                            type="date"
+                            className="w-full border rounded p-2"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
+                    </label>
+
+                    <div className="flex justify-between">
+                        <button
+                            onClick={() => setStep(1)}
+                            className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg"
+                        >
+                            Back
+                        </button>
+                        <button
+                            onClick={() => setStep(3)}
+                            className="bg-blue-600 text-white px-6 py-2 rounded-lg"
+                        >
+                            Next
+                        </button>
                     </div>
                 </div>
             )}
 
+
+
+
+            {/* Step 3: Review & Generate */}
+            {step === 3 && (
+                <div>
+                    <ReactQuill value={content} onChange={setContent} className="mb-6" theme="snow" style={{ minHeight: "300px" }} />
+                    <div className="flex justify-between">
+                        <button onClick={() => setStep(2)} className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg">Back</button>
+                        <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white px-6 py-2 rounded-lg">
+                            {loading ? "Generating..." : "Generate Lease"}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Step 4: Sign */}
+            {step === 4 && signUrl && (
+                <div>
+                    <h2 className="text-xl font-semibold mb-4">Sign Lease Agreement</h2>
+                    <iframe src={signUrl} className="w-full h-[85vh] border rounded-xl shadow-lg" style={{ minHeight: "700px" }} />
+                </div>
+            )}
         </div>
     );
 }
+
