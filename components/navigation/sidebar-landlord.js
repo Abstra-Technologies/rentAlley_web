@@ -8,11 +8,11 @@ import {
   Calendar,
   Wrench,
   Bell,
-  CreditCard,
   Bug,
   MessageSquareMore,
   Menu,
   X,
+  ChevronRight,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { MdOutlinePayments } from "react-icons/md";
@@ -21,34 +21,92 @@ import { IoAnalytics } from "react-icons/io5";
 import { FaFileContract } from "react-icons/fa";
 
 const menuItems = [
-  // Core
-  { href: "/pages/landlord/dashboard", icon: Home, label: "Dashboard" },
-  { href: "/pages/landlord/property-listing", icon: Building, label: "My Properties" },
-  { href: "/pages/landlord/list_of_tenants", icon: BsFilePersonFill, label: "My Tenants" },
-  { href: "/pages/landlord/contracts", icon: FaFileContract, label: "Leases" },
-  { href: "/pages/landlord/payments", icon: MdOutlinePayments, label: "Payments" },
+  // Core - Priority for mobile
+  {
+    href: "/pages/landlord/dashboard",
+    icon: Home,
+    label: "Dashboard",
+    priority: 1,
+  },
+  {
+    href: "/pages/landlord/property-listing",
+    icon: Building,
+    label: "Properties",
+    priority: 1,
+  },
+  {
+    href: "/pages/landlord/list_of_tenants",
+    icon: BsFilePersonFill,
+    label: "Tenants",
+    priority: 1,
+  },
+  {
+    href: "/pages/landlord/payments",
+    icon: MdOutlinePayments,
+    label: "Payments",
+    priority: 1,
+  },
 
-  // Operations
-  { href: "/pages/landlord/booking-appointment", icon: Calendar, label: "Bookings" },
-  { href: "/pages/landlord/maintenance-request", icon: Wrench, label: "Maintenance" },
-  { href: "/pages/landlord/chat", icon: MessageSquareMore, label: "Chats" },
+  // Secondary
+  {
+    href: "/pages/landlord/contracts",
+    icon: FaFileContract,
+    label: "Contracts",
+    priority: 2,
+  },
+  {
+    href: "/pages/landlord/booking-appointment",
+    icon: Calendar,
+    label: "Bookings",
+    priority: 2,
+  },
+  {
+    href: "/pages/landlord/maintenance-request",
+    icon: Wrench,
+    label: "Maintenance",
+    priority: 2,
+  },
+  {
+    href: "/pages/landlord/chat",
+    icon: MessageSquareMore,
+    label: "Chats",
+    priority: 2,
+  },
 
-  // Insights & Communication
-  { href: "/pages/landlord/analytics/performance", icon: IoAnalytics, label: "Performance" },
-  { href: "/pages/landlord/announcement", icon: Bell, label: "Announcements" },
-
-  // Support
-  { href: "/pages/commons/bug-report", icon: Bug, label: "Report a Bug" },
+  // Tertiary
+  {
+    href: "/pages/landlord/analytics/performance",
+    icon: IoAnalytics,
+    label: "Analytics",
+    priority: 3,
+  },
+  {
+    href: "/pages/landlord/announcement",
+    icon: Bell,
+    label: "Announcements",
+    priority: 3,
+  },
+  {
+    href: "/pages/commons/bug-report",
+    icon: Bug,
+    label: "Support",
+    priority: 3,
+  },
 ];
 
 const LandlordLayout = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
   const handleNavigation = (label, href) => {
+    // Close mobile menu immediately for better UX
+    setIsMobileMenuOpen(false);
+
     Swal.fire({
       title: "Loading...",
       text: "Redirecting to " + label,
@@ -61,77 +119,255 @@ const LandlordLayout = ({ children }) => {
     setTimeout(() => {
       router.push(href);
       Swal.close();
-    }, 1000);
+    }, 500);
   };
 
+
+  const primaryItems = menuItems.filter((item) => item.priority === 1);
+  const secondaryItems = menuItems.filter((item) => item.priority === 2);
+  const tertiaryItems = menuItems.filter((item) => item.priority === 3);
+
   return (
-      <div className="flex h-screen">
-        {/* Mobile Topbar */}
-        <div className="md:hidden p-4 bg-white shadow-sm flex justify-between items-center">
-          <h1 className="text-xl font-bold text-blue-900"> </h1>
-          <button
-              onClick={toggleMobileMenu}
-              className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
-          >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+    <div className="flex h-screen bg-gray-50">
+
+      <div className="hidden md:block fixed left-0 top-0 w-64 bg-white shadow-lg h-full overflow-y-auto z-30">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
+            UpKeep
+          </h1>
         </div>
 
-        {/* Sidebar (fixed, no scroll) */}
-        <div
-            className={`
-        ${isMobileMenuOpen ? "block" : "hidden"}
-        md:block w-full md:w-64 bg-white shadow-lg
-        h-screen
-      `}
-        >
-          <div className="hidden md:block p-6">
-          </div>
+        <nav className="px-4 pb-6">
+          <ul className="space-y-1">
+            {menuItems.map(({ href, icon: Icon, label }) => {
+              const isActive = pathname === href;
+              return (
+                <li key={href} className="relative group">
+                  <button
+                    onClick={() => handleNavigation(label, href)}
+                    className={`
+                      flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
+                      ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700 font-semibold shadow-sm"
+                          : "hover:bg-gray-50 text-gray-700"
+                      }
+                    `}
+                  >
+                    <span
+                      className={`
+                        absolute left-0 top-0 h-full w-1 rounded-r 
+                        bg-gradient-to-b from-blue-600 via-teal-500 to-emerald-400
+                        ${
+                          isActive
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-100"
+                        }
+                        transition-opacity duration-300
+                      `}
+                    />
+                    <Icon
+                      className={`w-5 h-5 mr-3 ${
+                        isActive ? "text-blue-700" : "text-gray-500"
+                      }`}
+                    />
+                    <span className="flex-1 text-left">{label}</span>
+                    {isActive && (
+                      <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-600 to-emerald-500" />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
 
-          <nav className="px-4 py-2">
-            <ul className="space-y-2">
-              {menuItems.map(({ href, icon: Icon, label }) => {
-                const isActive = pathname === href;
-                return (
-                    <li key={href} className="relative group">
-                      <button
+
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <button
+          onClick={toggleMobileMenu}
+          className={`
+            p-4 rounded-full shadow-lg transition-all duration-300 transform
+            ${
+              isMobileMenuOpen
+                ? "bg-red-500 hover:bg-red-600 rotate-90"
+                : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 hover:scale-110"
+            }
+          `}
+        >
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6 text-white" />
+          ) : (
+            <Menu className="w-6 h-6 text-white" />
+          )}
+        </button>
+      </div>
+
+
+      {isMobileMenuOpen && (
+        <>
+
+          <div
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 transition-opacity z-40"
+            onClick={toggleMobileMenu}
+          />
+
+
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[75vh] overflow-hidden">
+
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+            </div>
+
+
+            <div className="px-6 pb-4 border-b border-gray-100">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
+                UpKeep Menu
+              </h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Navigate your dashboard
+              </p>
+            </div>
+
+
+            <div className="overflow-y-auto max-h-[calc(75vh-100px)]">
+              <nav className="p-4">
+
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
+                    Quick Actions
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {primaryItems.map(({ href, icon: Icon, label }) => {
+                      const isActive = pathname === href;
+                      return (
+                        <button
+                          key={href}
                           onClick={() => handleNavigation(label, href)}
                           className={`
-                    flex items-center w-full px-4 py-3 rounded-lg text-gray-700 transition-all duration-200
-                    ${isActive ? "bg-blue-50 text-blue-700 font-bold" : "hover:bg-gray-100"}
-                  `}
-                      >
-                  <span
-                      className={`
-                      absolute left-0 top-0 h-full w-1 rounded-r
-                      bg-gradient-to-b from-blue-600 via-teal-500 to-emerald-400
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                    `}
-                  ></span>
-                        <Icon
-                            className={`w-5 h-5 mr-3 ${isActive ? "text-blue-700" : "text-gray-500"}`}
-                        />
-                        <span>{label}</span>
-                        {isActive && (
-                            <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>
-                        )}
-                      </button>
-                    </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </div>
+                            flex flex-col items-center p-4 rounded-2xl transition-all duration-200 border-2
+                            ${
+                              isActive
+                                ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200 text-blue-700"
+                                : "bg-white border-gray-100 hover:border-gray-200 text-gray-700 hover:shadow-md"
+                            }
+                          `}
+                        >
+                          <div
+                            className={`
+                            p-3 rounded-xl mb-2
+                            ${
+                              isActive
+                                ? "bg-gradient-to-r from-blue-100 to-emerald-100"
+                                : "bg-gray-50"
+                            }
+                          `}
+                          >
+                            <Icon
+                              className={`w-6 h-6 ${
+                                isActive ? "text-blue-700" : "text-gray-500"
+                              }`}
+                            />
+                          </div>
+                          <span className="text-sm font-medium text-center">
+                            {label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-        {/* Content (scrollable only) */}
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-          {children}
-        </div>
+
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
+                    Operations
+                  </h3>
+                  <div className="space-y-2">
+                    {secondaryItems.map(({ href, icon: Icon, label }) => {
+                      const isActive = pathname === href;
+                      return (
+                        <button
+                          key={href}
+                          onClick={() => handleNavigation(label, href)}
+                          className={`
+                            flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
+                            ${
+                              isActive
+                                ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700"
+                                : "hover:bg-gray-50 text-gray-700"
+                            }
+                          `}
+                        >
+                          <Icon
+                            className={`w-5 h-5 mr-3 ${
+                              isActive ? "text-blue-700" : "text-gray-500"
+                            }`}
+                          />
+                          <span className="flex-1 text-left font-medium">
+                            {label}
+                          </span>
+                          <ChevronRight
+                            className={`w-4 h-4 ${
+                              isActive ? "text-blue-700" : "text-gray-400"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+   
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
+                    More
+                  </h3>
+                  <div className="space-y-1">
+                    {tertiaryItems.map(({ href, icon: Icon, label }) => {
+                      const isActive = pathname === href;
+                      return (
+                        <button
+                          key={href}
+                          onClick={() => handleNavigation(label, href)}
+                          className={`
+                            flex items-center w-full px-4 py-2.5 rounded-lg transition-all duration-200
+                            ${
+                              isActive
+                                ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700"
+                                : "hover:bg-gray-50 text-gray-600"
+                            }
+                          `}
+                        >
+                          <Icon
+                            className={`w-4 h-4 mr-3 ${
+                              isActive ? "text-blue-700" : "text-gray-500"
+                            }`}
+                          />
+                          <span className="flex-1 text-left text-sm font-medium">
+                            {label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+
+                <div className="h-6"></div>
+              </nav>
+            </div>
+          </div>
+        </>
+      )}
+
+
+      <div className="flex-1 md:ml-64 overflow-y-auto">
+        <div className="p-4 md:p-8">{children}</div>
       </div>
+    </div>
   );
-
-
-
 };
 
 export default LandlordLayout;

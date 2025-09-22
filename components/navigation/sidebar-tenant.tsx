@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   ReceiptText,
+  ChevronRight,
 } from "lucide-react";
 import Swal from "sweetalert2";
 
@@ -28,6 +29,9 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
   };
 
   const handleNavigation = (label: string, href: string) => {
+    // Close mobile menu immediately for better UX
+    setIsMobileMenuOpen(false);
+
     Swal.fire({
       title: "Loading...",
       text: `Redirecting to ${label}`,
@@ -40,90 +44,271 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
     setTimeout(() => {
       router.push(href);
       Swal.close();
-    }, 1000);
+    }, 500);
   };
 
   const menuItems = [
-    { slug: "rentalPortal", icon: Home, label: "Dashboard" },
-    { slug: "announcement", icon: Bell, label: "Announcements" },
-    { slug: "maintenance", icon: Wrench, label: "Maintenance Request" },
-    { slug: "billing", icon: CreditCard, label: "Billing Statement" },
+    {
+      slug: "rentalPortal",
+      icon: Home,
+      label: "Dashboard",
+      priority: 1,
+    },
+    {
+      slug: "billing",
+      icon: CreditCard,
+      label: "Billing Statement",
+      priority: 1,
+    },
     {
       slug: "paymentHistory/currentLeasePayment",
       icon: ReceiptText,
       label: "Payment History",
+      priority: 1,
     },
-  ].map(({ slug, ...rest }) => {
+    {
+      slug: "announcement",
+      icon: Bell,
+      label: "Announcements",
+      priority: 2,
+    },
+    {
+      slug: "maintenance",
+      icon: Wrench,
+      label: "Maintenance Request",
+      priority: 2,
+    },
+  ].map(({ slug, priority, ...rest }) => {
     let href = `/pages/tenant/${slug}`;
     if (slug === "rentalPortal" && agreement_id) {
       href = `/pages/tenant/${slug}/${agreement_id}`; // special case for dashboard
     } else if (agreement_id) {
       href = `/pages/tenant/${slug}?agreement_id=${agreement_id}`;
     }
-    return { href, ...rest };
+    return { href, priority, ...rest };
   });
 
+  // Group menu items for mobile
+  const primaryItems = menuItems.filter((item) => item.priority === 1);
+  const secondaryItems = menuItems.filter((item) => item.priority === 2);
 
   return (
-      <div className="flex flex-col md:flex-row min-h-screen">
-        {/* Mobile Header */}
-        <div className="md:hidden p-4 bg-white shadow-sm flex justify-between items-center">
+    <div className="flex h-screen bg-gray-50">
+      {/* Desktop Sidebar - Fixed and Sticky (only if agreement_id exists) */}
+      {agreement_id && (
+        <div className="hidden md:block fixed left-0 top-0 w-64 bg-white shadow-lg h-full overflow-y-auto z-30">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-green-800 to-blue-600 bg-clip-text text-transparent">
+              Tenant Portal
+            </h1>
+          </div>
+
+          <nav className="px-4 pb-6">
+            <ul className="space-y-1">
+              {menuItems.map(({ href, icon: Icon, label }) => {
+                const isActive = pathname.includes(href.split("?")[0]);
+                return (
+                  <li key={href} className="relative group">
+                    <button
+                      onClick={() => handleNavigation(label, href)}
+                      className={`
+                        flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
+                        ${
+                          isActive
+                            ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 font-semibold shadow-sm"
+                            : "hover:bg-gray-50 text-gray-700"
+                        }
+                      `}
+                    >
+                      <span
+                        className={`
+                          absolute left-0 top-0 h-full w-1 rounded-r 
+                          bg-gradient-to-b from-green-600 via-teal-500 to-blue-600
+                          ${
+                            isActive
+                              ? "opacity-100"
+                              : "opacity-0 group-hover:opacity-100"
+                          }
+                          transition-opacity duration-300
+                        `}
+                      />
+                      <Icon
+                        className={`w-5 h-5 mr-3 ${
+                          isActive ? "text-green-700" : "text-gray-500"
+                        }`}
+                      />
+                      <span className="flex-1 text-left">{label}</span>
+                      {isActive && (
+                        <div className="h-2 w-2 rounded-full bg-gradient-to-r from-green-600 to-blue-600" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </div>
+      )}
+
+      {/* Mobile Menu Button - Floating (only if agreement_id exists) */}
+      {agreement_id && (
+        <div className="md:hidden fixed bottom-6 right-6 z-50">
           <button
-              onClick={toggleMobileMenu}
-              className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
+            onClick={toggleMobileMenu}
+            className={`
+              p-4 rounded-full shadow-lg transition-all duration-300 transform
+              ${
+                isMobileMenuOpen
+                  ? "bg-red-500 hover:bg-red-600 rotate-90"
+                  : "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 hover:scale-110"
+              }
+            `}
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6 text-white" />
+            ) : (
+              <Menu className="w-6 h-6 text-white" />
+            )}
           </button>
         </div>
+      )}
 
-        {/* Sidebar Navigation - only if agreement_id exists */}
-        {agreement_id && (
-            <div
-                className={`${
-                    isMobileMenuOpen ? "block" : "hidden"
-                } md:block w-full md:w-64 bg-white shadow-lg md:min-h-screen md:fixed md:top-0 md:left-0`}
-            >
-              <div className="hidden md:block p-6"></div>
+      {/* Mobile Menu - Bottom Sheet Style (only if agreement_id exists) */}
+      {agreement_id && isMobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 transition-opacity z-40"
+            onClick={toggleMobileMenu}
+          />
 
-              <nav className="px-4 py-2 md:py-0">
-                <ul className="space-y-2">
-                  {menuItems.map(({ href, icon: Icon, label }) => {
-                    const isActive = pathname.includes(href.split("?")[0]);
-                    return (
-                        <li key={href}>
-                          <button
-                              onClick={() => handleNavigation(label, href)}
-                              className={`flex items-center w-full px-4 py-3 rounded-lg text-gray-700 transition-all duration-200 ${
-                                  isActive
-                                      ? "bg-blue-50 text-blue-700 font-bold"
-                                      : "hover:bg-gray-100"
-                              }`}
+          {/* Bottom Sheet Menu */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[70vh] overflow-hidden">
+            {/* Handle Bar */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+            </div>
+
+            {/* Header */}
+            <div className="px-6 pb-4 border-b border-gray-100">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-green-800 to-blue-600 bg-clip-text text-transparent">
+                Tenant Portal
+              </h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Manage your rental experience
+              </p>
+            </div>
+
+            {/* Navigation - Scrollable */}
+            <div className="overflow-y-auto max-h-[calc(70vh-100px)]">
+              <nav className="p-4">
+                {/* Essential Services - Primary Items in Grid */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
+                    Essential Services
+                  </h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {primaryItems.map(({ href, icon: Icon, label }) => {
+                      const isActive = pathname.includes(href.split("?")[0]);
+                      return (
+                        <button
+                          key={href}
+                          onClick={() => handleNavigation(label, href)}
+                          className={`
+                            flex items-center p-4 rounded-2xl transition-all duration-200 border-2
+                            ${
+                              isActive
+                                ? "bg-gradient-to-br from-green-50 to-blue-50 border-green-200 text-green-700"
+                                : "bg-white border-gray-100 hover:border-gray-200 text-gray-700 hover:shadow-md"
+                            }
+                          `}
+                        >
+                          <div
+                            className={`
+                            p-3 rounded-xl mr-4
+                            ${
+                              isActive
+                                ? "bg-gradient-to-r from-green-100 to-blue-100"
+                                : "bg-gray-50"
+                            }
+                          `}
                           >
                             <Icon
-                                className={`w-5 h-5 mr-3 ${
-                                    isActive ? "text-blue-700" : "text-gray-500"
-                                }`}
+                              className={`w-6 h-6 ${
+                                isActive ? "text-green-700" : "text-gray-500"
+                              }`}
                             />
-                            <span>{label}</span>
-                            {isActive && (
-                                <span className="ml-auto h-2 w-2 rounded-full bg-blue-600"></span>
-                            )}
-                          </button>
-                        </li>
-                    );
-                  })}
-                </ul>
+                          </div>
+                          <span className="flex-1 text-left font-medium">
+                            {label}
+                          </span>
+                          <ChevronRight
+                            className={`w-5 h-5 ${
+                              isActive ? "text-green-700" : "text-gray-400"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Communication & Support - List Style */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
+                    Communication & Support
+                  </h3>
+                  <div className="space-y-2">
+                    {secondaryItems.map(({ href, icon: Icon, label }) => {
+                      const isActive = pathname.includes(href.split("?")[0]);
+                      return (
+                        <button
+                          key={href}
+                          onClick={() => handleNavigation(label, href)}
+                          className={`
+                            flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
+                            ${
+                              isActive
+                                ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700"
+                                : "hover:bg-gray-50 text-gray-700"
+                            }
+                          `}
+                        >
+                          <Icon
+                            className={`w-5 h-5 mr-3 ${
+                              isActive ? "text-green-700" : "text-gray-500"
+                            }`}
+                          />
+                          <span className="flex-1 text-left font-medium">
+                            {label}
+                          </span>
+                          <ChevronRight
+                            className={`w-4 h-4 ${
+                              isActive ? "text-green-700" : "text-gray-400"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Bottom Padding for Safe Area */}
+                <div className="h-6"></div>
               </nav>
             </div>
-        )}
+          </div>
+        </>
+      )}
 
-        {/* Main Content */}
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto no-scrollbar md:ml-64">
-          {children}
-        </div>
+      {/* Main Content - Adjusted margin for fixed sidebar */}
+      <div
+        className={`flex-1 ${agreement_id ? "md:ml-64" : ""} overflow-y-auto`}
+      >
+        <div className="p-4 md:p-8">{children}</div>
       </div>
+    </div>
   );
-
 };
 
 export default TenantLayout;
