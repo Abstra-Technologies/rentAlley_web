@@ -21,6 +21,7 @@ import useAuthStore from "../../../../zustand/authStore";
 import LoadingScreen from "@/components/loadingScreen";
 import PropertyCard from "@/components/landlord/properties/propertyCards";
 import FBShareButton from "@/components/landlord/properties/shareToFacebook";
+import Pagination from "@mui/material/Pagination";
 
 const PropertyListingPage = () => {
     const router = useRouter();
@@ -32,8 +33,13 @@ const PropertyListingPage = () => {
     const [subscription, setSubscription] = useState(null);
     const [pendingApproval, setPendingApproval] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
-
     const [searchQuery, setSearchQuery] = useState("");
+    const [page, setPage] = useState(1);
+    const itemsPerPage = 10; // show 6 per page
+
+    const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
 
 
     useEffect(() => {
@@ -247,6 +253,12 @@ const PropertyListingPage = () => {
             property?.property_id?.toString().includes(query)
         );
     });
+
+    const startIndex = (page - 1) * itemsPerPage;
+    const currentProperties = filteredProperties.slice(
+        startIndex,
+        startIndex + itemsPerPage
+    );
 
     return (
         <LandlordLayout>
@@ -526,8 +538,8 @@ const PropertyListingPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-                    {filteredProperties.length > 0 ? (
-                        filteredProperties.map((property, index) => (
+                    {currentProperties.length > 0 ? (
+                        currentProperties.map((property, index) => (
                             <PropertyCard
                                 key={property.property_id}
                                 property={property}
@@ -545,7 +557,17 @@ const PropertyListingPage = () => {
                     )}
                 </div>
 
-
+                {filteredProperties.length > itemsPerPage && (
+                    <div className="flex justify-center py-6">
+                        <Pagination
+                            count={Math.ceil(filteredProperties.length / itemsPerPage)}
+                            page={page}
+                            onChange={handlePageChange}
+                            color="primary"
+                            shape="rounded"
+                        />
+                    </div>
+                )}
 
             </div>
         </LandlordLayout>
