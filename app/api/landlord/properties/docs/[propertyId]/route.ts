@@ -1,6 +1,7 @@
-import { NextRequest } from 'next/server';
-import mysql from 'mysql2/promise';
-import { decryptData } from '../../../../../../crypto/encrypt';
+
+import { NextRequest } from "next/server";
+import mysql from "mysql2/promise";
+import { decryptData } from "@/crypto/encrypt";
 
 export async function GET(
     req: NextRequest,
@@ -9,7 +10,10 @@ export async function GET(
     const propertyId = params.propertyId;
 
     if (!propertyId) {
-        return new Response(JSON.stringify({ message: 'Missing property ID' }), { status: 400 });
+        return new Response(
+            JSON.stringify({ message: "Missing property ID" }),
+            { status: 400 }
+        );
     }
 
     try {
@@ -18,50 +22,84 @@ export async function GET(
             user: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
-            timezone: '+08:00',
+            timezone: "+08:00",
         });
 
         const [rows] = await connection.execute(
-            `SELECT occ_permit, mayor_permit, property_title, outdoor_photo, indoor_photo
-       FROM PropertyVerification
-       WHERE property_id = ?`,
+            `SELECT
+                 verification_id,
+                 property_id,
+                 doc_type,
+                 submitted_doc,
+                 gov_id,
+                 outdoor_photo,
+                 indoor_photo,
+                 status,
+                 admin_message,
+                 reviewed_by,
+                 created_at,
+                 updated_at,
+                 verified,
+                 attempts
+             FROM PropertyVerification
+             WHERE property_id = ?`,
             [propertyId]
         );
 
         if (!Array.isArray(rows) || rows.length === 0) {
-            return new Response(JSON.stringify({ message: 'Verification documents not found' }), { status: 404 });
+            return new Response(
+                JSON.stringify({ message: "Verification documents not found" }),
+                { status: 404 }
+            );
         }
 
         const secretKey = process.env.ENCRYPTION_SECRET;
         if (!secretKey) {
-            console.error('Missing ENCRYPTION_SECRET');
-            return new Response(JSON.stringify({ message: 'Encryption key missing' }), { status: 500 });
+            console.error("Missing ENCRYPTION_SECRET");
+            return new Response(
+                JSON.stringify({ message: "Encryption key missing" }),
+                { status: 500 }
+            );
         }
 
-        const data = rows[0] as any;
-
         const decryptIfValid = (field: string | null) => {
-            if (!field || typeof field !== 'string') return null;
+            if (!field || typeof field !== "string") return null;
             try {
-                const parsed = field.trim().startsWith('{') ? JSON.parse(field) : null;
+                const parsed = field.trim().startsWith("{")
+                    ? JSON.parse(field)
+                    : null;
                 return parsed ? decryptData(parsed, secretKey) : null;
             } catch (err) {
-                console.error('Failed to decrypt field:', err);
+                console.error("Failed to decrypt field:", err);
                 return null;
             }
         };
 
-        const decryptedData = {
-            occ_permit: decryptIfValid(data.occ_permit),
-            mayor_permit: decryptIfValid(data.mayor_permit),
-            property_title: decryptIfValid(data.property_title),
-            outdoor_photo: decryptIfValid(data.outdoor_photo),
-            indoor_photo: decryptIfValid(data.indoor_photo),
-        };
+        // Map results directly from schema
+        const decryptedData = (rows as any[]).map((row) => ({
+            verification_id: row.verification_id,
+            property_id: row.property_id,
+            doc_type: row.doc_type,
+            submitted_doc: decryptIfValid(row.submitted_doc),
+            gov_id: decryptIfValid(row.gov_id),
+            outdoor_photo: decryptIfValid(row.outdoor_photo),
+            indoor_photo: decryptIfValid(row.indoor_photo),
+            status: row.status,
+            admin_message: row.admin_message,
+            reviewed_by: row.reviewed_by,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+            verified: row.verified,
+            attempts: row.attempts,
+        }));
 
         return new Response(JSON.stringify(decryptedData), { status: 200 });
     } catch (err) {
-        console.error('Database Error:', err);
-        return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+        console.error("Database Error:", err);
+        return new Response(
+            JSON.stringify({ message: "Internal Server Error" }),
+            { status: 500 }
+        );
     }
 }
+

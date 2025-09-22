@@ -51,7 +51,7 @@ const menuItems = [
   {
     href: "/pages/landlord/contracts",
     icon: FaFileContract,
-    label: "Contracts",
+    label: "Leases",
     priority: 2,
   },
   {

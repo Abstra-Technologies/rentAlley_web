@@ -419,6 +419,7 @@ export default function PropertyUnitDetailedPage() {
                   )}
                 </div>
               </div>
+
             </div>
           </div>
         </div>
