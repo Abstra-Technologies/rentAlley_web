@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
         la.start_date,
         un.unit_name,
         p.property_name,
+        la.agreement_id,
         la.end_date,
         la.status as lease_status,
         la.agreement_url

@@ -25,7 +25,7 @@ const menuItems = [
   { href: "/pages/landlord/dashboard", icon: Home, label: "Dashboard" },
   { href: "/pages/landlord/property-listing", icon: Building, label: "My Properties" },
   { href: "/pages/landlord/list_of_tenants", icon: BsFilePersonFill, label: "My Tenants" },
-  { href: "/pages/landlord/contracts", icon: FaFileContract, label: "Contracts" },
+  { href: "/pages/landlord/contracts", icon: FaFileContract, label: "Leases" },
   { href: "/pages/landlord/payments", icon: MdOutlinePayments, label: "Payments" },
 
   // Operations

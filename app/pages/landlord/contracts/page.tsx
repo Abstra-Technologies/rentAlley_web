@@ -6,6 +6,9 @@ import { Box, Typography } from "@mui/material";
 import useAuthStore from "../../../../zustand/authStore";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import LeaseStatusInfo from "@/components/landlord/widgets/LeaseStatusInfo";
+import VisibilityIcon from "@mui/icons-material/Visibility"; // 👁️ View Icon
+import { IconButton, Tooltip } from "@mui/material";
+import { useRouter } from "next/navigation";
 
 type Contact = {
     user_id: string;
@@ -22,6 +25,7 @@ type Contact = {
 export default function ContactsPage() {
     const [data, setData] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     const {user} = useAuthStore();
 
@@ -58,17 +62,17 @@ export default function ContactsPage() {
                 const status = cell.getValue<string>();
 
                 let color = "gray";
-                let bg = "#f3f4f6"; // light gray
+                let bg = "#f3f4f6";
 
                 if (status === "active") {
-                    color = "#16a34a"; // green-600
-                    bg = "#dcfce7";   // green-100
+                    color = "#16a34a"; // green
+                    bg = "#dcfce7";
                 } else if (status === "pending") {
-                    color = "#d97706"; // orange-600
-                    bg = "#fef3c7";   // orange-100
+                    color = "#d97706"; // orange
+                    bg = "#fef3c7";
                 } else if (status === "expired") {
-                    color = "#dc2626"; // red-600
-                    bg = "#fee2e2";   // red-100
+                    color = "#dc2626"; // red
+                    bg = "#fee2e2";
                 }
 
                 return (
@@ -82,14 +86,14 @@ export default function ContactsPage() {
                             backgroundColor: bg,
                         }}
                     >
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </span>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </span>
                 );
             },
         },
         {
             accessorKey: "agreement_url",
-            header: "Document Link",
+            header: "Agreement Docs",
             Cell: ({ cell }) => {
                 const url = cell.getValue<string>();
                 return url ? (
@@ -106,14 +110,27 @@ export default function ContactsPage() {
                 );
             },
         },
+        {
+            id: "actions",
+            header: "Actions",
+            Cell: ({ row }) => (
+                <Tooltip title="View More">
+                    <IconButton
+                        onClick={() => router.push(`/pages/lease/${row.original?.agreement_id}`)}
+                        color="primary"
+                    >
+                        <VisibilityIcon />
+                    </IconButton>
+                </Tooltip>
+            ),
+        },
     ];
-
 
     return (
         <div className="min-h-screen">
         <LandlordLayout>
             <div className="mb-6">
-                <h1 className="gradient-header">Lease Contracts</h1>
+                <h1 className="gradient-header">Active Leases </h1>
                 <p className="gardient-subtitle">
                     Manage, track, and monitor all your lease agreements in one place.
                 </p>
