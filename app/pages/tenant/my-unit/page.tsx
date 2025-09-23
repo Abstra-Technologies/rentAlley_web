@@ -15,6 +15,7 @@ import LoadingScreen from "@/components/loadingScreen";
 import LeaseCounter from "@/components/tenant/analytics-insights/LeaseCounter";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
+import ApplicationsCounter from "@/components/tenant/analytics-insights/applicationsCounter";
 
 interface Unit {
     unit_id: string;
@@ -86,7 +87,6 @@ export default function MyUnit() {
              <LoadingScreen message='Just a moment, getting things ready...' />;
         </div>
     );
-
 
     const handleUploadProof = async (
         unitId: string,
@@ -253,6 +253,8 @@ export default function MyUnit() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <LeaseCounter tenantId={user?.tenant_id} />
+                            <ApplicationsCounter tenantId={user?.tenant_id} />
+
                         </div>
 
                         {units.length === 0 ? (
