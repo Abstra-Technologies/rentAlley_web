@@ -51,6 +51,7 @@ export default function MyUnit() {
     const [loadingPayment, setLoadingPayment] = useState(false);
     const [page, setPage] = useState(1);
     const itemsPerPage = 10;
+    const [searchQuery, setSearchQuery] = useState("");
 
 
     useEffect(() => {
@@ -80,7 +81,17 @@ export default function MyUnit() {
     };
 
     // Slice units based on pagination
-    const paginatedUnits = units.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+    const filteredUnits = units.filter((unit) =>
+        unit.unit_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        unit.property_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        unit.city.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+// Apply pagination on filtered units
+    const paginatedUnits = filteredUnits.slice(
+        (page - 1) * itemsPerPage,
+        page * itemsPerPage
+    );
 
     if (loading) return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
@@ -239,7 +250,9 @@ export default function MyUnit() {
         <>
             <div className="flex min-h-screen bg-gray-50">
                 <TenantOutsidePortalNav />
+
                 <div className="flex-1 md:ml-64">
+
                     <div className="max-w-7xl mx-auto px-4 py-8">
                         <h1 className="gradient-header">My Units</h1>
                         <button
@@ -251,11 +264,29 @@ export default function MyUnit() {
                             View Invitations
                         </button>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <LeaseCounter tenantId={user?.tenant_id} />
-                            <ApplicationsCounter tenantId={user?.tenant_id} />
 
+                        {/* Counter Section */}
+                        <div className="flex flex-wrap gap-4 justify-between">
+                            <div className="flex-1 min-w-[150px]">
+                                <LeaseCounter tenantId={user?.tenant_id} />
+                            </div>
+                            <div className="flex-1 min-w-[150px]">
+                                <ApplicationsCounter tenantId={user?.tenant_id} />
+                            </div>
                         </div>
+                        <hr className="my-8 border-gray-300" />
+
+                        {/* Search Bar */}
+                        <div className="relative w-full max-w-md mx-auto mb-8">
+                            <input
+                                type="text"
+                                placeholder="Search your units..."
+                                className="w-full px-4 py-2 rounded-lg border-2 border-blue-500 focus:border-purple-500 bg-white text-gray-700 focus:outline-none transition-colors duration-300"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+
 
                         {units.length === 0 ? (
                             <p className="text-gray-500">You currently have no active leases.</p>
