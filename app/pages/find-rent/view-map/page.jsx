@@ -59,8 +59,8 @@ export default function PropertyMapPage() {
 
             // User location icon
             const userLocationIcon = new L.Icon({
-                iconUrl: "https://cdn-icons-png.flaticon.com/512/4872/4872521.png",
-                iconSize: [32, 32],
+                iconUrl: "/upkeep_blue_marker.png",
+                iconSize: [50,50],
                 iconAnchor: [16, 32],
                 popupAnchor: [0, -32],
                 className: 'animate-pulse',
@@ -77,6 +77,16 @@ export default function PropertyMapPage() {
             setPropertyIcon(propIcon);
         }
     }, []);
+
+    useEffect(() => {
+        return () => {
+            const containers = document.getElementsByClassName("leaflet-container");
+            for (let i = 0; i < containers.length; i++) {
+                containers[i]._leaflet_id = null;
+            }
+        };
+    }, []);
+
 
     // Get user location
     useEffect(() => {
