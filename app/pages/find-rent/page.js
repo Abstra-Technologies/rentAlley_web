@@ -20,6 +20,8 @@ import {
   FaHome,
   FaRuler,
   FaCouch,
+  FaChevronLeft,
+  FaChevronRight,
 } from "react-icons/fa";
 import { BsImageAlt } from "react-icons/bs";
 import { MdVerified, MdClose } from "react-icons/md";
@@ -70,6 +72,108 @@ function FlyToProperty({ coords, zoom = 16 }) {
   return null;
 }
 
+// Pagination Component
+function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+  totalItems,
+  itemsPerPage,
+}) {
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  return (
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border-t border-gray-200 bg-white">
+      {/* Results info */}
+      <div className="text-sm text-gray-600">
+        Showing <span className="font-medium">{startItem}</span> to{" "}
+        <span className="font-medium">{endItem}</span> of{" "}
+        <span className="font-medium">{totalItems}</span> properties
+      </div>
+
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center gap-1">
+          {/* Previous button */}
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaChevronLeft className="w-3 h-3" />
+          </button>
+
+          {/* Page numbers */}
+          {getPageNumbers().map((page, index) =>
+            page === "..." ? (
+              <span key={index} className="px-3 py-2 text-sm text-gray-500">
+                ...
+              </span>
+            ) : (
+              <button
+                key={index}
+                onClick={() => onPageChange(page)}
+                className={`px-3 py-2 text-sm font-medium border ${
+                  currentPage === page
+                    ? "bg-blue-50 border-blue-500 text-blue-600"
+                    : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+
+          {/* Next button */}
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PropertySearch() {
   const [allProperties, setAllProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
@@ -88,6 +192,11 @@ export default function PropertySearch() {
   const [hoveredProperty, setHoveredProperty] = useState(null);
   const [mapCenter, setMapCenter] = useState(null); // For flying to property location
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12); // You can make this configurable
+  const [paginatedProperties, setPaginatedProperties] = useState([]);
+
   // Map specific states
   const [userCoords, setUserCoords] = useState(null);
   const [userIcon, setUserIcon] = useState(null);
@@ -99,6 +208,30 @@ export default function PropertySearch() {
     { label: "₱15,000 - ₱20,000", min: 15000, max: 20000 },
     { label: "Greater than ₱20,000", min: 20000, max: "" },
   ];
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredProperties.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  // Update paginated properties when filtered properties or current page changes
+  useEffect(() => {
+    const paginated = filteredProperties.slice(startIndex, endIndex);
+    setPaginatedProperties(paginated);
+  }, [filteredProperties, currentPage, startIndex, endIndex]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, priceRange]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Scroll to top when page changes (for list view)
+    if (viewMode === "list") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     async function fetchProperties() {
@@ -119,6 +252,7 @@ export default function PropertySearch() {
 
     fetchProperties();
   }, []);
+
   // map
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -135,7 +269,7 @@ export default function PropertySearch() {
       // User location icon
       const userLocationIcon = new L.Icon({
         iconUrl: "/upkeep_blue_marker.png",
-        iconSize: [45,45],
+        iconSize: [45, 45],
         iconAnchor: [16, 32],
         popupAnchor: [0, -32],
         className: "animate-pulse",
@@ -285,9 +419,9 @@ export default function PropertySearch() {
 
   if (loading) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
-           <LoadingScreen message='Just a moment, getting properties ready...' />;
-        </div>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+        <LoadingScreen message="Just a moment, getting properties ready..." />;
+      </div>
     );
   }
 
@@ -317,7 +451,6 @@ export default function PropertySearch() {
                     <FaTimes className="text-sm" />
                   </button>
                 )}
-
               </div>
             </div>
 
@@ -432,142 +565,159 @@ export default function PropertySearch() {
       {/* Main Content */}
       <div className="flex-1 flex relative">
         {viewMode === "list" ? (
-          /* List View */
-          <div className="flex-1 overflow-auto p-2 sm:p-4">
-            {filteredProperties.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
-                <FaSearch className="text-gray-300 text-4xl mb-4" />
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">
-                  No properties found
-                </h3>
-                <p className="text-gray-500 mb-4 text-sm sm:text-base">
-                  Try adjusting your search criteria
-                </p>
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setPriceRange("");
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base"
-                >
-                  Clear Filters
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {filteredProperties.map((property) => (
-                  <div
-                    key={property.property_id}
-                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
+          /* List View with Pagination */
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 overflow-auto p-2 sm:p-4">
+              {filteredProperties.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <FaSearch className="text-gray-300 text-4xl mb-4" />
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">
+                    No properties found
+                  </h3>
+                  <p className="text-gray-500 mb-4 text-sm sm:text-base">
+                    Try adjusting your search criteria
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setPriceRange("");
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base"
                   >
-                    {/* Property Image */}
-                    <div className="relative group">
-                      {property?.property_photo ? (
-                        <div className="relative h-40 sm:h-48 overflow-hidden">
-                          <Image
-                            src={property?.property_photo}
-                            alt={property?.property_name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center">
-                          <BsImageAlt className="text-2xl sm:text-3xl text-gray-400" />
-                        </div>
-                      )}
-
-                      {/* FlexiPay Badge */}
-                      {property?.flexipay_enabled === 1 && (
-                        <div className="absolute top-3 right-3">
-                          <div className="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
-                            FlexiPay ✓
+                    Clear Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                  {paginatedProperties.map((property) => (
+                    <div
+                      key={property.property_id}
+                      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
+                    >
+                      {/* Property Image */}
+                      <div className="relative group">
+                        {property?.property_photo ? (
+                          <div className="relative h-40 sm:h-48 overflow-hidden">
+                            <Image
+                              src={property?.property_photo}
+                              alt={property?.property_name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
                           </div>
+                        ) : (
+                          <div className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center">
+                            <BsImageAlt className="text-2xl sm:text-3xl text-gray-400" />
+                          </div>
+                        )}
+
+                        {/* FlexiPay Badge */}
+                        {property?.flexipay_enabled === 1 && (
+                          <div className="absolute top-3 right-3">
+                            <div className="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                              FlexiPay ✓
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Property Details */}
+                      <div className="p-3 sm:p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-gray-900 text-base sm:text-lg">
+                            ₱{Math.round(property.rent_amount).toLocaleString()}
+                            <span className="text-xs sm:text-sm font-normal text-gray-500 ml-1">
+                              /month
+                            </span>
+                          </h3>
+                          <MdVerified className="text-blue-500 text-lg flex-shrink-0" />
                         </div>
-                      )}
-                    </div>
 
-                    {/* Property Details */}
-                    <div className="p-3 sm:p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-gray-900 text-base sm:text-lg">
-                          ₱{Math.round(property.rent_amount).toLocaleString()}
-                          <span className="text-xs sm:text-sm font-normal text-gray-500 ml-1">
-                            /month
-                          </span>
-                        </h3>
-                        <MdVerified className="text-blue-500 text-lg flex-shrink-0" />
-                      </div>
+                        <h4 className="font-medium text-gray-800 mb-1 line-clamp-1 text-sm sm:text-base">
+                          {property?.property_name}
+                        </h4>
 
-                      <h4 className="font-medium text-gray-800 mb-1 line-clamp-1 text-sm sm:text-base">
-                        {property?.property_name}
-                      </h4>
+                        <div className="flex items-center text-gray-600 mb-3">
+                          <FaMapMarkerAlt className="mr-1 text-gray-400 text-xs flex-shrink-0" />
+                          <p className="text-xs sm:text-sm truncate">
+                            {property?.city},{" "}
+                            {property?.province
+                              ?.split("_")
+                              .map(
+                                (word) =>
+                                  word.charAt(0).toUpperCase() + word.slice(1)
+                              )
+                              .join(" ")}
+                          </p>
+                        </div>
 
-                      <div className="flex items-center text-gray-600 mb-3">
-                        <FaMapMarkerAlt className="mr-1 text-gray-400 text-xs flex-shrink-0" />
-                        <p className="text-xs sm:text-sm truncate">
-                          {property?.city},{" "}
-                          {property?.province
-                            ?.split("_")
-                            .map(
-                              (word) =>
-                                word.charAt(0).toUpperCase() + word.slice(1)
-                            )
-                            .join(" ")}
-                        </p>
-                      </div>
+                        {/* Single Button - View Details Only */}
+                        <button
+                          onClick={() =>
+                            handleViewDetails(property.property_id)
+                          }
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors"
+                        >
+                          View Details
+                        </button>
 
-                      {/* Single Button - View Details Only */}
-                      <button
-                        onClick={() => handleViewDetails(property.property_id)}
-                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors"
-                      >
-                        View Details
-                      </button>
-
-                      {/* Inline Map */}
-                      {visibleMaps[property.property_id] && (
+                        {/* Inline Map */}
+                        {visibleMaps[property.property_id] && (
                           <div className="mt-3 rounded-lg overflow-hidden border border-gray-200">
                             {property.latitude && property.longitude ? (
-                                <div className="h-40">
-                                  <MapContainer
-                                      key={`map-${property.property_id}`} // 👈 force new map per property
-                                      center={[
-                                        parseFloat(property.latitude),
-                                        parseFloat(property.longitude),
-                                      ]}
-                                      zoom={15}
-                                      style={{ height: "100%", width: "100%" }}
+                              <div className="h-40">
+                                <MapContainer
+                                  key={`map-${property.property_id}`} // 👈 force new map per property
+                                  center={[
+                                    parseFloat(property.latitude),
+                                    parseFloat(property.longitude),
+                                  ]}
+                                  zoom={15}
+                                  style={{ height: "100%", width: "100%" }}
+                                >
+                                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                  <Marker
+                                    position={[
+                                      parseFloat(property.latitude),
+                                      parseFloat(property.longitude),
+                                    ]}
+                                    icon={propertyIcon}
                                   >
-                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                                    <Marker
-                                        position={[
-                                          parseFloat(property.latitude),
-                                          parseFloat(property.longitude),
-                                        ]}
-                                        icon={propertyIcon}
-                                    >
-                                      <Popup>
-                                        <div className="text-center p-2">
-                                          <strong>{property.property_name}</strong>
-                                        </div>
-                                      </Popup>
-                                    </Marker>
-                                  </MapContainer>
-                                </div>
+                                    <Popup>
+                                      <div className="text-center p-2">
+                                        <strong>
+                                          {property.property_name}
+                                        </strong>
+                                      </div>
+                                    </Popup>
+                                  </Marker>
+                                </MapContainer>
+                              </div>
                             ) : (
-                                <div className="h-20 bg-gray-100 flex items-center justify-center">
-                                  <p className="text-red-500 text-sm">Invalid coordinates</p>
-                                </div>
+                              <div className="h-20 bg-gray-100 flex items-center justify-center">
+                                <p className="text-red-500 text-sm">
+                                  Invalid coordinates
+                                </p>
+                              </div>
                             )}
                           </div>
-                      )}
-
-
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination Component for List View */}
+            {filteredProperties.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                totalItems={filteredProperties.length}
+                itemsPerPage={itemsPerPage}
+              />
             )}
           </div>
         ) : (
@@ -598,101 +748,116 @@ export default function PropertySearch() {
                 </div>
 
                 {/* Property List */}
-                <div className="flex-1 overflow-auto">
-                  {filteredProperties.length === 0 ? (
-                    <div className="p-4 text-center">
-                      <FaSearch className="text-gray-300 text-3xl mx-auto mb-3" />
-                      <p className="text-gray-500 text-sm sm:text-base">
-                        No properties found
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-gray-100">
-                      {filteredProperties.map((property) => (
-                        <div
-                          key={property.property_id}
-                          className={`p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                            hoveredProperty === property.property_id
-                              ? "bg-blue-50"
-                              : ""
-                          }`}
-                          onMouseEnter={() =>
-                            setHoveredProperty(property.property_id)
-                          }
-                          onMouseLeave={() => setHoveredProperty(null)}
-                          onClick={() => handleSidebarPropertyClick(property)}
-                        >
-                          <div className="flex gap-3">
-                            {/* Property Image */}
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                              {property?.property_photo ? (
-                                <Image
-                                  src={property?.property_photo}
-                                  alt={property?.property_name}
-                                  width={80}
-                                  height={80}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <BsImageAlt className="text-gray-400" />
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Property Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between mb-1">
-                                <h3 className="font-semibold text-gray-900 text-sm sm:text-lg">
-                                  ₱
-                                  {Math.round(
-                                    property.rent_amount
-                                  ).toLocaleString()}
-                                  <span className="text-xs font-normal text-gray-500 ml-1">
-                                    /ave. month
-                                  </span>
-                                </h3>
-                                {property?.flexipay_enabled === 1 && (
-                                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                                    FlexiPay
-                                  </span>
+                <div className="flex-1 flex flex-col">
+                  <div className="flex-1 overflow-auto">
+                    {filteredProperties.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <FaSearch className="text-gray-300 text-3xl mx-auto mb-3" />
+                        <p className="text-gray-500 text-sm sm:text-base">
+                          No properties found
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-100">
+                        {paginatedProperties.map((property) => (
+                          <div
+                            key={property.property_id}
+                            className={`p-3 sm:p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                              hoveredProperty === property.property_id
+                                ? "bg-blue-50"
+                                : ""
+                            }`}
+                            onMouseEnter={() =>
+                              setHoveredProperty(property.property_id)
+                            }
+                            onMouseLeave={() => setHoveredProperty(null)}
+                            onClick={() => handleSidebarPropertyClick(property)}
+                          >
+                            <div className="flex gap-3">
+                              {/* Property Image */}
+                              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                                {property?.property_photo ? (
+                                  <Image
+                                    src={property?.property_photo}
+                                    alt={property?.property_name}
+                                    width={80}
+                                    height={80}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <BsImageAlt className="text-gray-400" />
+                                  </div>
                                 )}
                               </div>
 
-                              <h4 className="font-medium text-gray-800 text-xs sm:text-sm mb-1 line-clamp-1">
-                                {property?.property_name}
-                              </h4>
+                              {/* Property Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between mb-1">
+                                  <h3 className="font-semibold text-gray-900 text-sm sm:text-lg">
+                                    ₱
+                                    {Math.round(
+                                      property.rent_amount
+                                    ).toLocaleString()}
+                                    <span className="text-xs font-normal text-gray-500 ml-1">
+                                      /ave. month
+                                    </span>
+                                  </h3>
+                                  {property?.flexipay_enabled === 1 && (
+                                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                                      FlexiPay
+                                    </span>
+                                  )}
+                                </div>
 
-                              <div className="flex items-center text-gray-500 text-xs mb-2">
-                                <FaMapMarkerAlt className="mr-1 flex-shrink-0" />
-                                <span className="truncate">
-                                  {property?.city},{" "}
-                                  {property?.province
-                                    ?.split("_")
-                                    .map(
-                                      (word) =>
-                                        word.charAt(0).toUpperCase() +
-                                        word.slice(1)
-                                    )
-                                    .join(" ")}
-                                </span>
-                              </div>
+                                <h4 className="font-medium text-gray-800 text-xs sm:text-sm mb-1 line-clamp-1">
+                                  {property?.property_name}
+                                </h4>
 
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewDetails(property.property_id);
-                                  }}
-                                  className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
-                                >
-                                  View Details
-                                </button>
+                                <div className="flex items-center text-gray-500 text-xs mb-2">
+                                  <FaMapMarkerAlt className="mr-1 flex-shrink-0" />
+                                  <span className="truncate">
+                                    {property?.city},{" "}
+                                    {property?.province
+                                      ?.split("_")
+                                      .map(
+                                        (word) =>
+                                          word.charAt(0).toUpperCase() +
+                                          word.slice(1)
+                                      )
+                                      .join(" ")}
+                                  </span>
+                                </div>
+
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewDetails(property.property_id);
+                                    }}
+                                    className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
+                                  >
+                                    View Details
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pagination Component for Map Sidebar */}
+                  {filteredProperties.length > 0 && (
+                    <div className="border-t border-gray-200">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        totalItems={filteredProperties.length}
+                        itemsPerPage={itemsPerPage}
+                      />
                     </div>
                   )}
                 </div>
@@ -762,7 +927,7 @@ export default function PropertySearch() {
                     </Marker>
                   )}
 
-                  {/* Property Markers */}
+                  {/* Property Markers - Show ALL filtered properties on map, not just paginated ones */}
                   {filteredProperties
                     .filter(
                       (property) =>

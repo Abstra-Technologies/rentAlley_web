@@ -226,7 +226,7 @@ export default function MyUnit() {
         <>
         <div className="flex min-h-screen bg-gray-50">
             <TenantOutsidePortalNav />
-            <div className="flex-1 md:ml-80">
+            <div className="flex-1 md:ml-64">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 <h1 className="gradient-header">My Units</h1>
                 <button

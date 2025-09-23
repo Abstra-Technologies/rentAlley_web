@@ -13,17 +13,30 @@ export default function TenantRequest() {
   const { fetchSession, user, admin } = useAuthStore();
 
   useEffect(() => {
+    const loadSession = async () => {
+      setLoading(true); // start loading
+      await fetchSession();
+      setLoading(false);
+    };
+
+    loadSession();
+  }, []);
+
+  useEffect(() => {
     if (user) {
       setLandlordId(user.landlord_id);
-      setLoading(false);
     }
   }, [user]);
 
-  if (loading) return <LoadingScreen />;
-
   return (
-    <LandlordLayout>
-      <InterestedTenants unitId={unitId} landlordId={landlordId} />
-    </LandlordLayout>
+    <>
+      {loading ? (
+        <LoadingScreen />
+      ) : (
+        <LandlordLayout>
+          <InterestedTenants unitId={unitId} landlordId={landlordId} />
+        </LandlordLayout>
+      )}
+    </>
   );
 }
