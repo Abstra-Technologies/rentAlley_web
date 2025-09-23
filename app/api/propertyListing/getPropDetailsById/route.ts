@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
         zip_code,
         floor_area,
         amenities,
-        utility_billing_type,
+        water_billing_type,
+        electricity_billing_type,
         assoc_dues,
         late_fee,
         min_stay

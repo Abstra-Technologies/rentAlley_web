@@ -94,8 +94,13 @@ export default function AddNewProperty() {
         return false;
       }
 
-      if (!property.utilityBillingType?.trim()) {
-        Swal.fire("Missing Utility Billing Type", "Please select a utility billing type.", "error");
+      if (!property.waterBillingType?.trim()) {
+        Swal.fire("Missing Water Utility Billing Type", "Please select a utility billing type.", "error");
+        return false;
+      }
+
+      if (!property.electricityBillingType?.trim()) {
+        Swal.fire("Missing Electricity Utility Billing Type", "Please select a utility billing type.", "error");
         return false;
       }
 
@@ -163,35 +168,6 @@ export default function AddNewProperty() {
       `/api/propertyListing/createNewProperty?landlord_id=${user?.landlord_id}`,
       sendPropertyData
   );
-
-  const uploadPhotos = async (propertyID) => {
-    const formData = new FormData();
-    formData.append("property_id", propertyID);
-
-    photos.forEach((photo) => {
-      if (photo.file instanceof File) {
-        formData.append("files", photo.file);
-      }
-    });
-
-    await axios.post(`/api/propertyListing/uploadPropertyPhotos`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-  };
-
-  const uploadPropertyRequirements = async (propertyID) => {
-    const formData = new FormData();
-    formData.append("property_id", propertyID);
-    formData.append("docType", docType);
-    formData.append("submittedDoc", submittedDoc?.file);
-    formData.append("govID", govID?.file);
-    formData.append("indoor", indoorPhoto);
-    formData.append("outdoor", outdoorPhoto);
-
-    await axios.post("/api/propertyListing/propertyVerification", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();

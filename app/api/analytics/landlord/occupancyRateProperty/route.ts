@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { RowDataPacket } from "mysql2";
@@ -8,14 +9,14 @@ export async function GET(req: NextRequest) {
 
   if (!landlord_id) {
     return NextResponse.json(
-      { error: "Missing landlord_id parameter" },
-      { status: 400 }
+        { error: "Missing landlord_id parameter" },
+        { status: 400 }
     );
   }
 
   try {
     const [rows] = await db.execute<RowDataPacket[]>(
-      `
+        `
       SELECT 
         COUNT(CASE WHEN U.status = 'occupied' THEN 1 END) AS occupied_units,
         COUNT(U.unit_id) AS total_units,
@@ -24,15 +25,21 @@ export async function GET(req: NextRequest) {
       JOIN Property P ON U.property_id = P.property_id
       WHERE P.landlord_id = ?
       `,
-      [landlord_id]
+        [landlord_id]
     );
 
-    return NextResponse.json({ occupancyRate: rows[0] });
+    const data = rows[0];
+
+    return NextResponse.json({
+      occupiedUnits: data.occupied_units,
+      totalUnits: data.total_units,
+      occupancyRate: Number(data.occupancy_rate) || 0, // return as number
+    });
   } catch (error: any) {
     console.error("Database error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+        { error: "Internal Server Error" },
+        { status: 500 }
     );
   }
 }

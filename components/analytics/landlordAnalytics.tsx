@@ -50,74 +50,131 @@ const LandlordPropertyChart = () => {
   const { user, fetchSession } = useAuthStore();
   const router = useRouter();
   const [monthlyVisits, setMonthlyVisits] = useState([]);
-  const [occupancyRate, setOccupancyRate] = useState(null);
+  const [occupancyRate, setOccupancyRate] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [totalUnits, setTotalUnits] = useState(0);
   const [totalTenants, setTotalTenants] = useState(0);
   const [totalRequests, setTotalRequests] = useState(0);
   const [totalReceivables, setTotalReceivables] = useState(0);
   const [activeTab, setActiveTab] = useState("overview"); // For mobile tabs
+  const [totalProperties, setTotalProperties] = useState(0);
 
   useEffect(() => {
     if (!user?.landlord_id) {
       fetchSession();
     }
-  }, [user, fetchSession]);
+  }, [user?.landlord_id, fetchSession]);
 
   const landlord_id = user?.landlord_id;
+
+  // useEffect(() => {
+  //   if (!user?.landlord_id) return; // don’t run until landlord_id is ready
+  //
+  //   const landlord_id = user.landlord_id;
+  //
+  //   // Fetch all data concurrently
+  //   Promise.all([
+  //     fetch(`/api/analytics/landlord/propertyVisitsPerMonth?landlord_id=${landlord_id}`),
+  //     fetch(`/api/analytics/landlord/occupancyRateProperty?landlord_id=${landlord_id}`),
+  //     fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`),
+  //     fetch(`/api/analytics/landlord/maintenanceRequestsSummary?landlord_id=${landlord_id}`),
+  //     fetch(`/api/analytics/landlord/totalReceivables?landlord_id=${landlord_id}`),
+  //     fetch(`/api/analytics/landlord/getActiveListings?landlord_id=${landlord_id}`),
+  //   ])
+  //       .then(
+  //           async ([
+  //                    visitsRes,
+  //                    occupancyRes,
+  //                    tenantsRes,
+  //                    requestsRes,
+  //                    receivablesRes,
+  //                    propertiesRes,
+  //                  ]) => {
+  //             const visitsData = await visitsRes.json();
+  //             const occupancyData = await occupancyRes.json();
+  //             const tenantsData = await tenantsRes.json();
+  //             const requestsData = await requestsRes.json();
+  //             const receivablesData = await receivablesRes.json();
+  //             const propertiesData = await propertiesRes.json();
+  //             console.log('propertiessdata: ', propertiesData);
+  //             // visits
+  //             setMonthlyVisits(visitsData.visitsPerMonth || []);
+  //
+  //             // occupancy
+  //             const totalUnits = occupancyData.occupancyRate?.total_units || 0;
+  //             const rate =
+  //                 totalUnits > 0 ? occupancyData.occupancyRate?.occupancy_rate || 0 : 0;
+  //
+  //             // properties
+  //             setTotalProperties(propertiesData.totalActiveListings || 0);
+  //
+  //             // others
+  //             setTotalUnits(totalUnits);
+  //             setOccupancyRate(rate);
+  //             setTotalTenants(tenantsData.total_tenants || 0);
+  //             setTotalRequests(requestsData.totalRequests || 0);
+  //             setTotalReceivables(receivablesData.totalReceivables || 0);
+  //
+  //             setLoading(false);
+  //           }
+  //       )
+  //       .catch((error) => {
+  //         console.error("Error fetching dashboard data:", error);
+  //         setLoading(false);
+  //       });
+  // }, [user?.landlord_id]); // ✅ minimal dependency
 
   useEffect(() => {
     if (!user?.landlord_id) return;
 
-    // Fetch all data concurrently
-    Promise.all([
-      fetch(
-        `/api/analytics/landlord/propertyVisitsPerMonth?landlord_id=${landlord_id}`
-      ),
-      fetch(
-        `/api/analytics/landlord/occupancyRateProperty?landlord_id=${landlord_id}`
-      ),
-      fetch(
-        `/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`
-      ),
-      fetch(
-        `/api/analytics/landlord/maintenanceRequestsSummary?landlord_id=${landlord_id}`
-      ),
-      fetch(
-        `/api/analytics/landlord/totalReceivables?landlord_id=${landlord_id}`
-      ),
-    ])
-      .then(
-        async ([
-          visitsRes,
-          occupancyRes,
-          tenantsRes,
-          requestsRes,
-          receivablesRes,
-        ]) => {
-          const visitsData = await visitsRes.json();
-          const occupancyData = await occupancyRes.json();
-          const tenantsData = await tenantsRes.json();
-          const requestsData = await requestsRes.json();
-          const receivablesData = await receivablesRes.json();
+    const landlord_id = user.landlord_id;
 
-          setMonthlyVisits(visitsData.visitsPerMonth || []);
-          const total = occupancyData.occupancyRate?.total_units || 0;
-          const rate =
-            total > 0 ? occupancyData.occupancyRate?.occupancy_rate || 0 : 0;
-          setTotalUnits(total);
-          setOccupancyRate(rate);
-          setTotalTenants(tenantsData.total_tenants);
-          setTotalRequests(requestsData.totalRequests || 0);
-          setTotalReceivables(receivablesData.totalReceivables || 0);
-          setLoading(false);
-        }
-      )
-      .catch((error) => {
-        console.error("Error fetching dashboard data:", error);
-        setLoading(false);
-      });
-  }, [fetchSession, user, landlord_id]);
+    // 🔹 Fetch total active listings
+    fetch(`/api/analytics/landlord/getActiveListings?landlord_id=${landlord_id}`)
+        .then((res) => res.json())
+        .then((propertiesData) => {
+          setTotalProperties(propertiesData.totalActiveListings || 0);
+        })
+        .catch((error) => console.error("Error fetching properties:", error));
+
+    // 🔹 Fetch occupancy rate
+    fetch(`/api/analytics/landlord/occupancyRateProperty?landlord_id=${landlord_id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          // works with { occupancyRate: 50 } or { occupancy_rate: 50 }
+          const raw = data?.occupancyRate ?? data?.occupancy_rate ?? 0;
+
+          let num =
+              typeof raw === "string"
+                  ? parseFloat(raw.replace("%", "")) // handle "85" or "85%"
+                  : Number(raw); // ✅ capital N
+
+
+          // if backend ever sends a fraction (0–1), convert to %
+          if (num > 0 && num <= 1) num = num * 100;
+
+          setOccupancyRate(Number.isFinite(num) ? num : 0);
+        })
+        .catch((err) => {
+          console.error("Error fetching occupancy:", err);
+          setOccupancyRate(0);
+        });
+
+    // total tenants
+    fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("API raw response (tenants):", data);
+          setTotalTenants(data?.total_tenants || 0);
+        })
+        .catch((err) => console.error("Error fetching tenants:", err));
+
+
+
+  }, [user?.landlord_id]);
+
+
+
 
   const months = [
     "Jan",
@@ -133,6 +190,7 @@ const LandlordPropertyChart = () => {
     "Nov",
     "Dec",
   ];
+  // @ts-ignore
   const visitData = (monthlyVisits || []).map((item) => ({
     month: months[item.month - 1],
     visitCount: item.visitCount,
@@ -146,13 +204,13 @@ const LandlordPropertyChart = () => {
     { id: "upcoming", label: "Upcoming", icon: TrendingUp },
   ];
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
-        <LoadingScreen />
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+  //       <LoadingScreen />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="bg-gray-50 min-h-screen -mx-4 sm:mx-0">
@@ -189,8 +247,8 @@ const LandlordPropertyChart = () => {
           <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm">Total Units</p>
-                <p className="text-2xl font-bold text-gray-800">{totalUnits}</p>
+                <p className="text-gray-500 text-sm">Total Properties</p>
+                <p className="text-2xl font-bold text-gray-800">{totalProperties}</p>
               </div>
               <div className="p-3 bg-blue-50 rounded-lg">
                 <Home className="w-6 h-6 text-blue-600" />
@@ -296,8 +354,8 @@ const LandlordPropertyChart = () => {
             {/* Mobile Quick Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
-                <p className="text-gray-500 text-xs">Total Units</p>
-                <p className="text-xl font-bold text-gray-800">{totalUnits}</p>
+                <p className="text-gray-500 text-xs">Total Properties</p>
+                <p className="text-xl font-bold text-gray-800">{totalProperties}</p>
               </div>
               <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
                 <p className="text-gray-500 text-xs">Total Tenants</p>

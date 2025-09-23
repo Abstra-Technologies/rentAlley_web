@@ -15,7 +15,11 @@ interface PropertyData {
     province: string;
     propDesc: string;
     floorArea: number;
-    utilityBillingType: string;
+
+    // 🔑 Separated billing types
+    waterBillingType: string;
+    electricityBillingType: string;
+
     minStay: number;
     secDeposit: number;
     advancedPayment: number;
@@ -71,7 +75,11 @@ const initialPropertyState: PropertyData = {
     province: "",
     propDesc: "",
     floorArea: 0,
-    utilityBillingType: "",
+
+    // 🔑 New billing fields
+    waterBillingType: "",
+    electricityBillingType: "",
+
     minStay: 0,
     secDeposit: 0,
     advancedPayment: 0,

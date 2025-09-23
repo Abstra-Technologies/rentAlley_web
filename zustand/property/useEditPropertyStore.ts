@@ -1,4 +1,6 @@
+
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 const initialEditPropertyState = {
     propertyName: "",
@@ -11,7 +13,11 @@ const initialEditPropertyState = {
     province: "",
     propDesc: "",
     floorArea: 0,
-    utilityBillingType: "",
+
+    // 🔑 Split billing types
+    waterBillingType: "",
+    electricityBillingType: "",
+
     minStay: 0,
     secDeposit: 0,
     advancedPayment: 0,
@@ -28,52 +34,59 @@ const initialEditPropertyState = {
 };
 
 // @ts-ignore
-const useEditPropertyStore = create((set) => ({
-    property: { ...initialEditPropertyState },
-    photos: [],
-    loading: false,
-    error: null,
-
-    // Set or merge property fields
-    // @ts-ignore
-    setProperty: (propertyDetails) =>
-        // @ts-ignore
-        set((state) => ({
-            property: {
-                ...state.property,
-                ...propertyDetails,
-            },
-        })),
-
-    // Toggle an amenity
-    // @ts-ignore
-    toggleAmenity: (amenity) =>
-        // @ts-ignore
-        set((state) => {
-            const amenities = state.property.amenities || [];
-            const exists = amenities.includes(amenity);
-            return {
-                property: {
-                    ...state.property,
-                    amenities: exists
-                        // @ts-ignore
-                        ? amenities.filter((a) => a !== amenity)
-                        : [...amenities, amenity],
-                },
-            };
-        }),
-
-    // Set photos/files individually
-    // @ts-ignore
-    setPhotos: (photos) => set({ photos }),
-
-    reset: () =>
-        set(() => ({
+const useEditPropertyStore = create(
+    persist(
+        (set) => ({
             property: { ...initialEditPropertyState },
             photos: [],
             loading: false,
             error: null,
-        })),
-}));
+
+            // Set or merge property fields
+            setProperty: (propertyDetails) =>
+                set((state) => ({
+                    property: {
+                        ...state.property,
+                        ...propertyDetails,
+                    },
+                })),
+
+            // Toggle an amenity
+            toggleAmenity: (amenity) =>
+                set((state) => {
+                    const amenities = state.property.amenities || [];
+                    const exists = amenities.includes(amenity);
+                    return {
+                        property: {
+                            ...state.property,
+                            amenities: exists
+                                ? amenities.filter((a) => a !== amenity)
+                                : [...amenities, amenity],
+                        },
+                    };
+                }),
+
+            // Set photos/files individually
+            setPhotos: (photos) => set({ photos }),
+
+            // Reset state
+            reset: () =>
+                set(() => ({
+                    property: { ...initialEditPropertyState },
+                    photos: [],
+                    loading: false,
+                    error: null,
+                })),
+        }),
+        {
+            name: "edit-property-store", // 🔑 localStorage key
+            partialize: (state) => ({
+                property: state.property,
+                photos: state.photos,
+            }),
+        }
+    )
+);
 
 export default useEditPropertyStore;
+

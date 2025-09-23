@@ -119,9 +119,18 @@ export default function EditProperty() {
         return false;
       }
 
-      if (!property.utilityBillingType || property.utilityBillingType.trim() === "") {
+      if (!property.waterBillingType || property.waterBillingType.trim() === "") {
         Swal.fire(
-            "Missing Utility Billing Type",
+            "Missing Water Utility Billing Type",
+            "Please select a utility billing type.",
+            "error"
+        );
+        return false;
+      }
+
+      if (!property.electricityBillingType || property.electricityBillingType.trim() === "") {
+        Swal.fire(
+            "Missing Eelctricity Utility Billing Type",
             "Please select a utility billing type.",
             "error"
         );

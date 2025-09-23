@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
       JOIN Tenant t ON la.tenant_id = t.tenant_id
       JOIN User u ON t.user_id = u.user_id
       WHERE la.unit_id = ?
-        AND la.status = 'active'
       LIMIT 1
       `,
             [unitId]

@@ -12,7 +12,10 @@ export async function PUT(req: NextRequest) {
     console.log("data received", body);
 
     if (!property_id) {
-        return NextResponse.json({ error: "Property ID is required" }, { status: 400 });
+        return NextResponse.json(
+            { error: "Property ID is required" },
+            { status: 400 }
+        );
     }
 
     const connection = await db.getConnection();
@@ -25,12 +28,15 @@ export async function PUT(req: NextRequest) {
         );
         // @ts-ignore
         if (!existingRows.length) {
-            return NextResponse.json({ error: "Property not found" }, { status: 404 });
+            return NextResponse.json(
+                { error: "Property not found" },
+                { status: 404 }
+            );
         }
 
         await connection.beginTransaction();
 
-        // Normalize fields (camelCase or snake_case)
+        // Normalize fields
         const propertyName = body.propertyName ?? body.property_name ?? null;
         const propertyType = body.propertyType ?? body.property_type ?? null;
         const street = body.street ?? null;
@@ -38,17 +44,27 @@ export async function PUT(req: NextRequest) {
         const city = body.city ?? null;
         const zipCode = body.zipCode ?? body.zip_code ?? null;
         const province = body.province ?? null;
-        const utilityBillingType = body.utilityBillingType ?? body.utility_billing_type ?? null;
+
+        // 🔑 New: Separate billing types
+        const waterBillingType =
+            body.waterBillingType ?? body.water_billing_type ?? null;
+        const electricityBillingType =
+            body.electricityBillingType ?? body.electricity_billing_type ?? null;
+
         const propDesc = body.propDesc ?? body.description ?? null;
         const floorArea = body.floorArea ?? body.floor_area ?? null;
         const minStay = body.minStay ?? body.min_stay ?? null;
         const assocDues = body.assocDues ?? body.assoc_dues ?? null;
         const lateFee = body.lateFee ?? body.late_fee ?? null;
-        const paymentFrequency = body.paymentFrequency ?? body.payment_frequency ?? null;
-        const flexiPayEnabled = body.flexiPayEnabled ?? body.flexipay_enabled ?? false;
+        const paymentFrequency =
+            body.paymentFrequency ?? body.payment_frequency ?? null;
+        const flexiPayEnabled =
+            body.flexiPayEnabled ?? body.flexipay_enabled ?? false;
         const amenities = body.amenities ?? null;
-        const paymentMethodsAccepted = body.paymentMethodsAccepted ?? body.accepted_payment_methods ?? null;
-        const propertyPreferences = body.propertyPreferences ?? body.property_preferences ?? null;
+        const paymentMethodsAccepted =
+            body.paymentMethodsAccepted ?? body.accepted_payment_methods ?? null;
+        const propertyPreferences =
+            body.propertyPreferences ?? body.property_preferences ?? null;
         const latitude = body.lat ?? body.latitude ?? null;
         const longitude = body.lng ?? body.longitude ?? null;
 
@@ -60,46 +76,47 @@ export async function PUT(req: NextRequest) {
                 : null;
 
         const propertyPreferencesJson = propertyPreferences
-            ? (Array.isArray(propertyPreferences)
+            ? Array.isArray(propertyPreferences)
                 ? JSON.stringify(propertyPreferences)
                 : typeof propertyPreferences === "string"
                     ? propertyPreferences
-                    : JSON.stringify([propertyPreferences]))
+                    : JSON.stringify([propertyPreferences])
             : null;
 
         const paymentMethodsJson = paymentMethodsAccepted
-            ? (Array.isArray(paymentMethodsAccepted)
+            ? Array.isArray(paymentMethodsAccepted)
                 ? JSON.stringify(paymentMethodsAccepted)
                 : typeof paymentMethodsAccepted === "string"
                     ? paymentMethodsAccepted
-                    : JSON.stringify([paymentMethodsAccepted]))
+                    : JSON.stringify([paymentMethodsAccepted])
             : null;
 
         // Execute update
         await connection.execute(
             `UPDATE Property SET
-                property_name = ?,
-                property_type = ?,
-                amenities = ?,
-                street = ?,
-                brgy_district = ?,
-                city = ?,
-                zip_code = ?,
-                province = ?,
-                utility_billing_type = ?,
-                description = ?,
-                floor_area = ?,
-                min_stay = ?,
-                assoc_dues = ?,
-                late_fee = ?,
-                payment_frequency = ?,
-                flexipay_enabled = ?,
-                property_preferences = ?,
-                accepted_payment_methods = ?,
-                latitude = ?,
-                longitude = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE property_id = ?`,
+                                 property_name = ?,
+                                 property_type = ?,
+                                 amenities = ?,
+                                 street = ?,
+                                 brgy_district = ?,
+                                 city = ?,
+                                 zip_code = ?,
+                                 province = ?,
+                                 water_billing_type = ?,
+                                 electricity_billing_type = ?,
+                                 description = ?,
+                                 floor_area = ?,
+                                 min_stay = ?,
+                                 assoc_dues = ?,
+                                 late_fee = ?,
+                                 payment_frequency = ?,
+                                 flexipay_enabled = ?,
+                                 property_preferences = ?,
+                                 accepted_payment_methods = ?,
+                                 latitude = ?,
+                                 longitude = ?,
+                                 updated_at = CURRENT_TIMESTAMP
+             WHERE property_id = ?`,
             [
                 propertyName,
                 propertyType,
@@ -109,7 +126,8 @@ export async function PUT(req: NextRequest) {
                 city,
                 zipCode,
                 province,
-                utilityBillingType,
+                waterBillingType,
+                electricityBillingType,
                 propDesc,
                 floorArea,
                 minStay,
@@ -130,7 +148,10 @@ export async function PUT(req: NextRequest) {
         const token = cookies.get("token")?.value;
         if (!token) {
             await connection.rollback();
-            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+            return NextResponse.json(
+                { success: false, message: "Unauthorized" },
+                { status: 401 }
+            );
         }
 
         const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -148,7 +169,10 @@ export async function PUT(req: NextRequest) {
     } catch (error) {
         await connection.rollback();
         console.error("Error updating property listing:", error);
-        return NextResponse.json({ error: "Failed to update property listing" }, { status: 500 });
+        return NextResponse.json(
+            { error: "Failed to update property listing" },
+            { status: 500 }
+        );
     } finally {
         connection.release();
     }

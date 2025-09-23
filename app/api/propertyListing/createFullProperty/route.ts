@@ -1,11 +1,7 @@
 
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import {
-    S3Client,
-    PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { encryptData } from "@/crypto/encrypt";
 
 const s3Client = new S3Client({
@@ -42,7 +38,7 @@ async function uploadToS3(file: File, folder: string) {
 
 export async function POST(req: NextRequest) {
     const formData = await req.formData();
-
+    console.log('form data: ', formData);
     const landlord_id = formData.get("landlord_id")?.toString();
     const propertyRaw = formData.get("property")?.toString();
 
@@ -64,17 +60,18 @@ export async function POST(req: NextRequest) {
     try {
         await connection.beginTransaction();
 
-        // 1️⃣ Insert property
+        // 1️⃣ Insert property with separated billing types
         const [result] = await connection.execute(
             `INSERT INTO Property (
-        landlord_id, property_name, property_type, amenities, street,
-        brgy_district, city, zip_code, province,
-        utility_billing_type, description, floor_area,
-        min_stay, late_fee, assoc_dues,
-        payment_frequency, flexipay_enabled, property_preferences,
-        accepted_payment_methods, latitude, longitude,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                landlord_id, property_name, property_type, amenities, street,
+                brgy_district, city, zip_code, province,
+                water_billing_type, electricity_billing_type,
+                description, floor_area,
+                min_stay, late_fee, assoc_dues,
+                payment_frequency, flexipay_enabled, property_preferences,
+                accepted_payment_methods, latitude, longitude,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
                 landlord_id,
                 property.propertyName,
@@ -85,7 +82,8 @@ export async function POST(req: NextRequest) {
                 property.city || null,
                 property.zipCode || null,
                 property.province || null,
-                property.utilityBillingType,
+                property.waterBillingType || null,
+                property.electricityBillingType || null,
                 property.propDesc || null,
                 property.floorArea,
                 property.minStay || null,
@@ -123,18 +121,18 @@ export async function POST(req: NextRequest) {
         const outdoorUrl = await uploadToS3(outdoor, "property-photo/outdoor");
 
         await connection.execute(
-            `INSERT INTO PropertyVerification 
-        (property_id, doc_type, submitted_doc, gov_id, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts)
-      VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)
-      ON DUPLICATE KEY UPDATE 
-        doc_type = VALUES(doc_type),
-        submitted_doc = VALUES(submitted_doc),
-        gov_id = VALUES(gov_id),
-        indoor_photo = VALUES(indoor_photo),
-        outdoor_photo = VALUES(outdoor_photo),
-        status = 'Pending',
-        updated_at = NOW(),
-        attempts = attempts + 1`,
+            `INSERT INTO PropertyVerification
+             (property_id, doc_type, submitted_doc, gov_id, indoor_photo, outdoor_photo, status, created_at, updated_at, verified, attempts)
+             VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)
+             ON DUPLICATE KEY UPDATE
+                                  doc_type = VALUES(doc_type),
+                                  submitted_doc = VALUES(submitted_doc),
+                                  gov_id = VALUES(gov_id),
+                                  indoor_photo = VALUES(indoor_photo),
+                                  outdoor_photo = VALUES(outdoor_photo),
+                                  status = 'Pending',
+                                  updated_at = NOW(),
+                                  attempts = attempts + 1`,
             [propertyId, docType, submittedDocUrl, govIdUrl, indoorUrl, outdoorUrl]
         );
 
@@ -150,3 +148,4 @@ export async function POST(req: NextRequest) {
         connection.release();
     }
 }
+

@@ -24,7 +24,18 @@ export async function POST(req: NextRequest) {
     const connection = await db.getConnection();
 
     try {
-        const { unitId, startDate, endDate, content } = await req.json();
+        const {
+            unitId,
+            startDate,
+            endDate,
+            depositAmount,
+            advanceAmount,
+            gracePeriod,
+            latePenalty,
+            billingDueDay,
+            expenses, // optional array [{type, amount}]
+            content,
+        } = await req.json();
 
         if (!unitId || !startDate || !endDate || !content) {
             return NextResponse.json(
@@ -86,7 +97,9 @@ export async function POST(req: NextRequest) {
         }
 
         // Step 3: Generate PDF from HTML content
+
         const browser = await puppeteer.launch({
+            // @ts-ignore
             headless: "new",
             args: ["--no-sandbox", "--disable-setuid-sandbox"],
         });
@@ -120,27 +133,69 @@ export async function POST(req: NextRequest) {
         if (isFromLeaseAgreement && agreement_id) {
             await connection.execute(
                 `UPDATE LeaseAgreement
-                 SET agreement_url = ?, start_date = ?, end_date = ?, updated_at = NOW()
+                 SET agreement_url = ?, start_date = ?, end_date = ?,
+                     security_deposit_amount = ?, advance_payment_amount = ?,
+                     grace_period_days = ?, late_penalty_amount = ?, billing_due_day = ?,
+                     updated_at = NOW()
                  WHERE agreement_id = ?`,
-                [encryptedUrl, startDate, endDate, agreement_id]
+                [
+                    encryptedUrl,
+                    startDate,
+                    endDate,
+                    Number(depositAmount) || 0,
+                    Number(advanceAmount) || 0,
+                    Number(gracePeriod) || 3,
+                    Number(latePenalty) || 1000,
+                    Number(billingDueDay) || 1,
+                    agreement_id,
+                ]
             );
         } else {
             await connection.execute(
-                `INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, agreement_url, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-                [tenant_id, unitId, startDate, endDate, encryptedUrl]
+                `INSERT INTO LeaseAgreement
+                 (tenant_id, unit_id, start_date, end_date, agreement_url,
+                  security_deposit_amount, advance_payment_amount,
+                  grace_period_days, late_penalty_amount, billing_due_day,
+                  created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                [
+                    tenant_id,
+                    unitId,
+                    startDate,
+                    endDate,
+                    encryptedUrl,
+                    Number(depositAmount) || 0,
+                    Number(advanceAmount) || 0,
+                    Number(gracePeriod) || 3,
+                    Number(latePenalty) || 1000,
+                    Number(billingDueDay) || 1,
+                ]
             );
+            // @ts-ignore
+            agreement_id = (await connection.query("SELECT LAST_INSERT_ID() as id"))[0][0].id;
+        }
+
+        // Step 6: Save additional expenses if provided
+        if (expenses && Array.isArray(expenses)) {
+            for (const row of expenses) {
+                if (!row.type || !row.amount) continue;
+                await connection.execute(
+                    `INSERT INTO LeaseAdditionalExpense (agreement_id, expense_type, amount, created_at)
+           VALUES (?, ?, ?, NOW())`,
+                    [agreement_id, row.type, Number(row.amount)]
+                );
+            }
         }
 
         await connection.commit();
         connection.release();
 
-        // ✅ return fileBase64 in addition to signedUrl
         return NextResponse.json({
             message: "Lease agreement generated & uploaded successfully.",
             fileBase64: Buffer.from(pdfBuffer).toString("base64"),
             signedUrl: s3Url,
             fileKey: s3Key,
+            agreementId: agreement_id,
         });
     } catch (error: any) {
         await connection.rollback();
@@ -152,4 +207,3 @@ export async function POST(req: NextRequest) {
         );
     }
 }
-

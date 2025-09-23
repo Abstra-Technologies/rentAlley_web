@@ -7,6 +7,10 @@ export async function GET(
     req: Request,
     { params }: { params: { landlord_id: string } }
 ) {
+
+    const { landlord_id } = await params;
+
+
     try {
         const [rows]: any = await db.query(
             `

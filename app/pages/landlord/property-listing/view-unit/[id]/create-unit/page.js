@@ -47,7 +47,7 @@ export default function UnitListingForm() {
         const res = await fetch(`/api/propertyListing/getPropDetailsById?id=${propertyId}`);
         if (!res.ok) throw new Error("Failed to fetch property");
         const data = await res.json();
-        setPropertyName(data?.property.property_nam);
+        setPropertyName(data.property.property_name);
         console.log('property name: ', data.property.property_name);
       } catch (err) {
         console.error("Error fetching property name:", err);
