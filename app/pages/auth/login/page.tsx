@@ -41,6 +41,21 @@ function Login() {
   const [focusedField, setFocusedField] = useState("");
 
   useEffect(() => {
+    if (user) {
+      if (user.userType === "tenant") {
+        router.replace("/pages/tenant/feeds");
+      } else if (user.userType === "landlord") {
+        router.replace("/pages/landlord/dashboard");
+      } else {
+        router.replace("/");
+      }
+    } else if (admin) {
+      router.replace("/pages/system_admin");
+    }
+  }, [user, admin, router]);
+
+
+  useEffect(() => {
     sessionStorage.removeItem("pending2FA");
     window.history.replaceState(null, "", "/pages/auth/login");
   }, [user, admin]);
