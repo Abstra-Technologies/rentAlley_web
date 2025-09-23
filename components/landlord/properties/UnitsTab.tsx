@@ -70,6 +70,27 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                                     </div>
                                 </div>
 
+                                {/* Lease Due Date Visual */}
+                                {unit?.next_due_date && (
+                                    <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-xl shadow-sm flex items-center">
+                                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold mr-2">
+                                                      📅
+                                                    </span>
+                                                                                        <span className="text-sm text-gray-700 font-medium">
+                                                      Billing Due Date:{" "}
+                                                                                            <span className="text-gray-900 font-semibold">
+                                                        {new Date(unit.next_due_date).toLocaleDateString("en-US", {
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            year: "numeric",
+                                                        })}
+                                                      </span>
+                                                    </span>
+                                    </div>
+                                )}
+
+
+
                                 {/* Billing Status */}
                                 {unitBillingStatus[unit.unit_id] && (
                                     <div className="absolute top-3 left-3 flex items-center gap-1 bg-green-500 text-white px-2 py-1 rounded-full shadow-md">

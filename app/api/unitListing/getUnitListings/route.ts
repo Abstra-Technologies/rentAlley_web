@@ -1,4 +1,3 @@
-
 import { db } from "@/lib/db";
 import { NextRequest } from "next/server";
 
@@ -12,20 +11,34 @@ export async function GET(req: NextRequest) {
   try {
     connection = await db.getConnection();
 
-    // Base query with LEFT JOIN on LeaseAgreement
     let query = `
       SELECT
         u.*,
+        la.agreement_id AS lease_agreement_id,
+        la.start_date,
+        la.end_date,
+        la.billing_due_day,
+        la.status AS lease_status,
+        -- Compute next due date based on billing_due_day
+        CASE
+          WHEN DAY(CURDATE()) <= la.billing_due_day
+            THEN DATE(CONCAT(YEAR(CURDATE()), '-', MONTH(CURDATE()), '-', la.billing_due_day))
+          ELSE DATE(CONCAT(YEAR(CURDATE()), '-', MONTH(CURDATE()) + 1, '-', la.billing_due_day))
+          END AS next_due_date,
         CASE
           WHEN EXISTS (
-            SELECT 1 FROM LeaseAgreement la
-            WHERE la.unit_id = u.unit_id AND la.status = 'pending'
+            SELECT 1 FROM LeaseAgreement lap
+            WHERE lap.unit_id = u.unit_id AND lap.status = 'pending'
           )
             THEN 1 ELSE 0
           END AS hasPendingLease
       FROM Unit u
+             LEFT JOIN LeaseAgreement la
+                       ON la.unit_id = u.unit_id
+                         AND la.status = 'active'
       WHERE 1=1
     `;
+
     const params: any[] = [];
 
     if (unit_id) {
@@ -65,4 +78,3 @@ export async function GET(req: NextRequest) {
     }
   }
 }
-

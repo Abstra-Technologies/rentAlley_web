@@ -141,7 +141,7 @@ export function StepThreeEdit({ propertyId }) {
                         <label className="block text-gray-700 font-medium mb-1">Description</label>
                         <textarea
                             name="propDesc"
-                            value={property.propDesc || ""}
+                            value={property.description || ""}
                             onChange={handleChange}
                             placeholder="Add a brief description"
                             className="w-full p-2 border rounded"

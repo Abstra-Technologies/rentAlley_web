@@ -11,13 +11,10 @@ const initialEditPropertyState = {
     city: "",
     zipCode: "",
     province: "",
-    propDesc: "",
+    description: "",
     floorArea: 0,
-
-    // 🔑 Split billing types
     waterBillingType: "",
     electricityBillingType: "",
-
     minStay: 0,
     secDeposit: 0,
     advancedPayment: 0,
