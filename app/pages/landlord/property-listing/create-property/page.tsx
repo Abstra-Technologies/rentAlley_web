@@ -23,6 +23,7 @@ export default function AddNewProperty() {
     return savedStep ? Number(savedStep) : 1;
   });
   const { fetchSession, user, admin } = useAuthStore();
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -169,23 +170,25 @@ export default function AddNewProperty() {
       sendPropertyData
   );
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep()) return;
 
-    const formData = new FormData();
-    formData.append("landlord_id", user?.landlord_id);
-    formData.append("property", JSON.stringify(property));
-    photos.forEach((p) => p.file && formData.append("photos", p.file));
-    formData.append("docType", docType);
-    // @ts-ignore
-    formData.append("submittedDoc", submittedDoc.file);
-    // @ts-ignore
-    formData.append("govID", govID.file);
-    formData.append("indoor", indoorPhoto);
-    formData.append("outdoor", outdoorPhoto);
-
+    setSubmitting(true); // 🔵 show "Submitting..."
     try {
+      const formData = new FormData();
+      formData.append("landlord_id", user?.landlord_id);
+      formData.append("property", JSON.stringify(property));
+      photos.forEach((p) => p.file && formData.append("photos", p.file));
+      formData.append("docType", docType);
+      // @ts-ignore
+      formData.append("submittedDoc", submittedDoc.file);
+      // @ts-ignore
+      formData.append("govID", govID.file);
+      formData.append("indoor", indoorPhoto);
+      formData.append("outdoor", outdoorPhoto);
+
       await axios.post("/api/propertyListing/createFullProperty", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -197,6 +200,8 @@ export default function AddNewProperty() {
       });
     } catch (err: any) {
       Swal.fire("Error", `Failed to submit property: ${err.message}`, "error");
+    } finally {
+      setSubmitting(false); // 🔴 always reset
     }
   };
 
@@ -276,12 +281,13 @@ export default function AddNewProperty() {
                   ) : (
                       <button
                           onClick={handleSubmit}
-                          disabled={isMutating}
+                          disabled={submitting}
                           className={`px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 
-                      disabled:opacity-50 ${isMutating ? "cursor-not-allowed" : ""}`}
+  disabled:opacity-50 ${submitting ? "cursor-not-allowed" : ""}`}
                       >
-                        {isMutating ? "Submitting..." : "Submit"}
+                        {submitting ? "Submitting..." : "Submit"}
                       </button>
+
                   )}
                 </div>
               </div>

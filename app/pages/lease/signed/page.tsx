@@ -1,24 +1,19 @@
 
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function LeaseSignedPage() {
+function LeaseSignedContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // DocuSign appends query params like:
-    // ?event=signing_complete&envelopeId=xxxx
     const event = searchParams.get("event");
     const envelopeId = searchParams.get("envelopeId");
 
     useEffect(() => {
-        if (event === "signing_complete") {
-            // ✅ handle post-signing actions
-            console.log("Lease signed!", { envelopeId });
-
-            // Example: call backend to mark lease as signed
+        if (event === "signing_complete" && envelopeId) {
             fetch("/api/leaseAgreement/markSigned", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -63,5 +58,13 @@ export default function LeaseSignedPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function LeaseSignedPage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center">Loading signed lease...</div>}>
+            <LeaseSignedContent />
+        </Suspense>
     );
 }
