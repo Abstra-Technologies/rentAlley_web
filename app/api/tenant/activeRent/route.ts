@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       const [unitDetails] = await db.query(
           `SELECT
              u.unit_id, u.unit_name, u.unit_size, u.bed_spacing, u.avail_beds,
-             u.rent_amount, u.furnish, u.status, u.sec_deposit, u.advanced_payment,
+             u.rent_amount, u.furnish, u.status,
              p.property_id, p.property_name, p.property_type, p.min_stay, p.landlord_id,
              p.city, p.zip_code, p.province, p.street, p.brgy_district
            FROM Unit u
