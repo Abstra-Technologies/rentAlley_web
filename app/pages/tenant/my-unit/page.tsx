@@ -13,6 +13,8 @@ import InstallPrompt from "@/components/Commons/installPrompt";
 import { useChatStore } from "@/zustand/chatStore";
 import LoadingScreen from "@/components/loadingScreen";
 import LeaseCounter from "@/components/tenant/analytics-insights/LeaseCounter";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 
 interface Unit {
     unit_id: string;
@@ -46,6 +48,9 @@ export default function MyUnit() {
     const [units, setUnits] = useState<Unit[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingPayment, setLoadingPayment] = useState(false);
+    const [page, setPage] = useState(1);
+    const itemsPerPage = 10;
+
 
     useEffect(() => {
         if (!user && !admin) {
@@ -69,11 +74,19 @@ export default function MyUnit() {
         if (user?.tenant_id) fetchUnits();
     }, [user]);
 
+    const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+    };
+
+    // Slice units based on pagination
+    const paginatedUnits = units.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
     if (loading) return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
              <LoadingScreen message='Just a moment, getting things ready...' />;
         </div>
     );
+
 
     const handleUploadProof = async (
         unitId: string,
@@ -224,105 +237,129 @@ export default function MyUnit() {
 
     return (
         <>
-        <div className="flex min-h-screen bg-gray-50">
-            <TenantOutsidePortalNav />
-            <div className="flex-1 md:ml-64">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <h1 className="gradient-header">My Units</h1>
-                <button
-                    className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200"
-                    onClick={() => {
-                        router.push("/pages/tenant/viewInvites");
-                    }}
-                >
-                    View Invitations
-                </button>
+            <div className="flex min-h-screen bg-gray-50">
+                <TenantOutsidePortalNav />
+                <div className="flex-1 md:ml-64">
+                    <div className="max-w-7xl mx-auto px-4 py-8">
+                        <h1 className="gradient-header">My Units</h1>
+                        <button
+                            className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200"
+                            onClick={() => {
+                                router.push("/pages/tenant/viewInvites");
+                            }}
+                        >
+                            View Invitations
+                        </button>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                     <LeaseCounter tenantId={user?.tenant_id} />
-                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <LeaseCounter tenantId={user?.tenant_id} />
+                        </div>
 
-                {units.length === 0 ? (
-                    <p className="text-gray-500">You currently have no active leases.</p>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {units.map((unit) => {
-                            const showPayButton = !unit.is_advance_payment_paid || !unit.is_security_deposit_paid;
-                            return (
-                                <div
-                                    key={unit.unit_id}
-                                    className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300"
-                                >
-                                    <div className="h-48 w-full relative">
-                                        <Image
-                                            src={unit.unit_photos?.[0] || "/placeholder.jpg"}
-                                            alt="Unit photo"
-                                            layout="fill"
-                                            objectFit="cover"
-                                        />
-                                    </div>
-                                    <div className="p-4">
-                                        <h2 className="text-xl font-bold">Unit {unit.unit_name}</h2>
-                                        <p className="text-sm text-gray-600">{unit.property_name} · {unit.city}, {unit.province}</p>
-                                        <p className="mt-2 text-sm">₱{unit.rent_amount.toLocaleString()} / month</p>
-                                        <p className="text-xs text-gray-500">Lease: {unit.start_date} to {unit.end_date}</p>
+                        {units.length === 0 ? (
+                            <p className="text-gray-500">You currently have no active leases.</p>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {paginatedUnits.map((unit) => {
+                                        const showPayButton =
+                                            !unit.is_advance_payment_paid || !unit.is_security_deposit_paid;
+                                        return (
+                                            <div
+                                                key={unit.unit_id}
+                                                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition duration-300"
+                                            >
+                                                <div className="h-48 w-full relative">
+                                                    <Image
+                                                        src={unit.unit_photos?.[0] || "/placeholder.jpg"}
+                                                        alt="Unit photo"
+                                                        layout="fill"
+                                                        objectFit="cover"
+                                                    />
+                                                </div>
+                                                <div className="p-4">
+                                                    <h2 className="text-xl font-bold">Unit {unit.unit_name}</h2>
+                                                    <p className="text-sm text-gray-600">
+                                                        {unit.property_name} · {unit.city}, {unit.province}
+                                                    </p>
+                                                    <p className="mt-2 text-sm">
+                                                        ₱{unit.rent_amount.toLocaleString()} / month
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        Lease Period:{" "}
+                                                        {new Date(unit.start_date).toISOString().split("T")[0]} to{" "}
+                                                        {new Date(unit.end_date).toISOString().split("T")[0]}
+                                                    </p>
 
-                                        <div className="mt-4 flex flex-col gap-2">
-                                            {(!unit.is_security_deposit_paid || !unit.is_advance_payment_paid) ? (
-                                                unit.has_pending_proof ? (
-                                                    <p className="mt-2 text-yellow-600 font-medium text-sm">Proof of payment submitted. Awaiting landlord confirmation.</p>
-                                                ) : (
-                                                    <div className="mt-2 space-y-2">
+                                                    <div className="mt-4 flex flex-col gap-2">
+                                                        {!unit.is_security_deposit_paid || !unit.is_advance_payment_paid ? (
+                                                            unit.has_pending_proof ? (
+                                                                <p className="mt-2 text-yellow-600 font-medium text-sm">
+                                                                    Proof of payment submitted. Awaiting landlord confirmation.
+                                                                </p>
+                                                            ) : (
+                                                                <div className="mt-2 space-y-2">
+                                                                    <button
+                                                                        onClick={() => handleUnitPayment(unit.unit_id)}
+                                                                        className="w-full py-2 px-4 text-white bg-green-600 rounded-lg hover:bg-green-700 transition"
+                                                                    >
+                                                                        Pay through Maya
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            handleUploadProof(
+                                                                                unit.unit_id,
+                                                                                unit.agreement_id,
+                                                                                toNumber(!unit.is_security_deposit_paid ? unit.sec_deposit : 0) +
+                                                                                toNumber(!unit.is_advance_payment_paid ? unit.advanced_payment : 0)
+                                                                            )
+                                                                        }
+                                                                        className="w-full py-2 px-4 text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition"
+                                                                    >
+                                                                        Upload Proof of Payment
+                                                                    </button>
+                                                                </div>
+                                                            )
+                                                        ) : (
+                                                            <button
+                                                                onClick={() =>
+                                                                    router.push(`/pages/tenant/rentalPortal/${unit?.agreement_id}`)
+                                                                }
+                                                                className="mt-2 w-full py-2 px-4 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+                                                            >
+                                                                Access Portal
+                                                            </button>
+                                                        )}
+
                                                         <button
-                                                            onClick={() => handleUnitPayment(unit.unit_id)}
-                                                            className="w-full py-2 px-4 text-white bg-green-600 rounded-lg hover:bg-green-700 transition"
+                                                            onClick={handleContactLandlord}
+                                                            className="mt-2 w-full flex items-center justify-center gap-2 py-2 px-4 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition"
                                                         >
-                                                            Pay through Maya
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                handleUploadProof(
-                                                                    unit.unit_id,
-                                                                    unit.agreement_id,
-                                                                    toNumber(!unit.is_security_deposit_paid ? unit.sec_deposit : 0) +
-                                                                    toNumber(!unit.is_advance_payment_paid ? unit.advanced_payment : 0)
-                                                                )
-                                                            }
-                                                            className="w-full py-2 px-4 text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition"
-                                                        >
-                                                            Upload Proof of Payment
+                                                            <IoChatboxEllipsesSharp className="w-5 h-5" />
+                                                            <span className="text-sm font-medium">Message Landlord</span>
                                                         </button>
                                                     </div>
-                                                )
-                                            ) : (
-                                                <button
-                                                    onClick={() => router.push(`/pages/tenant/rentalPortal/${unit?.agreement_id}`)}
-                                                    className="mt-2 w-full py-2 px-4 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
-                                                >
-                                                    Access Portal
-                                                </button>
-                                            )}
-
-                                            <button
-                                                onClick={handleContactLandlord}
-                                                className="mt-2 w-full flex items-center justify-center gap-2 py-2 px-4 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition"
-                                            >
-                                                <IoChatboxEllipsesSharp className="w-5 h-5" />
-                                                <span className="text-sm font-medium">Message Landlord</span>
-                                            </button>
-
-                                        </div>
-
-
-                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            );
-                        })}
+
+                                {/* Pagination */}
+                                <div className="flex justify-center mt-6">
+                                    <Stack spacing={2}>
+                                        <Pagination
+                                            count={Math.ceil(units.length / itemsPerPage)}
+                                            page={page}
+                                            onChange={handlePageChange}
+                                            color="primary"
+                                        />
+                                    </Stack>
+                                </div>
+                            </>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
-            </div>
-        </div>
         </>
     );
 
