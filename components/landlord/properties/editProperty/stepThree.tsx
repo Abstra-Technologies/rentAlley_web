@@ -119,7 +119,7 @@ export function StepThreeEdit({ propertyId }) {
             });
             const data = await response.json();
             const aiText = data?.choices?.[0]?.message?.content?.trim();
-            if (aiText) setProperty({ ...property, propDesc: aiText });
+            if (aiText) setProperty({ ...property, description: aiText });
         } catch (error) {
             console.error("AI generation error:", error);
             alert("Failed to generate description. Please try again.");
@@ -140,7 +140,7 @@ export function StepThreeEdit({ propertyId }) {
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Description</label>
                         <textarea
-                            name="propDesc"
+                            name="description"
                             value={property.description || ""}
                             onChange={handleChange}
                             placeholder="Add a brief description"
