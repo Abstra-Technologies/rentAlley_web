@@ -124,6 +124,7 @@ const LandlordPropertyChart = () => {
   //       });
   // }, [user?.landlord_id]); // ✅ minimal dependency
 
+  // analytics
   useEffect(() => {
     if (!user?.landlord_id) return;
 
@@ -156,7 +157,6 @@ const LandlordPropertyChart = () => {
           setOccupancyRate(Number.isFinite(num) ? num : 0);
         })
         .catch((err) => {
-          console.error("Error fetching occupancy:", err);
           setOccupancyRate(0);
         });
 
@@ -164,11 +164,9 @@ const LandlordPropertyChart = () => {
     fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`)
         .then((res) => res.json())
         .then((data) => {
-          console.log("API raw response (tenants):", data);
           setTotalTenants(data?.total_tenants || 0);
         })
         .catch((err) => console.error("Error fetching tenants:", err));
-
 
 
   }, [user?.landlord_id]);
