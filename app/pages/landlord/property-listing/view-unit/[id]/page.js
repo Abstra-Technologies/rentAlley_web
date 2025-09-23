@@ -23,6 +23,7 @@ import PropertyDocumentsTab from "../../../../../../components/landlord//propert
 import FBShareButton from "../../../../../../components/landlord/properties/shareToFacebook";
 import UnitsTab from "../../../../../../components/landlord/properties/UnitsTab";
 const fetcher = (url) => axios.get(url).then((res) => res.data);
+import { BackButton } from "@/components/navigation/backButton";
 
 const ViewUnitPage = () => {
   const { id } = useParams();
@@ -321,8 +322,10 @@ const ViewUnitPage = () => {
     <LandlordLayout>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
         {/* HEADER PART - Mobile Optimized */}
+        <BackButton label='Back to Property Details'/>
         <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 border border-gray-100">
           {/* Header Content */}
+
           <div className="mb-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl shadow-md">

@@ -40,10 +40,8 @@ export default function EditProperty() {
           .then((res) => {
             const data = res.data;
             if (data.length > 0) {
-              const propertyData = data[0]; // take the first property
-              console.log('propertyData',propertyData);
+              const propertyData = data[0];
               setProperty(propertyData);
-              // Optional: If you have separate files/photos
               setPhotos(propertyData.photos || []);
 
             } else {

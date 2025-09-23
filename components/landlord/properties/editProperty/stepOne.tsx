@@ -171,24 +171,27 @@ export const StepOneEdit = ({ propertyId }) => {
                 </div>
 
                 {/* Map */}
-                <PropertyMap
-                    coordinates={coords.lat && coords.lng ? [coords.lat, coords.lng] : null}
-                    // @ts-ignore
-                    setFields={({ lat, lng, address, barangay, city, province, region, postcode }) => {
-                        setCoords({ lat, lng });
-                        setProperty({
-                            ...property,
-                            lat,
-                            lng,
-                            street: address,
-                            brgyDistrict: barangay,
-                            city,
-                            province: region,
-                            zipCode: postcode || "",
-                        });
-                        setAddressQuery(address);
-                    }}
-                />
+                <div className="relative z-0">
+                    <PropertyMap
+                        coordinates={coords.lat && coords.lng ? [coords.lat, coords.lng] : null}
+                        // @ts-ignore
+                        setFields={({ lat, lng, address, barangay, city, province, region, postcode }) => {
+                            setCoords({ lat, lng });
+                            setProperty({
+                                ...property,
+                                lat,
+                                lng,
+                                street: address,
+                                brgyDistrict: barangay,
+                                city,
+                                province: region,
+                                zipCode: postcode || "",
+                            });
+                            setAddressQuery(address);
+                        }}
+                    />
+                </div>
+
 
                 <p className="mt-2 text-sm text-gray-600">
                     Selected Location: {coords.lat}, {coords.lng}
