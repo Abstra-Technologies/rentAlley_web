@@ -24,6 +24,7 @@ import FBShareButton from "../../../../../../components/landlord/properties/shar
 import UnitsTab from "../../../../../../components/landlord/properties/UnitsTab";
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 import { BackButton } from "@/components/navigation/backButton";
+import PropertyRatesModal from "@/components/landlord/properties/utilityRatesSetter";
 
 const ViewUnitPage = () => {
   const { id } = useParams();
@@ -34,11 +35,13 @@ const ViewUnitPage = () => {
   const [billingMode, setBillingMode] = useState(false);
   const [billingForm, setBillingForm] = useState({
     billingPeriod: "",
-    electricityTotal: "",
-    electricityRate: "",
-    waterTotal: "",
-    waterRate: "",
+    electricityConsumption: "", // ⚡ Highlighted in UI
+    electricityTotal: "",       // secondary
+    waterConsumption: "",       // 💧 Highlighted in UI
+    waterTotal: "",             // secondary
   });
+
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [billingData, setBillingData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -47,52 +50,46 @@ const ViewUnitPage = () => {
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [activeTab, setActiveTab] = useState("units");
 
-  // Billing Status
+  // Billing Status and rates deta
   useEffect(() => {
     if (!id) return;
+
     async function fetchBillingData_PropertyUtility() {
       try {
         const response = await axios.get(
-          `/api/landlord/billing/checkPropertyBillingStats`,
-          {
-            params: { id },
-          }
+            `/api/landlord/billing/checkPropertyBillingStats`,
+            { params: { id } }
         );
 
-        if (response.data.billingData && response.data.billingData.length > 0) {
-          setBillingData(response.data.billingData);
+        if (response.data.billingData) {
+          const data = response.data.billingData;
+
+          setBillingData(data);
           setHasBillingForMonth(true);
+
           setBillingForm({
-            billingPeriod: response.data.billingData[0]?.billing_period || "",
-            electricityTotal:
-              response.data.billingData.find(
-                (b) => b.utility_type === "electricity"
-              )?.total_billed_amount || "",
-            electricityRate:
-              response.data.billingData.find(
-                (b) => b.utility_type === "electricity"
-              )?.rate_consumed || "",
-            waterTotal:
-              response.data.billingData.find((b) => b.utility_type === "water")
-                ?.total_billed_amount || "",
-            waterRate:
-              response.data.billingData.find((b) => b.utility_type === "water")
-                ?.rate_consumed || "",
+            billingPeriod: data.billing_period || "",
+            electricityTotal: data.electricity?.total || "",
+            electricityConsumption: data.electricity?.consumption || "",
+            waterTotal: data.water?.total || "",
+            waterConsumption: data.water?.consumption || "",
           });
         } else {
           setBillingData(null);
           setHasBillingForMonth(false);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(
-          "Failed to fetch billing data:",
-          error.response?.data || error.message
+            "Failed to fetch billing data:",
+            error.response?.data || error.message
         );
       }
     }
+
     fetchBillingData_PropertyUtility();
     fetchPropertyDetails();
   }, [id]);
+
 
   useEffect(() => {
     if (!user && !admin) {
@@ -105,47 +102,28 @@ const ViewUnitPage = () => {
     setBillingForm({ ...billingForm, [name]: value });
   };
 
+  //  added manual and guided billing
   const handleSaveOrUpdateBilling = async (e) => {
     e.preventDefault();
     try {
       const url = hasBillingForMonth
-        ? "/api/landlord/billing/updateConcessionaireBilling"
-        : "/api/landlord/billing/savePropertyUtilityBillingMonthly";
+          ? "/api/landlord/billing/updateConcessionaireRates"
+          : "/api/landlord/billing/savePropertyUtilityBillingMonthly";
 
-      const response = await axios({
+      await axios({
         method: hasBillingForMonth ? "PUT" : "POST",
-        url: url,
+        url,
         data: {
-          id,
+          property_id: id, // always property-level now
           ...billingForm,
         },
       });
 
-      await Swal.fire({
-        icon: "success",
-        title: "Success!",
-        text: hasBillingForMonth
-          ? "Billing information updated successfully."
-          : "Billing information saved successfully.",
-        confirmButtonColor: "#3085d6",
-        confirmButtonText: "OK",
-      });
-
-      setIsEditing(false);
+      Swal.fire("Success", "Billing saved successfully.", "success");
       setIsModalOpen(false);
-      window.location.reload();
     } catch (error) {
-      console.error(
-        "Error saving billing:",
-        error.response?.data || error.message
-      );
-      Swal.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Failed to save billing. Please try again.",
-        confirmButtonColor: "#d33",
-        confirmButtonText: "OK",
-      });
+      console.error(error);
+      Swal.fire("Error", "Failed to save billing.", "error");
     }
   };
 
@@ -155,11 +133,12 @@ const ViewUnitPage = () => {
     fetcher
   );
 
+  // get the subscription status
   const { data: subscription, isLoading: loadingSubscription } = useSWR(
     `/api/landlord/subscription/active/${landlord_id}`,
     fetcher
   );
-
+  //  get property units
   const {
     data: units,
     error,
@@ -430,7 +409,20 @@ const ViewUnitPage = () => {
               <span className="text-sm">
                 {billingMode ? "Exit Billing" : "Billing Mode"}
               </span>
+
             </button>
+
+            {billingMode &&
+                (propertyDetails?.electricity_billing_type === "submetered" ||
+                    propertyDetails?.water_billing_type === "submetered") && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="px-4 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
+                    >
+                      <span className="text-sm">Set Property Rates</span>
+                    </button>
+                )}
+
 
             {/* Utility Rate Button - Conditional */}
             {billingMode &&
@@ -451,6 +443,7 @@ const ViewUnitPage = () => {
                 />
               </div>
             )}
+
           </div>
 
           {/* Non-submetered Info */}
@@ -505,6 +498,7 @@ const ViewUnitPage = () => {
 
         {/* CONTENT SECTIONS */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+
           {/* Units Tab */}
           {activeTab === "units" && (
               <UnitsTab
@@ -519,7 +513,6 @@ const ViewUnitPage = () => {
                   handleAddUnitClick={handleAddUnitClick}
               />
           )}
-
 
           {/* Documents Tab */}
           {activeTab === "documents" && (
@@ -575,226 +568,19 @@ const ViewUnitPage = () => {
         </div>
 
         {/* Enhanced Modal for Property Utility Rate */}
-        {isModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-200">
-              {/* Modal Header */}
-              <div className="sticky top-0 bg-white p-5 border-b border-gray-200 rounded-t-2xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-sm">
-                    <BuildingOffice2Icon className="h-5 w-5 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-800">
-                    Property Utility Rates
-                  </h2>
-                </div>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <XMarkIcon className="h-5 w-5" />
-                </button>
-              </div>
+        <PropertyRatesModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            billingData={billingData}
+            billingForm={billingForm}
+            propertyDetails={propertyDetails}
+            hasBillingForMonth={hasBillingForMonth}
+            handleInputChange={handleInputChange}
+            handleSaveOrUpdateBilling={handleSaveOrUpdateBilling}
+        />
 
-              <div className="p-5 space-y-6">
-                {/* Current Billing Status */}
-                {billingData ? (
-                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                      <FaCheckCircle className="text-green-600" size={18} />
-                      <h3 className="font-bold text-green-800">
-                        Current Billing Period
-                      </h3>
-                    </div>
-                    <p className="text-gray-700 mb-4 font-medium">
-                      Period:{" "}
-                      <span className="text-green-800">
-                        {billingForm?.billingPeriod}
-                      </span>
-                    </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-4 bg-white rounded-xl border border-green-100 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                          <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wide">
-                            Electricity
-                          </h4>
-                        </div>
-                        <p className="text-xl font-bold text-gray-800 mb-1">
-                          ₱
-                          {billingData.find(
-                            (b) => b.utility_type === "electricity"
-                          )?.total_billed_amount || "N/A"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {billingData.find(
-                            (b) => b.utility_type === "electricity"
-                          )?.rate_consumed || "N/A"}{" "}
-                          kWh
-                        </p>
-                      </div>
 
-                      <div className="p-4 bg-white rounded-xl border border-green-100 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-                          <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wide">
-                            Water
-                          </h4>
-                        </div>
-                        <p className="text-xl font-bold text-gray-800 mb-1">
-                          ₱
-                          {billingData.find((b) => b.utility_type === "water")
-                            ?.total_billed_amount || "N/A"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {billingData.find((b) => b.utility_type === "water")
-                            ?.rate_consumed || "N/A"}{" "}
-                          cu. meters
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 text-center">
-                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <BuildingOffice2Icon className="h-6 w-6 text-gray-400" />
-                    </div>
-                    <p className="text-gray-600 font-medium">
-                      No billing data found for this month
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Set up your utility rates below
-                    </p>
-                  </div>
-                )}
-
-                {/* Form Section */}
-                <form
-                  className="space-y-6"
-                  onSubmit={handleSaveOrUpdateBilling}
-                >
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Billing Period
-                    </label>
-                    <input
-                      name="billingPeriod"
-                      value={billingForm.billingPeriod}
-                      onChange={handleInputChange}
-                      type="date"
-                      className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
-                    />
-                  </div>
-
-                  {/* Electricity Section */}
-                  <div className="p-5 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl border border-yellow-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center shadow-sm">
-                        <span className="text-white font-bold text-sm">⚡</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-orange-800">
-                        Electricity
-                      </h3>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-gray-700 text-sm font-semibold mb-2">
-                          Total Amount Billed
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                            ₱
-                          </span>
-                          <input
-                            type="number"
-                            name="electricityTotal"
-                            value={billingForm.electricityTotal}
-                            onChange={handleInputChange}
-                            className="w-full border border-yellow-300 rounded-xl p-3 pl-8 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-500 outline-none transition-all duration-200 bg-white"
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 text-sm font-semibold mb-2">
-                          Consumption (kWh)
-                        </label>
-                        <input
-                          type="number"
-                          name="electricityRate"
-                          value={billingForm.electricityRate}
-                          onChange={handleInputChange}
-                          className="w-full border border-yellow-300 rounded-xl p-3 focus:ring-2 focus:ring-yellow-300 focus:border-yellow-500 outline-none transition-all duration-200 bg-white"
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Water Section */}
-                  <div className="p-5 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl border border-cyan-200 shadow-sm">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
-                        <span className="text-white font-bold text-sm">💧</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-cyan-800">Water</h3>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-gray-700 text-sm font-semibold mb-2">
-                          Total Amount Billed
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                            ₱
-                          </span>
-                          <input
-                            type="number"
-                            name="waterTotal"
-                            value={billingForm.waterTotal}
-                            onChange={handleInputChange}
-                            className="w-full border border-cyan-300 rounded-xl p-3 pl-8 focus:ring-2 focus:ring-cyan-300 focus:border-cyan-500 outline-none transition-all duration-200 bg-white"
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 text-sm font-semibold mb-2">
-                          Consumption (cubic meters)
-                        </label>
-                        <input
-                          type="number"
-                          name="waterRate"
-                          value={billingForm.waterRate}
-                          onChange={handleInputChange}
-                          className="w-full border border-cyan-300 rounded-xl p-3 focus:ring-2 focus:ring-cyan-300 focus:border-cyan-500 outline-none transition-all duration-200 bg-white"
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="sticky bottom-0 bg-white p-5 border-t border-gray-200 rounded-b-2xl flex flex-col sm:flex-row gap-3 sm:justify-end">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium order-2 sm:order-1"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveOrUpdateBilling}
-                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg font-semibold order-1 sm:order-2"
-                >
-                  {hasBillingForMonth ? "Update Rates" : "Save Rates"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </LandlordLayout>
   );

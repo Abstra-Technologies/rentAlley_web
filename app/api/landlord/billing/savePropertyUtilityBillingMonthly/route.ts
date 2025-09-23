@@ -1,34 +1,64 @@
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
 
+// POST - Save billing
 export async function POST(req: NextRequest) {
   try {
     const { id, billingPeriod, electricityTotal, electricityRate, waterTotal, waterRate } = await req.json();
 
-    if (!id || !billingPeriod || (!electricityTotal && !waterTotal)) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    if (!id || !billingPeriod) {
+      return NextResponse.json({ error: "Property ID and Billing Period are required" }, { status: 400 });
     }
 
-    if (electricityTotal && electricityRate) {
-      await db.execute(
+    await db.execute(
         `INSERT INTO ConcessionaireBilling 
-         (property_id, billing_period, utility_type, total_billed_amount, rate_consumed, created_at) 
-         VALUES (?, ?, 'electricity', ?, ?, NOW())`,
-        [id, billingPeriod, electricityTotal, electricityRate]
-      );
-    }
+       (property_id, billing_period, electricity_total, electricity_consumption, water_total, water_consumption, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+        [
+          id,
+          billingPeriod,
+          electricityTotal || null,
+          electricityRate || null,
+          waterTotal || null,
+          waterRate || null,
+        ]
+    );
 
-    if (waterTotal && waterRate) {
-      await db.execute(
-        `INSERT INTO ConcessionaireBilling 
-         (property_id, billing_period, utility_type, total_billed_amount, rate_consumed, created_at) 
-         VALUES (?, ?, 'water', ?, ?, NOW())`,
-        [id, billingPeriod, waterTotal, waterRate]
-      );
-    }
-
-    return NextResponse.json({ message: "Billing records saved successfully" }, { status: 201 });
+    return NextResponse.json({ message: "Billing record saved successfully" }, { status: 201 });
   } catch (error) {
+    console.error("Billing Save Error:", error);
+    return NextResponse.json({ error: `Database Server Error: ${error}` }, { status: 500 });
+  }
+}
+
+// PUT - Update billing
+export async function PUT(req: NextRequest) {
+  try {
+    const { id, billingPeriod, electricityTotal, electricityRate, waterTotal, waterRate } = await req.json();
+
+    if (!id || !billingPeriod) {
+      return NextResponse.json({ error: "Property ID and Billing Period are required" }, { status: 400 });
+    }
+
+    await db.execute(
+        `UPDATE ConcessionaireBilling 
+       SET electricity_total = ?, electricity_consumption = ?, 
+           water_total = ?, water_consumption = ?, 
+           updated_at = NOW()
+       WHERE property_id = ? AND billing_period = ?`,
+        [
+          electricityTotal || null,
+          electricityRate || null,
+          waterTotal || null,
+          waterRate || null,
+          id,
+          billingPeriod,
+        ]
+    );
+
+    return NextResponse.json({ message: "Billing record updated successfully" }, { status: 200 });
+  } catch (error) {
+    console.error("Billing Update Error:", error);
     return NextResponse.json({ error: `Database Server Error: ${error}` }, { status: 500 });
   }
 }
