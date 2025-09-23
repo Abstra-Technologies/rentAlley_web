@@ -27,20 +27,24 @@ import { HiOutlineAdjustments } from "react-icons/hi";
 import Swal from "sweetalert2";
 import axios from "axios";
 import { logEvent } from "../../../utils/gtag";
+import LoadingScreen from "@/components/loadingScreen";
 
 // Dynamic imports for map components
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
   { ssr: false }
 );
+
 const TileLayer = dynamic(
   () => import("react-leaflet").then((mod) => mod.TileLayer),
   { ssr: false }
 );
+
 const Marker = dynamic(
   () => import("react-leaflet").then((mod) => mod.Marker),
   { ssr: false }
 );
+
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
   ssr: false,
 });
@@ -55,6 +59,7 @@ function FlyToUserLocation({ coords }) {
   }, [coords, map]);
   return null;
 }
+
 function FlyToProperty({ coords, zoom = 16 }) {
   const map = useMap();
   useEffect(() => {
@@ -114,7 +119,7 @@ export default function PropertySearch() {
 
     fetchProperties();
   }, []);
-
+  // map
   useEffect(() => {
     if (typeof window !== "undefined") {
       const L = require("leaflet");
@@ -129,8 +134,8 @@ export default function PropertySearch() {
 
       // User location icon
       const userLocationIcon = new L.Icon({
-        iconUrl: "https://cdn-icons-png.flaticon.com/512/4872/4872521.png",
-        iconSize: [32, 32],
+        iconUrl: "/upkeep_blue_marker.png",
+        iconSize: [45,45],
         iconAnchor: [16, 32],
         popupAnchor: [0, -32],
         className: "animate-pulse",
@@ -234,7 +239,6 @@ export default function PropertySearch() {
     router.push(`/pages/find-rent/${selectedProperty.property_id}/${unitId}`);
   };
 
-
   const handleViewPropertyDetails = () => {
     router.push(`/pages/find-rent/${selectedProperty.property_id}`);
   };
@@ -281,12 +285,9 @@ export default function PropertySearch() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Loading properties...</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+           <LoadingScreen message='Just a moment, getting properties ready...' />;
         </div>
-      </div>
     );
   }
 
@@ -307,6 +308,7 @@ export default function PropertySearch() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-10 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
                 />
+
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
@@ -315,6 +317,7 @@ export default function PropertySearch() {
                     <FaTimes className="text-sm" />
                   </button>
                 )}
+
               </div>
             </div>
 
@@ -524,42 +527,43 @@ export default function PropertySearch() {
 
                       {/* Inline Map */}
                       {visibleMaps[property.property_id] && (
-                        <div className="mt-3 rounded-lg overflow-hidden border border-gray-200">
-                          {property.latitude && property.longitude ? (
-                            <div className="h-40">
-                              <MapContainer
-                                center={[
-                                  parseFloat(property.latitude),
-                                  parseFloat(property.longitude),
-                                ]}
-                                zoom={15}
-                                style={{ height: "100%", width: "100%" }}
-                              >
-                                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                                <Marker
-                                  position={[
-                                    parseFloat(property.latitude),
-                                    parseFloat(property.longitude),
-                                  ]}
-                                  icon={propertyIcon}
-                                >
-                                  <Popup>
-                                    <div className="text-center p-2">
-                                      <strong>{property.property_name}</strong>
-                                    </div>
-                                  </Popup>
-                                </Marker>
-                              </MapContainer>
-                            </div>
-                          ) : (
-                            <div className="h-20 bg-gray-100 flex items-center justify-center">
-                              <p className="text-red-500 text-sm">
-                                Invalid coordinates
-                              </p>
-                            </div>
-                          )}
-                        </div>
+                          <div className="mt-3 rounded-lg overflow-hidden border border-gray-200">
+                            {property.latitude && property.longitude ? (
+                                <div className="h-40">
+                                  <MapContainer
+                                      key={`map-${property.property_id}`} // 👈 force new map per property
+                                      center={[
+                                        parseFloat(property.latitude),
+                                        parseFloat(property.longitude),
+                                      ]}
+                                      zoom={15}
+                                      style={{ height: "100%", width: "100%" }}
+                                  >
+                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                    <Marker
+                                        position={[
+                                          parseFloat(property.latitude),
+                                          parseFloat(property.longitude),
+                                        ]}
+                                        icon={propertyIcon}
+                                    >
+                                      <Popup>
+                                        <div className="text-center p-2">
+                                          <strong>{property.property_name}</strong>
+                                        </div>
+                                      </Popup>
+                                    </Marker>
+                                  </MapContainer>
+                                </div>
+                            ) : (
+                                <div className="h-20 bg-gray-100 flex items-center justify-center">
+                                  <p className="text-red-500 text-sm">Invalid coordinates</p>
+                                </div>
+                            )}
+                          </div>
                       )}
+
+
                     </div>
                   </div>
                 ))}
@@ -645,7 +649,7 @@ export default function PropertySearch() {
                                     property.rent_amount
                                   ).toLocaleString()}
                                   <span className="text-xs font-normal text-gray-500 ml-1">
-                                    /mo
+                                    /ave. month
                                   </span>
                                 </h3>
                                 {property?.flexipay_enabled === 1 && (

@@ -1,3 +1,5 @@
+
+
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 import { redis } from "@/lib/redis";
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
          FROM PropertyPhoto pp
          WHERE pp.property_id = p.property_id
          LIMIT 1) AS encrypted_property_photo,
-        MIN(u.rent_amount) AS rent_amount
+        ROUND(AVG(u.rent_amount), 2) AS rent_amount
       FROM Property p
              JOIN PropertyVerification pv
                   ON p.property_id = pv.property_id
