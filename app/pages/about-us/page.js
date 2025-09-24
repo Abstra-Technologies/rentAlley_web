@@ -1,3 +1,5 @@
+'use client'
+
 import { BuildingIcon, UsersIcon, LightbulbIcon, ArrowRightIcon } from "lucide-react";
 import Footer from "../../../components/navigation/footer";
 

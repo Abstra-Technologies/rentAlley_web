@@ -1,3 +1,5 @@
+'use client'
+
 import { Building, BarChart, Globe } from "lucide-react";
 import Footer from "../../../components/navigation/footer";
 
