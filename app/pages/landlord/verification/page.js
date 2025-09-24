@@ -15,15 +15,19 @@ import {
   FiMapPin,
   FiCalendar,
   FiGlobe,
+  FiHeart,
   FiFileText,
   FiEye,
   FiCheckCircle,
+  FiPhone,
+  FiBriefcase,
   FiArrowRight,
   FiArrowLeft,
   FiShield,
 } from "react-icons/fi";
 import LoadingScreen from "../../../../components/loadingScreen";
-
+import { CITIZENSHIPS } from "@/constant/citizenship";
+import occupations from "@/constant/occupations";
 // Enhanced Image Quality Checker
 const checkImageQuality = (imageData) => {
   return new Promise((resolve) => {
@@ -97,10 +101,17 @@ export default function LandlordDashboard() {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [capturedDocument, setCapturedDocument] = useState(null);
   const [selfie, setSelfie] = useState(null);
-  const [fullName, setFullName] = useState("");
-  const [address, setAddress] = useState("");
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [civilStatus, setCivilStatus] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [address, setAddress] = useState("");
   const [citizenship, setCitizenship] = useState("");
+  const [occupation, setOccupation] = useState("");
+
   const webcamRef = useRef(null);
   const addressInputRef = useRef(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -136,22 +147,34 @@ export default function LandlordDashboard() {
     { id: 4, title: "Review", icon: FiEye, description: "Confirm & submit" },
   ];
 
+  // data user
   useEffect(() => {
     if (user?.userType === "landlord") {
       setDataLoading(true);
       fetch(`/api/landlord/${user.landlord_id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setLandlordId(data.landlord_id);
-          setFullName(`${user.firstName} ${user.lastName}`);
-          setDateOfBirth(user.birthDate);
-        })
-        .catch((err) => console.error("Error fetching landlord data:", err))
-        .finally(() => {
-          setDataLoading(false);
-        });
+          .then((res) => res.json())
+          .then((data) => {
+            setLandlordId(data.landlord_id);
+
+            setFirstName(user.firstName || "");
+            setLastName(user.lastName || "");
+            setCompanyName(user.companyName || "");
+            setCivilStatus(user.civil_status || "");
+            setDateOfBirth(user.birthDate || "");
+            setPhoneNumber(user.phoneNumber || "");
+            setOccupation(user.occupation || "");
+            setCitizenship(user.citizenship || "");
+
+            // ✅ from Landlord table
+            setAddress(data.address || "");
+          })
+          .catch((err) => console.error("Error fetching landlord data:", err))
+          .finally(() => {
+            setDataLoading(false);
+          });
     }
   }, [user]);
+
 
   useEffect(() => {
     let interval;
@@ -168,6 +191,7 @@ export default function LandlordDashboard() {
     }
     return () => clearInterval(interval);
   }, [captureCountdown]);
+
   // auto location completion.
   useEffect(() => {
     if (!address) {
@@ -190,6 +214,7 @@ export default function LandlordDashboard() {
   }, [address]);
 
   if (dataLoading) return <LoadingScreen />;
+
   if (error)
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
@@ -280,26 +305,36 @@ export default function LandlordDashboard() {
   const handleSubmit = async () => {
     const formData = new FormData();
     formData.append("documentType", selectedDocument);
+
     if (uploadedFile) {
       formData.append("uploadedFile", uploadedFile);
     } else if (capturedDocument) {
       formData.append("capturedDocument", capturedDocument);
     }
+
     formData.append("selfie", selfie);
     formData.append("landlord_id", landlordId);
-    formData.append("fullName", fullName);
-    formData.append("address", address);
+
+    formData.append("firstName", firstName);
+    formData.append("lastName", lastName);
+    if (companyName) formData.append("companyName", companyName); // optional
+    formData.append("phoneNumber", phoneNumber);
+    formData.append("civil_status", civilStatus);
     formData.append("dateOfBirth", dateOfBirth);
     formData.append("citizenship", citizenship);
+    formData.append("occupation", occupation);
+    formData.append("address", address);
 
     try {
       const response = await fetch("/api/landlord/verification-upload", {
         method: "POST",
         body: formData,
       });
+
       if (!response.ok) {
         throw new Error("Upload failed!");
       }
+
       Swal.fire({
         title: "Success!",
         text: "Verification Submitted Successfully!",
@@ -349,7 +384,7 @@ export default function LandlordDashboard() {
   const isStepComplete = (stepNumber) => {
     switch (stepNumber) {
       case 1:
-        return fullName && address && dateOfBirth && citizenship;
+        return firstName && lastName && address && dateOfBirth && citizenship && occupation;
       case 2:
         return selectedDocument && (uploadedFile || capturedDocument);
       case 3:
@@ -462,93 +497,186 @@ export default function LandlordDashboard() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="p-8">
 
+            {/* profile info PII */}
             {currentStep === 1 && (
+                <div className="space-y-6">
+                  <div className="flex items-center mb-6">
+                    <FiUser className="w-6 h-6 text-blue-500 mr-3" />
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Personal Information
+                    </h2>
+                  </div>
 
-              <div className="space-y-6">
-                <div className="flex items-center mb-6">
-                  <FiUser className="w-6 h-6 text-blue-500 mr-3" />
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Personal Information
-                  </h2>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {/* First Name */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiUser className="w-4 h-4 mr-2 text-gray-400" />
+                        First Name
+                      </label>
+                      <input
+                          type="text"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                          placeholder="Your first name"
+                      />
+                    </div>
+
+                    {/* Last Name */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiUser className="w-4 h-4 mr-2 text-gray-400" />
+                        Last Name
+                      </label>
+                      <input
+                          type="text"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                          placeholder="Your last name"
+                      />
+                    </div>
+
+                    {/* Company Name (optional) */}
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiBriefcase className="w-4 h-4 mr-2 text-gray-400" />
+                        Company Name (optional)
+                      </label>
+                      <input
+                          type="text"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                          placeholder="Enter company name (if applicable)"
+                      />
+                    </div>
+
+                    {/* Date of Birth */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiCalendar className="w-4 h-4 mr-2 text-gray-400" />
+                        Date of Birth
+                      </label>
+                      <input
+                          type="date"
+                          value={dateOfBirth}
+                          onChange={(e) => setDateOfBirth(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Phone Number */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiPhone className="w-4 h-4 mr-2 text-gray-400" />
+                        Phone Number
+                      </label>
+                      <input
+                          type="tel"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                          placeholder="09XXXXXXXXX"
+                      />
+                    </div>
+
+                    {/* Civil Status */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiHeart className="w-4 h-4 mr-2 text-gray-400" />
+                        Civil Status
+                      </label>
+                      <select
+                          value={civilStatus}
+                          onChange={(e) => setCivilStatus(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                      >
+                        <option value="">Select status...</option>
+                        <option value="single">Single</option>
+                        <option value="married">Married</option>
+                        <option value="widowed">Widowed</option>
+                        <option value="separated">Separated</option>
+                      </select>
+                    </div>
+
+                    {/* Home Address */}
+                    <div className="md:col-span-2 space-y-2 relative">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiMapPin className="w-4 h-4 mr-2 text-gray-400" />
+                        Home Address
+                      </label>
+                      <input
+                          ref={addressInputRef}
+                          type="text"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                          placeholder="Start typing your address..."
+                      />
+                      {address.length > 0 && (
+                          <ul className="absolute z-10 bg-white border border-gray-200 w-full rounded-xl max-h-60 overflow-auto mt-1">
+                            {suggestions.map((item, idx) => (
+                                <li
+                                    key={idx}
+                                    onClick={() => {
+                                      setAddress(item.display_name);
+                                      setSuggestions([]);
+                                    }}
+                                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                                >
+                                  {item.display_name}
+                                </li>
+                            ))}
+                          </ul>
+                      )}
+                    </div>
+
+                    {/* Citizenship */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiGlobe className="w-4 h-4 mr-2 text-gray-400" />
+                        Citizenship
+                      </label>
+                      <select
+                          value={citizenship}
+                          onChange={(e) => setCitizenship(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                      >
+                        <option value="">Select citizenship...</option>
+                        {CITIZENSHIPS.map((c) => (
+                            <option key={c.value} value={c.value}>
+                              {c.label}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Occupation */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiBriefcase className="w-4 h-4 mr-2 text-gray-400" />
+                        Occupation
+                      </label>
+                      <select
+                          value={occupation}
+                          onChange={(e) => setOccupation(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
+                      >
+                        <option value="">Select occupation...</option>
+                        {occupations.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="flex items-center text-sm font-medium text-gray-700">
-                      <FiUser className="w-4 h-4 mr-2 text-gray-400" />
-                      Full Legal Name
-                    </label>
-                    <input
-                        type="text"
-                        value={fullName || ""} // use state, allow empty string
-                        onChange={(e) => setFullName(e.target.value)} // update state on edit
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
-                        placeholder="Your full legal name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="flex items-center text-sm font-medium text-gray-700">
-                      <FiCalendar className="w-4 h-4 mr-2 text-gray-400" />
-                      Date of Birth
-                    </label>
-                    <input
-                        type="date"
-                        onChange={(e) => setDateOfBirth(e.target.value)}
-                        value={dateOfBirth || ""} // <-- use state, allow empty string
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:outline-none"
-                    />
-
-                  </div>
-
-                  <div className="md:col-span-2 space-y-2 relative">
-                    <label className="flex items-center text-sm font-medium text-gray-700">
-                      <FiMapPin className="w-4 h-4 mr-2 text-gray-400" />
-                      Home Address
-                    </label>
-                    <input
-                        ref={addressInputRef}
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                        placeholder="Start typing your address..."
-                    />
-                    {address.length > 0 && (
-                        <ul className="absolute z-10 bg-white border border-gray-200 w-full rounded-xl max-h-60 overflow-auto mt-1">
-                          {suggestions.map((item, idx) => (
-                              <li
-                                  key={idx}
-                                  onClick={() => {
-                                    setAddress(item.display_name);
-                                    setSuggestions([]);
-                                  }}
-                                  className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                              >
-                                {item.display_name}
-                              </li>
-                          ))}
-                        </ul>
-                    )}
-                  </div>
-
-
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="flex items-center text-sm font-medium text-gray-700">
-                      <FiGlobe className="w-4 h-4 mr-2 text-gray-400" />
-                      Place of Birth
-                    </label>
-                    <input
-                      type="text"
-                      value={citizenship}
-                      onChange={(e) => setCitizenship(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Enter your place of birth"
-                    />
-                  </div>
-                </div>
-              </div>
             )}
+
+
 
             {currentStep === 2 && (
               <div className="space-y-6">

@@ -941,10 +941,18 @@ const Navbar = () => {
                       className="w-8 h-8 lg:w-9 lg:h-9 object-cover rounded-full border-2 border-white/30 transition-transform duration-300 group-hover:scale-110 shadow-sm"
                     />
                     <div className="hidden xl:block">
+
                       <div className="text-sm font-medium leading-none">
-                        {user?.firstName ||
-                          admin?.first_name + admin?.last_name}
+                        {user?.companyName ||
+                            (user?.firstName && user?.lastName
+                                ? `${user.firstName} ${user.lastName}`
+                                : user?.email) ||
+                            (admin?.companyName ||
+                                (admin?.first_name && admin?.last_name
+                                    ? `${admin.first_name} ${admin.last_name}`
+                                    : admin?.email))}
                       </div>
+
                       <div className="text-xs text-blue-100 opacity-80">
                         {user?.userType || "Admin"}
                       </div>

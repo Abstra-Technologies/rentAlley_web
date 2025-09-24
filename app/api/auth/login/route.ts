@@ -48,21 +48,29 @@ export async function POST(req: NextRequest) {
 
     // ✅ Account checks
     if (user.google_id) {
-      return NextResponse.json({
-        error: "Your account is linked with Google Sign-In. Please log in using Google.",
-      }, { status: 403 });
+      return NextResponse.json(
+          {
+            error: "Your account is linked with Google Sign-In. Please log in using Google.",
+          },
+          { status: 403 }
+      );
     }
 
     if (user.status === "deactivated") {
-      return NextResponse.json({
-        error: "Your account is deactivated since you requested deletion. Please contact support if this was a mistake.",
-      }, { status: 403 });
+      return NextResponse.json(
+          {
+            error:
+                "Your account is deactivated since you requested deletion. Please contact support if this was a mistake.",
+          },
+          { status: 403 }
+      );
     }
 
     if (user.status === "suspended") {
-      return NextResponse.json({
-        error: "Your account is suspended. Please contact support.",
-      }, { status: 403 });
+      return NextResponse.json(
+          { error: "Your account is suspended. Please contact support." },
+          { status: 403 }
+      );
     }
 
     // ✅ Password check
@@ -71,22 +79,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    // ✅ Decrypt names
-    const firstName = await decryptData(JSON.parse(user.firstName), process.env.ENCRYPTION_SECRET!);
-    const lastName = await decryptData(JSON.parse(user.lastName), process.env.ENCRYPTION_SECRET!);
+    // ✅ Display name handling
+    let displayName: string | null = null;
+
+    if (user.companyName) {
+      displayName = user.companyName;
+    } else if (user.firstName && user.lastName) {
+      try {
+        const firstName = await decryptData(JSON.parse(user.firstName), process.env.ENCRYPTION_SECRET!);
+        const lastName = await decryptData(JSON.parse(user.lastName), process.env.ENCRYPTION_SECRET!);
+        displayName = `${firstName} ${lastName}`;
+      } catch {
+        displayName = null; // in case decrypt fails for new schema
+      }
+    }
+
+    if (!displayName) {
+      displayName = email; // fallback
+    }
 
     // ✅ JWT expiration time based on rememberMe
     const jwtExpiry = rememberMe ? "7d" : "2h";
-    const cookieMaxAge = rememberMe
-        ? 60 * 60 * 24 * 7     // 7 days
-        : 60 * 60 * 2;         // 2 hours, still persistent (not session-only)
+    const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 7 : 60 * 60 * 2;
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
     const token = await new SignJWT({
       user_id: user.user_id,
       userType: user.userType,
-      firstName,
-      lastName,
+      displayName,
     })
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime(jwtExpiry)
@@ -94,6 +114,7 @@ export async function POST(req: NextRequest) {
         .setSubject(user.user_id)
         .sign(secret);
 
+    // ✅ Redirect based on role
     let redirectUrl = "/pages/auth/login";
     switch (user.userType) {
       case "tenant":
@@ -113,8 +134,7 @@ export async function POST(req: NextRequest) {
           token,
           user: {
             userID: user.user_id,
-            firstName,
-            lastName,
+            displayName,
             email,
             userType: user.userType,
           },
@@ -139,29 +159,33 @@ export async function POST(req: NextRequest) {
       await db.query("SET time_zone = '+08:00'");
       await db.query(
           `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
-         VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))
-         ON DUPLICATE KEY UPDATE token = VALUES(token), created_at = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)`,
+           VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))
+           ON DUPLICATE KEY UPDATE token = VALUES(token), created_at = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)`,
           [user.user_id, otp]
       );
 
       await sendOtpEmail(email, otp.toString());
       response.cookies.set("pending_2fa", "true", { httpOnly: true, path: "/" });
 
-      return NextResponse.json({
-        message: "OTP sent. Please verify to continue.",
-        requires_otp: true,
-        user_id: user.user_id,
-        userType: user.userType,
-      }, { status: 200 });
+      return NextResponse.json(
+          {
+            message: "OTP sent. Please verify to continue.",
+            requires_otp: true,
+            user_id: user.user_id,
+            userType: user.userType,
+          },
+          { status: 200 }
+      );
     }
 
     // ✅ Activity log
     const action = "User logged in";
     const timestamp = new Date().toISOString();
-    await db.query(
-        "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)",
-        [user.user_id, action, timestamp]
-    );
+    await db.query("INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)", [
+      user.user_id,
+      action,
+      timestamp,
+    ]);
 
     return response;
   } catch (error: any) {

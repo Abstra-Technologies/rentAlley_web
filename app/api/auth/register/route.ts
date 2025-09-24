@@ -16,11 +16,11 @@ const dbConfig = {
 
 export async function POST(req: NextRequest) {
     const body = await req.json();
-    const { firstName, lastName, email, password, dob, mobileNumber, role } = body;
+    const { email, password, role } = body;
 
-    if (!firstName || !lastName || !email || !password || !dob || !mobileNumber || !role) {
+    if (!email || !password || !role) {
         console.error("Missing fields in request body:", body);
-        return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+        return NextResponse.json({ error: "Email, password, and role are required" }, { status: 400 });
     }
 
     const db = await mysql.createConnection(dbConfig);
@@ -30,8 +30,6 @@ export async function POST(req: NextRequest) {
         await db.beginTransaction();
 
         const emailHash = crypto.createHash("sha256").update(email.toLowerCase()).digest("hex");
-        const birthDate = dob;
-        const phoneNumber = mobileNumber;
         const userType = role.toLowerCase();
 
         const [existingUser] = await db.execute<any[]>(
@@ -42,7 +40,6 @@ export async function POST(req: NextRequest) {
         let user_id;
 
         if (existingUser.length > 0) {
-            user_id = existingUser[0].user_id;
             console.error("An existing account is already in use.");
             return NextResponse.json({ error: "An account with this email already exists." }, { status: 400 });
         } else {
@@ -52,54 +49,31 @@ export async function POST(req: NextRequest) {
             const ipAddress = req.headers.get("x-forwarded-for") || "unknown";
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            const emailEncrypted = JSON.stringify(await encryptData(email, process.env.ENCRYPTION_SECRET!));
-            const fnameEncrypted = JSON.stringify(await encryptData(firstName, process.env.ENCRYPTION_SECRET!));
-            const lnameEncrypted = JSON.stringify(await encryptData(lastName, process.env.ENCRYPTION_SECRET!));
-            const phoneEncrypted = JSON.stringify(await encryptData(phoneNumber, process.env.ENCRYPTION_SECRET!));
-            const birthDateEncrypted = JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET!));
-            const photoEncrypted = JSON.stringify(await encryptData(birthDate, process.env.ENCRYPTION_SECRET!));
-            // "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+            const emailEncrypted = JSON.stringify(
+                await encryptData(email, process.env.ENCRYPTION_SECRET!)
+            );
 
             console.log("Inserting user into database...");
 
             await db.execute(
                 `INSERT INTO User 
-                (user_id, firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, createdAt, updatedAt, emailVerified) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)`,
-                [
-                    user_id,
-                    fnameEncrypted,
-                    lnameEncrypted,
-                    emailEncrypted,
-                    emailHash,
-                    hashedPassword,
-                    birthDateEncrypted,
-                    phoneEncrypted,
-                    userType,
-                    0,
-                ]
+          (user_id, email, emailHashed, password, userType, createdAt, updatedAt, emailVerified) 
+          VALUES (?, ?, ?, ?, ?, NOW(), NOW(), ?)`,
+                [user_id, emailEncrypted, emailHash, hashedPassword, userType, 0]
             );
 
             if (role === "tenant") {
-                await db.execute(
-                    `INSERT INTO Tenant (user_id) VALUES (?)`,
-                    [user_id]
-                );
+                await db.execute(`INSERT INTO Tenant (user_id) VALUES (?)`, [user_id]);
             } else if (role === "landlord") {
                 console.log("Inserting into Landlord table...");
-                await db.execute(
-                    `INSERT INTO Landlord (user_id) VALUES (?)`,
-                    [user_id]
-                );
+                await db.execute(`INSERT INTO Landlord (user_id) VALUES (?)`, [user_id]);
             }
-
-            // await logAuditEvent(user_id, "User Registered", "User", user_id, ipAddress, "Success", `New user registered as ${role}`);
 
             console.log("Logging registration activity...");
 
             await db.execute(
                 `INSERT INTO ActivityLog (user_id, action, timestamp) 
-                VALUES (?, ?, NOW())`,
+         VALUES (?, ?, NOW())`,
                 [user_id, "User registered"]
             );
 
@@ -108,6 +82,7 @@ export async function POST(req: NextRequest) {
             await sendOtpEmail(email, otp);
         }
 
+        // Generate JWT
         const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
         const token = await new SignJWT({ user_id })
             .setProtectedHeader({ alg: "HS256" })
@@ -131,7 +106,6 @@ export async function POST(req: NextRequest) {
 
         await db.commit();
         return response;
-
     } catch (error: any) {
         await db.rollback();
         console.error("Error:", error);
@@ -141,8 +115,9 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// --------------------- OTP HELPERS ------------------------
 
+
+// --------------------- OTP HELPERS ------------------------
 function generateOTP() {
     return crypto.randomInt(100000, 999999).toString();
 }

@@ -61,9 +61,16 @@ export default function LandlordDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
           {/* Greeting - Better mobile typography */}
           <div className="text-left">
+
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
-              {greeting}, {user?.firstName}
+              {greeting},{" "}
+              {user?.firstName
+                  ? user.firstName
+                  : user?.companyName
+                      ? user.companyName
+                      : user?.email}
             </h2>
+
             <p className="text-sm sm:text-base text-gray-600 mt-1">
               <span className="hidden sm:inline">
                 Simplifying property management, empowering landlords.

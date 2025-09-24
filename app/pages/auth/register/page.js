@@ -27,40 +27,22 @@ const isAdult = (dob) => {
 };
 
 const registerSchema = z
-  .object({
-    firstName: z
-      .string()
-      .nonempty("First Name is required")
-      .regex(/^[A-Za-z ]+$/, "First Name must only contain letters"),
-    lastName: z
-      .string()
-      .nonempty("Last Name is required")
-      .regex(/^[A-Za-z ]+$/, "Last Name must only contain letters"),
-    dob: z
-      .string()
-      .nonempty("Date of Birth is required")
-      .refine((dob) => isAdult(dob), {
-        message: "You must be at least 18 years old",
-      }),
-    mobileNumber: z
-      .string()
-      .regex(/^\d{11}$/, "Mobile Number must be 11 digits"),
-    email: z.string().email("Invalid email address"),
-    password: z
-        .string()
-        .min(8, "Password must be at least 8 characters long")
-        // Allow any character, but you can refine further if needed
-        .refine(
-            (value) => /^[\w!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(value),
-            "Password contains invalid characters"
-        ),
+    .object({
+      email: z.string().email("Invalid email address"),
+      password: z
+          .string()
+          .min(8, "Password must be at least 8 characters long")
+          .refine(
+              (value) => /^[\w!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(value),
+              "Password contains invalid characters"
+          ),
+      confirmPassword: z.string().min(8, "Confirm Password must be the same."),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
+    });
 
-    confirmPassword: z.string().min(8, "Confirm Password must be the same."),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
 
   
 export default function RegisterPage() {
@@ -79,15 +61,12 @@ function Register() {
   const searchParams = useSearchParams();
   const error_2 = searchParams.get("error");
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    dob: "",
-    mobileNumber: "",
     email: "",
     password: "",
     confirmPassword: "",
     role: role,
   });
+
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
   const handleCheckboxChange = (e) => {
@@ -239,7 +218,7 @@ function Register() {
             {/* Form Box */}
             <div className="relative z-10 w-full mt-2 mb-2 max-w-lg sm:max-w-2xl mx-4 sm:mx-auto p-6 sm:p-10 bg-white rounded-2xl shadow-lg">
               <h1 className="text-3xl sm:text-4xl font-bold text-center text-blue-600 mb-4">
-                Hestia
+                Upkyp
               </h1>
               <h2 className="text-xl sm:text-2xl font-semibold text-center mb-6">
                 Register as {role}
@@ -253,15 +232,6 @@ function Register() {
 
               <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
                 {[
-                  { id: "firstName", label: "First Name", placeholder: "Juan" },
-                  { id: "lastName", label: "Last Name", placeholder: "Gonzalez" },
-                  { id: "dob", label: "Date of Birth", type: "date" },
-                  {
-                    id: "mobileNumber",
-                    label: "Mobile Number",
-                    placeholder: "09XXXXXXXXX",
-                    type: "tel",
-                  },
                   {
                     id: "email",
                     label: "Email Address",
