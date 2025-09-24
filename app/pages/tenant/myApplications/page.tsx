@@ -27,11 +27,8 @@ export default function TenantMyApplicationsPage() {
     <Suspense fallback={<div>Loading My Applications...</div>}>
       <div className="flex min-h-screen bg-gray-50">
         <TenantOutsidePortalNav />
-
         <div className="flex-1 md:ml-64">
-          <div className="p-6">
             <TenantMyApplicationsContent />
-          </div>
         </div>
       </div>
     </Suspense>

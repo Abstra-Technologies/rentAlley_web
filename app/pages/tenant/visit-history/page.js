@@ -5,6 +5,7 @@ import axios from "axios";
 import useAuthStore from "../../../../zustand/authStore";
 import Swal from "sweetalert2";
 import SideNavProfile from "../../../../components/navigation/sidebar-profile";
+import TenantOutsidePortalNav from "@/components/navigation/TenantOutsidePortalNav";
 
 const PropertyVisits = () => {
   const { fetchSession, user, admin } = useAuthStore();
@@ -156,12 +157,14 @@ const PropertyVisits = () => {
   );
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
-      <SideNavProfile />
-      <div className="flex-grow">
+
+      <div className="flex min-h-screen bg-gray-50">
+      <TenantOutsidePortalNav />
+
+        <div className="flex-1 md:ml-64">
         <div className="bg-white">
           <div className="px-8 py-6">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h1 className="gradient-header">
               My Property Visits
             </h1>
             <p className="text-gray-600">

@@ -124,8 +124,9 @@ export default function MyApplications({ tenantId }: { tenantId: number }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="flex min-h-screen bg-gray-50">
+
+        <div className='flex-1 md:ml-5' >
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center gap-3">
@@ -133,7 +134,7 @@ export default function MyApplications({ tenantId }: { tenantId: number }) {
               <FaFile className="text-indigo-600 text-xl" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <h1 className="gradient-header">
                 My Rental Applications
               </h1>
               <p className="text-gray-600 mt-1">
