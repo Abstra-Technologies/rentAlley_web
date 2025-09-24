@@ -708,6 +708,7 @@ const LeaseDetails = ({ unitId }) => {
                               >
                                 Use System Template
                               </button>
+
                               <button
                                   onClick={() => setLeaseMode("upload")}
                                   className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
@@ -716,8 +717,9 @@ const LeaseDetails = ({ unitId }) => {
                                           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                                   }`}
                               >
-                                Upload PDF
+                                Upload Lease
                               </button>
+
                             </div>
 
                             {/* Action Buttons */}
@@ -733,12 +735,13 @@ const LeaseDetails = ({ unitId }) => {
 
                               {leaseMode === "upload" && (
                                   <button
-                                      className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50"
-                                      onClick={handleSaveLease}
+                                      className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-xl"
+                                      onClick={() => router.push(`/pages/lease/scan/${unitId}`)}
                                   >
                                     Upload Lease Agreement
                                   </button>
                               )}
+
                             </div>
                           </>
                       )}
@@ -801,4 +804,6 @@ const LeaseDetails = ({ unitId }) => {
     </div>
   );
 };
+
+
 export default LeaseDetails;
