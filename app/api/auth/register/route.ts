@@ -16,7 +16,7 @@ const dbConfig = {
 
 export async function POST(req: NextRequest) {
     const body = await req.json();
-    const { email, password, role } = body;
+    const { email, password, role, timezone  } = body;
 
     if (!email || !password || !role) {
         console.error("Missing fields in request body:", body);
@@ -40,7 +40,6 @@ export async function POST(req: NextRequest) {
         let user_id;
 
         if (existingUser.length > 0) {
-            console.error("An existing account is already in use.");
             return NextResponse.json({ error: "An account with this email already exists." }, { status: 400 });
         } else {
             const [userIdResult] = await db.execute<any[]>("SELECT UUID() AS uuid");
@@ -53,13 +52,12 @@ export async function POST(req: NextRequest) {
                 await encryptData(email, process.env.ENCRYPTION_SECRET!)
             );
 
-            console.log("Inserting user into database...");
 
             await db.execute(
-                `INSERT INTO User 
-          (user_id, email, emailHashed, password, userType, createdAt, updatedAt, emailVerified) 
-          VALUES (?, ?, ?, ?, ?, NOW(), NOW(), ?)`,
-                [user_id, emailEncrypted, emailHash, hashedPassword, userType, 0]
+                `INSERT INTO User
+                 (user_id, email, emailHashed, password, userType, createdAt, updatedAt, emailVerified, timezone)
+                 VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP(), ?, ?)`,
+                [user_id, emailEncrypted, emailHash, hashedPassword, userType, 0, timezone]
             );
 
             if (role === "tenant") {
@@ -69,7 +67,6 @@ export async function POST(req: NextRequest) {
                 await db.execute(`INSERT INTO Landlord (user_id) VALUES (?)`, [user_id]);
             }
 
-            console.log("Logging registration activity...");
 
             await db.execute(
                 `INSERT INTO ActivityLog (user_id, action, timestamp) 
@@ -78,8 +75,8 @@ export async function POST(req: NextRequest) {
             );
 
             const otp = generateOTP();
-            await storeOTP(db, user_id, otp);
-            await sendOtpEmail(email, otp);
+            const { local_expiry, timezone: tz } = await storeOTP(db, user_id, otp);
+            await sendOtpEmail(email, otp, local_expiry, tz);
         }
 
         // Generate JWT
@@ -101,7 +98,7 @@ export async function POST(req: NextRequest) {
             path: "/",
             sameSite: "strict",
             secure: process.env.NODE_ENV === "production",
-            maxAge: 2 * 60 * 60, // 2 hours
+            maxAge: 2 * 60 * 60,
         });
 
         await db.commit();
@@ -109,7 +106,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         await db.rollback();
         console.error("Error:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ message: "Database Server Error" }, { status: 500 });
     } finally {
         await db.end();
     }
@@ -125,22 +122,39 @@ function generateOTP() {
 async function storeOTP(connection: mysql.Connection, user_id: string, otp: string) {
     console.log(`Storing OTP for User ID: ${user_id}, OTP: ${otp}`);
 
-    await connection.execute("SET time_zone = '+08:00'");
+    // Remove old tokens
     await connection.execute(
         `DELETE FROM UserToken WHERE user_id = ? AND token_type = 'email_verification'`,
         [user_id]
     );
 
+    // Insert new token in UTC
     await connection.execute(
         `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
-         VALUES (?, 'email_verification', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))`,
+         VALUES (?, 'email_verification', ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL 10 MINUTE))`,
         [user_id, otp]
     );
 
-    console.log(`OTP ${otp} stored for user ${user_id} (expires in 10 min)`);
+    // 🔹 Fetch expiry time converted to user's saved timezone
+    const [rows] = await connection.execute<any[]>(
+        `SELECT 
+            CONVERT_TZ(t.expires_at, '+00:00', u.timezone) AS local_expiry,
+            u.timezone
+         FROM UserToken t
+         JOIN User u ON u.user_id = t.user_id
+         WHERE t.user_id = ? AND t.token_type = 'email_verification'
+         ORDER BY t.created_at DESC
+         LIMIT 1`,
+        [user_id]
+    );
+
+    const { local_expiry, timezone } = rows[0];
+    console.log(`OTP ${otp} expires at ${local_expiry} (${timezone})`);
+
+    return { local_expiry, timezone };
 }
 
-async function sendOtpEmail(toEmail: string, otp: string) {
+async function sendOtpEmail(toEmail: string, otp: string, localExpiry: string, timezone: string) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -155,10 +169,11 @@ async function sendOtpEmail(toEmail: string, otp: string) {
     await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: toEmail,
-        subject: 'Hestia: Registration One Time Password.',
-        text: `Your OTP is: ${otp}. It expires in 10 minutes.`,
+        subject: 'Upkyp Registration: Verify your account',
+        text: `Your OTP is: ${otp}.
+It expires at ${localExpiry} (${timezone}).`,
     });
 
-    console.log(`OTP sent to ${toEmail}`);
+    console.log(`OTP sent to ${toEmail}, expires at ${localExpiry} (${timezone})`);
 }
 

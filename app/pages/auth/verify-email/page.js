@@ -13,6 +13,10 @@ export default function VerifyOTP() {
   const [timeLeft, setTimeLeft] = useState(0);
   const router = useRouter();
 
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  // timer
   useEffect(() => {
     const storedExpiry = sessionStorage.getItem("otp_timer_expiry");
     if (storedExpiry) {
@@ -61,19 +65,19 @@ export default function VerifyOTP() {
       toast.error("OTP must be a 6-digit number");
       return;
     }
-    setLoading(true);
+    setVerifying(true);
     try {
       const response = await axios.post(
-        "/api/auth/verify-otp-reg",
-        { otp },
-        { withCredentials: true }
+          "/api/auth/verify-otp-reg",
+          { otp },
+          { withCredentials: true }
       );
       toast.success(response.data.message);
       const userType = response.data.userType;
 
       setTimeout(() => {
         if (userType === "tenant") {
-          window.location.href = "/pages/tenant/my-unit";
+          window.location.href = "/pages/tenant/feeds";
         } else if (userType === "landlord") {
           window.location.href = "/pages/landlord/dashboard";
         }
@@ -81,21 +85,31 @@ export default function VerifyOTP() {
     } catch (error) {
       toast.error(error.response?.data?.message || "OTP verification failed");
     }
-    setLoading(false);
+    setVerifying(false);
   };
 
   const handleResendOTP = async () => {
     if (timeLeft > 0) return;
-    setLoading(true);
+    setResending(true);
     try {
-      await axios.post("/api/auth/resend-otp-reg");
-      toast.info("New OTP sent. Check your email.");
-      resetTimer();
+      const response = await axios.post("/api/auth/resend-otp-reg");
+      toast.info(response.data.message || "New OTP sent. Check your email.");
+
+      // 🔹 Sync timer with backend if available
+      if (response.data.expiresAt) {
+        const expiryTime = new Date(response.data.expiresAt).getTime();
+        const remaining = Math.floor((expiryTime - Date.now()) / 1000);
+        setTimeLeft(remaining > 0 ? remaining : 0);
+        sessionStorage.setItem("otp_timer_expiry", expiryTime.toString());
+      } else {
+        resetTimer();
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to resend OTP");
     }
-    setLoading(false);
+    setResending(false);
   };
+
 
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
@@ -121,8 +135,9 @@ export default function VerifyOTP() {
           className="w-full p-2 bg-blue-600 text-white rounded-md"
           disabled={loading}
         >
-          {loading ? "Verifying..." : "Verify OTP"}
+          {verifying ? "Verifying..." : "Verify OTP"}
         </button>
+
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">Didn't receive the OTP?</p>
           <p className="text-sm text-gray-600 mb-2">
@@ -137,7 +152,7 @@ export default function VerifyOTP() {
             }`}
             disabled={loading || timeLeft > 0}
           >
-            {loading ? "Resending..." : "Resend OTP"}
+            {resending ? "Resending..." : "Resend OTP"}
           </button>
         </div>
       </div>

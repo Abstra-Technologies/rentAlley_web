@@ -65,6 +65,8 @@ function Register() {
     password: "",
     confirmPassword: "",
     role: role,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
   });
 
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -87,8 +89,10 @@ function Register() {
     setFormData((prevData) => ({
       ...prevData,
       role: role,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, // keep updated
     }));
   }, [role]);
+
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -128,8 +132,9 @@ function Register() {
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData), // timezone is part of this
       });
+
 
       const data = await res.json();
 

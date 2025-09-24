@@ -14,7 +14,7 @@ export async function GET(
                 SELECT
                     u.firstName, u.lastName, u.companyName, u.birthDate, u.phoneNumber,
                     u.profilePicture, u.emailVerified,
-                    l.address, l.citizenship,
+                    u.address, l.citizenship,
                     lv.status AS verification_status
                 FROM Landlord l
                          JOIN User u ON l.user_id = u.user_id

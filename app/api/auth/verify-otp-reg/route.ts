@@ -13,13 +13,13 @@ const dbConfig = {
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
+  const token = cookieStore.get("token")?.value;
 
-  console.log("Received Token:", token);
-
-  if (!token || typeof token !== 'string') {
-    console.log("No valid token found.");
-    return NextResponse.json({ message: 'Unauthorized: No valid token found.' }, { status: 401 });
+  if (!token || typeof token !== "string") {
+    return NextResponse.json(
+        { message: "Unauthorized: No valid token found." },
+        { status: 401 }
+    );
   }
 
   if (!process.env.JWT_SECRET) {
@@ -33,85 +33,126 @@ export async function POST(req: NextRequest) {
     const user_id = payload.user_id;
 
     if (!user_id) {
-      return NextResponse.json({ message: 'Invalid token data' }, { status: 400 });
+      return NextResponse.json({ message: "Invalid token data" }, { status: 400 });
     }
 
     const { otp } = await req.json();
 
     if (!otp || otp.length !== 6) {
-      return NextResponse.json({ message: 'OTP must be a 6-digit number' }, { status: 400 });
+      return NextResponse.json(
+          { message: "OTP must be a 6-digit number" },
+          { status: 400 }
+      );
     }
 
     const connection = await mysql.createConnection(dbConfig);
     await connection.beginTransaction();
 
+    // 🔹 Fix expiration check: use UTC_TIMESTAMP instead of NOW()
     const [otpResult] = await connection.execute<any[]>(
-      `
-      SELECT * FROM UserToken
-      WHERE user_id = ? AND token = ?
-        AND token_type = 'email_verification'
-        AND expires_at > NOW() AND used_at IS NULL
-    `,
-      [user_id, otp]
+        `
+          SELECT t.expires_at, u.timezone
+          FROM UserToken t
+                 JOIN User u ON u.user_id = t.user_id
+          WHERE t.user_id = ? AND t.token = ?
+            AND t.token_type = 'email_verification'
+            AND t.expires_at > UTC_TIMESTAMP()
+            AND t.used_at IS NULL
+        `,
+        [user_id, otp]
     );
 
-    console.log("OTP Query Result:", otpResult);
     if (otpResult.length === 0) {
-      console.log("OTP not found or expired:", { user_id, otp });
-      return NextResponse.json({ message: 'Invalid or expired OTP' }, { status: 400 });
+      await connection.rollback();
+      await connection.end();
+      return NextResponse.json({ message: "Invalid or expired OTP" }, { status: 400 });
     }
 
+    // delete OTP after use
     await connection.execute(
-      "DELETE FROM UserToken WHERE user_id = ? AND token = ?",
-      [user_id, otp]
+        "DELETE FROM UserToken WHERE user_id = ? AND token = ?",
+        [user_id, otp]
     );
 
-    await connection.execute("UPDATE User SET emailVerified = 1 WHERE user_id = ?", [user_id]);
+    // mark user verified
+    await connection.execute(
+        "UPDATE User SET emailVerified = 1 WHERE user_id = ?",
+        [user_id]
+    );
 
+    // fetch user info
     const [userResult] = await connection.execute<any[]>(
-      "SELECT firstName, lastName, userType FROM User WHERE user_id = ?",
-      [user_id]
+        "SELECT firstName, lastName, userType FROM User WHERE user_id = ?",
+        [user_id]
     );
 
     if (userResult.length === 0) {
-      return NextResponse.json({ message: 'User not found.' }, { status: 400 });
+      await connection.rollback();
+      await connection.end();
+      return NextResponse.json({ message: "User not found." }, { status: 400 });
     }
 
-    const encryptedFirstName = JSON.parse(userResult[0].firstName);
-    const encryptedLastName = JSON.parse(userResult[0].lastName);
-
-    const firstName = await decryptData(encryptedFirstName, process.env.ENCRYPTION_SECRET!);
-    const lastName = await decryptData(encryptedLastName, process.env.ENCRYPTION_SECRET!);
+    // const encryptedFirstName = JSON.parse(userResult[0].firstName);
+    // const encryptedLastName = JSON.parse(userResult[0].lastName);
+    //
+    // const firstName = await decryptData(
+    //     encryptedFirstName,
+    //     process.env.ENCRYPTION_SECRET!
+    // );
+    // const lastName = await decryptData(
+    //     encryptedLastName,
+    //     process.env.ENCRYPTION_SECRET!
+    // );
 
     const userType = userResult[0].userType;
-    console.log("Decrypted User Data:", { firstName, lastName, userType });
 
-    const newToken = await new SignJWT({ user_id, userType, firstName, lastName })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('2h')
-      .sign(secret);
+    // 🔹 Convert expiry to user’s timezone
+    const [expiryRows] = await connection.execute<any[]>(
+        `
+      SELECT CONVERT_TZ(?, '+00:00', ?) AS local_expiry
+      `,
+        [otpResult[0].expires_at, otpResult[0].timezone]
+    );
+
+    const localExpiry = expiryRows[0]?.local_expiry;
+    const tz = otpResult[0].timezone;
+
+    // issue new token
+    const newToken = await new SignJWT({
+      user_id,
+      userType,
+      // firstName,
+      // lastName,
+    })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime("2h")
+        .sign(secret);
 
     const response = NextResponse.json({
       message: "OTP verified successfully!",
       userType,
-      firstName,
-      lastName,
+      // firstName,
+      // lastName,
+      expiresAt: localExpiry,
+      timezone: tz,
     });
 
-    response.cookies.set('token', newToken, {
+    response.cookies.set("token", newToken, {
       httpOnly: true,
-      path: '/',
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 2 * 60 * 60, // 2 hours
+      path: "/",
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 2 * 60 * 60,
     });
 
     await connection.commit();
     await connection.end();
     return response;
-
   } catch (error) {
-    console.error('JWT Verification Error:', error);
-    return NextResponse.json({ message: 'Invalid or expired session' }, { status: 401 });
+    console.error("JWT Verification Error:", error);
+    return NextResponse.json(
+        { message: "Invalid or expired session" },
+        { status: 401 }
+    );
   }
 }
