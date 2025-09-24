@@ -30,7 +30,7 @@ export default function TenantFeedsPage() {
         <div className="flex-1 p-6">
           <TenantLeaseReminderBanner tenantId={user?.tenant_id} />
 
-          <h1 className="text-2xl font-bold mb-4">My Feeds</h1>
+          <h1 className="gradient-header">UpFeeds</h1>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Main Announcement Feed - Bigger Section */}

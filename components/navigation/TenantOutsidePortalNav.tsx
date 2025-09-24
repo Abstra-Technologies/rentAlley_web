@@ -113,7 +113,7 @@ export default function TenantOutsidePortalNav() {
     {
       name: "Unit History",
       icon: ClockIcon,
-      onClick: () => router.push("#"),
+      onClick: () => router.push("/pages/tenant/unitHistory"),
       path: "#",
       badge: null,
       priority: 2,
