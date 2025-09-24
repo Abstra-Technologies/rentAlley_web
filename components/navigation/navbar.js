@@ -82,7 +82,7 @@ const useNotifications = (user, admin) => {
 
   const markAsRead = useCallback(async (notificationId) => {
     try {
-      const response = await fetch("/api/notification/mark-read", {
+      const response = await fetch("/api/notification/markSingleRead", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: notificationId }),
@@ -106,7 +106,7 @@ const useNotifications = (user, admin) => {
     if (unreadNotifications.length === 0) return;
 
     try {
-      const response = await fetch("/api/notification/mark-all-read", {
+      const response = await fetch("/api/notification/markAllAsRead", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

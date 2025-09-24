@@ -447,137 +447,143 @@ const LeaseDetails = ({ unitId }) => {
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab tenant details */}
       {activeTab === "details" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+
           {/* Tenant Information Card */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="p-4 sm:p-6">
+              {/* Profile Header */}
               <div className="flex items-start gap-4 mb-6">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gray-100 overflow-hidden flex-shrink-0 shadow-md">
                   {tenant?.profilePicture ? (
-                    <Image
-                      src={tenant?.profilePicture}
-                      alt="Profile"
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover"
-                    />
+                      <Image
+                          src={tenant?.profilePicture}
+                          alt="Profile"
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                      />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                      <UserIcon className="h-8 w-8 text-gray-500" />
-                    </div>
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <UserIcon className="h-8 w-8 text-gray-500" />
+                      </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
                     {tenant
-                      ? `${tenant?.firstName} ${tenant?.lastName}`
-                      : "No Tenant Assigned"}
+                        ? `${tenant?.firstName} ${tenant?.lastName}`
+                        : "No Tenant Assigned"}
                   </h2>
                   {tenant?.birthDate && (
-                    <p className="text-gray-500 text-sm">
-                      Born: {formatDate(tenant?.birthDate)}
-                    </p>
+                      <p className="text-gray-500 text-sm">
+                        Born: {formatDate(tenant?.birthDate)}
+                      </p>
                   )}
                 </div>
               </div>
 
               {tenant ? (
-                <div className="space-y-4">
-                  {[
-                    {
-                      icon: EnvelopeIcon,
-                      label: "Email",
-                      value: tenant?.email,
-                    },
-                    {
-                      icon: PhoneIcon,
-                      label: "Phone",
-                      value: tenant?.phoneNumber,
-                    },
-                    {
-                      icon: HiOutlineBriefcase,
-                      label: "Occupation",
-                      value: tenant?.occupation,
-                    },
-                    {
-                      icon: HiOutlineCurrencyDollar,
-                      label: "Monthly Income",
-                      value: tenant?.monthlyIncome?.replace("_", "-"),
-                    },
-                    {
-                      icon: HiOutlineUser,
-                      label: "Employment",
-                      value: tenant?.employmentType,
-                    },
-                    {
-                      icon: MapPinIcon,
-                      label: "Address",
-                      value: tenant?.address,
-                    },
-                  ].map((item, index) => {
-                    const Icon = item.icon;
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"
-                      >
-                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 mt-0.5">
-                          <Icon className="h-4 w-4 text-gray-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                            {item.label}
-                          </p>
-                          <p className="text-gray-800 font-medium break-words">
-                            {item.value || "Not provided"}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div className="space-y-6">
+                    {/* Info grid 2 per row */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { icon: EnvelopeIcon, label: "Email", value: tenant?.email },
+                        { icon: PhoneIcon, label: "Phone", value: tenant?.phoneNumber },
+                        { icon: HiOutlineBriefcase, label: "Occupation", value: tenant?.occupation },
+                        {
+                          icon: HiOutlineCurrencyDollar,
+                          label: "Monthly Income",
+                          value: tenant?.monthlyIncome?.replace("_", "-"),
+                        },
+                        { icon: HiOutlineUser, label: "Employment", value: tenant?.employmentType },
+                        { icon: MapPinIcon, label: "Address", value: tenant?.address },
+                      ].map((item, index) => {
+                        const Icon = item.icon;
+                        return (
+                            <div
+                                key={index}
+                                className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"
+                            >
+                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 mt-0.5">
+                                <Icon className="h-4 w-4 text-gray-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                                  {item.label}
+                                </p>
+                                <p className="text-gray-800 font-medium break-words">
+                                  {item.value || "Not provided"}
+                                </p>
+                              </div>
+                            </div>
+                        );
+                      })}
+                    </div>
 
-                  {/* Valid ID Section */}
-                  {tenant?.validId ? (
-                    <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                          <IdentificationIcon className="h-6 w-6 text-blue-600" />
+                    {/* Valid ID Section */}
+                    {tenant?.validId ? (
+                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                              <IdentificationIcon className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-blue-800 mb-1">Government ID</p>
+                              <Link
+                                  href={tenant?.validId}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                              >
+                                View Verification Document
+                              </Link>
+                            </div>
+                            <FaCheckCircle className="text-green-500 h-5 w-5" />
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-blue-800 mb-1">
-                            Government ID
-                          </p>
-                          <Link
-                            href={tenant?.validId}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
-                          >
-                            View Verification Document
-                          </Link>
+                    ) : (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <p className="text-gray-500 text-center">No ID verification available</p>
                         </div>
-                        <FaCheckCircle className="text-green-500 h-5 w-5" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                      <p className="text-gray-500 text-center">
-                        No ID verification available
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <UserIcon className="h-8 w-8 text-gray-400" />
+                    )}
+
+                    {/* Proof of Income Section */}
+                    {tenant?.proofOfIncome ? (
+                        <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                              <HiOutlineCurrencyDollar className="h-6 w-6 text-purple-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-purple-800 mb-1">Proof of Income</p>
+                              <Link
+                                  href={tenant?.proofOfIncome}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-purple-600 hover:text-purple-800 underline text-sm font-medium"
+                              >
+                                View Document
+                              </Link>
+                            </div>
+                            <FaCheckCircle className="text-green-500 h-5 w-5" />
+                          </div>
+                        </div>
+                    ) : (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <p className="text-gray-500 text-center">No proof of income uploaded</p>
+                        </div>
+                    )}
                   </div>
-                  <p className="text-gray-500">
-                    No tenant information available
-                  </p>
-                </div>
+              ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <UserIcon className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500">No tenant information available</p>
+                  </div>
               )}
             </div>
           </div>
@@ -589,9 +595,7 @@ const LeaseDetails = ({ unitId }) => {
                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
                   <DocumentTextIcon className="h-5 w-5 text-white" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  Lease Agreement
-                </h2>
+                <h2 className="text-xl font-bold text-gray-800">Lease Agreement</h2>
               </div>
 
               {!tenant ? (
@@ -633,65 +637,11 @@ const LeaseDetails = ({ unitId }) => {
                         </div>
                     )}
 
-                    {/* Date Input Section */}
-                    <div className="mb-6">
-                      <h3 className="font-semibold text-gray-800 mb-4">
-                        Set Lease Dates
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Start Date
-                          </label>
-                          <input
-                              type="date"
-                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                              value={startDate}
-                              onChange={(e) => setStartDate(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            End Date
-                          </label>
-                          <input
-                              type="date"
-                              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                              value={endDate}
-                              onChange={(e) => setEndDate(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Lease Document Section */}
                     <div className="mb-6">
                       <h3 className="font-semibold text-gray-800 mb-4">Lease Document</h3>
 
-                      <div className="flex gap-3 mb-4">
-                        <button
-                            onClick={() => setLeaseMode("generate")}
-                            className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
-                                leaseMode === "generate"
-                                    ? "bg-emerald-600 text-white border-emerald-600"
-                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                            }`}
-                        >
-                          Use System Template
-                        </button>
-                        <button
-                            onClick={() => setLeaseMode("upload")}
-                            className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
-                                leaseMode === "upload"
-                                    ? "bg-green-600 text-white border-green-600"
-                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                            }`}
-                        >
-                          Upload PDF
-                        </button>
-                      </div>
-
-                      {lease?.agreement_url && (
+                      {lease?.agreement_url ? (
                           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 flex items-center justify-between">
                             <div>
                               <p className="font-semibold text-blue-800 mb-1">
@@ -713,29 +663,84 @@ const LeaseDetails = ({ unitId }) => {
                               Delete
                             </button>
                           </div>
-                      )}
+                      ) : (
+                          <>
+                            {/* Date Input Section */}
+                            <div className="mb-6">
+                              <h3 className="font-semibold text-gray-800 mb-4">
+                                Set Lease Dates
+                              </h3>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Start Date
+                                  </label>
+                                  <input
+                                      type="date"
+                                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
+                                      value={startDate}
+                                      onChange={(e) => setStartDate(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    End Date
+                                  </label>
+                                  <input
+                                      type="date"
+                                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
+                                      value={endDate}
+                                      onChange={(e) => setEndDate(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
 
+                            {/* Toggle Buttons */}
+                            <div className="flex gap-3 mb-4">
+                              <button
+                                  onClick={() => setLeaseMode("generate")}
+                                  className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
+                                      leaseMode === "generate"
+                                          ? "bg-emerald-600 text-white border-emerald-600"
+                                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                  }`}
+                              >
+                                Use System Template
+                              </button>
+                              <button
+                                  onClick={() => setLeaseMode("upload")}
+                                  className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
+                                      leaseMode === "upload"
+                                          ? "bg-green-600 text-white border-green-600"
+                                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                  }`}
+                              >
+                                Upload PDF
+                              </button>
+                            </div>
 
-                    </div>
+                            {/* Action Buttons */}
+                            <div className="space-y-3">
+                              {leaseMode === "generate" && (
+                                  <button
+                                      className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50"
+                                      onClick={handleGenerateLease}
+                                  >
+                                    Generate Lease Agreement
+                                  </button>
+                              )}
 
-                    {/* Action Buttons */}
-                    <div className="space-y-3">
-                      {leaseMode === "generate" && (
-                          <button
-                              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50"
-                              onClick={handleGenerateLease}
-                          >
-                            Generate Lease Agreement
-                          </button>
-                      )}
-
-                      {leaseMode === "upload" && (
-                          <button
-                              className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50"
-                              onClick={handleSaveLease}
-                          >
-                            Upload Lease Agreement
-                          </button>
+                              {leaseMode === "upload" && (
+                                  <button
+                                      className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50"
+                                      onClick={handleSaveLease}
+                                  >
+                                    Upload Lease Agreement
+                                  </button>
+                              )}
+                            </div>
+                          </>
                       )}
                     </div>
                   </>
@@ -795,9 +800,5 @@ const LeaseDetails = ({ unitId }) => {
       )}
     </div>
   );
-
 };
-
-
-
 export default LeaseDetails;

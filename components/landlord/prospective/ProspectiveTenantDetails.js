@@ -17,6 +17,7 @@ import {
   CheckIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import LoadingScreen from "@/components/loadingScreen";
 
 const ProspectiveTenantDetails = () => {
   const router = useRouter();
@@ -33,7 +34,6 @@ const ProspectiveTenantDetails = () => {
   const [applicationStatus, setApplicationStatus] = useState("pending");
 
   useEffect(() => {
-    console.log("unitId:", unitId, "tenantId:", tenantId);
     if (unitId && tenantId) {
       fetchTenantDetails();
       fetchUnitDetails();
@@ -150,9 +150,9 @@ const ProspectiveTenantDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-t-blue-600 border-blue-200 rounded-full animate-spin"></div>
-      </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+          <LoadingScreen message='Just a moment, getting tenant info ready...' />;
+        </div>
     );
   }
 

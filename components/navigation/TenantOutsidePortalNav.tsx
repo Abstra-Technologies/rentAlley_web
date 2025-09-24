@@ -12,16 +12,37 @@ import { FaFile } from "react-icons/fa";
 import { RiCommunityFill } from "react-icons/ri";
 import { Menu, X, ChevronRight } from "lucide-react";
 import Swal from "sweetalert2";
+import useAuthStore from "@/zustand/authStore";
 
 export default function TenantOutsidePortalNav() {
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [undecidedApplications, setUndecidedApplications] = useState(0);
+  const { user } = useAuthStore();
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!user?.tenant_id) return;
+
+    const fetchUndecidedApplications = async () => {
+      try {
+        const res = await fetch(`/api/tenant/applications/pendingApplications?tenant_id=${user?.tenant_id}`);
+        const data = await res.json();
+        setUndecidedApplications(data.count || 0);
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+      }
+    };
+
+    fetchUndecidedApplications();
+  }, [user?.tenant_id]);
+
+
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -86,7 +107,7 @@ export default function TenantOutsidePortalNav() {
       icon: FaFile,
       onClick: handleClick_MyApplications,
       path: "/pages/tenant/myApplications",
-      badge: null,
+      badge: undecidedApplications > 0 ? undecidedApplications : null,
       priority: 2,
     },
     {
@@ -107,11 +128,10 @@ export default function TenantOutsidePortalNav() {
     <div className="flex h-screen bg-gray-50">
       {/* Desktop Sidebar - Fixed and Sticky */}
       <div className="hidden md:block fixed left-0 top-16 w-64 bg-white shadow-lg h-[calc(100vh-4rem)] overflow-y-auto z-30 border-r border-gray-200">
+
         <div className="p-4">
           <h1 className="text-lg font-semibold bg-gradient-to-r from-indigo-800 to-purple-600 bg-clip-text text-transparent">
-            My Rental
           </h1>
-          <p className="text-gray-500 text-xs mt-1">Manage your property</p>
         </div>
 
         <nav className="px-3 pb-4">

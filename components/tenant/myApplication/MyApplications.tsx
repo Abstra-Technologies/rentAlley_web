@@ -13,6 +13,9 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import LoadingScreen from "@/components/loadingScreen";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 
 type Application = {
   id: number;
@@ -32,6 +35,8 @@ export default function MyApplications({ tenantId }: { tenantId: number }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10); // number of applications per page
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -66,6 +71,11 @@ export default function MyApplications({ tenantId }: { tenantId: number }) {
     }
   }, [tenantId, router]);
 
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+  };
+  const paginatedApps = applications.slice((page - 1) * pageSize, page * pageSize);
+
   const handleTenantDecision = async (
     applicationId: number,
     decision: "yes" | "no"
@@ -91,16 +101,9 @@ export default function MyApplications({ tenantId }: { tenantId: number }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            <span className="ml-3 text-gray-600 font-medium">
-              Loading applications...
-            </span>
-          </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+           <LoadingScreen message='Just a moment, getting your applications data ready...' />;
         </div>
-      </div>
     );
   }
 
@@ -152,6 +155,7 @@ export default function MyApplications({ tenantId }: { tenantId: number }) {
           </div>
         ) : (
           <div className="space-y-4">
+
             {applications.map((app) => (
               <div
                 key={app.id}
@@ -289,11 +293,22 @@ export default function MyApplications({ tenantId }: { tenantId: number }) {
                     </div>
                   )}
                 </div>
+
               </div>
             ))}
+
           </div>
         )}
       </div>
+      <Stack spacing={2} alignItems="center" className="pt-6">
+        <Pagination
+            count={Math.ceil(applications.length / pageSize)}
+            page={page}
+            onChange={handlePageChange}
+            color="primary"
+            shape="rounded"
+        />
+      </Stack>
     </div>
   );
 }

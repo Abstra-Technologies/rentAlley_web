@@ -14,7 +14,7 @@ export default function TenantRequest() {
 
   useEffect(() => {
     const loadSession = async () => {
-      setLoading(true); // start loading
+      setLoading(true);
       await fetchSession();
       setLoading(false);
     };
