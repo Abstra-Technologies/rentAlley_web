@@ -1,5 +1,3 @@
-// Add Confirm new Password part. and validation.
-
 'use client';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -37,7 +35,6 @@ export default function ForgotPassword() {
       }
     }
   }, []);
-  
 
   useEffect(() => {
     if (typeof window !== "undefined") {
