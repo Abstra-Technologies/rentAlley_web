@@ -18,9 +18,13 @@ function sanitizeFilename(filename: string): string {
     return filename.replace(/[^a-zA-Z0-9.]/g, "_").replace(/\s+/g, "_");
 }
 
-async function uploadToS3(file: File, folder: string) {
+async function uploadToS3(file: any, folder: string) {
+    if (!file || typeof file.arrayBuffer !== "function") {
+        throw new Error("Invalid file object received in uploadToS3");
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
-    const sanitizedFilename = sanitizeFilename(file.name);
+    const sanitizedFilename = sanitizeFilename(file.name ?? "upload");
     const fileName = `${folder}/${Date.now()}_${sanitizedFilename}`;
 
     await s3Client.send(
@@ -28,7 +32,7 @@ async function uploadToS3(file: File, folder: string) {
             Bucket: process.env.NEXT_S3_BUCKET_NAME!,
             Key: fileName,
             Body: buffer,
-            ContentType: file.type,
+            ContentType: file.type ?? "application/octet-stream",
         })
     );
 
@@ -61,6 +65,7 @@ export async function POST(req: NextRequest) {
         await connection.beginTransaction();
 
         // 1️⃣ Insert property with separated billing types
+        // 1️⃣ Insert property with separated billing types + new fields
         const [result] = await connection.execute(
             `INSERT INTO Property (
                 landlord_id, property_name, property_type, amenities, street,
@@ -70,8 +75,9 @@ export async function POST(req: NextRequest) {
                 min_stay, late_fee, assoc_dues,
                 payment_frequency, flexipay_enabled, property_preferences,
                 accepted_payment_methods, latitude, longitude,
+                rent_increase_percent, security_deposit_months, advance_payment_months,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
                 landlord_id,
                 property.propertyName,
@@ -95,8 +101,12 @@ export async function POST(req: NextRequest) {
                 JSON.stringify(property.paymentMethodsAccepted || []),
                 property.lat || null,
                 property.lng || null,
+                property.rentIncreasePercent || 0.0,
+                property.securityDepositMonths || 0,
+                property.advancePaymentMonths || 0,
             ]
         );
+
 
         // @ts-ignore
         const propertyId = result.insertId;
