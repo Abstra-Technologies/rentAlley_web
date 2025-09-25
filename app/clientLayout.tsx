@@ -100,6 +100,32 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 }}
             />
 
+            <Script
+                id="facebook-sdk"
+                strategy="afterInteractive"
+                dangerouslySetInnerHTML={{
+                    __html: `
+      window.fbAsyncInit = function() {
+        FB.init({
+          appId      : '${process.env.NEXT_PUBLIC_FB_APP_ID}', 
+          cookie     : true,
+          xfbml      : true,
+          version    : 'v20.0' // latest stable Graph API version
+        });
+      };
+
+      (function(d, s, id){
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) {return;}
+        js = d.createElement(s); js.id = id;
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    `,
+                }}
+            />
+
+
             {/* ✅ Facebook SDK root */}
             <div id="fb-root"></div>
 

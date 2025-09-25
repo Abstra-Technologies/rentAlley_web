@@ -9,6 +9,7 @@ import useAuthStore from "../../../../zustand/authStore";
 import { logEvent } from "../../../../utils/gtag";
 import Footer from "../../../../components/navigation/footer";
 import Image from "next/image";
+// @ts-ignore
 import ReCAPTCHA from "react-google-recaptcha";
 
 const loginSchema = z.object({
@@ -30,7 +31,7 @@ function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const { user, admin, fetchSession } = useAuthStore();
+  const { user, fetchSession } = useAuthStore();
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -49,16 +50,16 @@ function Login() {
       } else {
         router.replace("/");
       }
-    } else if (admin) {
-      router.replace("/pages/system_admin");
+    } else if (!user) {
+        fetchSession();
     }
-  }, [user, admin, router]);
+  }, [user, fetchSession, router]);
 
 
   useEffect(() => {
     sessionStorage.removeItem("pending2FA");
     window.history.replaceState(null, "", "/pages/auth/login");
-  }, [user, admin]);
+  }, [user]);
 
   useEffect(() => {
     if (error) {
@@ -71,6 +72,8 @@ function Login() {
     setFormData((prev) => ({ ...prev, [id]: value }));
 
     // Clear errors on input
+
+    // @ts-ignore
     if (errors[id]) {
       setErrors((prevErrors) => ({ ...prevErrors, [id]: "" }));
     }
@@ -109,6 +112,7 @@ function Login() {
       error.errors.forEach((err: any) => {
         fieldErrors[err.path[0]] = err.message;
       });
+      // @ts-ignore
       setErrors(fieldErrors);
       return;
     }

@@ -45,6 +45,10 @@ const baseConfig: NextConfig = {
                 hostname: "rentahanbucket.s3.us-east-1.amazonaws.com",
                 pathname: "/**",
             },
+            {
+                protocol: "https",
+                hostname: "photos.app.goo.gl",
+            },
         ],
     },
 

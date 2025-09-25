@@ -125,10 +125,7 @@ export async function GET(req: NextRequest) {
         [id]
     );
 
-    // ✅ Response
-    // @ts-ignore
     return NextResponse.json({
-      // @ts-ignore
       ...property[0],
       landlord_id: property[0].landlord_id,
       landlord_firstName: landlordFirstName,
@@ -137,7 +134,13 @@ export async function GET(req: NextRequest) {
       property_photo: decryptedPropertyPhotos,
       units: unitsWithPhotos,
       payment_methods: paymentMethods,
+
+      main_photo:
+          decryptedPropertyPhotos?.[0] ||
+          `${process.env.NEXT_PUBLIC_BASE_URL}/default-property.jpg`,
+      share_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/find-rent/${id}`,
     });
+
 
   } catch (error) {
     console.error("Error fetching property details:", error);
