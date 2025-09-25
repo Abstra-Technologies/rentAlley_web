@@ -12,10 +12,7 @@ import {
     FaWifi,
     FaInfoCircle,
 } from "react-icons/fa";
-import {
-    FacebookShareButton,
-    FacebookIcon,
-} from "react-share";
+import { FacebookShareButton, FacebookIcon } from "next-share";
 import { BsImageAlt, BsCheckCircleFill } from "react-icons/bs";
 import { MdVerified, MdOutlineApartment } from "react-icons/md";
 import { IoArrowBackOutline } from "react-icons/io5";
@@ -195,7 +192,7 @@ export default function PropertyDetails() {
                             </div>
 
                             <FacebookShareButton
-                                url={`${process.env.NEXT_PUBLIC_BASE_URL}/pages/find-rent/${property.property_id}`}
+                                url={shareUrl}
                                 quote={`Check out this property: ${property?.property_name}`}
                                 hashtag="#FindRent #Upkyp"
                             >
