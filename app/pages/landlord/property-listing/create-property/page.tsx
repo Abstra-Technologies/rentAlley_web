@@ -19,7 +19,9 @@ export default function AddNewProperty() {
   const router = useRouter();
   const [step, setStep] = useState(() => {
     const savedStep =
-        typeof window !== "undefined" ? localStorage.getItem("addPropertyStep") : null;
+      typeof window !== "undefined"
+        ? localStorage.getItem("addPropertyStep")
+        : null;
     return savedStep ? Number(savedStep) : 1;
   });
   const { fetchSession, user, admin } = useAuthStore();
@@ -51,64 +53,114 @@ export default function AddNewProperty() {
   const validateStep = () => {
     if (step === 1) {
       if (
-          !property.propertyName ||
-          !property.street ||
-          !property.brgyDistrict ||
-          !property.city ||
-          !property.province ||
-          !property.zipCode
+        !property.propertyName ||
+        !property.street ||
+        !property.brgyDistrict ||
+        !property.city ||
+        !property.province ||
+        !property.zipCode
       ) {
-        Swal.fire("Missing Details", "Please fill in all property details before proceeding.", "warning");
+        Swal.fire({
+          title: "Missing Details",
+          text: "Please fill in all property details before proceeding.",
+          icon: "warning",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       const zipCodePattern = /^\d{4}$/;
       if (!zipCodePattern.test(property.zipCode)) {
-        Swal.fire("Invalid ZIP Code", "Zip Code must be exactly 4 digits.", "error");
+        Swal.fire({
+          title: "Invalid ZIP Code",
+          text: "Zip Code must be exactly 4 digits.",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
     }
 
     if (step === 3) {
       if (photos.length === 0 || photos.length < 3) {
-        Swal.fire("Insufficient Photos", "Please upload at least three property photos.", "warning");
+        Swal.fire({
+          title: "Insufficient Photos",
+          text: "Please upload at least three property photos.",
+          icon: "warning",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       if (property.totalUnits < 0) {
-        Swal.fire("Invalid Input", "Number of units cannot be negative.", "error");
+        Swal.fire({
+          title: "Invalid Input",
+          text: "Number of units cannot be negative.",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       if (!property.propDesc?.trim()) {
-        Swal.fire("Missing Description", "Please enter a description of the property.", "error");
+        Swal.fire({
+          title: "Missing Description",
+          text: "Please enter a description of the property.",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       if (!property.floorArea || property.floorArea <= 0) {
-        Swal.fire("Missing Floor Area", "Please enter the floor area of the property.", "error");
+        Swal.fire({
+          title: "Missing Floor Area",
+          text: "Please enter the floor area of the property.",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       if (!property.minStay || property.minStay <= 0) {
-        Swal.fire("Missing Minimum Stay", "Please enter the minimum stay duration (in months).", "error");
+        Swal.fire({
+          title: "Missing Minimum Stay",
+          text: "Please enter the minimum stay duration (in months).",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       if (!property.waterBillingType?.trim()) {
-        Swal.fire("Missing Water Utility Billing Type", "Please select a utility billing type.", "error");
+        Swal.fire({
+          title: "Missing Water Utility Billing Type",
+          text: "Please select a utility billing type.",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       if (!property.electricityBillingType?.trim()) {
-        Swal.fire("Missing Electricity Utility Billing Type", "Please select a utility billing type.", "error");
+        Swal.fire({
+          title: "Missing Electricity Utility Billing Type",
+          text: "Please select a utility billing type.",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
       for (let photo of photos) {
         if (!allowedImageTypes.includes(photo.file?.type)) {
-          Swal.fire("Invalid File Type", "Only JPEG, PNG, or WEBP images are allowed.", "error");
+          Swal.fire({
+            title: "Invalid File Type",
+            text: "Only JPEG, PNG, or WEBP images are allowed.",
+            icon: "error",
+            confirmButtonColor: "#3b82f6",
+          });
           return false;
         }
       }
@@ -116,30 +168,60 @@ export default function AddNewProperty() {
 
     if (step === 4) {
       if (!property.paymentFrequency) {
-        Swal.fire("Missing Payment Frequency", "Please select a payment frequency.", "error");
+        Swal.fire({
+          title: "Missing Payment Frequency",
+          text: "Please select a payment frequency.",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       if (property.lateFee == null || property.lateFee < 0) {
-        Swal.fire("Missing Late Fee", "Please enter a valid late fee amount (0 or higher).", "error");
+        Swal.fire({
+          title: "Missing Late Fee",
+          text: "Please enter a valid late fee amount (0 or higher).",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
       if (property.assocDues == null || property.assocDues < 0) {
-        Swal.fire("Missing Association Dues", "Please enter a valid association dues amount (0 or higher).", "error");
+        Swal.fire({
+          title: "Missing Association Dues",
+          text: "Please enter a valid association dues amount (0 or higher).",
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
     }
 
     if (step === 5) {
-      if (!submittedDoc?.file || !govID?.file || !indoorPhoto || !outdoorPhoto) {
-        Swal.fire("Missing Documents", "Please upload all required documents.", "warning");
+      if (
+        !submittedDoc?.file ||
+        !govID?.file ||
+        !indoorPhoto ||
+        !outdoorPhoto
+      ) {
+        Swal.fire({
+          title: "Missing Documents",
+          text: "Please upload all required documents.",
+          icon: "warning",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
 
-      const isPDF = (file: File) => file && file.type === "application/pdf";
+      const isPDF = (file) => file && file.type === "application/pdf";
       if (!isPDF(submittedDoc?.file)) {
-        Swal.fire("Invalid File", `${docType.replace("_", " ")} must be a PDF file.`, "error");
+        Swal.fire({
+          title: "Invalid File",
+          text: `${docType.replace("_", " ")} must be a PDF file.`,
+          icon: "error",
+          confirmButtonColor: "#3b82f6",
+        });
         return false;
       }
     }
@@ -161,30 +243,27 @@ export default function AddNewProperty() {
 
   const sendPropertyData = async (url, { arg }) => {
     return axiosInstance
-        .post(url, arg, { headers: { "Content-Type": "application/json" } })
-        .then((res) => res.data);
+      .post(url, arg, { headers: { "Content-Type": "application/json" } })
+      .then((res) => res.data);
   };
 
   const { trigger, isMutating } = useSWRMutation(
-      `/api/propertyListing/createNewProperty?landlord_id=${user?.landlord_id}`,
-      sendPropertyData
+    `/api/propertyListing/createNewProperty?landlord_id=${user?.landlord_id}`,
+    sendPropertyData
   );
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep()) return;
 
-    setSubmitting(true); // 🔵 show "Submitting..."
+    setSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("landlord_id", user?.landlord_id);
       formData.append("property", JSON.stringify(property));
       photos.forEach((p) => p.file && formData.append("photos", p.file));
       formData.append("docType", docType);
-      // @ts-ignore
       formData.append("submittedDoc", submittedDoc.file);
-      // @ts-ignore
       formData.append("govID", govID.file);
       formData.append("indoor", indoorPhoto);
       formData.append("outdoor", outdoorPhoto);
@@ -194,15 +273,44 @@ export default function AddNewProperty() {
       });
 
       reset();
-      Swal.fire("Success!", "Property listing submitted.", "success").then(() => {
+      Swal.fire({
+        title: "Success!",
+        text: "Property listing submitted successfully.",
+        icon: "success",
+        confirmButtonColor: "#10b981",
+      }).then(() => {
         localStorage.removeItem("addPropertyStep");
         router.push("/pages/landlord/property-listing/review-listing");
       });
-    } catch (err: any) {
-      Swal.fire("Error", `Failed to submit property: ${err.message}`, "error");
+    } catch (err) {
+      Swal.fire({
+        title: "Error",
+        text: `Failed to submit property: ${err.message}`,
+        icon: "error",
+        confirmButtonColor: "#ef4444",
+      });
     } finally {
-      setSubmitting(false); // 🔴 always reset
+      setSubmitting(false);
     }
+  };
+
+  const handleCancel = () => {
+    Swal.fire({
+      title: "Cancel Property Listing?",
+      text: "All entered data will be lost. This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, cancel",
+      cancelButtonText: "No, continue",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        reset();
+        localStorage.removeItem("addPropertyStep");
+        router.push("/pages/landlord/property-listing");
+      }
+    });
   };
 
   const renderStep = () => {
@@ -223,77 +331,144 @@ export default function AddNewProperty() {
   };
 
   return (
-      <div className="min-h-screen bg-gray-100">
-        <LandlordLayout>
-          <div className="flex">
-            <main className="flex-1 p-8">
-              <StepCounter currentStep={step} />
+    <LandlordLayout>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Page Header */}
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+              Add New Property
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
+              Fill in the details below to list your property and start
+              attracting tenants.
+            </p>
+          </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-md mt-6">
-                {renderStep()}
+          {/* Step Counter */}
+          <StepCounter currentStep={step} />
 
-                <div className="flex justify-between mt-6">
-                  {step > 1 && (
+          {/* Main Content */}
+          <div className="space-y-6 sm:space-y-8">
+            {/* Step Content */}
+            <div className="min-h-[600px]">{renderStep()}</div>
+
+            {/* Navigation Controls */}
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 overflow-hidden sticky bottom-4 z-10">
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                  {/* Left Side - Back and Cancel Buttons */}
+                  <div className="flex items-center space-x-2">
+                    {step > 1 && (
                       <button
-                          onClick={prevStep}
-                          disabled={isMutating}
-                          className={`px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 
-                      ${isMutating ? "opacity-50 cursor-not-allowed" : ""}`}
+                        onClick={prevStep}
+                        disabled={isMutating || submitting}
+                        className="flex items-center space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 text-gray-700 disabled:text-gray-400 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed text-sm sm:text-base"
                       >
-                        Back
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                        <span>Back</span>
                       </button>
-                  )}
-
-                  <div className="flex space-x-2">
+                    )}
                     <button
-                        onClick={() => {
-                          Swal.fire({
-                            title: "Cancel Property Listing?",
-                            text: "All entered data will be lost.",
-                            icon: "warning",
-                            showCancelButton: true,
-                            confirmButtonText: "Yes, cancel",
-                            cancelButtonText: "No, stay",
-                          }).then((result) => {
-                            if (result.isConfirmed) {
-                              reset();
-                              localStorage.removeItem("addPropertyStep");
-                              router.push("/pages/landlord/property-listing");
-                            }
-                          });
-                        }}
-                        disabled={isMutating}
-                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                      onClick={handleCancel}
+                      disabled={isMutating || submitting}
+                      className="px-4 sm:px-6 py-2.5 sm:py-3 font-semibold text-gray-500 hover:text-gray-700 disabled:text-gray-300 transition-colors duration-200 disabled:cursor-not-allowed text-sm sm:text-base"
                     >
                       Cancel
                     </button>
                   </div>
 
-                  {step < 5 ? (
+                  {/* Right Side - Next/Submit Button */}
+                  <div className="flex">
+                    {step < 5 ? (
                       <button
-                          onClick={nextStep}
-                          className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 
-                      ${isMutating ? "opacity-50 cursor-not-allowed" : ""}`}
-                          disabled={isMutating}
+                        onClick={nextStep}
+                        className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-400 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:shadow-none text-sm sm:text-base"
+                        disabled={isMutating || submitting}
                       >
-                        Next
+                        <span>Continue</span>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
                       </button>
-                  ) : (
+                    ) : (
                       <button
-                          onClick={handleSubmit}
-                          disabled={submitting}
-                          className={`px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 
-  disabled:opacity-50 ${submitting ? "cursor-not-allowed" : ""}`}
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="flex items-center space-x-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-400 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:shadow-none text-sm sm:text-base"
                       >
-                        {submitting ? "Submitting..." : "Submit"}
+                        {submitting ? (
+                          <>
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            <span>Submitting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                            <span>Submit Listing</span>
+                          </>
+                        )}
                       </button>
-
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
-            </main>
+            </div>
           </div>
-        </LandlordLayout>
+        </div>
       </div>
+    </LandlordLayout>
   );
 }
