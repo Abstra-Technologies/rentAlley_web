@@ -165,7 +165,7 @@ export default function LandlordDashboard() {
             setOccupation(user.occupation || "");
             setCitizenship(user.citizenship || "");
 
-            // ✅ from Landlord table
+            // from Landlord table
             setAddress(data.address || "");
           })
           .catch((err) => console.error("Error fetching landlord data:", err))

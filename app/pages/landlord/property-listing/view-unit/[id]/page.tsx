@@ -14,6 +14,7 @@ import {
   TrashIcon,
   ExclamationCircleIcon,
   XMarkIcon,
+  Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 import useAuthStore from "../../../../../../zustand/authStore";
 import { useSearchParams } from "next/navigation";
@@ -25,6 +26,7 @@ import UnitsTab from "../../../../../../components/landlord/properties/UnitsTab"
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 import { BackButton } from "@/components/navigation/backButton";
 import PropertyRatesModal from "@/components/landlord/properties/utilityRatesSetter";
+import PropertyConfiguration from "@/components/landlord/properties/propertyConfigSettings";
 
 const ViewUnitPage = () => {
   const { id } = useParams();
@@ -423,7 +425,6 @@ const ViewUnitPage = () => {
                     </button>
                 )}
 
-
             {/* Utility Rate Button - Conditional */}
             {billingMode &&
               propertyDetails?.utility_billing_type === "submetered" && (
@@ -466,31 +467,24 @@ const ViewUnitPage = () => {
           <div className="flex gap-1 overflow-x-auto scrollbar-hide bg-white rounded-xl p-1 shadow-md border border-gray-100">
             {[
               { id: "units", label: "Units", icon: HomeIcon },
-              {
-                id: "documents",
-                label: "Documents",
-                icon: ClipboardDocumentListIcon,
-              },
-              {
-                id: "analytics",
-                label: "Analytics",
-                icon: BuildingOffice2Icon,
-              },
+              { id: "documents", label: "Documents", icon: ClipboardDocumentListIcon },
+              { id: "analytics", label: "Analytics", icon: BuildingOffice2Icon },
+              { id: "configuration", label: "Configuration", icon: Cog6ToothIcon },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
-                </button>
+                  <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                          activeTab === tab.id
+                              ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md"
+                              : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                      }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
               );
             })}
           </div>
@@ -565,6 +559,12 @@ const ViewUnitPage = () => {
               </div>
             </div>
           )}
+
+          {/* Configuration Tab */}
+          {activeTab === "configuration" && (
+              <PropertyConfiguration propertyId={id} />
+          )}
+
         </div>
 
         {/* Enhanced Modal for Property Utility Rate */}
