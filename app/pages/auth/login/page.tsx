@@ -9,7 +9,6 @@ import useAuthStore from "../../../../zustand/authStore";
 import { logEvent } from "../../../../utils/gtag";
 import Footer from "../../../../components/navigation/footer";
 import Image from "next/image";
-// @ts-ignore
 import ReCAPTCHA from "react-google-recaptcha";
 
 const loginSchema = z.object({
@@ -51,9 +50,9 @@ function Login() {
         router.replace("/");
       }
     } else if (!user) {
-        fetchSession();
+      fetchSession();
     }
-  }, [user, fetchSession, router]);
+  }, [user, router]);
 
 
   useEffect(() => {
@@ -72,8 +71,6 @@ function Login() {
     setFormData((prev) => ({ ...prev, [id]: value }));
 
     // Clear errors on input
-
-    // @ts-ignore
     if (errors[id]) {
       setErrors((prevErrors) => ({ ...prevErrors, [id]: "" }));
     }
@@ -112,7 +109,6 @@ function Login() {
       error.errors.forEach((err: any) => {
         fieldErrors[err.path[0]] = err.message;
       });
-      // @ts-ignore
       setErrors(fieldErrors);
       return;
     }
