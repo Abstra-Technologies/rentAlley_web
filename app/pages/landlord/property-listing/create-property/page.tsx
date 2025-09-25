@@ -58,57 +58,48 @@ export default function AddNewProperty() {
           !property.province ||
           !property.zipCode
       ) {
-        Swal.fire("Missing Details", "Please fill in all property details before proceeding.", "warning");
+        Swal.fire("Missing Details", "Please fill in all property details.", "warning");
         return false;
       }
-
-      const zipCodePattern = /^\d{4}$/;
-      if (!zipCodePattern.test(property.zipCode)) {
+      if (!/^\d{4}$/.test(String(property.zipCode))) {
         Swal.fire("Invalid ZIP Code", "Zip Code must be exactly 4 digits.", "error");
         return false;
       }
     }
 
     if (step === 3) {
-      if (photos.length === 0 || photos.length < 3) {
-        Swal.fire("Insufficient Photos", "Please upload at least three property photos.", "warning");
+      if (photos.length < 3) {
+        Swal.fire("Insufficient Photos", "Upload at least three property photos.", "warning");
         return false;
       }
-
-      if (property.totalUnits < 0) {
+      if (property.totalUnits != null && property.totalUnits < 0) {
         Swal.fire("Invalid Input", "Number of units cannot be negative.", "error");
         return false;
       }
-
       if (!property.propDesc?.trim()) {
-        Swal.fire("Missing Description", "Please enter a description of the property.", "error");
+        Swal.fire("Missing Description", "Please enter a description.", "warning");
         return false;
       }
-
       if (!property.floorArea || property.floorArea <= 0) {
-        Swal.fire("Missing Floor Area", "Please enter the floor area of the property.", "error");
+        Swal.fire("Missing Floor Area", "Please enter a valid floor area.", "error");
         return false;
       }
-
       if (!property.minStay || property.minStay <= 0) {
-        Swal.fire("Missing Minimum Stay", "Please enter the minimum stay duration (in months).", "error");
+        Swal.fire("Missing Minimum Stay", "Enter minimum stay duration (in months).", "error");
         return false;
       }
-
       if (!property.waterBillingType?.trim()) {
-        Swal.fire("Missing Water Utility Billing Type", "Please select a utility billing type.", "error");
+        Swal.fire("Missing Water Billing Type", "Please select a billing type.", "error");
         return false;
       }
-
       if (!property.electricityBillingType?.trim()) {
-        Swal.fire("Missing Electricity Utility Billing Type", "Please select a utility billing type.", "error");
+        Swal.fire("Missing Electricity Billing Type", "Please select a billing type.", "error");
         return false;
       }
-
-      const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
       for (let photo of photos) {
-        if (!allowedImageTypes.includes(photo.file?.type)) {
-          Swal.fire("Invalid File Type", "Only JPEG, PNG, or WEBP images are allowed.", "error");
+        if (!allowedTypes.includes(photo.file?.type)) {
+          Swal.fire("Invalid File", "Only JPEG, PNG, or WEBP images are allowed.", "error");
           return false;
         }
       }
@@ -116,30 +107,38 @@ export default function AddNewProperty() {
 
     if (step === 4) {
       if (!property.paymentFrequency) {
-        Swal.fire("Missing Payment Frequency", "Please select a payment frequency.", "error");
+        Swal.fire("Missing Payment Frequency", "Please select one.", "error");
         return false;
       }
-
       if (property.lateFee == null || property.lateFee < 0) {
-        Swal.fire("Missing Late Fee", "Please enter a valid late fee amount (0 or higher).", "error");
+        Swal.fire("Missing Late Fee", "Enter a valid late fee (0 or higher).", "error");
         return false;
       }
-
       if (property.assocDues == null || property.assocDues < 0) {
-        Swal.fire("Missing Association Dues", "Please enter a valid association dues amount (0 or higher).", "error");
+        Swal.fire("Missing Association Dues", "Enter a valid amount (0 or higher).", "error");
+        return false;
+      }
+      if (property.rentIncreasePercent == null || property.rentIncreasePercent < 0) {
+        Swal.fire("Missing Rent Increase", "Enter a valid percentage (0 or higher).", "error");
+        return false;
+      }
+      if (property.securityDepositMonths == null || property.securityDepositMonths < 0) {
+        Swal.fire("Missing Security Deposit", "Enter number of months required.", "error");
+        return false;
+      }
+      if (property.advancePaymentMonths == null || property.advancePaymentMonths < 0) {
+        Swal.fire("Missing Advance Payment", "Enter number of months required.", "error");
         return false;
       }
     }
 
     if (step === 5) {
       if (!submittedDoc?.file || !govID?.file || !indoorPhoto || !outdoorPhoto) {
-        Swal.fire("Missing Documents", "Please upload all required documents.", "warning");
+        Swal.fire("Missing Documents", "Upload all required documents.", "warning");
         return false;
       }
-
-      const isPDF = (file: File) => file && file.type === "application/pdf";
-      if (!isPDF(submittedDoc?.file)) {
-        Swal.fire("Invalid File", `${docType.replace("_", " ")} must be a PDF file.`, "error");
+      if (submittedDoc?.file.type !== "application/pdf") {
+        Swal.fire("Invalid File", `${docType.replace("_", " ")} must be a PDF.`, "error");
         return false;
       }
     }
@@ -147,39 +146,19 @@ export default function AddNewProperty() {
     return true;
   };
 
-  const nextStep = () => {
-    if (validateStep()) {
-      setStep((prev) => Math.min(prev + 1, 5));
-    }
-  };
+  const nextStep = () => validateStep() && setStep((prev) => Math.min(prev + 1, 5));
+  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
-  const prevStep = () => {
-    setStep((prev) => Math.max(prev - 1, 1));
-  };
-
-  const axiosInstance = axios.create({});
-
-  const sendPropertyData = async (url, { arg }) => {
-    return axiosInstance
-        .post(url, arg, { headers: { "Content-Type": "application/json" } })
-        .then((res) => res.data);
-  };
-
-  const { trigger, isMutating } = useSWRMutation(
-      `/api/propertyListing/createNewProperty?landlord_id=${user?.landlord_id}`,
-      sendPropertyData
-  );
-
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep()) return;
 
-    setSubmitting(true); // 🔵 show "Submitting..."
+    setSubmitting(true);
     try {
       const formData = new FormData();
-      formData.append("landlord_id", user?.landlord_id);
+      formData.append("landlord_id", String(user?.landlord_id));
       formData.append("property", JSON.stringify(property));
+
       photos.forEach((p) => p.file && formData.append("photos", p.file));
       formData.append("docType", docType);
       // @ts-ignore
@@ -201,7 +180,7 @@ export default function AddNewProperty() {
     } catch (err: any) {
       Swal.fire("Error", `Failed to submit property: ${err.message}`, "error");
     } finally {
-      setSubmitting(false); // 🔴 always reset
+      setSubmitting(false);
     }
   };
 
@@ -236,9 +215,10 @@ export default function AddNewProperty() {
                   {step > 1 && (
                       <button
                           onClick={prevStep}
-                          disabled={isMutating}
-                          className={`px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 
-                      ${isMutating ? "opacity-50 cursor-not-allowed" : ""}`}
+                          disabled={submitting}
+                          className={`px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 ${
+                              submitting ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
                       >
                         Back
                       </button>
@@ -254,15 +234,15 @@ export default function AddNewProperty() {
                             showCancelButton: true,
                             confirmButtonText: "Yes, cancel",
                             cancelButtonText: "No, stay",
-                          }).then((result) => {
-                            if (result.isConfirmed) {
+                          }).then((res) => {
+                            if (res.isConfirmed) {
                               reset();
                               localStorage.removeItem("addPropertyStep");
                               router.push("/pages/landlord/property-listing");
                             }
                           });
                         }}
-                        disabled={isMutating}
+                        disabled={submitting}
                         className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
                     >
                       Cancel
@@ -272,9 +252,10 @@ export default function AddNewProperty() {
                   {step < 5 ? (
                       <button
                           onClick={nextStep}
-                          className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 
-                      ${isMutating ? "opacity-50 cursor-not-allowed" : ""}`}
-                          disabled={isMutating}
+                          className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 ${
+                              submitting ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                          disabled={submitting}
                       >
                         Next
                       </button>
@@ -282,12 +263,12 @@ export default function AddNewProperty() {
                       <button
                           onClick={handleSubmit}
                           disabled={submitting}
-                          className={`px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 
-  disabled:opacity-50 ${submitting ? "cursor-not-allowed" : ""}`}
+                          className={`px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 ${
+                              submitting ? "cursor-not-allowed" : ""
+                          }`}
                       >
                         {submitting ? "Submitting..." : "Submit"}
                       </button>
-
                   )}
                 </div>
               </div>

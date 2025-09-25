@@ -9,26 +9,29 @@ interface PropertyData {
     propertyType: string;
     amenities: string[];
     street: string;
-    brgyDistrict: number;
+    brgyDistrict: string; // DB: varchar(100)
     city: string;
     zipCode: number;
     province: string;
     propDesc: string;
     floorArea: number;
 
-    // 🔑 Separated billing types
+    // 🔑 Billing types
     waterBillingType: string;
     electricityBillingType: string;
 
     minStay: number;
-    secDeposit: number;
-    advancedPayment: number;
+    securityDepositMonths: number;   // ✅ matches DB field
+    advancePaymentMonths: number;    // ✅ matches DB field
+    rentIncreasePercent: number;     // ✅ added
     lateFee: number;
     assocDues: number;
-    paymentFrequency: number;
+    paymentFrequency: string;        // ✅ was number, changed to string
+
     bedSpacing: number;
     availBeds: number;
-    flexiPayEnabled: number;
+
+    flexiPayEnabled: boolean;        // ✅ tinyint(1) → boolean
     paymentMethodsAccepted: string[];
     propertyPreferences: string[];
     lat: number;
@@ -41,8 +44,8 @@ interface PropertyStore {
     properties: any[];
     propertyTypes: any[];
     govID: File | null;
-    submittedDoc: File | null; // unified doc
-    docType: string; // business_permit | occupancy_permit | property_title
+    submittedDoc: File | null;
+    docType: string;
     indoorPhoto: File | null;
     outdoorPhoto: File | null;
     selectedProperty: any;
@@ -69,26 +72,28 @@ const initialPropertyState: PropertyData = {
     propertyType: "",
     amenities: [],
     street: "",
-    brgyDistrict: 0,
+    brgyDistrict: "",
     city: "",
     zipCode: 0,
     province: "",
     propDesc: "",
     floorArea: 0,
 
-    // 🔑 New billing fields
     waterBillingType: "",
     electricityBillingType: "",
 
     minStay: 0,
-    secDeposit: 0,
-    advancedPayment: 0,
+    securityDepositMonths: 0,
+    advancePaymentMonths: 0,
+    rentIncreasePercent: 0,
     lateFee: 0,
     assocDues: 0,
-    paymentFrequency: 0,
+    paymentFrequency: "",
+
     bedSpacing: 0,
     availBeds: 0,
-    flexiPayEnabled: 0,
+
+    flexiPayEnabled: false,
     paymentMethodsAccepted: [],
     propertyPreferences: [],
     lat: 0,
@@ -183,7 +188,7 @@ const usePropertyStore = create<PropertyStore>()(
                 })),
         }),
         {
-            name: "property-store", // localStorage key
+            name: "property-store",
             partialize: (state) => ({
                 property: state.property,
                 photos: state.photos,
