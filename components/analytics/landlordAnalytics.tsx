@@ -52,7 +52,6 @@ const LandlordPropertyChart = () => {
   const [monthlyVisits, setMonthlyVisits] = useState([]);
   const [occupancyRate, setOccupancyRate] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [totalUnits, setTotalUnits] = useState(0);
   const [totalTenants, setTotalTenants] = useState(0);
   const [totalRequests, setTotalRequests] = useState(0);
   const [totalReceivables, setTotalReceivables] = useState(0);
@@ -122,7 +121,7 @@ const LandlordPropertyChart = () => {
   //         console.error("Error fetching dashboard data:", error);
   //         setLoading(false);
   //       });
-  // }, [user?.landlord_id]); // ✅ minimal dependency
+  // }, [user?.landlord_id]);
 
   // analytics
   useEffect(() => {
@@ -167,12 +166,7 @@ const LandlordPropertyChart = () => {
           setTotalTenants(data?.total_tenants || 0);
         })
         .catch((err) => console.error("Error fetching tenants:", err));
-
-
   }, [user?.landlord_id]);
-
-
-
 
   const months = [
     "Jan",
@@ -329,19 +323,15 @@ const LandlordPropertyChart = () => {
 
         {/* Additional Charts and Widgets */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
           <div className="bg-white rounded-xl shadow-sm p-5">
             <PropertyTypeChart landlordId={user?.landlord_id} />
           </div>
+
           <div className="bg-white rounded-xl shadow-sm p-5">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">
-              Recent Maintenance Requests
-            </h3>
-            {/* You would insert a component for a list of recent requests here */}
-            <div className="text-sm text-gray-500">
-              Total Requests:{" "}
-              <span className="font-bold text-gray-700">{totalRequests}</span>
-            </div>
+
           </div>
+
         </div>
       </div>
 

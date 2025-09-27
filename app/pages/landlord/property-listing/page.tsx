@@ -266,7 +266,7 @@ const PropertyListingPage = () => {
 
                 {!isFetchingVerification && (
                     <div className="mb-6">
-                        {/* 1. ❌ No verification + no subscription */}
+                        {/* 1.No verification + no subscription */}
                         {!verificationStatus && !subscription ? (
                             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
                                 <div className="flex items-center">

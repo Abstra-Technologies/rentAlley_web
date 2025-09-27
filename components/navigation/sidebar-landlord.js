@@ -353,8 +353,6 @@ const LandlordLayout = ({ children }) => {
                     })}
                   </div>
                 </div>
-
-
                 <div className="h-6"></div>
               </nav>
             </div>
@@ -362,8 +360,7 @@ const LandlordLayout = ({ children }) => {
         </>
       )}
 
-
-      <div className="flex-1 md:ml-64 overflow-y-auto">
+      <div className="flex-1 md:ml-64 overflow-y-auto scrollbar-none">
         <div className="p-4 md:p-8">{children}</div>
       </div>
     </div>

@@ -1,6 +1,5 @@
 
 "use client";
-
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
@@ -8,6 +7,10 @@ const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 import "react-quill-new/dist/quill.snow.css";
 import useAuthStore from "@/zustand/authStore";
 import { EXTRA_EXPENSES } from "@/constant/extraExpenses";
+import { PAYMENT_METHODS } from "@/constant/paymentMethods";
+import { PENALTY_TYPES } from "@/constant/penaltyTypes";
+import { RENT_INCLUSIONS } from "@/constant/rentInclusions";
+import { MAINTENANCE_CHARGES } from "@/constant/maintenanceCharges";
 
 export default function LeaseEditor() {
     const searchParams = useSearchParams();
@@ -129,8 +132,6 @@ export default function LeaseEditor() {
         expenses, // make sure expenses triggers rebuild
     ]);
 
-
-
     const handleAddExpense = () => {
         setExpenses([...expenses, { type: "", amount: "" }]);
     };
@@ -220,7 +221,7 @@ export default function LeaseEditor() {
 
             {/* Step indicator */}
             <div className="flex items-center mb-6 space-x-4">
-                {["Step 1. Financial Terms", "Step 2. Lease Dates", "Step 3. Review & Generate", "Step 4. Sign"].map(
+                {["Step 1. Tenant & Property","Step . Financial Terms", "Step . Lease Dates", "Step . Review & Generate", "Step . Sign"].map(
                     (label, index) => (
                         <div
                             key={index}
@@ -383,6 +384,7 @@ export default function LeaseEditor() {
                     <iframe src={signUrl} className="w-full h-[85vh] border rounded-xl shadow-lg" style={{ minHeight: "700px" }} />
                 </div>
             )}
+
         </div>
     );
 }

@@ -38,6 +38,7 @@ export default function UnitListingForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const [propertyName, setPropertyName] = useState("");
+  const [unitNameError, setUnitNameError] = useState("");
 
   useEffect(() => {
     const fetchPropertyName = async () => {
@@ -72,13 +73,31 @@ export default function UnitListingForm() {
     });
   };
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, type, checked, value } = e.target;
+
     setFormData((prevData) => ({
       ...prevData,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    if (name === "unitName" && value.trim() !== "") {
+      try {
+        const res = await fetch(
+            `/api/unitListing/checkUnitName?property_id=${propertyId}&unitName=${encodeURIComponent(value.trim())}`
+        );
+        const data = await res.json();
+        if (data.exists) {
+          setUnitNameError("This unit name is already in use for this property.");
+        } else {
+          setUnitNameError("");
+        }
+      } catch (err) {
+        console.error("Error checking unit name:", err);
+      }
+    }
   };
+
 
   // Dropzone
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -224,19 +243,28 @@ export default function UnitListingForm() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {/* Unit Name */}
+
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
                       Unit Name <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="text"
-                      name="unitName"
-                      value={formData.unitName || ""}
-                      onChange={handleChange}
-                      placeholder="e.g., Unit 101, Studio A"
-                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
+                        type="text"
+                        name="unitName"
+                        value={formData.unitName || ""}
+                        onChange={handleChange}
+                        placeholder="e.g., Unit 101, Studio A"
+                        className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg sm:rounded-xl focus:ring-2 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base ${
+                            unitNameError
+                                ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                                : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        }`}
                     />
+                    {unitNameError && (
+                        <p className="text-xs text-red-500 mt-1">{unitNameError}</p>
+                    )}
                   </div>
+
 
                   {/* Unit Size */}
                   <div className="space-y-2">

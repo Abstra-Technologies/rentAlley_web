@@ -49,7 +49,6 @@ export function StepThree() {
 
   const handleGenerateDescription = async () => {
     setLoading(true);
-
     const {
       propertyName,
       propertyType,
@@ -69,24 +68,24 @@ export function StepThree() {
 
     try {
       const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "deepseek/deepseek-r1:free",
-            messages: [
-              {
-                role: "system",
-                content: "You are a helpful real estate assistant.",
-              },
-              { role: "user", content: prompt },
-            ],
-          }),
-        }
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "deepseek/deepseek-r1:free",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a helpful real estate assistant.",
+                },
+                { role: "user", content: prompt },
+              ],
+            }),
+          }
       );
 
       const data = await response.json();
