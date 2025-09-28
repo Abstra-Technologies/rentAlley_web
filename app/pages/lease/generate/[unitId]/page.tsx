@@ -46,11 +46,10 @@
 //     const [rentAmount, setRentAmount] = useState<string>("");
 //
 //     const [content, setContent] = useState("");
-//     const [generatedFileUrl, setGeneratedFileUrl] = useState<string | null>(null);
 //     const [signUrl, setSignUrl] = useState<string | null>(null);
 //     const [loading, setLoading] = useState(false);
 //     const [fileBase64, setFileBase64] = useState<string | null>(null);
-//
+////     const [generatedFileUrl, setGeneratedFileUrl] = useState<string | null>(null);
 //     useEffect(() => {
 //         const start = searchParams.get("startDate");
 //         const end = searchParams.get("endDate");
@@ -475,6 +474,11 @@ export default function LeaseEditor() {
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
+    const [fileBase64, setFileBase64] = useState<string | null>(null);
+    const [generatedFileUrl, setGeneratedFileUrl] = useState<string | null>(null);
+    const [signUrl, setSignUrl] = useState<string | null>(null);
+    const [agreementId, setAgreementId] = useState<string | null>(null);
+
     // ----- Utils -----
     const formatDateForInput = (dateString: string | null) => {
         if (!dateString) return "";
@@ -698,6 +702,111 @@ export default function LeaseEditor() {
         }
         setErr(null);
         setStep(2); // 👉 proceed to Step 2 (you’ll wire this next)
+    };
+
+    const handleGenerateLease = async () => {
+        setLoading(true);
+        try {
+            // format penalties
+            const formattedPenalties = otherPenalties.map(p => ({
+                type: p.key,
+                amount: p.amount,
+            }));
+
+            const res = await fetch("/api/leaseAgreement/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    unitId: searchParams.get("unitId"),
+                    tenantId: searchParams.get("tenantId"),
+                    content, // full contract HTML from Quill
+                    startDate,
+                    endDate,
+                    rentAmount,
+                    depositAmount,
+                    advanceAmount,
+                    billingDueDay,
+                    paymentMethods,
+                    included,
+                    excludedFees,
+                    gracePeriod,
+                    latePenalty,
+                    otherPenalties: formattedPenalties,
+                    maintenanceCharges,
+                    occupancyLimit,
+                    entryNoticeDays,
+                    useOfProperty,
+                    maintenanceResponsibility,
+                    renewalOption,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to generate lease");
+
+            // set generated lease file url/base64 for signing
+            setGeneratedFileUrl(data.signedUrl);
+            setFileBase64(data.fileBase64);
+            setAgreementId(data.agreementId);
+
+            // fetch tenant email
+            // if you already have agreementId
+            const tenantRes = await fetch(
+                `/api/tenant/getByUnit?agreementId=${data.agreementId}`
+            );
+
+            const tenantData = await tenantRes.json();
+
+            console.log('tenant data: ', tenantData);
+
+            if (!tenantData?.email) {
+                alert("Tenant email is missing. Please update tenant details before sending for signing.");
+                return;
+            }
+
+            await handleSendForSigning(
+                data.fileBase64,
+                tenantData?.email,
+                data.agreementId
+            );
+
+
+            alert("Lease generated successfully!");
+            setStep(6);
+        } catch (err) {
+            console.error(err);
+            alert("Error generating lease.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSendForSigning = async (
+        fileBase64: string,
+        tenantEmail: string,
+        agreementId: string | number
+    ) => {
+        try {
+            const res = await fetch("/api/leaseAgreement/generate/sendToDocuSign", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    agreementId,                 // ✅ use agreementId now
+                    landlordEmail: user?.email,  // still required
+                    tenantEmail,                 // from /getByAgreement
+                    fileBase64,
+                }),
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setSignUrl(data.signUrl); // ✅ embedded signing URL from DocuSign
+            } else {
+                console.error("DocuSign send failed:", data);
+            }
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     // ----- UI -----
@@ -1383,58 +1492,75 @@ export default function LeaseEditor() {
                         <button
                             type="button"
                             className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                            onClick={async () => {
-                                try {
-                                    const formattedPenalties = otherPenalties.map(p => ({
-                                        type: p.key,   // rename key -> type
-                                        amount: p.amount,
-                                    }));
-
-                                    const res = await fetch("/api/leaseAgreement/generate", {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                            unitId: searchParams.get("unitId"),
-                                            tenantId: searchParams.get("tenantId"),
-                                            content, // full contract HTML from Quill
-                                            startDate,
-                                            endDate,
-                                            rentAmount,
-                                            depositAmount,
-                                            advanceAmount,
-                                            billingDueDay,
-                                            paymentMethods,
-                                            included,
-                                            excludedFees,
-                                            gracePeriod,
-                                            latePenalty,
-                                            otherPenalties: formattedPenalties,
-                                            maintenanceCharges,
-                                            occupancyLimit,
-                                            entryNoticeDays,
-                                            useOfProperty,
-                                            maintenanceResponsibility,
-                                            renewalOption,
-                                        }),
-                                    });
-
-                                    const data = await res.json();
-                                    if (!res.ok) throw new Error(data.error || "Failed to generate lease");
-
-                                    alert("Lease generated successfully!");
-                                    // optional: navigate to next step
-                                    setStep(6);
-                                } catch (err) {
-                                    console.error(err);
-                                    alert("Error generating lease.");
-                                }
-                            }}
+                            onClick={handleGenerateLease}
                         >
                             Generate Lease
                         </button>
                     </div>
                 </div>
             )}
+
+            {step === 6 && (
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+
+                    <h2 className="text-xl font-bold text-gray-800 mb-4">
+                        ✍️Sign Lease Agreement
+                    </h2>
+
+                    {!signUrl ? (
+                        <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-md text-yellow-800">
+                            Waiting for signing link to be generated...
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center">
+                            {/* Embedded Signing via iframe */}
+                            <iframe
+                                src={signUrl}
+                                title="DocuSign Signing"
+                                className="w-full h-[600px] border rounded-lg"
+                            />
+
+                            {/* Optional fallback if user prefers new tab */}
+                            <a
+                                href={signUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-4 inline-block px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                            >
+                                Open in New Tab
+                            </a>
+                        </div>
+                    )}
+
+                    <div className="mt-6 flex justify-between">
+                        <button
+                            type="button"
+                            className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300"
+                            onClick={() => setStep(5)}
+                        >
+                            ← Back
+                        </button>
+
+                        <button
+                            type="button"
+                            disabled={!signUrl}
+                            className={`px-6 py-2 rounded-lg ${
+                                signUrl
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            }`}
+                            onClick={() => {
+                                // optionally mark as "sent for signing"
+                                alert("Waiting for signature completion...");
+                                // TODO: poll or webhook to mark as 'signed'
+                            }}
+                        >
+                            Continue After Signing
+                        </button>
+                    </div>
+                </div>
+            )}
+
 
 
 

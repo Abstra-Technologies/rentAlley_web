@@ -267,6 +267,7 @@ export async function POST(req: NextRequest) {
             fileKey: s3Key,
             agreementId: agreement_id,
         });
+
     } catch (error: any) {
         await connection.rollback();
         connection.release();
