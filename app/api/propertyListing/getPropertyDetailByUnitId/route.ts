@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
         p.province,
         p.electricity_billing_type,
         p.water_billing_type,
+        p.rent_increase_percent,
         p.landlord_id
       FROM Unit u
       JOIN Property p ON u.property_id = p.property_id

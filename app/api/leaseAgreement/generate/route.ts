@@ -33,9 +33,12 @@ export async function POST(req: NextRequest) {
             gracePeriod,
             latePenalty,
             billingDueDay,
-            expenses, // optional array [{type, amount}]
+            expenses,       // [{category, type, amount, frequency}]
+            otherPenalties, // [{type, amount}]
             content,
         } = await req.json();
+
+        console.log('body response penalyu', otherPenalties);
 
         if (!unitId || !startDate || !endDate || !content) {
             return NextResponse.json(
@@ -97,7 +100,6 @@ export async function POST(req: NextRequest) {
         }
 
         // Step 3: Generate PDF from HTML content
-
         const browser = await puppeteer.launch({
             // @ts-ignore
             headless: "new",
@@ -115,7 +117,7 @@ export async function POST(req: NextRequest) {
 
         // Step 4: Upload to S3
         const sanitizedFilename = sanitizeFilename(`Lease_${unitId}.pdf`);
-        const s3Key = `leaseAgreement/${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
+        const s3Key = `leaseAgreements/${Date.now()}_${randomUUID()}_${sanitizedFilename}`;
 
         await s3.send(
             new PutObjectCommand({
@@ -175,17 +177,76 @@ export async function POST(req: NextRequest) {
             agreement_id = (await connection.query("SELECT LAST_INSERT_ID() as id"))[0][0].id;
         }
 
-        // Step 6: Save additional expenses if provided
+        // Step 6: Clear old additional expenses for this agreement
+        await connection.execute(
+            `DELETE FROM LeaseAdditionalExpense WHERE agreement_id = ?`,
+            [agreement_id]
+        );
+        console.log(`🗑️ Cleared old expenses for agreement_id=${agreement_id}`);
+
+// Step 7: Save excluded/maintenance expenses if provided
         if (expenses && Array.isArray(expenses)) {
+            console.log("📦 Expenses received:", expenses);
             for (const row of expenses) {
-                if (!row.type || !row.amount) continue;
+                if (!row.type || !row.amount) {
+                    console.log("⚠️ Skipping invalid expense row:", row);
+                    continue;
+                }
+
+                console.log("➕ Inserting expense:", {
+                    agreement_id,
+                    category: row.category || "excluded_fee",
+                    type: row.type,
+                    amount: row.amount,
+                    frequency: row.frequency || "monthly",
+                });
+
                 await connection.execute(
-                    `INSERT INTO LeaseAdditionalExpense (agreement_id, expense_type, amount, created_at)
-           VALUES (?, ?, ?, NOW())`,
-                    [agreement_id, row.type, Number(row.amount)]
+                    `INSERT INTO LeaseAdditionalExpense 
+         (agreement_id, category, expense_type, amount, frequency, created_at)
+       VALUES (?, ?, ?, ?, ?, NOW())`,
+                    [
+                        agreement_id,
+                        row.category || "excluded_fee",
+                        row.type,
+                        Number(row.amount),
+                        row.frequency || "monthly",
+                    ]
                 );
             }
         }
+
+
+// Step 8: Save other penalties if provided
+        if (otherPenalties && Array.isArray(otherPenalties)) {
+            console.log("📦 Other penalties received:", otherPenalties);
+            for (const row of otherPenalties) {
+                if (!row.type || !row.amount) {
+                    console.log("⚠️ Skipping invalid penalty row:", row);
+                    continue;
+                }
+
+                console.log("➕ Inserting penalty:", {
+                    agreement_id,
+                    type: row.type,
+                    amount: row.amount,
+                });
+
+                await connection.execute(
+                    `INSERT INTO LeaseAdditionalExpense 
+         (agreement_id, category, expense_type, amount, frequency, created_at)
+       VALUES (?, ?, ?, ?, ?, NOW())`,
+                    [
+                        agreement_id,
+                        "penalty",
+                        row.type,
+                        Number(row.amount),
+                        "one_time",
+                    ]
+                );
+            }
+        }
+
 
         await connection.commit();
         connection.release();
