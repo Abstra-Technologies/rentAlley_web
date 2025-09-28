@@ -1,5 +1,3 @@
-
-
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 import { redis } from "@/lib/redis";
@@ -9,12 +7,15 @@ const SECRET_KEY = process.env.ENCRYPTION_SECRET;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const minPrice = searchParams.get("minPrice");
-  const maxPrice = searchParams.get("maxPrice");
+  // const minPrice = searchParams.get("minPrice");
+  // const maxPrice = searchParams.get("maxPrice");
   const searchQuery = searchParams.get("searchQuery");
+  const propertyType = searchParams.get("propertyType");
 
   // Unique cache key based on filters
-  const cacheKey = `properties:${minPrice || "any"}:${maxPrice || "any"}:${searchQuery || "any"}`;
+  const cacheKey = `properties:${searchQuery || "any"}:${
+    propertyType || "any"
+  }`;
 
   try {
     // 1️⃣ Try Redis cache first
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
         p.province,
         p.latitude,
         p.longitude,
+        p.property_type,
         pv.status AS verification_status,
         (SELECT pp.photo_url
          FROM PropertyPhoto pp
@@ -52,20 +54,25 @@ export async function GET(req: NextRequest) {
 
     const queryParams: (string | number)[] = [];
 
-    if (minPrice) {
-      query += ` AND u.rent_amount >= ?`;
-      queryParams.push(Number(minPrice));
-    }
+    // if (minPrice) {
+    //   query += ` AND u.rent_amount >= ?`;
+    //   queryParams.push(Number(minPrice));
+    // }
 
-    if (maxPrice) {
-      query += ` AND u.rent_amount <= ?`;
-      queryParams.push(Number(maxPrice));
-    }
+    // if (maxPrice) {
+    //   query += ` AND u.rent_amount <= ?`;
+    //   queryParams.push(Number(maxPrice));
+    // }
 
     if (searchQuery) {
       query += ` AND (p.property_name LIKE ? OR p.city LIKE ? OR p.street LIKE ? OR p.province LIKE ?)`;
       const likeQuery = `%${searchQuery}%`;
       queryParams.push(likeQuery, likeQuery, likeQuery, likeQuery);
+    }
+
+    if (propertyType) {
+      query += ` AND p.property_type = ?`;
+      queryParams.push(propertyType);
     }
 
     query += ` GROUP BY p.property_id;`;
@@ -78,8 +85,11 @@ export async function GET(req: NextRequest) {
     const decryptedProperties = properties.map((property: any) => ({
       ...property,
       property_photo: property.encrypted_property_photo
-          ? decryptData(JSON.parse(property.encrypted_property_photo), SECRET_KEY!)
-          : null,
+        ? decryptData(
+            JSON.parse(property.encrypted_property_photo),
+            SECRET_KEY!
+          )
+        : null,
     }));
 
     // 5️⃣ Cache in Redis for 10 seconds
@@ -88,6 +98,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(decryptedProperties);
   } catch (error) {
     console.error("Error fetching properties:", error);
-    return NextResponse.json({ message: "Database Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Database Server Error" },
+      { status: 500 }
+    );
   }
 }
