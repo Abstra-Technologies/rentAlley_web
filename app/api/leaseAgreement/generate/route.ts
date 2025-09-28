@@ -112,7 +112,16 @@ export async function POST(req: NextRequest) {
         <body>${content}</body>
       </html>
     `);
-        const pdfBuffer = await page.pdf({ format: "A4" });
+        const pdfBuffer = await page.pdf({
+            format: "A4",
+            printBackground: true,
+            margin: {
+                top: "1in",
+                bottom: "1in",
+                left: "0.75in",
+                right: "0.75in",
+            },
+        });
         await browser.close();
 
         // Step 4: Upload to S3
