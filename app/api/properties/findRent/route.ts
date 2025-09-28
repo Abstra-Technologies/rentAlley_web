@@ -18,12 +18,18 @@ export async function GET(req: NextRequest) {
   }`;
 
   try {
-    // 1️⃣ Try Redis cache first
     const cached = await redis.get(cacheKey);
+
     if (cached) {
-      console.log("⚡ Serving from Redis cache");
-      // @ts-ignore
-      return NextResponse.json(JSON.parse(cached));
+      let parsed;
+      try {
+        parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+      } catch (err) {
+        console.error("Cache parse error:", err);
+        parsed = cached;
+      }
+
+      return NextResponse.json(parsed);
     }
 
     let query = `
