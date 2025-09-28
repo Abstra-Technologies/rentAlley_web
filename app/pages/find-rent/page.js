@@ -25,9 +25,12 @@ import {
   FaBuilding,
   FaUsers,
   FaShieldAlt,
+  FaBars,
+  FaExpand,
+  FaCompress,
 } from "react-icons/fa";
 import { BsImageAlt, BsGridFill } from "react-icons/bs";
-import { MdVerified, MdClose, MdApartment } from "react-icons/md";
+import { MdVerified, MdClose, MdApartment, MdFilterList } from "react-icons/md";
 import { HiOutlineAdjustments } from "react-icons/hi";
 import Swal from "sweetalert2";
 import axios from "axios";
@@ -62,6 +65,7 @@ const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
 
 import { useMap } from "react-leaflet";
 
+// Map utility components
 function FlyToUserLocation({ coords }) {
   const map = useMap();
   useEffect(() => {
@@ -82,7 +86,319 @@ function FlyToProperty({ coords, zoom = 16 }) {
   return null;
 }
 
-// Enhanced Pagination Component with better accessibility
+// Enhanced Mobile-First Search Header
+function MobileSearchHeader({
+  searchQuery,
+  setSearchQuery,
+  propertyTypeFilter,
+  setPropertyTypeFilter,
+  viewMode,
+  setViewMode,
+  filteredProperties,
+  showMobileFilters,
+  setShowMobileFilters,
+}) {
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const propertyTypes = [
+    { label: "All Types", value: "" },
+    { label: "Apartment", value: "apartment" },
+    { label: "Duplex", value: "duplex" },
+    { label: "Condo", value: "condo" },
+  ];
+
+  return (
+    <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+      <div className="px-3 py-2 sm:px-6 sm:py-4">
+        {/* Mobile-optimized search and controls */}
+        <div className="flex items-center gap-2 mb-3 sm:mb-0">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
+            <input
+              type="text"
+              placeholder="Search properties..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(sanitizeInput(e.target.value))}
+              className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-emerald-500 focus:outline-none text-sm bg-gray-50 focus:bg-white transition-all"
+              aria-label="Search properties"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label="Clear search"
+              >
+                <FaTimes className="text-sm" />
+              </button>
+            )}
+          </div>
+
+          {/* Mobile Filter Toggle */}
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="lg:hidden p-2.5 bg-gradient-to-r from-blue-50 to-emerald-50 border-2 border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors"
+            aria-label="Toggle filters"
+          >
+            <MdFilterList className="text-emerald-600 text-lg" />
+          </button>
+        </div>
+
+        {/* Desktop Controls Row */}
+        <div className="hidden lg:flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Property Type Filter */}
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50 border-2 border-transparent hover:border-emerald-200 rounded-xl transition-all group"
+              >
+                <HiOutlineAdjustments className="text-emerald-600 group-hover:rotate-90 transition-transform" />
+                <span className="font-medium text-gray-700">
+                  {propertyTypeFilter
+                    ? propertyTypes.find((t) => t.value === propertyTypeFilter)
+                        ?.label
+                    : "All Types"}
+                </span>
+                <FaChevronDown
+                  className={`text-xs text-emerald-600 transition-transform ${
+                    showDropdown ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {showDropdown && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                  {propertyTypes.map((type) => (
+                    <button
+                      key={type.value}
+                      onClick={() => {
+                        setPropertyTypeFilter(type.value);
+                        setShowDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 text-sm hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 transition-colors ${
+                        propertyTypeFilter === type.value
+                          ? "bg-gradient-to-r from-blue-100 to-emerald-100 text-emerald-700 font-medium"
+                          : ""
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Results count */}
+            <div>
+              <span className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
+                {filteredProperties.length}
+              </span>
+              <span className="text-sm text-gray-600 ml-1">properties</span>
+            </div>
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex bg-gradient-to-r from-blue-100 to-emerald-100 rounded-xl p-1">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === "grid"
+                  ? "bg-white text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <BsGridFill className="inline mr-2 text-blue-600" />
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === "list"
+                  ? "bg-white text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <FaList className="inline mr-2 text-emerald-600" />
+              List
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === "map"
+                  ? "bg-white text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <FaMap className="inline mr-2 text-teal-600" />
+              Map
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Filters Panel */}
+        {showMobileFilters && (
+          <div className="lg:hidden mt-3 p-3 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl border border-emerald-200">
+            {/* Property Type Filter for Mobile */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Property Type
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {propertyTypes.map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => setPropertyTypeFilter(type.value)}
+                    className={`p-2 rounded-lg text-xs font-medium transition-all ${
+                      propertyTypeFilter === type.value
+                        ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white"
+                        : "bg-white text-gray-700 hover:bg-emerald-100"
+                    }`}
+                  >
+                    {type.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* View Toggle for Mobile */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                View Mode
+              </label>
+              <div className="flex gap-1 bg-white rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all ${
+                    viewMode === "grid"
+                      ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <BsGridFill className="inline mr-1" />
+                  Grid
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all ${
+                    viewMode === "list"
+                      ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <FaList className="inline mr-1" />
+                  List
+                </button>
+                <button
+                  onClick={() => setViewMode("map")}
+                  className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all ${
+                    viewMode === "map"
+                      ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <FaMap className="inline mr-1" />
+                  Map
+                </button>
+              </div>
+            </div>
+
+            {/* Results count for mobile */}
+            <div className="mt-3 text-center">
+              <span className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
+                {filteredProperties.length} properties found
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Active Filters */}
+        {(searchQuery || propertyTypeFilter) && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {searchQuery && (
+              <span className="inline-flex items-center bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs">
+                <FaSearch className="mr-1 text-xs" />"{searchQuery}"
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="ml-2 text-blue-600 hover:text-blue-800"
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              </span>
+            )}
+            {propertyTypeFilter && (
+              <span className="inline-flex items-center bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 px-3 py-1 rounded-full text-xs">
+                <FaBuilding className="mr-1 text-xs" />
+                {
+                  propertyTypes.find((t) => t.value === propertyTypeFilter)
+                    ?.label
+                }
+                <button
+                  onClick={() => setPropertyTypeFilter("")}
+                  className="ml-2 text-emerald-600 hover:text-emerald-800"
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Mobile-Optimized Map Controls
+function MapControls({
+  sidebarOpen,
+  setSidebarOpen,
+  filteredProperties,
+  isFullscreen,
+  setIsFullscreen,
+}) {
+  return (
+    <>
+      {/* Mobile Map Controls - Fixed Position */}
+      <div className="lg:hidden fixed top-20 left-4 right-4 z-30 flex justify-between items-center">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="bg-white border border-gray-300 rounded-xl px-3 py-2 shadow-lg hover:shadow-xl transition-all text-sm font-medium flex items-center gap-2"
+        >
+          <FaList className="text-emerald-600" />
+          <span>
+            {sidebarOpen ? "Hide" : "Show"} List ({filteredProperties.length})
+          </span>
+        </button>
+
+        <button
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          className="bg-white border border-gray-300 rounded-xl p-2 shadow-lg hover:shadow-xl transition-all"
+        >
+          {isFullscreen ? (
+            <FaCompress className="text-gray-600" />
+          ) : (
+            <FaExpand className="text-gray-600" />
+          )}
+        </button>
+      </div>
+
+      {/* Desktop Map Controls */}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="hidden lg:block absolute top-4 left-4 z-10 bg-white border border-gray-300 rounded-xl px-3 py-2 shadow-lg hover:shadow-xl transition-all"
+        >
+          <FaList className="text-emerald-600 mr-2 inline" />
+          <span className="text-sm font-semibold">
+            Show List ({filteredProperties.length})
+          </span>
+        </button>
+      )}
+    </>
+  );
+}
+
+// Mobile-First Pagination Component
 function Pagination({
   currentPage,
   totalPages,
@@ -92,31 +408,31 @@ function Pagination({
 }) {
   const getPageNumbers = () => {
     const pages = [];
-    const maxVisiblePages = 5;
+    const maxVisiblePages = window.innerWidth < 640 ? 3 : 5;
 
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
+      if (currentPage <= 2) {
+        for (let i = 1; i <= Math.min(3, totalPages); i++) {
           pages.push(i);
         }
-        pages.push("...");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
+        if (totalPages > 3) {
+          pages.push("...");
+          pages.push(totalPages);
+        }
+      } else if (currentPage >= totalPages - 1) {
         pages.push(1);
-        pages.push("...");
-        for (let i = totalPages - 3; i <= totalPages; i++) {
+        if (totalPages > 3) pages.push("...");
+        for (let i = Math.max(totalPages - 2, 1); i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
         pages.push(1);
         pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
+        pages.push(currentPage);
         pages.push("...");
         pages.push(totalPages);
       }
@@ -130,42 +446,38 @@ function Pagination({
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50">
-      <div className="text-sm text-gray-600">
-        Showing <span className="font-semibold text-blue-700">{startItem}</span>{" "}
-        to <span className="font-semibold text-blue-700">{endItem}</span> of{" "}
-        <span className="font-semibold text-emerald-700">{totalItems}</span>{" "}
-        properties
+      <div className="text-sm text-gray-600 order-2 sm:order-1">
+        <span className="font-semibold text-blue-700">{startItem}</span>-
+        <span className="font-semibold text-blue-700">{endItem}</span> of{" "}
+        <span className="font-semibold text-emerald-700">{totalItems}</span>
       </div>
 
       {totalPages > 1 && (
-        <nav
-          aria-label="Pagination Navigation"
-          className="flex items-center gap-1"
-        >
+        <nav className="flex items-center gap-1 order-1 sm:order-2">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            aria-label="Previous page"
-            className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-l-md hover:bg-blue-50 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-2 sm:px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-l-md hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaChevronLeft className="w-3 h-3" />
           </button>
 
           {getPageNumbers().map((page, index) =>
             page === "..." ? (
-              <span key={index} className="px-3 py-2 text-sm text-gray-500">
+              <span
+                key={index}
+                className="px-2 sm:px-3 py-2 text-sm text-gray-500"
+              >
                 ...
               </span>
             ) : (
               <button
                 key={index}
                 onClick={() => onPageChange(page)}
-                aria-label={`Go to page ${page}`}
-                aria-current={currentPage === page ? "page" : undefined}
-                className={`px-3 py-2 text-sm font-medium border transition-all ${
+                className={`px-2 sm:px-3 py-2 text-sm font-medium border transition-all ${
                   currentPage === page
-                    ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white border-transparent shadow-md"
-                    : "bg-white border-gray-300 text-gray-600 hover:bg-blue-50 hover:border-blue-300"
+                    ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white border-transparent"
+                    : "bg-white border-gray-300 text-gray-600 hover:bg-blue-50"
                 }`}
               >
                 {page}
@@ -176,8 +488,7 @@ function Pagination({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            aria-label="Next page"
-            className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-r-md hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-2 sm:px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-r-md hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaChevronRight className="w-3 h-3" />
           </button>
@@ -187,6 +498,7 @@ function Pagination({
   );
 }
 
+// Property type utilities
 const propertyTypeLabels = {
   apartment: "Apartment",
   office_space: "Office Space",
@@ -200,7 +512,6 @@ function formatPropertyType(type) {
   return propertyTypeLabels[type] || type;
 }
 
-// Property Type Badge Component
 function PropertyTypeBadge({ type }) {
   const typeConfig = {
     apartment: { icon: MdApartment, bg: "bg-blue-100", text: "text-blue-700" },
@@ -230,6 +541,7 @@ function PropertyTypeBadge({ type }) {
   );
 }
 
+// Main Component
 export default function PropertySearch() {
   const [allProperties, setAllProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
@@ -237,18 +549,19 @@ export default function PropertySearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("");
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState(null);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [selectedPropertyUnits, setSelectedPropertyUnits] = useState([]);
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [visibleMaps, setVisibleMaps] = useState({});
   const [markerIcon, setMarkerIcon] = useState(null);
-  const [viewMode, setViewMode] = useState("grid"); // 'grid', 'list', or 'map'
+  const [viewMode, setViewMode] = useState("grid");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [hoveredProperty, setHoveredProperty] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
   const [error, setError] = useState(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -259,12 +572,12 @@ export default function PropertySearch() {
   const [userIcon, setUserIcon] = useState(null);
   const [propertyIcon, setPropertyIcon] = useState(null);
 
-  const propertyTypes = [
-    { label: "All Types", value: "" },
-    { label: "Apartment", value: "apartment" },
-    { label: "Duplex", value: "duplex" },
-    { label: "Condo", value: "condo" },
-  ];
+  // Auto-hide mobile sidebar when switching from map view
+  useEffect(() => {
+    if (viewMode !== "map") {
+      setShowMobileFilters(false);
+    }
+  }, [viewMode]);
 
   // Memoized pagination calculations
   const paginationData = useMemo(() => {
@@ -307,9 +620,7 @@ export default function PropertySearch() {
           `/api/properties/findRent?${params.toString()}`,
           {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
           }
         );
 
@@ -318,8 +629,6 @@ export default function PropertySearch() {
         }
 
         const data = await res.json();
-
-        // Validate and sanitize data
         const sanitizedData = data.map((property) => ({
           ...property,
           property_name: sanitizeInput(property.property_name),
@@ -333,7 +642,6 @@ export default function PropertySearch() {
       } catch (error) {
         console.error("Error fetching properties:", error);
         setError("Unable to load properties. Please try again later.");
-
         logEvent({
           action: "error",
           params: {
@@ -377,18 +685,10 @@ export default function PropertySearch() {
         popupAnchor: [1, -34],
       });
       setPropertyIcon(propIcon);
-
-      const icon = new L.Icon({
-        iconUrl: "/marker.png",
-        iconSize: [30, 30],
-        iconAnchor: [12, 41],
-        popupAnchor: [0, -41],
-      });
-      setMarkerIcon(icon);
     }
   }, []);
 
-  // Get user location with permission handling
+  // Get user location
   useEffect(() => {
     if (typeof window !== "undefined" && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -419,7 +719,6 @@ export default function PropertySearch() {
 
   const handleViewDetails = useCallback(
     (propertyId) => {
-      // Log analytics event
       logEvent({
         action: "view_property_details",
         params: { property_id: propertyId },
@@ -430,9 +729,7 @@ export default function PropertySearch() {
         text: "Redirecting to property details...",
         allowOutsideClick: true,
         allowEscapeKey: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
+        didOpen: () => Swal.showLoading(),
       });
 
       setTimeout(() => {
@@ -443,7 +740,6 @@ export default function PropertySearch() {
     [router]
   );
 
-  // Handle property click on map with error handling
   const handlePropertyClick = useCallback(async (property) => {
     try {
       setLoadingUnits(true);
@@ -451,20 +747,13 @@ export default function PropertySearch() {
 
       const response = await axios.get(
         `/api/properties/findRent/viewPropertyDetails?id=${property.property_id}`,
-        {
-          timeout: 10000, // 10 second timeout
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { timeout: 10000, headers: { "Content-Type": "application/json" } }
       );
 
       setSelectedPropertyUnits(response.data.units || []);
     } catch (error) {
       console.error("Failed to fetch property units:", error);
       setSelectedPropertyUnits([]);
-
-      // Show user-friendly error
       Swal.fire({
         icon: "error",
         title: "Unable to load units",
@@ -476,7 +765,6 @@ export default function PropertySearch() {
     }
   }, []);
 
-  // Handle property click from sidebar
   const handleSidebarPropertyClick = useCallback(
     async (property) => {
       if (property.latitude && property.longitude) {
@@ -494,10 +782,7 @@ export default function PropertySearch() {
     (unitId) => {
       logEvent({
         action: "view_unit_details",
-        params: {
-          property_id: selectedProperty.property_id,
-          unit_id: unitId,
-        },
+        params: { property_id: selectedProperty.property_id, unit_id: unitId },
       });
 
       router.push(`/pages/find-rent/${selectedProperty.property_id}/${unitId}`);
@@ -514,7 +799,6 @@ export default function PropertySearch() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const queryParam = params.get("searchQuery");
-
       if (queryParam) {
         setSearchQuery(sanitizeInput(queryParam));
       }
@@ -585,174 +869,25 @@ export default function PropertySearch() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-      {/* Enhanced Top Search Bar */}
-      <header className="bg-white border-b border-gray-200 shadow-sm z-10">
-        <div className="px-2 sm:px-6 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-            {/* Search Input with gradient border on focus */}
-            <div className="flex-1 sm:max-w-lg">
-              <div className="relative group">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors text-sm" />
-                <input
-                  type="text"
-                  placeholder="Search by location, property name..."
-                  value={searchQuery}
-                  onChange={(e) =>
-                    setSearchQuery(sanitizeInput(e.target.value))
-                  }
-                  className="w-full pl-10 pr-10 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:ring-0 focus:border-transparent focus:outline-none focus:shadow-[0_0_0_3px] focus:shadow-blue-500/20 text-sm sm:text-base transition-all bg-gray-50 focus:bg-white"
-                  aria-label="Search properties"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <FaTimes className="text-sm" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Property Type Filter */}
-              <div className="relative flex-1 sm:flex-initial">
-                <button
-                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-blue-50 to-emerald-50 border-2 border-transparent hover:border-emerald-200 rounded-xl transition-all text-sm sm:text-base group"
-                  aria-label="Filter by property type"
-                >
-                  <HiOutlineAdjustments className="text-emerald-600 group-hover:rotate-90 transition-transform" />
-                  <span className="font-medium text-gray-700 truncate">
-                    {propertyTypeFilter
-                      ? propertyTypes.find(
-                          (t) => t.value === propertyTypeFilter
-                        )?.label
-                      : "All Types"}
-                  </span>
-                  <FaChevronDown
-                    className={`text-xs text-emerald-600 transition-transform ${
-                      showFilterDropdown ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {showFilterDropdown && (
-                  <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-20 overflow-hidden">
-                    {propertyTypes.map((type) => (
-                      <button
-                        key={type.value}
-                        onClick={() => {
-                          setPropertyTypeFilter(type.value);
-                          setShowFilterDropdown(false);
-                        }}
-                        className={`w-full text-left px-4 py-3 text-sm hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 transition-colors ${
-                          propertyTypeFilter === type.value
-                            ? "bg-gradient-to-r from-blue-100 to-emerald-100 text-emerald-700 font-medium"
-                            : ""
-                        }`}
-                      >
-                        {type.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Enhanced View Toggle */}
-              <div className="flex bg-gradient-to-r from-blue-100 to-emerald-100 rounded-xl p-1">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                    viewMode === "grid"
-                      ? "bg-white text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                  aria-label="Grid view"
-                >
-                  <BsGridFill className="inline mr-1 sm:mr-2 text-blue-600" />
-                  <span className="hidden sm:inline">Grid</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                    viewMode === "list"
-                      ? "bg-white text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                  aria-label="List view"
-                >
-                  <FaList className="inline mr-1 sm:mr-2 text-emerald-600" />
-                  <span className="hidden sm:inline">List</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("map")}
-                  className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                    viewMode === "map"
-                      ? "bg-white text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                  aria-label="Map view"
-                >
-                  <FaMap className="inline mr-1 sm:mr-2 text-teal-600" />
-                  <span className="hidden sm:inline">Map</span>
-                </button>
-              </div>
-
-              {/* Results count with gradient text */}
-              <div className="hidden sm:block">
-                <span className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
-                  {filteredProperties.length}
-                </span>
-                <span className="text-sm text-gray-600 ml-1">properties</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Results Count */}
-          <div className="sm:hidden mt-2 text-center">
-            <span className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
-              {filteredProperties.length} properties found
-            </span>
-          </div>
-
-          {/* Active Filters with gradient backgrounds */}
-          {(searchQuery || propertyTypeFilter) && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {searchQuery && (
-                <span className="inline-flex items-center bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs sm:text-sm">
-                  <FaSearch className="mr-1 text-xs" />"{searchQuery}"
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                    aria-label="Remove search filter"
-                  >
-                    <FaTimes className="text-xs" />
-                  </button>
-                </span>
-              )}
-              {propertyTypeFilter && (
-                <span className="inline-flex items-center bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 px-3 py-1 rounded-full text-xs sm:text-sm">
-                  <FaBuilding className="mr-1 text-xs" />
-                  {
-                    propertyTypes.find((t) => t.value === propertyTypeFilter)
-                      ?.label
-                  }
-                  <button
-                    onClick={() => setPropertyTypeFilter("")}
-                    className="ml-2 text-emerald-600 hover:text-emerald-800"
-                    aria-label="Remove type filter"
-                  >
-                    <FaTimes className="text-xs" />
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </header>
+    <div
+      className={`${
+        isFullscreen && viewMode === "map"
+          ? "fixed inset-0 z-50 bg-white"
+          : "h-screen"
+      } flex flex-col bg-gradient-to-br from-blue-50 via-white to-emerald-50`}
+    >
+      {/* Mobile-First Search Header */}
+      <MobileSearchHeader
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        propertyTypeFilter={propertyTypeFilter}
+        setPropertyTypeFilter={setPropertyTypeFilter}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        filteredProperties={filteredProperties}
+        showMobileFilters={showMobileFilters}
+        setShowMobileFilters={setShowMobileFilters}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 flex relative" role="main">
@@ -790,7 +925,7 @@ export default function PropertySearch() {
                       key={property.property_id}
                       className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 group"
                     >
-                      {/* Property Image with gradient overlay */}
+                      {/* Property Image */}
                       <div className="relative">
                         {property?.property_photo ? (
                           <div className="relative h-48 sm:h-56 overflow-hidden">
@@ -798,6 +933,7 @@ export default function PropertySearch() {
                               src={property?.property_photo}
                               alt={property?.property_name}
                               fill
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                               className="object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -917,6 +1053,7 @@ export default function PropertySearch() {
                               src={property?.property_photo}
                               alt={property?.property_name}
                               fill
+                              sizes="(max-width: 640px) 100vw, 256px"
                               className="object-cover"
                             />
                           ) : (
@@ -925,7 +1062,6 @@ export default function PropertySearch() {
                             </div>
                           )}
 
-                          {/* Badges on image */}
                           <div className="absolute top-3 left-3">
                             <PropertyTypeBadge type={property?.property_type} />
                           </div>
@@ -1059,22 +1195,28 @@ export default function PropertySearch() {
             )}
           </div>
         ) : (
-          /* Enhanced Map View */
+          /* Enhanced Mobile-First Map View */
           <>
-            {/* Sidebar */}
+            {/* Mobile-Optimized Sidebar */}
             <aside
               className={`bg-white border-r border-gray-200 transition-all duration-300 ${
-                sidebarOpen ? "w-full sm:w-96" : "w-0"
-              } overflow-hidden ${
-                sidebarOpen ? "absolute sm:static inset-0 z-20 sm:z-auto" : ""
-              }`}
+                sidebarOpen
+                  ? "w-full sm:w-96 absolute sm:static inset-0 z-20 sm:z-auto"
+                  : "w-0 sm:w-0"
+              } overflow-hidden`}
             >
               <div className="h-full flex flex-col">
-                <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50">
+                {/* Mobile-optimized header */}
+                <div className="p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50">
                   <div className="flex items-center justify-between">
-                    <h2 className="font-bold text-gray-900">
-                      Properties ({filteredProperties.length})
-                    </h2>
+                    <div>
+                      <h2 className="font-bold text-gray-900 text-sm sm:text-base">
+                        Properties ({filteredProperties.length})
+                      </h2>
+                      <p className="text-xs text-gray-600 sm:hidden">
+                        Tap any property to view on map
+                      </p>
+                    </div>
                     <button
                       onClick={() => setSidebarOpen(false)}
                       className="p-2 hover:bg-white/50 rounded-lg transition-colors"
@@ -1097,7 +1239,7 @@ export default function PropertySearch() {
                         {paginationData.paginatedProperties.map((property) => (
                           <div
                             key={property.property_id}
-                            className={`p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 cursor-pointer transition-all ${
+                            className={`p-3 sm:p-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 cursor-pointer transition-all active:bg-emerald-100 ${
                               hoveredProperty === property.property_id
                                 ? "bg-gradient-to-r from-blue-50 to-emerald-50"
                                 : ""
@@ -1106,10 +1248,16 @@ export default function PropertySearch() {
                               setHoveredProperty(property.property_id)
                             }
                             onMouseLeave={() => setHoveredProperty(null)}
-                            onClick={() => handleSidebarPropertyClick(property)}
+                            onClick={() => {
+                              handleSidebarPropertyClick(property);
+                              // Auto-hide sidebar on mobile after selection
+                              if (window.innerWidth < 640) {
+                                setTimeout(() => setSidebarOpen(false), 300);
+                              }
+                            }}
                           >
                             <div className="flex gap-3">
-                              <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                                 {property?.property_photo ? (
                                   <Image
                                     src={property?.property_photo}
@@ -1120,14 +1268,14 @@ export default function PropertySearch() {
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <BsImageAlt className="text-gray-400" />
+                                    <BsImageAlt className="text-gray-400 text-sm" />
                                   </div>
                                 )}
                               </div>
 
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between mb-1">
-                                  <h3 className="font-bold text-gray-900 line-clamp-1">
+                                  <h3 className="font-bold text-gray-900 line-clamp-2 text-sm sm:text-base">
                                     {property?.property_name}
                                   </h3>
                                   {property?.flexipay_enabled === 1 && (
@@ -1137,11 +1285,13 @@ export default function PropertySearch() {
                                   )}
                                 </div>
 
-                                <PropertyTypeBadge
-                                  type={property?.property_type}
-                                />
+                                <div className="mb-2">
+                                  <PropertyTypeBadge
+                                    type={property?.property_type}
+                                  />
+                                </div>
 
-                                <div className="flex items-center text-gray-500 text-xs mt-2">
+                                <div className="flex items-center text-gray-500 text-xs mb-3">
                                   <FaMapMarkerAlt className="mr-1 text-emerald-500 flex-shrink-0" />
                                   <span className="truncate">
                                     {property?.city},{" "}
@@ -1161,7 +1311,7 @@ export default function PropertySearch() {
                                     e.stopPropagation();
                                     handleViewDetails(property.property_id);
                                   }}
-                                  className="mt-2 w-full py-1.5 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-lg text-xs font-semibold hover:shadow-md transition-all"
+                                  className="w-full py-1.5 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-lg text-xs font-semibold hover:shadow-md transition-all"
                                 >
                                   View Details
                                 </button>
@@ -1173,6 +1323,7 @@ export default function PropertySearch() {
                     )}
                   </div>
 
+                  {/* Mobile-optimized pagination */}
                   {filteredProperties.length > 0 && (
                     <div className="border-t border-gray-200">
                       <Pagination
@@ -1188,38 +1339,34 @@ export default function PropertySearch() {
               </div>
             </aside>
 
-            {/* Map Container */}
+            {/* Map Container with Mobile Controls */}
             <div className="flex-1 relative">
-              {!sidebarOpen && (
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="absolute top-4 left-4 z-10 bg-white border border-gray-300 rounded-xl px-3 py-2 shadow-lg hover:shadow-xl transition-all"
-                >
-                  <FaList className="text-emerald-600 mr-2 inline" />
-                  <span className="text-sm font-semibold">
-                    Show List ({filteredProperties.length})
-                  </span>
-                </button>
-              )}
+              <MapControls
+                sidebarOpen={sidebarOpen}
+                setSidebarOpen={setSidebarOpen}
+                filteredProperties={filteredProperties}
+                isFullscreen={isFullscreen}
+                setIsFullscreen={setIsFullscreen}
+              />
 
-              {/* Enhanced Map Legend */}
-              <div className="absolute top-4 right-4 bg-white rounded-xl shadow-lg p-4 z-10 max-w-[180px]">
-                <h3 className="font-bold text-gray-800 mb-3 text-sm">
+              {/* Enhanced Mobile Map Legend */}
+              <div className="absolute top-16 sm:top-4 right-4 bg-white rounded-xl shadow-lg p-3 sm:p-4 z-20 max-w-[160px] sm:max-w-[180px]">
+                <h3 className="font-bold text-gray-800 mb-2 sm:mb-3 text-xs sm:text-sm">
                   Map Legend
                 </h3>
-                <div className="space-y-2 text-xs">
+                <div className="space-y-1 sm:space-y-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full animate-pulse flex-shrink-0"></div>
-                    <span>Your Location</span>
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full animate-pulse flex-shrink-0"></div>
+                    <span className="text-xs">Your Location</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <FaMapMarkerAlt className="text-red-500 text-sm flex-shrink-0" />
-                    <span>Properties</span>
+                    <FaMapMarkerAlt className="text-red-500 text-xs flex-shrink-0" />
+                    <span className="text-xs">Properties</span>
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-200">
                   <p className="text-xs text-gray-600">
-                    Click markers to view units
+                    Tap markers to view units
                   </p>
                 </div>
               </div>
@@ -1230,6 +1377,8 @@ export default function PropertySearch() {
                   center={defaultCenter}
                   zoom={13}
                   style={{ height: "100%", width: "100%" }}
+                  zoomControl={false}
+                  attributionControl={false}
                 >
                   <TileLayer
                     attribution="&copy; OpenStreetMap contributors"
@@ -1270,17 +1419,17 @@ export default function PropertySearch() {
                         }}
                       >
                         <Popup>
-                          <div className="w-64 p-3">
+                          <div className="w-60 sm:w-64 p-3">
                             <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-bold text-gray-800">
+                              <h3 className="font-bold text-gray-800 text-sm">
                                 {property.property_name}
                               </h3>
-                              <MdVerified className="text-blue-500 ml-2" />
+                              <MdVerified className="text-blue-500 ml-2 flex-shrink-0" />
                             </div>
 
                             <PropertyTypeBadge type={property?.property_type} />
 
-                            <p className="text-sm text-gray-600 mt-2 mb-3">
+                            <p className="text-sm text-gray-600 mt-2 mb-3 line-clamp-2">
                               {property.street}, {property.city},{" "}
                               {property.province}
                             </p>
@@ -1306,17 +1455,17 @@ export default function PropertySearch() {
 
       {/* Enhanced Property Details Sidebar for Map View */}
       {viewMode === "map" && selectedProperty && (
-        <aside className="fixed top-20 right-4 w-[calc(100vw-2rem)] sm:w-96 h-[calc(100vh-6rem)] bg-white shadow-2xl z-[1000] overflow-y-auto border border-gray-200 rounded-2xl">
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50 sticky top-0 rounded-t-2xl">
+        <aside className="fixed top-16 sm:top-20 right-4 w-[calc(100vw-2rem)] sm:w-96 max-h-[calc(100vh-5rem)] bg-white shadow-2xl z-[1000] overflow-y-auto border border-gray-200 rounded-2xl">
+          <div className="p-3 sm:p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50 sticky top-0 rounded-t-2xl">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                <h2 className="text-base sm:text-lg font-bold text-gray-800 flex items-center">
                   <span className="truncate">
                     {selectedProperty.property_name}
                   </span>
                   <MdVerified className="text-blue-500 ml-2 flex-shrink-0" />
                 </h2>
-                <p className="text-sm text-gray-600 truncate">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
                   {selectedProperty.city}, {selectedProperty.province}
                 </p>
               </div>
@@ -1330,25 +1479,26 @@ export default function PropertySearch() {
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             {/* Property Image */}
             {selectedProperty.property_photo ? (
-              <div className="relative h-48 rounded-xl overflow-hidden mb-4">
+              <div className="relative h-40 sm:h-48 rounded-xl overflow-hidden mb-4">
                 <Image
                   src={selectedProperty.property_photo}
                   alt={selectedProperty.property_name}
                   fill
+                  sizes="(max-width: 640px) calc(100vw - 3rem), 384px"
                   className="object-cover"
                 />
               </div>
             ) : (
-              <div className="h-48 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl flex items-center justify-center mb-4">
+              <div className="h-40 sm:h-48 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl flex items-center justify-center mb-4">
                 <BsImageAlt className="text-4xl text-gray-400" />
               </div>
             )}
 
             {/* Property Info */}
-            <div className="mb-4 space-y-3">
+            <div className="mb-4 space-y-2 sm:space-y-3">
               <div className="flex items-center gap-2">
                 <FaHome className="text-blue-500 flex-shrink-0" />
                 <span className="font-medium text-sm">Property Type:</span>
@@ -1386,7 +1536,7 @@ export default function PropertySearch() {
 
             {/* Units List */}
             <div>
-              <h3 className="font-bold text-gray-800 mb-3 flex items-center">
+              <h3 className="font-bold text-gray-800 mb-3 flex items-center text-sm sm:text-base">
                 <MdApartment className="mr-2 text-emerald-500" />
                 Available Units
               </h3>
@@ -1413,7 +1563,7 @@ export default function PropertySearch() {
                         }`}
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-semibold text-gray-800">
+                          <h4 className="font-semibold text-gray-800 text-sm">
                             Unit {unit.unit_name}
                           </h4>
                           <span
@@ -1447,7 +1597,7 @@ export default function PropertySearch() {
                         </div>
 
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
+                          <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 text-sm sm:text-base">
                             ₱{unit.rent_amount.toLocaleString()}/month
                           </span>
                           <button
