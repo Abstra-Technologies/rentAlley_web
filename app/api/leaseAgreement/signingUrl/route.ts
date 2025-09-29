@@ -83,14 +83,15 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // ✅ Recipient view request
+        //  Recipient view request
         const viewRequest = {
-            returnUrl: "http://localhost:3000/pages/lease/signed",
+            returnUrl: `http://localhost:3000/pages/lease/signed?envelopeId=${envelopeId}`,
             authenticationMethod: "none",
             email: isLandlord ? landlordEmail : tenantEmail,
             userName: isLandlord ? "Landlord" : "Tenant",
             clientUserId: isLandlord ? "1001" : "1002",
         };
+
 
         console.log("📤 Sending recipient view request:", viewRequest);
 

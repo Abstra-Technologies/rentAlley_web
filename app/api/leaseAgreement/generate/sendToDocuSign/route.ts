@@ -95,12 +95,13 @@ export async function POST(req: NextRequest) {
         );
         // 2. Create embedded signing view for landlord after clicking finish
         const viewRequest = {
-            returnUrl: "http://localhost:3000/pages/lease/signed", // must be absolute
+            returnUrl: `http://localhost:3000/pages/lease/signed?envelopeId=${envelopeId}`,
             authenticationMethod: "none",
             email: landlordEmail,
             userName: "Landlord",
             clientUserId: "1001",
         };
+
 
         const viewRes = await fetch(
             `https://demo.docusign.net/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/views/recipient`,
