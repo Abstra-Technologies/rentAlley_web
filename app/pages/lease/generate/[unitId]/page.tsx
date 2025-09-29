@@ -404,6 +404,7 @@ import "react-quill-new/dist/quill.snow.css";
 import { USE_OF_PROPERTY } from "@/constant/useOfProperty";
 import { MAINTENANCE_RESPONSIBILITY } from "@/constant/maintenanceResponsibility";
 import { buildLeaseTemplate } from "@/utils/buildLeaseTemplate";
+import { useRouter } from "next/navigation";
 
 
 type TenantInfo = {
@@ -428,9 +429,26 @@ type UnitInfo = {
 export default function LeaseEditor() {
     const searchParams = useSearchParams();
     const { user, fetchSession } = useAuthStore();
+    const STORAGE_KEY = "lease_editor_state";
+    const router = useRouter();
+
+    const getInitialState = () => {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    return parsed.step || 1;
+                } catch {
+                    return 1;
+                }
+            }
+        }
+        return 1;
+    };
 
     // ----- Step control -----
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState<number>(getInitialState);
 
     // ----- Part 1 state -----
     const [tenant, setTenant] = useState<TenantInfo>({});
@@ -478,6 +496,7 @@ export default function LeaseEditor() {
     const [generatedFileUrl, setGeneratedFileUrl] = useState<string | null>(null);
     const [signUrl, setSignUrl] = useState<string | null>(null);
     const [agreementId, setAgreementId] = useState<string | null>(null);
+    const [envelopeId, setEnvelopeId] = useState<string | null>(null);
 
     // ----- Utils -----
     const formatDateForInput = (dateString: string | null) => {
@@ -547,6 +566,111 @@ export default function LeaseEditor() {
         MAINTENANCE_RESPONSIBILITY.find((m) => m.key === maintenanceResponsibility)?.label ||
         maintenanceResponsibility;
 
+    const handleCancel = () => {
+        localStorage.removeItem(STORAGE_KEY);
+        setStep(1);
+
+        if (unit?.property_id && unit?.id) {
+            router.replace(
+                `/pages/landlord/property-listing/view-unit/${unit.property_id}/unit-details/${unit.id}`
+            );
+        } else {
+            router.replace("/pages/landlord/property-listing");
+        }
+    };
+
+    useEffect(() => {
+        const stateToSave = {
+            step,
+            tenant,
+            property,
+            unit,
+            startDate,
+            endDate,
+            renewalOption,
+            renewalNoticeDays,
+            depositAmount,
+            advanceAmount,
+            billingDueDay,
+            paymentMethods,
+            included,
+            rentAmount,
+            excludedFees,
+            percentageIncrease,
+            gracePeriod,
+            latePenalty,
+            otherPenalties,
+            maintenanceCharges,
+            entryNoticeDays,
+            useOfProperty,
+            maintenanceResponsibility,
+            occupancyLimit,
+            content,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    }, [
+        step,
+        tenant,
+        property,
+        unit,
+        startDate,
+        endDate,
+        renewalOption,
+        renewalNoticeDays,
+        depositAmount,
+        advanceAmount,
+        billingDueDay,
+        paymentMethods,
+        included,
+        rentAmount,
+        excludedFees,
+        percentageIncrease,
+        gracePeriod,
+        latePenalty,
+        otherPenalties,
+        maintenanceCharges,
+        entryNoticeDays,
+        useOfProperty,
+        maintenanceResponsibility,
+        occupancyLimit,
+        content,
+    ]);
+
+    useEffect(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed.step) setStep(parsed.step);
+                if (parsed.tenant) setTenant(parsed.tenant);
+                if (parsed.property) setProperty(parsed.property);
+                if (parsed.unit) setUnit(parsed.unit);
+                if (parsed.startDate) setStartDate(parsed.startDate);
+                if (parsed.endDate) setEndDate(parsed.endDate);
+                if (parsed.renewalOption) setRenewalOption(parsed.renewalOption);
+                if (parsed.renewalNoticeDays) setRenewalNoticeDays(parsed.renewalNoticeDays);
+                if (parsed.depositAmount) setDepositAmount(parsed.depositAmount);
+                if (parsed.advanceAmount) setAdvanceAmount(parsed.advanceAmount);
+                if (parsed.billingDueDay) setBillingDueDay(parsed.billingDueDay);
+                if (parsed.paymentMethods) setPaymentMethods(parsed.paymentMethods);
+                if (parsed.included) setIncluded(parsed.included);
+                if (parsed.rentAmount) setRentAmount(parsed.rentAmount);
+                if (parsed.excludedFees) setExcludedFees(parsed.excludedFees);
+                if (parsed.percentageIncrease) setPercentageIncrease(parsed.percentageIncrease);
+                if (parsed.gracePeriod) setGracePeriod(parsed.gracePeriod);
+                if (parsed.latePenalty) setLatePenalty(parsed.latePenalty);
+                if (parsed.otherPenalties) setOtherPenalties(parsed.otherPenalties);
+                if (parsed.maintenanceCharges) setMaintenanceCharges(parsed.maintenanceCharges);
+                if (parsed.entryNoticeDays) setEntryNoticeDays(parsed.entryNoticeDays);
+                if (parsed.useOfProperty) setUseOfProperty(parsed.useOfProperty);
+                if (parsed.maintenanceResponsibility) setMaintenanceResponsibility(parsed.maintenanceResponsibility);
+                if (parsed.occupancyLimit) setOccupancyLimit(parsed.occupancyLimit);
+                if (parsed.content) setContent(parsed.content);
+            } catch (e) {
+                console.error("Failed to parse saved lease state", e);
+            }
+        }
+    }, []);
 
     // ----- Prefill from URL -----
     useEffect(() => {
@@ -566,6 +690,7 @@ export default function LeaseEditor() {
         if (urlUnitName) setUnit((u) => ({ ...u, name: urlUnitName }));
     }, [searchParams]);
 
+
     // ----- Auth (ensure session) -----
     useEffect(() => {
         if (!user) fetchSession();
@@ -580,7 +705,7 @@ export default function LeaseEditor() {
             setLoading(true);
             setErr(null);
             try {
-                // 1) Get unit details (includes property_id, unit name, rent)
+                // Get unit details (includes property_id, unit name, rent)
                 const uRes = await fetch(`/api/properties/findRent/viewPropUnitDetails?rentId=${unitId}`);
                 if (!uRes.ok) throw new Error("Failed to load unit details");
                 const uJson = await uRes.json();
@@ -609,19 +734,18 @@ export default function LeaseEditor() {
                     }
                 }
 
-
-
                 // 3) Get tenant by unit (for name/email displayed in lease)
-                const tRes = await fetch(`/api/tenant/getByUnit?unitId=${unitId}`);
-                if (tRes.ok) {
-                    const tJson = await tRes.json();
-                    setTenant((prev) => ({
-                        ...prev,
-                        name: tJson?.fullName || prev.name,
-                        email: tJson?.email || prev.email,
-                        phone: tJson?.phone || prev.phone,
-                    }));
-                }
+                // const tRes = await fetch(`/api/tenant/getByUnit?unitId=${unitId}`);
+                // if (tRes.ok) {
+                //     const tJson = await tRes.json();
+                //     setTenant((prev) => ({
+                //         ...prev,
+                //         name: tJson?.fullName || prev.name,
+                //         email: tJson?.email || prev.email,
+                //         phone: tJson?.phone || prev.phone,
+                //     }));
+                // }
+
             } catch (e: any) {
                 setErr(e?.message || "Error loading details");
             } finally {
@@ -677,6 +801,20 @@ export default function LeaseEditor() {
             );
         }
     }, [step]);
+
+    useEffect(() => {
+        if (step === 6 && agreementId && envelopeId && user?.userType) {
+            regenerateSignUrl(user.userType); // landlord | tenant
+        }
+    }, [step, agreementId, envelopeId, user?.userType]);
+
+
+    useEffect(() => {
+        const savedAgreement = localStorage.getItem("lease_agreement_id");
+        const savedEnvelope = localStorage.getItem("lease_envelope_id");
+        if (savedAgreement) setAgreementId(savedAgreement);
+        if (savedEnvelope) setEnvelopeId(savedEnvelope);
+    }, []);
 
     // ----- Validation -----
     const validateStep1 = () => {
@@ -781,6 +919,7 @@ export default function LeaseEditor() {
         }
     };
 
+
     const handleSendForSigning = async (
         fileBase64: string,
         tenantEmail: string,
@@ -791,21 +930,53 @@ export default function LeaseEditor() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    agreementId,                 // ✅ use agreementId now
-                    landlordEmail: user?.email,  // still required
-                    tenantEmail,                 // from /getByAgreement
+                    agreementId,
+                    landlordEmail: user?.email,
+                    tenantEmail,
                     fileBase64,
                 }),
             });
 
             const data = await res.json();
             if (res.ok) {
-                setSignUrl(data.signUrl); // ✅ embedded signing URL from DocuSign
+                setSignUrl(data.signUrl);
+                setEnvelopeId(data.envelopeId);
+                setAgreementId(String(agreementId));
+
+                // 🔹 persist IDs in localStorage so they survive reloads
+                localStorage.setItem("lease_agreement_id", String(agreementId));
+                localStorage.setItem("lease_envelope_id", String(data.envelopeId));
+
+                console.log("envelope id:", data.envelopeId);
+                console.log("signed url:", data.signUrl);
             } else {
                 console.error("DocuSign send failed:", data);
             }
         } catch (err) {
             console.error(err);
+        }
+    };
+
+
+    const regenerateSignUrl = async (role: "landlord" | "tenant") => {
+        if (!agreementId || !envelopeId) return;
+
+        const res = await fetch("/api/leaseAgreement/signingUrl", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                agreementId,
+                envelopeId,
+                role,
+                landlordEmail: user?.email,
+            }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            setSignUrl(data.url);
+        } else {
+            console.error("Failed to regenerate signing link:", data);
         }
     };
 
@@ -829,7 +1000,13 @@ export default function LeaseEditor() {
                     )
                 )}
             </div>
-
+            <button
+                type="button"
+                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700"
+                onClick={handleCancel}
+            >
+                Cancel
+            </button>
             {/* ====== STEP 1: Property & Tenant Details ====== */}
             {step === 1 && (
                 <div className="space-y-6">
@@ -1501,68 +1678,22 @@ export default function LeaseEditor() {
             )}
 
             {step === 6 && (
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 text-center">
                     <h2 className="text-xl font-bold text-gray-800 mb-4">
-                        ✍️Sign Lease Agreement
+                        ✍️ Ready to Sign?
                     </h2>
 
-                    {!signUrl ? (
-                        <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-md text-yellow-800">
-                            Waiting for signing link to be generated...
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center">
-                            {/* Embedded Signing via iframe */}
-                            <iframe
-                                src={signUrl}
-                                title="DocuSign Signing"
-                                className="w-full h-[600px] border rounded-lg"
-                            />
-
-                            {/* Optional fallback if user prefers new tab */}
-                            <a
-                                href={signUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-4 inline-block px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                            >
-                                Open in New Tab
-                            </a>
-                        </div>
-                    )}
-
-                    <div className="mt-6 flex justify-between">
-                        <button
-                            type="button"
-                            className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300"
-                            onClick={() => setStep(5)}
-                        >
-                            ← Back
-                        </button>
-
-                        <button
-                            type="button"
-                            disabled={!signUrl}
-                            className={`px-6 py-2 rounded-lg ${
-                                signUrl
-                                    ? "bg-green-600 text-white hover:bg-green-700"
-                                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            }`}
-                            onClick={() => {
-                                // optionally mark as "sent for signing"
-                                alert("Waiting for signature completion...");
-                                // TODO: poll or webhook to mark as 'signed'
-                            }}
-                        >
-                            Continue After Signing
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => {
+                            // 🔹 Navigate to your own signing page
+                            router.push(`/pages/lease/signing?agreementId=${agreementId}`);
+                        }}
+                        className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                        Go to Signing Page →
+                    </button>
                 </div>
             )}
-
-
-
 
         </div>
     );

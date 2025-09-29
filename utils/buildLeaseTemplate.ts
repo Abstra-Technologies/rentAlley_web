@@ -281,22 +281,25 @@ IN WITNESS WHEREOF, parties herein affixed their signatures on the date and plac
 <br>
 
 <div style="display:flex; justify-content:space-between; margin-top:50px; text-align:center; gap:40px;">
-  <div style="flex:1;">
+  <div style="flex:1;"> 
+   <!-- 🔑 Unique anchor for landlord signature -->
+    <p><span style="color:white;">ANCHOR_LESSOR_SIGN</span></p>
     <p><strong>__________________________</strong></p>
     <p>${data.lessorName || "LESSOR NAME"}</p>
     <p><em>Lessor</em></p>
+  
     <p>Date Signed: ___________________</p>
   </div>
-<br>
-<br>
 
-  <div style="flex:1;">
+  <div style="flex:1;">    
+  <p><span style="color:white;">ANCHOR_LESSEE_SIGN</span></p>
     <p><strong>__________________________</strong></p>
     <p>${data.tenantName || "LESSEE NAME"}</p>
     <p><em>Lessee</em></p>
     <p>Date Signed: ___________________</p>
   </div>
 </div>
+
 
 
 

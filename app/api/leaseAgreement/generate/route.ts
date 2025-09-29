@@ -186,13 +186,6 @@ export async function POST(req: NextRequest) {
             agreement_id = (await connection.query("SELECT LAST_INSERT_ID() as id"))[0][0].id;
         }
 
-        // Step 6: Clear old additional expenses for this agreement
-        await connection.execute(
-            `DELETE FROM LeaseAdditionalExpense WHERE agreement_id = ?`,
-            [agreement_id]
-        );
-        console.log(`🗑️ Cleared old expenses for agreement_id=${agreement_id}`);
-
 // Step 7: Save excluded/maintenance expenses if provided
         if (expenses && Array.isArray(expenses)) {
             console.log("📦 Expenses received:", expenses);

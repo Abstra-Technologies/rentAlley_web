@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDocuSignToken } from "@/lib/docusignAuth";
+import { db } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
     try {
-        let { landlordEmail, tenantEmail, fileBase64 } = await req.json();
+        let { landlordEmail, tenantEmail, fileBase64, agreementId } = await req.json();
         const { accessToken, accountId } = await getDocuSignToken();
 
         if (fileBase64.startsWith("data:")) {
@@ -29,12 +30,12 @@ export async function POST(req: NextRequest) {
                         email: landlordEmail,
                         name: "Landlord",
                         recipientId: "1",
-                        clientUserId: "1001", // required for embedded signing
+                        clientUserId: "1001",
                         routingOrder: "1",
                         tabs: {
                             signHereTabs: [
                                 {
-                                    anchorString: "LESSOR",
+                                    anchorString: "ANCHOR_LESSOR_SIGN",
                                     anchorYOffset: "30",
                                     anchorXOffset: "0",
                                 },
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
                         tabs: {
                             signHereTabs: [
                                 {
-                                    anchorString: "LESSEE",
+                                    anchorString: "ANCHOR_LESSEE_SIGN",
                                     anchorYOffset: "30",
                                     anchorXOffset: "0",
                                 },
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
             status: "sent",
         };
 
-        // 1. Create envelope
+        //  Create envelope
         const res = await fetch(
             `https://demo.docusign.net/restapi/v2.1/accounts/${accountId}/envelopes`,
             {
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest) {
         );
 
         const envelope = await res.json();
+
         console.log("Envelope creation response:", envelope);
 
         if (!res.ok || !envelope.envelopeId) {
@@ -87,13 +89,17 @@ export async function POST(req: NextRequest) {
 
         const envelopeId = envelope.envelopeId;
 
-        // 2. Create embedded signing view for landlord
+        await db.execute(
+            `UPDATE LeaseAgreement SET docusign_envelope_id = ? WHERE agreement_id = ?`,
+            [envelopeId, agreementId]
+        );
+        // 2. Create embedded signing view for landlord after clicking finish
         const viewRequest = {
             returnUrl: "http://localhost:3000/pages/lease/signed", // must be absolute
             authenticationMethod: "none",
             email: landlordEmail,
             userName: "Landlord",
-            clientUserId: "1001", // must match signer above
+            clientUserId: "1001",
         };
 
         const viewRes = await fetch(
@@ -118,10 +124,14 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        console.log('api envelope id: ', envelopeId);
+
         return NextResponse.json({
             envelopeId,
             signUrl: viewResult.url,
         });
+
+
     } catch (err) {
         console.error("DocuSign send failed:", err);
         return NextResponse.json(
