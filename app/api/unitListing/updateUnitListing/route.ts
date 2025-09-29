@@ -36,8 +36,6 @@ export async function PUT(req: Request) {
       availBeds,
       rentAmt,
       furnish,
-      secDeposit,
-      advancedPayment,
       status,
         amenities,
     } = body;
@@ -49,7 +47,7 @@ export async function PUT(req: Request) {
       `UPDATE Unit SET
         unit_name = ?, unit_size = ?, bed_spacing = ?,
         avail_beds = ?, rent_amount = ?, furnish = ?, status = ?, 
-        sec_deposit = ?, advanced_payment = ?, amenities = ?, updated_at = CURRENT_TIMESTAMP
+        amenities = ?, updated_at = CURRENT_TIMESTAMP
        WHERE unit_id = ?`,
       [
         unitName,
@@ -59,8 +57,6 @@ export async function PUT(req: Request) {
         rentAmt,
         furnish,
         status ?? "unoccupied",
-        secDeposit,
-        advancedPayment,
         amenityString,
         id,
       ]

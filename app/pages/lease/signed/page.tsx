@@ -5,26 +5,36 @@ import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import useAuthStore from "@/zustand/authStore";
 
 function LeaseSignedContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
-
+    const { user, fetchSession } = useAuthStore();
     const event = searchParams.get("event");
     const envelopeId = searchParams.get("envelopeId");
 
     const [updating, setUpdating] = useState(false);
 
+
     useEffect(() => {
-        if (event === "signing_complete" && envelopeId) {
+        if (!user) {
+            fetchSession();
+        }
+    }, [user?.userType]);
+
+
+    useEffect(() => {
+        if (event === "signing_complete" && envelopeId && user?.userType) {
             setUpdating(true);
             fetch("/api/leaseAgreement/markSigned", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ envelopeId }),
+                body: JSON.stringify({ envelopeId, userType: user.userType }),
             }).finally(() => setUpdating(false));
         }
-    }, [event, envelopeId]);
+    }, [event, envelopeId, user?.userType]);
+
 
     const cardClasses =
         "bg-white shadow-xl rounded-2xl p-10 max-w-md w-full text-center";

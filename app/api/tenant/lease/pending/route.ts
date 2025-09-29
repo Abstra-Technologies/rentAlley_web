@@ -15,27 +15,32 @@ export async function GET(req: NextRequest) {
 
         const [rows] = await connection.execute(
             `
-      SELECT la.agreement_id, la.unit_id, la.start_date, la.end_date, la.status,
-             u.unit_name, p.property_name, la.agreement_url
-      FROM LeaseAgreement la
-      JOIN Unit u ON la.unit_id = u.unit_id
-      JOIN Property p ON u.property_id = p.property_id
-      WHERE la.tenant_id = ? AND la.status = 'pending'
-      LIMIT 1
-      `,
+                SELECT la.agreement_id, la.unit_id, la.start_date, la.end_date, la.status,
+                       u.unit_name, p.property_name, la.docusign_envelope_id
+                FROM LeaseAgreement la
+                         JOIN Unit u ON la.unit_id = u.unit_id
+                         JOIN Property p ON u.property_id = p.property_id
+                WHERE la.tenant_id = ? AND la.status = 'pending'
+            `,
             [tenant_id]
         );
 
+        // If no pending leases, return an empty array
         if ((rows as any[]).length === 0) {
-            return NextResponse.json({ pendingLease: null });
+            return NextResponse.json({ pendingLeases: [] });
         }
 
-        // @ts-ignore
-        return NextResponse.json({ pendingLease: rows[0] });
+        // Attach signingPageUrl to each lease
+        const leases = (rows as any[]).map((lease) => ({
+            ...lease,
+            signingPageUrl: `/lease/signing?envelopeId=${lease.docusign_envelope_id}`,
+        }));
+
+        return NextResponse.json({ pendingLeases: leases });
     } catch (error: any) {
-        console.error("Error fetching pending lease:", error);
+        console.error("Error fetching pending leases:", error);
         return NextResponse.json(
-            { error: "Failed to fetch pending lease" },
+            { error: "Failed to fetch pending leases" },
             { status: 500 }
         );
     } finally {

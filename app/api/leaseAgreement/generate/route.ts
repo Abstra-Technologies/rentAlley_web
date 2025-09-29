@@ -183,8 +183,18 @@ export async function POST(req: NextRequest) {
                 ]
             );
             // @ts-ignore
-            agreement_id = (await connection.query("SELECT LAST_INSERT_ID() as id"))[0][0].id;
+            // agreement_id = (await connection.query("SELECT LAST_INSERT_ID() as id"))[0][0].id;
+            agreement_id = insertResult.insertId;
         }
+
+        if (agreement_id) {
+            await connection.execute(
+                `INSERT INTO LeaseSignature (agreement_id, role, status)
+         VALUES (?, 'landlord', 'pending'), (?, 'tenant', 'pending')`,
+                [agreement_id, agreement_id]
+            );
+        }
+
 
 // Step 7: Save excluded/maintenance expenses if provided
         if (expenses && Array.isArray(expenses)) {
