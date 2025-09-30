@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
         // 4️⃣ Build recipient view request
         const viewRequest = {
-            returnUrl: `http://localhost:3000/pages/tenant/leaseAgreement/signed?envelopeId=${envelopeId}`,
+            returnUrl: `http://localhost:3000/pages/lease/signed?envelopeId=${envelopeId}`,
             authenticationMethod: "none",
             email: tenantEmail,
             userName: "Tenant",
