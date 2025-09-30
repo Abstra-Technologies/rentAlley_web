@@ -166,7 +166,7 @@ export default function UnitListingForm() {
         text: "Unit created successfully!",
         icon: "success",
       }).then(() => {
-        router.push(propURL);
+        router.replace(propURL);
         router.refresh();
       });
     } catch (error) {

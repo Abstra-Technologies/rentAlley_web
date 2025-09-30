@@ -147,7 +147,7 @@ const EditUnit = () => {
 
           Swal.fire("Updated!", "Unit updated successfully.", "success").then(
             () => {
-              router.push(viewUnitURL);
+              router.replace(viewUnitURL);
               router.refresh();
             }
           );
