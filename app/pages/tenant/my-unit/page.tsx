@@ -1,4 +1,6 @@
 "use client";
+//  to remove locking mechanism just a centralized payment list
+//  no more handling pyaments here
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
@@ -39,7 +41,6 @@ import {
   FaComments,
   FaSpinner,
 } from "react-icons/fa";
-import InstallPrompt from "@/components/Commons/installPrompt";
 import { useChatStore } from "@/zustand/chatStore";
 import LoadingScreen from "@/components/loadingScreen";
 import LeaseCounter from "@/components/tenant/analytics-insights/LeaseCounter";
@@ -853,7 +854,6 @@ export default function MyUnit() {
                 View Invitations
               </button>
 
-              <InstallPrompt />
             </div>
           </div>
 
