@@ -30,6 +30,7 @@ export default function RentPortalPage() {
     "pending" | "completed" | null
   >(null);
   const [loading, setLoading] = useState(false);
+  const [showMoveInChecklist, setShowMoveInChecklist] = useState(false);
 
   useEffect(() => {
     const fetchUnitName = async () => {
@@ -46,6 +47,7 @@ export default function RentPortalPage() {
     if (agreementId) fetchUnitName();
   }, [agreementId]);
 
+
   useEffect(() => {
     const fetchMoveInStatus = async () => {
       if (!agreementId) return;
@@ -54,7 +56,9 @@ export default function RentPortalPage() {
           `/api/tenant/activeRent/moveInChecklistStatus?agreement_id=${agreementId}`
         );
         setMoveInStatus(response.data.status); // expected 'pending' or 'completed'
-        console.log("moveInStatus", response.data.status);
+        setShowMoveInChecklist(response.data.showButton || false);
+
+
       } catch (error) {
         console.error("Failed to fetch move-in checklist status:", error);
       }
@@ -167,38 +171,40 @@ export default function RentPortalPage() {
         {/* Main Content */}
         <div className="px-4 sm:px-6 py-6 space-y-8">
           {/* Move-in Checklist - Priority Section */}
-          {moveInStatus !== "completed" && (
-            <section className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-orange-100 rounded-full">
-                  <svg
-                    className="w-5 h-5 text-orange-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z"
-                    />
-                  </svg>
+          {showMoveInChecklist && (
+              <section className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-center w-8 h-8 bg-orange-100 rounded-full">
+                    <svg
+                        className="w-5 h-5 text-orange-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                      <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                      Move-in Requirements
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      Complete your move-in checklist to fully activate your portal
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-                    Move-in Requirements
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Complete your move-in checklist to fully activate your
-                    portal
-                  </p>
+
+                {/* Checklist */}
+                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-200 p-1">
+                  <MoveInChecklist agreement_id={agreementId} />
                 </div>
-              </div>
-              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-200 p-1">
-                <MoveInChecklist agreement_id={agreementId} />
-              </div>
-            </section>
+              </section>
           )}
 
           {/* Quick Stats Section */}
