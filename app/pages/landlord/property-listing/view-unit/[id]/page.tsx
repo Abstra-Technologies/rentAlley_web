@@ -27,9 +27,14 @@ const fetcher = (url) => axios.get(url).then((res) => res.data);
 import { BackButton } from "@/components/navigation/backButton";
 import PropertyRatesModal from "@/components/landlord/properties/utilityRatesSetter";
 import PropertyConfiguration from "@/components/landlord/properties/propertyConfigSettings";
+import { Pagination } from "@mui/material";
 
 const ViewUnitPage = () => {
   const { id } = useParams();
+  const property_id = id;
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+  const startIndex = (page - 1) * itemsPerPage;
   const router = useRouter();
   const { fetchSession, user, admin } = useAuthStore();
   const landlord_id = user?.landlord_id;
@@ -43,7 +48,6 @@ const ViewUnitPage = () => {
     waterTotal: "",             // secondary
   });
 
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [billingData, setBillingData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -54,13 +58,13 @@ const ViewUnitPage = () => {
 
   // Billing Status and rates deta
   useEffect(() => {
-    if (!id) return;
+    if (!property_id) return;
 
     async function fetchBillingData_PropertyUtility() {
       try {
         const response = await axios.get(
             `/api/landlord/billing/checkPropertyBillingStats`,
-            { params: { id } }
+            { params: { property_id } }
         );
 
         if (response.data.billingData) {
@@ -90,7 +94,7 @@ const ViewUnitPage = () => {
 
     fetchBillingData_PropertyUtility();
     fetchPropertyDetails();
-  }, [id]);
+  }, [property_id]);
 
 
   useEffect(() => {
@@ -98,6 +102,13 @@ const ViewUnitPage = () => {
       fetchSession();
     }
   }, [user, admin]);
+
+  const handlePageChange = (event, value) => {
+    setPage(value);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // smooth scroll to top
+  };
+
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -116,7 +127,7 @@ const ViewUnitPage = () => {
         method: hasBillingForMonth ? "PUT" : "POST",
         url,
         data: {
-          property_id: id, // always property-level now
+          property_id: property_id, // always property-level now
           ...billingForm,
         },
       });
@@ -131,7 +142,7 @@ const ViewUnitPage = () => {
 
   // get property Overall Details
   const { data: property } = useSWR(
-    id ? `/api/propertyListing/viewDetailedProperty/${id}` : null,
+    id ? `/api/propertyListing/viewDetailedProperty/${property_id}` : null,
     fetcher
   );
 
@@ -146,7 +157,7 @@ const ViewUnitPage = () => {
     error,
     isLoading,
   } = useSWR(
-    id ? `/api/unitListing/getUnitListings?property_id=${id}` : null,
+    id ? `/api/unitListing/getUnitListings?property_id=${property_id}` : null,
     fetcher
   );
 
@@ -182,7 +193,7 @@ const ViewUnitPage = () => {
 
   const handleEditUnit = (unitId) => {
     router.push(
-      `/pages/landlord/property-listing/view-unit/${id}/edit-unit/${unitId}`
+      `/pages/landlord/property-listing/view-unit/${property_id}/edit-unit/${unitId}`
     );
   };
 
@@ -220,7 +231,7 @@ const ViewUnitPage = () => {
     setTimeout(() => {
       Swal.close();
       router.push(
-        `/pages/landlord/property-listing/view-unit/${id}/create-unit?property_id=${id}`
+        `/pages/landlord/property-listing/view-unit/${property_id}/create-unit?property_id=${id}`
       );
     }, 1500);
   };
@@ -243,8 +254,8 @@ const ViewUnitPage = () => {
 
       if (response.status === 200) {
         Swal.fire("Deleted!", "Unit has been deleted.", "success");
-        mutate(`/api/propertyListing/property/${id}`);
-        mutate(`/api/unitListing/unit?property_id=${id}`);
+        mutate(`/api/propertyListing/property/${property_id}`);
+        mutate(`/api/unitListing/unit?property_id=${property_id}`);
       } else {
         Swal.fire(
           "Error",
@@ -276,7 +287,7 @@ const ViewUnitPage = () => {
       const response = await axios.get(
         "/api/propertyListing/getPropDetailsById",
         {
-          params: { id },
+          params: { property_id },
         }
       );
       setPropertyDetails(response.data.property);
@@ -285,6 +296,8 @@ const ViewUnitPage = () => {
       console.error("Failed to fetch property details:", error);
     }
   }
+
+  const currentUnits = units?.slice(startIndex, startIndex + itemsPerPage) || [];
 
   if (error)
     return (
@@ -495,23 +508,39 @@ const ViewUnitPage = () => {
 
           {/* Units Tab */}
           {activeTab === "units" && (
-              <UnitsTab
-                  units={units}
-                  isLoading={isLoading}
-                  unitBillingStatus={unitBillingStatus}
-                  billingMode={billingMode}
-                  propertyId={id}
-                  propertyDetails={propertyDetails}
-                  handleEditUnit={handleEditUnit}
-                  handleDeleteUnit={handleDeleteUnit}
-                  handleAddUnitClick={handleAddUnitClick}
-              />
+              <>
+                <UnitsTab
+                    units={currentUnits}
+                    isLoading={isLoading}
+                    unitBillingStatus={unitBillingStatus}
+                    billingMode={billingMode}
+                    propertyId={property_id}
+                    propertyDetails={propertyDetails}
+                    handleEditUnit={handleEditUnit}
+                    handleDeleteUnit={handleDeleteUnit}
+                    handleAddUnitClick={handleAddUnitClick}
+                />
+
+                {units && units.length > itemsPerPage && (
+                    <div className="flex justify-center p-4 bg-white border-t border-gray-100">
+                      <Pagination
+                          count={Math.ceil(units.length / itemsPerPage)}
+                          page={page}
+                          onChange={handlePageChange}
+                          color="primary"
+                          shape="rounded"
+                          size="large"
+                      />
+                    </div>
+                )}
+              </>
           )}
+
 
           {/* Documents Tab */}
           {activeTab === "documents" && (
             <div className="p-4 sm:p-6">
-              <PropertyDocumentsTab propertyId={id} />
+              <PropertyDocumentsTab propertyId={property_id} />
             </div>
           )}
 
@@ -562,7 +591,7 @@ const ViewUnitPage = () => {
 
           {/* Configuration Tab */}
           {activeTab === "configuration" && (
-              <PropertyConfiguration propertyId={id} />
+              <PropertyConfiguration propertyId={property_id} />
           )}
 
         </div>
@@ -578,8 +607,6 @@ const ViewUnitPage = () => {
             handleInputChange={handleInputChange}
             handleSaveOrUpdateBilling={handleSaveOrUpdateBilling}
         />
-
-
 
       </div>
     </LandlordLayout>

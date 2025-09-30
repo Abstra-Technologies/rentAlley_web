@@ -4,9 +4,9 @@ import { NextResponse, NextRequest } from "next/server";
 // POST - Save billing
 export async function POST(req: NextRequest) {
   try {
-    const { id, billingPeriod, electricityTotal, electricityRate, waterTotal, waterRate } = await req.json();
+    const { property_id, billingPeriod, electricityTotal, electricityRate, waterTotal, waterRate } = await req.json();
 
-    if (!id || !billingPeriod) {
+    if (!property_id || !billingPeriod) {
       return NextResponse.json({ error: "Property ID and Billing Period are required" }, { status: 400 });
     }
 
@@ -14,8 +14,7 @@ export async function POST(req: NextRequest) {
         `INSERT INTO ConcessionaireBilling 
        (property_id, billing_period, electricity_total, electricity_consumption, water_total, water_consumption, created_at) 
        VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-        [
-          id,
+        [property_id,
           billingPeriod,
           electricityTotal || null,
           electricityRate || null,
@@ -34,9 +33,9 @@ export async function POST(req: NextRequest) {
 // PUT - Update billing
 export async function PUT(req: NextRequest) {
   try {
-    const { id, billingPeriod, electricityTotal, electricityRate, waterTotal, waterRate } = await req.json();
+    const { property_id, billingPeriod, electricityTotal, electricityRate, waterTotal, waterRate } = await req.json();
 
-    if (!id || !billingPeriod) {
+    if (!property_id || !billingPeriod) {
       return NextResponse.json({ error: "Property ID and Billing Period are required" }, { status: 400 });
     }
 
@@ -51,7 +50,7 @@ export async function PUT(req: NextRequest) {
           electricityRate || null,
           waterTotal || null,
           waterRate || null,
-          id,
+            property_id,
           billingPeriod,
         ]
     );
@@ -66,7 +65,7 @@ export async function PUT(req: NextRequest) {
 // Getting Rates
 export async function GET(req:NextRequest) {
   const { searchParams } = new URL(req.url);
-  const property_id = searchParams.get("id");
+  const property_id = searchParams.get("property_id");
 
   if (!property_id) {
     return NextResponse.json({ error: "Property ID is required" }, { status: 400 });

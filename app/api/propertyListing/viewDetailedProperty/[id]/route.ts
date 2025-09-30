@@ -3,7 +3,7 @@ import { decryptData } from "@/crypto/encrypt";
 import { NextRequest } from "next/server";
 // @ts-ignore
 export async function GET(req: NextRequest, { params }) {
-  const property_id = params.id;
+  const property_id = params.property_id;
 
   if (!property_id) {
     return new Response(
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest, { params }) {
     });
   } catch (error) {
     return new Response(
-      JSON.stringify({ message: "Internal Server Error" }),
+      JSON.stringify({ message: "Database Server Error" }),
       { status: 500 }
     );
   }

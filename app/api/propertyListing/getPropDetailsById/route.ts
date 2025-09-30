@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const property_id = searchParams.get("id");
+    const property_id = searchParams.get("property_id");
 
     if (!property_id) {
         return NextResponse.json({ error: "Property ID is required" }, { status: 400 });

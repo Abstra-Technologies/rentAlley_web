@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const property_id = searchParams.get("id");
+    const property_id = searchParams.get("property_id");
 
     if (!property_id) {
         return NextResponse.json(
