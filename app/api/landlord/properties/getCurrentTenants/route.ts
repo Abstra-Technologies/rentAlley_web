@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       SELECT
         t.tenant_id,
         t.employment_type,
-        t.occupation,
+       u.occupation,
         u.firstName,
         u.lastName,
         u.email,

@@ -52,7 +52,7 @@ function Login() {
     } else if (!user) {
       fetchSession();
     }
-  }, [user, router]);
+  }, [user, router, user?.userType]);
 
 
   useEffect(() => {
