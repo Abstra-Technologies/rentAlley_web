@@ -8,13 +8,22 @@ import TenantPayables from "@/components/tenant/analytics-insights/consolidated-
 import AnnouncementFeeds from "@/components/tenant/feeds/announcement";
 import TenantLeaseReminderBanner from "@/components/tenant/currentRent/TenantLeaseReminderBanner";
 import LoadingScreen from "@/components/loadingScreen";
+import NameModal from "@/components/Commons/profile/accountSetupName";
 
 export default function TenantFeedsPage() {
   const { user, fetchSession, loading } = useAuthStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchSession();
   }, [fetchSession]);
+
+  useEffect(() => {
+    if (user && (!user.firstName?.trim() || !user.lastName?.trim() || !user.birthDate)) {
+      setIsModalOpen(true);
+    }
+  }, [user]);
+
 
   if (loading)
     return (
@@ -28,6 +37,15 @@ export default function TenantFeedsPage() {
       <TenantOutsidePortalNav />
       <div className="flex-1 md:ml-64">
         <div className="flex-1 p-6">
+
+          {user && (
+              <NameModal
+                  isOpen={isModalOpen}
+                  onClose={() => setIsModalOpen(false)}
+                  userId={user?.user_id}
+              />
+          )}
+
           <TenantLeaseReminderBanner tenantId={user?.tenant_id} />
 
           <h1 className="gradient-header">UpFeeds</h1>
