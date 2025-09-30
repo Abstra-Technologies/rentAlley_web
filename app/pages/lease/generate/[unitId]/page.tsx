@@ -1685,8 +1685,12 @@ export default function LeaseEditor() {
 
                     <button
                         onClick={() => {
-                            // 🔹 Navigate to your own signing page
-                            router.push(`/pages/lease/signing?agreementId=${agreementId}`);
+                            localStorage.removeItem(STORAGE_KEY);
+                            localStorage.removeItem("lease_agreement_id");
+                            localStorage.removeItem("lease_envelope_id");
+
+                            // 🔹 Redirect to signing page
+                            router.push(`/pages/lease/signing?agreementId=${agreementId}&envelopeId=${envelopeId}`);
                         }}
                         className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                     >

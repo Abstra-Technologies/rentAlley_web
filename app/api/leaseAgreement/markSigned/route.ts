@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 1️⃣ Find the lease by envelopeId
+        // Find the lease by envelopeId
         const [leaseRows]: any = await db.query(
             `SELECT agreement_id FROM LeaseAgreement WHERE docusign_envelope_id = ?`,
             [envelopeId]
@@ -30,39 +30,41 @@ export async function POST(req: NextRequest) {
 
         const agreementId = leaseRows[0].agreement_id;
 
-        // 2️⃣ Mark this signer as signed
+        // Mark this signer as signed
         await db.execute(
             `UPDATE LeaseSignature
              SET status = 'signed', signed_at = NOW()
              WHERE agreement_id = ? AND role = ?`,
-            [agreementId, userType]
+            [agreementId, userType.toLowerCase()]
         );
 
-        // 3️⃣ Check how many signatures are completed
-        const [checkRows]: any = await db.query(
-            `SELECT COUNT(*) as total,
-                    SUM(status = 'signed') as signedCount
+        // Get all signature statuses
+        const [sigRows]: any = await db.query(
+            `SELECT role, status, signed_at
              FROM LeaseSignature
              WHERE agreement_id = ?`,
             [agreementId]
         );
 
-        const total = checkRows[0].total;
-        const signedCount = checkRows[0].signedCount;
+        // Count total and signed
+        const total = sigRows.length;
+        const signedCount = sigRows.filter(
+            (r: any) => r.status?.toLowerCase().trim() === "signed"
+        ).length;
 
-        // 4️⃣ Update LeaseAgreement status
+        // Update LeaseAgreement status
         if (signedCount === total) {
             await db.execute(
-                `UPDATE LeaseAgreement 
-                 SET status = 'active', activated_at = NOW()
+                `UPDATE LeaseAgreement
+                 SET status = 'active', updated_at = NOW()
                  WHERE agreement_id = ?`,
                 [agreementId]
             );
             console.log(`✅ Lease ${agreementId} is now ACTIVE`);
         } else {
             await db.execute(
-                `UPDATE LeaseAgreement 
-                 SET status = 'pending' 
+                `UPDATE LeaseAgreement
+                 SET status = 'pending', updated_at = NOW()
                  WHERE agreement_id = ?`,
                 [agreementId]
             );
@@ -71,23 +73,21 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
+            status: signedCount === total ? "active" : "pending",
             message:
                 signedCount === total
                     ? "Lease fully signed ✅ Lease is now active"
                     : `${userType} signed, waiting for others...`,
+            signatures: sigRows, // return current roles + statuses
         });
     } catch (err) {
-        console.error("🔥 Error in markSigned:", err);
+        console.error("Error in markSigned:", err);
         return NextResponse.json(
             { error: "Failed to update lease signing", details: String(err) },
             { status: 500 }
         );
     }
 }
-
-
-
-
 
 // export async function POST(req: NextRequest) {
 //     try {
