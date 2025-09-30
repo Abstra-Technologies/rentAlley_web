@@ -44,7 +44,7 @@ const ViewUnitPage = () => {
     billingPeriod: "",
     electricityConsumption: "", // ⚡ Highlighted in UI
     electricityTotal: "",       // secondary
-    waterConsumption: "",       // 💧 Highlighted in UI
+    waterConsumption: "",       //  Highlighted in UI
     waterTotal: "",             // secondary
   });
 
@@ -96,7 +96,6 @@ const ViewUnitPage = () => {
     fetchPropertyDetails();
   }, [property_id]);
 
-
   useEffect(() => {
     if (!user && !admin) {
       fetchSession();
@@ -107,8 +106,6 @@ const ViewUnitPage = () => {
     setPage(value);
     window.scrollTo({ top: 0, behavior: "smooth" }); // smooth scroll to top
   };
-
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -299,6 +296,11 @@ const ViewUnitPage = () => {
 
   const currentUnits = units?.slice(startIndex, startIndex + itemsPerPage) || [];
 
+  //  only applicsable for both non-submtered utility.
+  const handleReviewBilling = () => {
+    router.push(`/pages/landlord/billing/reviewBilling/${property_id}`);
+  };
+
   if (error)
     return (
       <LandlordLayout>
@@ -450,28 +452,35 @@ const ViewUnitPage = () => {
               )}
 
             {/* FB Share Button */}
-            {propertyDetails && (
-              <div className="flex items-center">
-                <FBShareButton
-                  url={`https://rent-alley-web.vercel.app/pages/find-rent/${propertyDetails?.property_id}`}
-                />
-              </div>
-            )}
+            {/*{propertyDetails && (*/}
+            {/*  <div className="flex items-center">*/}
+            {/*    <FBShareButton*/}
+            {/*      url={`https://rent-alley-web.vercel.app/pages/find-rent/${propertyDetails?.property_id}`}*/}
+            {/*    />*/}
+            {/*  </div>*/}
+            {/*)}*/}
 
           </div>
 
           {/* Non-submetered Info */}
           {billingMode &&
-              propertyDetails?.water_billing_type !== "submetered" &&
-              propertyDetails?.electricity_billing_type !== "submetered" && (
-                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+              (propertyDetails?.water_billing_type !== "submetered" ||
+                  propertyDetails?.electricity_billing_type !== "submetered") && (
+                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl space-y-3">
                     <p className="text-sm text-green-800">
                       <span className="font-semibold">Auto-billing:</span>{" "}
-                      Monthly Billing are generated automatically based on the set due date for non-submetered properties.
+                      Monthly Billing is generated automatically based on the set due date
+                      for non-submetered properties.
                     </p>
+
+                    <button
+                        onClick={handleReviewBilling}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
+                    >
+                      Review Billing for this Month
+                    </button>
                   </div>
               )}
-
 
         </div>
 
