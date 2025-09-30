@@ -869,7 +869,7 @@ const Navbar = () => {
             <Link
               href={
                 user?.userType === "tenant"
-                  ? "/"
+                  ? "/pages/tenant/feeds"
                   : user?.userType === "landlord"
                   ? "/pages/landlord/dashboard"
                   : "/"

@@ -16,6 +16,7 @@ import LeaseCounter from "@/components/tenant/analytics-insights/LeaseCounter";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 import ApplicationsCounter from "@/components/tenant/analytics-insights/applicationsCounter";
+import { FileText } from "lucide-react";
 
 interface Unit {
     unit_id: string;
@@ -289,7 +290,14 @@ export default function MyUnit() {
 
 
                         {units.length === 0 ? (
-                            <p className="text-gray-500">You currently have no active leases.</p>
+
+                            <div className="flex flex-col items-center justify-center py-8">
+                                <FileText className="w-10 h-10 text-gray-400 mb-2" />
+                                <p className="text-gray-500 text-center">
+                                    You currently have no active leases.
+                                </p>
+                            </div>
+
                         ) : (
                             <>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -322,6 +330,22 @@ export default function MyUnit() {
                                                         {new Date(unit.start_date).toISOString().split("T")[0]} to{" "}
                                                         {new Date(unit.end_date).toISOString().split("T")[0]}
                                                     </p>
+
+                                                    <span
+                                                        className={`inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full 
+                                                        ${
+                                                            unit.lease_status === "active"
+                                                                ? "bg-green-100 text-green-700"
+                                                                : unit.lease_status === "pending"
+                                                                    ? "bg-yellow-100 text-yellow-700"
+                                                                    : unit.lease_status === "terminated"
+                                                                        ? "bg-red-100 text-red-700"
+                                                                        : "bg-gray-100 text-gray-600"
+                                                        }`}
+                                                    >
+                                                                      {unit.lease_status.charAt(0).toUpperCase() + unit.lease_status.slice(1)}
+                                                    </span>
+
 
                                                     <div className="mt-4 flex flex-col gap-2">
                                                         {!unit.is_security_deposit_paid || !unit.is_advance_payment_paid ? (

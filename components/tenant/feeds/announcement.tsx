@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Megaphone } from "lucide-react";
 
 interface Announcement {
     id: number;
@@ -34,7 +35,14 @@ export default function AnnouncementFeed({ tenant_id }: { tenant_id: number | un
             <h2 className="text-xl font-bold mb-4"></h2>
 
             {announcements.length === 0 ? (
-                <p className="text-gray-500 text-center">No announcements available.</p>
+
+                <div className="flex flex-col items-center justify-center py-8">
+                    <Megaphone className="w-10 h-10 text-gray-400 mb-2" />
+                    <p className="text-gray-500 text-center">
+                        No feeds available.
+                    </p>
+                </div>
+
             ) : (
                 announcements.map((a) => (
                     <div

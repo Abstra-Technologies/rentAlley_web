@@ -19,10 +19,10 @@ export default function TenantFeedsPage() {
   }, [fetchSession]);
 
   useEffect(() => {
-    if (user && (!user.firstName?.trim() || !user.lastName?.trim() || !user.birthDate)) {
+    if (user && (!user.firstName?.trim() || !user.lastName?.trim())) {
       setIsModalOpen(true);
     }
-  }, [user]);
+  }, [user, user.firstName, user.lastName, user.birthDate]);
 
 
   if (loading)
