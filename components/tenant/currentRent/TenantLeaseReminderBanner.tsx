@@ -13,28 +13,34 @@ export default function TenantLeaseReminderBanner({
                                                       tenantId,
                                                   }: TenantLeaseReminderBannerProps) {
     const [leases, setLeases] = useState<any[]>([]);
+    const [showAll, setShowAll] = useState(false);
 
     useEffect(() => {
         if (!tenantId) return;
+
         const fetchPendingLeases = async () => {
             try {
                 const res = await axios.get(
                     `/api/tenant/lease/pending?tenant_id=${tenantId}`
                 );
                 setLeases(res.data.pendingLeases || []);
-                console.log('lease info: ', res.data.pendingLeases);
+                console.log("lease info: ", res.data.pendingLeases);
             } catch (err) {
                 console.error("Error fetching leases:", err);
             }
         };
+
         fetchPendingLeases();
     }, [tenantId]);
 
     if (!leases || leases.length === 0) return null;
 
+    // leases to display
+    const visibleLeases = showAll ? leases : [leases[0]];
+
     return (
         <div className="space-y-4">
-            {leases.map((lease) => (
+            {visibleLeases.map((lease) => (
                 <div
                     key={lease.agreement_id}
                     className="w-full bg-amber-50 border-l-4 border-amber-400 p-4 rounded-md shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between"
@@ -70,6 +76,18 @@ export default function TenantLeaseReminderBanner({
                     </div>
                 </div>
             ))}
+
+            {/* Toggle only if more than 1 lease */}
+            {leases.length > 1 && (
+                <div className="text-center">
+                    <button
+                        onClick={() => setShowAll(!showAll)}
+                        className="text-sm font-medium text-amber-700 hover:text-amber-900 underline"
+                    >
+                        {showAll ? "Show Less" : `Show All (${leases.length})`}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
