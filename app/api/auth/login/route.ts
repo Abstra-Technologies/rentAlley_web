@@ -114,11 +114,10 @@ export async function POST(req: NextRequest) {
         .setSubject(user.user_id)
         .sign(secret);
 
-    // ✅ Redirect based on role
     let redirectUrl = "/pages/auth/login";
     switch (user.userType) {
       case "tenant":
-        redirectUrl = "/pages/tenant/my-unit";
+        redirectUrl = "/pages/tenant/feeds";
         break;
       case "landlord":
         redirectUrl = "/pages/landlord/dashboard";

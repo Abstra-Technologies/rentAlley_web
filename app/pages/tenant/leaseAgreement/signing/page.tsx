@@ -7,13 +7,14 @@ export default function LeaseSigningPage() {
     const searchParams = useSearchParams();
     const envelopeId = searchParams.get("envelopeId");
     const [signUrl, setSignUrl] = useState<string | null>(null);
+    console.log('envelop id:', envelopeId);
 
     useEffect(() => {
         if (!envelopeId) return;
 
         const fetchSigningUrl = async () => {
             try {
-                const res = await fetch("/api/leaseAgreement/signingUrl", {
+                const res = await fetch("/api/tenant/lease/signing", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ envelopeId }),

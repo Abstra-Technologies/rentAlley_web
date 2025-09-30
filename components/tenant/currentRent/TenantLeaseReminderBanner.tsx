@@ -22,6 +22,7 @@ export default function TenantLeaseReminderBanner({
                     `/api/tenant/lease/pending?tenant_id=${tenantId}`
                 );
                 setLeases(res.data.pendingLeases || []);
+                console.log('lease info: ', res.data.pendingLeases);
             } catch (err) {
                 console.error("Error fetching leases:", err);
             }
