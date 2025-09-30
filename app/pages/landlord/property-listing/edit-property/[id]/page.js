@@ -228,7 +228,7 @@ export default function EditProperty() {
           }
 
           Swal.fire("Saved!", "Your property has been updated.", "success").then(() => {
-            router.push("/pages/landlord/property-listing");
+            router.replace("/pages/landlord/property-listing");
           });
 
         } catch (error) {

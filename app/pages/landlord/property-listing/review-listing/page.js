@@ -17,7 +17,7 @@ export default function ReviewingListing() {
       }, 1000);
 
       timer = setTimeout(() => {
-        router.push("/pages/landlord/property-listing");
+        router.replace("/pages/landlord/property-listing");
       }, countdown * 1000);
     }
 

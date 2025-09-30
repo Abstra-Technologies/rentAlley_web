@@ -285,7 +285,7 @@ export default function AddNewProperty() {
         confirmButtonColor: "#10b981",
       }).then(() => {
         localStorage.removeItem("addPropertyStep");
-        router.push("/pages/landlord/property-listing/review-listing");
+        router.replace("/pages/landlord/property-listing/review-listing");
       });
     } catch (err) {
       Swal.fire({
