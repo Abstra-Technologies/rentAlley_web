@@ -17,46 +17,51 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     const { fetchSession, user, admin } = useAuthStore();
     const user_id = user?.user_id ?? admin?.id;
     const [sessionExpired, setSessionExpired] = useState(false);
+    const [sessionChecked, setSessionChecked] = useState(false);
 
     useEffect(() => {
-        if (!user && !admin) {
-            fetchSession().catch((err: any) => {
-                if (err.status === 401 || err.message.includes("expired")) {
-                    setSessionExpired(true);
-                    document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
-                } else {
-                    console.error("Database connection error during session fetch:", err);
-                }
-            });
+        if ((user || admin) && !sessionChecked) {
+            fetchSession()
+                .then(() => {
+                    setSessionChecked(true); // Mark session as checked
+                })
+                .catch((err) => {
+                    setSessionChecked(true); // Mark session as checked even on error
+                    if (err.status === 401 || err.message.includes('expired')) {
+                        setSessionExpired(true);
+                        document.cookie = 'token=; path=/; max-age=0; SameSite=Lax';
+                    } else {
+                        console.error('Database connection error during session fetch:', err);
+                    }
+                });
         }
-    }, [user, admin, fetchSession]);
+    }, [user, admin, fetchSession, sessionChecked]);
 
     useEffect(() => {
         if (sessionExpired) {
             Swal.fire({
-                title: "Session Expired",
-                text: "Your session has expired. Please log in again to continue.",
-                icon: "warning",
-                confirmButtonText: "Go to Login",
+                title: 'Session Expired',
+                text: 'Your session has expired. Please log in again to continue.',
+                icon: 'warning',
+                confirmButtonText: 'Go to Login',
                 customClass: {
-                    container: "swal2-container",
-                    popup: "rounded-lg p-4 max-w-[90%] sm:max-w-md",
-                    title: "text-lg sm:text-xl font-semibold text-gray-800",
-                    htmlContainer: "text-sm sm:text-base text-gray-600",
-                    confirmButton: "bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto",
+                    container: 'swal2-container',
+                    popup: 'rounded-lg p-4 max-w-[90%] sm:max-w-md',
+                    title: 'text-lg sm:text-xl font-semibold text-gray-800',
+                    htmlContainer: 'text-sm sm:text-base text-gray-600',
+                    confirmButton:
+                        'bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto',
                 },
                 buttonsStyling: false,
                 allowOutsideClick: false,
             }).then((result) => {
                 if (result.isConfirmed) {
                     setSessionExpired(false);
-                    window.location.href = "/pages/auth/login";
+                    window.location.href = '/pages/auth/login';
                 }
             });
         }
     }, [sessionExpired]);
-
-
 
     useEffect(() => {
         if (!user_id) return;
