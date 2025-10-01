@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
@@ -10,8 +11,8 @@ export async function GET(req: NextRequest) {
 
   if (!landlord_id) {
     return NextResponse.json(
-      { message: "Missing landlord_id" },
-      { status: 400 }
+        { message: "Missing landlord_id" },
+        { status: 400 }
     );
   }
 
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
       SELECT
         t.tenant_id,
         t.employment_type,
-       u.occupation,
+        u.occupation,
         u.firstName,
         u.lastName,
         u.email,
@@ -31,12 +32,16 @@ export async function GET(req: NextRequest) {
         la.agreement_id,
         la.end_date,
         la.status as lease_status,
-        la.agreement_url
+        la.agreement_url,
+        ls_tenant.status as tenant_signature_status,
+        ls_landlord.status as landlord_signature_status
       FROM Tenant t
-      JOIN LeaseAgreement la ON t.tenant_id = la.tenant_id
-      JOIN Unit un ON la.unit_id = un.unit_id
-      JOIN Property p ON un.property_id = p.property_id
-      JOIN User u ON t.user_id = u.user_id
+             JOIN LeaseAgreement la ON t.tenant_id = la.tenant_id
+             JOIN Unit un ON la.unit_id = un.unit_id
+             JOIN Property p ON un.property_id = p.property_id
+             JOIN User u ON t.user_id = u.user_id
+             LEFT JOIN LeaseSignature ls_tenant ON la.agreement_id = ls_tenant.agreement_id AND ls_tenant.role = 'tenant'
+             LEFT JOIN LeaseSignature ls_landlord ON la.agreement_id = ls_landlord.agreement_id AND ls_landlord.role = 'landlord'
       WHERE la.status = 'active' AND p.landlord_id = ?
       ORDER BY la.start_date DESC
     `;
@@ -58,8 +63,8 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error("Database error:", error);
     return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
+        { message: "Internal Server Error" },
+        { status: 500 }
     );
   }
 }

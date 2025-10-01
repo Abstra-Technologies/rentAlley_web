@@ -25,6 +25,7 @@ import LoadingScreen from "@/components/loadingScreen";
 import PropertyCard from "@/components/landlord/properties/propertyCards";
 import FBShareButton from "@/components/landlord/properties/shareToFacebook";
 import Pagination from "@mui/material/Pagination";
+import { AlertCircle } from 'lucide-react';
 
 const PropertyListingPage = () => {
   const router = useRouter();
@@ -231,23 +232,6 @@ const PropertyListingPage = () => {
     [user?.landlord_id, fetchAllProperties]
   );
 
-  if (!user?.landlord_id) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
-        <LoadingScreen message="Just a moment, getting things ready..." />
-      </div>
-    );
-  }
-
-  if (loading)
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
-        <LoadingScreen message="Fetching your properties, please wait..." />
-      </div>
-    );
-
-  if (error) return <p className="text-center mt-4 text-red-500">{error}</p>;
-
   const isAddDisabled =
     isFetchingVerification ||
     fetchingSubscription ||
@@ -436,6 +420,30 @@ const PropertyListingPage = () => {
 
     return null;
   };
+
+  if (error) {
+    return (
+        <div className="flex items-center justify-center mt-4 text-red-500">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          <p>{error}</p>
+        </div>
+    );
+  }
+
+  if (!user?.landlord_id) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+          <LoadingScreen message="Just a moment, getting things ready..." />
+        </div>
+    );
+  }
+
+  if (loading)
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+          <LoadingScreen message="Fetching your properties, please wait..." />
+        </div>
+    );
 
   return (
     <LandlordLayout>

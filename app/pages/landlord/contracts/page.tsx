@@ -6,7 +6,7 @@ import { Box, Typography } from "@mui/material";
 import useAuthStore from "../../../../zustand/authStore";
 import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import LeaseStatusInfo from "@/components/landlord/widgets/LeaseStatusInfo";
-import VisibilityIcon from "@mui/icons-material/Visibility"; // 👁️ View Icon
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { IconButton, Tooltip } from "@mui/material";
 import { useRouter } from "next/navigation";
 
@@ -20,6 +20,9 @@ type Contact = {
     unit_name: string;
     lease_status: string;
     agreement_url: string;
+    tenant_signature_status: string | null;
+    landlord_signature_status: string | null;
+    agreement_id: number;
 };
 
 export default function ContactsPage() {
@@ -27,7 +30,7 @@ export default function ContactsPage() {
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
-    const {user} = useAuthStore();
+    const { user } = useAuthStore();
 
     useEffect(() => {
         if (!user?.landlord_id) return;
@@ -59,7 +62,7 @@ export default function ContactsPage() {
             accessorKey: "lease_status",
             header: "Lease Status",
             Cell: ({ cell }) => {
-                const status = cell.getValue<string>();
+                const status = cell.getValue<string>() || "unknown";
 
                 let color = "gray";
                 let bg = "#f3f4f6";
@@ -86,14 +89,64 @@ export default function ContactsPage() {
                             backgroundColor: bg,
                         }}
                     >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </span>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </span>
+                );
+            },
+        },
+        {
+            accessorFn: (row) => {
+                const tenantStatus = row.tenant_signature_status || "pending";
+                const landlordStatus = row.landlord_signature_status || "pending";
+
+                if (tenantStatus === "signed" && landlordStatus === "signed") {
+                    return "complete";
+                } else if (landlordStatus === "signed" && tenantStatus !== "signed") {
+                    return "landlord signed, waiting for tenant";
+                } else if (tenantStatus === "declined") {
+                    return "declined";
+                } else {
+                    return tenantStatus;
+                }
+            },
+            id: "signature_status",
+            header: "Signature Status",
+            Cell: ({ cell }) => {
+                const status = cell.getValue<string>() || "pending";
+
+                let color = "gray";
+                let bg = "#f3f4f6";
+
+                if (status === "complete") {
+                    color = "#16a34a"; // green
+                    bg = "#dcfce7";
+                } else if (status === "landlord signed, waiting for tenant" || status === "pending") {
+                    color = "#d97706"; // orange
+                    bg = "#fef3c7";
+                } else if (status === "declined") {
+                    color = "#dc2626"; // red
+                    bg = "#fee2e2";
+                }
+
+                return (
+                    <span
+                        style={{
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            fontWeight: 600,
+                            fontSize: "0.8rem",
+                            color,
+                            backgroundColor: bg,
+                        }}
+                    >
+                        {status.split(" ").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
+                    </span>
                 );
             },
         },
         {
             accessorKey: "agreement_url",
-            header: "Agreement Docs",
+            header: "Agreement URL",
             Cell: ({ cell }) => {
                 const url = cell.getValue<string>();
                 return url ? (
@@ -128,29 +181,29 @@ export default function ContactsPage() {
 
     return (
         <div className="min-h-screen">
-        <LandlordLayout>
-            <div className="mb-6">
-                <h1 className="gradient-header">Active Leases </h1>
-                <p className="gardient-subtitle">
-                    Manage, track, and monitor all your lease agreements in one place.
-                </p>
-            </div>
+            <LandlordLayout>
 
-            <LeaseStatusInfo />
+                <div className="mb-6">
+                    <h1 className="gradient-header">Active Lease Agreements</h1>
+                    <p className="gradient-subtitle">
+                        Efficiently oversee, track, and manage all your lease agreements within a centralized platform.
+                    </p>
+                </div>
 
-        <Box p={3}>
-            <MaterialReactTable
-                columns={columns}
-                data={data}
-                state={{isLoading: loading}}
-                muiTablePaperProps={{
-                    elevation: 3,
-                    sx: {borderRadius: "12px"},
-                }}
-            />
-        </Box>
+                <LeaseStatusInfo />
 
-        </LandlordLayout>
+                <Box p={3}>
+                    <MaterialReactTable
+                        columns={columns}
+                        data={data}
+                        state={{ isLoading: loading }}
+                        muiTablePaperProps={{
+                            elevation: 3,
+                            sx: { borderRadius: "12px" },
+                        }}
+                    />
+                </Box>
+            </LandlordLayout>
         </div>
     );
 }
