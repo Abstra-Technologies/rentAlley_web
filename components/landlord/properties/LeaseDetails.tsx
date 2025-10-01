@@ -21,7 +21,7 @@ import {
 import { PhoneIcon } from "lucide-react";
 import { MapPinIcon } from "lucide-react";
 import { UserIcon } from "lucide-react";
-
+import NoTenantAssigned from "../../../components/landlord/properties/NoTenantAssigned";
 // @ts-ignore
 const LeaseDetails = ({ unitId }) => {
   const router = useRouter();
@@ -271,7 +271,6 @@ const LeaseDetails = ({ unitId }) => {
     }
   };
 
-  // Example: inside your LeaseAgreement component
   const handleGenerateLease = async () => {
     if (!startDate || !endDate) {
       Swal.fire("Error", "Start and end date are required", "error");
@@ -309,7 +308,6 @@ const LeaseDetails = ({ unitId }) => {
       setIsGenerating(false);
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
@@ -369,49 +367,7 @@ const LeaseDetails = ({ unitId }) => {
 
         {/* No Tenant Warning */}
         {!tenant && (
-          <div className="p-4 sm:p-6 bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mt-0.5">
-                <EnvelopeIcon className="h-5 w-5 text-amber-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-amber-800 mb-2">
-                  No Tenant Assigned
-                </h3>
-                <p className="text-amber-700 text-sm mb-4">
-                  Send an invitation to connect a tenant to this unit. They'll
-                  receive an email with registration instructions.
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1">
-                    <input
-                      type="email"
-                      placeholder="Enter tenant's email address"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className="w-full bg-white border border-amber-200 px-4 py-2.5 rounded-xl text-gray-700 focus:ring-2 focus:ring-amber-300 focus:border-amber-400 outline-none transition-all"
-                    />
-                  </div>
-                  <button
-                    onClick={handleSendInvite}
-                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg"
-                  >
-                    Send Invite
-                  </button>
-                </div>
-
-                <button
-                  className="mt-3 text-blue-600 hover:text-blue-800 underline font-medium text-sm"
-                  onClick={() =>
-                    router.push(`/landlord/prospectives/${unitId}`)
-                  }
-                >
-                  View prospective tenants instead
-                </button>
-              </div>
-            </div>
-          </div>
+            <NoTenantAssigned unitId={unitId} handleSendInvite={handleSendInvite} />
         )}
 
         {/* Enhanced Tab Navigation */}
