@@ -1,6 +1,7 @@
 
 "use client";
 import { useEffect, useState } from "react";
+import { UserPlus } from "lucide-react";
 
 type ProspectiveTenant = {
     id: number;
@@ -47,7 +48,12 @@ export default function ProspectiveTenantsWidget({ landlordId }: { landlordId: n
             {loading ? (
                 <p className="text-sm text-gray-500 py-6 text-center">Loading...</p>
             ) : tenants.length === 0 ? (
-                <p className="text-sm text-gray-500 py-6 text-center">No applications yet.</p>
+
+                <p className="flex flex-col items-center justify-center text-gray-500 py-6">
+                    <UserPlus className="w-8 h-8 mb-2 text-gray-400" />
+                    <span className="text-sm">No applications yet.</span>
+                </p>
+
             ) : (
 
                 <ul className="divide-y divide-gray-100">

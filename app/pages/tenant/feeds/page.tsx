@@ -22,8 +22,7 @@ export default function TenantFeedsPage() {
     if (user && (!user.firstName?.trim() || !user.lastName?.trim())) {
       setIsModalOpen(true);
     }
-  }, [user, user.firstName, user.lastName, user.birthDate]);
-
+  }, [user]);
 
   if (loading)
     return (

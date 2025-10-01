@@ -24,11 +24,11 @@ export async function GET(req: NextRequest) {
                          JOIN Property p ON u.property_id = p.property_id
                          JOIN User usr ON t.user_id = usr.user_id
                 WHERE p.landlord_id = ?
+                  AND pt.status = 'pending'
                 ORDER BY pt.created_at DESC
             `,
             [landlordId]
         );
-
 
         const tenants = await Promise.all(
             // @ts-ignore
