@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function LeaseSigningPage() {
+function LeaseSigningPageContent() {
     const searchParams = useSearchParams();
     const envelopeId = searchParams.get("envelopeId");
     const [signUrl, setSignUrl] = useState<string | null>(null);
-    console.log('envelop id:', envelopeId);
+    console.log("envelope id:", envelopeId);
 
     useEffect(() => {
         if (!envelopeId) return;
@@ -53,4 +53,12 @@ export default function LeaseSigningPage() {
     // Option B (if you want full-page redirect instead of iframe)
     // window.location.href = signUrl;
     // return null;
+}
+
+export default function LeaseSigningPage() {
+    return (
+        <Suspense fallback={<div className="p-6 text-center">Loading...</div>}>
+            <LeaseSigningPageContent />
+        </Suspense>
+    );
 }

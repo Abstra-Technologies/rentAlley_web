@@ -1,11 +1,10 @@
-
-
 "use client";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import useAuthStore from "@/zustand/authStore";
 
-export default function LeaseSigningPage() {
+import useAuthStore from "@/zustand/authStore";
+import { useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+
+function LeaseSigningPageContent() {
     const searchParams = useSearchParams();
     const agreementId = searchParams.get("agreementId");
     const [signUrl, setSignUrl] = useState<string | null>(null);
@@ -21,7 +20,7 @@ export default function LeaseSigningPage() {
                 body: JSON.stringify({
                     agreementId,
                     role: "landlord",
-                    landlordEmail: user.email, // guaranteed not undefined here
+                    landlordEmail: user.email,
                 }),
             });
 
@@ -32,14 +31,11 @@ export default function LeaseSigningPage() {
                 console.error("Failed to get signing URL", data);
             }
         })();
-    }, [agreementId, user?.email]); // 👈 depend on user?.email
-
-
+    }, [agreementId, user?.email]);
 
     return (
         <div className="max-w-5xl mx-auto mt-10 bg-white shadow-lg rounded-xl p-6">
             <h1 className="text-2xl font-bold mb-6">Lease Signing</h1>
-
             {!signUrl ? (
                 <p className="text-gray-600 text-sm">Preparing signing session...</p>
             ) : (
@@ -50,5 +46,13 @@ export default function LeaseSigningPage() {
                 />
             )}
         </div>
+    );
+}
+
+export default function LeaseSigningPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <LeaseSigningPageContent />
+        </Suspense>
     );
 }
