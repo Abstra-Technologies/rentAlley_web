@@ -40,6 +40,7 @@ const TaskWidget = dynamic(() => import("../landlord/widgets/taskToDo"), {
 import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
 import TenantActivity from "../landlord/widgets/TenantActivity";
 import ProspectiveTenantsWidget from "../landlord/widgets/leads";
+import LeaseWidget from "../landlord/analytics/leaseCountWidget";
 
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -47,6 +48,7 @@ const Chart = dynamic(() => import("react-apexcharts"), {
 });
 
 const LandlordPropertyChart = () => {
+  // @ts-ignore
   const { user, fetchSession } = useAuthStore();
   const router = useRouter();
   const [monthlyVisits, setMonthlyVisits] = useState([]);
@@ -325,7 +327,8 @@ const LandlordPropertyChart = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           <div className="bg-white rounded-xl shadow-sm p-5">
-            <PropertyTypeChart landlordId={user?.landlord_id} />
+            {/*<PropertyTypeChart landlordId={user?.landlord_id} />*/}
+            <LeaseWidget landlord_id={user?.landlord_id} />
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-5">

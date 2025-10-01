@@ -141,40 +141,52 @@ const useAuthStore = create(
 
       logout: () => set({ user: null, admin: null, loading: false }),
 
-      fetchSession: async () => {
-        try {
-          set({ loading: true });
-          const response = await fetch("/api/auth/me", {
-            method: "GET",
-            credentials: "include",
-          });
+        fetchSession: async () => {
+            try {
+                set({ loading: true });
+                const response = await fetch("/api/auth/me", {
+                    method: "GET",
+                    credentials: "include",
+                });
 
-          if (!response.ok) {
-            set({ user: null, admin: null, loading: false });
-            return;
-          }
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    set({ user: null, admin: null, loading: false });
+                    if (response.status === 401) {
+                        throw { status: 401, message: "Session expired or invalid token" };
+                    } else if (response.status === 403) {
+                        throw { status: 403, message: `Account ${errorData.error}` };
+                    } else if (response.status === 404) {
+                        throw { status: 404, message: "User or admin not found" };
+                    } else {
+                        throw { status: response.status, message: errorData.error || "Failed to validate session" };
+                    }
+                }
 
-          const data = await response.json();
+                const data = await response.json();
 
-          if (data.admin_id) {
-            set((state) => ({
-              admin: state.decryptAdminData(data),
-              user: null,
-              loading: false,
-            }));
-          } else if (data.user_id) {
-            set((state) => ({
-              user: state.decryptUserData(data),
-              admin: null,
-              loading: false,
-            }));
-          } else {
-            set({ user: null, admin: null, loading: false });
-          }
-        } catch (error) {
-          set({ user: null, admin: null, loading: false });
-        }
-      },
+                if (data.admin_id) {
+                    set((state) => ({
+                        admin: state.decryptAdminData(data),
+                        user: null,
+                        loading: false,
+                    }));
+                } else if (data.user_id) {
+                    set((state) => ({
+                        user: state.decryptUserData(data),
+                        admin: null,
+                        loading: false,
+                    }));
+                } else {
+                    set({ user: null, admin: null, loading: false });
+                    throw { status: 401, message: "No valid session data found" };
+                }
+            } catch (error: any) {
+                set({ user: null, admin: null, loading: false });
+                console.error("[AuthStore] Session fetch error:", error);
+                throw error; // Re-throw to allow ClientLayout to handle
+            }
+        },
 
       signOut: async () => {
         try {
