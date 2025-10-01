@@ -1,5 +1,4 @@
 
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
@@ -19,7 +18,7 @@ export async function GET(
         );
     }
 
-    console.log("lease_id api:", agreement_id);
+    console.log("agreement_id api:", agreement_id);
 
     try {
         // 🔑 Lease + Property + Unit + Tenant
@@ -36,12 +35,15 @@ export async function GET(
           la.is_advance_payment_paid,
           la.grace_period_days,
           la.late_penalty_amount,
-#           la.billing_due_day,
+          la.billing_due_day,
           p.property_name,
           u.unit_name,
+          u.rent_amount,
           t.tenant_id,
           usr.firstName AS enc_firstName,
-          usr.lastName AS enc_lastName
+          usr.lastName AS enc_lastName,
+          usr.email AS enc_email,  
+          usr.phoneNumber as enc_phoneNumber
        FROM LeaseAgreement la
        JOIN Unit u ON la.unit_id = u.unit_id
        JOIN Property p ON u.property_id = p.property_id
@@ -50,7 +52,8 @@ export async function GET(
        WHERE la.agreement_id = ?;`,
             [agreement_id]
         );
-// @ts-ignore
+
+        // @ts-ignore
         if (!leaseRows || leaseRows.length === 0) {
             return NextResponse.json({ message: "Lease not found" }, { status: 404 });
         }
@@ -61,11 +64,19 @@ export async function GET(
         // 🧑‍🤝‍🧑 Decrypt tenant name
         let tenantFirstName = "";
         let tenantLastName = "";
+        let tenantEmail = "";
+        let tenantPhoneNumber = "";
         try {
             // @ts-ignore
             tenantFirstName = decryptData(JSON.parse(lease.enc_firstName), SECRET_KEY);
             // @ts-ignore
             tenantLastName = decryptData(JSON.parse(lease.enc_lastName), SECRET_KEY);
+            // @ts-ignore
+            tenantEmail = decryptData(JSON.parse(lease.enc_email), SECRET_KEY);
+            // @ts-ignore
+            tenantPhoneNumber = lease.enc_phoneNumber
+                ? decryptData(JSON.parse(lease.enc_phoneNumber), SECRET_KEY)
+                : lease.enc_phoneNumber || ""; // Fallback if phoneNumber is not encrypted
         } catch (err) {
             console.error("Decryption failed for tenant name:", err);
         }
@@ -85,20 +96,6 @@ export async function GET(
             [agreement_id]
         );
 
-        // 💳 Payments
-       //  const [paymentRows] = await db.execute(
-       //      `SELECT
-       //    payment_id,
-       //    amount,
-       //    method,
-       //    paid_on,
-       //    status
-       // FROM Payment
-       // WHERE lease_id = ?
-       // ORDER BY paid_on DESC;`,
-       //      [agreement_id]
-       //  );
-
         // ✅ Response
         return NextResponse.json(
             {
@@ -110,7 +107,8 @@ export async function GET(
                 end_date: lease.end_date,
                 lease_status: lease.lease_status,
                 agreement_url: lease.agreement_url,
-
+                email: tenantEmail,
+                phoneNumber: tenantPhoneNumber,
                 // Financial terms
                 security_deposit_amount: lease.security_deposit_amount,
                 advance_payment_amount: lease.advance_payment_amount,
@@ -118,11 +116,11 @@ export async function GET(
                 is_advance_payment_paid: lease.is_advance_payment_paid,
                 grace_period_days: lease.grace_period_days,
                 late_penalty_amount: lease.late_penalty_amount,
-                // billing_due_day: lease.billing_due_day,
+                billing_due_day: lease.billing_due_day,
+                rent_amount: lease.rent_amount,
 
                 // Related data
                 pdcs: pdcRows,
-                // payments: paymentRows,
             },
             { status: 200 }
         );
