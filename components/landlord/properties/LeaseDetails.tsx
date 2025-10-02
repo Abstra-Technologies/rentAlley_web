@@ -309,6 +309,31 @@ const LeaseDetails = ({ unitId }) => {
     }
   };
 
+  const handleUploadLease = async () => {
+    try {
+      const payload = {
+        tenantName: tenant ? `${tenant?.firstName} ${tenant?.lastName}` : "Tenant",
+        tenantEmail: tenant?.email || "",
+        propertyName,
+        unitName,
+        startDate,
+        endDate,
+        unitId,
+        monthlyRent: lease?.rent_amount || null,
+        securityDeposit: lease?.sec_deposit || null,
+      };
+
+      // ✅ Save payload locally so scan page can retrieve it
+      localStorage.setItem("lease_upload_payload", JSON.stringify(payload));
+
+      // Redirect with only unitId
+      router.push(`/pages/lease/scan/${unitId}`);
+    } catch (err) {
+      console.error("Error preparing upload lease:", err);
+      Swal.fire("Error", "Failed to prepare upload lease", "error");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
       {/* Enhanced Back Button */}
@@ -598,10 +623,10 @@ const LeaseDetails = ({ unitId }) => {
                       <h3 className="font-semibold text-gray-800 mb-4">Lease Document</h3>
 
                       {lease?.agreement_url ? (
-                          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 flex items-center justify-between">
-                            <div>
+                          <>
+                            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                               <p className="font-semibold text-blue-800 mb-1">
-                                Current Lease Agreement
+                                Lease Agreement File
                               </p>
                               <Link
                                   href={lease.agreement_url}
@@ -609,23 +634,53 @@ const LeaseDetails = ({ unitId }) => {
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
                               >
-                                View Agreement Document
+                                View Document
                               </Link>
                             </div>
-                            <button
-                                onClick={handleDeleteLease}
-                                className="ml-4 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg shadow-sm transition"
-                            >
-                              Delete
-                            </button>
-                          </div>
+
+                            {/* ✅ Terminate button shown BELOW the file card */}
+                            {lease?.start_date && lease?.end_date && (
+                                <div className="mt-4">
+                                  <button
+                                      onClick={() => {
+                                        Swal.fire({
+                                          title: "Terminate Lease?",
+                                          text: "This will mark the lease as terminated but keep a record for history.",
+                                          icon: "warning",
+                                          showCancelButton: true,
+                                          confirmButtonColor: "#d33",
+                                          cancelButtonColor: "#3085d6",
+                                          confirmButtonText: "Yes, terminate it",
+                                        }).then(async (result) => {
+                                          if (result.isConfirmed) {
+                                            try {
+                                              await fetch("/api/leaseAgreement/terminateLease", {
+                                                method: "PUT",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ unit_id: unitId }),
+                                              });
+
+                                              Swal.fire("Terminated!", "Lease has been terminated.", "success");
+                                              fetchLeaseDetails?.();
+                                            } catch (error) {
+                                              console.error("Error terminating lease:", error);
+                                              Swal.fire("Error!", "Failed to terminate lease.", "error");
+                                            }
+                                          }
+                                        });
+                                      }}
+                                      className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-lg shadow-md transition"
+                                  >
+                                    Terminate Lease
+                                  </button>
+                                </div>
+                            )}
+                          </>
                       ) : (
                           <>
                             {/* Date Input Section */}
                             <div className="mb-6">
-                              <h3 className="font-semibold text-gray-800 mb-4">
-                                Set Lease Dates
-                              </h3>
+                              <h3 className="font-semibold text-gray-800 mb-4">Set Lease Dates</h3>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -675,7 +730,6 @@ const LeaseDetails = ({ unitId }) => {
                               >
                                 Upload Lease
                               </button>
-
                             </div>
 
                             {/* Action Buttons */}
@@ -692,16 +746,16 @@ const LeaseDetails = ({ unitId }) => {
                               {leaseMode === "upload" && (
                                   <button
                                       className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-xl"
-                                      onClick={() => router.push(`/pages/lease/scan/${unitId}`)}
+                                      onClick={handleUploadLease}
                                   >
                                     Upload Lease Agreement
                                   </button>
                               )}
-
                             </div>
                           </>
                       )}
                     </div>
+
                   </>
               )}
             </div>
@@ -760,6 +814,5 @@ const LeaseDetails = ({ unitId }) => {
     </div>
   );
 };
-
 
 export default LeaseDetails;
