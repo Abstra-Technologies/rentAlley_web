@@ -162,13 +162,13 @@ export async function POST(req: NextRequest) {
                 ]
             );
         } else {
-            await connection.execute(
+            const [insertResult]: any = await connection.execute(
                 `INSERT INTO LeaseAgreement
-                 (tenant_id, unit_id, start_date, end_date, agreement_url,
-                  security_deposit_amount, advance_payment_amount,
-                  grace_period_days, late_penalty_amount, billing_due_day,
-                  created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+     (tenant_id, unit_id, start_date, end_date, agreement_url,
+      security_deposit_amount, advance_payment_amount,
+      grace_period_days, late_penalty_amount, billing_due_day,
+      created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
                 [
                     tenant_id,
                     unitId,
@@ -182,9 +182,8 @@ export async function POST(req: NextRequest) {
                     Number(billingDueDay) || 1,
                 ]
             );
-            // @ts-ignore
-            // agreement_id = (await connection.query("SELECT LAST_INSERT_ID() as id"))[0][0].id;
             agreement_id = insertResult.insertId;
+
         }
 
         if (agreement_id) {

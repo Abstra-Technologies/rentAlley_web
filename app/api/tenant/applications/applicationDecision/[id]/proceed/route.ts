@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import webpush from 'web-push';
+import webpush from "web-push";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
@@ -22,7 +22,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { decision } = await req.json();
 
     if (!["yes", "no"].includes(decision)) {
-        return NextResponse.json({ error: "Invalid decision value. Must be 'yes' or 'no'." }, { status: 400 });
+        return NextResponse.json(
+            { error: "Invalid decision value. Must be 'yes' or 'no'." },
+            { status: 400 }
+        );
     }
 
     try {
@@ -33,7 +36,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         );
 
         if (rows.length === 0) {
-            return NextResponse.json({ error: "Application not found or not approved." }, { status: 404 });
+            return NextResponse.json({
+                error: "Application not found or not approved.",
+            }, { status: 404 });
         }
 
         const prospective = rows[0];
@@ -47,10 +52,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         // Fetch landlord info from property/unit
         const [landlordRows]: any = await db.query(
             `SELECT l.user_id, p.property_name, u.unit_name, u.unit_id, p.property_id
-             FROM Unit u
-             JOIN Property p ON u.property_id = p.property_id
-             JOIN Landlord l ON p.landlord_id = l.landlord_id
-             WHERE u.unit_id = ?`,
+       FROM Unit u
+       JOIN Property p ON u.property_id = p.property_id
+       JOIN Landlord l ON p.landlord_id = l.landlord_id
+       WHERE u.unit_id = ?`,
             [unitId]
         );
 
@@ -62,7 +67,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
             let notifTitle: string;
             let notifBody: string;
-            let url: string = `/pages/landlord/property-listing/view-unit/${propertyId}/unit-details/${unitId}`;
+            const url: string = `/pages/landlord/property-listing/view-unit/${propertyId}/unit-details/${unitId}`;
 
             if (decision === "yes") {
                 notifTitle = `Prospective Tenant Proceed - ${propertyName} - ${unitName}`;
@@ -72,18 +77,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
                 notifBody = `A prospective tenant has decided not to proceed with the application for your unit (${propertyName} - ${unitName}).`;
             }
 
-            // Save notification
+            // Save notification with URL
             await db.query(
-                `INSERT INTO Notification (user_id, title, body, is_read, created_at)
-                 VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)`,
-                [landlordUserId, notifTitle, notifBody]
+                `INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
+         VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
+                [landlordUserId, notifTitle, notifBody, url]
             );
 
             // Fetch push subscriptions
             const [subs]: any = await db.query(
                 `SELECT endpoint, p256dh, auth 
-                 FROM user_push_subscriptions 
-                 WHERE user_id = ?`,
+         FROM user_push_subscriptions 
+         WHERE user_id = ?`,
                 [landlordUserId]
             );
 
@@ -124,6 +129,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         return NextResponse.json({ success: true, proceeded: decision });
     } catch (error) {
         console.error("Error updating tenant decision:", error);
-        return NextResponse.json({ error: "Database server error." }, { status: 500 });
+        return NextResponse.json(
+            { error: "Database server error." },
+            { status: 500 }
+        );
     }
 }

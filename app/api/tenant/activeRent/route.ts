@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
         `SELECT
            agreement_id, start_date, end_date,
            is_advance_payment_paid, is_security_deposit_paid,
+           advance_payment_amount, security_deposit_amount,
            unit_id, tenant_id, status
          FROM LeaseAgreement
          WHERE tenant_id = ?
@@ -57,8 +58,10 @@ export async function GET(req: NextRequest) {
 
       const [pendingPayment] = await db.query(
           `SELECT COUNT(*) as pending_count
-   FROM Payment
-   WHERE agreement_id = ? AND payment_status = 'pending' AND payment_type = 'initial_payment'`,
+           FROM Payment
+           WHERE agreement_id = ?
+             AND payment_status = 'pending'
+             AND payment_type = 'initial_payment'`,
           [lease.agreement_id]
       );
 
@@ -69,16 +72,19 @@ export async function GET(req: NextRequest) {
       const unit = unitDetails[0];
 
       const [unitPhotos] = await db.query(
-          `SELECT photo_url FROM UnitPhoto WHERE unit_id = ? ORDER BY id ASC`,
+          `SELECT photo_url
+           FROM UnitPhoto
+           WHERE unit_id = ?
+           ORDER BY id ASC`,
           [lease.unit_id]
       );
 
+      // decrypt photos if any
       // @ts-ignore
       const decryptedPhotos = unitPhotos.length > 0
-          // @ts-ignore
           ? unitPhotos.map((photo) => {
             try {
-              return decryptData(JSON.parse(photo.photo_url), SECRET_KEY!);
+              return decryptData(JSON.parse(photo.photo_url), SECRET_KEY);
             } catch (e) {
               console.error("Failed to decrypt unit photo:", e);
               return null;
@@ -92,16 +98,23 @@ export async function GET(req: NextRequest) {
         agreement_id: lease.agreement_id,
         start_date: lease.start_date,
         end_date: lease.end_date,
+        lease_status: lease.status,
+
+        // ✅ Initial Payments
+        advance_payment_amount: lease.advance_payment_amount,
+        security_deposit_amount: lease.security_deposit_amount,
         is_advance_payment_paid: lease.is_advance_payment_paid,
         is_security_deposit_paid: lease.is_security_deposit_paid,
-        lease_status: lease.status, // ✅ Add lease status here
+
+        // ✅ Pending proof flag
+        has_pending_proof: hasPendingProof,
+
+        // ✅ Location details
         street: unit.street,
         brgy_district: unit.brgy_district,
         city: unit.city,
         province: unit.province,
         zip_code: unit.zip_code,
-        has_pending_proof: hasPendingProof,
-
       });
     }
 
