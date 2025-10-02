@@ -31,23 +31,23 @@ export async function POST(req: NextRequest) {
     const occupation = formData.get("occupation")?.toString();
     const employment_type = formData.get("employment_type")?.toString();
     const monthly_income = formData.get("monthly_income")?.toString();
-
+    const birthDate = formData.get("birthDate");
     const validIdFile = formData.get("valid_id") as File | null;
     const incomeFile = formData.get("income_proof") as File | null;
-
+    const phoneNumber = formData.get("phoneNumber");
     if (!user_id || !tenant_id || !unit_id || !address || !occupation || !employment_type || !monthly_income) {
       return NextResponse.json({ message: "Missing required fields." }, { status: 400 });
     }
 
-    // 1️⃣ Update User table
+    //  Update User table
     await db.query(
         `UPDATE User 
-       SET address = ?, occupation = ?, updatedAt = NOW() 
+       SET address = ?, occupation = ?, birthDate =?, phoneNumber =?, updatedAt = NOW() 
        WHERE user_id = ?`,
-        [address, occupation, user_id]
+        [address, occupation, birthDate, phoneNumber, user_id]
     );
 
-    // 2️⃣ Update Tenant table
+    // Update Tenant table
     await db.query(
         `UPDATE Tenant 
        SET employment_type = ?, monthly_income = ?, updatedAt = NOW() 
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         [employment_type, monthly_income, tenant_id]
     );
 
-    // 3️⃣ Upload files to S3
+    //  Upload files to S3
     let validIdUrl: string | null = null;
     let incomeProofUrl: string | null = null;
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       incomeProofUrl = JSON.stringify(encryptData(url, process.env.ENCRYPTION_SECRET!));
     }
 
-    // 4️⃣ Insert or update ProspectiveTenant
+    //  Insert or update ProspectiveTenant
     const [existing]: any = await db.query(
         `SELECT id FROM ProspectiveTenant WHERE tenant_id = ? AND unit_id = ?`,
         [tenant_id, unit_id]
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ message: "Application submitted successfully!" }, { status: 201 });
   } catch (error: any) {
-    console.error("❌ [Submit Application] Error:", error);
+    console.error("[Submit Application] Error:", error);
     return NextResponse.json(
         { message: "Failed to submit application", error: error.message },
         { status: 500 }

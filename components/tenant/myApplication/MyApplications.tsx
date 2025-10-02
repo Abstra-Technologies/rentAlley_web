@@ -36,7 +36,7 @@ export default function MyApplications({ tenantId }: { tenantId: number }) {
   const [error, setError] = useState("");
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10); // number of applications per page
+  const [pageSize] = useState(10);
 
   useEffect(() => {
     const fetchApplications = async () => {

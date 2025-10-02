@@ -149,6 +149,8 @@ const TenantApplicationForm = () => {
       fd.append("occupation", formData.occupation);
       fd.append("employment_type", formData.employment_type);
       fd.append("monthly_income", formData.monthly_income);
+      fd.append("birthDate", formData.birthDate);
+      fd.append("phoneNumber", formData.phoneNumber);
 
       if (validIdFile) {
         fd.append("valid_id", validIdFile);
@@ -294,23 +296,51 @@ const TenantApplicationForm = () => {
                     label="Birth Date"
                     type="date"
                     value={formData.birthDate}
-                    onChange={(e) =>
-                        setFormData({ ...formData, birthDate: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const selectedDate = new Date(e.target.value);
+                      const today = new Date();
+                      const age = today.getFullYear() - selectedDate.getFullYear();
+                      const monthDiff = today.getMonth() - selectedDate.getMonth();
+                      const dayDiff = today.getDate() - selectedDate.getDate();
+
+                      // Check if user is at least 18 years old
+                      if (
+                          age > 18 ||
+                          (age === 18 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
+                      ) {
+                        setFormData({ ...formData, birthDate: e.target.value });
+                      } else {
+                        // Optionally, reset the field or show an error
+                        setFormData({ ...formData, birthDate: '' });
+                        alert('You must be 18 or older.');
+                      }
+                    }}
                     InputLabelProps={{ shrink: true }}
+                    inputProps={{ max: new Date().toISOString().split('T')[0] }} // Prevents future dates
                     fullWidth
                 />
                 <TextField
                     label="Mobile Number"
+                    type="tel"
                     value={formData.phoneNumber}
-                    onChange={(e) =>
-                        setFormData({ ...formData, phoneNumber: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow only digits and ensure length is 11 to 12
+                      if (/^\d{0,12}$/.test(value)) {
+                        setFormData({ ...formData, phoneNumber: value });
+                      }
+                    }}
+                    inputProps={{
+                      pattern: "\\d{11,12}",
+                      maxLength: 12,
+                      minLength: 11
+                    }}
                     fullWidth
                 />
                 <TextField
                     label="Email"
                     type="email"
+                    InputProps={{ readOnly: true }}
                     value={formData.email}
                     onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })

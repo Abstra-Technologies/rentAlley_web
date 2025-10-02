@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
       firstName: safeDecrypt(tenant.firstName),
       lastName: safeDecrypt(tenant.lastName),
       email: safeDecrypt(tenant.email),
+      birthDate: safeDecrypt(tenant.birthDate),
       phoneNumber: safeDecrypt(tenant.phoneNumber),
       profilePicture: safeDecrypt(tenant.profilePicture),
       valid_id: safeDecrypt(tenant.valid_id),
@@ -68,7 +69,6 @@ export async function GET(req: NextRequest) {
       occupation: tenant.occupation,
       employment_type: tenant.employment_type,
       monthly_income: tenant.monthly_income,
-      birthDate: safeDecrypt(tenant.birthDate),
     }));
 
     // if tenant_id is provided, return single object instead of array
@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(decryptedRows, { status: 200 });
+
   } catch (error: any) {
     console.error("❌ Database error:", error);
     return NextResponse.json(

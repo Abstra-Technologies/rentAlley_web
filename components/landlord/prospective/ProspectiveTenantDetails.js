@@ -90,9 +90,9 @@ const ProspectiveTenantDetails = () => {
       const response = await axios.get(
         `/api/landlord/prospective/interestedTenants?tenant_id=${tenantId}`
       );
-
       if (response.data) {
         setTenant(response.data);
+        console.log('response data:', response.data);
       }
     } catch (error) {
       console.error("Error fetching tenant details:", error);
