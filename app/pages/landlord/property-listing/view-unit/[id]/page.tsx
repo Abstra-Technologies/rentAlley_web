@@ -243,8 +243,34 @@ const ViewUnitPage = () => {
   const currentUnits = units?.slice(startIndex, startIndex + itemsPerPage) || [];
 
   const handleReviewBilling = () => {
-    router.push(`/pages/landlord/billing/reviewBilling/${property_id}`);
+    Swal.fire({
+      title: "Review Billing?",
+      text: "You will be redirected to the billing review page for this property.",
+      icon: "info",
+      showCancelButton: true,
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Proceed",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: "Redirecting...",
+          text: "Please wait while we take you to the billing review.",
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          },
+        });
+
+        setTimeout(() => {
+          Swal.close();
+          router.push(`/pages/landlord/billing/reviewBilling/${property_id}`);
+        }, 1200);
+      }
+    });
   };
+
 
   if (error) {
     return (
@@ -310,7 +336,7 @@ const ViewUnitPage = () => {
               </div>
             )}
 
-            {/* Status Indicators - Stacked on Mobile */}
+            {/* Status Indicators fo billing - Stacked on Mobile */}
             <div className="space-y-3">
               {hasBillingForMonth && (
                 <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl border border-green-200">
