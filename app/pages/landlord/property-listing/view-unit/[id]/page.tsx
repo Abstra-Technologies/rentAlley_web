@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import useSWR, { mutate } from "swr";
+import { mutate } from "swr";
 import axios from "axios";
 import Swal from "sweetalert2";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
@@ -10,57 +10,56 @@ import {
   HomeIcon,
   PlusCircleIcon,
   ClipboardDocumentListIcon,
-  PencilSquareIcon,
-  TrashIcon,
   ExclamationCircleIcon,
-  XMarkIcon,
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 import useAuthStore from "../../../../../../zustand/authStore";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { FaCheckCircle } from "react-icons/fa";
-import PropertyDocumentsTab from "../../../../../../components/landlord//properties/PropertyDocumentsTab";
-import FBShareButton from "../../../../../../components/landlord/properties/shareToFacebook";
+import PropertyDocumentsTab from "../../../../../../components/landlord/properties/PropertyDocumentsTab";
 import UnitsTab from "../../../../../../components/landlord/properties/UnitsTab";
-const fetcher = (url) => axios.get(url).then((res) => res.data);
 import { BackButton } from "@/components/navigation/backButton";
 import PropertyRatesModal from "@/components/landlord/properties/utilityRatesSetter";
 import PropertyConfiguration from "@/components/landlord/properties/propertyConfigSettings";
 import { Pagination } from "@mui/material";
+import { usePropertyData } from "@/hooks/usePropertyData";
+import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 
 const ViewUnitPage = () => {
   const { id } = useParams();
-  const property_id = id;
+  const property_id = id as string;
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
   const startIndex = (page - 1) * itemsPerPage;
   const router = useRouter();
   const { fetchSession, user, admin } = useAuthStore();
   const landlord_id = user?.landlord_id;
-  const [isNavigating, setIsNavigating] = useState(false);
+
   const [billingMode, setBillingMode] = useState(false);
   const [billingForm, setBillingForm] = useState({
     billingPeriod: "",
-    electricityConsumption: "", // ⚡ Highlighted in UI
-    electricityTotal: "",       // secondary
-    waterConsumption: "",       //  Highlighted in UI
-    waterTotal: "",             // secondary
+    electricityConsumption: "",
+    electricityTotal: "",
+    waterConsumption: "",
+    waterTotal: "",
   });
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [billingData, setBillingData] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [billingData, setBillingData] = useState<any>(null);
   const [hasBillingForMonth, setHasBillingForMonth] = useState(false);
-  const [unitBillingStatus, setUnitBillingStatus] = useState({});
-  const [propertyDetails, setPropertyDetails] = useState(null);
+  const [unitBillingStatus, setUnitBillingStatus] = useState<Record<string, boolean>>({});
+  const [propertyDetails, setPropertyDetails] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("units");
 
-  // Billing Status and rates deta
+  //  get property, subscription, and units with hook
+  const { property, subscription, units, error, isLoading, loadingSubscription } =
+      usePropertyData(property_id, landlord_id);
+
+  console.log('units data:', units);
+
+  // Billing status + property details
   useEffect(() => {
     if (!property_id) return;
 
-    async function fetchBillingData_PropertyUtility() {
+    async function fetchBillingData() {
       try {
         const response = await axios.get(
             `/api/landlord/billing/checkPropertyBillingStats`,
@@ -69,10 +68,8 @@ const ViewUnitPage = () => {
 
         if (response.data.billingData) {
           const data = response.data.billingData;
-
           setBillingData(data);
           setHasBillingForMonth(true);
-
           setBillingForm({
             billingPeriod: data.billing_period || "",
             electricityTotal: data.electricity?.total || "",
@@ -85,35 +82,43 @@ const ViewUnitPage = () => {
           setHasBillingForMonth(false);
         }
       } catch (error: any) {
-        console.error(
-            "Failed to fetch billing data:",
-            error.response?.data || error.message
-        );
+        console.error("Failed to fetch billing data:", error.message);
       }
     }
 
-    fetchBillingData_PropertyUtility();
+    async function fetchPropertyDetails() {
+      try {
+        const response = await axios.get("/api/propertyListing/getPropDetailsById", {
+          params: { property_id },
+        });
+        setPropertyDetails(response.data.property);
+      } catch (error) {
+        console.error("Failed to fetch property details:", error);
+      }
+    }
+
+    fetchBillingData();
     fetchPropertyDetails();
   }, [property_id]);
 
+  // ensure session is loaded
   useEffect(() => {
     if (!user && !admin) {
       fetchSession();
     }
   }, [user, admin]);
 
-  const handlePageChange = (event, value) => {
+  const handlePageChange = (event: any, value: number) => {
     setPage(value);
-    window.scrollTo({ top: 0, behavior: "smooth" }); // smooth scroll to top
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setBillingForm({ ...billingForm, [name]: value });
   };
 
-  //  added manual and guided billing
-  const handleSaveOrUpdateBilling = async (e) => {
+  const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const url = hasBillingForMonth
@@ -123,63 +128,33 @@ const ViewUnitPage = () => {
       await axios({
         method: hasBillingForMonth ? "PUT" : "POST",
         url,
-        data: {
-          property_id: property_id, // always property-level now
-          ...billingForm,
-        },
+        data: { property_id, ...billingForm },
       });
 
       Swal.fire("Success", "Billing saved successfully.", "success");
       setIsModalOpen(false);
     } catch (error) {
-      console.error(error);
       Swal.fire("Error", "Failed to save billing.", "error");
     }
   };
 
-  // get property Overall Details
-  const { data: property } = useSWR(
-    id ? `/api/propertyListing/viewDetailedProperty/${property_id}` : null,
-    fetcher
-  );
-
-  // get the subscription status
-  const { data: subscription, isLoading: loadingSubscription } = useSWR(
-    `/api/landlord/subscription/active/${landlord_id}`,
-    fetcher
-  );
-  //  get property units
-  const {
-    data: units,
-    error,
-    isLoading,
-  } = useSWR(
-    id ? `/api/unitListing/getUnitListings?property_id=${property_id}` : null,
-    fetcher
-  );
-
-  //  Get Unit Billing Status
+  // Fetch billing status for each unit
   useEffect(() => {
     const fetchUnitBillingStatus = async () => {
       if (!units || units.length === 0) return;
-
-      const statusMap = {};
+      const statusMap: Record<string, boolean> = {};
 
       await Promise.all(
-        units.map(async (unit) => {
-          try {
-            const response = await axios.get(
-              `/api/landlord/billing/getUnitDetails/billingStatus?unit_id=${unit.unit_id}`
-            );
-            statusMap[unit.unit_id] =
-              response.data?.hasBillForThisMonth || false;
-          } catch (error) {
-            console.error(
-              `Error fetching billing status for unit ${unit.unit_id}`,
-              error
-            );
-          }
-        })
+          units.map(async (unit: any) => {
+            try {
+              const response = await axios.get(
+                  `/api/landlord/billing/getUnitDetails/billingStatus?unit_id=${unit.unit_id}`
+              );
+              statusMap[unit.unit_id] = response.data?.hasBillForThisMonth || false;
+            } catch (error) {
+              console.error(`Error fetching billing status for unit ${unit.unit_id}`, error);
+            }
+          })
       );
 
       setUnitBillingStatus(statusMap);
@@ -188,9 +163,9 @@ const ViewUnitPage = () => {
     fetchUnitBillingStatus();
   }, [units]);
 
-  const handleEditUnit = (unitId) => {
+  const handleEditUnit = (unitId: number) => {
     router.push(
-      `/pages/landlord/property-listing/view-unit/${property_id}/edit-unit/${unitId}`
+        `/pages/landlord/property-listing/view-unit/${property_id}/edit-unit/${unitId}`
     );
   };
 
@@ -228,12 +203,12 @@ const ViewUnitPage = () => {
     setTimeout(() => {
       Swal.close();
       router.push(
-        `/pages/landlord/property-listing/view-unit/${property_id}/create-unit?property_id=${id}`
+          `/pages/landlord/property-listing/view-unit/${property_id}/create-unit?property_id=${id}`
       );
     }, 1500);
   };
 
-  const handleDeleteUnit = async (unitId) => {
+  const handleDeleteUnit = async (unitId: number) => {
     const result = await Swal.fire({
       title: "Are you sure?",
       text: "This action cannot be undone!",
@@ -254,65 +229,34 @@ const ViewUnitPage = () => {
         mutate(`/api/propertyListing/property/${property_id}`);
         mutate(`/api/unitListing/unit?property_id=${property_id}`);
       } else {
-        Swal.fire(
-          "Error",
-          "Failed to delete the unit. Please try again.",
-          "error"
-        );
+        Swal.fire("Error", "Failed to delete the unit. Please try again.", "error");
       }
-    } catch (error) {
-      console.error("Error deleting unit:", error);
-
+    } catch (error: any) {
       let errorMessage = "Failed to delete the unit. Please try again.";
-
-      if (error.response && error.response.data?.error) {
-        if (
-          error.response.data.error ===
-          "Cannot delete unit with active lease agreement"
-        ) {
-          errorMessage =
-            "This unit cannot be deleted because it has an active lease.";
-        }
+      if (error.response?.data?.error === "Cannot delete unit with active lease agreement") {
+        errorMessage = "This unit cannot be deleted because it has an active lease.";
       }
-
-      await Swal.fire("Error", errorMessage, "error");
+      Swal.fire("Error", errorMessage, "error");
     }
   };
 
-  async function fetchPropertyDetails() {
-    try {
-      const response = await axios.get(
-        "/api/propertyListing/getPropDetailsById",
-        {
-          params: { property_id },
-        }
-      );
-      setPropertyDetails(response.data.property);
-      console.log("property details:", response.data.property);
-    } catch (error) {
-      console.error("Failed to fetch property details:", error);
-    }
-  }
-
   const currentUnits = units?.slice(startIndex, startIndex + itemsPerPage) || [];
 
-  //  only applicsable for both non-submtered utility.
   const handleReviewBilling = () => {
     router.push(`/pages/landlord/billing/reviewBilling/${property_id}`);
   };
 
-  if (error)
+  if (error) {
     return (
-      <LandlordLayout>
-        <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
-          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
-            <p className="text-red-500 text-center">
-              Failed to load units. Please try again later.
-            </p>
-          </div>
-        </div>
-      </LandlordLayout>
+        <LandlordLayout>
+          <ErrorBoundary
+              error="Failed to load units. Please try again later."
+              onRetry={() => window.location.reload()}
+          />
+        </LandlordLayout>
     );
+  }
+
 
   return (
     <LandlordLayout>
@@ -451,15 +395,6 @@ const ViewUnitPage = () => {
                   <span className="text-sm">Set Utility Rate</span>
                 </button>
               )}
-
-            {/* FB Share Button */}
-            {/*{propertyDetails && (*/}
-            {/*  <div className="flex items-center">*/}
-            {/*    <FBShareButton*/}
-            {/*      url={`https://rent-alley-web.vercel.app/pages/find-rent/${propertyDetails?.property_id}`}*/}
-            {/*    />*/}
-            {/*  </div>*/}
-            {/*)}*/}
 
           </div>
 

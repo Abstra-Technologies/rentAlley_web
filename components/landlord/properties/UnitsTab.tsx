@@ -9,6 +9,7 @@ import {
 import { FaCheckCircle } from "react-icons/fa";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import LandlordUnitStatusBanner from "./UnitOccupancyStatusBar";
 
 interface UnitsTabProps {
   units: any[];
@@ -104,24 +105,12 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                   </div>
                 )}
 
-                {/* Occupancy Status */}
-                <div className="absolute top-3 right-3">
-                  <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full shadow-md ${
-                      unit?.status === "Occupied"
-                        ? "bg-green-100 text-green-800"
-                        : unit?.hasPendingLease
-                        ? "bg-amber-100 text-amber-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {unit?.status === "Occupied"
-                      ? "Occupied"
-                      : unit?.hasPendingLease
-                      ? "Pending Lease"
-                      : "Unoccupied"}
-                  </span>
-                </div>
+                {/* Occupancy Status - base on lease */}
+                  <LandlordUnitStatusBanner
+                      status={unit?.status}
+                      hasPendingLease={unit?.hasPendingLease}
+                  />
+
               </div>
 
               {/* Content */}
