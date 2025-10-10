@@ -537,12 +537,16 @@ export default function PropertyUnitDetailedPage() {
                     },
                     {
                       label: "Security Deposit",
-                      value: `₱${unit.sec_deposit?.toLocaleString()}`,
+                      value: `${unit.sec_deposit} ${
+                        unit.sec_deposit === 1 ? "month" : "months"
+                      }`,
                       icon: <FaShieldAlt className="text-xl" />,
                     },
                     {
                       label: "Advanced Payment",
-                      value: `₱${unit.advanced_payment?.toLocaleString()}`,
+                      value: `${unit.advanced_payment} ${
+                        unit.advanced_payment === 1 ? "month" : "months"
+                      }`,
                       icon: <FaCalendarAlt className="text-xl" />,
                     },
                     ...(unit.min_stay
