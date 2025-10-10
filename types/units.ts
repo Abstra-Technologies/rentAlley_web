@@ -1,44 +1,56 @@
-// types/unit.ts
-
 /**
  * Shared Unit type used across tenant UI components
  * (cards, listings, portals).
  */
-export interface Unit {
-    unit_id: string;
-    unit_name: string;
-    unit_size: string;
-    bed_spacing: number;
-    avail_beds: number;
-    rent_amount: number;
-    furnish: string;
-    status: string;
+export interface UnitDetails {
+  unit_id: string;
+  unit_name: string;
 
-    // Initial payment fields
-    sec_deposit: number;            // Security deposit amount
-    advanced_payment: number;       // Advance payment amount
-    is_advance_payment_paid: number;   // 0 = false, 1 = true
-    is_security_deposit_paid: number;  // 0 = false, 1 = true
+  unit_size: number;
+  bed_spacing: number;
+  avail_beds: number;
+  rent_amount: number;
+  furnish: string;
+  status: string;
 
-    // Media
-    unit_photos: string[];
+  amenities: string;
+  min_stay: number;
+  late_fee: number;
+  flexipay_enabled: number;
+  accepted_payment_methods: string;
 
-    // Property info
-    property_name: string;
-    property_type: string;
-    city: string;
-    province: string;
-    street: string;
-    zip_code: string;
-    brgy_district: string;
+  sec_deposit: number;
+  advanced_payment: number;
+  is_advance_payment_paid: number;
+  is_security_deposit_paid: number;
 
-    // Lease info
-    agreement_id: string;
-    start_date: string;
-    end_date: string;
-    has_pending_proof?: boolean;
+  photos: string[];
 
-    // Optional landlord info
-    landlord_id?: string;
-    landlord_name?: string;
+  property_id: string;
+  property_name: string;
+  property_type: string;
+  property_amenities: string;
+  property_description: string;
+
+  city: string;
+  province: string;
+  street: string;
+
+  latitude: number;
+  longitude: number;
+
+  zip_code?: string;
+  brgy_district?: string;
+
+  agreement_id?: string;
+  start_date?: string;
+  end_date?: string;
+  has_pending_proof?: boolean;
+
+  landlord_id: string;
+  landlord_name: string;
+
+  landlord_contact: string;
+
+  landlord_photo: string;
 }
