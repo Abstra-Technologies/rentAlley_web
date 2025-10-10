@@ -32,7 +32,7 @@ async function generateNonSubmeteredBilling() {
         JOIN Unit un ON la.unit_id = un.unit_id
         JOIN Property p ON un.property_id = p.property_id
         LEFT JOIN LeaseAdditionalExpense e ON la.agreement_id = e.agreement_id
-        WHERE la.status = 'active'
+        WHERE la.status = 'draft'
           AND (p.water_billing_type != 'submetered' OR p.electricity_billing_type != 'submetered')
         GROUP BY la.agreement_id, la.unit_id, la.billing_due_day, un.rent_amount, un.property_id
         `

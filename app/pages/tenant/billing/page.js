@@ -15,7 +15,6 @@ function BillingContent() {
 
   useEffect(() => {
     const init = async () => {
-      console.log("[DEBUG] Initial user:", user);
       if (!user) {
         await fetchSession();
       } else {
@@ -37,8 +36,6 @@ function BillingContent() {
       </TenantLayout>
   );
 }
-
-
 
 
 export default function TenantBillingPage() {

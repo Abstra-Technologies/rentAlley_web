@@ -14,36 +14,46 @@ export default function TenantBilling({ agreement_id, user_id }) {
 
   const router = useRouter();
 
-useEffect(() => {
-  if (!user_id) {
-    return;
-  }
+  useEffect(() => {
+    if (!user_id) return;
 
-  const fetchBillingData = async () => {
-    try {
-      const res = await axios.get(`/api/tenant/billing/viewCurrentBilling`, {
-        params: { agreement_id, user_id },
-      });
+    const fetchBillingData = async () => {
+      try {
+        const res = await axios.get(`/api/tenant/billing/viewCurrentBilling`, {
+          params: { agreement_id, user_id },
+        });
 
-      const billings = res.data.billing ? [res.data.billing] : [];
+        const billings = res.data.billing
+            ? [
+              {
+                ...res.data.billing,
+                billingAdditionalCharges: res.data.billingAdditionalCharges || [],
+                leaseAdditionalExpenses: res.data.leaseAdditionalExpenses || [],
+                breakdown: res.data.breakdown || {},
+                propertyBillingTypes: res.data.propertyBillingTypes || {},
+              },
+            ]
+            : [];
 
-      const rawMeterReadings = res.data.meterReadings || {};
-      const flatReadings = [
-        ...(rawMeterReadings.water || []),
-        ...(rawMeterReadings.electricity || []),
-      ];
-// The spread syntax ... is used to extract the elements of each array into a single new array.
-      setBillingData(billings);
-      setMeterReadings(flatReadings);
-    } catch (err) {
-      setError("Failed to fetch billing data.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        const rawMeterReadings = res.data.meterReadings || {};
+        const flatReadings = [
+          ...(rawMeterReadings.water || []),
+          ...(rawMeterReadings.electricity || []),
+        ];
 
-  fetchBillingData();
-}, [agreement_id, user_id]);
+        setBillingData(billings);
+        setMeterReadings(flatReadings);
+      } catch (err) {
+        console.error(" Billing fetch error:", err);
+        setError("Failed to fetch billing data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBillingData();
+  }, [agreement_id, user_id]);
+
 
 
   const handleMayaPayment = async (amount, billing_id) => {
@@ -112,7 +122,6 @@ if (!Array.isArray(billingData) || billingData.length === 0) {
     </div>
   );
 }
-
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
@@ -177,40 +186,145 @@ if (!Array.isArray(billingData) || billingData.length === 0) {
             </div>
 
             <div className="px-6 py-4">
+
+              {/* Show Meter Readings only if property has submetered water or electricity */}
+              {(bill.water_billing_type === "submetered" ||
+                  bill.electricity_billing_type === "submetered") && (
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">
+                      Meter Readings
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {Array.isArray(meterReadings)
+                          ? meterReadings
+                              .filter((r) => r.unit_id === bill.unit_id)
+                              .map((r, i) => (
+                                  <div key={i} className="p-3 bg-gray-50 rounded-lg border">
+                                    <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                    {r.utility_type?.toUpperCase()}
+                  </span>
+                                      <span className="text-xs text-gray-500">{r.reading_date}</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <p className="text-xs text-gray-500">Previous</p>
+                                        <p className="text-sm font-medium">{r.previous_reading}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-gray-500">Current</p>
+                                        <p className="text-sm font-medium">{r.current_reading}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                              ))
+                          : <p className="text-sm text-gray-500 italic">
+                            No meter readings available.
+                          </p>}
+                    </div>
+                  </div>
+              )}
+
+              {/* Billing Breakdown */}
               <div className="mb-4">
-                <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">
-                  Meter Readings
-                </h3>
+                <h2 className="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">
+                  Billing Breakdown
+                </h2>
+                <div className="divide-y divide-gray-200 rounded-lg border">
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {Array.isArray(meterReadings)
-  ? meterReadings
-      .filter((r) => r.unit_id === bill.unit_id)
-      .map((r, i) => (
-        <div key={i} className="p-3 bg-gray-50 rounded-lg border">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-              {r.utility_type?.toUpperCase()}
-            </span>
-            <span className="text-xs text-gray-500">{r.reading_date}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <p className="text-xs text-gray-500">Previous</p>
-              <p className="text-sm font-medium">{r.previous_reading}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Current</p>
-              <p className="text-sm font-medium">{r.current_reading}</p>
-            </div>
-          </div>
-        </div>
-      ))
-  : <p className="text-sm text-gray-500 italic">No meter readings available.</p>
-}
+                  {/* Base Rent */}
+                  <div className="flex justify-between items-center p-3">
+                    <span className="text-sm text-gray-700">Base Rent</span>
+                    <span className="text-sm font-semibold text-gray-900">
+        ₱{parseFloat(bill.breakdown?.base_rent || 0).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+      </span>
+                  </div>
 
+                  {/* Advance Payment Deduction */}
+                  {bill.breakdown?.is_advance_payment_paid && bill.breakdown?.advance_payment_required > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-yellow-50">
+        <span className="text-sm text-gray-700">
+          Advance Payment Deduction ({bill.breakdown.advance_months} month
+          {bill.breakdown.advance_months > 1 ? "s" : ""})
+        </span>
+                        <span className="text-sm font-semibold text-red-600">
+          -₱{parseFloat(bill.breakdown.advance_payment_required).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+        </span>
+                      </div>
+                  )}
                 </div>
               </div>
+
+              {/* Billing Additional Charges */}
+              {bill.billingAdditionalCharges && bill.billingAdditionalCharges.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">
+                      Additional Charges or Discounts
+                    </h3>
+                    <div className="divide-y divide-gray-200 rounded-lg border">
+                      {bill.billingAdditionalCharges.map((c, idx) => (
+                          <div
+                              key={idx}
+                              className="flex justify-between items-center p-3"
+                          >
+          <span className="text-sm text-gray-700">
+            {c.charge_type}{" "}
+            <span
+                className={`ml-2 text-xs font-medium px-2 py-0.5 rounded-full ${
+                    c.charge_category === "discount"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                }`}
+            >
+              {c.charge_category}
+            </span>
+          </span>
+                            <span className="text-sm font-semibold text-gray-900">
+            ₱
+                              {parseFloat(c.amount).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+          </span>
+                          </div>
+                      ))}
+                    </div>
+                  </div>
+              )}
+
+              {/* Lease Additional Expenses */}
+          {/*    {bill.leaseAdditionalExpenses && bill.leaseAdditionalExpenses.length > 0 && (*/}
+          {/*        <div className="mb-4">*/}
+          {/*          <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">*/}
+          {/*            Lease Additional Expenses*/}
+          {/*          </h3>*/}
+          {/*          <div className="divide-y divide-gray-200 rounded-lg border">*/}
+          {/*            {bill.leaseAdditionalExpenses.map((e, idx) => (*/}
+          {/*                <div key={idx} className="flex justify-between items-center p-3">*/}
+          {/*<span className="text-sm text-gray-700">*/}
+          {/*  {e.expense_type}{" "}*/}
+          {/*  <span className="ml-2 text-xs text-gray-500">*/}
+          {/*    ({e.frequency})*/}
+          {/*  </span>*/}
+          {/*</span>*/}
+          {/*                  <span className="text-sm font-semibold text-gray-900">*/}
+          {/*  ₱{parseFloat(e.amount).toLocaleString(undefined, {*/}
+          {/*                    minimumFractionDigits: 2,*/}
+          {/*                    maximumFractionDigits: 2,*/}
+          {/*                  })}*/}
+          {/*</span>*/}
+          {/*                </div>*/}
+          {/*            ))}*/}
+          {/*          </div>*/}
+          {/*        </div>*/}
+          {/*    )}*/}
 
               {bill.status === "unpaid" && (
                 <div className="pt-4 border-t">
@@ -233,10 +347,20 @@ if (!Array.isArray(billingData) || billingData.length === 0) {
                   </div>
                 </div>
               )}
+
+              <button
+                  onClick={() => window.open(`/api/tenant/billing/${bill.billing_id}`, "_blank")}
+                  className="px-4 py-2.5 mt-2 text-sm font-medium rounded-lg bg-gradient-to-r from-emerald-600 to-green-700 text-white shadow-sm hover:from-emerald-700 hover:to-green-800"
+              >
+                📄 Download Statement (PDF)
+              </button>
+
+
             </div>
           </div>
         ))}
       </div>
     </div>
   );
+
 }

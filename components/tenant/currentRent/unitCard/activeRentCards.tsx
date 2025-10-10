@@ -1,4 +1,4 @@
-"use client";
+"use client";"use client";
 
 import Image from "next/image";
 import {
@@ -12,6 +12,7 @@ import {
     ClockIcon,
 } from "@heroicons/react/24/outline";
 import { FaHome, FaCreditCard, FaUpload, FaComments, FaSpinner } from "react-icons/fa";
+import { RefreshCw, XCircle } from "lucide-react"; // Added for Renew Lease button
 
 import { formatCurrency, formatDate, toNumber } from "@/utils/formatter/formatters";
 import { Unit } from "@/types/units";
@@ -67,6 +68,7 @@ export default function UnitCard({
                                      onUploadProof,
                                      onContactLandlord,
                                      onAccessPortal,
+                                     onRenewLease,
                                      loadingPayment,
                                  }: {
     unit: Unit;
@@ -74,6 +76,7 @@ export default function UnitCard({
     onUploadProof: (unitId: string, agreementId: string, amount: number) => void;
     onContactLandlord: () => void;
     onAccessPortal: (agreementId: string) => void;
+    onRenewLease: (unitId: string, agreementId: string) => void; // Added prop
     loadingPayment: boolean;
 }) {
     const isPaymentsComplete =
@@ -88,6 +91,9 @@ export default function UnitCard({
 
     const showPayButton =
         !isPaymentsComplete && !unit.has_pending_proof && !bothZero;
+
+    // Check if lease is expired (end_date is in the past)
+    const isLeaseExpired = new Date(unit.end_date) < new Date();
 
     return (
         <article className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group">
@@ -136,8 +142,8 @@ export default function UnitCard({
                         <div className="flex items-center gap-1">
                             <CurrencyDollarIcon className="w-4 h-4 text-blue-500" />
                             <span className="font-semibold">
-                {formatCurrency(unit.rent_amount)}/month
-              </span>
+                                {formatCurrency(unit.rent_amount)}/month
+                            </span>
                         </div>
                         <div className="flex items-center gap-1">
                             <FaHome className="w-3 h-3 text-emerald-500" />
@@ -151,16 +157,19 @@ export default function UnitCard({
                     <div className="flex items-center gap-2 mb-2">
                         <CalendarIcon className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-medium text-gray-700">
-              Lease Period
-            </span>
+                            Lease Period
+                        </span>
                     </div>
                     <p className="text-sm text-gray-600">
                         {formatDate(unit.start_date)} - {formatDate(unit.end_date)}
+                        {isLeaseExpired && (
+                            <span className="text-red-600 font-medium ml-2">(Expired)</span>
+                        )}
                     </p>
                 </div>
 
                 {/* Payment Details */}
-                {!isPaymentsComplete && !bothZero && (
+                {!isPaymentsComplete && !bothZero && !isLeaseExpired && (
                     <div className="mb-4 p-3 bg-gradient-to-r from-red-50 to-rose-50 rounded-lg border border-red-200">
                         <h4 className="text-sm font-medium text-red-800 mb-2 flex items-center gap-1">
                             <ExclamationTriangleIcon className="w-4 h-4" />
@@ -171,23 +180,23 @@ export default function UnitCard({
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Security Deposit:</span>
                                     <span className="font-medium text-red-700">
-                    {formatCurrency(unit.sec_deposit)}
-                  </span>
+                                        {formatCurrency(unit.sec_deposit)}
+                                    </span>
                                 </div>
                             )}
                             {!unit.is_advance_payment_paid && (
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Advance Payment:</span>
                                     <span className="font-medium text-red-700">
-                    {formatCurrency(unit.advanced_payment)}
-                  </span>
+                                        {formatCurrency(unit.advanced_payment)}
+                                    </span>
                                 </div>
                             )}
                             <div className="flex justify-between pt-2 border-t border-red-200">
                                 <span className="font-medium text-gray-700">Total Due:</span>
                                 <span className="font-bold text-red-800">
-                  {formatCurrency(totalPaymentDue)}
-                </span>
+                                    {formatCurrency(totalPaymentDue)}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -195,13 +204,33 @@ export default function UnitCard({
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
-                    {unit.has_pending_proof ? (
+                    {isLeaseExpired ? (
+                        <div className="space-y-3">
+                            {/* Existing buttons for payment, portal, etc. */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => onRenewLease(unit.unit_id, unit.agreement_id)}
+                                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transform hover:scale-[1.02] transition-all"
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                    Renew Lease
+                                </button>
+                                <button
+                                    onClick={() => onEndContract(unit.unit_id, unit.agreement_id)}
+                                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transform hover:scale-[1.02] transition-all"
+                                >
+                                    <XCircle className="w-4 h-4" />
+                                    End Contract
+                                </button>
+                            </div>
+                        </div>
+                    ) : unit.has_pending_proof ? (
                         <div className="p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg border border-yellow-200">
                             <div className="flex items-center gap-2 text-yellow-800">
                                 <ClockIcon className="w-4 h-4" />
                                 <span className="text-sm font-medium">
-                  Proof of payment submitted. Awaiting landlord confirmation.
-                </span>
+                                    Proof of payment submitted. Awaiting landlord confirmation.
+                                </span>
                             </div>
                         </div>
                     ) : showPayButton ? (

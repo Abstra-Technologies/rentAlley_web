@@ -23,6 +23,7 @@ import PropertyConfiguration from "@/components/landlord/properties/propertyConf
 import { Pagination } from "@mui/material";
 import { usePropertyData } from "@/hooks/usePropertyData";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
+import AIUnitGenerator from "@/components/landlord/ai/AIUnitGenerator";
 
 const ViewUnitPage = () => {
   const { id } = useParams();
@@ -48,6 +49,7 @@ const ViewUnitPage = () => {
   const [unitBillingStatus, setUnitBillingStatus] = useState<Record<string, boolean>>({});
   const [propertyDetails, setPropertyDetails] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("units");
+  const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
 
   //  get property, subscription, and units with hook
   const { property, subscription, units, error, isLoading, loadingSubscription } =
@@ -222,7 +224,7 @@ const ViewUnitPage = () => {
     if (!result.isConfirmed) return;
 
     try {
-      const response = await axios.delete(`/api/unitListing/unit?id=${unitId}`);
+      const response = await axios.delete(`/api/unitListing/deleteUnit?id=${unitId}`);
 
       if (response.status === 200) {
         Swal.fire("Deleted!", "Unit has been deleted.", "success");
@@ -368,22 +370,44 @@ const ViewUnitPage = () => {
           {/* Action Buttons - Mobile Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <button
-              className={`flex items-center justify-center px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                loadingSubscription ||
-                !subscription ||
-                units?.length >= subscription?.listingLimits?.maxUnits
-                  ? "bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200"
-                  : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg active:scale-95"
-              }`}
-              onClick={handleAddUnitClick}
-              disabled={
-                loadingSubscription ||
-                !subscription ||
-                units?.length >= subscription?.listingLimits?.maxUnits
-              }
+                className={`flex items-center justify-center px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                    loadingSubscription ||
+                    !subscription ||
+                    units?.length >= subscription?.listingLimits?.maxUnits
+                        ? "bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200"
+                        : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg active:scale-95"
+                }`}
+                onClick={handleAddUnitClick}
+                disabled={
+                    loadingSubscription ||
+                    !subscription ||
+                    units?.length >= subscription?.listingLimits?.maxUnits
+                }
             >
               <PlusCircleIcon className="h-5 w-5 mr-2" />
               <span className="text-sm">Add Unit</span>
+            </button>
+
+            {/* ✨ Generate with AI Button */}
+            <button
+                onClick={() => setIsAIGeneratorOpen(true)}
+                className="flex items-center justify-center px-4 py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
+            >
+              <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+              >
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Generate with AI
             </button>
 
             <button
@@ -580,7 +604,23 @@ const ViewUnitPage = () => {
         />
 
       </div>
+      {isAIGeneratorOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-3 p-6 relative border border-gray-200">
+              {/* Close Button */}
+              <button
+                  onClick={() => setIsAIGeneratorOpen(false)}
+                  className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              >
+                ✖
+              </button>
+              <AIUnitGenerator propertyId={property_id} />
+            </div>
+          </div>
+      )}
+
     </LandlordLayout>
+
   );
 
 };

@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useEffect, useState } from "react";
 import { BarChart } from "@mui/x-charts/BarChart";
@@ -12,27 +11,16 @@ const TenantOccupationChart = ({ landlordId }: { landlordId: number }) => {
         fetch(`/api/analytics/landlord/getTenantOccupations?landlord_id=${landlordId}`)
             .then((res) => res.json())
             .then((data) => {
-                if (Array.isArray(data)) {
-                    setOccupationData(data);
-                } else {
-                    console.error("Invalid format:", data);
-                    setOccupationData([]);
-                }
+                if (Array.isArray(data)) setOccupationData(data);
+                else setOccupationData([]);
             })
             .catch((error) =>
                 console.error("Error fetching tenant occupation data:", error)
             );
     }, [landlordId]);
 
-    const labelsOccupation =
-        occupationData.length > 0
-            ? occupationData.map((item) => item.occupation || "Unknown")
-            : ["No Data"];
-
-    const seriesOccupation =
-        occupationData.length > 0
-            ? occupationData.map((item) => item.tenant_count)
-            : [0];
+    const labels = occupationData.map((item) => item.occupation || "Unknown");
+    const values = occupationData.map((item) => item.tenant_count);
 
     return (
         <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-all">
@@ -51,10 +39,9 @@ const TenantOccupationChart = ({ landlordId }: { landlordId: number }) => {
             {/* Chart */}
             {occupationData.length > 0 ? (
                 <BarChart
-                    yAxis={[{ scaleType: "band", data: labelsOccupation }]} // ✅ categorical axis
-                    series={[{ data: seriesOccupation, color: "#10B981" }]}
-                    layout="horizontal"
-                    height={420}
+                    xAxis={[{ scaleType: "band", data: labels }]}
+                    series={[{ data: values, color: "#3B82F6" }]}
+                    height={400}
                 />
             ) : (
                 <div className="flex flex-col justify-center items-center h-64 text-center">
