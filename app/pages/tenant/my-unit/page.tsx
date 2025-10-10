@@ -13,13 +13,14 @@ import { useChatStore } from "@/zustand/chatStore";
 import TenantOutsidePortalNav from "@/components/navigation/TenantOutsidePortalNav";
 import LoadingScreen from "@/components/loadingScreen";
 import LeaseCounter from "@/components/tenant/analytics-insights/LeaseCounter";
+import BillingCounter  from "@/components/tenant/analytics-insights/BillingCounter";
 import ApplicationsCounter from "@/components/tenant/analytics-insights/applicationsCounter";
 import UnitCard from "@/components/tenant/currentRent/unitCard/activeRentCards";
 import SearchAndFilter from "@/components/Commons/SearchAndFilterUnits";
 import Pagination from "@/components/Commons/Pagination";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import EmptyState from "@/components/Commons/EmptyStateUnitSearch";
-
+import RenewalRequestForm from "@/components/tenant/currentRent/RenewalRequestForm";
 // Types & utils
 import { Unit } from "@/types/units";
 import { formatCurrency } from "@/utils/formatter/formatters";
@@ -63,12 +64,12 @@ export default function MyUnit() {
   // @ts-ignore
   const { user, admin, fetchSession } = useAuthStore();
   const router = useRouter();
-
+  const [showRenewalForm, setShowRenewalForm] = useState<string | null>(null);
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 10;
-
+  const [loadingRenewal, setLoadingRenewal] = useState(false);
   // Authentication check
   useEffect(() => {
     if (!user && !admin) {
@@ -78,7 +79,6 @@ export default function MyUnit() {
 
   const { units, loading, error, refetch } = useUnits(user?.tenant_id);
 
-  // Filtering & pagination
   const { filteredUnits, paginatedUnits, totalPages } = useMemo(() => {
     const filtered = units.filter((unit) => {
       const query = searchQuery.toLowerCase();
@@ -285,11 +285,57 @@ export default function MyUnit() {
       [router]
   );
 
+  const handleRenewLease = useCallback(
+      async (unitId: string, agreementId: string, renewalData: any) => {
+        if (!user?.tenant_id) {
+          Swal.fire({
+            icon: "error",
+            title: "Authentication Error",
+            text: "User not authenticated.",
+            customClass: { popup: "rounded-xl" },
+          });
+          return;
+        }
+
+        setLoadingRenewal(true);
+        try {
+          const response = await axios.post("/api/tenant/renewal-request", {
+            tenant_id: user.tenant_id,
+            unit_id: unitId,
+            agreement_id: agreementId,
+            requested_start_date: renewalData.requested_start_date,
+            requested_end_date: renewalData.requested_end_date,
+            requested_rent_amount: renewalData.requested_rent_amount,
+            notes: renewalData.notes,
+          });
+
+          if (response.status === 200) {
+            await Swal.fire({
+              icon: "success",
+              title: "Success!",
+              text: "Your renewal request has been submitted!",
+              customClass: { popup: "rounded-xl" },
+            });
+            setShowRenewalForm(null); // Close modal
+          }
+        } catch (error: any) {
+          await Swal.fire({
+            icon: "error",
+            title: "Submission Failed",
+            text: `Failed to submit renewal request: ${error.response?.data?.message || error.message}`,
+            customClass: { popup: "rounded-xl" },
+          });
+        } finally {
+          setLoadingRenewal(false);
+        }
+      },
+      [user?.tenant_id, refetch]
+  );
+
   const handleViewInvitations = useCallback(() => {
     router.push("/pages/tenant/viewInvites");
   }, [router]);
 
-  // Loading
   if (loading) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90">
@@ -321,12 +367,15 @@ export default function MyUnit() {
             </div>
 
             {/* Analytics Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <LeaseCounter tenantId={user?.tenant_id} />
               </div>
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <ApplicationsCounter tenantId={user?.tenant_id} />
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <BillingCounter tenantId={user?.tenant_id} />
               </div>
             </div>
 
@@ -363,6 +412,9 @@ export default function MyUnit() {
                                     onContactLandlord={handleContactLandlord}
                                     onAccessPortal={handleAccessPortal}
                                     loadingPayment={loadingPayment}
+                                    onRenewLease={(unitId, agreementId, renewalData) =>
+                                        setShowRenewalForm(unitId) // Open modal
+                                    }
                                 />
                             ))}
                           </div>
@@ -376,6 +428,20 @@ export default function MyUnit() {
                             itemsPerPage={itemsPerPage}
                         />
                       </div>
+                  )}
+                  {showRenewalForm && (
+                      <RenewalRequestForm
+                          unit={units.find((u) => u.unit_id === showRenewalForm)!}
+                          onSubmit={(renewalData) =>
+                              handleRenewLease(
+                                  showRenewalForm,
+                                  units.find((u) => u.unit_id === showRenewalForm)!.agreement_id,
+                                  renewalData
+                              )
+                          }
+                          onClose={() => setShowRenewalForm(null)}
+                          loading={loadingRenewal}
+                      />
                   )}
                 </>
             )}

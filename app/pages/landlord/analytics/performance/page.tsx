@@ -21,12 +21,20 @@ const PaymentsPerMonthChart = dynamic(
     { ssr: false }
 );
 
+const RentCollectionRateCard = dynamic(
+    () => import("../../../../../components/landlord/analytics/RentCollectionRateCard"),
+    { ssr: false }
+);
+
 import ActiveListingsCard from "@/components/landlord/analytics/activeListings";
 import PendingListingsCard from "@/components/landlord/analytics/getPendingListings";
 import LandlordLayout from "@/components/navigation/sidebar-landlord";
 import useAuthStore from "@/zustand/authStore";
 import { useEffect, useState } from "react";
 import ScoreCard from "@/components/landlord/analytics/scoreCards";
+import TenantAgeGroupChart from "@/components/landlord/analytics/tenantAgegroup";
+import AverageLeaseDurationChart from "@/components/landlord/analytics/AverageLeaseDurationChart";
+import UnitDistributionChart from "@/components/landlord/analytics/UnitDistributionChart";
 
 export default function PropertyPerformancePage() {
     const { user, admin, loading, fetchSession } = useAuthStore();
@@ -99,9 +107,20 @@ export default function PropertyPerformancePage() {
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">
                         Tenant Insights
                     </h2>
-                    <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
                         <TenantOccupationChart landlordId={user?.landlord_id} />
-                    </div>
+                        </div>
+
+                        <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
+                            <TenantAgeGroupChart landlordId={user?.landlord_id} />
+                        </div>
+
+                        <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
+                            <AverageLeaseDurationChart landlordId={user?.landlord_id} />
+                        </div>
+
+                        </div>
                 </section>
 
                 {/* Property Insights */}
@@ -109,12 +128,15 @@ export default function PropertyPerformancePage() {
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">
                         Property Insights
                     </h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
                             <PropertyUtilitiesChart landlordId={user?.landlord_id} />
                         </div>
                         <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
                             <MaintenanceCategoriesChart landlordId={user?.landlord_id} />
+                        </div>
+                        <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
+                            <UnitDistributionChart landlordId={user?.landlord_id} />
                         </div>
                     </div>
                 </section>
@@ -124,8 +146,13 @@ export default function PropertyPerformancePage() {
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">
                         Financial Insights
                     </h2>
-                    <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
                         <PaymentsPerMonthChart landlordId={user?.landlord_id} />
+                    </div>
+                        <div className="bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
+                        <RentCollectionRateCard landlordId={user?.landlord_id} />
+                    </div>
                     </div>
                 </section>
             </div>
