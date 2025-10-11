@@ -1,6 +1,5 @@
-
 "use client";
-import React, {useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
@@ -20,13 +19,63 @@ const ReviewBillingPage = () => {
     >([]);
     const [discounts, setDiscounts] = useState<{ type: string; amount: number }[]>([]);
 
-    // hook
-    const { data: billingData, error, isLoading } = useSWR(
-        property_id
-            ? `/api/billing/non_submetered/getData?property_id=${property_id}`
-            : null,
+    // Hook for fetching billing data
+    const { data: billingData, error, isLoading, mutate } = useSWR(
+        property_id ? `/api/billing/non_submetered/getData?property_id=${property_id}` : null,
         fetcher
     );
+
+
+    // Populate extraExpenses and discounts when switching units
+    useEffect(() => {
+        const currentBill = billingData?.bills?.[currentIndex];
+        if (!currentBill) {
+            setExtraExpenses([]);
+            setDiscounts([]);
+            return;
+        }
+
+        // 🧩 If user has unsaved edits for this unit, restore them
+        const savedBill = savedBills[currentBill.unit_id];
+        if (savedBill) {
+            setExtraExpenses(savedBill.additional_charges || []);
+            setDiscounts(savedBill.discounts || []);
+            return;
+        }
+
+        const fromDBExtras = Array.isArray(currentBill.additional_charges)
+            ? currentBill.additional_charges.map((a: any) => ({
+                charge_id: a.charge_id, // ✅ preserve id for deletion
+                type: a.charge_type || "",
+                amount: parseAmount(a.amount),
+                category: a.charge_category || "additional",
+                fromDB: true,
+            }))
+            : [];
+
+        const fromDBDiscounts = Array.isArray(currentBill.discounts)
+            ? currentBill.discounts.map((d: any) => ({
+                charge_id: d.charge_id, // ✅ preserve id for deletion
+                type: d.charge_type || "",
+                amount: parseAmount(d.amount),
+                category: d.charge_category || "discount",
+                fromDB: true,
+            }))
+            : [];
+
+
+        // 🧠 Merge DB + any unsaved local charges (in case user switched back)
+        setExtraExpenses((prev) => {
+            // keep any locally added non-DB charges that aren't duplicates
+            const localNew = prev?.filter((e) => !e.fromDB) || [];
+            return [...fromDBExtras, ...localNew];
+        });
+
+        setDiscounts((prev) => {
+            const localNew = prev?.filter((d) => !d.fromDB) || [];
+            return [...fromDBDiscounts, ...localNew];
+        });
+    }, [currentIndex, savedBills, billingData]);
 
     const parseAmount = (v: any): number => {
         if (v === null || v === undefined) return 0;
@@ -36,8 +85,7 @@ const ReviewBillingPage = () => {
     const peso = (n: number) =>
         n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    //  handlers
-
+    // Handlers
     const handleAddExpense = () => {
         setExtraExpenses([...extraExpenses, { type: "", amount: 0 }]);
     };
@@ -48,9 +96,50 @@ const ReviewBillingPage = () => {
         setExtraExpenses(updated);
     };
 
-    const handleRemoveExpense = (index: number) => {
+    const handleRemoveExpense = async (index: number, item: any) => {
+        console.log("Deleting charge:", item); // 👈 check this in browser console
+
+        if (item.fromDB && item.charge_id) {
+            try {
+                await axios.delete("/api/billing/non_submetered/deleteCharge", {
+                    data: { charge_id: item.charge_id },
+                });
+
+                Swal.fire("Deleted!", "Charge has been removed from billing.", "success");
+
+                // Refresh from DB
+                await mutate();
+            } catch (error) {
+                console.error("Error deleting charge:", error);
+                Swal.fire("Error", "Failed to delete charge from database.", "error");
+                return;
+            }
+        }
+
+        // Remove locally either way
         setExtraExpenses(extraExpenses.filter((_, i) => i !== index));
     };
+
+    const handleRemoveDiscount = async (index: number, item: any) => {
+        try {
+            if (item.fromDB && item.charge_id) {
+                await axios.delete("/api/billing/non_submetered/deleteCharge", {
+                    data: { charge_id: item.charge_id },
+                });
+
+                Swal.fire("Deleted!", "Discount has been removed from billing.", "success");
+
+                // ✅ Refresh billing data after deletion
+                await mutate();
+            }
+
+            setDiscounts(discounts.filter((_, i) => i !== index));
+        } catch (error) {
+            console.error("Error deleting discount:", error);
+            Swal.fire("Error", "Failed to delete discount.", "error");
+        }
+    };
+
 
     const handleAddDiscount = () => {
         setDiscounts([...discounts, { type: "", amount: 0 }]);
@@ -62,9 +151,6 @@ const ReviewBillingPage = () => {
         setDiscounts(updated);
     };
 
-    const handleRemoveDiscount = (index: number) => {
-        setDiscounts(discounts.filter((_, i) => i !== index));
-    };
 
     const handleSaveBill = async (bill: any) => {
         try {
@@ -79,11 +165,17 @@ const ReviewBillingPage = () => {
                 0
             );
 
+            const discountTotal = discounts.reduce(
+                (sum, d) => sum + parseAmount(d.amount),
+                0
+            );
+
             const total =
                 parseAmount(bill.base_rent) +
                 parseAmount(bill.late_penalty_amount) +
                 additionalExpenseTotal -
-                advanceDeduction;
+                advanceDeduction -
+                discountTotal;
 
             await axios.post("/api/billing/non_submetered/saveBill", {
                 property_id,
@@ -100,16 +192,22 @@ const ReviewBillingPage = () => {
                     type: d.type,
                     amount: parseAmount(d.amount),
                 })),
-
             });
 
-
-            setSavedBills((prev: any) => ({ ...prev, [bill.unit_id]: true }));
+            setSavedBills((prev: any) => ({
+                ...prev,
+                [bill.unit_id]: {
+                    saved: true,
+                    additional_charges: extraExpenses,
+                    discounts,
+                    total,
+                },
+            }));
 
             Swal.fire("Saved!", "Billing for this unit has been saved.", "success");
         } catch (err) {
             console.error("Error saving bill:", err);
-            Swal.fire("Error", "Failed to save billing", "error");
+            Swal.fire("Error", "Failed to save billing. Please check your input and try again.", "error");
         }
     };
 
@@ -122,16 +220,9 @@ const ReviewBillingPage = () => {
             router.push(`/pages/landlord/property-listing/view-unit/${property_id}`);
         } catch (err) {
             console.error("Error approving billing:", err);
-            Swal.fire("Error", "Failed to approve billing", "error");
+            Swal.fire("Error", "Failed to approve billing. Please try again.", "error");
         }
     };
-
-    useEffect(() => {
-        // reset charges/discounts when switching units
-        setExtraExpenses([]);
-        setDiscounts([]);
-    }, [currentIndex]);
-
 
     if (isLoading) {
         return (
@@ -145,7 +236,7 @@ const ReviewBillingPage = () => {
         return (
             <LandlordLayout>
                 <div className="p-6 text-center text-red-500">
-                    Failed to load billing data
+                    Failed to load billing data. Please try again.
                 </div>
             </LandlordLayout>
         );
@@ -166,16 +257,16 @@ const ReviewBillingPage = () => {
                     Back
                 </button>
 
-                {/*computations*/}
+                {/* Computations */}
                 <div className="bg-white rounded-xl shadow-lg p-6 max-w-2xl mx-auto border border-gray-200">
                     <div className="mb-6 text-center sm:text-left">
                         <h2 className="text-xl font-semibold text-gray-700">
-                            {currentBill.property_name}
+                            {currentBill?.property_name || "Property"}
                         </h2>
 
                         <h1 className="text-3xl font-bold text-gray-900 mt-1">
                             Monthly Billing Review –{" "}
-                            {currentBill.billing_period
+                            {currentBill?.billing_period
                                 ? new Date(currentBill.billing_period).toLocaleDateString("en-US", {
                                     month: "long",
                                     year: "numeric",
@@ -189,7 +280,6 @@ const ReviewBillingPage = () => {
                             deductions, and additional charges before finalizing.
                         </p>
                     </div>
-
 
                     {bills.length === 0 ? (
                         <p className="text-gray-600 text-center">No auto-generated billing available for this month.</p>
@@ -237,48 +327,60 @@ const ReviewBillingPage = () => {
                                             ))}
                                         </div>
                                     )}
-
                                 </div>
                             </div>
 
-                            {/* Additional Expenses */}
+                            {/* Additional Charges */}
                             <div className="mt-4">
                                 <h4 className="text-sm font-semibold text-gray-700 mb-2">Additional Charges:</h4>
                                 <p className="text-xs text-gray-500 mb-3">
-                                    Add extra charges such as parking fees, association dues, maintenance, or penalties. These
-                                    will be added to the tenant’s monthly bill.
+                                    Add extra charges such as parking fees, association dues, maintenance, or penalties.
+                                    These will be added to the tenant’s monthly bill.
                                 </p>
 
-                                {extraExpenses.map((exp, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 mb-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Type (e.g. Parking)"
-                                            value={exp.type}
-                                            onChange={(e) => handleExpenseChange(idx, "type", e.target.value)}
-                                            className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                                        />
-                                        <input
-                                            type="text"               // use text to allow "5,000.01" then sanitize
-                                            inputMode="decimal"
-                                            placeholder="Amount"
-                                            value={exp.amount}
-                                            onChange={(e) => handleExpenseChange(idx, "amount", e.target.value)}
-                                            onBlur={(e) =>
-                                                handleExpenseChange(idx, "amount", String(parseAmount(e.target.value).toFixed(2)))
-                                            }
-                                            className="w-32 px-3 py-2 border rounded-lg text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveExpense(idx)}
-                                            className="px-2 py-1 text-sm text-red-600 hover:text-red-800"
+                                {extraExpenses.length > 0 ? (
+                                    extraExpenses.map((exp, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="flex items-center gap-2 mb-2 bg-white border border-gray-200 rounded-lg p-2"
                                         >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
+                                            <input
+                                                type="text"
+                                                placeholder="Type (e.g. Parking)"
+                                                value={exp.type}
+                                                onChange={(e) => handleExpenseChange(idx, "type", e.target.value)}
+                                                disabled={exp.fromDB}
+                                                className={`flex-1 px-3 py-2 border rounded-lg text-sm ${
+                                                    exp.fromDB ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                                                }`}
+                                            />
+                                            <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                placeholder="Amount"
+                                                value={exp.amount}
+                                                onChange={(e) => handleExpenseChange(idx, "amount", e.target.value)}
+                                                disabled={exp.fromDB}
+                                                className={`w-32 px-3 py-2 border rounded-lg text-sm text-right ${
+                                                    exp.fromDB ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                                                }`}
+                                            />
 
+                                            {/* 🗑️ Delete button for both new and DB-sourced */}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveExpense(idx, exp)}
+                                                className="px-2 py-1 text-sm text-red-600 hover:text-red-800"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-gray-500 text-sm italic mb-2">No additional charges set.</p>
+                                )}
+
+                                {/* ✅ Always keep Add button */}
                                 <button
                                     type="button"
                                     onClick={handleAddExpense}
@@ -292,39 +394,53 @@ const ReviewBillingPage = () => {
                             <div className="mt-6">
                                 <h4 className="text-sm font-semibold text-gray-700 mb-2">Discounts:</h4>
                                 <p className="text-xs text-gray-500 mb-3">
-                                    Apply discounts such as promos, loyalty rewards, or landlord goodwill. These will reduce the tenant’s monthly bill.
+                                    Apply discounts such as promos, loyalty rewards, or landlord goodwill.
+                                    These will reduce the tenant’s monthly bill.
                                 </p>
 
-                                {discounts.map((disc, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 mb-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Type (e.g. Promo)"
-                                            value={disc.type}
-                                            onChange={(e) => handleDiscountChange(idx, "type", e.target.value)}
-                                            className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                                        />
-                                        <input
-                                            type="text"
-                                            inputMode="decimal"
-                                            placeholder="Amount"
-                                            value={disc.amount}
-                                            onChange={(e) => handleDiscountChange(idx, "amount", e.target.value)}
-                                            onBlur={(e) =>
-                                                handleDiscountChange(idx, "amount", String(parseAmount(e.target.value).toFixed(2)))
-                                            }
-                                            className="w-32 px-3 py-2 border rounded-lg text-sm"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveDiscount(idx)}
-                                            className="px-2 py-1 text-sm text-red-600 hover:text-red-800"
+                                {discounts.length > 0 ? (
+                                    discounts.map((disc, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="flex items-center gap-2 mb-2 bg-white border border-gray-200 rounded-lg p-2"
                                         >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
+                                            <input
+                                                type="text"
+                                                placeholder="Type (e.g. Promo)"
+                                                value={disc.type}
+                                                onChange={(e) => handleDiscountChange(idx, "type", e.target.value)}
+                                                disabled={disc.fromDB}
+                                                className={`flex-1 px-3 py-2 border rounded-lg text-sm ${
+                                                    disc.fromDB ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                                                }`}
+                                            />
+                                            <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                placeholder="Amount"
+                                                value={disc.amount}
+                                                onChange={(e) => handleDiscountChange(idx, "amount", e.target.value)}
+                                                disabled={disc.fromDB}
+                                                className={`w-32 px-3 py-2 border rounded-lg text-sm text-right ${
+                                                    disc.fromDB ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                                                }`}
+                                            />
 
+                                            {/* 🗑️ Delete button for all */}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveDiscount(idx, disc)}
+                                                className="px-2 py-1 text-sm text-red-600 hover:text-red-800"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-gray-500 text-sm italic mb-2">No discounts applied.</p>
+                                )}
+
+                                {/* ✅ Always keep Add button */}
                                 <button
                                     type="button"
                                     onClick={handleAddDiscount}
@@ -333,7 +449,6 @@ const ReviewBillingPage = () => {
                                     + Add Discount
                                 </button>
                             </div>
-
 
                             {/* Computed Total */}
                             <div className="mt-6 border-t pt-4 text-right">
@@ -391,12 +506,12 @@ const ReviewBillingPage = () => {
                                 <button
                                     onClick={() => handleSaveBill(currentBill)}
                                     className={`flex-1 py-2 px-4 rounded-lg shadow-md font-semibold ${
-                                        savedBills[currentBill.unit_id]
+                                        savedBills[currentBill.unit_id]?.saved
                                             ? "bg-green-500 text-white"
                                             : "bg-blue-600 hover:bg-blue-700 text-white"
                                     }`}
                                 >
-                                    {savedBills[currentBill.unit_id] ? "Saved" : "Save"}
+                                    {savedBills[currentBill.unit_id]?.saved ? "Saved" : "Save"}
                                 </button>
 
                                 <div className="flex flex-1 gap-3">
@@ -424,12 +539,9 @@ const ReviewBillingPage = () => {
                             <p className="text-center text-sm text-gray-500 mt-4">
                                 Reviewing {currentIndex + 1} of {bills.length} units
                             </p>
-
                         </>
                     )}
                 </div>
-
-
             </div>
         </LandlordLayout>
     );
