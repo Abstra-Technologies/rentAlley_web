@@ -367,106 +367,144 @@ const ViewUnitPage = () => {
             </div>
           </div>
 
-          {/* Action Buttons - Mobile Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <button
-                className={`flex items-center justify-center px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                    loadingSubscription ||
-                    !subscription ||
-                    units?.length >= subscription?.listingLimits?.maxUnits
-                        ? "bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200"
-                        : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg active:scale-95"
-                }`}
-                onClick={handleAddUnitClick}
-                disabled={
-                    loadingSubscription ||
-                    !subscription ||
-                    units?.length >= subscription?.listingLimits?.maxUnits
-                }
-            >
-              <PlusCircleIcon className="h-5 w-5 mr-2" />
-              <span className="text-sm">Add Unit</span>
-            </button>
+          {/* 🔧 Action Buttons Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* ====== Left Column: Add/Generate Split Button ====== */}
+                <div className="flex flex-col gap-3">
+                    <div className="flex rounded-xl overflow-hidden shadow-md border border-gray-200">
+                        {/* 🏘 Add Unit (left half) */}
+                        <button
+                            onClick={handleAddUnitClick}
+                            disabled={
+                                loadingSubscription ||
+                                !subscription ||
+                                units?.length >= subscription?.listingLimits?.maxUnits
+                            }
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all duration-200 ${
+                                loadingSubscription ||
+                                !subscription ||
+                                units?.length >= subscription?.listingLimits?.maxUnits
+                                    ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                                    : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 active:scale-95"
+                            }`}
+                        >
+                            <PlusCircleIcon className="h-5 w-5" />
+                            <span>Add Unit</span>
+                        </button>
 
-            {/* ✨ Generate with AI Button */}
-            <button
-                onClick={() => setIsAIGeneratorOpen(true)}
-                className="flex items-center justify-center px-4 py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-md hover:shadow-lg active:scale-95 transition-all duration-200"
-            >
-              <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-              >
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Generate with AI
-            </button>
+                        {/* 🤖 Generate AI (right half) */}
+                        <button
+                            onClick={() => setIsAIGeneratorOpen(true)}
+                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 active:scale-95 transition-all duration-200 border-l border-white/20"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>or Generate with AI</span>
+                        </button>
+                    </div>
+                </div>
 
-            <button
-              onClick={() => setBillingMode(!billingMode)}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 ${
-                billingMode
-                  ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800"
-                  : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
-              }`}
-            >
-              <span className="text-sm">
-                {billingMode ? "Exit Billing" : "Billing Mode"}
-              </span>
-
-            </button>
-
-            {billingMode &&
-                (propertyDetails?.electricity_billing_type === "submetered" ||
-                    propertyDetails?.water_billing_type === "submetered") && (
+                {/* ====== Right Column: Billing Mode + Set Property Rates ====== */}
+                <div className="flex flex-col gap-3">
+                    {/* 💰 Billing Mode Toggle */}
                     <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="px-4 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
+                        onClick={() => setBillingMode(!billingMode)}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 ${
+                            billingMode
+                                ? "bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800"
+                                : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
+                        }`}
                     >
-                      <span className="text-sm">Set Property Rates</span>
+                        {billingMode ? (
+                            <>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Exit Billing
+                            </>
+                        ) : (
+                            <>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M9 17v-2a4 4 0 018 0v2m-4-12a4 4 0 014 4v2H9V9a4 4 0 014-4z"
+                                    />
+                                </svg>
+                                Billing Mode
+                            </>
+                        )}
                     </button>
+
+                    {/* ⚙️ Set Property Rates (only visible in billing mode if submetered) */}
+                    {billingMode &&
+                        (propertyDetails?.water_billing_type === "submetered" ||
+                            propertyDetails?.electricity_billing_type === "submetered") && (
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 8v8m-4-4h8m8-4v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2h7"
+                                    />
+                                </svg>
+                                Set Property Rates
+                            </button>
+                        )}
+                </div>
+            </div>
+
+            {/* ✅ Review Billing Section (Visible only if both are non-submetered) */}
+            {billingMode &&
+                propertyDetails?.water_billing_type !== "submetered" &&
+                propertyDetails?.electricity_billing_type !== "submetered" && (
+                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl space-y-3">
+                        <p className="text-sm text-green-800">
+                            <span className="font-semibold">Auto-billing:</span>{" "}
+                            Monthly Billing is generated automatically based on the set due date for{" "}
+                            <b>non-submetered properties</b>.
+                        </p>
+
+                        <button
+                            onClick={handleReviewBilling}
+                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
+                        >
+                            Review Billing for this Month
+                        </button>
+                    </div>
                 )}
-
-            {/* Utility Rate Button - Conditional */}
-            {billingMode &&
-              propertyDetails?.utility_billing_type === "submetered" && (
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="px-4 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
-                >
-                  <span className="text-sm">Set Utility Rate</span>
-                </button>
-              )}
-
-          </div>
-
-          {/* Non-submetered Info */}
-          {billingMode &&
-              (propertyDetails?.water_billing_type !== "submetered" ||
-                  propertyDetails?.electricity_billing_type !== "submetered") && (
-                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl space-y-3">
-                    <p className="text-sm text-green-800">
-                      <span className="font-semibold">Auto-billing:</span>{" "}
-                      Monthly Billing is generated automatically based on the set due date
-                      for non-submetered properties.
-                    </p>
-
-                    <button
-                        onClick={handleReviewBilling}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
-                    >
-                      Review Billing for this Month
-                    </button>
-                  </div>
-              )}
 
         </div>
 

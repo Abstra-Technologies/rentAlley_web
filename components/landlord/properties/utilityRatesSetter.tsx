@@ -1,8 +1,12 @@
-
 "use client";
 
-import { BuildingOffice2Icon, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import {
+    BuildingOffice2Icon,
+    InformationCircleIcon,
+    XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { formatCurrency, formatDate } from "@/utils/formatter/formatters";
 
 interface PropertyRatesModalProps {
     isOpen: boolean;
@@ -24,18 +28,17 @@ export default function PropertyRatesModal({
                                                hasBillingForMonth,
                                                handleInputChange,
                                                handleSaveOrUpdateBilling,
-                                           }: PropertyRatesModalProps)
-{
+                                           }: PropertyRatesModalProps) {
     const [showInfo, setShowInfo] = useState(false);
 
     if (!isOpen) return null;
 
     return (
         <>
-            {/* Main Modal */}
+            {/* Overlay */}
             <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-200">
-                    {/* Modal Header */}
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-200 animate-fadeIn">
+                    {/* Header */}
                     <div className="sticky top-0 bg-white p-5 border-b border-gray-200 rounded-t-2xl flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-sm">
@@ -58,64 +61,64 @@ export default function PropertyRatesModal({
                         </button>
                     </div>
 
+                    {/* Content */}
                     <div className="p-5 space-y-6">
-
-                        {/* Current Billing Status */}
-
+                        {/* ===== Current Billing Info ===== */}
                         {billingData ? (
-                            <div className="p-4 bg-green-50 rounded-xl border border-green-200 shadow-sm">
+                            <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 shadow-sm">
                                 <h3 className="font-bold text-green-800 mb-2">Current Billing Period</h3>
                                 <p className="text-gray-700 mb-4 font-medium">
-                                    Period: <span className="text-green-800">{billingData.billing_period}</span>
+                                    Period:{" "}
+                                    <span className="text-green-800">
+                                        {formatDate(billingData.billing_period)}
+                                    </span>
                                 </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {propertyDetails?.electricity_billing_type === "submetered" &&
-                                        billingData.electricity && (
-                                            <div className="p-4 bg-white rounded-lg border border-yellow-200">
-                                                <h4 className="text-sm font-bold text-gray-600 mb-1">⚡ Electricity</h4>
-                                                <p className="text-2xl font-extrabold text-gray-900">
-                                                    {billingData.electricity.consumption ?? "N/A"}{" "}
-                                                    <span className="text-sm font-medium text-gray-500">kWh</span>
-                                                </p>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Total: ₱{billingData.electricity.total ?? "N/A"}
-                                                </p>
-                                            </div>
-                                        )}
+                                    {propertyDetails?.electricity_billing_type === "submetered" && (
+                                        <div className="p-4 bg-white rounded-lg border border-yellow-200">
+                                            <h4 className="text-sm font-bold text-gray-600 mb-1">⚡ Electricity</h4>
+                                            <p className="text-2xl font-extrabold text-gray-900">
+                                                {billingData?.electricity?.consumption ?? 0}{" "}
+                                                <span className="text-sm font-medium text-gray-500">kWh</span>
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Total: {formatCurrency(billingData?.electricity?.total ?? 0)}
+                                            </p>
+                                        </div>
+                                    )}
 
-                                    {propertyDetails?.water_billing_type === "submetered" &&
-                                        billingData.water && (
-                                            <div className="p-4 bg-white rounded-lg border border-blue-200">
-                                                <h4 className="text-sm font-bold text-gray-600 mb-1">💧 Water</h4>
-                                                <p className="text-2xl font-extrabold text-gray-900">
-                                                    {billingData.water.consumption ?? "N/A"}{" "}
-                                                    <span className="text-sm font-medium text-gray-500">cu. m</span>
-                                                </p>
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Total: ₱{billingData.water.total ?? "N/A"}
-                                                </p>
-                                            </div>
-                                        )}
+                                    {propertyDetails?.water_billing_type === "submetered" && (
+                                        <div className="p-4 bg-white rounded-lg border border-blue-200">
+                                            <h4 className="text-sm font-bold text-gray-600 mb-1">💧 Water</h4>
+                                            <p className="text-2xl font-extrabold text-gray-900">
+                                                {billingData?.water?.consumption ?? 0}{" "}
+                                                <span className="text-sm font-medium text-gray-500">cu. m</span>
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Total: {formatCurrency(billingData?.water?.total ?? 0)}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-4 bg-gray-50 text-center rounded-lg">
+                            <div className="p-4 bg-gray-50 text-center rounded-lg border border-gray-200">
                                 <p className="text-gray-600">No billing data found for this month</p>
                             </div>
                         )}
 
-                        {/* Form Section */}
+                        {/* ===== Input Form ===== */}
                         <form className="space-y-6" onSubmit={handleSaveOrUpdateBilling}>
                             <div>
                                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                                    Billing Period
+                                    Billing Month
                                 </label>
                                 <input
                                     name="billingPeriod"
                                     value={billingForm.billingPeriod}
                                     onChange={handleInputChange}
                                     type="date"
-                                    className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none transition-all duration-200 bg-gray-50 focus:bg-white"
+                                    className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none bg-gray-50 focus:bg-white transition-all"
                                 />
                             </div>
 
@@ -126,7 +129,7 @@ export default function PropertyRatesModal({
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-gray-700 text-sm font-semibold mb-2">
-                                                Consumption (kWh)
+                                                Consumption Rate (kWh)
                                             </label>
                                             <input
                                                 type="number"
@@ -139,7 +142,7 @@ export default function PropertyRatesModal({
                                         </div>
                                         <div>
                                             <label className="block text-gray-700 text-sm font-semibold mb-2">
-                                                Total Amount Billed (₱)
+                                                Total Amount Billed
                                             </label>
                                             <input
                                                 type="number"
@@ -161,7 +164,7 @@ export default function PropertyRatesModal({
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-gray-700 text-sm font-semibold mb-2">
-                                                Consumption (cu. m)
+                                                Consumption Rate (cu. m)
                                             </label>
                                             <input
                                                 type="number"
@@ -174,7 +177,7 @@ export default function PropertyRatesModal({
                                         </div>
                                         <div>
                                             <label className="block text-gray-700 text-sm font-semibold mb-2">
-                                                Total Amount Billed (₱)
+                                                Total Amount Billed
                                             </label>
                                             <input
                                                 type="number"
@@ -189,11 +192,9 @@ export default function PropertyRatesModal({
                                 </div>
                             )}
                         </form>
-
-
                     </div>
 
-                    {/* Modal Footer */}
+                    {/* Footer */}
                     <div className="sticky bottom-0 bg-white p-5 border-t border-gray-200 rounded-b-2xl flex flex-col sm:flex-row gap-3 sm:justify-end">
                         <button
                             onClick={onClose}
@@ -218,7 +219,7 @@ export default function PropertyRatesModal({
                     onClick={() => setShowInfo(false)}
                 >
                     <div
-                        className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 transform transition-all duration-200 scale-95 animate-fadeIn"
+                        className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 transform transition-all duration-200 scale-95"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between mb-4">
@@ -232,12 +233,11 @@ export default function PropertyRatesModal({
                         </div>
                         <ul className="list-disc list-inside text-gray-700 space-y-2 text-sm">
                             <li>
-                                Only <span className="font-semibold">submetered utilities</span> can have manual rates
-                                set.
+                                Only <span className="font-semibold">submetered utilities</span> can have manual rates.
                             </li>
                             <li>Non-submetered utilities are billed automatically by the system.</li>
-                            <li>You can update rates monthly if your property is submetered.</li>
-                            <li>Ensure correct billing period is selected before saving.</li>
+                            <li>You can update rates monthly for submetered properties.</li>
+                            <li>Ensure the correct billing period is selected before saving.</li>
                         </ul>
                         <div className="mt-5 flex justify-end">
                             <button
@@ -252,5 +252,4 @@ export default function PropertyRatesModal({
             )}
         </>
     );
-
 }

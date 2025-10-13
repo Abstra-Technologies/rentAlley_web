@@ -198,7 +198,7 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                         </Link>
                       ) : (
                         <Link
-                          href={`/pages/landlord/billing/editUnitBill/${unit?.unit_id}`}
+                          href={`/pages/landlord/billing/createUnitBill/${unit?.unit_id}`}
                         >
                           <button className="w-full bg-amber-50 text-amber-700 px-3 py-2 rounded-lg border border-amber-200 hover:bg-amber-100 text-sm font-medium">
                             Edit Unit Bill
