@@ -16,7 +16,6 @@ export async function GET(
             );
         }
 
-        // ✅ Query units for this property
         const [rows]: any = await db.query(
             `
       SELECT 
@@ -25,8 +24,6 @@ export async function GET(
         u.status,
         u.rent_amount,
         u.unit_size,
-        u.bed_spacing,
-        u.avail_beds,
         u.furnish,
         u.amenities
       FROM Unit u

@@ -46,7 +46,7 @@ export default function UnitListingForm() {
       if (!propertyId) return;
       try {
         const res = await fetch(
-            `/api/propertyListing/getPropDetailsById?id=${propertyId}`
+            `/api/propertyListing/getPropDetailsById?property_id=${propertyId}`
         );
         if (!res.ok) throw new Error("Failed to fetch property");
         const data = await res.json();

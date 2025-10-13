@@ -5,25 +5,42 @@ import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, unitId, propertyName, unitName } = await req.json();
+        const { email, unitId, propertyName, unitName, startDate, endDate } =
+            await req.json();
 
         if (!email || !unitId || !propertyName || !unitName) {
-            return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+            return NextResponse.json(
+                { error: "Missing required fields." },
+                { status: 400 }
+            );
         }
 
-        // 1. Generate invite code
+        if (!startDate || !endDate) {
+            return NextResponse.json(
+                { error: "Start and end date are required." },
+                { status: 400 }
+            );
+        }
+
+        if (new Date(startDate) >= new Date(endDate)) {
+            return NextResponse.json(
+                { error: "End date must be after start date." },
+                { status: 400 }
+            );
+        }
+
         const inviteCode = crypto.randomBytes(8).toString("hex");
 
-        // 2. Save invite code to DB (create `InviteCode` table if needed)
         await db.query(
-            `INSERT INTO InviteCode (code, email, unitId, expiresAt)
-       VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))`,
-            [inviteCode, email, unitId]
+            `
+                INSERT INTO InviteCode (code, email, unitId, start_date, end_date, status, expiresAt)
+                VALUES (?, ?, ?, ?, ?, 'PENDING', DATE_ADD(NOW(), INTERVAL 7 DAY))
+            `,
+            [inviteCode, email, unitId, startDate, endDate]
         );
 
-        // 3. Send email
         const transporter = nodemailer.createTransport({
-            service: "gmail", // or your SMTP config
+            service: "gmail",
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
@@ -33,34 +50,49 @@ export async function POST(req: NextRequest) {
         const registrationUrl = `${process.env.BASE_URL}/pages/InviteRegister?invite=${inviteCode}`;
 
         await transporter.sendMail({
-            from: `[Hestia Rent360] "${propertyName}" <${process.env.EMAIL_USER}>`,
+            from: `[Upkyp] "${propertyName}" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: `You're invited to join ${propertyName}`,
             html: `
-    <div style="background-color:#f4f4f4;padding:40px 20px;font-family:sans-serif">
-      <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
-        <div style="background-color:#4f46e5;padding:20px;text-align:center;color:white">
-          <h1 style="margin:0;font-size:24px;">Hestia Rent360</h1>
-          <p style="margin:0;">Invitation to Register</p>
+        <div style="background-color:#f4f4f4;padding:40px 20px;font-family:sans-serif">
+          <div style="max-width:600px;margin:0 auto;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+            <div style="background-color:#4f46e5;padding:20px;text-align:center;color:white">
+              <h1 style="margin:0;font-size:24px;">Upkyp</h1>
+              <p style="margin:0;">Invitation to Join Unit</p>
+            </div>
+            <div style="padding:30px;">
+              <h2 style="font-size:20px;color:#333;">Invitation to Join ${propertyName}</h2>
+              <p style="color:#555;">You’ve been invited to join as a tenant for unit <strong>${unitName}</strong>.</p>
+              <p style="color:#555;">Proposed lease period:</p>
+              <p><strong>${new Date(startDate).toLocaleDateString("en-PH", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            })}</strong> – <strong>${new Date(endDate).toLocaleDateString(
+                "en-PH",
+                { year: "numeric", month: "short", day: "numeric" }
+            )}</strong></p>
+              <p style="color:#555;">Click below to register and confirm your tenancy:</p>
+              <p>
+                <a href="${registrationUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background-color:#4f46e5;color:white;text-decoration:none;border-radius:4px;font-weight:bold;">Join Now</a>
+              </p>
+              <p style="color:#999;font-size:12px;">This invite will expire in 7 days.</p>
+            </div>
+          </div>
         </div>
-        <div style="padding:30px;">
-          <h2 style="font-size:20px;color:#333;">Invitation to Rent at ${propertyName}</h2>
-          <p style="color:#555;">You have been invited to join as a tenant for unit <strong>${unitName}</strong>.</p>
-          <p style="color:#555;">Click the link below to register and join your unit:</p>
-          <p>
-            <a href="${registrationUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background-color:#4f46e5;color:white;text-decoration:none;border-radius:4px;font-weight:bold;">Join Now</a>
-          </p>
-          <p style="color:#999;font-size:12px;">This invite will expire in 7 days.</p>
-        </div>
-      </div>
-    </div>
-  `,
+      `,
         });
 
-
-        return NextResponse.json({ success: true, code: inviteCode });
+        return NextResponse.json({
+            success: true,
+            code: inviteCode,
+            message: "Invite sent successfully with lease dates saved.",
+        });
     } catch (error) {
         console.error("Error sending invite:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(
+            { error: "Internal Server Error" },
+            { status: 500 }
+        );
     }
 }

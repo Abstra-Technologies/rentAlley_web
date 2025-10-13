@@ -16,17 +16,6 @@ import { Suspense } from 'react';
     const [expired, setExpired] = useState(false);
     const [loadingInvite, setLoadingInvite] = useState(true);
 
-    // useEffect(() => {
-    //     // Always fetch session first
-    //     fetchSession().then(() => {
-    //         if (!loading && !user) {
-    //             const currentPath = window.location.pathname;
-    //             router.push(`/pages/auth/login?redirect=${encodeURIComponent(currentPath)}`);
-    //         }
-    //     });
-    // }, [user, loading, fetchSession, router]);
-
-
     useEffect(() => {
         async function fetchInviteDetails() {
             try {

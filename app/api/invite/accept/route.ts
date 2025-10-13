@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import webpush from 'web-push';
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import webpush from "web-push";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
@@ -12,9 +12,10 @@ webpush.setVapidDetails(
 );
 
 export async function POST(req: Request) {
+    const conn = await db.getConnection();
     try {
         const body = await req.json();
-        const { inviteCode, userId, startDate, endDate } = body;
+        const { inviteCode, userId } = body;
 
         if (!inviteCode || !userId) {
             return NextResponse.json(
@@ -23,14 +24,17 @@ export async function POST(req: Request) {
             );
         }
 
-        // 1. Validate invite code
-        const [inviteRows]: any = await db.query(
+        await conn.beginTransaction();
+
+        // 1️⃣ Validate invite
+        const [inviteRows]: any = await conn.query(
             `SELECT * FROM InviteCode WHERE code = ? AND status = 'PENDING'`,
             [inviteCode]
         );
         const invite = inviteRows[0];
 
         if (!invite) {
+            await conn.rollback();
             return NextResponse.json(
                 { error: "Invite code not found or already used." },
                 { status: 404 }
@@ -38,49 +42,72 @@ export async function POST(req: Request) {
         }
 
         if (new Date(invite.expiresAt) < new Date()) {
-            return NextResponse.json({ error: "Invite code has expired." }, { status: 410 });
+            await conn.rollback();
+            return NextResponse.json(
+                { error: "Invite code has expired." },
+                { status: 410 }
+            );
         }
 
-        // 2. Get tenant_id using userId
-        const [tenantRows]: any = await db.query(
+        // 2️⃣ Get tenant_id using userId
+        const [tenantRows]: any = await conn.query(
             `SELECT tenant_id FROM Tenant WHERE user_id = ?`,
             [userId]
         );
         const tenant = tenantRows[0];
 
         if (!tenant) {
+            await conn.rollback();
             return NextResponse.json(
                 { error: "Tenant account not found for this user." },
                 { status: 404 }
             );
         }
 
-        // 3. Prepare dates
-        const leaseStart = startDate ? new Date(startDate) : null;
-        const leaseEnd = endDate ? new Date(endDate) : null;
+        // 3️⃣ Get lease dates from InviteCode
+        const leaseStart = invite.start_date ? new Date(invite.start_date) : null;
+        const leaseEnd = invite.end_date ? new Date(invite.end_date) : null;
 
-        // 4. Insert lease agreement
-        await db.query(
+        if (!leaseStart || !leaseEnd) {
+            await conn.rollback();
+            return NextResponse.json(
+                { error: "Lease dates not found in invite." },
+                { status: 400 }
+            );
+        }
+
+        // 4️⃣ Create lease record (mark as ACTIVE)
+        const [leaseResult]: any = await conn.query(
             `INSERT INTO LeaseAgreement (
                 tenant_id, unit_id, start_date, end_date, status,
                 is_security_deposit_paid, is_advance_payment_paid
-            ) VALUES (?, ?, ?, ?, 'pending', 1, 1)`,
+            ) VALUES (?, ?, ?, ?, 'active', 1, 1)`,
             [tenant.tenant_id, invite.unitId, leaseStart, leaseEnd]
         );
 
-        // 5. Mark invite code as used
-        await db.query(
+        const newLeaseId = leaseResult.insertId;
+
+        // 5️⃣ Update InviteCode → USED
+        await conn.query(
             `UPDATE InviteCode SET status = 'USED' WHERE code = ?`,
             [inviteCode]
         );
 
-        // 6. Fetch landlord info from property/unit
-        const [landlordRows]: any = await db.query(
+        // 6️⃣ Mark Unit → OCCUPIED
+        await conn.query(
+            `UPDATE Unit
+             SET status = 'occupied', updated_at = CURRENT_TIMESTAMP
+             WHERE unit_id = ?`,
+            [invite.unitId]
+        );
+
+        // 7️⃣ Fetch landlord info
+        const [landlordRows]: any = await conn.query(
             `SELECT l.user_id, p.property_name, u.unit_name, u.unit_id, p.property_id
-       FROM Unit u
-       JOIN Property p ON u.property_id = p.property_id
-       JOIN Landlord l ON p.landlord_id = l.landlord_id
-       WHERE u.unit_id = ?`,
+             FROM Unit u
+                      JOIN Property p ON u.property_id = p.property_id
+                      JOIN Landlord l ON p.landlord_id = l.landlord_id
+             WHERE u.unit_id = ?`,
             [invite.unitId]
         );
 
@@ -91,21 +118,22 @@ export async function POST(req: Request) {
             const unitId = landlordRows[0].unit_id;
             const propertyId = landlordRows[0].property_id;
 
-            const notifTitle = `Tenant Invite Accepted ${propertyName} - ${unitName}`;
-            const notifBody = `A tenant has accepted your invite  for your unit (${propertyName} - ${unitName}). Please review/set the lease agreement.`;
+            const notifTitle = `Tenant Invite Accepted - ${propertyName} / ${unitName}`;
+            const notifBody = `Your tenant has accepted the invite. The lease is now active for ${propertyName} - ${unitName}.`;
+            const notifUrl = `/pages/landlord/property-listing/view-unit/${propertyId}/unit-details/${unitId}`;
 
-            // Save notification
-            await db.query(
-                `INSERT INTO Notification (user_id, title, body, is_read, created_at)
-         VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)`,
-                [landlordUserId, notifTitle, notifBody]
+            // 8️⃣ Save landlord notification
+            await conn.query(
+                `INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
+                 VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
+                [landlordUserId, notifTitle, notifBody, notifUrl]
             );
 
-            // Fetch push subscriptions
-            const [subs]: any = await db.query(
-                `SELECT endpoint, p256dh, auth 
-         FROM user_push_subscriptions 
-         WHERE user_id = ?`,
+            // 9️⃣ Push notification
+            const [subs]: any = await conn.query(
+                `SELECT endpoint, p256dh, auth
+                 FROM user_push_subscriptions
+                 WHERE user_id = ?`,
                 [landlordUserId]
             );
 
@@ -113,7 +141,7 @@ export async function POST(req: Request) {
                 const payload = JSON.stringify({
                     title: notifTitle,
                     body: notifBody,
-                    url: `/pages/landlord/property-listing/view-unit/${propertyId}/unit-details/${unitId}`,
+                    url: notifUrl,
                 });
 
                 for (const sub of subs) {
@@ -127,16 +155,14 @@ export async function POST(req: Request) {
 
                     try {
                         await webpush.sendNotification(subscription, payload);
-                        console.log("✅ Sent push notification to landlord:", sub.endpoint);
+                        console.log("✅ Push sent to landlord:", sub.endpoint);
                     } catch (err: any) {
-                        console.error("❌ Failed push:", err);
-                        // Remove invalid subscription
+                        console.error("❌ Push failed:", err.message);
                         if (err.statusCode === 410 || err.statusCode === 404) {
-                            await db.execute(
+                            await conn.query(
                                 `DELETE FROM user_push_subscriptions WHERE endpoint = ?`,
                                 [sub.endpoint]
                             );
-                            await db.end();
                             console.log("🗑️ Removed invalid subscription:", sub.endpoint);
                         }
                     }
@@ -144,9 +170,16 @@ export async function POST(req: Request) {
             }
         }
 
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error("Invite redeem error:", error);
+        await conn.commit();
+        return NextResponse.json({
+            success: true,
+            message: "Lease created, unit marked occupied, landlord notified.",
+        });
+    } catch (error: any) {
+        console.error("Invite accept error:", error);
+        await conn.rollback();
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    } finally {
+        conn.release();
     }
 }
