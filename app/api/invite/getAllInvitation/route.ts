@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       FROM InviteCode ic
       JOIN Unit u ON ic.unitId = u.unit_id
       JOIN Property p ON u.property_id = p.property_id
-      WHERE ic.email = ?
+      WHERE ic.email = ? AND ic.status = 'PENDING'
       ORDER BY ic.createdAt DESC
       `,
             [email]
