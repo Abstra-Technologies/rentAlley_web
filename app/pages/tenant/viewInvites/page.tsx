@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
+import TenantOutsidePortalNav from "@/components/navigation/TenantOutsidePortalNav";
 
 type Invite = {
     code: string;
@@ -13,6 +14,7 @@ type Invite = {
 
 export default function TenantInvites() {
     const router = useRouter();
+    // @ts-ignore
     const { user } = useAuthStore();
     const [invites, setInvites] = useState<Invite[]>([]);
     const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ export default function TenantInvites() {
             if (!user?.email) return;
 
             try {
-                const res = await fetch(`/api/invite?email=${user.email}`);
+                const res = await fetch(`/api/invite/getAllInvitation?email=${user?.email}`);
                 if (!res.ok) throw new Error("Failed to fetch invites");
                 const data = await res.json();
                 setInvites(data.invites || []);
@@ -37,7 +39,10 @@ export default function TenantInvites() {
     }, [user?.email]);
 
     return (
-        <div className="max-w-2xl mx-auto mt-10 px-4">
+        <div className="flex min-h-screen bg-gray-50">
+            <TenantOutsidePortalNav />
+            <div className="flex-1 md:ml-64">
+
             <h1 className="text-2xl font-bold mb-6">Pending Invitations</h1>
 
             {loading ? (
@@ -67,6 +72,8 @@ export default function TenantInvites() {
             ) : (
                 <p className="text-gray-600">No pending invitations found.</p>
             )}
+            </div>
+
         </div>
     );
 }
