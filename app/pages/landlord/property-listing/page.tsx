@@ -26,20 +26,20 @@ import PropertyCard from "@/components/landlord/properties/propertyCards";
 import FBShareButton from "@/components/landlord/properties/shareToFacebook";
 import Pagination from "@mui/material/Pagination";
 import { AlertCircle } from 'lucide-react';
+import useSubscription from "@/hooks/landlord/useSubscription";
 
 const PropertyListingPage = () => {
   const router = useRouter();
-  const { fetchSession, user, admin } = useAuthStore();
+  const { fetchSession, user } = useAuthStore();
   const { properties, fetchAllProperties, loading, error } = usePropertyStore();
   const [verificationStatus, setVerificationStatus] = useState("not verified");
   const [isFetchingVerification, setIsFetchingVerification] = useState(true);
-  const [fetchingSubscription, setFetchingSubscription] = useState(true);
-  const [subscription, setSubscription] = useState(null);
   const [pendingApproval, setPendingApproval] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
-  const itemsPerPage = 9; // Better grid layout
+  const itemsPerPage = 9;
+  const { subscription, loadingSubscription, errorSubscription } = useSubscription(user?.landlord_id);
 
   const handlePageChange = (event, value) => {
     setPage(value);
@@ -47,10 +47,10 @@ const PropertyListingPage = () => {
   };
 
   useEffect(() => {
-    if (!user && !admin) {
+    if (!user) {
       fetchSession();
     }
-  }, [user, admin]);
+  }, [user]);
 
   useEffect(() => {
     if (user?.landlord_id) {
@@ -82,7 +82,6 @@ const PropertyListingPage = () => {
         );
         const status =
           verificationRes.data.verification_status || "not verified";
-        console.log("status of landlord: ", status);
         setVerificationStatus(status.toLowerCase());
       } catch (err) {
         console.error("[ERROR] Failed to fetch landlord verification:", err);
@@ -90,20 +89,7 @@ const PropertyListingPage = () => {
       } finally {
         setIsFetchingVerification(false);
       }
-
-      try {
-        setFetchingSubscription(true);
-        const subscriptionRes = await axios.get(
-          `/api/landlord/subscription/active/${user?.landlord_id}`
-        );
-        setSubscription(subscriptionRes.data);
-      } catch (err) {
-        console.error("[ERROR] Failed to fetch subscription:", err);
-      } finally {
-        setFetchingSubscription(false);
-      }
     };
-
     fetchVerificationAndSubscription();
   }, [user]);
 
@@ -234,7 +220,8 @@ const PropertyListingPage = () => {
 
   const isAddDisabled =
     isFetchingVerification ||
-    fetchingSubscription ||
+      loadingSubscription
+      ||
     verificationStatus !== "approved" ||
     !subscription ||
     subscription?.is_active !== 1 ||
@@ -508,7 +495,8 @@ const PropertyListingPage = () => {
                     disabled={isAddDisabled}
                   >
                     {isFetchingVerification ||
-                    fetchingSubscription ||
+                    loadingSubscription
+                    ||
                     isNavigating ? (
                       <>
                         <svg

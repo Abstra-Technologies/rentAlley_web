@@ -14,6 +14,7 @@ import usePropertyStore from "../../../../../zustand/property/usePropertyStore";
 import useAuthStore from "../../../../../zustand/authStore";
 import useSWRMutation from "swr/mutation";
 import Swal from "sweetalert2";
+import useSubscription from "@/hooks/landlord/useSubscription";
 
 export default function AddNewProperty() {
   const router = useRouter();
@@ -24,8 +25,51 @@ export default function AddNewProperty() {
         : null;
     return savedStep ? Number(savedStep) : 1;
   });
-  const { fetchSession, user, admin } = useAuthStore();
+  const { fetchSession, user } = useAuthStore();
   const [submitting, setSubmitting] = useState(false);
+  const { subscription, loadingSubscription, errorSubscription } = useSubscription(user?.landlord_id);
+
+  useEffect(() => {
+    if (loadingSubscription || !user?.landlord_id) return;
+
+    if (!subscription || subscription?.is_active !== 1) {
+      Swal.fire({
+        title: "Subscription Required",
+        text: "You need an active subscription to add a property.",
+        icon: "info",
+        showConfirmButton: false, // hides the default OK button
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        html: `
+        <div style="margin-top: 20px;">
+          <button id="goBackButton" 
+            style="
+              background-color: #3b82f6;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 8px;
+              font-weight: 600;
+              cursor: pointer;
+            ">
+            Go Back
+          </button>
+        </div>
+      `,
+        didOpen: () => {
+          const goBackButton = document.getElementById("goBackButton");
+          if (goBackButton) {
+            goBackButton.addEventListener("click", () => {
+              Swal.close();
+              router.replace("/pages/landlord/property-listing");
+            });
+          }
+        },
+      });
+    }
+  }, [subscription, loadingSubscription, user]);
+
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -34,10 +78,10 @@ export default function AddNewProperty() {
   }, [step]);
 
   useEffect(() => {
-    if (!user && !admin) {
+    if (!user) {
       fetchSession();
     }
-  }, [user, admin]);
+  }, [user]);
 
   const {
     property,
