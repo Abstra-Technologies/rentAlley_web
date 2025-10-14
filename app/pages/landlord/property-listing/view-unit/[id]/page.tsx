@@ -24,6 +24,7 @@ import { Pagination } from "@mui/material";
 import { usePropertyData } from "@/hooks/usePropertyData";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import AIUnitGenerator from "@/components/landlord/ai/AIUnitGenerator";
+import LandlordSubscriptionPlanComponent from "@/components/landlord/subscrription";
 
 const ViewUnitPage = () => {
   const { id } = useParams();
@@ -57,7 +58,6 @@ const ViewUnitPage = () => {
 
   console.log('units data:', units);
 
-  // Billing status + property details
   useEffect(() => {
     if (!property_id) return;
 
@@ -103,12 +103,11 @@ const ViewUnitPage = () => {
     fetchPropertyDetails();
   }, [property_id]);
 
-  // ensure session is loaded
   useEffect(() => {
-    if (!user && !admin) {
+    if (!user) {
       fetchSession();
     }
-  }, [user, admin]);
+  }, [user]);
 
   const handlePageChange = (event: any, value: number) => {
     setPage(value);
@@ -285,7 +284,6 @@ const ViewUnitPage = () => {
     );
   }
 
-
   return (
     <LandlordLayout>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
@@ -296,19 +294,30 @@ const ViewUnitPage = () => {
           {/* Header Content */}
 
           <div className="mb-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl shadow-md">
-                <BuildingOffice2Icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+            {/* ====== Header Section ====== */}
+            <div className="mb-6">
+              {/* Property Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl shadow-md">
+                    <BuildingOffice2Icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 leading-tight">
+                      {isLoading
+                          ? "Loading..."
+                          : propertyDetails?.property_name || "Property Details"}
+                    </h1>
+                    <p className="text-gray-500 text-sm sm:text-base mt-1">
+                      Manage your rental units efficiently
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 leading-tight">
-                  {isLoading
-                    ? "Loading..."
-                    : propertyDetails?.property_name || "Property Details"}
-                </h1>
-                <p className="text-gray-500 text-sm sm:text-base mt-1">
-                  Manage your rental units efficiently
-                </p>
+
+              {/* Subscription Plan Info (Full Width Below Header) */}
+              <div className="mt-2 sm:mt-3">
+                <LandlordSubscriptionPlanComponent landlord_id={landlord_id} />
               </div>
             </div>
 
@@ -371,45 +380,110 @@ const ViewUnitPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* ====== Left Column: Add/Generate Split Button ====== */}
                 <div className="flex flex-col gap-3">
-                    <div className="flex rounded-xl overflow-hidden shadow-md border border-gray-200">
-                        {/* 🏘 Add Unit (left half) */}
-                        <button
-                            onClick={handleAddUnitClick}
-                            disabled={
-                                loadingSubscription ||
-                                !subscription ||
-                                units?.length >= subscription?.listingLimits?.maxUnits
-                            }
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all duration-200 ${
-                                loadingSubscription ||
-                                !subscription ||
-                                units?.length >= subscription?.listingLimits?.maxUnits
-                                    ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                                    : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 active:scale-95"
-                            }`}
-                        >
-                            <PlusCircleIcon className="h-5 w-5" />
-                            <span>Add Unit</span>
-                        </button>
+                  <div className="flex rounded-xl overflow-hidden shadow-md border border-gray-200">
+                    {/* 🏘 Add Unit (left half) */}
+                    <button
+                        onClick={handleAddUnitClick}
+                        disabled={
+                            loadingSubscription ||
+                            !subscription ||
+                            units?.length >= subscription?.listingLimits?.maxUnits
+                        }
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all duration-200 ${
+                            loadingSubscription ||
+                            !subscription ||
+                            units?.length >= subscription?.listingLimits?.maxUnits
+                                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                                : "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 active:scale-95"
+                        }`}
+                    >
+                      <PlusCircleIcon className="h-5 w-5" />
+                      <span>Add Unit</span>
+                    </button>
 
-                        {/* 🤖 Generate AI (right half) */}
-                        <button
-                            onClick={() => setIsAIGeneratorOpen(true)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 active:scale-95 transition-all duration-200 border-l border-white/20"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>or Generate with AI</span>
-                        </button>
-                    </div>
+                    {/* 🤖 Generate AI (right half) */}
+                    <button
+                        onClick={() => {
+                          if (
+                              loadingSubscription ||
+                              !subscription ||
+                              subscription?.is_active !== 1
+                          ) {
+                            Swal.fire({
+                              title: "Subscription Required",
+                              text: "You need an active subscription to use AI unit generation.",
+                              icon: "info",
+                              showConfirmButton: false,
+                              allowOutsideClick: false,
+                              allowEscapeKey: false,
+                              allowEnterKey: false,
+                              html: `
+            <div style="margin-top: 20px;">
+              <button id="goBackButton"
+                style="
+                  background-color: #3b82f6;
+                  color: white;
+                  border: none;
+                  padding: 10px 20px;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  cursor: pointer;
+                ">
+                Go Back
+              </button>
+            </div>
+          `,
+                              didOpen: () => {
+                                const btn = document.getElementById("goBackButton");
+                                if (btn) {
+                                  btn.addEventListener("click", () => {
+                                    Swal.close();
+                                    router.replace("/pages/landlord/sub_two/subscription");
+                                  });
+                                }
+                              },
+                            });
+                            return;
+                          }
+
+                          if (units?.length >= subscription?.listingLimits?.maxUnits) {
+                            Swal.fire({
+                              title: "Unit Limit Reached",
+                              text: `You’ve reached the maximum of ${subscription?.listingLimits?.maxUnits} units for your plan.`,
+                              icon: "warning",
+                              confirmButtonColor: "#ef4444",
+                            });
+                            return;
+                          }
+
+                          setIsAIGeneratorOpen(true);
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold text-white border-l border-white/20 transition-all duration-200 ${
+                            loadingSubscription ||
+                            !subscription ||
+                            units?.length >= subscription?.listingLimits?.maxUnits
+                                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                                : "bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 active:scale-95"
+                        }`}
+                        disabled={
+                            loadingSubscription ||
+                            !subscription ||
+                            units?.length >= subscription?.listingLimits?.maxUnits
+                        }
+                    >
+                      <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span>or Generate with AI</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* ====== Right Column: Billing Mode + Set Property Rates ====== */}
