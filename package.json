@@ -76,6 +76,7 @@
     "googleapis": "^144.0.0",
     "gsap": "^3.13.0",
     "html-to-image": "^1.11.13",
+    "html2canvas": "^1.4.1",
     "install": "^0.13.0",
     "ioredis": "^5.7.0",
     "jose": "^5.9.6",

@@ -5,6 +5,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { formatDate, formatCurrency, toNumber } from "@/utils/formatter/formatters";
+import useAuthStore from "../../../zustand/authStore";
 
 export default function TenantBilling({ agreement_id, user_id }) {
   const [billingData, setBillingData] = useState([]);
@@ -12,7 +13,7 @@ export default function TenantBilling({ agreement_id, user_id }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingPayment, setLoadingPayment] = useState(false);
-
+  const { user, admin, fetchSession } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -111,8 +112,8 @@ export default function TenantBilling({ agreement_id, user_id }) {
         const res = await axios.post("/api/tenant/billing/payment", {
           amount,
           billing_id,
-          tenant_id: user_id,
-          payment_method_id: 1,
+          tenant_id: user?.tenant_id,
+          payment_method_id: 7,
           redirectUrl: {
             success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billSuccess`,
             failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/billFailed`,
