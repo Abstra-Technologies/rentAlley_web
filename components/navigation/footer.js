@@ -51,7 +51,7 @@ const Footer = () => {
               <div className="mb-6">
                 <div className="inline-flex items-center mb-4">
                   <Image
-                    src="/upkyptxt.png"
+                    src="/upkyp.png"
                     alt="UpKyp Logo"
                     width={130}
                     height={32}
