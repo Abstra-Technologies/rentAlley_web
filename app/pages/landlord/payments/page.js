@@ -37,12 +37,13 @@ export default function PaymentsPage() {
                     {/* Tenant Payments Ledger - spans 2/3 */}
                     <section className="bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80 rounded-2xl shadow-lg p-6 hover:shadow-xl transition lg:col-span-2">
                         <h2 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
-                           Tenant Payments Ledger
+                            Tenant Payments Ledger
                         </h2>
-                        <div className="overflow-x-auto bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 h-[600px] flex flex-col">
                             <PaymentList landlord_id={landlord_id} />
                         </div>
                     </section>
+
 
 
                     {/* Payment Review - spans 1/3 */}

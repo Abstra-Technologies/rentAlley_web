@@ -57,27 +57,41 @@ export default function SearchLeaseBar() {
     };
 
     return (
-        <div className="relative max-w-md w-full mx-auto" ref={dropdownRef}>
-            <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
-                <input
-                    type="text"
-                    placeholder="Search tenant email, property, or unit..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 focus:bg-white text-sm sm:text-base"
-                />
+        <div
+            className="relative w-full max-w-2xl mx-auto flex justify-center transition-all duration-200"
+            ref={dropdownRef}
+        >
+            {/* 🌟 Search Card Container */}
+            <div className="w-full max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-md p-4 sm:p-5 flex flex-col items-center justify-center transition-all duration-200 hover:shadow-lg">
+                {/* 🔍 Input Field */}
+                <div className="relative w-full group">
+                    <MagnifyingGlassIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+
+                    <input
+                        type="text"
+                        placeholder="Search tenants via email, properties, or units..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-400 bg-gray-50 hover:bg-white shadow-sm outline-none transition-all duration-150"
+                    />
+                </div>
+
+                {/* 📝 Optional helper text below input */}
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                    Search across your current tenants via email, property, unit name.
+                </p>
             </div>
 
+            {/* 🧾 Dropdown Results */}
             {showDropdown && results.length > 0 && (
-                <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden max-h-72 overflow-y-auto">
+                <div className="absolute top-full mt-3 w-full max-w-3xl bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden max-h-72 overflow-y-auto z-50">
                     {results.map((item) => (
                         <button
                             key={item.agreement_id}
                             onClick={() => handleSelect(item.agreement_id)}
-                            className="w-full text-left px-4 py-2 hover:bg-blue-50 flex flex-col border-b border-gray-100 last:border-0"
+                            className="w-full text-left px-5 py-2.5 flex flex-col hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 transition-colors border-b border-gray-100 last:border-0"
                         >
-                            <p className="text-sm font-semibold text-gray-800 truncate">
+                            <p className="text-sm font-medium text-gray-800 truncate">
                                 {item.firstName} {item.lastName}
                             </p>
                             <p className="text-xs text-gray-500 truncate">
@@ -88,12 +102,16 @@ export default function SearchLeaseBar() {
                 </div>
             )}
 
+            {/* 🚫 No Results */}
             {showDropdown && !loading && results.length === 0 && (
-                <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-lg border border-gray-200 p-3 text-sm text-gray-500 text-center">
+                <div className="absolute top-full mt-3 w-full max-w-3xl bg-white rounded-xl shadow-lg border border-gray-200 px-5 py-3 text-sm text-gray-500 text-center z-50">
                     No matches found
                 </div>
             )}
         </div>
     );
+
+
+
 }
 

@@ -12,8 +12,6 @@ import {
   Wrench,
   FileText,
 } from "lucide-react";
-
-// Dynamic imports for charts
 const PropertyTypeChart = dynamic(
   () => import("../landlord/analytics/typesOfProperties"),
   { ssr: false }
@@ -68,64 +66,7 @@ const LandlordPropertyChart = () => {
 
   const landlord_id = user?.landlord_id;
 
-  // useEffect(() => {
-  //   if (!user?.landlord_id) return; // don’t run until landlord_id is ready
-  //
-  //   const landlord_id = user.landlord_id;
-  //
-  //   // Fetch all data concurrently
-  //   Promise.all([
-  //     fetch(`/api/analytics/landlord/propertyVisitsPerMonth?landlord_id=${landlord_id}`),
-  //     fetch(`/api/analytics/landlord/occupancyRateProperty?landlord_id=${landlord_id}`),
-  //     fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`),
-  //     fetch(`/api/analytics/landlord/maintenanceRequestsSummary?landlord_id=${landlord_id}`),
-  //     fetch(`/api/analytics/landlord/totalReceivables?landlord_id=${landlord_id}`),
-  //     fetch(`/api/analytics/landlord/getActiveListings?landlord_id=${landlord_id}`),
-  //   ])
-  //       .then(
-  //           async ([
-  //                    visitsRes,
-  //                    occupancyRes,
-  //                    tenantsRes,
-  //                    requestsRes,
-  //                    receivablesRes,
-  //                    propertiesRes,
-  //                  ]) => {
-  //             const visitsData = await visitsRes.json();
-  //             const occupancyData = await occupancyRes.json();
-  //             const tenantsData = await tenantsRes.json();
-  //             const requestsData = await requestsRes.json();
-  //             const receivablesData = await receivablesRes.json();
-  //             const propertiesData = await propertiesRes.json();
-  //             console.log('propertiessdata: ', propertiesData);
-  //             // visits
-  //             setMonthlyVisits(visitsData.visitsPerMonth || []);
-  //
-  //             // occupancy
-  //             const totalUnits = occupancyData.occupancyRate?.total_units || 0;
-  //             const rate =
-  //                 totalUnits > 0 ? occupancyData.occupancyRate?.occupancy_rate || 0 : 0;
-  //
-  //             // properties
-  //             setTotalProperties(propertiesData.totalActiveListings || 0);
-  //
-  //             // others
-  //             setTotalUnits(totalUnits);
-  //             setOccupancyRate(rate);
-  //             setTotalTenants(tenantsData.total_tenants || 0);
-  //             setTotalRequests(requestsData.totalRequests || 0);
-  //             setTotalReceivables(receivablesData.totalReceivables || 0);
-  //
-  //             setLoading(false);
-  //           }
-  //       )
-  //       .catch((error) => {
-  //         console.error("Error fetching dashboard data:", error);
-  //         setLoading(false);
-  //       });
-  // }, [user?.landlord_id]);
-
-  // analytics
+  // analytic
   useEffect(() => {
     if (!user?.landlord_id) return;
 
@@ -291,6 +232,7 @@ const LandlordPropertyChart = () => {
               </div>
             </div>
           </div>
+
         </div>
 
         {/* Main Charts Grid */}
