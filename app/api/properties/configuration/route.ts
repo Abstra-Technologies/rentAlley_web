@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
                     p.property_name,
                     p.property_type,
                     p.water_billing_type,
-                    p.elec_billing_type,
+                    p.electricity_billing_type,
                     pc.billingReminderDay,
                     pc.billingDueDay,
                     pc.notifyEmail,

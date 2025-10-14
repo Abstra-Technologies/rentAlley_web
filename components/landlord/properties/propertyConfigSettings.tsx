@@ -50,6 +50,7 @@ export default function PropertyConfiguration({ propertyId }: PropertyConfigurat
                         elec_billing_type: res.data.elec_billing_type || "included",
                     });
                 }
+                console.log('proerty congfig', res.data);
             } catch (err) {
                 console.error("Failed to fetch property config:", err);
             } finally {
@@ -147,6 +148,35 @@ export default function PropertyConfiguration({ propertyId }: PropertyConfigurat
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Billing Due Date (Day of Month)
+                            </label>
+                            <select
+                                name="billingDueDay"
+                                value={configForm.billingDueDay}
+                                onChange={handleChange}
+                                className="w-full rounded-lg border border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2.5"
+                            >
+                                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                                    <option key={day} value={day}>
+                                        {day}
+                                        {day === 1
+                                            ? "st"
+                                            : day === 2
+                                                ? "nd"
+                                                : day === 3
+                                                    ? "rd"
+                                                    : "th"}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Rent billings will be due every <b>{configForm.billingDueDay}</b>
+                                {configForm.billingDueDay === 1 ? "st" : "th"} of the month.
+                            </p>
                         </div>
 
                         <div>

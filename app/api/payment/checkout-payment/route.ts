@@ -1,8 +1,3 @@
-// app/api/subscription/checkout/route.ts
-// -----------------------------------------------------------------------------
-// Converts your existing Express-style handler into a Next.js App Router route.
-// Handles: one-time free trial (Standard or Premium plans) + Maya Checkout init.
-// -----------------------------------------------------------------------------
 
 import { NextRequest, NextResponse } from "next/server";
 import mysql from "mysql2/promise";

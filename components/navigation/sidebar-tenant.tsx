@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 interface TenantLayoutProps {
   children: React.ReactNode;
@@ -23,6 +24,24 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const [propertyInfo, setPropertyInfo] = useState<{ property_name: string; unit_name: string } | null>(null);
+
+  useEffect(() => {
+    if (!agreement_id) return;
+
+    const fetchPropertyUnitInfo = async () => {
+      try {
+        const res = await axios.get(`/api/tenant/activeRent/propertyUnitInfo`, {
+          params: { agreement_id },
+        });
+        setPropertyInfo(res.data);
+      } catch (error) {
+        console.error("Failed to fetch property info:", error);
+      }
+    };
+
+    fetchPropertyUnitInfo();
+  }, [agreement_id]);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -105,6 +124,17 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
 
           <nav className="px-4 pb-6">
             <ul className="space-y-1">
+              {propertyInfo && (
+                  <div className="px-5 py-4 mb-4 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl shadow-md  user-select:none">
+                    <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide">
+                      {propertyInfo.property_name}
+                    </h2>
+                    <p className="text-sm text-blue-50 mt-1 flex items-center gap-1">
+                      <Home className="w-4 h-4 text-emerald-100" />
+                      Unit <span className="font-semibold text-white">{propertyInfo.unit_name}</span>
+                    </p>
+                  </div>
+              )}
               {menuItems.map(({ href, icon: Icon, label }) => {
                 const isActive = pathname.includes(href.split("?")[0]);
                 return (

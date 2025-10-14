@@ -172,7 +172,6 @@ const ReviewBillingPage = () => {
 
             const total =
                 parseAmount(bill.base_rent) +
-                parseAmount(bill.late_penalty_amount) +
                 additionalExpenseTotal -
                 advanceDeduction -
                 discountTotal;
@@ -472,7 +471,6 @@ const ReviewBillingPage = () => {
                                     // 🔄 live total (includes discounts)
                                     const total =
                                         parseAmount(currentBill.base_rent) +
-                                        parseAmount(currentBill.late_penalty_amount) +
                                         additionalExpenseTotal -
                                         advanceDeduction -
                                         discountTotal;
@@ -483,7 +481,6 @@ const ReviewBillingPage = () => {
                                                 Subtotal: ₱
                                                 {peso(
                                                     parseAmount(currentBill.base_rent) +
-                                                    parseAmount(currentBill.late_penalty_amount) +
                                                     additionalExpenseTotal -
                                                     advanceDeduction
                                                 )}

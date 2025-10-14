@@ -1,27 +1,38 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     let agreementId = searchParams.get("agreement_id");
     const userId = searchParams.get("user_id");
 
     try {
-        // 🔹 If no agreementId but userId is provided, get latest agreement
-        if (!agreementId && userId) {
-            const [agreements]: any = await db.query(
-                `SELECT agreement_id
-                 FROM LeaseAgreement
-                 WHERE tenant_id = ?
-                 ORDER BY start_date DESC
-                 LIMIT 1`,
+        // 🔹 1. Resolve Tenant & Agreement
+        let tenantId: number | null = null;
+
+        if (userId) {
+            const [tenantRows]: any = await db.query(
+                `SELECT tenant_id FROM Tenant WHERE user_id = ? LIMIT 1`,
                 [userId]
+            );
+            tenantId = tenantRows.length ? tenantRows[0].tenant_id : null;
+        }
+
+        if (!agreementId && tenantId) {
+            const [agreements]: any = await db.query(
+                `
+          SELECT agreement_id
+          FROM LeaseAgreement
+          WHERE tenant_id = ?
+          ORDER BY start_date DESC
+          LIMIT 1
+        `,
+                [tenantId]
             );
 
             if (!agreements.length) {
                 return NextResponse.json(
-                    { message: "No lease agreement found for user." },
+                    { message: "No active lease found for tenant." },
                     { status: 404 }
                 );
             }
@@ -31,14 +42,16 @@ export async function GET(req: NextRequest) {
 
         if (!agreementId) {
             return NextResponse.json(
-                { message: "Agreement ID or User ID is required" },
+                { message: "Missing agreement_id or valid user_id." },
                 { status: 400 }
             );
         }
 
-        // 🔹 Get unit + property + lease info
+        // 🔹 2. Get Lease, Unit, Property Details
         const [leaseRows]: any = await db.query(
-            `SELECT l.unit_id,
+            `
+                SELECT
+                    l.unit_id,
                     u.property_id,
                     u.rent_amount,
                     p.water_billing_type,
@@ -46,23 +59,23 @@ export async function GET(req: NextRequest) {
                     p.advance_payment_months,
                     l.advance_payment_amount,
                     l.is_advance_payment_paid
-             FROM LeaseAgreement l
-                      JOIN Unit u ON l.unit_id = u.unit_id
-                      JOIN Property p ON u.property_id = p.property_id
-             WHERE l.agreement_id = ?`,
+                FROM LeaseAgreement l
+                         JOIN Unit u ON l.unit_id = u.unit_id
+                         JOIN Property p ON u.property_id = p.property_id
+                WHERE l.agreement_id = ?
+            `,
             [agreementId]
         );
 
-        if (!leaseRows.length) {
+        if (!leaseRows.length)
             return NextResponse.json(
-                { message: "Lease agreement not found" },
+                { message: "Lease agreement not found." },
                 { status: 404 }
             );
-        }
 
         const {
             unit_id: unitId,
-            property_id,
+            property_id: propertyId,
             rent_amount,
             water_billing_type,
             electricity_billing_type,
@@ -71,42 +84,65 @@ export async function GET(req: NextRequest) {
             is_advance_payment_paid,
         } = leaseRows[0];
 
-        // 🔹 Compute total advance payment required
-        const totalAdvanceRequired = parseFloat(advance_payment_amount || 0) * (advance_payment_months || 0);
+        const totalAdvanceRequired =
+            parseFloat(advance_payment_amount || 0) * (advance_payment_months || 0);
 
-        // 🔹 Get latest billing (for current month)
+        // 🔹 3. Get Property Configuration
+        const [configRows]: any = await db.query(
+            `
+        SELECT
+            billingReminderDay,
+            billingDueDay,
+            notifyEmail,
+            notifySms,
+            lateFeeType,
+            lateFeeAmount,
+            gracePeriodDays
+        FROM PropertyConfiguration
+        WHERE property_id = ?
+        LIMIT 1
+      `,
+            [propertyId]
+        );
+        const propertyConfig = configRows.length ? configRows[0] : null;
+
+        // 🔹 4. Fetch Current Month Billing
         const [billingRows]: any = await db.query(
-            `SELECT * 
-       FROM Billing 
-       WHERE unit_id = ? 
-         AND MONTH(billing_period) = MONTH(CURRENT_DATE())
-         AND YEAR(billing_period) = YEAR(CURRENT_DATE())
-       LIMIT 1`,
+            `
+                SELECT *
+                FROM Billing
+                WHERE unit_id = ?
+                  AND MONTH(billing_period) = MONTH(CURRENT_DATE())
+                  AND YEAR(billing_period) = YEAR(CURRENT_DATE())
+                LIMIT 1
+            `,
             [unitId]
         );
-
         const billing = billingRows.length ? billingRows[0] : null;
 
-        // 🔹 Get last 2 meter readings per utility
+        // 🔹 5. Utility Readings
         const [meterReadings]: any = await db.query(
-            `SELECT *
-             FROM MeterReading
-             WHERE unit_id = ?
-             ORDER BY utility_type, reading_date DESC`,
+            `
+                SELECT *
+                FROM MeterReading
+                WHERE unit_id = ?
+                ORDER BY utility_type, reading_date DESC
+            `,
             [unitId]
         );
 
         const groupedReadings = { water: [], electricity: [] };
         for (const r of meterReadings) {
-            if (r.utility_type === "water" && groupedReadings.water.length < 2) {
+            if (r.utility_type === "water" && groupedReadings.water.length < 2)
                 groupedReadings.water.push(r);
-            }
-            if (r.utility_type === "electricity" && groupedReadings.electricity.length < 2) {
+            if (
+                r.utility_type === "electricity" &&
+                groupedReadings.electricity.length < 2
+            )
                 groupedReadings.electricity.push(r);
-            }
         }
 
-        // 🔹 Get additional charges for this billing
+        // 🔹 6. Additional Charges
         let billingAdditionalCharges: any[] = [];
         if (billing) {
             const [charges]: any = await db.query(
@@ -116,15 +152,74 @@ export async function GET(req: NextRequest) {
             billingAdditionalCharges = charges;
         }
 
-        // 🔹 Get lease-level additional expenses
+        // 🔹 7. Lease-level Additional Expenses
         const [leaseExpenses]: any = await db.query(
             `SELECT * FROM LeaseAdditionalExpense WHERE agreement_id = ?`,
             [agreementId]
         );
 
+        // 🔹 8. Compute Late Fee
+        let lateFee = 0;
+        let daysLate = 0;
+        let baseRent = parseFloat(rent_amount || 0);
+
+        if (billing && propertyConfig) {
+            const today = new Date();
+            const dueDate = new Date(billing.due_date);
+            const diffDays = Math.floor(
+                (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
+            if (diffDays > propertyConfig.gracePeriodDays) {
+                daysLate = diffDays - propertyConfig.gracePeriodDays;
+
+                if (propertyConfig.lateFeeType === "percentage") {
+                    lateFee =
+                        (baseRent * parseFloat(propertyConfig.lateFeeAmount || 0)) / 100;
+                } else {
+                    lateFee =
+                        parseFloat(propertyConfig.lateFeeAmount || 0) *
+                        Math.max(daysLate, 1);
+                }
+            }
+        }
+
+        const totalWithLateFee = billing
+            ? parseFloat(billing.total_amount_due || 0) + lateFee
+            : baseRent + lateFee;
+
+        // 🔹 9. Construct Breakdown Object
+        const breakdown = {
+            base_rent: baseRent,
+            water: billing?.total_water_amount || 0,
+            electricity: billing?.total_electricity_amount || 0,
+            advance_payment_required: totalAdvanceRequired,
+            advance_payment_amount: parseFloat(advance_payment_amount || 0),
+            advance_months: advance_payment_months,
+            is_advance_payment_paid: !!is_advance_payment_paid,
+            total_before_late_fee: billing
+                ? parseFloat(billing.total_amount_due || 0)
+                : baseRent,
+        };
+
+        // ✅ 10. Send Full Response
         return NextResponse.json(
             {
-                billing,
+                billing: billing
+                    ? {
+                        ...billing,
+                        lateFee: lateFee.toFixed(2),
+                        totalWithLateFee: totalWithLateFee.toFixed(2),
+                        daysLate,
+                    }
+                    : {
+                        billing_period: new Date(),
+                        total_amount_due: baseRent.toFixed(2),
+                        lateFee: lateFee.toFixed(2),
+                        totalWithLateFee: totalWithLateFee.toFixed(2),
+                        status: "unpaid",
+                        daysLate,
+                    },
                 meterReadings: groupedReadings,
                 billingAdditionalCharges,
                 leaseAdditionalExpenses: leaseExpenses,
@@ -132,18 +227,13 @@ export async function GET(req: NextRequest) {
                     water: water_billing_type,
                     electricity: electricity_billing_type,
                 },
-                breakdown: {
-                    base_rent: parseFloat(rent_amount || 0),
-                    advance_payment_required: totalAdvanceRequired,
-                    advance_payment_amount: parseFloat(advance_payment_amount || 0),
-                    advance_months: advance_payment_months,
-                    is_advance_payment_paid: !!is_advance_payment_paid,
-                },
+                breakdown,
+                propertyConfig,
             },
             { status: 200 }
         );
-    } catch (error) {
-        console.error("❌ Billing route error:", error);
+    } catch (error: any) {
+        console.error("❌ Tenant Billing API error:", error);
         return NextResponse.json(
             { message: "Internal server error", error: error.message },
             { status: 500 }
