@@ -7,7 +7,7 @@ import LandlordPropertyChart from "../../../../components/analytics/landlordAnal
 import PointsEarnedAlert from "../../../../components/Commons/alertPoints";
 import LandlordProfileStatus from "../../../../components/landlord/profile/LandlordProfileStatus";
 import SendTenantInviteModal from "../../../../components/landlord/properties/sendInvite";
-
+import SearchLeaseBar from "../../../../components/landlord/activeLease/SearchLeaseBar";
 export default function LandlordDashboard() {
   const { user, admin, loading, fetchSession } = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
@@ -89,6 +89,9 @@ export default function LandlordDashboard() {
         <div className="mb-4">
           <LandlordProfileStatus landlord_id={user?.landlord_id} />
         </div>
+
+        <SearchLeaseBar />
+
 
         {/* Analytics Section - Mobile Responsive */}
         <div className="mobile-analytics-container">

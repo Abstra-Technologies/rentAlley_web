@@ -617,17 +617,15 @@ const LeaseDetails = ({ unitId }) => {
                           </div>
                         </div>
                     )}
-
                     {/* Lease Document Section */}
                     <div className="mb-6">
                       <h3 className="font-semibold text-gray-800 mb-4">Lease Document</h3>
 
                       {lease?.agreement_url ? (
+                          // ✅ Case 1: Lease file exists
                           <>
                             <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                              <p className="font-semibold text-blue-800 mb-1">
-                                Lease Agreement File
-                              </p>
+                              <p className="font-semibold text-blue-800 mb-1">Lease Agreement File</p>
                               <Link
                                   href={lease.agreement_url}
                                   target="_blank"
@@ -638,7 +636,7 @@ const LeaseDetails = ({ unitId }) => {
                               </Link>
                             </div>
 
-                            {/* ✅ Terminate button shown BELOW the file card */}
+                            {/* Terminate button (file exists + dates set) */}
                             {lease?.start_date && lease?.end_date && (
                                 <div className="mt-4">
                                   <button
@@ -659,7 +657,6 @@ const LeaseDetails = ({ unitId }) => {
                                                 headers: { "Content-Type": "application/json" },
                                                 body: JSON.stringify({ unit_id: unitId }),
                                               });
-
                                               Swal.fire("Terminated!", "Lease has been terminated.", "success");
                                               fetchLeaseDetails?.();
                                             } catch (error) {
@@ -677,35 +674,38 @@ const LeaseDetails = ({ unitId }) => {
                             )}
                           </>
                       ) : (
+                          // ⚙️ Case 2: No file exists yet
                           <>
-                            {/* Date Input Section */}
-                            <div className="mb-6">
-                              <h3 className="font-semibold text-gray-800 mb-4">Set Lease Dates</h3>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Start Date
-                                  </label>
-                                  <input
-                                      type="date"
-                                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                                      value={startDate}
-                                      onChange={(e) => setStartDate(e.target.value)}
-                                  />
+                            {/* Only show date input fields if no dates are set */}
+                            {!lease?.start_date && !lease?.end_date && (
+                                <div className="mb-6">
+                                  <h3 className="font-semibold text-gray-800 mb-4">Set Lease Dates</h3>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Start Date
+                                      </label>
+                                      <input
+                                          type="date"
+                                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
+                                          value={startDate}
+                                          onChange={(e) => setStartDate(e.target.value)}
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        End Date
+                                      </label>
+                                      <input
+                                          type="date"
+                                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
+                                          value={endDate}
+                                          onChange={(e) => setEndDate(e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
-                                <div>
-                                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    End Date
-                                  </label>
-                                  <input
-                                      type="date"
-                                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                                      value={endDate}
-                                      onChange={(e) => setEndDate(e.target.value)}
-                                  />
-                                </div>
-                              </div>
-                            </div>
+                            )}
 
                             {/* Toggle Buttons */}
                             <div className="flex gap-3 mb-4">
@@ -750,6 +750,43 @@ const LeaseDetails = ({ unitId }) => {
                                   >
                                     Upload Lease Agreement
                                   </button>
+                              )}
+
+                              {/* 🆕 Terminate button (if dates exist even without file) */}
+                              {lease?.start_date && lease?.end_date && (
+                                  <div className="mt-4">
+                                    <button
+                                        onClick={() => {
+                                          Swal.fire({
+                                            title: "Terminate Lease?",
+                                            text: "This will mark the lease as terminated but keep a record for history.",
+                                            icon: "warning",
+                                            showCancelButton: true,
+                                            confirmButtonColor: "#d33",
+                                            cancelButtonColor: "#3085d6",
+                                            confirmButtonText: "Yes, terminate it",
+                                          }).then(async (result) => {
+                                            if (result.isConfirmed) {
+                                              try {
+                                                await fetch("/api/leaseAgreement/terminateLease", {
+                                                  method: "PUT",
+                                                  headers: { "Content-Type": "application/json" },
+                                                  body: JSON.stringify({ unit_id: unitId }),
+                                                });
+                                                Swal.fire("Terminated!", "Lease has been terminated.", "success");
+                                                fetchLeaseDetails?.();
+                                              } catch (error) {
+                                                console.error("Error terminating lease:", error);
+                                                Swal.fire("Error!", "Failed to terminate lease.", "error");
+                                              }
+                                            }
+                                          });
+                                        }}
+                                        className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-lg shadow-md transition"
+                                    >
+                                      Terminate Lease
+                                    </button>
+                                  </div>
                               )}
                             </div>
                           </>
