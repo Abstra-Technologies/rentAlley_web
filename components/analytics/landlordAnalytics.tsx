@@ -237,7 +237,9 @@ const LandlordPropertyChart = () => {
 
         {/* Main Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
+          <div onClick={() =>
+              router.push(`/pages/landlord/analytics/detailed/paymentLogs`)
+          }  className="lg:col-span-2">
             <PaymentSummaryCard landlord_id={user?.landlord_id} />
           </div>
           <div className="lg:col-span-1">

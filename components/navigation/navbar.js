@@ -149,7 +149,7 @@ const Navbar = () => {
               className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center space-x-1 sm:space-x-2 transition-transform duration-300 hover:scale-105 flex-shrink-0"
             >
               <Image
-                src="/public/upkyptxt.png"
+                src="/upkyp.png"
                 alt="UpKyp Logo"
                 width={130}
                 height={32}

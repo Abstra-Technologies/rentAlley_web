@@ -8,8 +8,10 @@ import PointsEarnedAlert from "../../../../components/Commons/alertPoints";
 import LandlordProfileStatus from "../../../../components/landlord/profile/LandlordProfileStatus";
 import SendTenantInviteModal from "../../../../components/landlord/properties/sendInvite";
 import SearchLeaseBar from "../../../../components/landlord/activeLease/SearchLeaseBar";
+import LandlordSubscriptionStatus from "@/components/landlord/profile/LandlordSubscriptionStatus";
+
 export default function LandlordDashboard() {
-  const { user, admin, loading, fetchSession } = useAuthStore();
+  const { user, loading, fetchSession } = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
   const [pointMessage, setPointMessage] = useState("");
   const [showAlert, setShowAlert] = useState(false);
@@ -26,10 +28,10 @@ export default function LandlordDashboard() {
   }
 
   useEffect(() => {
-    if (!user && !admin) {
+    if (!user) {
       fetchSession();
     }
-  }, [user, admin]);
+  }, [user]);
 
   useEffect(() => {
     setGreeting(getGreeting());
@@ -92,28 +94,31 @@ export default function LandlordDashboard() {
         </div>
 
         {/* ===== Search Bar + Credits Card Row ===== */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-          {/* 🔍 Search Bar (unchanged, with description below) */}
-          <div className="flex-1 flex flex-col items-center align-center justify-center text-center">
-            {/* 🔍 Search bar */}
-            <div className="relative w-full mx-auto">
+        <div className="flex flex-col gap-4 mb-6 sm:grid sm:grid-cols-3 sm:gap-6 sm:items-start">
+          {/* 🔍 Search Bar */}
+          <div className="w-full sm:col-span-1 flex flex-col justify-center text-center">
+            <div className="relative w-full max-w-md mx-auto">
               <SearchLeaseBar />
             </div>
           </div>
 
+          {/* 🧾 Subscription Status */}
+          <div className="w-full">
+            <LandlordSubscriptionStatus landlordId={user?.landlord_id} />
+          </div>
 
-
-          {/* 💰 Total Credits Summary Card */}
-          <div className="w-full sm:w-[280px] lg:w-[320px] flex-shrink-0">
+          {/* 💰 Total Credits Summary */}
+          <div className="w-full">
             <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 rounded-2xl shadow-md p-4 border border-emerald-100 hover:shadow-lg transition-all duration-300">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 {/* Left content */}
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Total Credits</p>
                   <p className="text-2xl font-extrabold text-emerald-700 mt-1">
-                    ₱{(totalCredits || 0).toLocaleString("en-PH", {
-                    minimumFractionDigits: 2,
-                  })}
+                    ₱
+                    {(totalCredits || 0).toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                    })}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Available funds ready for disbursement
@@ -149,7 +154,6 @@ export default function LandlordDashboard() {
             </div>
           </div>
         </div>
-
 
         {/* Analytics Section - Mobile Responsive */}
         <div className="mobile-analytics-container">

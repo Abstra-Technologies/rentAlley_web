@@ -6,10 +6,12 @@ import PaymentReviewWidget from "../../../../components/landlord/widgets/Payment
 import PageTitle from '../../../../components/page_layouts/pageTitle';
 import { PaidDepositsWidget }from "../../../../components/landlord/widgets/secAdvanceWidgets";
 import {useEffect} from "react";
+import { useRouter } from "next/navigation";
 
 
 export default function PaymentsPage() {
     const { user, admin, loading, fetchSession } = useAuthStore();
+    const router = useRouter();
 
     useEffect(() => {
         if (!user && !admin) {
@@ -36,13 +38,25 @@ export default function PaymentsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Tenant Payments Ledger - spans 2/3 */}
                     <section className="bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80 rounded-2xl shadow-lg p-6 hover:shadow-xl transition lg:col-span-2">
-                        <h2 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
-                            Tenant Payments Ledger
-                        </h2>
+                        {/* Header row */}
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                Tenant Payments Ledger
+                            </h2>
+                            <button
+                                onClick={() => router.push("/pages/landlord/analytics/detailed/paymentLogs")}
+                                className="text-sm font-medium text-emerald-300 hover:text-white transition-colors duration-200"
+                            >
+                                Show All →
+                            </button>
+                        </div>
+
+                        {/* Ledger content */}
                         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 h-[600px] flex flex-col">
                             <PaymentList landlord_id={landlord_id} />
                         </div>
                     </section>
+
 
 
 

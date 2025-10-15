@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
     try {
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        if (!token) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const { payload } = await jwtVerify(token, secret);
+        const user_id = payload?.user_id;
+
+        if (!user_id) {
+            return NextResponse.json({ error: "Invalid user session" }, { status: 400 });
+        }
+
+        // 🔹 Parse request body
         const body = await req.json();
         const {
             tenant_id,
@@ -26,12 +44,12 @@ export async function POST(req: NextRequest) {
         // 🔹 1. Find active lease for tenant
         const [leaseRows]: any = await db.query(
             `
-                SELECT agreement_id
-                FROM LeaseAgreement
-                WHERE tenant_id = ?
-                  AND status = 'active'
-                LIMIT 1
-            `,
+        SELECT agreement_id
+        FROM LeaseAgreement
+        WHERE tenant_id = ?
+          AND status = 'active'
+        LIMIT 1
+      `,
             [tenant_id]
         );
 
@@ -51,59 +69,79 @@ export async function POST(req: NextRequest) {
         );
 
         if (existing.length > 0) {
-            // ✅ Update existing payment record
+            // ✅ Update existing payment
             await db.query(
                 `
-                    UPDATE Payment
-                    SET
-                        amount_paid = ?,
-                        payment_status = ?,
-                        updated_at = NOW()
-                    WHERE receipt_reference = ?
-                `,
+          UPDATE Payment
+          SET
+            amount_paid = ?,
+            payment_status = ?,
+            updated_at = NOW()
+          WHERE receipt_reference = ?
+        `,
                 [amount, payment_status, requestReferenceNumber]
             );
         } else {
-            // ✅ Insert new record
+            // ✅ Insert new payment
             await db.query(
                 `
-        INSERT INTO Payment (
-          agreement_id,
-          billing_id,
-          payment_type,
-          amount_paid,
-          payment_method_id,
-          payment_status,
-          receipt_reference,
-          created_at
-        )
-        VALUES (?, ?, 'billing', ?, ?, ?, ?, NOW())
-      `,
-                [agreement_id, billing_id, amount, payment_method_id, payment_status, requestReferenceNumber]
+          INSERT INTO Payment (
+            agreement_id,
+            billing_id,
+            payment_type,
+            amount_paid,
+            payment_method_id,
+            payment_status,
+            receipt_reference,
+            created_at
+          )
+          VALUES (?, ?, 'billing', ?, ?, ?, ?, NOW())
+        `,
+                [
+                    agreement_id,
+                    billing_id,
+                    amount,
+                    payment_method_id,
+                    payment_status,
+                    requestReferenceNumber,
+                ]
             );
         }
 
-        // 🔹 3. Reflect payment status in Billing
+        // 🔹 3. Update Billing table
         if (payment_status === "confirmed") {
             await db.query(
                 `
-        UPDATE Billing 
-        SET status = 'paid', paid_at = NOW(), updated_at = NOW()
-        WHERE billing_id = ?
-      `,
+          UPDATE Billing 
+          SET status = 'paid', paid_at = NOW(), updated_at = NOW()
+          WHERE billing_id = ?
+        `,
                 [billing_id]
             );
         } else if (payment_status === "cancelled") {
             await db.query(
                 `
-        UPDATE Billing 
-        SET status = 'unpaid', paid_at = NULL, updated_at = NOW()
-        WHERE billing_id = ?
-      `,
+          UPDATE Billing 
+          SET status = 'unpaid', paid_at = NULL, updated_at = NOW()
+          WHERE billing_id = ?
+        `,
                 [billing_id]
             );
         }
 
+        // 🔹 4. Insert ActivityLog entry (same as sample)
+        const actionText =
+            payment_status === "confirmed"
+                ? `Confirmed payment of ₱${Number(amount).toLocaleString()} for Billing #${billing_id}`
+                : `Cancelled payment for Billing #${billing_id}`;
+
+        await db.query(
+            `INSERT INTO rentalley_db.ActivityLog (user_id, action, timestamp)
+       VALUES (?, ?, NOW())`,
+            [user_id, actionText]
+        );
+
+        // ✅ 5. Return response
         return NextResponse.json(
             {
                 message:

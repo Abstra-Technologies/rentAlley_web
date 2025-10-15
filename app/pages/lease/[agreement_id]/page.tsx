@@ -15,6 +15,7 @@ import LoadingScreen from "@/components/loadingScreen";
 
 
 import LeaseInfo from "../../../../components/landlord/activeLease/leaseInfo";
+import LeasePayments from "../../../../components/landlord/activeLease/leasePayments";
 // import LeaseBilling from "./LeaseBilling";
 // import LeasePayments from "./LeasePayments";
 // import LeaseRequests from "./LeaseRequests";
@@ -149,7 +150,7 @@ export default function LeaseDetailsPage() {
             {/* Tab Contents as Components */}
             {tab === 0 && <LeaseInfo lease={lease} />}
             {/*{tab === 1 && <LeaseBilling lease={lease} />}*/}
-            {/*{tab === 2 && <LeasePayments lease={lease} />}*/}
+            {tab === 2 && <LeasePayments lease={lease} />}
             {/*{tab === 3 && <LeaseRequests lease={lease} />}*/}
             {/*{tab === 4 && <LeasePDCs lease={lease} />}*/}
         </Box>
