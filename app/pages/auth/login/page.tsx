@@ -177,424 +177,235 @@ function Login() {
   };
 
   return (
-    <>
-      <div className="min-h-screen flex flex-col">
-        {/* Main Content */}
-        <main className="flex-1 flex">
-          {/* Hero Section - Hidden on mobile, visible on desktop */}
-          <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-700/90 to-emerald-600/90 z-10"></div>
-            <Image
+      <>
+        <div className="relative flex flex-col min-h-screen bg-gradient-to-br from-blue-900 via-emerald-700 to-emerald-500 overflow-hidden">
+          {/* Background */}
+          <Image
               src="/images/hero-section.jpeg"
-              alt="Modern cityscape with high-rise buildings"
+              alt="UpKyp background"
               fill
-              className="object-cover"
               priority
-              sizes="(max-width: 1024px) 0vw, 50vw"
-            />
-            <div className="relative z-20 flex flex-col justify-center items-start p-12 xl:p-16 text-white">
-              <div className="max-w-md">
-                <h1 className="text-xl xl:text-5xl font-bold mb-6 leading-tight">
-                  Welcome to
-                    <span className="block select-none typographica text-transparent text-9xl leading-[1.4] bg-clip-text bg-gradient-to-r from-emerald-400 to-lime-300 drop-shadow-[2px_2px_2px_rgba(0,0,0,0.4)]">
-                      UpKyp
-                    </span>
+              className="object-cover brightness-75"
+              sizes="100vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-emerald-800/70 to-emerald-600/70" />
 
-                </h1>
-                <p className="text-lg xl:text-xl text-blue-100 mb-8 leading-relaxed">
-                  Your trusted partner in property management. Streamline your
-                  rental experience with our comprehensive platform.
-                </p>
-                <div className="flex items-center space-x-4 text-blue-200">
-                  <div className="flex items-center">
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
+          {/* Main Section */}
+          <main className="relative z-10 flex flex-col lg:flex-row items-center justify-center flex-1 px-4 sm:px-8 py-16 lg:py-24 gap-8 lg:gap-20">
+            {/* Hero Text Left */}
+            <div className="text-white max-w-lg text-center lg:text-left space-y-4 lg:space-y-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight drop-shadow-lg">
+                Manage. Automate. Simplify.
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-lime-300 to-emerald-400 typographica mt-2">
+                UpKyp
+              </span>
+              </h1>
+              <p className="mt-4 text-base sm:text-lg text-blue-50/90">
+                The smarter way to handle rentals — automate your billing, leases,
+                and tenant communication in one place.
+              </p>
+            </div>
+
+            {/* Login Form Right */}
+            <div className="w-full max-w-md bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 sm:p-10 lg:p-12 border border-white/30 mt-10 lg:mt-0">
+              <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                {/* Email */}
+                <div>
+                  <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                      type="email"
+                      id="email"
+                      autoComplete="email"
+                      className={`w-full px-4 py-3 border-2 rounded-xl text-sm transition-all ${
+                          focusedField === "email"
+                              ? "border-blue-500 ring-2 ring-blue-500/10"
+                              : "border-gray-200 hover:border-gray-300"
+                      } ${
+                          errors.email ? "border-red-300 bg-red-50" : "bg-white/80"
+                      } placeholder:text-gray-400 focus:outline-none`}
+                      value={formData.email}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField("email")}
+                      onBlur={() => setFocusedField("")}
+                      placeholder="juan@email.com"
+                      disabled={isLoggingIn}
+                  />
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label
+                      htmlFor="password"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        autoComplete="current-password"
+                        className={`w-full px-4 py-3 pr-10 border-2 rounded-xl text-sm transition-all ${
+                            focusedField === "password"
+                                ? "border-blue-500 ring-2 ring-blue-500/10"
+                                : "border-gray-200 hover:border-gray-300"
+                        } ${
+                            errors.password ? "border-red-300 bg-red-50" : "bg-white/80"
+                        } placeholder:text-gray-400 focus:outline-none`}
+                        value={formData.password}
+                        onChange={handleChange}
+                        onFocus={() => setFocusedField("password")}
+                        onBlur={() => setFocusedField("")}
+                        placeholder="••••••••"
+                        disabled={isLoggingIn}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                        tabIndex={-1}
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Secure & Reliable
-                  </div>
-                  <div className="flex items-center">
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Easy to Use
+                      <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                      >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d={
+                              showPassword
+                                  ? "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                                  : "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            }
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Form Section */}
-          <div className="w-full lg:w-1/2 xl:w-2/5 flex flex-col justify-center relative">
-            {/* Mobile Background */}
-            <div className="absolute inset-0 lg:hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 to-purple-900/80 z-10"></div>
-              <Image
-                src="/images/hero-section.jpeg"
-                alt="Modern cityscape background"
-                fill
-                className="object-cover"
-                priority
-                sizes="100vw"
-              />
-            </div>
-
-            {/* Form Container */}
-            <div className="relative z-20 px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-              <div className="max-w-md mx-auto">
-                {/* Logo and Header */}
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-lg mb-6 lg:bg-transparent lg:shadow-none">
-                    <Image
-                      src="/Hestia-logo-b.svg"
-                      alt="Hestia Logo"
-                      width={60}
-                      height={45}
-                      className="object-contain"
+                {/* Remember Me + Forgot Password */}
+                <div className="flex items-center justify-between text-xs">
+                  <label className="flex items-center">
+                    <input
+                        type="checkbox"
+                        id="rememberMe"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        disabled={isLoggingIn}
                     />
-                  </div>
-                    <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-700 to-emerald-600 bg-clip-text text-transparent mb-2">
-                        Welcome Back
-                    </h2>
+                    <span className="ml-2 text-gray-600">Remember me</span>
+                  </label>
+                  <Link
+                      href="./forgot-password"
+                      className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
 
-                    <p className="text-blue-200 lg:text-gray-600">
-                    Sign in to access your account
+                {/* reCAPTCHA */}
+                <div className="flex justify-center scale-[0.9] origin-center">
+                  <ReCAPTCHA
+                      sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
+                      onChange={(token) => setCaptchaToken(token)}
+                      theme="light"
+                  />
+                </div>
+
+                {/* Sign In Button */}
+                <button
+                    type="submit"
+                    disabled={isLoggingIn || !captchaToken}
+                    className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold py-3 rounded-xl text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-60"
+                >
+                  {isLoggingIn ? "Signing in..." : "Sign In"}
+                </button>
+
+                {/* Divider */}
+                <div className="relative flex items-center justify-center my-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative bg-white/90 px-3">
+                  <span className="text-xs text-gray-500 font-medium">
+                    or continue with
+                  </span>
+                  </div>
+                </div>
+
+                {/* Google Sign In */}
+                <button
+                    type="button"
+                    onClick={handleGoogleSignin}
+                    disabled={isLoggingIn}
+                    className="w-full bg-white flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-2.5 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.99]"
+                >
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white shadow-sm">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 48 48"
+                        className="w-5 h-5"
+                    >
+                      <path
+                          fill="#EA4335"
+                          d="M24 9.5c3.1 0 5.9 1.1 8.1 3.3l6-6C34.9 3.2 29.8 1 24 1 14.8 1 7 6.9 3.5 15l7 5.4C12 13.8 17.5 9.5 24 9.5z"
+                      />
+                      <path
+                          fill="#34A853"
+                          d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.4 5.6-5 7.3l7.7 6c4.5-4.1 7.1-10.2 7.1-17.8z"
+                      />
+                      <path
+                          fill="#4A90E2"
+                          d="M24 47c6.4 0 11.8-2.1 15.7-5.7l-7.7-6c-2.1 1.4-4.8 2.2-8 2.2-6.5 0-12-4.3-13.9-10.1l-7 5.4C7 41.1 14.8 47 24 47z"
+                      />
+                      <path
+                          fill="#FBBC05"
+                          d="M10.1 27.4c-.5-1.4-.8-2.9-.8-4.4s.3-3 .8-4.4l-7-5.4C2.4 16.5 1.5 20.1 1.5 23s.9 6.5 2.6 9.8l7-5.4z"
+                      />
+                    </svg>
+                  </div>
+                  <span className="font-medium text-gray-700 text-sm">
+    Continue with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">Google</span>
+  </span>
+                </button>
+
+
+                {/* Footer Links */}
+                <div className="text-center text-xs text-gray-600 pt-2">
+                  <p>
+                    Don’t have an account?{" "}
+                    <Link
+                        href="../auth/selectRole"
+                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                    >
+                      Create one
+                    </Link>
+                  </p>
+                  <p className="pt-1">
+                    <Link
+                        href="/pages/admin_login"
+                        className="text-teal-600 hover:text-teal-800 font-medium hover:underline"
+                    >
+                      System Admin Login
+                    </Link>
                   </p>
                 </div>
-
-                {/* Form Card */}
-                <div className="bg-white/95 lg:bg-white backdrop-blur-sm rounded-2xl shadow-xl lg:shadow-lg p-6 sm:p-8 border border-white/20 lg:border-gray-200">
-                  <form
-                    onSubmit={handleSubmit}
-                    className="space-y-6"
-                    noValidate
-                  >
-                    {/* Error Message */}
-                    {errorMessage && (
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
-                        <svg
-                          className="w-5 h-5 text-red-400 mt-0.5 mr-3 flex-shrink-0"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <p className="text-sm text-red-800">{errorMessage}</p>
-                      </div>
-                    )}
-
-                    {/* Email Field */}
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="email"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Email Address
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="email"
-                          id="email"
-                          autoComplete="email"
-                          className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 bg-white
-                            ${
-                              focusedField === "email"
-                                ? "border-blue-500 ring-4 ring-blue-500/10"
-                                : "border-gray-200"
-                            }
-                            ${
-                              errors.email
-                                ? "border-red-300 bg-red-50"
-                                : "hover:border-gray-300"
-                            }
-                            focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
-                            placeholder:text-gray-400`}
-                          value={formData.email}
-                          onChange={handleChange}
-                          onFocus={() => setFocusedField("email")}
-                          onBlur={() => setFocusedField("")}
-                          placeholder="juan@email.com"
-                          aria-describedby={
-                            errors.email ? "email-error" : undefined
-                          }
-                          disabled={isLoggingIn}
-                        />
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                          <svg
-                            className="w-5 h-5 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      {errors.email && (
-                        <p
-                          id="email-error"
-                          className="text-sm text-red-600 flex items-center"
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {errors.email}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Password Field */}
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="password"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Password
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          id="password"
-                          autoComplete="current-password"
-                          className={`w-full px-4 py-3 pr-12 border-2 rounded-xl transition-all duration-200 bg-white
-                            ${
-                              focusedField === "password"
-                                ? "border-blue-500 ring-4 ring-blue-500/10"
-                                : "border-gray-200"
-                            }
-                            ${
-                              errors.password
-                                ? "border-red-300 bg-red-50"
-                                : "hover:border-gray-300"
-                            }
-                            focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
-                            placeholder:text-gray-400`}
-                          value={formData.password}
-                          onChange={handleChange}
-                          onFocus={() => setFocusedField("password")}
-                          onBlur={() => setFocusedField("")}
-                          placeholder="••••••••"
-                          aria-describedby={
-                            errors.password ? "password-error" : undefined
-                          }
-                          disabled={isLoggingIn}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                          tabIndex={-1}
-                        >
-                          {showPassword ? (
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                              />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                      {errors.password && (
-                        <p
-                          id="password-error"
-                          className="text-sm text-red-600 flex items-center"
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          {errors.password}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Remember Me & Forgot Password */}
-                    <div className="flex items-center justify-between text-sm">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="rememberMe"
-                          checked={rememberMe}
-                          onChange={(e) => setRememberMe(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                          disabled={isLoggingIn}
-                        />
-                        <span className="ml-2 text-gray-600">Remember me</span>
-                      </label>
-                      <Link
-                        href="./forgot-password"
-                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-
-                    {/* reCAPTCHA */}
-                    <div className="flex justify-center">
-                      <ReCAPTCHA
-                        sitekey={
-                          process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ||
-                          "your-site-key"
-                        }
-                        onChange={(token) => setCaptchaToken(token)}
-                        theme="light"
-                      />
-                    </div>
-
-                    {/* Login Button */}
-                      <button
-                          type="submit"
-                          disabled={isLoggingIn || !captchaToken}
-                          className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 disabled:from-blue-400 disabled:to-emerald-400 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:shadow-md transform hover:scale-[1.02] disabled:transform-none"
-                      >
-
-                      {isLoggingIn ? (
-                        <>
-                          <svg
-                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Signing in...
-                        </>
-                      ) : (
-                        "Sign In"
-                      )}
-                    </button>
-
-                    {/* Divider */}
-                    <div className="relative flex items-center justify-center my-6">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200"></div>
-                      </div>
-                      <div className="relative bg-white px-4">
-                        <span className="text-sm text-gray-500 font-medium">
-                          or continue with
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Google Sign In */}
-                    <button
-                      type="button"
-                      onClick={handleGoogleSignin}
-                      disabled={isLoggingIn}
-                      className="w-full bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                    >
-                      <GoogleLogo className="mr-3" />
-                      Continue with Google
-                    </button>
-
-                    {/* Sign Up Link */}
-                    <p className="text-center text-sm text-gray-600 pt-4">
-                      Don't have an account?{" "}
-                      <Link
-                        href="../auth/selectRole"
-                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors"
-                      >
-                        Create account
-                      </Link>
-                    </p>
-
-                    {/* Admin Login Link */}
-                    <p className="text-center text-sm pt-2">
-                      <Link
-                        href="/pages/admin_login"
-                        className="text-teal-600 hover:text-teal-800 font-medium hover:underline transition-colors"
-                      >
-                        System Admin Login
-                      </Link>
-                    </p>
-                  </form>
-                </div>
-              </div>
+              </form>
             </div>
-          </div>
-        </main>
-      </div>
-      <Footer />
-    </>
+          </main>
+
+          <Footer />
+        </div>
+      </>
   );
+
 }
