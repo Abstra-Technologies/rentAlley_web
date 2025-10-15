@@ -48,6 +48,7 @@ export default function PropertyPerformancePage() {
     }, [user, admin]);
 
     useEffect(() => {
+        if (typeof window === "undefined") return;
 
         fetch(
             `/api/analytics/landlord/getTotalTenants?landlord_id=${user?.landlord_id}`

@@ -410,7 +410,7 @@ export default function LeaseEditor() {
 
     useEffect(() => {
         if (step === 6 && agreementId && envelopeId && user?.userType) {
-            regenerateSignUrl(user.userType); /
+            regenerateSignUrl(user.userType);
         }
     }, [step, agreementId, envelopeId, user?.userType]);
 
