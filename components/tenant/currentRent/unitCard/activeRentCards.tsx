@@ -202,43 +202,71 @@ export default function UnitCard({
                     </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="space-y-3">
-                    {isLeaseExpired ? (
-                        <div className="space-y-3">
-                            {/* Existing buttons for payment, portal, etc. */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <button
-                                    onClick={() => onRenewLease(unit.unit_id, unit.agreement_id)}
-                                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transform hover:scale-[1.02] transition-all"
-                                >
-                                    <RefreshCw className="w-4 h-4" />
-                                    Renew Lease
-                                </button>
-                                <button
-                                    onClick={() => onEndContract(unit.unit_id, unit.agreement_id)}
-                                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transform hover:scale-[1.02] transition-all"
-                                >
-                                    <XCircle className="w-4 h-4" />
-                                    End Contract
-                                </button>
-                            </div>
+                {/* --- Action Buttons --- */}
+                <div className="mt-5 space-y-4">
+
+                    {/* Always show Access Portal */}
+                    <button
+                        onClick={() => onAccessPortal(unit.agreement_id)}
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4
+               bg-gradient-to-r from-blue-500 to-emerald-500 text-white
+               rounded-xl font-semibold text-sm shadow-sm hover:shadow-lg
+               transform hover:scale-[1.02] transition-all"
+                    >
+                        <HomeIcon className="w-4 h-4" />
+                        Access Portal
+                    </button>
+
+                    {/* Lease Expired: show Renew / End side by side */}
+                    {isLeaseExpired && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button
+                                onClick={() => onRenewLease(unit.unit_id, unit.agreement_id)}
+                                className="flex items-center justify-center gap-2 py-3 px-4
+                   bg-gradient-to-r from-green-500 to-emerald-500 text-white
+                   rounded-xl font-semibold text-sm hover:shadow-lg
+                   transform hover:scale-[1.02] transition-all"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                Renew Lease
+                            </button>
+
+                            <button
+                                onClick={() => onEndContract(unit.unit_id, unit.agreement_id)}
+                                className="flex items-center justify-center gap-2 py-3 px-4
+                   bg-gradient-to-r from-red-500 to-rose-500 text-white
+                   rounded-xl font-semibold text-sm hover:shadow-lg
+                   transform hover:scale-[1.02] transition-all"
+                            >
+                                <XCircle className="w-4 h-4" />
+                                End Contract
+                            </button>
                         </div>
-                    ) : unit.has_pending_proof ? (
+                    )}
+
+                    {/* Pending proof message */}
+                    {unit.has_pending_proof && !isLeaseExpired && (
                         <div className="p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg border border-yellow-200">
                             <div className="flex items-center gap-2 text-yellow-800">
                                 <ClockIcon className="w-4 h-4" />
                                 <span className="text-sm font-medium">
-                                    Proof of payment submitted. Awaiting landlord confirmation.
-                                </span>
+          Proof of payment submitted. Awaiting landlord confirmation.
+        </span>
                             </div>
                         </div>
-                    ) : showPayButton ? (
-                        <div className="grid grid-cols-1 gap-2">
+                    )}
+
+                    {/* Pay / Upload Proof (only if applicable) */}
+                    {showPayButton && !isLeaseExpired && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button
                                 onClick={() => onPayment(unit.unit_id)}
                                 disabled={loadingPayment}
-                                className="flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center justify-center gap-2 py-3 px-4
+                   bg-gradient-to-r from-green-500 to-emerald-500 text-white
+                   rounded-xl font-semibold text-sm hover:shadow-lg
+                   transform hover:scale-[1.02] transition-all
+                   disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loadingPayment ? (
                                     <FaSpinner className="w-4 h-4 animate-spin" />
@@ -252,26 +280,24 @@ export default function UnitCard({
                                 onClick={() =>
                                     onUploadProof(unit.unit_id, unit.agreement_id, totalPaymentDue)
                                 }
-                                className="flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transform hover:scale-[1.02] transition-all"
+                                className="flex items-center justify-center gap-2 py-3 px-4
+                   bg-gradient-to-r from-yellow-500 to-amber-500 text-white
+                   rounded-xl font-semibold text-sm hover:shadow-lg
+                   transform hover:scale-[1.02] transition-all"
                             >
                                 <FaUpload className="w-4 h-4" />
-                                Upload Proof of Payment
+                                Upload Proof
                             </button>
                         </div>
-                    ) : (
-                        <button
-                            onClick={() => onAccessPortal(unit.agreement_id)}
-                            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transform hover:scale-[1.02] transition-all"
-                        >
-                            <HomeIcon className="w-4 h-4" />
-                            Access Portal
-                        </button>
                     )}
 
-                    {/* Contact Landlord */}
+                    {/* Message Landlord (always visible) */}
                     <button
                         onClick={onContactLandlord}
-                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-semibold text-sm hover:shadow-lg transform hover:scale-[1.02] transition-all"
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4
+               bg-gradient-to-r from-indigo-500 to-purple-500 text-white
+               rounded-xl font-semibold text-sm hover:shadow-lg
+               transform hover:scale-[1.02] transition-all"
                     >
                         <FaComments className="w-4 h-4" />
                         Message Landlord

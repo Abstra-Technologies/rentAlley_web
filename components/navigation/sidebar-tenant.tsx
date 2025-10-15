@@ -11,6 +11,7 @@ import {
   X,
   ReceiptText,
   ChevronRight,
+  LogOut
 } from "lucide-react";
 import Swal from "sweetalert2";
 import axios from "axios";
@@ -97,16 +98,25 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
       label: "Maintenance Request",
       priority: 2,
     },
-  ].map(({ slug, priority, ...rest }) => {
+    // 🆕 Exit Portal Button (manual navigation)
+    {
+      slug: "exitPortal",
+      icon: LogOut,
+      label: "Exit Portal",
+      priority: 3,
+      onClick: () => router.replace("/pages/tenant/my-unit"),
+    },
+  ].map(({ slug, priority, icon, label, onClick }) => {
     let href = `/pages/tenant/${slug}`;
+
     if (slug === "rentalPortal" && agreement_id) {
-      href = `/pages/tenant/${slug}/${agreement_id}`; // special case for dashboard
-    } else if (agreement_id) {
+      href = `/pages/tenant/${slug}/${agreement_id}`;
+    } else if (agreement_id && slug !== "exitPortal") {
       href = `/pages/tenant/${slug}?agreement_id=${agreement_id}`;
     }
-    return { href, priority, ...rest };
-  });
 
+    return { href, priority, icon, label, onClick };
+  });
   // Group menu items for mobile
   const primaryItems = menuItems.filter((item) => item.priority === 1);
   const secondaryItems = menuItems.filter((item) => item.priority === 2);
@@ -135,44 +145,63 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
                     </p>
                   </div>
               )}
-              {menuItems.map(({ href, icon: Icon, label }) => {
+              {menuItems.map(({ href, icon: Icon, label, onClick }) => {
+                const isExit = label === "Exit Portal";
                 const isActive = pathname.includes(href.split("?")[0]);
+
                 return (
-                  <li key={href} className="relative group">
-                    <button
-                      onClick={() => handleNavigation(label, href)}
-                      className={`
-                        flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
-                        ${
-                          isActive
-                            ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 font-semibold shadow-sm"
-                            : "hover:bg-gray-50 text-gray-700"
-                        }
-                      `}
-                    >
-                      <span
-                        className={`
-                          absolute left-0 top-0 h-full w-1 rounded-r 
-                          bg-gradient-to-b from-green-600 via-teal-500 to-blue-600
-                          ${
-                            isActive
-                              ? "opacity-100"
-                              : "opacity-0 group-hover:opacity-100"
+                    <li key={href} className="relative group">
+                      <button
+                          onClick={() =>
+                              onClick ? onClick() : handleNavigation(label, href)
                           }
-                          transition-opacity duration-300
-                        `}
-                      />
-                      <Icon
-                        className={`w-5 h-5 mr-3 ${
-                          isActive ? "text-green-700" : "text-gray-500"
-                        }`}
-                      />
-                      <span className="flex-1 text-left">{label}</span>
-                      {isActive && (
-                        <div className="h-2 w-2 rounded-full bg-gradient-to-r from-green-600 to-blue-600" />
-                      )}
-                    </button>
-                  </li>
+                          className={`
+          flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
+          ${
+                              isExit
+                                  ? "bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90"
+                                  : isActive
+                                      ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 font-semibold shadow-sm"
+                                      : "hover:bg-gray-50 text-gray-700"
+                          }
+        `}
+                      >
+                        {/* Active indicator bar */}
+                        {!isExit && (
+                            <span
+                                className={`
+              absolute left-0 top-0 h-full w-1 rounded-r 
+              bg-gradient-to-b from-green-600 via-teal-500 to-blue-600
+              ${
+                                    isActive
+                                        ? "opacity-100"
+                                        : "opacity-0 group-hover:opacity-100"
+                                }
+              transition-opacity duration-300
+            `}
+                            />
+                        )}
+
+                        {/* Icon */}
+                        <Icon
+                            className={`w-5 h-5 mr-3 ${
+                                isExit
+                                    ? "text-white"
+                                    : isActive
+                                        ? "text-green-700"
+                                        : "text-gray-500"
+                            }`}
+                        />
+
+                        {/* Label */}
+                        <span className="flex-1 text-left">{label}</span>
+
+                        {/* Active dot indicator */}
+                        {isActive && !isExit && (
+                            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-green-600 to-blue-600" />
+                        )}
+                      </button>
+                    </li>
                 );
               })}
             </ul>

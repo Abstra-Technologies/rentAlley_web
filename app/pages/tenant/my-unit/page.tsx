@@ -367,17 +367,35 @@ export default function MyUnit() {
             </div>
 
             {/* Analytics Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+              {/* Lease Counter */}
+              <div
+                  className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-100
+               rounded-2xl shadow-sm hover:shadow-md transition-all duration-300
+               p-4 sm:p-6 flex flex-col items-center text-center"
+              >
                 <LeaseCounter tenantId={user?.tenant_id} />
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+
+              {/* Applications Counter */}
+              <div
+                  className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-100
+               rounded-2xl shadow-sm hover:shadow-md transition-all duration-300
+               p-4 sm:p-6 flex flex-col items-center text-center"
+              >
                 <ApplicationsCounter tenantId={user?.tenant_id} />
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+
+              {/* Billing Counter */}
+              <div
+                  className="bg-gradient-to-br from-indigo-50 to-purple-100 border border-indigo-100
+               rounded-2xl shadow-sm hover:shadow-md transition-all duration-300
+               p-4 sm:p-6 flex flex-col items-center text-center"
+              >
                 <BillingCounter tenantId={user?.tenant_id} />
               </div>
             </div>
+
 
             <hr className="my-8 border-gray-300" />
 

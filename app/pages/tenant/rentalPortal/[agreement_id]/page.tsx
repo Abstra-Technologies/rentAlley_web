@@ -47,7 +47,6 @@ export default function RentPortalPage() {
     if (agreementId) fetchUnitName();
   }, [agreementId]);
 
-
   useEffect(() => {
     const fetchMoveInStatus = async () => {
       if (!agreementId) return;
@@ -285,11 +284,34 @@ export default function RentPortalPage() {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-              <div className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-green-200 transition-all duration-300 overflow-hidden">
+              <div
+                  onClick={() =>
+                      router.push(`/pages/tenant/paymentHistory/currentLeasePayment?agreement_id=${agreementId}`)
+                  }
+                  className="group relative bg-white rounded-xl shadow-sm border border-gray-200
+             hover:shadow-md hover:border-green-200 transition-all duration-300
+             overflow-hidden cursor-pointer"
+              >
+                {/* Widget content */}
                 <div className="p-1">
                   <PaymentHistoryWidget agreement_id={agreementId} />
                 </div>
+
+                {/* Hover overlay — does NOT block interactions */}
+                <div
+                    className="absolute inset-0 flex items-center justify-center
+               opacity-0 group-hover:opacity-100 transition-opacity duration-300
+               pointer-events-none"
+                >
+    <span
+        className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
+                 px-3 py-1 rounded-full shadow-md border border-gray-200"
+    >
+      View Payment History →
+    </span>
+                </div>
               </div>
+
 
               <div className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-indigo-200 transition-all duration-300 overflow-hidden">
                 <div className="p-1">
