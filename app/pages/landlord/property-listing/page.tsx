@@ -27,6 +27,7 @@ import FBShareButton from "@/components/landlord/properties/shareToFacebook";
 import Pagination from "@mui/material/Pagination";
 import { AlertCircle } from 'lucide-react';
 import useSubscription from "@/hooks/landlord/useSubscription";
+import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 
 const PropertyListingPage = () => {
   const router = useRouter();
@@ -410,10 +411,13 @@ const PropertyListingPage = () => {
 
   if (error) {
     return (
-        <div className="flex items-center justify-center mt-4 text-red-500">
-          <AlertCircle className="w-5 h-5 mr-2" />
-          <p>{error}</p>
-        </div>
+        <ErrorBoundary
+            error={
+                error.message ||
+                "Failed to load data. Please check your internet connection or try again."
+            }
+            onRetry={() => window.location.reload()}
+        />
     );
   }
 

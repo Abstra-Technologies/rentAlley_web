@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { formatDate, formatCurrency, toNumber } from "@/utils/formatter/formatters";
 import useAuthStore from "../../../zustand/authStore";
+import LoadingScreen from "@/components/loadingScreen";
+import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 
 export default function TenantBilling({ agreement_id, user_id }) {
   const [billingData, setBillingData] = useState([]);
@@ -152,9 +154,24 @@ export default function TenantBilling({ agreement_id, user_id }) {
     );
   };
 
-  if (loading) return <p className="text-gray-500">Loading billing records...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (loading)
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+          <LoadingScreen message="Fetching your billing data, please wait..." />
+        </div>
+    );
 
+  if (error) {
+    return (
+        <ErrorBoundary
+            error={
+                error.message ||
+                "Failed to load data. Please check your internet connection or try again."
+            }
+            onRetry={() => window.location.reload()}
+        />
+    );
+  }
   if (!Array.isArray(billingData) || billingData.length === 0) {
     return (
         <div className="text-gray-500 p-6 bg-gray-50 border border-gray-200 rounded-lg text-center">

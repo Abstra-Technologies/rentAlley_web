@@ -173,10 +173,26 @@ const LandlordPropertyChart = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
-              <div>
+              <div
+                  onClick={() => router.push(`/pages/landlord/property-listing`)}
+                  className="relative group cursor-pointer"
+              >
+                {/* Main content (unchanged) */}
                 <p className="text-gray-500 text-sm">Total Properties</p>
                 <p className="text-2xl font-bold text-gray-800">{totalProperties}</p>
+
+                {/* Hover overlay */}
+                <div
+                    className="absolute inset-0 flex items-center justify-center rounded-md
+               bg-white/70 backdrop-blur-sm opacity-0 group-hover:opacity-100
+               transition-opacity duration-300"
+                >
+    <span className="text-gray-800 text-xs font-medium px-3 py-1 rounded-full shadow-md bg-white/80">
+      View Properties →
+    </span>
+                </div>
               </div>
+
               <div className="p-3 bg-blue-50 rounded-lg">
                 <Home className="w-6 h-6 text-blue-600" />
               </div>
@@ -229,51 +245,115 @@ const LandlordPropertyChart = () => {
 
         {/* Main Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div onClick={() =>
-              router.push(`/pages/landlord/analytics/detailed/paymentLogs`)
-          }  className="lg:col-span-2">
-            <PaymentSummaryCard landlord_id={user?.landlord_id} />
+          <div
+              onClick={() =>
+                  router.push(`/pages/landlord/analytics/detailed/paymentLogs`)
+              }
+              className="lg:col-span-2 relative group cursor-pointer transition-all duration-300"
+          >
+            {/* Card Component */}
+            <div className="transform group-hover:-translate-y-1 group-hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden">
+              <PaymentSummaryCard landlord_id={user?.landlord_id} />
+            </div>
+
+            {/* Hover Overlay Effect */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-600/0 via-emerald-500/0 to-emerald-600/0 group-hover:from-blue-600/10 group-hover:via-emerald-500/10 group-hover:to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none" />
+
+            {/* Hover Label (appears smoothly) */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+    <span className="bg-white/80 text-gray-800 text-sm font-medium px-4 py-1.5 rounded-full shadow-md">
+      View Payment Logs →
+    </span>
+            </div>
           </div>
+
           <div className="lg:col-span-1">
             <TaskWidget landlordId={user?.landlord_id} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div
-            onClick={() =>
-              router.push(`/pages/landlord/analytics/detailed/revenue`)
-            }
-            className="bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition"
-          >
-            <RevenuePerformanceChart landlordId={user?.landlord_id} />
-          </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-5">
+            <div
+                onClick={() => router.push(`/pages/landlord/analytics/detailed/revenue`)}
+                className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
+            >
+                {/* Chart content always visible */}
+                <RevenuePerformanceChart landlordId={user?.landlord_id} />
+
+                {/* Hover label — does not block chart interaction */}
+                <div
+                    className="absolute inset-0 flex items-center justify-center
+               opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                >
+    <span
+        className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
+                 px-3 py-1 rounded-full shadow-md border border-gray-200"
+    >
+      View Revenue →
+    </span>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-5">
             <TenantActivity landlord_id={user?.landlord_id} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <UpcomingVisitsWidget landlordId={user?.landlord_id} />
-          <ProspectiveTenantsWidget landlordId={user?.landlord_id} />
+            <div
+                onClick={() => router.push(`/pages/landlord/analytics/detailed/visits`)}
+                className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
+            >
+                <UpcomingVisitsWidget landlordId={user?.landlord_id} />
+
+                {/* Hover label — non-blocking */}
+                <div
+                    className="absolute inset-0 flex items-center justify-center opacity-0
+                 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                >
+      <span
+          className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
+                   px-3 py-1 rounded-full shadow-md border border-gray-200"
+      >
+        View Visits →
+      </span>
+                </div>
+            </div>
+
+            <ProspectiveTenantsWidget landlordId={user?.landlord_id} />
         </div>
 
         {/* Additional Charts and Widgets */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          <div className="bg-white rounded-xl shadow-sm p-5">
-            {/*<PropertyTypeChart landlordId={user?.landlord_id} />*/}
-            <LeaseWidget landlord_id={user?.landlord_id} />
-          </div>
+            <div
+                onClick={() => router.push(`/pages/landlord/contracts`)}
+                className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
+            >
+                {/* Widget always visible */}
+                <LeaseWidget landlord_id={user?.landlord_id} />
 
-          <div className="bg-white rounded-xl shadow-sm p-5">
+                {/* Hover label only (no full overlay) */}
+                <div
+                    className="absolute inset-0 flex items-center justify-center
+               opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                >
+    <span className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-3 py-1 rounded-full shadow-md border border-gray-200">
+      View Leases →
+    </span>
+                </div>
+            </div>
+
+
+
+            <div className="bg-white rounded-xl shadow-sm p-5">
 
           </div>
 
         </div>
       </div>
-
+      {/*/pages/landlord/property-listing*/}
       {/* Mobile View - Tab Content */}
       <div className="sm:hidden p-4">
         {activeTab === "overview" && (

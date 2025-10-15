@@ -69,7 +69,7 @@ export default function SearchLeaseBar() {
 
                     <input
                         type="text"
-                        placeholder="Search tenants via email, properties, or units..."
+                        placeholder="Search tenants..."
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         className="w-full pl-12 pr-4 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-400 bg-gray-50 hover:bg-white shadow-sm outline-none transition-all duration-150"
