@@ -139,14 +139,6 @@ const LandlordPropertyChart = () => {
     { id: "upcoming", label: "Upcoming", icon: TrendingUp },
   ];
 
-  // if (loading) {
-  //   return (
-  //     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
-  //       <LoadingScreen />
-  //     </div>
-  //   );
-  // }
-
   return (
     <div className="bg-gray-50 min-h-screen -mx-4 sm:mx-0">
       {/* Mobile Tab Navigation */}
