@@ -140,6 +140,7 @@ export async function POST(req: NextRequest) {
                 },
             }
         );
+        const raw_gateway_payload = mayaResp.data;
 
         const checkoutUrl = mayaResp.data.redirectUrl;
         const checkoutId = mayaResp.data.checkoutId;
@@ -153,6 +154,7 @@ export async function POST(req: NextRequest) {
                 checkoutId,
                 reference,
                 agreement_id,
+                raw_gateway_payload
             },
             { status: 200 }
         );
@@ -164,5 +166,7 @@ export async function POST(req: NextRequest) {
             } catch {}
         }
         return httpError(500, "Failed to initiate payment.", err.response?.data || err.message);
+    }finally {
+        if (connection) await connection.end().catch(() => {});
     }
 }

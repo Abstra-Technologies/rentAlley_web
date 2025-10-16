@@ -57,7 +57,7 @@ export default function LandlordDashboard() {
   return (
     <LandlordLayout>
       {showAlert && <PointsEarnedAlert points={user.points} />}
-
+    <p>Landlord id: {user?.landlord_id}</p>
       {/* Mobile-optimized container with better padding */}
       <div className="px-2 sm:px-0">
         {/* Header Section - Mobile Optimized */}
