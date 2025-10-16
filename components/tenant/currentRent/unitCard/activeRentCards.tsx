@@ -118,7 +118,27 @@ export default function UnitCard({
                 <div className="absolute top-3 left-3">
                     <PaymentStatusBadge unit={unit} />
                 </div>
+
+                {/* 🔹 Due Date Banner (bottom overlay) */}
+                {unit.due_date && unit.due_day && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-blue-600/90 to-emerald-600/90 text-white text-sm font-medium py-1.5 px-3 flex items-center justify-between backdrop-blur-sm">
+    <span>
+      Billing every <span className="font-semibold">{unit.due_day}</span>
+        {unit.due_day === 1
+            ? "st"
+            : unit.due_day === 2
+                ? "nd"
+                : unit.due_day === 3
+                    ? "rd"
+                    : "th"}{" "}
+        — Next Due:
+    </span>
+                        <span className="font-semibold">{formatDate(unit.due_date)}</span>
+                    </div>
+                )}
+
             </div>
+
 
             {/* Content Section */}
             <div className="p-4 sm:p-6">

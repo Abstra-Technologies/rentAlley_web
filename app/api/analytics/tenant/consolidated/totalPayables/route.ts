@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
     const tenant_id = req.nextUrl.searchParams.get("tenant_id");
@@ -12,21 +12,22 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // 🔹 Get all active leases with deposits/advances
+        // 🔹 Get all active leases
         const [leases]: any[] = await db.query(
             `
-            SELECT 
-                la.unit_id,
-                la.security_deposit_amount,
-                la.advance_payment_amount,
-                la.is_security_deposit_paid,
-                la.is_advance_payment_paid,
-                u.unit_name,
-                p.property_name
-            FROM LeaseAgreement la
-            JOIN Unit u ON la.unit_id = u.unit_id
-            JOIN Property p ON u.property_id = p.property_id
-            WHERE la.tenant_id = ? AND la.status = 'active'
+                SELECT
+                    la.unit_id,
+                    la.security_deposit_amount,
+                    la.advance_payment_amount,
+                    la.is_security_deposit_paid,
+                    la.is_advance_payment_paid,
+                    u.unit_name,
+                    p.property_id,
+                    p.property_name
+                FROM LeaseAgreement la
+                         JOIN Unit u ON la.unit_id = u.unit_id
+                         JOIN Property p ON u.property_id = p.property_id
+                WHERE la.tenant_id = ? AND la.status = 'active'
             `,
             [tenant_id]
         );
@@ -34,43 +35,103 @@ export async function GET(req: NextRequest) {
         if (!leases.length)
             return NextResponse.json({ total: 0, details: [] }, { status: 200 });
 
-        // 🔹 For each leased unit, pull its Billing records
         const details = await Promise.all(
             leases.map(async (lease: any) => {
+                // 🔹 Get property configuration
+                const [configRows]: any[] = await db.query(
+                    `
+                        SELECT
+                            billingDueDay,
+                            lateFeeType,
+                            lateFeeAmount,
+                            gracePeriodDays
+                        FROM PropertyConfiguration
+                        WHERE property_id = ?
+                        LIMIT 1
+                    `,
+                    [lease.property_id]
+                );
+
+                const config = configRows?.[0] || {};
+                const billingDueDay = Number(config.billingDueDay || 1);
+                const feeType = config.lateFeeType || "fixed";
+                const feeAmount = Number(config.lateFeeAmount || 0);
+                const graceDays = Number(config.gracePeriodDays || 0);
+
+                // 🔹 Get all billings for the unit
                 const [billings]: any[] = await db.query(
                     `
-                    SELECT 
-                        billing_id, billing_period, total_amount_due, status, due_date
-                    FROM Billing
-                    WHERE unit_id = ?
-                    ORDER BY due_date DESC
-                    `,
+          SELECT billing_id, billing_period, total_amount_due, status
+          FROM Billing
+          WHERE unit_id = ?  and status = 'unpaid'
+          ORDER BY billing_period DESC
+          `,
                     [lease.unit_id]
                 );
 
-                // Compute total_due (unpaid or overdue + unpaid deposits/advances)
                 let total_due = 0;
+                const now = new Date();
 
-                total_due += billings
-                    .filter((b: any) => b.status !== "paid")
-                    .reduce((sum: number, b: any) => sum + Number(b.total_amount_due || 0), 0);
+                // 🔹 Compute billing details with due_date per billing_period
+                const billing_details = billings.map((b: any) => {
+                    const billingPeriod = new Date(b.billing_period);
+                    const year = billingPeriod.getFullYear();
+                    const month = billingPeriod.getMonth();
 
-                if (!lease.is_security_deposit_paid && lease.security_deposit_amount) {
-                    total_due += Number(lease.security_deposit_amount);
-                }
+                    // ✅ compute due date based on that billing period
+                    const computedDueDate = new Date(year, month, billingDueDay);
+                    const due_date_str = computedDueDate.toLocaleDateString("en-CA");
 
-                if (!lease.is_advance_payment_paid && lease.advance_payment_amount) {
-                    total_due += Number(lease.advance_payment_amount);
-                }
+                    const isUnpaid = b.status !== "paid";
+                    const daysLate =
+                        isUnpaid && now > computedDueDate
+                            ? Math.floor(
+                                (now.getTime() - computedDueDate.getTime()) /
+                                (1000 * 60 * 60 * 24)
+                            )
+                            : 0;
+
+                    const daysBeyondGrace = Math.max(0, daysLate - graceDays);
+
+                    let penalty = 0;
+                    if (daysBeyondGrace > 0 && feeAmount > 0) {
+                        if (feeType === "percentage") {
+                            penalty =
+                                Number(b.total_amount_due) *
+                                (feeAmount / 100) *
+                                daysBeyondGrace;
+                        } else {
+                            penalty = feeAmount * daysBeyondGrace;
+                        }
+                    }
+
+                    const totalWithPenalty = isUnpaid
+                        ? Number(b.total_amount_due || 0) + penalty
+                        : 0;
+
+                    total_due += totalWithPenalty;
+
+                    return {
+                        ...b,
+                        billing_due_date: due_date_str, // ✅ Send full computed due date
+                        days_late: daysLate,
+                        days_beyond_grace: daysBeyondGrace,
+                        penalty,
+                        total_with_penalty: totalWithPenalty,
+                    };
+                });
 
                 return {
+                    property_id: lease.property_id,
+                    property_name: lease.property_name,
                     unit_id: lease.unit_id,
                     unit_name: lease.unit_name,
-                    property_name: lease.property_name,
-                    security_deposit_amount: Number(lease.security_deposit_amount) || 0,
-                    advance_payment_amount: Number(lease.advance_payment_amount) || 0,
+                    billing_due_day: billingDueDay,
+                    grace_period_days: graceDays,
+                    late_fee_type: feeType,
+                    late_fee_amount: feeAmount,
                     total_due,
-                    billing_details: billings,
+                    billing_details,
                 };
             })
         );
@@ -79,7 +140,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({ total, details }, { status: 200 });
     } catch (error: any) {
-        console.error("Error fetching tenant payables:", error);
+        console.error("❌ Error fetching tenant payables:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

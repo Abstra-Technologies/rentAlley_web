@@ -46,6 +46,7 @@ export default function TenantPayables({ tenant_id }: { tenant_id: number | unde
             .finally(() => setLoading(false));
     }, [tenant_id]);
 
+
     const formatPHP = (value: number | null | undefined): string =>
         `₱${(Number(value) || 0).toLocaleString("en-PH", {
             minimumFractionDigits: 2,
@@ -93,14 +94,9 @@ export default function TenantPayables({ tenant_id }: { tenant_id: number | unde
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                                <p className="text-sm font-semibold text-gray-800">{formatPHP(unit.total_due)}</p>
-                                {expandedUnit === unit.unit_id ? (
-                                    <FaChevronUp className="w-4 h-4 text-gray-500" />
-                                ) : (
-                                    <FaChevronDown className="w-4 h-4 text-gray-500" />
-                                )}
-                            </div>
+                            <p className="text-sm text-gray-500">
+                           <span className="font-semibold">{formatPHP(unit.total_due)}</span>
+                            </p>
                         </div>
 
                         {/* EXPANDED BILLING DETAILS */}
@@ -121,12 +117,12 @@ export default function TenantPayables({ tenant_id }: { tenant_id: number | unde
     </span>
                                                     </p>
                                                     <p className="text-xs text-gray-500">
-                                                        Due Date: {formatDate(bill.due_date)}
+                                                        Due Date: {formatDate(bill.billing_due_date)}
                                                     </p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-sm font-semibold text-gray-700">
-                                                        {formatPHP(bill.total_amount_due)}
+                                                        <span className="font-semibold">{formatPHP(unit.total_due)}</span>
                                                     </p>
                                                     <span
                                                         className={`text-xs font-medium px-2 py-0.5 rounded-full ${

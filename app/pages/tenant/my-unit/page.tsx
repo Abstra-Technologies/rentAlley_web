@@ -41,6 +41,7 @@ const useUnits = (tenantId: string | undefined) => {
       setLoading(true);
       setError(null);
       const res = await axios.get(`/api/tenant/activeRent?tenantId=${tenantId}`);
+      console.log(res);
       setUnits(res.data || []);
       console.log('my units: ', res.data);
     } catch (err: any) {
