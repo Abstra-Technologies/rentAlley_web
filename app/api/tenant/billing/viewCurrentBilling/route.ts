@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -21,12 +21,12 @@ export async function GET(req: NextRequest) {
         if (!agreementId && tenantId) {
             const [agreements]: any = await db.query(
                 `
-          SELECT agreement_id
-          FROM LeaseAgreement
-          WHERE tenant_id = ?
-          ORDER BY start_date DESC
-          LIMIT 1
-        `,
+                    SELECT agreement_id
+                    FROM LeaseAgreement
+                    WHERE tenant_id = ?
+                    ORDER BY start_date DESC
+                    LIMIT 1
+                `,
                 [tenantId]
             );
 
@@ -90,23 +90,23 @@ export async function GET(req: NextRequest) {
         // 🔹 3. Get Property Configuration
         const [configRows]: any = await db.query(
             `
-        SELECT
-            billingReminderDay,
-            billingDueDay,
-            notifyEmail,
-            notifySms,
-            lateFeeType,
-            lateFeeAmount,
-            gracePeriodDays
-        FROM PropertyConfiguration
-        WHERE property_id = ?
-        LIMIT 1
-      `,
+                SELECT
+                    billingReminderDay,
+                    billingDueDay,
+                    notifyEmail,
+                    notifySms,
+                    lateFeeType,
+                    lateFeeAmount,
+                    gracePeriodDays
+                FROM PropertyConfiguration
+                WHERE property_id = ?
+                LIMIT 1
+            `,
             [propertyId]
         );
         const propertyConfig = configRows.length ? configRows[0] : null;
 
-        // 🔹 4. Fetch Current Month Billing
+        // 🔹 4. Fetch Current Month Billing (Total amount is taken directly)
         const [billingRows]: any = await db.query(
             `
                 SELECT *
@@ -158,37 +158,9 @@ export async function GET(req: NextRequest) {
             [agreementId]
         );
 
-        // 🔹 8. Compute Late Fee
-        let lateFee = 0;
-        let daysLate = 0;
-        let baseRent = parseFloat(rent_amount || 0);
+        // 🔹 8. Compute Base Breakdown
+        const baseRent = parseFloat(rent_amount || 0);
 
-        if (billing && propertyConfig) {
-            const today = new Date();
-            const dueDate = new Date(billing.due_date);
-            const diffDays = Math.floor(
-                (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-
-            if (diffDays > propertyConfig.gracePeriodDays) {
-                daysLate = diffDays - propertyConfig.gracePeriodDays;
-
-                if (propertyConfig.lateFeeType === "percentage") {
-                    lateFee =
-                        (baseRent * parseFloat(propertyConfig.lateFeeAmount || 0)) / 100;
-                } else {
-                    lateFee =
-                        parseFloat(propertyConfig.lateFeeAmount || 0) *
-                        Math.max(daysLate, 1);
-                }
-            }
-        }
-
-        const totalWithLateFee = billing
-            ? parseFloat(billing.total_amount_due || 0) + lateFee
-            : baseRent + lateFee;
-
-        // 🔹 9. Construct Breakdown Object
         const breakdown = {
             base_rent: baseRent,
             water: billing?.total_water_amount || 0,
@@ -202,23 +174,18 @@ export async function GET(req: NextRequest) {
                 : baseRent,
         };
 
-        // ✅ 10. Send Full Response
+        // ✅ 9. Simplified Response — no late fee computation
         return NextResponse.json(
             {
                 billing: billing
                     ? {
                         ...billing,
-                        lateFee: lateFee.toFixed(2),
-                        totalWithLateFee: totalWithLateFee.toFixed(2),
-                        daysLate,
+                        total_amount_due: parseFloat(billing.total_amount_due || 0).toFixed(2),
                     }
                     : {
                         billing_period: new Date(),
                         total_amount_due: baseRent.toFixed(2),
-                        lateFee: lateFee.toFixed(2),
-                        totalWithLateFee: totalWithLateFee.toFixed(2),
                         status: "unpaid",
-                        daysLate,
                     },
                 meterReadings: groupedReadings,
                 billingAdditionalCharges,

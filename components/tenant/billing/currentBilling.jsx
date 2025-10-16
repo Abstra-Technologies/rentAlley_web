@@ -193,7 +193,7 @@ export default function TenantBilling({ agreement_id, user_id }) {
         <div className="space-y-6">
           {billingData.map((bill) => {
             const { lateFee, daysLate } = computeLateFeeAndDays(bill);
-            const totalDue = toNumber(bill.total_amount_due) + lateFee;
+            const totalDue = toNumber(bill.total_amount_due);
             bill.lateFee = lateFee;
             bill.daysLate = daysLate;
 
