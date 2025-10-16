@@ -11,15 +11,17 @@ export async function GET(req: NextRequest, { params }: { params: { billing_id: 
     }
 
     try {
-        // Fetch billing and tenant info
+        // Fetch billing + tenant + property + unit info
         const [rows]: any = await db.query(
             `SELECT
                  b.billing_id, b.billing_period, b.total_water_amount, b.total_electricity_amount,
-                 b.penalty_amount, b.discount_amount, b.total_amount_due, b.status AS billing_status,
-                 b.due_date, b.paid_at, b.created_at AS billing_created, b.updated_at AS billing_updated,
-                 u.unit_id, u.unit_name, u.unit_size, u.furnish, u.bed_spacing, u.avail_beds, u.rent_amount, u.status AS unit_status,
-                 p.property_id, p.property_name, p.property_type, p.street, p.brgy_district, p.city, p.zip_code, p.province, p.floor_area, p.payment_frequency, p.assoc_dues,
-                 t.tenant_id, t.user_id AS tenant_user_id, t.address AS tenant_address, t.occupation AS tenant_occupation, t.employment_type AS tenant_employment_type, t.monthly_income,
+                 b.total_amount_due, b.status AS billing_status,
+                 b.paid_at, b.created_at AS billing_created, b.updated_at AS billing_updated,
+                 u.unit_id, u.unit_name, u.unit_size, u.furnish, u.rent_amount, u.status AS unit_status,
+                 p.property_id, p.property_name, p.property_type, p.street, p.brgy_district, p.city, p.zip_code, p.province,
+                 p.floor_area, p.payment_frequency, p.assoc_dues,
+                 t.tenant_id, t.user_id AS tenant_user_id, us.address AS tenant_address, us.occupation AS tenant_occupation,
+                 t.employment_type AS tenant_employment_type, t.monthly_income,
                  us.user_id AS user_id, us.firstName, us.lastName, us.email, us.phoneNumber, us.userType
              FROM Billing b
                       JOIN Unit u ON u.unit_id = b.unit_id
@@ -37,7 +39,24 @@ export async function GET(req: NextRequest, { params }: { params: { billing_id: 
 
         const row = rows[0];
 
-        // Decrypt tenant info
+        // 🔹 Fetch PropertyConfiguration to get billingDueDay
+        const [configRows]: any = await db.query(
+            `SELECT billingDueDay FROM PropertyConfiguration WHERE property_id = ? LIMIT 1`,
+            [row.property_id]
+        );
+
+        // Default fallback if no property config found
+        const billingDueDay = configRows.length ? configRows[0].billingDueDay : 1;
+
+        // Compute the due_date based on billing_period + billingDueDay
+        const billingPeriodDate = new Date(row.billing_period);
+        const dueDate = new Date(
+            billingPeriodDate.getFullYear(),
+            billingPeriodDate.getMonth(),
+            billingDueDay
+        );
+
+        // 🔹 Decrypt tenant info
         const decryptedTenantUser = {
             user_id: row.user_id,
             firstName: row.firstName ? decryptData(JSON.parse(row.firstName), process.env.ENCRYPTION_SECRET!) : null,
@@ -47,7 +66,7 @@ export async function GET(req: NextRequest, { params }: { params: { billing_id: 
             userType: row.userType,
         };
 
-        // Fetch meter readings by unit and billing period
+        // 🔹 Fetch meter readings
         const [meterReadings]: any = await db.query(
             `SELECT utility_type, previous_reading, current_reading
              FROM MeterReading
@@ -68,11 +87,9 @@ export async function GET(req: NextRequest, { params }: { params: { billing_id: 
             billing_period: row.billing_period,
             total_water_amount: row.total_water_amount,
             total_electricity_amount: row.total_electricity_amount,
-            penalty_amount: row.penalty_amount,
-            discount_amount: row.discount_amount,
             total_amount_due: row.total_amount_due,
             status: row.billing_status,
-            due_date: row.due_date,
+            due_date: dueDate.toISOString().split("T")[0], // formatted YYYY-MM-DD
             paid_at: row.paid_at,
             created_at: row.billing_created,
             updated_at: row.billing_updated,
@@ -82,8 +99,6 @@ export async function GET(req: NextRequest, { params }: { params: { billing_id: 
                 unit_name: row.unit_name,
                 unit_size: row.unit_size,
                 furnish: row.furnish,
-                bed_spacing: row.bed_spacing,
-                avail_beds: row.avail_beds,
                 rent_amount: row.rent_amount,
                 status: row.unit_status,
             },
@@ -99,6 +114,7 @@ export async function GET(req: NextRequest, { params }: { params: { billing_id: 
                 floor_area: row.floor_area,
                 payment_frequency: row.payment_frequency,
                 assoc_dues: row.assoc_dues,
+                billingDueDay: billingDueDay,
             },
             tenant: {
                 tenant_id: row.tenant_id,
@@ -110,6 +126,8 @@ export async function GET(req: NextRequest, { params }: { params: { billing_id: 
                 user: decryptedTenantUser,
             },
         };
+
+        console.log('billing due day', billing.property.billingDueDay);
 
         return NextResponse.json({ billing }, { status: 200 });
     } catch (error) {

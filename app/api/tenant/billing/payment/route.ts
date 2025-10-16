@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
         redirectUrl,
     } = body;
 
+    console.log(body);
+
     if (!amount || !billing_id || !tenant_id)
         return httpError(400, "Missing amount, billing_id, or tenant_id.");
 
@@ -110,28 +112,10 @@ export async function POST(req: NextRequest) {
                 contact: { email: "tenant@example.com" },
             },
             redirectUrl: {
-                // ✅ Include all four parameters for success/failure/cancel
-                success: `${redirectUrl.success}?amount=${encodeURIComponent(
-                    amount
-                )}&requestReferenceNumber=${encodeURIComponent(
-                    reference
-                )}&tenant_id=${encodeURIComponent(
-                    tenant_id
-                )}&billing_id=${encodeURIComponent(billing_id)}`,
-                failure: `${redirectUrl.failure}?amount=${encodeURIComponent(
-                    amount
-                )}&requestReferenceNumber=${encodeURIComponent(
-                    reference
-                )}&tenant_id=${encodeURIComponent(
-                    tenant_id
-                )}&billing_id=${encodeURIComponent(billing_id)}`,
-                cancel: `${redirectUrl.cancel}?amount=${encodeURIComponent(
-                    amount
-                )}&requestReferenceNumber=${encodeURIComponent(
-                    reference
-                )}&tenant_id=${encodeURIComponent(
-                    tenant_id
-                )}&billing_id=${encodeURIComponent(billing_id)}`,
+                // ✅ Include tenant_id, billing_id, agreement_id, and requestReferenceNumber
+                success: `${redirectUrl.success}?amount=${encodeURIComponent(amount)}&requestReferenceNumber=${encodeURIComponent(reference)}&tenant_id=${encodeURIComponent(tenant_id)}&billing_id=${encodeURIComponent(billing_id)}&agreement_id=${encodeURIComponent(agreement_id)}`,
+                failure: `${redirectUrl.failure}?amount=${encodeURIComponent(amount)}&requestReferenceNumber=${encodeURIComponent(reference)}&tenant_id=${encodeURIComponent(tenant_id)}&billing_id=${encodeURIComponent(billing_id)}&agreement_id=${encodeURIComponent(agreement_id)}`,
+                cancel: `${redirectUrl.cancel}?amount=${encodeURIComponent(amount)}&requestReferenceNumber=${encodeURIComponent(reference)}&tenant_id=${encodeURIComponent(tenant_id)}&billing_id=${encodeURIComponent(billing_id)}&agreement_id=${encodeURIComponent(agreement_id)}`,
             },
             items: [
                 {
@@ -141,6 +125,7 @@ export async function POST(req: NextRequest) {
                 },
             ],
         };
+
 
         const mayaAuth = Buffer.from(`${publicKey}:${secretKey}`).toString("base64");
 
@@ -167,6 +152,7 @@ export async function POST(req: NextRequest) {
                 checkoutUrl,
                 checkoutId,
                 reference,
+                agreement_id,
             },
             { status: 200 }
         );

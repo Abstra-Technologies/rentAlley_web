@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
+
 export async function GET(req: NextRequest) {
     const tenant_id = req.nextUrl.searchParams.get("tenant_id");
 
@@ -61,63 +62,35 @@ export async function GET(req: NextRequest) {
                 // 🔹 Get all billings for the unit
                 const [billings]: any[] = await db.query(
                     `
-          SELECT billing_id, billing_period, total_amount_due, status
-          FROM Billing
-          WHERE unit_id = ?  and status = 'unpaid'
-          ORDER BY billing_period DESC
-          `,
+                        SELECT billing_id, billing_period, total_amount_due, status
+                        FROM Billing
+                        WHERE unit_id = ? AND status IN ('unpaid', 'overdue')
+                        ORDER BY billing_period DESC
+                    `,
                     [lease.unit_id]
                 );
 
                 let total_due = 0;
-                const now = new Date();
 
-                // 🔹 Compute billing details with due_date per billing_period
+                // 🔹 Compute due_date per billing_period only (no penalty)
                 const billing_details = billings.map((b: any) => {
                     const billingPeriod = new Date(b.billing_period);
                     const year = billingPeriod.getFullYear();
                     const month = billingPeriod.getMonth();
 
-                    // ✅ compute due date based on that billing period
+                    // ✅ compute due date based on billingDueDay
                     const computedDueDate = new Date(year, month, billingDueDay);
                     const due_date_str = computedDueDate.toLocaleDateString("en-CA");
 
-                    const isUnpaid = b.status !== "paid";
-                    const daysLate =
-                        isUnpaid && now > computedDueDate
-                            ? Math.floor(
-                                (now.getTime() - computedDueDate.getTime()) /
-                                (1000 * 60 * 60 * 24)
-                            )
-                            : 0;
-
-                    const daysBeyondGrace = Math.max(0, daysLate - graceDays);
-
-                    let penalty = 0;
-                    if (daysBeyondGrace > 0 && feeAmount > 0) {
-                        if (feeType === "percentage") {
-                            penalty =
-                                Number(b.total_amount_due) *
-                                (feeAmount / 100) *
-                                daysBeyondGrace;
-                        } else {
-                            penalty = feeAmount * daysBeyondGrace;
-                        }
-                    }
-
-                    const totalWithPenalty = isUnpaid
-                        ? Number(b.total_amount_due || 0) + penalty
-                        : 0;
-
-                    total_due += totalWithPenalty;
+                    total_due += Number(b.total_amount_due || 0);
 
                     return {
                         ...b,
-                        billing_due_date: due_date_str, // ✅ Send full computed due date
-                        days_late: daysLate,
-                        days_beyond_grace: daysBeyondGrace,
-                        penalty,
-                        total_with_penalty: totalWithPenalty,
+                        billing_due_date: due_date_str, // ✅ Keep computed due date
+                        days_late: 0,
+                        days_beyond_grace: 0,
+                        penalty: 0,
+                        total_with_penalty: Number(b.total_amount_due || 0),
                     };
                 });
 

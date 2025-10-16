@@ -97,7 +97,6 @@ export default function TenantBilling({ agreement_id, user_id }) {
     return { lateFee, daysLate };
   };
 
-
   const handleMayaPayment = async (amount, billing_id) => {
     const result = await Swal.fire({
       title: "Billing Payment via Maya",

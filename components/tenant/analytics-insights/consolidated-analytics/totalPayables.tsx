@@ -55,7 +55,7 @@ export default function TenantPayables({ tenant_id }: { tenant_id: number | unde
 
     const handlePayNow = (bill: BillingDetail) => {
         // For now, just log or redirect
-        router.push(`/tenant/pay/${bill.billing_id}`);
+        router.push(`/pages/tenant/pay/${bill.billing_id}`);
     };
 
     if (!tenant_id) return <p className="text-gray-600 text-center">Please log in to view payables.</p>;
