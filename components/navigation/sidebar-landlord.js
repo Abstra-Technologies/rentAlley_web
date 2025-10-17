@@ -14,6 +14,8 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
+import { ReceiptText } from 'lucide-react';
+
 import Swal from "sweetalert2";
 import { MdOutlinePayments } from "react-icons/md";
 import { BsFilePersonFill } from "react-icons/bs";
@@ -74,6 +76,12 @@ const menuItems = [
   },
 
   // Tertiary
+  {
+    href: "/pages/landlord/pdcManagement",
+    icon: ReceiptText ,
+    label: "PDC Management",
+    priority: 3,
+  },
   {
     href: "/pages/landlord/analytics/performance",
     icon: IoAnalytics,
