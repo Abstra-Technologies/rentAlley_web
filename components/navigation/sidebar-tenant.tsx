@@ -11,9 +11,8 @@ import {
   X,
   ReceiptText,
   ChevronRight,
-  LogOut
+  LogOut,
 } from "lucide-react";
-import Swal from "sweetalert2";
 import axios from "axios";
 
 interface TenantLayoutProps {
@@ -25,7 +24,12 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
-  const [propertyInfo, setPropertyInfo] = useState<{ property_name: string; unit_name: string } | null>(null);
+  const [propertyInfo, setPropertyInfo] = useState<{
+    property_name: string;
+    unit_name: string;
+  } | null>(null);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
 
   useEffect(() => {
     if (!agreement_id) return;
@@ -48,23 +52,9 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const handleNavigation = (label: string, href: string) => {
-    // Close mobile menu immediately for better UX
+  const handleNavigation = (href: string) => {
     setIsMobileMenuOpen(false);
-
-    Swal.fire({
-      title: "Loading...",
-      text: `Redirecting to ${label}`,
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-    });
-
-    setTimeout(() => {
-      router.push(href);
-      Swal.close();
-    }, 500);
+    router.push(href);
   };
 
   const menuItems = [
@@ -98,28 +88,34 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
       label: "Maintenance Request",
       priority: 2,
     },
-    // 🆕 Exit Portal Button (manual navigation)
     {
       slug: "exitPortal",
       icon: LogOut,
       label: "Exit Portal",
       priority: 3,
-      onClick: () => router.replace("/pages/tenant/my-unit"),
     },
-  ].map(({ slug, priority, icon, label, onClick }) => {
+  ].map(({ slug, priority, icon, label }) => {
     let href = `/pages/tenant/${slug}`;
 
     if (slug === "rentalPortal" && agreement_id) {
       href = `/pages/tenant/${slug}/${agreement_id}`;
     } else if (agreement_id && slug !== "exitPortal") {
       href = `/pages/tenant/${slug}?agreement_id=${agreement_id}`;
+    } else if (slug === "exitPortal") {
+      href = "/pages/tenant/my-unit";
     }
 
-    return { href, priority, icon, label, onClick };
+    return { href, priority, icon, label };
   });
-  // Group menu items for mobile
+
   const primaryItems = menuItems.filter((item) => item.priority === 1);
   const secondaryItems = menuItems.filter((item) => item.priority === 2);
+  const exitItem = menuItems.find((item) => item.priority === 3);
+
+  const getIsActive = (href: string) => {
+    const basePath = href.split("?")[0];
+    return pathname.includes(basePath);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -135,73 +131,74 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
           <nav className="px-4 pb-6">
             <ul className="space-y-1">
               {propertyInfo && (
-                  <div className="px-5 py-4 mb-4 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl shadow-md  user-select:none">
-                    <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide">
-                      {propertyInfo.property_name}
-                    </h2>
-                    <p className="text-sm text-blue-50 mt-1 flex items-center gap-1">
-                      <Home className="w-4 h-4 text-emerald-100" />
-                      Unit <span className="font-semibold text-white">{propertyInfo.unit_name}</span>
-                    </p>
-                  </div>
+                <div className="px-5 py-4 mb-4 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl shadow-md">
+                  <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide line-clamp-2">
+                    {propertyInfo.property_name}
+                  </h2>
+                  <p className="text-sm text-blue-50 mt-1 flex items-center gap-1">
+                    <Home className="w-4 h-4 text-emerald-100 flex-shrink-0" />
+                    Unit{" "}
+                    <span className="font-semibold text-white">
+                      {propertyInfo.unit_name}
+                    </span>
+                  </p>
+                </div>
               )}
-              {menuItems.map(({ href, icon: Icon, label, onClick }) => {
+              {menuItems.map(({ href, icon: Icon, label }) => {
                 const isExit = label === "Exit Portal";
-                const isActive = pathname.includes(href.split("?")[0]);
+                const isActive = getIsActive(href);
 
                 return (
-                    <li key={href} className="relative group">
-                      <button
-                          onClick={() =>
-                              onClick ? onClick() : handleNavigation(label, href)
-                          }
+                  <li key={href} className="relative group">
+                    <button
+                      onClick={() => handleNavigation(href)}
+                      className={`
+                        flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
+                        ${
+                          isExit
+                            ? "bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90 active:scale-95"
+                            : isActive
+                            ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 font-semibold shadow-sm"
+                            : "hover:bg-gray-50 text-gray-700 active:bg-gray-100"
+                        }
+                      `}
+                    >
+                      {/* Active indicator bar */}
+                      {!isExit && (
+                        <span
                           className={`
-          flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
-          ${
-                              isExit
-                                  ? "bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90"
-                                  : isActive
-                                      ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 font-semibold shadow-sm"
-                                      : "hover:bg-gray-50 text-gray-700"
-                          }
-        `}
-                      >
-                        {/* Active indicator bar */}
-                        {!isExit && (
-                            <span
-                                className={`
-              absolute left-0 top-0 h-full w-1 rounded-r 
-              bg-gradient-to-b from-green-600 via-teal-500 to-blue-600
-              ${
-                                    isActive
-                                        ? "opacity-100"
-                                        : "opacity-0 group-hover:opacity-100"
-                                }
-              transition-opacity duration-300
-            `}
-                            />
-                        )}
-
-                        {/* Icon */}
-                        <Icon
-                            className={`w-5 h-5 mr-3 ${
-                                isExit
-                                    ? "text-white"
-                                    : isActive
-                                        ? "text-green-700"
-                                        : "text-gray-500"
-                            }`}
+                            absolute left-0 top-0 h-full w-1 rounded-r 
+                            bg-gradient-to-b from-green-600 via-teal-500 to-blue-600
+                            ${
+                              isActive
+                                ? "opacity-100"
+                                : "opacity-0 group-hover:opacity-100"
+                            }
+                            transition-opacity duration-300
+                          `}
                         />
+                      )}
 
-                        {/* Label */}
-                        <span className="flex-1 text-left">{label}</span>
+                      {/* Icon */}
+                      <Icon
+                        className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                          isExit
+                            ? "text-white"
+                            : isActive
+                            ? "text-green-700"
+                            : "text-gray-500"
+                        }`}
+                      />
 
-                        {/* Active dot indicator */}
-                        {isActive && !isExit && (
-                            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-green-600 to-blue-600" />
-                        )}
-                      </button>
-                    </li>
+                      {/* Label */}
+                      <span className="flex-1 text-left truncate">{label}</span>
+
+                      {/* Active dot indicator */}
+                      {isActive && !isExit && (
+                        <div className="h-2 w-2 rounded-full bg-gradient-to-r from-green-600 to-blue-600 flex-shrink-0" />
+                      )}
+                    </button>
+                  </li>
                 );
               })}
             </ul>
@@ -215,7 +212,7 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
           <button
             onClick={toggleMobileMenu}
             className={`
-              p-4 rounded-full shadow-lg transition-all duration-300 transform
+              p-4 rounded-full shadow-lg transition-all duration-300 transform active:scale-95
               ${
                 isMobileMenuOpen
                   ? "bg-red-500 hover:bg-red-600 rotate-90"
@@ -235,14 +232,25 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
       {/* Mobile Menu - Bottom Sheet Style (only if agreement_id exists) */}
       {agreement_id && isMobileMenuOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - No color, just clickable area */}
           <div
-            className="md:hidden fixed inset-0 bg-black bg-opacity-50 transition-opacity z-40"
-            onClick={toggleMobileMenu}
+            className="md:hidden fixed inset-0 z-40"
+            onClick={() => setIsMobileMenuOpen(false)}
+            role="presentation"
           />
 
-          {/* Bottom Sheet Menu */}
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[70vh] overflow-hidden">
+          <div
+            className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[75vh] overflow-hidden flex flex-col transition-transform duration-300"
+            onTouchStart={(e) => setTouchStart(e.targetTouches[0].clientY)}
+            onTouchEnd={(e) => {
+              setTouchEnd(e.changedTouches[0].clientY);
+
+              if (e.changedTouches[0].clientY - touchStart > 50) {
+                setIsMobileMenuOpen(false);
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Handle Bar */}
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
@@ -258,51 +266,50 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
               </p>
             </div>
 
-            {/* Navigation - Scrollable */}
-            <div className="overflow-y-auto max-h-[calc(70vh-100px)]">
-              <nav className="p-4">
-                {/* Essential Services - Primary Items in Grid */}
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
+            <div className="overflow-y-auto flex-1">
+              <nav className="p-4 space-y-4">
+                {/* Essential Services - Primary Items */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-600 mb-3 px-2 uppercase tracking-wider">
                     Essential Services
                   </h3>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-2">
                     {primaryItems.map(({ href, icon: Icon, label }) => {
-                      const isActive = pathname.includes(href.split("?")[0]);
+                      const isActive = getIsActive(href);
                       return (
                         <button
                           key={href}
-                          onClick={() => handleNavigation(label, href)}
+                          onClick={() => handleNavigation(href)}
                           className={`
-                            flex items-center p-4 rounded-2xl transition-all duration-200 border-2
+                            flex items-center w-full p-4 rounded-xl transition-all duration-200 border-2 active:scale-95
                             ${
                               isActive
-                                ? "bg-gradient-to-br from-green-50 to-blue-50 border-green-200 text-green-700"
-                                : "bg-white border-gray-100 hover:border-gray-200 text-gray-700 hover:shadow-md"
+                                ? "bg-gradient-to-br from-green-50 to-blue-50 border-green-300 text-green-700 font-semibold shadow-sm"
+                                : "bg-white border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50"
                             }
                           `}
                         >
                           <div
                             className={`
-                            p-3 rounded-xl mr-4
-                            ${
-                              isActive
-                                ? "bg-gradient-to-r from-green-100 to-blue-100"
-                                : "bg-gray-50"
-                            }
-                          `}
+                              p-3 rounded-lg mr-3 flex-shrink-0
+                              ${
+                                isActive
+                                  ? "bg-gradient-to-r from-green-100 to-blue-100"
+                                  : "bg-gray-100"
+                              }
+                            `}
                           >
                             <Icon
                               className={`w-6 h-6 ${
-                                isActive ? "text-green-700" : "text-gray-500"
+                                isActive ? "text-green-700" : "text-gray-600"
                               }`}
                             />
                           </div>
-                          <span className="flex-1 text-left font-medium">
+                          <span className="flex-1 text-left font-medium text-sm md:text-base">
                             {label}
                           </span>
                           <ChevronRight
-                            className={`w-5 h-5 ${
+                            className={`w-5 h-5 flex-shrink-0 ${
                               isActive ? "text-green-700" : "text-gray-400"
                             }`}
                           />
@@ -312,37 +319,37 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
                   </div>
                 </div>
 
-                {/* Communication & Support - List Style */}
-                <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
+                {/* Communication & Support */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-600 mb-3 px-2 uppercase tracking-wider">
                     Communication & Support
                   </h3>
                   <div className="space-y-2">
                     {secondaryItems.map(({ href, icon: Icon, label }) => {
-                      const isActive = pathname.includes(href.split("?")[0]);
+                      const isActive = getIsActive(href);
                       return (
                         <button
                           key={href}
-                          onClick={() => handleNavigation(label, href)}
+                          onClick={() => handleNavigation(href)}
                           className={`
-                            flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
+                            flex items-center w-full px-4 py-3 rounded-lg transition-all duration-200 active:scale-95
                             ${
                               isActive
-                                ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700"
+                                ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 font-semibold"
                                 : "hover:bg-gray-50 text-gray-700"
                             }
                           `}
                         >
                           <Icon
-                            className={`w-5 h-5 mr-3 ${
+                            className={`w-5 h-5 mr-3 flex-shrink-0 ${
                               isActive ? "text-green-700" : "text-gray-500"
                             }`}
                           />
-                          <span className="flex-1 text-left font-medium">
+                          <span className="flex-1 text-left font-medium text-sm">
                             {label}
                           </span>
                           <ChevronRight
-                            className={`w-4 h-4 ${
+                            className={`w-4 h-4 flex-shrink-0 ${
                               isActive ? "text-green-700" : "text-gray-400"
                             }`}
                           />
@@ -352,15 +359,31 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
                   </div>
                 </div>
 
-                {/* Bottom Padding for Safe Area */}
-                <div className="h-6"></div>
+                {/* Exit Portal */}
+                {exitItem && (
+                  <div className="border-t border-gray-100 pt-4">
+                    <button
+                      onClick={() => handleNavigation(exitItem.href)}
+                      className="flex items-center w-full p-4 rounded-xl transition-all duration-200 bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90 active:scale-95"
+                    >
+                      <div className="p-3 rounded-lg mr-3 bg-white/20 flex-shrink-0">
+                        <exitItem.icon className="w-6 h-6" />
+                      </div>
+                      <span className="flex-1 text-left font-medium text-sm md:text-base">
+                        {exitItem.label}
+                      </span>
+                      <ChevronRight className="w-5 h-5 flex-shrink-0" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="h-4"></div>
               </nav>
             </div>
           </div>
         </>
       )}
 
-      {/* Main Content - Adjusted margin for fixed sidebar */}
       <div
         className={`flex-1 ${agreement_id ? "md:ml-64" : ""} overflow-y-auto`}
       >
