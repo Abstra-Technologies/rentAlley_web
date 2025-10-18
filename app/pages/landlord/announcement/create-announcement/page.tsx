@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 
 export default function CreateAnnouncement() {
   const router = useRouter();
-  const [properties, setProperties] = useState([]);
+    const [properties, setProperties] = useState<any[]>([]);
   const { user } = useAuth();
   const [formData, setFormData] = useState({
       properties: [],
@@ -20,42 +20,50 @@ export default function CreateAnnouncement() {
   const [error, setError] = useState("");
     const [uploadedImages, setUploadedImages] = useState([]);
 
-  useEffect(() => {
-    async function fetchProperties() {
-      try {
-        if (!user?.landlord_id) {
-          console.error("No landlord ID found in user data");
-          return;
+    useEffect(() => {
+        async function fetchProperties() {
+            try {
+                if (!user?.landlord_id) {
+                    console.error("No landlord ID found in user data");
+                    return;
+                }
+
+                const response = await fetch(
+                    `/api/landlord/${user.landlord_id}/properties`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch properties");
+                }
+
+                const data = await response.json();
+
+                // ✅ Extract only the property list array from API response
+                if (data.success && Array.isArray(data.data)) {
+                    setProperties(data.data);
+                } else {
+                    console.warn("Unexpected response format:", data);
+                    setProperties([]);
+                }
+            } catch (error) {
+                console.error("Error fetching properties:", error);
+                setError("Failed to load properties. Please refresh and try again.");
+
+                Swal.fire({
+                    icon: "error",
+                    title: "Loading Error",
+                    text: "Failed to load properties. Please try again.",
+                    confirmButtonColor: "#3B82F6",
+                });
+            } finally {
+                setLoading(false);
+            }
         }
 
-        const response = await fetch(
-          `/api/landlord/announcement/fetchPropertyLists?landlord_id=${user.landlord_id}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch properties");
+        if (user?.landlord_id) {
+            fetchProperties();
         }
-
-        const data = await response.json();
-        setProperties(data);
-      } catch (error) {
-        console.error("Error fetching properties:", error);
-        setError("Failed to load properties. Please refresh and try again.");
-        Swal.fire({
-          icon: "error",
-          title: "Loading Error",
-          text: "Failed to load properties. Please try again.",
-          confirmButtonColor: "#3B82F6",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (user?.landlord_id) {
-      fetchProperties();
-    }
-  }, [user]);
+    }, [user]);
 
     const handleChange = (e) => {
         const { name, value, options } = e.target;
@@ -144,7 +152,7 @@ export default function CreateAnnouncement() {
                 });
                 setUploadedImages([]);
 
-                router.push("/pages/landlord/announcement");
+                router.replace("/pages/landlord/announcement");
             } else {
                 throw new Error(data.message || "Failed to create announcement");
             }
@@ -205,17 +213,26 @@ export default function CreateAnnouncement() {
     // Select all / Clear all
 
     const toggleSelectAll = () => {
-        if (formData.properties.length === properties.length) {
-            // currently all selected -> clear
-            setFormData((prev) => ({ ...prev, properties: [] }));
-        } else {
-            const allIds = properties.map((p) => String(p.property_id));
-            setFormData((prev) => ({ ...prev, properties: allIds }));
-        }
+        if (!properties || properties.length === 0) return;
+
+        // extract all property_ids from grouped response
+        const allPropertyIds = properties.map((p: any) => String(p.property_id));
+
+        setFormData((prev) => {
+            const currentlyAllSelected =
+                prev.properties.length === allPropertyIds.length;
+
+            return {
+                ...prev,
+                properties: currentlyAllSelected ? [] : allPropertyIds,
+            };
+        });
+
         if (error) setError("");
     };
 
-  // Loading skeleton
+
+    // Loading skeleton
   const LoadingSkeleton = () => (
     <div className="bg-white rounded-lg shadow-lg p-6 animate-pulse">
       <div className="h-8 bg-gray-200 rounded mb-6 w-1/2"></div>
@@ -250,8 +267,6 @@ export default function CreateAnnouncement() {
     const handleDeleteImage = (index) => {
         setUploadedImages((prev) => prev.filter((_, i) => i !== index));
     };
-
-
 
     if (loading) {
     return (
@@ -418,26 +433,33 @@ export default function CreateAnnouncement() {
                           ) : (
                               properties.map((property) => {
                                   const idStr = String(property.property_id);
+                                  const isChecked = formData.properties.includes(idStr);
+
                                   return (
                                       <label
                                           key={idStr}
                                           className="flex items-center space-x-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
                                       >
+                                          {/* ✅ Checkbox */}
                                           <input
                                               type="checkbox"
                                               value={idStr}
-                                              checked={formData.properties.includes(idStr)}
+                                              checked={isChecked}
                                               onChange={() => toggleProperty(idStr)}
                                               className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                              aria-checked={formData.properties.includes(idStr)}
+                                              aria-checked={isChecked}
                                           />
+
+                                          {/* ✅ Property Info */}
                                           <div className="flex-1 min-w-0">
                                               <div className="text-sm font-medium text-gray-800 truncate">
                                                   {property.property_name}
                                               </div>
-                                              {property.address && (
+
+                                              {/* ✅ Display city + province (fallback safe) */}
+                                              {(property.city || property.province) && (
                                                   <div className="text-xs text-gray-500 truncate">
-                                                      {property.address}
+                                                      {[property.city, property.province].filter(Boolean).join(", ")}
                                                   </div>
                                               )}
                                           </div>

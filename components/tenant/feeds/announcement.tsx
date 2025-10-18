@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
+import { logEvent } from "@/utils/gtag";
 
 interface Announcement {
     id: number;
@@ -32,29 +33,26 @@ export default function AnnouncementFeed({ tenant_id }: { tenant_id: number | un
 
     return (
         <div className="w-full max-w-2xl mx-auto space-y-6">
-            <h2 className="text-xl font-bold mb-4"></h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900">
+                Announcements & Feeds
+            </h2>
 
             {announcements.length === 0 ? (
-
                 <div className="flex flex-col items-center justify-center py-8">
                     <Megaphone className="w-10 h-10 text-gray-400 mb-2" />
-                    <p className="text-gray-500 text-center">
-                        No feeds available.
-                    </p>
+                    <p className="text-gray-500 text-center">No feeds available.</p>
                 </div>
-
             ) : (
                 announcements.map((a) => (
                     <div
                         key={a.id}
-                        className="bg-white rounded-lg shadow hover:shadow-md transition p-4"
+                        className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4 border border-gray-100"
                     >
                         {/* Header: landlord avatar + name + property */}
                         <div className="flex items-center mb-3">
                             <img
                                 src={
-                                    a.landlord?.profilePicture ||
-                                    "/default-avatar.png" // fallback
+                                    a.landlord?.profilePicture || "/default-avatar.png" // fallback
                                 }
                                 alt="Landlord"
                                 className="w-10 h-10 rounded-full object-cover border"
@@ -77,11 +75,14 @@ export default function AnnouncementFeed({ tenant_id }: { tenant_id: number | un
                         {/* Subject + description */}
                         <div className="mb-3">
                             {a.subject && (
-                                <h3 className="font-medium text-gray-800 mb-1">{a.subject}</h3>
+                                <h3 className="font-extrabold text-lg text-gray-900 mb-2 leading-snug">
+                                    {a.subject}
+                                </h3>
                             )}
                             <p className="text-gray-700 whitespace-pre-line break-words overflow-hidden text-ellipsis line-clamp-3">
                                 {a.description}
-                            </p>                        </div>
+                            </p>
+                        </div>
 
                         {/* Photos */}
                         {a.photos?.length > 0 && (
@@ -99,10 +100,10 @@ export default function AnnouncementFeed({ tenant_id }: { tenant_id: number | un
 
                         {/* Like + Comment actions */}
                         <div className="flex items-center justify-between mt-4 text-gray-600 text-sm border-t pt-2">
-                            <button className="flex items-center gap-1 hover:text-blue-600">
+                            <button className="flex items-center gap-1 hover:text-blue-600 font-medium">
                                 👍 Like
                             </button>
-                            <button className="flex items-center gap-1 hover:text-blue-600">
+                            <button className="flex items-center gap-1 hover:text-blue-600 font-medium">
                                 💬 Comment
                             </button>
                         </div>
@@ -111,5 +112,6 @@ export default function AnnouncementFeed({ tenant_id }: { tenant_id: number | un
             )}
         </div>
     );
+
 
 }

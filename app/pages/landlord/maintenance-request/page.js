@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useEffect, useState, Suspense } from "react";
 import {
@@ -16,6 +15,7 @@ import useAuthStore from "../../../../zustand/authStore";
 import axios from "axios";
 import CalendarComponent from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import useSubscription from "@/hooks/landlord/useSubscription";
 
 const SearchParamsWrapper = ({ setActiveTab }) => {
   const searchParams = useSearchParams();
@@ -37,62 +37,50 @@ const MaintenanceRequestPage = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentRequestId, setCurrentRequestId] = useState(null);
-  const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hiddenRequestCount, setHiddenRequestCount] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
-  //  Getting current tier plan. and all requests
+  const landlordId = user?.landlord_id;
+  const {
+    subscription,
+    loadingSubscription,
+    errorSubscription,
+    refreshSubscription,
+  } = useSubscription(landlordId);
+
+  // Fetch maintenance requests
   useEffect(() => {
-    const fetchSubscription = async () => {
-      if (!user?.landlord_id) return;
-
-      try {
-        const response = await axios.get(
-          `/api/landlord/subscription/active/${user?.landlord_id}`
-        );
-        setSubscription(response.data);
-        console.log("maintenance request data limit: ", response.data);
-      } catch (error) {
-        console.error("Error fetching subscription:", error);
-      }
-    };
-
-    fetchSubscription();
-
     const fetchRequests = async () => {
-      if (!user?.landlord_id) return;
-
+      if (!landlordId) return;
       try {
         const response = await axios.get(
-          `/api/maintenance/getAllMaintenance?landlord_id=${user?.landlord_id}`
+            `/api/maintenance/getAllMaintenance?landlord_id=${landlordId}`
         );
-
         if (response.data.success) {
           setAllRequests(response.data.data);
         }
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching maintenance requests:", error);
+      } finally {
         setLoading(false);
       }
     };
-
     fetchRequests();
-  }, [user]);
+  }, [landlordId]);
 
+  // Filter requests based on plan
   useEffect(() => {
-    if (!subscription || !allRequests.length) return;
+    if (!allRequests.length) return;
 
     const filteredByTab = allRequests.filter(
-      (req) => req.status.toLowerCase() === activeTab
+        (req) => req.status.toLowerCase() === activeTab
     );
 
-    const { maxMaintenanceRequest } = subscription.listingLimits || {
-      maxMaintenanceRequest: 5,
-    };
+    const maxMaintenanceRequest =
+        subscription?.listingLimits?.maxMaintenanceRequest || 5;
 
     if (activeTab === "completed") {
       setVisibleRequests(filteredByTab);
@@ -101,66 +89,61 @@ const MaintenanceRequestPage = () => {
     }
 
     const completedRequests = allRequests.filter(
-      (request) => request.status.toLowerCase() === "completed"
+        (request) => request.status.toLowerCase() === "completed"
     );
 
     const activeRequests = allRequests.filter(
-      (request) => request.status.toLowerCase() !== "completed"
+        (request) => request.status.toLowerCase() !== "completed"
     );
 
     const sortedActiveRequests = [...activeRequests].sort(
-      (a, b) => new Date(a.created_at) - new Date(b.created_at)
+        (a, b) => new Date(a.created_at) - new Date(b.created_at)
     );
 
     const visibleActiveCount = Math.min(
-      maxMaintenanceRequest === Infinity
-        ? activeRequests.length
-        : maxMaintenanceRequest,
-      activeRequests.length
+        maxMaintenanceRequest === Infinity
+            ? activeRequests.length
+            : maxMaintenanceRequest,
+        activeRequests.length
     );
 
     const visibleActiveRequestIds = sortedActiveRequests
-      .slice(0, visibleActiveCount)
-      .map((req) => req.request_id);
+        .slice(0, visibleActiveCount)
+        .map((req) => req.request_id);
 
     const visibleTabRequests = filteredByTab.filter((req) => {
       if (req.status.toLowerCase() === "completed") return true;
-
       return visibleActiveRequestIds.includes(req.request_id);
     });
 
     setVisibleRequests(visibleTabRequests);
-
-    const hiddenTabRequests =
-      activeTab !== "completed"
-        ? filteredByTab.length - visibleTabRequests.length
-        : 0;
-
-    setHiddenRequestCount(hiddenTabRequests);
+    setHiddenRequestCount(filteredByTab.length - visibleTabRequests.length);
   }, [allRequests, subscription, activeTab]);
 
+  // Disable updates when no active subscription
+  const isLocked = !subscription;
+  const tooltipMsg = "Upgrade your plan to manage maintenance requests.";
+
   const updateStatus = async (request_id, newStatus, additionalData = {}) => {
+    if (isLocked) {
+      alert(tooltipMsg);
+      return;
+    }
     try {
       await axios.put("/api/maintenance/updateStatus", {
         request_id,
         status: newStatus,
         ...additionalData,
         user_id: user?.user_id,
-        landlord_id: user?.landlord_id,
+        landlord_id: landlordId,
       });
 
-      await axios.post("/api/maintenance/sendNotification", {
-        request_id,
-        status: newStatus,
-        landlord_id: user?.landlord_id,
-      });
-
-      setAllRequests((prevRequests) =>
-        prevRequests.map((req) =>
-          req.request_id === request_id
-            ? { ...req, status: newStatus, ...additionalData }
-            : req
-        )
+      setAllRequests((prev) =>
+          prev.map((req) =>
+              req.request_id === request_id
+                  ? { ...req, status: newStatus, ...additionalData }
+                  : req
+          )
       );
     } catch (error) {
       console.error("Error updating request status:", error);
@@ -168,19 +151,18 @@ const MaintenanceRequestPage = () => {
   };
 
   const handleStartClick = (request_id) => {
+    if (isLocked) return alert(tooltipMsg);
     setCurrentRequestId(request_id);
     setShowCalendar(true);
   };
 
   const handleScheduleConfirm = () => {
-    if (currentRequestId) {
-      updateStatus(currentRequestId, "in-progress", {
-        schedule_date: selectedDate.toISOString().split("T")[0],
-      });
-
-      setShowCalendar(false);
-      setCurrentRequestId(null);
-    }
+    if (!currentRequestId) return;
+    updateStatus(currentRequestId, "in-progress", {
+      schedule_date: selectedDate.toISOString().split("T")[0],
+    });
+    setShowCalendar(false);
+    setCurrentRequestId(null);
   };
 
   const handleViewDetails = (request) => {
@@ -204,43 +186,54 @@ const MaintenanceRequestPage = () => {
   };
 
   const getActionButton = (request) => {
+    const Button = ({ label, color, onClick }) => (
+        <button
+            onClick={isLocked ? () => alert(tooltipMsg) : onClick}
+            disabled={isLocked}
+            title={isLocked ? tooltipMsg : ""}
+            className={`w-full sm:w-auto px-3 py-2 rounded-md text-sm transition-colors ${
+                isLocked
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed opacity-60"
+                    : `${color} text-white hover:brightness-110`
+            }`}
+        >
+          {label}
+        </button>
+    );
+
     switch (activeTab) {
       case "pending":
         return (
-          <button
-            onClick={() => updateStatus(request.request_id, "scheduled")}
-            className="w-full sm:w-auto px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md text-sm transition-colors"
-          >
-            Approve
-          </button>
+            <Button
+                label="Approve"
+                color="bg-green-500"
+                onClick={() => updateStatus(request.request_id, "scheduled")}
+            />
         );
       case "scheduled":
         return (
-          <button
-            onClick={() => handleStartClick(request.request_id)}
-            className="w-full sm:w-auto px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md text-sm transition-colors"
-          >
-            Start
-          </button>
+            <Button
+                label="Start"
+                color="bg-yellow-500"
+                onClick={() => handleStartClick(request.request_id)}
+            />
         );
       case "in-progress":
         return (
-          <button
-            onClick={() =>
-              updateStatus(request.request_id, "completed", {
-                completion_date: new Date().toISOString().split("T")[0],
-              })
-            }
-            className="w-full sm:w-auto px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm transition-colors"
-          >
-            Complete
-          </button>
+            <Button
+                label="Complete"
+                color="bg-blue-500"
+                onClick={() =>
+                    updateStatus(request.request_id, "completed", {
+                      completion_date: new Date().toISOString().split("T")[0],
+                    })
+                }
+            />
         );
       default:
         return null;
     }
   };
-
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <SearchParamsWrapper setActiveTab={setActiveTab} />
@@ -253,16 +246,33 @@ const MaintenanceRequestPage = () => {
           <div className="text-xs sm:text-sm bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0">
               <span className="font-medium">Plan:</span>
-              <span className="sm:ml-1 text-blue-600">
-                {subscription?.plan_name}
-              </span>
-              <span className="hidden sm:inline mx-2">|</span>
+              <span
+                  className={`sm:ml-1 ${
+                      subscription ? "text-blue-600" : "text-red-600 font-semibold"
+                  }`}
+              >
+      {subscription?.plan_name || "No Active Plan"}
+    </span>
+
+              <span className="hidden sm:inline mx-2 text-gray-400">|</span>
+
               <span className="font-medium">Limit:</span>
-              <span className="sm:ml-1 text-blue-600">
-                {subscription?.listingLimits?.maxMaintenanceRequest}
-              </span>
+              <span
+                  className={`sm:ml-1 ${
+                      subscription ? "text-blue-600" : "text-gray-700"
+                  }`}
+              >
+      {subscription?.listingLimits?.maxMaintenanceRequest ?? 5}
+    </span>
             </div>
+
+            {!subscription && (
+                <p className="mt-1 text-[11px] sm:text-xs text-red-600 italic">
+                  Upgrade your plan to manage or approve maintenance requests.
+                </p>
+            )}
           </div>
+
         </div>
 
         {/* Warning Message */}

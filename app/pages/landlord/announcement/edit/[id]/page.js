@@ -44,7 +44,7 @@ export default function EditAnnouncement() {
 
         // Fetch properties for dropdown
         const propertiesRes = await fetch(
-          `/api/landlord/announcement/fetchPropertyLists?landlord_id=${user?.landlord_id}`
+          `/api/landlord/${user?.landlord_id}/properties`
         );
         if (!propertiesRes.ok) throw new Error("Failed to fetch properties");
         const propertiesData = await propertiesRes.json();
