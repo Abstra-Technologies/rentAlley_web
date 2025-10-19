@@ -26,14 +26,14 @@ export default function SideNavProfile() {
 
   const menuItems = [
     {
-      href: `/pages/${user?.userType}/profile`,
+      href: `/pages/commons/profile`,
       icon: UserIcon,
       label: "Profile",
       onClick: () =>
         logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1),
     },
     {
-      href: `/pages/${user?.userType}/securityPrivacy`,
+      href: `/pages/commons/profile/security`,
       icon: ShieldCheckIcon,
       label: "Security & Privacy",
       onClick: () =>
@@ -44,13 +44,13 @@ export default function SideNavProfile() {
           1
         ),
     },
-    {
-      href: `/pages/commons/settings`,
-      icon: IoIosNotifications,
-      label: "Other Settings",
-      onClick: () =>
-          logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1),
-    },
+    // {
+    //   href: `/pages/commons/settings`,
+    //   icon: IoIosNotifications,
+    //   label: "Other Settings",
+    //   onClick: () =>
+    //       logEvent("Navigation", "User Interaction", "Clicked Profile Link", 1),
+    // },
     ...(user?.userType === "landlord"
       ? [
           {

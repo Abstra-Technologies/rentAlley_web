@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Megaphone } from "lucide-react";
-import { logEvent } from "@/utils/gtag";
 
 interface Announcement {
     id: number;
@@ -33,9 +32,6 @@ export default function AnnouncementFeed({ tenant_id }: { tenant_id: number | un
 
     return (
         <div className="w-full max-w-2xl mx-auto space-y-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">
-                Announcements & Feeds
-            </h2>
 
             {announcements.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8">

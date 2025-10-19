@@ -332,7 +332,7 @@ const Navbar = () => {
 
                       {user && (
                         <Link
-                          href={`/pages/${user.userType}/profile`}
+                          href={`/pages/commons/profile`}
                           className="flex items-center px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50 transition-all duration-200 group"
                         >
                           <svg
