@@ -39,6 +39,7 @@ import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
 import TenantActivity from "../landlord/widgets/TenantActivity";
 import ProspectiveTenantsWidget from "../landlord/widgets/leads";
 import LeaseWidget from "../landlord/analytics/leaseCountWidget";
+import LandlordPropertyMarquee from "../landlord/properties/LandlordPropertyQuickView";
 
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -272,7 +273,11 @@ const LandlordPropertyChart = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div>
+              <LandlordPropertyMarquee landlordId={user?.landlord_id} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
             <div
                 onClick={() => router.push(`/pages/landlord/analytics/detailed/revenue`)}

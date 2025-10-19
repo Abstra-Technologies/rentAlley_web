@@ -7,13 +7,7 @@ export async function GET(req: NextRequest) {
     const landlord_id = searchParams.get("landlord_id");
     const property_id = searchParams.get("property_id");
 
-    console.log("[DEBUG] Received request with:", {
-      landlord_id,
-      property_id,
-    });
-
     if (!landlord_id && !property_id) {
-      console.warn("[DEBUG] Missing both landlord_id and property_id.");
       return NextResponse.json({ error: "Missing landlord_id or property_id" }, { status: 400 });
     }
 
@@ -38,9 +32,6 @@ export async function GET(req: NextRequest) {
       query += ` AND p.property_id = ?`;
       params.push(property_id);
     }
-
-    console.log("[DEBUG] Final query:", query);
-    console.log("[DEBUG] Query params:", params);
 
     const [rows] = await db.query(query, params);
 // @ts-ignore
