@@ -42,9 +42,7 @@ export default function LandlordSubscriptionPlan() {
                                 >
                                     View Policies
                                 </button>
-                                <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg hover:opacity-90 transition">
-                                    Upgrade Plan
-                                </button>
+
                             </div>
                         </div>
                     </div>

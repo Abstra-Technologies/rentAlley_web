@@ -1,73 +1,117 @@
-// app/api/subscription/payment-success/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
-import mysql from "mysql2/promise";
+import mysql, { RowDataPacket } from "mysql2/promise";
 
-// Always run on server
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
-    try {
-        const { requestReferenceNumber, landlord_id, plan_name, amount } = await req.json();
+type IdRow = RowDataPacket & { subscription_id: number };
 
-        // Validate required fields
-        if (!requestReferenceNumber || !landlord_id || !plan_name || !amount) {
-            console.error("[ERROR] Missing required parameters:", { requestReferenceNumber, landlord_id, plan_name, amount });
-            return NextResponse.json({ error: "Missing required parameters." }, { status: 400 });
+export async function POST(req: NextRequest) {
+    let connection: mysql.Connection | null = null;
+
+    try {
+        const body = await req.json();
+        const requestReferenceNumber = String(body?.requestReferenceNumber || "").trim();
+        const landlord_id = Number(body?.landlord_id);
+        const plan_name = String(body?.plan_name || "").trim();
+        const amount = Number(body?.amount);
+
+        // Validate inputs
+        if (!requestReferenceNumber || !Number.isFinite(landlord_id) || !plan_name || !Number.isFinite(amount)) {
+            return NextResponse.json(
+                { error: "Missing or invalid parameters." },
+                { status: 400 }
+            );
         }
 
-        console.log("[DEBUG] Payment Success - Processing Subscription Update:", {
-            requestReferenceNumber,
-            landlord_id,
-            plan_name,
-            amount,
-        });
-
         const { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME } = process.env;
-
-        const connection = await mysql.createConnection({
+        connection = await mysql.createConnection({
             host: DB_HOST,
             user: DB_USER,
             password: DB_PASSWORD,
             database: DB_NAME,
         });
 
-        const start_date = new Date().toISOString().split("T")[0];
-        const endDate = new Date();
-        endDate.setMonth(endDate.getMonth() + 1);
-        const formatted_end_date = endDate.toISOString().split("T")[0];
+        // --- ACID transaction start ---
+        await connection.execute("SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+        await connection.beginTransaction();
 
-        console.log("Deactivating Previous Subscriptions...");
+        // 1) Idempotency check (lock the row if it exists)
+        const [existing] = await connection.execute<IdRow[]>(
+            "SELECT subscription_id FROM Subscription WHERE request_reference_number = ? LIMIT 1 FOR UPDATE",
+            [requestReferenceNumber]
+        );
+
+        if (existing.length > 0) {
+            // Already processed — return success idempotently
+            await connection.commit();
+            return NextResponse.json(
+                { message: "Subscription already activated (idempotent).", requestReferenceNumber },
+                { status: 200 }
+            );
+        }
+
+        // 2) Lock current active subscription rows for this landlord to avoid race conditions
         await connection.execute(
-            "UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?",
+            "SELECT subscription_id FROM Subscription WHERE landlord_id = ? AND is_active = 1 FOR UPDATE",
             [landlord_id]
         );
-        console.log("Previous subscriptions deactivated:", landlord_id);
 
-        console.log("Inserting New Subscription...");
+        // 3) Deactivate any active subscriptions for this landlord (safe even if none)
         await connection.execute(
-            `INSERT INTO Subscription 
-        (landlord_id, plan_name, start_date, end_date, payment_status, created_at, request_reference_number, is_trial, amount_paid, is_active) 
-        VALUES (?, ?, ?, ?, 'paid', NOW(), ?, 0, ?, 1)`,
-            [landlord_id, plan_name, start_date, formatted_end_date, requestReferenceNumber, amount]
+            "UPDATE Subscription SET is_active = 0 WHERE landlord_id = ? AND is_active = 1",
+            [landlord_id]
         );
-        console.log("Subscription successfully inserted for landlord:", landlord_id);
 
-        await connection.end();
-        console.log("Database connection closed.");
+        // 4) Insert new subscription
+        const now = new Date();
+        const start_date = new Date(now.getTime() - now.getTimezoneOffset() * 60000) // normalize to UTC date
+            .toISOString()
+            .split("T")[0];
 
-        return NextResponse.json({ message: "Subscription activated successfully." }, { status: 200 });
-    } catch (error: any) {
-        console.error("Failed to update subscription:", error.message || error);
+        const end = new Date(now);
+        end.setMonth(end.getMonth() + 1);
+        const end_date = new Date(end.getTime() - end.getTimezoneOffset() * 60000)
+            .toISOString()
+            .split("T")[0];
+
+        await connection.execute(
+            `INSERT INTO Subscription
+        (landlord_id, plan_name, start_date, end_date, payment_status, created_at, request_reference_number, is_trial, amount_paid, is_active)
+       VALUES (?, ?, ?, ?, 'paid', NOW(), ?, 0, ?, 1)`,
+            [landlord_id, plan_name, start_date, end_date, requestReferenceNumber, amount]
+        );
+
+        await connection.commit();
+        // --- ACID transaction end ---
+
         return NextResponse.json(
-            { error: "Failed to update subscription.", details: error.message || String(error) },
+            { message: "Subscription activated successfully.", requestReferenceNumber },
+            { status: 200 }
+        );
+    } catch (err: any) {
+        if (connection) {
+            try { await connection.rollback(); } catch {}
+        }
+        const msg = err?.message || String(err);
+        const isDup = /duplicate/i.test(msg);
+        if (isDup) {
+            return NextResponse.json(
+                { message: "Subscription already activated.", detail: msg },
+                { status: 200 }
+            );
+        }
+        return NextResponse.json(
+            { error: "Failed to update subscription.", details: msg },
             { status: 500 }
         );
+    } finally {
+        if (connection) {
+            try { await connection.end(); } catch {}
+        }
     }
 }
 
-// Optional method guard
 export async function GET() {
     return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
 }

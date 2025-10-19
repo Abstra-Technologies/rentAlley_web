@@ -438,7 +438,7 @@ const ViewUnitPage = () => {
                                 if (btn) {
                                   btn.addEventListener("click", () => {
                                     Swal.close();
-                                    router.replace("/pages/landlord/sub_two/subscription");
+                                    router.replace("/pages/landlord/subscription_plan/pricing");
                                   });
                                 }
                               },

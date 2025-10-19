@@ -281,7 +281,7 @@ const PropertyListingPage = () => {
                   Verify Account
                 </Link>
                 <Link
-                  href="/pages/landlord/sub_two/subscription"
+                  href="/pages/landlord/subscription_plan/pricing"
                   className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   Choose Plan
@@ -310,7 +310,7 @@ const PropertyListingPage = () => {
               </p>
               {!subscription && (
                 <Link
-                  href="/pages/landlord/sub_two/subscription"
+                  href="/pages/landlord/subscription_plan/pricing"
                   className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
                 >
                   Choose a Plan
@@ -365,7 +365,7 @@ const PropertyListingPage = () => {
                 reach potential tenants.
               </p>
               <Link
-                href="/pages/landlord/sub_two/subscription"
+                href="/pages/landlord/subscription_plan/pricing"
                 className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all duration-200"
               >
                 View Plans
@@ -395,7 +395,7 @@ const PropertyListingPage = () => {
                 to add more listings.
               </p>
               <Link
-                href="/pages/landlord/sub_two/subscription"
+                href="/pages/landlord/subscription_plan/pricing"
                 className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white rounded-lg font-medium transition-all duration-200"
               >
                 Upgrade Plan

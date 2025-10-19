@@ -72,7 +72,7 @@ function PaymentCancelledPage() {
                     </div>
                 ) : (
                     <button
-                        onClick={() => router.push("/pages/landlord/sub_two/subscription")}
+                        onClick={() => router.push("/pages/landlord/subscription_plan/pricing")}
                         className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     >
                         Go Back to Subscriptions
