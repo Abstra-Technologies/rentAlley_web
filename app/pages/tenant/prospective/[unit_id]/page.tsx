@@ -59,6 +59,36 @@ const TenantApplicationForm = () => {
   const validIdRef = useRef(null);
   const incomeRef = useRef(null);
 
+
+  useEffect(() => {
+    if (!user?.user_id || !user?.tenant_id) return;
+
+    console.log('user bday:', user?.user_id);
+
+    const fetchTenantData = async () => {
+      try {
+        const res = await axios.get(`/api/tenant/profile`, {
+          params: { tenant_id: user.tenant_id },
+        });
+
+        if (res.data.tenant) {
+          const t = res.data.tenant;
+          setFormData((prev) => ({
+            ...prev,
+            occupation: user.occupation || "",
+            employment_type: t.employment_type || "",
+            monthly_income: t.monthly_income || "",
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching tenant profile:", err);
+      }
+    };
+
+    fetchTenantData();
+  }, [user]);
+
+
   // Fetch property
   useEffect(() => {
     if (!unit_id) return;
@@ -95,6 +125,7 @@ const TenantApplicationForm = () => {
         birthDate: user?.birthDate || "",
         phoneNumber: user?.phoneNumber || "",
         email: user?.email || "",
+        address: user?.address || "",
       }));
     }
   }, [unit_id, user]);

@@ -50,13 +50,19 @@ export async function POST(req: NextRequest) {
     ) {
       return NextResponse.json({ message: "Missing required fields." }, { status: 400 });
     }
+    const encryptedPhone = JSON.stringify(encryptData(phoneNumber?.toString() || "", process.env.ENCRYPTION_SECRET!));
+    const encryptedBirthDate = JSON.stringify(encryptData(birthDate?.toString() || "", process.env.ENCRYPTION_SECRET!));
 
-    // ✅ Update User info
     await db.query(
         `UPDATE User
-         SET address = ?, occupation = ?, birthDate = ?, phoneNumber = ?, updatedAt = NOW()
+         SET
+           address = ?,
+           occupation = ?,
+           birthDate = ?,
+           phoneNumber = ?,
+           updatedAt = NOW()
          WHERE user_id = ?`,
-        [address, occupation, birthDate, phoneNumber, user_id]
+        [address, occupation, encryptedBirthDate, encryptedPhone, user_id]
     );
 
     // ✅ Update Tenant details
