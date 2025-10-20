@@ -1,9 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
-
+import { useRouter, useSearchParams } from "next/navigation";
 import { Unit, FilterState } from "../../../types/types";
-
 import LoadingScreen from "@/components/loadingScreen";
 import MobileSearchHeader from "../../../components/find-rent/MobileSearchHeader";
 import MobileFiltersPanel from "../../../components/find-rent/MobileFiltersPanel";
@@ -14,6 +12,7 @@ import MapView from "../../../components/find-rent/MapView";
 
 export default function UnitSearchPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("grid");
@@ -21,8 +20,11 @@ export default function UnitSearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
 
+  // Initialize filters from URL search params
+  const initialSearchQuery = searchParams?.get("searchQuery") || "";
+
   const [filters, setFilters] = useState<FilterState>({
-    searchQuery: "",
+    searchQuery: initialSearchQuery,
     propertyType: "",
     furnishing: "",
     minPrice: 0,
@@ -31,6 +33,17 @@ export default function UnitSearchPage() {
     bedSpacing: "",
   });
 
+  // Update search query when URL params change
+  useEffect(() => {
+    if (initialSearchQuery) {
+      setFilters((prev) => ({
+        ...prev,
+        searchQuery: initialSearchQuery,
+      }));
+    }
+  }, [initialSearchQuery]);
+
+  // Fetch units on component mount
   useEffect(() => {
     async function fetchUnits() {
       try {
@@ -39,9 +52,6 @@ export default function UnitSearchPage() {
         if (!res.ok) throw new Error("Failed to fetch units");
 
         const data = await res.json();
-        console.log("data received", data);
-
-        console.log("Data array for setUnits:", data.data);
 
         if (data?.data && Array.isArray(data.data)) {
           setUnits(data.data);
@@ -55,18 +65,19 @@ export default function UnitSearchPage() {
         setLoading(false);
       }
     }
+
     fetchUnits();
   }, []);
 
   const filteredUnits = useMemo(() => {
     return units.filter((unit) => {
+      const searchLower = filters.searchQuery.toLowerCase().trim();
       const matchesSearch =
-        !filters.searchQuery ||
-        unit.property_name
-          .toLowerCase()
-          .includes(filters.searchQuery.toLowerCase()) ||
-        unit.city.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        unit.province.toLowerCase().includes(filters.searchQuery.toLowerCase());
+        !searchLower ||
+        unit.property_name.toLowerCase().includes(searchLower) ||
+        unit.city.toLowerCase().includes(searchLower) ||
+        unit.province.toLowerCase().replace(/_/g, " ").includes(searchLower) ||
+        unit.street?.toLowerCase().includes(searchLower);
 
       const matchesType =
         !filters.propertyType ||
@@ -75,14 +86,18 @@ export default function UnitSearchPage() {
       const matchesFurnishing =
         !filters.furnishing || unit.furnish === filters.furnishing;
 
+      const unitPrice = Number(unit.rent_amount);
       const matchesMinPrice =
-        filters.minPrice === 0 || Number(unit.rent_amount) >= filters.minPrice;
-
+        filters.minPrice === 0 || unitPrice >= filters.minPrice;
       const matchesMaxPrice =
-        filters.maxPrice === 0 || Number(unit.rent_amount) <= filters.maxPrice;
+        filters.maxPrice === 0 || unitPrice <= filters.maxPrice;
 
       const matchesMinSize =
         filters.minSize === 0 || unit.unit_size >= filters.minSize;
+
+      const matchesBedSpacing =
+        !filters.bedSpacing ||
+        unit.bed_spacing?.toString() === filters.bedSpacing;
 
       return (
         matchesSearch &&
@@ -90,7 +105,8 @@ export default function UnitSearchPage() {
         matchesFurnishing &&
         matchesMinPrice &&
         matchesMaxPrice &&
-        matchesMinSize
+        matchesMinSize &&
+        matchesBedSpacing
       );
     });
   }, [units, filters]);
@@ -128,7 +144,27 @@ export default function UnitSearchPage() {
       minSize: 0,
       bedSpacing: "",
     });
-  }, []);
+
+    router.push("/pages/find-rent");
+  }, [router]);
+
+  const handleSearchChange = useCallback(
+    (newQuery: string) => {
+      setFilters((prev) => ({
+        ...prev,
+        searchQuery: newQuery,
+      }));
+
+      if (newQuery.trim()) {
+        router.push(
+          `/pages/find-rent?searchQuery=${encodeURIComponent(newQuery)}`
+        );
+      } else {
+        router.push("/pages/find-rent");
+      }
+    },
+    [router]
+  );
 
   if (loading) {
     return <LoadingScreen message="Finding perfect units for you..." />;
@@ -136,10 +172,23 @@ export default function UnitSearchPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-      {/* Search Header */}
       <MobileSearchHeader
         filters={filters}
-        setFilters={setFilters}
+        setFilters={(newFilters) => {
+          setFilters(newFilters);
+
+          if (newFilters.searchQuery !== filters.searchQuery) {
+            if (newFilters.searchQuery.trim()) {
+              router.push(
+                `/pages/find-rent?searchQuery=${encodeURIComponent(
+                  newFilters.searchQuery
+                )}`
+              );
+            } else {
+              router.push("/pages/find-rent");
+            }
+          }
+        }}
         viewMode={viewMode}
         setViewMode={setViewMode}
         filteredUnits={filteredUnits}
@@ -150,7 +199,6 @@ export default function UnitSearchPage() {
       />
 
       <main className="flex-1 flex flex-col">
-        {" "}
         {viewMode === "grid" && (
           <GridView
             filteredUnits={filteredUnits}
@@ -179,7 +227,6 @@ export default function UnitSearchPage() {
         )}
         {viewMode === "map" && (
           <div className="flex-1">
-            {" "}
             <MapView
               key="map-view-key"
               filteredUnits={mapUnits}

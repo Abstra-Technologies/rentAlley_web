@@ -9,7 +9,7 @@ import {
 } from "react-icons/fa";
 import { BsImageAlt } from "react-icons/bs";
 import { MdVerified } from "react-icons/md";
-import { Unit } from "./types";
+import { Unit } from "../../types/types";
 import { formatCurrency, formatLocation } from "./utils";
 import Pagination from "./Pagination";
 
