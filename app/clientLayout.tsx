@@ -41,27 +41,34 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         if (sessionExpired) {
             Swal.fire({
                 title: 'Session Expired',
-                text: 'Your session has expired. Please log in again to continue.',
+                text: 'Your session has expired. Redirecting to login...',
                 icon: 'warning',
-                confirmButtonText: 'Go to Login',
+                showConfirmButton: false, // 🚫 no button
+                timer: 2500, // ⏳ auto close after 2.5s
+                timerProgressBar: true,
                 customClass: {
                     container: 'swal2-container',
                     popup: 'rounded-lg p-4 max-w-[90%] sm:max-w-md',
                     title: 'text-lg sm:text-xl font-semibold text-gray-800',
                     htmlContainer: 'text-sm sm:text-base text-gray-600',
-                    confirmButton:
-                        'bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto',
                 },
-                buttonsStyling: false,
                 allowOutsideClick: false,
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    setSessionExpired(false);
-                    window.location.href = '/pages/auth/login';
-                }
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
             });
+
+            // ⏩ Redirect automatically after timer
+            const redirectTimer = setTimeout(() => {
+                setSessionExpired(false);
+                window.location.href = '/pages/auth/login';
+            }, 2500);
+
+            return () => clearTimeout(redirectTimer);
         }
     }, [sessionExpired]);
+
 
     useEffect(() => {
         if (!user_id) return;

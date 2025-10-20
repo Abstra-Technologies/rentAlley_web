@@ -297,7 +297,8 @@ const ViewUnitPage = () => {
             {/* ====== Header Section ====== */}
             <div className="mb-6">
               {/* Property Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                {/* Left Section - Property Info */}
                 <div className="flex items-start sm:items-center gap-3">
                   <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2.5 rounded-xl shadow-md">
                     <BuildingOffice2Icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
@@ -313,11 +314,13 @@ const ViewUnitPage = () => {
                     </p>
                   </div>
                 </div>
-              </div>
 
-              {/* Subscription Plan Info (Full Width Below Header) */}
-              <div className="mt-2 sm:mt-3">
-                <LandlordSubscriptionPlanComponent landlord_id={landlord_id} />
+                {/* Right Section - Compact Subscription Plan */}
+                {/*<div className="shrink-0 w-full sm:w-auto">*/}
+                {/*  <div className="bg-white border border-gray-200 rounded-lg shadow-sm px-3 py-2 sm:px-4 sm:py-2.5">*/}
+                {/*    <LandlordSubscriptionPlanComponent landlord_id={landlord_id} />*/}
+                {/*  </div>*/}
+                {/*</div>*/}
               </div>
             </div>
 
