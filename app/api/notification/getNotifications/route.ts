@@ -13,7 +13,7 @@ export async function GET(req: Request) {
 
         // @ts-ignore
         const [notifications] = await db.query(
-            `SELECT id, title, body, is_read, created_at 
+            `SELECT id, title, body, is_read, created_at, url
        FROM Notification 
        WHERE user_id = ? 
        ORDER BY created_at DESC`,

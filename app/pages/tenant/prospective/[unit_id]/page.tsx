@@ -133,17 +133,26 @@ const TenantApplicationForm = () => {
       text: "Do you want to submit your application?",
       icon: "warning",
       showCancelButton: true,
+      confirmButtonText: "Submit",
     });
     if (!confirm.isConfirmed) return;
 
     setIsSubmitting(true);
-    Swal.fire({ title: "Submitting...", didOpen: () => Swal.showLoading() });
+    const loadingSwal = Swal.fire({
+      title: "Submitting...",
+      text: "Please wait while we process your application.",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
 
     try {
-      // ✅ Build one FormData payload
+      // ✅ Build FormData payload
       const fd = new FormData();
-      fd.append("user_id", user.user_id);      // 🔹 for User table
-      fd.append("tenant_id", user.tenant_id);  // 🔹 for Tenant + ProspectiveTenant
+      fd.append("user_id", user.user_id);
+      fd.append("tenant_id", user.tenant_id);
       fd.append("unit_id", formData.unit_id);
       fd.append("address", formData.address);
       fd.append("occupation", formData.occupation);
@@ -152,21 +161,29 @@ const TenantApplicationForm = () => {
       fd.append("birthDate", formData.birthDate);
       fd.append("phoneNumber", formData.phoneNumber);
 
-      if (validIdFile) {
-        fd.append("valid_id", validIdFile);
-      }
-      if (incomeFile) {
-        fd.append("income_proof", incomeFile);
-      }
+      if (validIdFile) fd.append("valid_id", validIdFile);
+      if (incomeFile) fd.append("income_proof", incomeFile);
 
-      // ✅ Single API call (combined backend)
+      // ✅ Send to backend
       await axios.post("/api/tenant/applications/submitApplication", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // await Swal.fire("Success", "Application submitted!", "success");
+      // ✅ Close loading and show success
+      Swal.close();
+      await Swal.fire({
+        title: "Success!",
+        text: "Your application has been submitted successfully.",
+        icon: "success",
+        confirmButtonText: "Continue",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // ✅ Redirect after a short delay
       router.push("/pages/tenant/prospective/success");
     } catch (err) {
+      Swal.close();
       Swal.fire("Error", err.message || "Submission failed.", "error");
     } finally {
       setIsSubmitting(false);

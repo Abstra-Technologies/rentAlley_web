@@ -126,12 +126,27 @@ const NotificationItem = ({ notification, onMarkRead, onDelete }) => {
         return `${Math.floor(diff / 86400)}d ago`;
     };
 
+    const handleClick = async () => {
+        if (!notification.is_read) {
+            await onMarkRead(notification.id);
+        }
+
+        // ✅ Build full URL from NEXT_PUBLIC_BASE_URL
+        if (notification.url) {
+            const base = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+            const fullUrl = `${base}${notification.url.startsWith("/") ? notification.url : `/${notification.url}`}`;
+
+            // Open in the same tab
+            window.location.href = fullUrl;
+        }
+    };
+
     return (
         <div
             className={`relative group hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
                 !notification.is_read ? "bg-blue-50 border-l-4 border-l-blue-500" : ""
             }`}
-            onClick={() => !notification.is_read && onMarkRead(notification.id)}
+            onClick={handleClick}
         >
             <div className="px-4 py-3 flex items-start justify-between">
                 <div className="flex-1 min-w-0">
@@ -164,7 +179,12 @@ const NotificationItem = ({ notification, onMarkRead, onDelete }) => {
                     title="Delete"
                 >
                     <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4H9v3H4" />
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4H9v3H4"
+                        />
                     </svg>
                 </button>
             </div>

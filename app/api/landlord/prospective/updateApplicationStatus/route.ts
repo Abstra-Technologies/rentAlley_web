@@ -96,9 +96,9 @@ export async function PUT(req: NextRequest) {
 
     if (subs.length > 0) {
       const payload = JSON.stringify({
-        title: "Tenant Application Update",
+        title: "Application Update",
         body: notificationMessage,
-        url: "/pages/tenant/myApplications", // redirect path on click
+        url: "/pages/tenant/myApplications",
       });
 
       for (const sub of subs) {
