@@ -55,44 +55,51 @@ export default function LandlordSubscriptionStatus({
 
     return (
         <div className="w-full">
-            <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 rounded-2xl shadow-md p-4 border border-emerald-100 hover:shadow-lg transition-all duration-300">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    {/* Left section: Label */}
+            <div
+                className="bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50
+                 rounded-xl shadow-sm p-3 sm:p-4 border border-emerald-100
+                 hover:shadow-md transition-all duration-300"
+            >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                    {/* Left section */}
                     <div className="flex items-center gap-2">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg shadow-inner">
-                            <Crown className="w-4 h-4 text-white" />
+                        <div className="p-2 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-md shadow-inner">
+                            <Crown className="w-3.5 h-3.5 text-white" />
                         </div>
-                        <h2 className="text-gray-800 text-sm font-semibold">
-                            Subscription Plan
+                        <h2 className="text-gray-800 text-xs sm:text-sm font-semibold">
+                            Subscription
                         </h2>
                     </div>
 
-                    {/* Right section: Plan details */}
+                    {/* Right section */}
                     {subscription && !isExpired ? (
                         <div className="flex flex-col items-end text-right">
-                            <p className="text-gray-900 font-bold text-base leading-tight">
+                            <p className="text-gray-900 font-bold text-sm leading-tight truncate max-w-[100px] sm:max-w-none">
                                 {subscription.plan_name}
                             </p>
-                            <p className="flex items-center justify-end gap-1.5 text-sm text-gray-600 mt-1">
-                                <Calendar className="w-4 h-4 text-emerald-600" />
-                                Ends on{" "}
+                            <p className="flex items-center justify-end gap-1 text-[11px] sm:text-xs text-gray-600 mt-1">
+                                <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Ends</span>{" "}
                                 <strong className="text-gray-800">
                                     {formatDate(subscription.end_date)}
                                 </strong>
                             </p>
-                            <span className="inline-block mt-2 px-3 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md text-[12px] font-medium">
-                Active
-              </span>
+                            <span className="inline-block mt-1.5 px-2 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md text-[10px] font-medium">
+              Active
+            </span>
                         </div>
                     ) : (
                         <div className="flex flex-col items-end text-right">
-                            <div className="flex items-center justify-end gap-1 text-sm text-gray-700 mb-2">
-                                <AlertCircle className="w-4 h-4 text-red-500" />
+                            <div className="flex items-center justify-end gap-1 text-[11px] sm:text-xs text-gray-700 mb-1.5">
+                                <AlertCircle className="w-3.5 h-3.5 text-red-500" />
                                 <span className="font-medium">Expired</span>
                             </div>
                             <Link
                                 href="/pages/landlord/sub_two/subscription"
-                                className="px-3 py-1.5 text-xs font-semibold text-white rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 shadow-md active:scale-95 transition-all duration-200"
+                                className="px-2 py-1 text-[10px] sm:text-xs font-semibold text-white rounded-md
+                         bg-gradient-to-r from-blue-600 to-emerald-600
+                         hover:from-blue-700 hover:to-emerald-700
+                         shadow-sm active:scale-95 transition-all duration-200"
                             >
                                 Subscribe
                             </Link>
@@ -102,4 +109,5 @@ export default function LandlordSubscriptionStatus({
             </div>
         </div>
     );
+
 }

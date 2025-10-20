@@ -1,4 +1,3 @@
-
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -28,24 +27,38 @@ export default function LandlordProfileStatus({
     fetchStatus();
   }, [landlord_id]);
 
+  const baseCard =
+      "rounded-lg sm:rounded-xl shadow-sm border transition-all duration-200 p-2.5 sm:p-4";
+
+  const iconBox =
+      "p-1.5 sm:p-2 rounded-md sm:rounded-lg shadow-inner flex items-center justify-center";
+
+  const titleText =
+      "text-[13px] sm:text-sm font-semibold leading-tight tracking-wide";
+
+  const descText =
+      "text-[11px] sm:text-xs text-gray-600 mt-0.5 sm:mt-1 leading-snug";
+
+  const buttonText =
+      "mt-1.5 sm:mt-2 text-[11px] sm:text-xs font-medium underline hover:opacity-80 transition-colors";
+
   const renderBanner = () => {
     switch (status) {
       case "pending":
         return (
-            <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-3 sm:p-4 shadow-sm">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
-                  </div>
+            <div
+                className={`${baseCard} bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200`}
+            >
+              <div className="flex items-start space-x-2 sm:space-x-3">
+                <div className={`${iconBox} bg-yellow-100`}>
+                  <Clock className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-yellow-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm sm:text-base font-medium text-yellow-800">
+                  <p className={`${titleText} text-yellow-800`}>
                     Documents Under Review
                   </p>
-                  <p className="text-xs sm:text-sm text-yellow-600 mt-1">
-                    We're reviewing your submitted documents. This usually takes
-                    1–2 business days.
+                  <p className={`${descText} text-yellow-600`}>
+                    We're reviewing your submitted documents (1–2 days).
                   </p>
                 </div>
               </div>
@@ -54,23 +67,23 @@ export default function LandlordProfileStatus({
 
       case "rejected":
         return (
-            <div className="bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-xl p-3 sm:p-4 shadow-sm">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
-                  </div>
+            <div
+                className={`${baseCard} bg-gradient-to-r from-red-50 to-rose-50 border-red-200`}
+            >
+              <div className="flex items-start space-x-2 sm:space-x-3">
+                <div className={`${iconBox} bg-red-100`}>
+                  <XCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-red-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm sm:text-base font-medium text-red-800">
+                  <p className={`${titleText} text-red-800`}>
                     Verification Rejected
                   </p>
-                  <p className="text-xs sm:text-sm text-red-600 mt-1">
-                    Please review the feedback and resubmit your documents.
+                  <p className={`${descText} text-red-600`}>
+                    Please review feedback and resubmit your documents.
                   </p>
                   <button
                       onClick={() => router.push("/pages/landlord/verification")}
-                      className="mt-2 text-xs sm:text-sm font-medium text-red-700 underline hover:text-red-800"
+                      className={`${buttonText} text-red-700 hover:text-red-800`}
                   >
                     View Details →
                   </button>
@@ -81,35 +94,35 @@ export default function LandlordProfileStatus({
 
       case "incomplete":
         return (
-            <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-3 sm:p-4 shadow-sm">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                  </div>
+            <div
+                className={`${baseCard} bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200`}
+            >
+              <div className="flex items-start space-x-2 sm:space-x-3">
+                <div className={`${iconBox} bg-gray-100`}>
+                  <AlertCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-gray-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm sm:text-base font-medium text-gray-800">
+                  <p className={`${titleText} text-gray-800`}>
                     Complete Your Profile
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                    Add missing information to unlock all features.
+                  <p className={`${descText}`}>
+                    Add missing info to unlock all features.
                   </p>
 
                   {/* Progress bar */}
-                  <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
+                  <div className="mt-2 sm:mt-3 w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                     <div
-                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        className="bg-blue-600 h-1.5 sm:h-2 rounded-full transition-all"
                         style={{ width: `${completion}%` }}
                     ></div>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">
                     {completion}% completed
                   </p>
 
                   <button
                       onClick={() => router.push("/pages/landlord/verification")}
-                      className="mt-2 text-xs sm:text-sm font-medium text-blue-600 underline hover:text-blue-700"
+                      className={`${buttonText} text-blue-600 hover:text-blue-700`}
                   >
                     Complete Now →
                   </button>
@@ -120,18 +133,18 @@ export default function LandlordProfileStatus({
 
       case "verified":
         return (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 sm:p-4 shadow-sm">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                  </div>
+            <div
+                className={`${baseCard} bg-gradient-to-r from-green-50 to-emerald-50 border-green-200`}
+            >
+              <div className="flex items-start space-x-2 sm:space-x-3">
+                <div className={`${iconBox} bg-green-100`}>
+                  <CheckCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm sm:text-base font-medium text-green-800">
+                  <p className={`${titleText} text-green-800`}>
                     Profile Verified
                   </p>
-                  <p className="text-xs sm:text-sm text-green-600 mt-1">
+                  <p className={`${descText} text-green-600`}>
                     Your account is fully verified and active.
                   </p>
                 </div>

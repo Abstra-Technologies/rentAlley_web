@@ -32,34 +32,42 @@ export default function LandlordCreditsSummary({ landlordId }: Props) {
 
     return (
         <div className="w-full">
-            <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 rounded-2xl shadow-md p-4 border border-emerald-100 hover:shadow-lg transition-all duration-300">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    {/* Left content */}
+            <div
+                className="bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50
+                 rounded-xl shadow-sm p-3 sm:p-4 border border-emerald-100
+                 hover:shadow-md transition-all duration-300"
+            >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                    {/* 💰 Left Section */}
                     <div>
-                        <p className="text-gray-600 text-sm font-medium">Total Credits</p>
+                        <p className="text-gray-600 text-xs sm:text-sm font-medium">
+                            Total Credits
+                        </p>
+
                         {loading ? (
-                            <p className="text-xl font-semibold text-gray-400 mt-1 animate-pulse">
+                            <p className="text-lg sm:text-xl font-semibold text-gray-400 mt-0.5 sm:mt-1 animate-pulse">
                                 Loading...
                             </p>
                         ) : (
-                            <p className="text-2xl font-extrabold text-emerald-700 mt-1">
+                            <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-0.5 sm:mt-1">
                                 ₱
                                 {(totalCredits || 0).toLocaleString("en-PH", {
                                     minimumFractionDigits: 2,
                                 })}
                             </p>
                         )}
-                        <p className="text-xs text-gray-500 mt-1">
+
+                        <p className="text-[10px] sm:text-xs text-gray-500 mt-1 leading-tight">
                             Available funds ready for disbursement
                         </p>
                     </div>
 
-                    {/* Icon + Button */}
-                    <div className="flex flex-col items-end gap-2">
-                        <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg shadow-inner">
+                    {/* 🔘 Right Section */}
+                    <div className="flex flex-col items-end gap-1.5 sm:gap-2">
+                        <div className="p-2 sm:p-2.5 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-md sm:rounded-lg shadow-inner">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                className="w-5 h-5 text-white"
+                                className="w-4 h-4 sm:w-5 sm:h-5 text-white"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -74,7 +82,11 @@ export default function LandlordCreditsSummary({ landlordId }: Props) {
                         </div>
                         <button
                             onClick={() => console.log("Request disbursement clicked")}
-                            className="px-3 py-1.5 text-xs font-semibold text-white rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 shadow-md active:scale-95 transition-all duration-200"
+                            className="px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold
+                       text-white rounded-md sm:rounded-lg
+                       bg-gradient-to-r from-blue-600 to-emerald-600
+                       hover:from-blue-700 hover:to-emerald-700
+                       shadow-sm active:scale-95 transition-all duration-200"
                         >
                             Request
                         </button>
@@ -83,4 +95,5 @@ export default function LandlordCreditsSummary({ landlordId }: Props) {
             </div>
         </div>
     );
+
 }

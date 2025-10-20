@@ -15,6 +15,7 @@ import UpcomingVisitsWidget from "@/components/landlord/properties/propertyVisit
 import SearchLeaseBar from "@/components/landlord/activeLease/SearchLeaseBar";
 import LandlordSubscriptionStatus from "@/components/landlord/profile/LandlordSubscriptionStatus";
 import LandlordCreditsSummary from "@/components/landlord/widgets/LandlordCreditsSummary";
+import LandlordPropertyMarquee from "@/components/landlord/properties/LandlordPropertyQuickView";
 
 const RevenuePerformanceChart = dynamic(
     () => import("@/components/landlord/analytics/revenuePerformance"),
@@ -61,13 +62,19 @@ export default function MobileLandlordAnalytics({ user }) {
                         {/* Search & Summaries */}
                         <div className="flex flex-col gap-4 mb-3">
                             <SearchLeaseBar />
-                            <LandlordSubscriptionStatus landlordId={user?.landlord_id} />
-                            <LandlordCreditsSummary landlordId={user?.landlord_id} />
+                            <div className="grid grid-cols-2 gap-3">
+                                <LandlordSubscriptionStatus landlordId={user?.landlord_id} />
+                                <LandlordCreditsSummary landlordId={user?.landlord_id} />
+                            </div>
+                        </div>
+
+                        <div className="mt-3">
+                            <LandlordPropertyMarquee landlordId={user?.landlord_id} />
                         </div>
 
                         {/* Core Overview */}
-                        <PaymentSummaryCard landlord_id={user?.landlord_id} />
-                        <TenantActivity landlord_id={user?.landlord_id} />
+                        {/*<PaymentSummaryCard landlord_id={user?.landlord_id} />*/}
+                        {/*<TenantActivity landlord_id={user?.landlord_id} />*/}
                     </>
                 )}
 

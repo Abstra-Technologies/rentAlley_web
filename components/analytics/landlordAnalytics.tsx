@@ -6,13 +6,16 @@ import useAuthStore from "@/zustand/authStore";
 import PointsEarnedAlert from "../Commons/alertPoints";
 import LandlordProfileStatus from "../landlord/profile/LandlordProfileStatus";
 import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
-import LandlordPropertyMarquee from "../landlord/properties/LandlordPropertyQuickView";
+import SearchLeaseBar from "@/components/landlord/activeLease/SearchLeaseBar";
+import LandlordSubscriptionStatus from "@/components/landlord/profile/LandlordSubscriptionStatus";
+import LandlordCreditsSummary from "@/components/landlord/widgets/LandlordCreditsSummary";
+import LandlordPropertyMarquee from "@/components/landlord/properties/LandlordPropertyQuickView";
 import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
 import TenantActivity from "../landlord/widgets/TenantActivity";
 import ProspectiveTenantsWidget from "../landlord/widgets/leads";
 import LeaseWidget from "../landlord/analytics/leaseCountWidget";
-import { TrendingUp, Users, Home, DollarSign } from "lucide-react";
 import TaskWidget from "../landlord/widgets/taskToDo";
+import { TrendingUp, Users, Home, DollarSign } from "lucide-react";
 
 // Dynamic imports
 const RevenuePerformanceChart = dynamic(
@@ -24,7 +27,7 @@ const UpcomingVisitsWidget = dynamic(
     { ssr: false }
 );
 
-// ✅ Mobile Layout (New)
+// ✅ Mobile Layout
 import MobileLandlordAnalytics from "@/components/landlord/mobile_layour/MobileLandlordAnalytics";
 
 const LandlordPropertyChart = () => {
@@ -38,7 +41,7 @@ const LandlordPropertyChart = () => {
     const prevPointsRef = useRef<number | null>(null);
     const [greeting, setGreeting] = useState("");
 
-    // Greeting based on time
+    // Greeting logic
     function getGreeting() {
         const hour = new Date().getHours();
         if (hour < 12) return "Good Morning";
@@ -126,14 +129,32 @@ const LandlordPropertyChart = () => {
                 <LandlordProfileStatus landlord_id={user?.landlord_id} />
             </div>
 
-            {/* 🖥️ Desktop Layout */}
+            {/* 🔍 Search + Subscription + Credits (Desktop only) */}
+            <div className="hidden sm:grid sm:grid-cols-3 sm:gap-6 sm:items-start mb-6">
+                {/* Search Bar */}
+                <div className="w-full sm:col-span-1 flex flex-col justify-center text-center">
+                    <div className="relative w-full max-w-md mx-auto">
+                        <SearchLeaseBar />
+                    </div>
+                </div>
+
+                {/* Subscription */}
+                <div className="w-full">
+                    <LandlordSubscriptionStatus landlordId={user?.landlord_id} />
+                </div>
+
+                {/* Credits */}
+                <div className="w-full">
+                    <LandlordCreditsSummary landlordId={user?.landlord_id} />
+                </div>
+            </div>
+
+            {/* 🖥️ Desktop Analytics */}
             <div className="hidden sm:block">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
                         <p className="text-gray-500 text-sm">Total Properties</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                            {totalProperties}
-                        </p>
+                        <p className="text-2xl font-bold text-gray-800">{totalProperties}</p>
                     </div>
                     <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-emerald-500">
                         <p className="text-gray-500 text-sm">Occupancy Rate</p>
@@ -153,7 +174,7 @@ const LandlordPropertyChart = () => {
                     </div>
                 </div>
 
-                {/* Analytics */}
+                {/* Analytics Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div className="lg:col-span-2">
                         <PaymentSummaryCard landlord_id={user?.landlord_id} />
