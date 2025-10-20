@@ -70,12 +70,13 @@ export default function ProspectiveTenantsWidget({ landlordId }: { landlordId: n
                                 {/* Left: Avatar + Info */}
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 text-sm font-semibold">
-                                        {t.first_name.charAt(0)}
+                                        {t.first_name}
                                     </div>
 
                                     <div>
                                         <p className="text-sm font-medium text-gray-800">
-                                            {t.first_name} {t.last_name}
+                                            {t.user?.firstName || "?"}
+                                            {t.user?.last_name || "?"}
                                         </p>
                                         <p className="text-xs text-gray-500">
                                             {t.unit_name} • {t.property_name}
