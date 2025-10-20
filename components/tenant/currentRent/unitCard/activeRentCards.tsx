@@ -15,6 +15,7 @@ import { FaHome, FaCreditCard, FaUpload, FaComments, FaSpinner } from "react-ico
 import { RefreshCw, XCircle } from "lucide-react"; // Added for Renew Lease button
 
 import { formatCurrency, formatDate, toNumber } from "@/utils/formatter/formatters";
+// @ts-ignore
 import { Unit } from "@/types/units";
 
 // --- Payment Status Badge for Sec and Adv ---
@@ -69,6 +70,7 @@ export default function UnitCard({
                                      onContactLandlord,
                                      onAccessPortal,
                                      onRenewLease,
+                                     onEndContract,
                                      loadingPayment,
                                  }: {
     unit: Unit;
@@ -78,6 +80,8 @@ export default function UnitCard({
     onAccessPortal: (agreementId: string) => void;
     onRenewLease: (unitId: string, agreementId: string) => void; // Added prop
     loadingPayment: boolean;
+    onAccessPortal: (agreementId: string) => void;
+
 }) {
     const isPaymentsComplete =
         unit.is_advance_payment_paid && unit.is_security_deposit_paid;
@@ -254,9 +258,9 @@ export default function UnitCard({
                             <button
                                 onClick={() => onEndContract(unit.unit_id, unit.agreement_id)}
                                 className="flex items-center justify-center gap-2 py-3 px-4
-                   bg-gradient-to-r from-red-500 to-rose-500 text-white
-                   rounded-xl font-semibold text-sm hover:shadow-lg
-                   transform hover:scale-[1.02] transition-all"
+             bg-gradient-to-r from-red-500 to-rose-500 text-white
+             rounded-xl font-semibold text-sm hover:shadow-lg
+             transform hover:scale-[1.02] transition-all"
                             >
                                 <XCircle className="w-4 h-4" />
                                 End Contract

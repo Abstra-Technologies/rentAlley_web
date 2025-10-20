@@ -5,7 +5,6 @@ import { encryptData } from "@/crypto/encrypt";
 export async function POST(request: Request) {
     try {
         const { tenant_id, unit_id, agreement_id, requested_start_date, requested_end_date, notes } = await request.json();
-
         // Validate required fields
         if (!tenant_id || !unit_id || !agreement_id || !requested_start_date || !requested_end_date) {
             return NextResponse.json(

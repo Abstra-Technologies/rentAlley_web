@@ -333,6 +333,70 @@ export default function MyUnit() {
       [user?.tenant_id, refetch]
   );
 
+  const handleEndLease = useCallback(
+      async (unitId: string, agreementId: string) => {
+        if (!user?.tenant_id) {
+          Swal.fire("Unauthorized", "Please log in first.", "error");
+          return;
+        }
+
+        const confirm = await Swal.fire({
+          title: "End Lease Agreement?",
+          text: "This action cannot be undone. Your landlord will be notified.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, End Lease",
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        try {
+          const res = await fetch("/api/tenant/activeRent/endLease", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              tenant_id: user.tenant_id,
+              agreement_id: agreementId,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok) {
+            await Swal.fire({
+              icon: "success",
+              title: "Lease Ended Successfully",
+              text: data.message || "Your landlord has been notified.",
+              confirmButtonText: "Continue",
+              confirmButtonColor: "#10B981",
+            });
+
+            // ✅ Redirect tenant to feedback form page after success
+            router.push(`/pages/tenant/feedback?agreement_id=${agreementId}`);
+          } else {
+            await Swal.fire({
+              icon: "error",
+              title: "Unable to End Lease",
+              text: data.error || "Please settle all pending payments before ending your lease.",
+              confirmButtonColor: "#d33",
+            });
+          }
+        } catch (err) {
+          console.error("Error ending lease:", err);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Something went wrong. Please try again later.",
+          });
+        }
+      },
+      [user?.tenant_id, refetch, router]
+  );
+
+
+
   const handleViewInvitations = useCallback(() => {
     router.push("/pages/tenant/viewInvites");
   }, [router]);
@@ -431,6 +495,7 @@ export default function MyUnit() {
                                     onContactLandlord={handleContactLandlord}
                                     onAccessPortal={handleAccessPortal}
                                     loadingPayment={loadingPayment}
+                                    onEndContract={handleEndLease}
                                     onRenewLease={(unitId, agreementId, renewalData) =>
                                         setShowRenewalForm(unitId) // Open modal
                                     }
