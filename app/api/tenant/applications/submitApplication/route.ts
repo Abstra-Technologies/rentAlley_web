@@ -65,7 +65,6 @@ export async function POST(req: NextRequest) {
         [address, occupation, encryptedBirthDate, encryptedPhone, user_id]
     );
 
-    // ✅ Update Tenant details
     await db.query(
         `UPDATE Tenant
          SET employment_type = ?, monthly_income = ?, updatedAt = NOW()
@@ -73,7 +72,6 @@ export async function POST(req: NextRequest) {
         [employment_type, monthly_income, tenant_id]
     );
 
-    // ✅ File Upload
     let validIdUrl: string | null = null;
     let incomeProofUrl: string | null = null;
 
@@ -102,7 +100,6 @@ export async function POST(req: NextRequest) {
       incomeProofUrl = JSON.stringify(encryptData(url, process.env.ENCRYPTION_SECRET!));
     }
 
-    // ✅ Insert or update ProspectiveTenant
     const [existing]: any = await db.query(
         `SELECT id FROM ProspectiveTenant WHERE tenant_id = ? AND unit_id = ?`,
         [tenant_id, unit_id]

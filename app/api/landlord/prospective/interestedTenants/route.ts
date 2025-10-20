@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   try {
     let query = `
-      SELECT pt.id, pt.status, pt.message, pt.valid_id, pt.created_at, pt.tenant_id,
+      SELECT pt.id, pt.status, pt.message, pt.valid_id, pt.created_at, pt.tenant_id, pt.proof_of_income,
              u.firstName, u.lastName, u.email, u.phoneNumber, u.profilePicture, u.birthDate, u.address, u.occupation,
              t.employment_type, t.monthly_income
       FROM ProspectiveTenant pt
@@ -65,11 +65,14 @@ export async function GET(req: NextRequest) {
       phoneNumber: safeDecrypt(tenant.phoneNumber),
       profilePicture: safeDecrypt(tenant.profilePicture),
       valid_id: safeDecrypt(tenant.valid_id),
+      proof_of_income:safeDecrypt(tenant.proof_of_income),
       address: tenant.address ? tenant.address.toString("utf8") : null,
       occupation: tenant.occupation,
       employment_type: tenant.employment_type,
       monthly_income: tenant.monthly_income,
     }));
+
+    console.log('proof of income', decryptedRows)
 
     // if tenant_id is provided, return single object instead of array
     if (tenant_id) {
