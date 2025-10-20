@@ -19,6 +19,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     const [sessionExpired, setSessionExpired] = useState(false);
     const [sessionChecked, setSessionChecked] = useState(false);
 
+
+
     useEffect(() => {
         if ((user || admin) && !sessionChecked) {
             fetchSession()

@@ -1,528 +1,188 @@
-import { useState, useEffect } from "react";
+"use client";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import useAuthStore from "../../zustand/authStore";
-import LoadingScreen from "../loadingScreen";
 import { useRouter } from "next/navigation";
-import {
-  ChevronRight,
-  TrendingUp,
-  Users,
-  Home,
-  DollarSign,
-  Wrench,
-  FileText,
-} from "lucide-react";
-const PropertyTypeChart = dynamic(
-  () => import("../landlord/analytics/typesOfProperties"),
-  { ssr: false }
-);
-const PropertyUtilitiesChart = dynamic(
-  () => import("../landlord/analytics/propertyUtilityRates"),
-  { ssr: false }
-);
-const UtilityTrendsChart = dynamic(
-  () => import("../landlord/analytics/utilityTrend"),
-  { ssr: false }
-);
-const RevenuePerformanceChart = dynamic(
-  () => import("../landlord/analytics/revenuePerformance"),
-  { ssr: false }
-);
-const UpcomingVisitsWidget = dynamic(
-  () => import("../landlord/properties/propertyVisit"),
-  { ssr: false }
-);
-const TaskWidget = dynamic(() => import("../landlord/widgets/taskToDo"), {
-  ssr: false,
-});
+import useAuthStore from "@/zustand/authStore";
+import PointsEarnedAlert from "../Commons/alertPoints";
+import LandlordProfileStatus from "../landlord/profile/LandlordProfileStatus";
+import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
+import LandlordPropertyMarquee from "../landlord/properties/LandlordPropertyQuickView";
 import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
 import TenantActivity from "../landlord/widgets/TenantActivity";
 import ProspectiveTenantsWidget from "../landlord/widgets/leads";
 import LeaseWidget from "../landlord/analytics/leaseCountWidget";
-import LandlordPropertyMarquee from "../landlord/properties/LandlordPropertyQuickView";
+import { TrendingUp, Users, Home, DollarSign } from "lucide-react";
+import TaskWidget from "../landlord/widgets/taskToDo";
 
-const Chart = dynamic(() => import("react-apexcharts"), {
-  ssr: false,
-  loading: () => <p>Loading Chart...</p>,
-});
+// Dynamic imports
+const RevenuePerformanceChart = dynamic(
+    () => import("../landlord/analytics/revenuePerformance"),
+    { ssr: false }
+);
+const UpcomingVisitsWidget = dynamic(
+    () => import("../landlord/properties/propertyVisit"),
+    { ssr: false }
+);
+
+// ✅ Mobile Layout (New)
+import MobileLandlordAnalytics from "@/components/landlord/mobile_layour/MobileLandlordAnalytics";
 
 const LandlordPropertyChart = () => {
-  // @ts-ignore
-  const { user, fetchSession } = useAuthStore();
-  const router = useRouter();
-  const [monthlyVisits, setMonthlyVisits] = useState([]);
-  const [occupancyRate, setOccupancyRate] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
-  const [totalTenants, setTotalTenants] = useState(0);
-  const [totalRequests, setTotalRequests] = useState(0);
-  const [totalReceivables, setTotalReceivables] = useState(0);
-  const [activeTab, setActiveTab] = useState("overview"); // For mobile tabs
-  const [totalProperties, setTotalProperties] = useState(0);
+    const { user, fetchSession, loading } = useAuthStore();
+    const router = useRouter();
+    const [occupancyRate, setOccupancyRate] = useState(0);
+    const [totalTenants, setTotalTenants] = useState(0);
+    const [totalProperties, setTotalProperties] = useState(0);
+    const [totalReceivables, setTotalReceivables] = useState(0);
+    const [showAlert, setShowAlert] = useState(false);
+    const prevPointsRef = useRef<number | null>(null);
+    const [greeting, setGreeting] = useState("");
 
-  useEffect(() => {
-    if (!user?.landlord_id) {
-      fetchSession();
+    // Greeting based on time
+    function getGreeting() {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good Morning";
+        if (hour < 18) return "Good Afternoon";
+        return "Good Evening";
     }
-  }, [user?.landlord_id, fetchSession]);
 
-  const landlord_id = user?.landlord_id;
+    useEffect(() => {
+        setGreeting(getGreeting());
+    }, []);
 
-  // analytic
-  useEffect(() => {
-    if (!user?.landlord_id) return;
+    useEffect(() => {
+        if (!user) fetchSession();
+    }, [user, fetchSession]);
 
-    const landlord_id = user.landlord_id;
+    // Alert for points earned
+    useEffect(() => {
+        if (!loading && user?.points != null) {
+            const prevPoints = prevPointsRef.current;
+            if (prevPoints !== null && user.points > prevPoints) {
+                setShowAlert(true);
+                const timer = setTimeout(() => setShowAlert(false), 4000);
+                return () => clearTimeout(timer);
+            }
+            prevPointsRef.current = user.points;
+        }
+    }, [user?.points, loading]);
 
-    // 🔹 Fetch total active listings
-    fetch(`/api/analytics/landlord/getActiveListings?landlord_id=${landlord_id}`)
-        .then((res) => res.json())
-        .then((propertiesData) => {
-          setTotalProperties(propertiesData.totalActiveListings || 0);
-        })
-        .catch((error) => console.error("Error fetching properties:", error));
+    // Fetch analytics
+    useEffect(() => {
+        if (!user?.landlord_id) return;
+        const landlord_id = user.landlord_id;
 
-    // 🔹 Fetch occupancy rate
-    fetch(`/api/analytics/landlord/occupancyRateProperty?landlord_id=${landlord_id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          // works with { occupancyRate: 50 } or { occupancy_rate: 50 }
-          const raw = data?.occupancyRate ?? data?.occupancy_rate ?? 0;
+        fetch(`/api/analytics/landlord/getActiveListings?landlord_id=${landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => setTotalProperties(data.totalActiveListings || 0));
 
-          let num =
-              typeof raw === "string"
-                  ? parseFloat(raw.replace("%", "")) // handle "85" or "85%"
-                  : Number(raw); // ✅ capital N
+        fetch(`/api/analytics/landlord/occupancyRateProperty?landlord_id=${landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => {
+                const raw = data?.occupancyRate ?? data?.occupancy_rate ?? 0;
+                let num =
+                    typeof raw === "string"
+                        ? parseFloat(raw.replace("%", ""))
+                        : Number(raw);
+                if (num > 0 && num <= 1) num *= 100;
+                setOccupancyRate(Number.isFinite(num) ? num : 0);
+            })
+            .catch(() => setOccupancyRate(0));
 
+        fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`)
+            .then((res) => res.json())
+            .then((data) => setTotalTenants(data?.total_tenants || 0));
+    }, [user?.landlord_id]);
 
-          // if backend ever sends a fraction (0–1), convert to %
-          if (num > 0 && num <= 1) num = num * 100;
+    return (
+        <div className="bg-gray-50 min-h-screen px-2 sm:px-6">
+            {showAlert && <PointsEarnedAlert points={user?.points} />}
 
-          setOccupancyRate(Number.isFinite(num) ? num : 0);
-        })
-        .catch((err) => {
-          setOccupancyRate(0);
-        });
-
-    // total tenants
-    fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setTotalTenants(data?.total_tenants || 0);
-        })
-        .catch((err) => console.error("Error fetching tenants:", err));
-  }, [user?.landlord_id]);
-
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  // @ts-ignore
-  const visitData = (monthlyVisits || []).map((item) => ({
-    month: months[item.month - 1],
-    visitCount: item.visitCount,
-  }));
-
-  // Mobile Tab Navigation
-  const mobileTabs = [
-    { id: "overview", label: "Overview", icon: Home },
-    { id: "finance", label: "Finance", icon: DollarSign },
-    { id: "activity", label: "Activity", icon: Users },
-    { id: "upcoming", label: "Upcoming", icon: TrendingUp },
-  ];
-
-  return (
-    <div className="bg-gray-50 min-h-screen -mx-4 sm:mx-0">
-      {/* Mobile Tab Navigation */}
-      <div className="sm:hidden sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-2">
-        <div className="flex overflow-x-auto scrollbar-none space-x-1">
-          {mobileTabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  flex items-center px-4 py-2 rounded-lg whitespace-nowrap transition-all
-                  ${
-                    activeTab === tab.id
-                      ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700 font-semibold"
-                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                  }
-                `}
-              >
-                <Icon className="w-4 h-4 mr-2" />
-                <span className="text-sm">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Desktop View - Show All */}
-      <div className="hidden sm:block p-6">
-        {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div
-                  onClick={() => router.push(`/pages/landlord/property-listing`)}
-                  className="relative group cursor-pointer"
-              >
-                {/* Main content (unchanged) */}
-                <p className="text-gray-500 text-sm">Total Properties</p>
-                <p className="text-2xl font-bold text-gray-800">{totalProperties}</p>
-
-                {/* Hover overlay */}
-                <div
-                    className="absolute inset-0 flex items-center justify-center rounded-md
-               bg-white/70 backdrop-blur-sm opacity-0 group-hover:opacity-100
-               transition-opacity duration-300"
-                >
-    <span className="text-gray-800 text-xs font-medium px-3 py-1 rounded-full shadow-md bg-white/80">
-      View Properties →
-    </span>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                <div className="text-left">
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
+                        {greeting},{" "}
+                        {user?.firstName
+                            ? user.firstName
+                            : user?.companyName
+                                ? user.companyName
+                                : user?.email}
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-600 mt-1">
+            <span className="hidden sm:inline">
+              Simplifying property management, empowering landlords.
+            </span>
+                        <span className="sm:hidden">Welcome to your dashboard</span>
+                    </p>
                 </div>
-              </div>
-
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <Home className="w-6 h-6 text-blue-600" />
-              </div>
+                <div className="mt-2 sm:mt-0">
+                    <SendTenantInviteModal landlord_id={user?.landlord_id} />
+                </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-emerald-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Occupancy Rate</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {occupancyRate?.toFixed(1) || 0}%
-                </p>
-              </div>
-              <div className="p-3 bg-emerald-50 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-emerald-600" />
-              </div>
+            {/* Profile Status */}
+            <div className="mb-4">
+                <LandlordProfileStatus landlord_id={user?.landlord_id} />
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-teal-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Tenants</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {totalTenants}
-                </p>
-              </div>
-              <div className="p-3 bg-teal-50 rounded-lg">
-                <Users className="w-6 h-6 text-teal-600" />
-              </div>
+            {/* 🖥️ Desktop Layout */}
+            <div className="hidden sm:block">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
+                        <p className="text-gray-500 text-sm">Total Properties</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                            {totalProperties}
+                        </p>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-emerald-500">
+                        <p className="text-gray-500 text-sm">Occupancy Rate</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                            {occupancyRate.toFixed(1)}%
+                        </p>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-teal-500">
+                        <p className="text-gray-500 text-sm">Total Tenants</p>
+                        <p className="text-2xl font-bold text-gray-800">{totalTenants}</p>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
+                        <p className="text-gray-500 text-sm">Total Receivables</p>
+                        <p className="text-2xl font-bold text-gray-800">
+                            ₱{totalReceivables.toFixed(2)}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Analytics */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div className="lg:col-span-2">
+                        <PaymentSummaryCard landlord_id={user?.landlord_id} />
+                    </div>
+                    <TaskWidget landlordId={user?.landlord_id} />
+                </div>
+
+                <LandlordPropertyMarquee landlordId={user?.landlord_id} />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div className="lg:col-span-2">
+                        <RevenuePerformanceChart landlordId={user?.landlord_id} />
+                    </div>
+                    <TenantActivity landlord_id={user?.landlord_id} />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+                    <UpcomingVisitsWidget landlordId={user?.landlord_id} />
+                    <ProspectiveTenantsWidget landlordId={user?.landlord_id} />
+                    <LeaseWidget landlord_id={user?.landlord_id} />
+                </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Receivables</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  ${totalReceivables.toFixed(2)}
-                </p>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-lg">
-                <DollarSign className="w-6 h-6 text-purple-600" />
-              </div>
+            {/* 📱 Mobile Layout (only visible on mobile) */}
+            <div className="block sm:hidden">
+                <MobileLandlordAnalytics user={user} />
             </div>
-          </div>
-
         </div>
-
-        {/* Main Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div
-              onClick={() =>
-                  router.push(`/pages/landlord/analytics/detailed/paymentLogs`)
-              }
-              className="lg:col-span-2 relative group cursor-pointer transition-all duration-300"
-          >
-            {/* Card Component */}
-            <div className="transform group-hover:-translate-y-1 group-hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden">
-              <PaymentSummaryCard landlord_id={user?.landlord_id} />
-            </div>
-
-            {/* Hover Overlay Effect */}
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-600/0 via-emerald-500/0 to-emerald-600/0 group-hover:from-blue-600/10 group-hover:via-emerald-500/10 group-hover:to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none" />
-
-            {/* Hover Label (appears smoothly) */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-    <span className="bg-white/80 text-gray-800 text-sm font-medium px-4 py-1.5 rounded-full shadow-md">
-      View Payment Logs →
-    </span>
-            </div>
-          </div>
-
-          <div className="lg:col-span-1">
-            <TaskWidget landlordId={user?.landlord_id} />
-          </div>
-        </div>
-
-          <div>
-              <LandlordPropertyMarquee landlordId={user?.landlord_id} />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              {/* Revenue Performance (wider on desktop) */}
-              <div
-                  onClick={() => router.push(`/pages/landlord/analytics/detailed/revenue`)}
-                  className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group
-                   col-span-1 sm:col-span-2 lg:col-span-2"
-              >
-                  {/* Chart content always visible */}
-                  <RevenuePerformanceChart landlordId={user?.landlord_id} />
-
-                  {/* Hover label — non-blocking */}
-                  <div
-                      className="absolute inset-0 flex items-center justify-center
-                opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  >
-            <span
-                className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
-                    px-3 py-1 rounded-full shadow-md border border-gray-200"
-            >
-                View Revenue →
-            </span>
-                  </div>
-              </div>
-
-              {/* Tenant Activity (smaller side panel) */}
-              <div className="bg-white rounded-xl shadow-sm p-5 col-span-1">
-                  <TenantActivity landlord_id={user?.landlord_id} />
-              </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-              {/* Visits Widget */}
-              <div
-                  onClick={() => router.push(`/pages/landlord/analytics/detailed/visits`)}
-                  className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
-              >
-                  <UpcomingVisitsWidget landlordId={user?.landlord_id} />
-
-                  {/* Hover label — non-blocking */}
-                  <div
-                      className="absolute inset-0 flex items-center justify-center opacity-0
-                group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  >
-            <span
-                className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
-                    px-3 py-1 rounded-full shadow-md border border-gray-200"
-            >
-                View Visits →
-            </span>
-                  </div>
-              </div>
-
-              {/* Prospective Tenants Widget */}
-              <div
-                  onClick={() => router.push(`/pages/landlord/analytics/detailed/prospects`)}
-                  className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
-              >
-                  <ProspectiveTenantsWidget landlordId={user?.landlord_id} />
-
-                  <div
-                      className="absolute inset-0 flex items-center justify-center opacity-0
-                group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  >
-            <span
-                className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
-                    px-3 py-1 rounded-full shadow-md border border-gray-200"
-            >
-                View Prospects →
-            </span>
-                  </div>
-              </div>
-
-              {/* Lease Widget */}
-              <div
-                  onClick={() => router.push(`/pages/landlord/contracts`)}
-                  className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
-              >
-                  <LeaseWidget landlord_id={user?.landlord_id} />
-
-                  <div
-                      className="absolute inset-0 flex items-center justify-center
-                opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  >
-            <span
-                className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
-                    px-3 py-1 rounded-full shadow-md border border-gray-200"
-            >
-                View Leases →
-            </span>
-                  </div>
-              </div>
-          </div>
-
-      </div>
-
-
-      {/*/pages/landlord/property-listing*/}
-      {/* Mobile View - Tab Content */}
-      <div className="sm:hidden p-4">
-        {activeTab === "overview" && (
-          <div className="space-y-4">
-            {/* Mobile Quick Stats */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
-                <p className="text-gray-500 text-xs">Total Properties</p>
-                <p className="text-xl font-bold text-gray-800">{totalProperties}</p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
-                <p className="text-gray-500 text-xs">Total Tenants</p>
-                <p className="text-xl font-bold text-gray-800">
-                  {totalTenants}
-                </p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-orange-500">
-                <p className="text-gray-500 text-xs">Requests</p>
-                <p className="text-xl font-bold text-gray-800">
-                  {totalRequests}
-                </p>
-              </div>
-              <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
-                <p className="text-gray-500 text-xs">Receivables</p>
-                <p className="text-xl font-bold text-gray-800">
-                  ${totalReceivables.toFixed(2)}
-                </p>
-              </div>
-            </div>
-
-            {/* Mobile Tenant Activity Card */}
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Quick Overview
-              </h3>
-              <TenantActivity landlord_id={user?.landlord_id} />
-            </div>
-
-            {/* Tasks Widget for Mobile */}
-            <TaskWidget landlordId={user?.landlord_id} />
-          </div>
-        )}
-
-        {activeTab === "finance" && (
-          <div className="space-y-4">
-            <PaymentSummaryCard landlord_id={user?.landlord_id} />
-            <div
-              onClick={() =>
-                router.push(`/pages/landlord/analytics/detailed/revenue`)
-              }
-              className="bg-white rounded-xl shadow-sm p-4 active:bg-gray-50"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-700">
-                  Revenue Trends
-                </h3>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </div>
-              <RevenuePerformanceChart landlordId={user?.landlord_id} />
-            </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <PropertyUtilitiesChart landlordId={user?.landlord_id} />
-            </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <UtilityTrendsChart landlordId={user?.landlord_id} />
-            </div>
-          </div>
-        )}
-
-        {activeTab === "activity" && (
-          <div className="space-y-4">
-            <ProspectiveTenantsWidget landlordId={user?.landlord_id} />
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Tenant Activity
-              </h3>
-              <TenantActivity landlord_id={user?.landlord_id} />
-            </div>
-          </div>
-        )}
-
-        {activeTab === "upcoming" && (
-          <div className="space-y-4">
-            <UpcomingVisitsWidget landlordId={user?.landlord_id} />
-            {/* Mobile-optimized visit summary */}
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Monthly Visit Trends
-              </h3>
-              <div className="h-48">
-                {visitData.length > 0 ? (
-                  <Chart
-                    options={{
-                      chart: {
-                        type: "area",
-                        toolbar: { show: false },
-                        sparkline: { enabled: true },
-                      },
-                      stroke: {
-                        curve: "smooth",
-                        width: 2,
-                      },
-                      fill: {
-                        type: "gradient",
-                        gradient: {
-                          shadeIntensity: 1,
-                          opacityFrom: 0.4,
-                          opacityTo: 0.1,
-                          stops: [0, 90, 100],
-                          colorStops: [
-                            {
-                              offset: 0,
-                              color: "#3B82F6",
-                              opacity: 0.4,
-                            },
-                            {
-                              offset: 100,
-                              color: "#10B981",
-                              opacity: 0.1,
-                            },
-                          ],
-                        },
-                      },
-                      colors: ["#3B82F6"],
-                      xaxis: {
-                        categories: visitData.map((item) => item.month),
-                      },
-                    }}
-                    series={[
-                      {
-                        name: "Visits",
-                        data: visitData.map((item) => item.visitCount),
-                      },
-                    ]}
-                    type="area"
-                    height="100%"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                    No visit data available
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    );
 };
 
 export default LandlordPropertyChart;

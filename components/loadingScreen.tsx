@@ -33,7 +33,7 @@ const LoadingScreen = ({ message = "Fetching properties..." }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
       >
-        UpKyp
+        Upkyp
       </motion.h1>
 
       {/* Tagline */}
@@ -43,7 +43,7 @@ const LoadingScreen = ({ message = "Fetching properties..." }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.9 }}
       >
-        "Manage less. Live more."
+        "Connect more. Manage less."
       </motion.p>
 
       {/* Dynamic Message */}
