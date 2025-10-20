@@ -1,68 +1,44 @@
 "use client";
 
-import { useState, useEffect, FormEvent, MouseEvent, useRef } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FaSearch, FaMapMarkerAlt, FaSpinner } from "react-icons/fa";
-import { HiBadgeCheck } from "react-icons/hi";
+import { Search, Loader, ArrowRight } from "lucide-react";
 import Footer from "../components/navigation/footer";
 import LoadingScreen from "@/components/loadingScreen";
-import HeroText from "@/components/ui/hero";
+import UnitCard from "../components/find-rent/UnitCard";
 
-
-interface Property {
-  property_id: number;
+interface Unit {
+  unit_id: string;
+  property_id: string;
   property_name: string;
+  unit_name: string;
+  property_type: string;
   property_photo: string;
+  photos: string[];
   city: string;
-  street: string;
   province: string;
   rent_amount: number;
-  verification_status: string;
+  unit_size: number;
+  bed_spacing: number;
+  furnish: string;
+  avail_beds: number;
+  flexipay_enabled: number;
 }
 
-interface PropertyCardProps {
-  property: Property;
+interface UnitCardProps {
+  unit: Unit;
+  onClick: () => void;
 }
 
 export default function SplashScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [allProperties, setAllProperties] = useState<Property[]>([]);
-  const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
-  const [recentProperties, setRecentProperties] = useState<Property[]>([]);
+  const [featuredUnits, setFeaturedUnits] = useState<Unit[]>([]);
+  const [recentUnits, setRecentUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const subtitleRef = useRef<HTMLParagraphElement>(null);
-
-  useEffect(() => {
-    if (titleRef.current && subtitleRef.current) {
-      const tl = gsap.timeline();
-
-      // Animate the heading word by word
-      tl.from(titleRef.current.children, {
-        y: 80,
-        opacity: 0,
-        stagger: 0.15,
-        duration: 0.8,
-        ease: "power4.out",
-      });
-
-      // Animate subtitle after title finishes
-      tl.from(
-          subtitleRef.current,
-          {
-            y: 30,
-            opacity: 0,
-            duration: 0.8,
-            ease: "power3.out",
-          },
-          "-=0.3"
-      );
-    }
-  }, []);
 
   useEffect(() => {
     async function redirectIfAuthenticated() {
@@ -74,25 +50,24 @@ export default function SplashScreen() {
 
           switch (data.userType) {
             case "tenant":
-              router.replace("/pages//tenant/my-unit");
+              router.replace("/pages/tenant/my-unit");
               return;
             case "landlord":
               router.replace("/pages/landlord/dashboard");
               return;
             case "admin":
-              router.replace("/pages//admin/dashboard");
+              router.replace("/pages/admin/dashboard");
               return;
             default:
               router.replace("/pages/auth/login");
               return;
           }
-
         } else {
           setCheckingAuth(false);
         }
       } catch (error) {
         console.error("Auth check failed:", error);
-        setCheckingAuth(false); // Not logged in
+        setCheckingAuth(false);
       }
     }
 
@@ -100,364 +75,285 @@ export default function SplashScreen() {
   }, []);
 
   useEffect(() => {
-    async function fetchProperties() {
+    async function fetchUnits() {
       try {
         setLoading(true);
-        const res = await fetch("/api/properties/findRent");
-        if (!res.ok) throw new Error("Failed to fetch properties");
+        const res = await fetch("/api/properties/findRent/units");
+        if (!res.ok) throw new Error("Failed to fetch units");
 
         const data = await res.json();
-        setAllProperties(data);
 
-        setFeaturedProperties(data.slice(0, 3));
-
-        setRecentProperties(data.slice(0, 6));
+        if (data?.data && Array.isArray(data.data)) {
+          setFeaturedUnits(data.data.slice(0, 3));
+          setRecentUnits(data.data.slice(0, 6));
+        } else {
+          setFeaturedUnits([]);
+          setRecentUnits([]);
+        }
       } catch (error) {
-        console.error("Error fetching properties:", error);
+        console.error("Error fetching units:", error);
+        setFeaturedUnits([]);
+        setRecentUnits([]);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchProperties();
+    fetchUnits();
   }, []);
-
 
   if (checkingAuth) {
     return <LoadingScreen />;
   }
+
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push(`/pages/find-rent?searchQuery=${searchQuery}`);
-  };
-
-  const navigateToFindRent = () => {
-    router.push("/pages/find-rent");
-  };
-
-  const PropertyCard = ({ property }: PropertyCardProps) => {
-    return (
-      <div
-        className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-        onClick={() => router.push(`/pages/find-rent/${property.property_id}`)}
-      >
-        {/* Property Image */}
-        <div className="relative">
-          {property?.property_photo ? (
-            <div className="relative h-48">
-              <Image
-                src={property.property_photo}
-                alt={property.property_name}
-                fill
-                className="object-cover"
-                priority
-                unoptimized
-              />
-            </div>
-          ) : (
-            <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-              <span className="text-gray-400">No Image Available</span>
-            </div>
-          )}
-        </div>
-
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-1">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {property?.property_name}
-            </h2>
-            <div className="flex items-center gap-1">
-              <HiBadgeCheck className="text-blue-500 text-lg" />
-              <span className="text-blue-600 font-medium text-sm">
-                Verified
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center text-gray-600 mt-2">
-            <FaMapMarkerAlt className="mr-1 text-gray-400" />
-            <p className="text-gray-800">
-              {property?.city},{" "}
-              {property?.province
-                .split("_")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" ")}
-            </p>
-          </div>
-
-          <p className="text-xl font-semibold text-blue-600 mt-1">
-            ₱{Math.round(property.rent_amount).toLocaleString()}
-          </p>
-
-          <button
-            className="mt-3 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-colors"
-            onClick={(e: MouseEvent<HTMLButtonElement>) => {
-              e.stopPropagation(); // Prevent event bubbling
-              router.push(`/pages/find-rent/${property.property_id}`);
-            }}
-          >
-            View Details
-          </button>
-        </div>
-      </div>
-    );
+    if (searchQuery.trim()) {
+      router.push(
+        `/pages/find-rent?searchQuery=${encodeURIComponent(searchQuery)}`
+      );
+    }
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="relative h-[500px]">
-
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50">
+      {/* Hero Section */}
+      <div className="relative min-h-screen sm:min-h-[600px] lg:h-[700px] w-full">
+        {/* Background Image */}
         <div className="absolute inset-0">
           <Image
             src="/images/hero-section.jpeg"
-            alt="Cityscape view of high-rise buildings"
+            alt="Cityscape"
             fill
-            className="object-cover brightness-50"
+            className="object-cover brightness-40"
             priority
           />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/40"></div>
         </div>
 
-        <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-white">
+        {/* Content */}
+        <div className="relative z-10 h-full flex flex-col justify-between sm:justify-center items-center px-4 py-8 sm:py-12">
+          {/* Main Heading */}
+          <div className="w-full max-w-4xl text-center mt-12 sm:mt-0">
+            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 leading-tight">
+              Find Your
+              <span className="block bg-gradient-to-r from-blue-300 via-emerald-300 to-blue-300 bg-clip-text text-transparent">
+                Perfect Home
+              </span>
+            </h1>
+            <p className="text-sm sm:text-base lg:text-lg text-blue-50 max-w-2xl mx-auto px-2">
+              Discover verified rental units that match your lifestyle. Simple,
+              transparent, and stress-free.
+            </p>
+          </div>
 
-         <HeroText />
-
+          {/* Search Bar */}
           <form
             onSubmit={handleSearch}
-            className="bg-white rounded-lg shadow-lg w-full max-w-4xl p-4 text-gray-800"
+            className="w-full max-w-4xl mt-8 sm:mt-12 px-4 sm:px-0"
           >
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Search Input */}
-              <div className="flex-1">
-                <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden focus-within:border-blue-500 transition-colors">
-                  <FaSearch className="text-gray-400 mx-3" />
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-blue-100">
+              <div className="flex flex-col sm:flex-row gap-0">
+                <div className="flex-1 flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 bg-white">
+                  <Search className="w-5 h-5 text-blue-600 flex-shrink-0" />
                   <input
                     type="text"
-                    placeholder="Search by property name, city, street, or province..."
+                    placeholder="Search by location, property..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full py-3 px-2 outline-none"
+                    className="w-full outline-none text-sm sm:text-base text-gray-900 placeholder-gray-400"
                   />
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors whitespace-nowrap"
-              >
-                Search
-              </button>
+                <button
+                  type="submit"
+                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-6 py-3 sm:py-4 font-semibold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <Search className="w-5 h-5" />
+                  <span className="hidden sm:inline">Search</span>
+                </button>
+              </div>
             </div>
           </form>
+
+          {/* Quick Links */}
+          <div className="mt-8 sm:mt-10 flex flex-wrap gap-2 justify-center px-4">
+            {["Manila", "Quezon", "Taguig", "Makati"].map((city) => (
+              <button
+                key={city}
+                onClick={() =>
+                  router.push(`/pages/find-rent?searchQuery=${city}`)
+                }
+                className="px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-full text-xs sm:text-sm font-medium hover:bg-white/30 transition-all active:scale-95"
+              >
+                {city}
+              </button>
+            ))}
+          </div>
         </div>
-
-
       </div>
 
-      <section className="py-12 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex justify-between items-center mb-6">
+      {/* Featured Units Section */}
+      <section className="py-8 sm:py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                Featured Property
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Featured Units
               </h2>
-              <p className="text-gray-600">Recommended Place to Live for You</p>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
+                Handpicked homes perfect for you
+              </p>
             </div>
-            <div className="flex space-x-2">
-              <button
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
-                type="button"
-              >
-                <span className="sr-only">Previous</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 19.5L8.25 12l7.5-7.5"
-                  />
-                </svg>
-              </button>
-              <button
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
-                type="button"
-              >
-                <span className="sr-only">Next</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                  />
-                </svg>
-              </button>
-            </div>
+            <Link
+              href="/pages/find-rent"
+              className="inline-flex items-center gap-2 text-blue-600 hover:text-emerald-600 font-semibold transition-colors"
+            >
+              View All
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <FaSpinner className="animate-spin text-blue-500 text-3xl" />
+            <div className="flex justify-center py-12">
+              <Loader className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
-          ) : featuredProperties.length === 0 ? (
-            <div className="bg-gray-50 rounded-lg p-12 text-center">
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                No properties found
+          ) : featuredUnits.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-blue-100 p-8 sm:p-12 text-center">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                No units available
               </h3>
-              <p className="text-gray-500">
-                Check back later for featured properties.
+              <p className="text-gray-600 text-sm sm:text-base">
+                Check back soon for featured listings
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredProperties.map((property) => (
-                <PropertyCard key={property.property_id} property={property} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {featuredUnits.map((unit) => (
+                <UnitCard
+                  key={unit.unit_id}
+                  unit={unit}
+                  onClick={() =>
+                    router.push(
+                      `/pages/find-rent/${unit.property_id}/${unit.unit_id}`
+                    )
+                  }
+                />
               ))}
             </div>
           )}
-
-          <div className="flex justify-center mt-8">
-            <Link
-              href="/pages/find-rent"
-              className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Show all Property
-            </Link>
-          </div>
         </div>
       </section>
 
-      <section className="py-16 bg-gray-900 text-white relative overflow-hidden">
-        <div className="container mx-auto max-w-6xl px-4 flex flex-col lg:flex-row items-center">
-          <div className="lg:w-1/2 z-10 mb-10 lg:mb-0">
-            <h3 className="text-lg font-medium mb-2">About Us</h3>
-            <h2 className="text-3xl font-bold mb-4">
-              Search, Find, and Invest in Good Properties with Us
-            </h2>
-            <p className="mb-6 opacity-80">
-              Discover your perfect rental property with Hestia. We provide a
-              curated selection of quality homes, apartments, and condominiums
-              across the Philippines, making property hunting simple and
-              stress-free.
-            </p>
-            <Link
-              href="/pages/about-us"
-              className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-blue-100 transition-colors"
-            >
-              Know More
-            </Link>
-          </div>
-          <div className="lg:w-1/2 relative">
-            <div className="w-full h-64 lg:h-80 relative">
+      {/* About Section */}
+      <section className="py-8 sm:py-16 px-4 bg-gradient-to-r from-gray-900 to-gray-800">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 items-center">
+            <div className="text-white order-2 lg:order-1">
+              <p className="text-xs sm:text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-2 sm:mb-3">
+                About Upkyp
+              </p>
+              <h2 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6">
+                Find Your Dream Property Today
+              </h2>
+              <p className="text-sm sm:text-base text-gray-300 mb-6 sm:mb-8 leading-relaxed">
+                Upkyp connects you with verified rental units across the
+                Philippines. We make property hunting simple, transparent, and
+                stress-free.
+              </p>
+              <Link
+                href="/pages/about-us"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all active:scale-95"
+              >
+                Learn More
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="relative h-64 sm:h-80 lg:h-96 rounded-2xl overflow-hidden order-1 lg:order-2 shadow-xl">
               <Image
                 src="/images/aboutrent.jpeg"
-                alt="Aerial view of properties"
+                alt="Properties"
                 fill
-                className="object-cover rounded-lg"
+                className="object-cover"
               />
-              <h4 className="absolute bottom-4 right-4 bg-white bg-opacity-80 text-2xl font-bold text-blue-600 text-center px-4 py-2 rounded-lg shadow-lg">
-                Hestia
-              </h4>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="py-12 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex justify-between items-center mb-6">
+      {/* Recently Added Units Section */}
+      <section className="py-8 sm:py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                Recently Added Property
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Recently Added
               </h2>
-              <p className="text-gray-600">Find Properties that suits you</p>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
+                Latest units on Upkyp
+              </p>
             </div>
-            <div className="flex space-x-2">
-              <button
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
-                type="button"
-              >
-                <span className="sr-only">Previous</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.75 19.5L8.25 12l7.5-7.5"
-                  />
-                </svg>
-              </button>
-              <button
-                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
-                type="button"
-              >
-                <span className="sr-only">Next</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                  />
-                </svg>
-              </button>
-            </div>
+            <Link
+              href="/pages/find-rent"
+              className="inline-flex items-center gap-2 text-blue-600 hover:text-emerald-600 font-semibold transition-colors"
+            >
+              Explore All
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
 
           {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <FaSpinner className="animate-spin text-blue-500 text-3xl" />
+            <div className="flex justify-center py-12">
+              <Loader className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
-          ) : recentProperties.length === 0 ? (
-            <div className="bg-gray-50 rounded-lg p-12 text-center">
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                No properties found
+          ) : recentUnits.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-blue-100 p-8 sm:p-12 text-center">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                No units available
               </h3>
-              <p className="text-gray-500">
-                Check back later for new properties.
+              <p className="text-gray-600 text-sm sm:text-base">
+                New listings coming soon
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recentProperties.map((property) => (
-                <PropertyCard key={property.property_id} property={property} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {recentUnits.map((unit) => (
+                <UnitCard
+                  key={unit.unit_id}
+                  unit={unit}
+                  onClick={() =>
+                    router.push(
+                      `/pages/find-rent/${unit.property_id}/${unit.unit_id}`
+                    )
+                  }
+                />
               ))}
             </div>
           )}
-
-          <div className="flex justify-center mt-8">
-            <Link
-              href="/pages/find-rent"
-              className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Show all Property
-            </Link>
-          </div>
         </div>
       </section>
+
+      {/* CTA Section */}
+      <section className="py-8 sm:py-12 px-4 bg-gradient-to-r from-blue-600 to-emerald-600">
+        <div className="max-w-4xl mx-auto text-center text-white">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
+            Ready to find your perfect home?
+          </h2>
+          <p className="text-sm sm:text-base text-blue-100 mb-6 sm:mb-8">
+            Join thousands of renters finding verified units on Upkyp
+          </p>
+          <Link
+            href="/pages/find-rent"
+            className="inline-flex items-center gap-2 bg-white text-blue-600 px-6 sm:px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all active:scale-95"
+          >
+            Start Searching
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );

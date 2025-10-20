@@ -1,5 +1,5 @@
 import { FaSearch } from "react-icons/fa";
-import { Unit, FilterState } from "./types";
+import { Unit, FilterState } from "../../types/types";
 import UnitCard from "./UnitCard";
 import Pagination from "./Pagination";
 
