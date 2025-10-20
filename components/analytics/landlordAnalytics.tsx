@@ -277,87 +277,102 @@ const LandlordPropertyChart = () => {
               <LandlordPropertyMarquee landlordId={user?.landlord_id} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+              {/* Revenue Performance (wider on desktop) */}
+              <div
+                  onClick={() => router.push(`/pages/landlord/analytics/detailed/revenue`)}
+                  className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group
+                   col-span-1 sm:col-span-2 lg:col-span-2"
+              >
+                  {/* Chart content always visible */}
+                  <RevenuePerformanceChart landlordId={user?.landlord_id} />
 
-            <div
-                onClick={() => router.push(`/pages/landlord/analytics/detailed/revenue`)}
-                className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
+                  {/* Hover label — non-blocking */}
+                  <div
+                      className="absolute inset-0 flex items-center justify-center
+                opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  >
+            <span
+                className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
+                    px-3 py-1 rounded-full shadow-md border border-gray-200"
             >
-                {/* Chart content always visible */}
-                <RevenuePerformanceChart landlordId={user?.landlord_id} />
+                View Revenue →
+            </span>
+                  </div>
+              </div>
 
-                {/* Hover label — does not block chart interaction */}
-                <div
-                    className="absolute inset-0 flex items-center justify-center
-               opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                >
-    <span
-        className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
-                 px-3 py-1 rounded-full shadow-md border border-gray-200"
-    >
-      View Revenue →
-    </span>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-5">
-            <TenantActivity landlord_id={user?.landlord_id} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div
-                onClick={() => router.push(`/pages/landlord/analytics/detailed/visits`)}
-                className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
-            >
-                <UpcomingVisitsWidget landlordId={user?.landlord_id} />
-
-                {/* Hover label — non-blocking */}
-                <div
-                    className="absolute inset-0 flex items-center justify-center opacity-0
-                 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                >
-      <span
-          className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
-                   px-3 py-1 rounded-full shadow-md border border-gray-200"
-      >
-        View Visits →
-      </span>
-                </div>
-            </div>
-
-            <ProspectiveTenantsWidget landlordId={user?.landlord_id} />
-        </div>
-
-        {/* Additional Charts and Widgets */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-            <div
-                onClick={() => router.push(`/pages/landlord/contracts`)}
-                className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
-            >
-                {/* Widget always visible */}
-                <LeaseWidget landlord_id={user?.landlord_id} />
-
-                {/* Hover label only (no full overlay) */}
-                <div
-                    className="absolute inset-0 flex items-center justify-center
-               opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                >
-    <span className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-3 py-1 rounded-full shadow-md border border-gray-200">
-      View Leases →
-    </span>
-                </div>
-            </div>
-
-
-
-            <div className="bg-white rounded-xl shadow-sm p-5">
-
+              {/* Tenant Activity (smaller side panel) */}
+              <div className="bg-white rounded-xl shadow-sm p-5 col-span-1">
+                  <TenantActivity landlord_id={user?.landlord_id} />
+              </div>
           </div>
 
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+              {/* Visits Widget */}
+              <div
+                  onClick={() => router.push(`/pages/landlord/analytics/detailed/visits`)}
+                  className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
+              >
+                  <UpcomingVisitsWidget landlordId={user?.landlord_id} />
+
+                  {/* Hover label — non-blocking */}
+                  <div
+                      className="absolute inset-0 flex items-center justify-center opacity-0
+                group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  >
+            <span
+                className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
+                    px-3 py-1 rounded-full shadow-md border border-gray-200"
+            >
+                View Visits →
+            </span>
+                  </div>
+              </div>
+
+              {/* Prospective Tenants Widget */}
+              <div
+                  onClick={() => router.push(`/pages/landlord/analytics/detailed/prospects`)}
+                  className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
+              >
+                  <ProspectiveTenantsWidget landlordId={user?.landlord_id} />
+
+                  <div
+                      className="absolute inset-0 flex items-center justify-center opacity-0
+                group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  >
+            <span
+                className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
+                    px-3 py-1 rounded-full shadow-md border border-gray-200"
+            >
+                View Prospects →
+            </span>
+                  </div>
+              </div>
+
+              {/* Lease Widget */}
+              <div
+                  onClick={() => router.push(`/pages/landlord/contracts`)}
+                  className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md hover:bg-gray-50 transition group"
+              >
+                  <LeaseWidget landlord_id={user?.landlord_id} />
+
+                  <div
+                      className="absolute inset-0 flex items-center justify-center
+                opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  >
+            <span
+                className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
+                    px-3 py-1 rounded-full shadow-md border border-gray-200"
+            >
+                View Leases →
+            </span>
+                  </div>
+              </div>
+          </div>
+
       </div>
+
+
       {/*/pages/landlord/property-listing*/}
       {/* Mobile View - Tab Content */}
       <div className="sm:hidden p-4">
