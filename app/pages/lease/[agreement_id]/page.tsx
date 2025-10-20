@@ -143,7 +143,7 @@ export default function LeaseDetailsPage() {
                 <Tab label="Info" />
                 <Tab label="Billing Statements" />
                 <Tab label="Payments" />
-                <Tab label="Requests" />
+                {/*<Tab label="Requests" />*/}
                 <Tab label="PDCs" />
             </Tabs>
 

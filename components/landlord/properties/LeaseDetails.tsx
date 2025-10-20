@@ -33,7 +33,7 @@ const LeaseDetails = ({ unitId }) => {
   const [status, setStatus] = useState("unoccupied");
   const [unitName, setUnitName] = useState("");
   const [propertyName, setPropertyName] = useState("");
-  const [unitPhoto, setUnitPhoto] = useState("");
+  const [unitPhoto, setUnitPhotos] = useState("");
   const [activeTab, setActiveTab] = useState("details");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -72,19 +72,30 @@ const LeaseDetails = ({ unitId }) => {
 
   const fetchUnitDetails = async () => {
     try {
-      const response = await axios.get(
-        `/api/landlord/prospective/getUnitInfo?unit_id=${unitId}`
+      const res = await axios.get(
+          `/api/propertyListing/getPropertyDetailByUnitId?unit_id=${unitId}`
       );
 
-      console.log("API Response:", response.data);
-
-      if (response.data) {
-        setUnitName(response.data.unit?.unit_name || "");
-        setPropertyName(response.data.property?.property_name || "");
-        setUnitPhoto(response.data.photos?.[0] || "");
+      if (res.data?.propertyDetails) {
+        const d = res.data.propertyDetails;
+        setPropertyName(d.property_name || "");
+        setUnitName(d.unit_name || "");
+        setPropertyId(d.property_id || null);
       }
-    } catch (error) {
-      console.error("Error fetching unit details:", error);
+
+      // 🧹 Safely handle unitPhotos
+      const photos = res.data?.unitPhotos;
+      if (Array.isArray(photos)) {
+        setUnitPhotos(photos);
+      } else if (typeof photos === "string") {
+        // Sometimes backend might return a single string instead of array
+        setUnitPhotos([photos]);
+      } else {
+        setUnitPhotos([]); // default to empty
+      }
+    } catch (err) {
+      console.error("Error fetching unit details:", err);
+      setUnitPhotos([]); // prevent map error on catch
     }
   };
 
@@ -98,28 +109,6 @@ const LeaseDetails = ({ unitId }) => {
       }
     } catch (error) {
       console.error("Error fetching status:", error);
-    }
-  };
-
-  const toggleUnitStatus = async () => {
-    if (isUpdatingStatus) return;
-
-    setIsUpdatingStatus(true);
-    const newStatus = status === "occupied" ? "unoccupied" : "occupied";
-
-    try {
-      await axios.put("/api/landlord/properties/updatePropertyUnitStatus", {
-        unitId,
-        status: newStatus,
-      });
-
-      setStatus(newStatus);
-      Swal.fire("Success", `Status updated to ${newStatus}`, "success");
-    } catch (error) {
-      console.error("Error updating status:", error);
-      Swal.fire("Error", "Failed to update status", "error");
-    } finally {
-      setIsUpdatingStatus(false);
     }
   };
 
@@ -210,66 +199,6 @@ const LeaseDetails = ({ unitId }) => {
     }
   };
 
-  const handleSaveLease = async () => {
-    if (!startDate || !endDate) {
-      Swal.fire("Error", "Start and end date are required", "error");
-      return;
-    }
-
-    if (endDate <= startDate) {
-      Swal.fire("Error", "End date must be after start date", "error");
-      return;
-    }
-
-    try {
-      if (leaseFile) {
-        const formData = new FormData();
-        formData.append("leaseFile", leaseFile);
-        formData.append("unit_id", unitId || "");
-
-        const uploadRes = await fetch("/api/leaseAgreement/uploadUnitLease", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!uploadRes.ok) {
-          const errorText = await uploadRes.text();
-          console.error("Upload failed:", errorText);
-          Swal.fire("Error", "File upload failed", "error");
-          return;
-        }
-      }
-
-      const leaseDateRes = await fetch(
-        "/api/leaseAgreement/updateLeaseDateSet",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            unit_id: unitId,
-            start_date: startDate,
-            end_date: endDate,
-          }),
-        }
-      );
-
-      if (!leaseDateRes.ok) {
-        const errorText = await leaseDateRes.text(); // optional for logging
-        console.error("Lease date update failed:", errorText);
-        throw new Error(
-          `Lease date update failed with status ${leaseDateRes.status}`
-        );
-      }
-
-      Swal.fire("Success", "Lease saved successfully", "success");
-      fetchLeaseDetails?.();
-    } catch (error) {
-      console.error(error);
-      Swal.fire("Error", "Failed to save lease", "error");
-    }
-  };
 
   const handleGenerateLease = async () => {
     if (!startDate || !endDate) {
@@ -333,6 +262,74 @@ const LeaseDetails = ({ unitId }) => {
       Swal.fire("Error", "Failed to prepare upload lease", "error");
     }
   };
+  // only if user select not to upload
+  const handleSaveDates = async () => {
+    if (!startDate || !endDate) {
+      Swal.fire("Error", "Start and end date are required", "error");
+      return;
+    }
+
+    if (endDate <= startDate) {
+      Swal.fire("Error", "End date must be after start date", "error");
+      return;
+    }
+
+    // ⚠️ Warn landlord about proceeding without a lease
+    const confirm = await Swal.fire({
+      title: "Proceed Without a Signed Lease?",
+      html: `
+      <p class="text-gray-700 text-sm leading-relaxed">
+        You're about to activate this tenant without attaching a lease document.
+        <br/><br/>
+        <strong>Warning:</strong> Proceeding without a signed lease can lead to disputes or legal issues.
+        <br/><br/>
+        It's highly recommended to have a written agreement for protection.
+      </p>
+    `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, continue anyway",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      // ✅ Only update lease dates
+      const leaseDateRes = await fetch("/api/leaseAgreement/updateLeaseDateSet", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unit_id: unitId,
+          start_date: startDate,
+          end_date: endDate,
+          continueWithoutFile: true, // optional flag for backend
+        }),
+      });
+
+      if (!leaseDateRes.ok) {
+        const errorText = await leaseDateRes.text();
+        console.error("Lease date update failed:", errorText);
+        throw new Error(
+            `Lease date update failed with status ${leaseDateRes.status}`
+        );
+      }
+
+      await Swal.fire(
+          "Success!",
+          "Tenant marked as active without a signed lease agreement.",
+          "success"
+      );
+      window.location.reload();
+
+      fetchLeaseDetails?.();
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "Failed to save lease", "error");
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
@@ -708,7 +705,7 @@ const LeaseDetails = ({ unitId }) => {
                             )}
 
                             {/* Toggle Buttons */}
-                            <div className="flex gap-3 mb-4">
+                            <div className="flex flex-col sm:flex-row gap-3 mb-4">
                               <button
                                   onClick={() => setLeaseMode("generate")}
                                   className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
@@ -729,6 +726,17 @@ const LeaseDetails = ({ unitId }) => {
                                   }`}
                               >
                                 Upload Lease
+                              </button>
+
+                              <button
+                                  onClick={() => setLeaseMode("continue")}
+                                  className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
+                                      leaseMode === "continue"
+                                          ? "bg-blue-600 text-white border-blue-600"
+                                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                  }`}
+                              >
+                                Continue Without Agreement
                               </button>
                             </div>
 
@@ -752,7 +760,16 @@ const LeaseDetails = ({ unitId }) => {
                                   </button>
                               )}
 
-                              {/* 🆕 Terminate button (if dates exist even without file) */}
+                              {leaseMode === "continue" && (
+                                  <button
+                                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-6 rounded-xl"
+                                      onClick={handleSaveDates}
+                                  >
+                                    Continue Without Agreement
+                                  </button>
+                              )}
+
+                              {/* 🆕 Terminate button */}
                               {lease?.start_date && lease?.end_date && (
                                   <div className="mt-4">
                                     <button
@@ -789,6 +806,7 @@ const LeaseDetails = ({ unitId }) => {
                                   </div>
                               )}
                             </div>
+
                           </>
                       )}
                     </div>

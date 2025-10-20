@@ -1,6 +1,6 @@
-
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
+import { decryptData } from "@/crypto/encrypt"; // ✅ make sure you have this util
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -11,36 +11,75 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const [rows] = await db.query(
+        // ✅ 1. Fetch property + unit details
+        const [rows]: any = await db.query(
             `
-      SELECT 
-        u.unit_id,
-        u.unit_name,
-        u.rent_amount,
-        u.status,
-        p.property_id,
-        p.property_name,
-        p.street,
-        p.city,
-        p.province,
-        p.electricity_billing_type,
-        p.water_billing_type,
-        p.rent_increase_percent,
-        p.landlord_id
-      FROM Unit u
-      JOIN Property p ON u.property_id = p.property_id
-      WHERE u.unit_id = ?
-      `,
+                SELECT
+                    u.unit_id,
+                    u.unit_name,
+                    u.rent_amount,
+                    u.status,
+                    p.property_id,
+                    p.property_name,
+                    p.street,
+                    p.city,
+                    p.province,
+                    p.electricity_billing_type,
+                    p.water_billing_type,
+                    p.rent_increase_percent,
+                    p.landlord_id
+                FROM Unit u
+                         JOIN Property p ON u.property_id = p.property_id
+                WHERE u.unit_id = ?
+            `,
             [unit_id]
         );
 
-        if (!rows || (rows as any[]).length === 0) {
-            return NextResponse.json({ error: "No property found for this unit" }, { status: 404 });
+        if (!rows || rows.length === 0) {
+            return NextResponse.json(
+                { error: "No property found for this unit" },
+                { status: 404 }
+            );
         }
 
-        return NextResponse.json({ propertyDetails: (rows as any[])[0] });
+        const propertyDetails = rows[0];
+
+        // ✅ 2. Fetch and decrypt photos
+        const [photoRows]: any = await db.query(
+            `SELECT photo_url FROM UnitPhoto WHERE unit_id = ?`,
+            [unit_id]
+        );
+
+        let unitPhotos: string[] = [];
+
+        if (photoRows && photoRows.length > 0) {
+            unitPhotos = await Promise.all(
+                photoRows.map(async (photo: any) => {
+                    try {
+                        return await decryptData(
+                            JSON.parse(photo.photo_url),
+                            process.env.ENCRYPTION_SECRET!
+                        );
+                    } catch (err) {
+                        console.warn("⚠️ Failed to decrypt unit photo:", err);
+                        return null;
+                    }
+                })
+            );
+
+            // remove any null entries
+            unitPhotos = unitPhotos.filter(Boolean);
+        }
+        // ✅ 3. Return complete response
+        return NextResponse.json({
+            propertyDetails,
+            unitPhotos, // 🔥 now included and decrypted
+        });
     } catch (error) {
-        console.error("Database Error:", error);
-        return NextResponse.json({ error: "Database server error" }, { status: 500 });
+        console.error("❌ Database Error:", error);
+        return NextResponse.json(
+            { error: "Database server error" },
+            { status: 500 }
+        );
     }
 }

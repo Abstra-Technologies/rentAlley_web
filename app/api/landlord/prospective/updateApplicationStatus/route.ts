@@ -17,6 +17,9 @@ export async function PUT(req: NextRequest) {
   try {
     const { unitId, status, message, tenant_id } = await req.json();
 
+    console.log('application status:', status);
+    console.log('unit id:', unitId);
+
     if (!["pending", "approved", "disapproved"].includes(status)) {
       return NextResponse.json(
           { message: "Invalid status value" },

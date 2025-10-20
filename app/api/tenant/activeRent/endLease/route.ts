@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
         // ✅ 1. Verify lease belongs to the tenant
         const [leaseRows]: any = await db.query(
-            `SELECT tenant_id, status FROM LeaseAgreement WHERE agreement_id = ? LIMIT 1`,
+            `SELECT tenant_id, unit_id, status FROM LeaseAgreement WHERE agreement_id = ? LIMIT 1`,
             [agreement_id]
         );
 
@@ -32,11 +32,11 @@ export async function POST(req: NextRequest) {
         // ✅ 3. Check for unpaid or overdue billings
         const [unpaidRows]: any = await db.query(
             `
-      SELECT billing_id, status, total_amount_due
-      FROM Billing
-      WHERE lease_id = ?
-        AND (status = 'unpaid' OR status = 'overdue')
-      `,
+                SELECT billing_id, status, total_amount_due
+                FROM Billing
+                WHERE lease_id = ?
+                  AND (status = 'unpaid' OR status = 'overdue')
+            `,
             [agreement_id]
         );
 
@@ -57,31 +57,43 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // ✅ 4. Mark lease as expired
         await db.query(
-            `UPDATE LeaseAgreement SET status = 'expired', updated_at = NOW() WHERE agreement_id = ?`,
+            `UPDATE LeaseAgreement
+             SET status = 'expired', updated_at = NOW()
+             WHERE agreement_id = ?`,
             [agreement_id]
         );
 
-        // ✅ 5. Notify landlord automatically
+        // ✅ 5. Mark the associated unit as unoccupied
+        await db.query(
+            `UPDATE Unit
+             SET status = 'unoccupied', updated_at = NOW()
+             WHERE unit_id = ?`,
+            [lease.unit_id]
+        );
+
+        // ✅ 6. Notify landlord automatically
         await db.query(
             `
-      INSERT INTO Notification (user_id, title, body, url)
-      SELECT u.user_id, 'Tenant Ended Lease',
-             CONCAT('A tenant has ended the lease for Unit ', un.unit_name),
-             '/pages/landlord/lease-management'
-      FROM LeaseAgreement la
-      JOIN Unit un ON la.unit_id = un.unit_id
-      JOIN Property p ON un.property_id = p.property_id
-      JOIN Landlord l ON p.landlord_id = l.landlord_id
-      JOIN User u ON u.user_id = l.user_id
-      WHERE la.agreement_id = ?
-      `,
+            INSERT INTO Notification (user_id, title, body, url)
+            SELECT u.user_id, 'Tenant Ended Lease',
+                   CONCAT('A tenant has ended the lease for Unit ', un.unit_name),
+                   '/pages/landlord/lease-management'
+            FROM LeaseAgreement la
+            JOIN Unit un ON la.unit_id = un.unit_id
+            JOIN Property p ON un.property_id = p.property_id
+            JOIN Landlord l ON p.landlord_id = l.landlord_id
+            JOIN User u ON u.user_id = l.user_id
+            WHERE la.agreement_id = ?
+            `,
             [agreement_id]
         );
 
         return NextResponse.json({
             success: true,
-            message: "Lease ended successfully. Your landlord has been notified.",
+            message:
+                "Lease ended successfully. The unit is now marked as unoccupied and the landlord has been notified.",
         });
     } catch (err: any) {
         console.error("❌ Error ending lease:", err);
