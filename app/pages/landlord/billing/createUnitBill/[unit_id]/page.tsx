@@ -46,11 +46,11 @@ export default function CreateUnitBill() {
   async function fetchUnitData() {
     try {
       const res = await axios.get(
-          `/api/landlord/billing/getUnitBilling?unit_id=${unit_id}`
+          `/api/landlord/billing/submetered/getUnitBilling?unit_id=${unit_id}`
       );
       const data = res.data;
 
-      console.log("datae", data);
+      console.log("Fetched unit billing data:", data);
 
       if (!data.unit || !data.property)
         throw new Error("Missing unit or property data.");
@@ -58,7 +58,7 @@ export default function CreateUnitBill() {
       setUnit(data.unit);
       setProperty(data.property);
 
-      // 🧩 Helper to ensure date is formatted properly (YYYY-MM-DD)
+      // ✅ Always format dates safely (YYYY-MM-DD)
       const formatDate = (d: any) => {
         if (!d) return "";
         try {
@@ -68,18 +68,15 @@ export default function CreateUnitBill() {
         }
       };
 
-      // ✅ Compute due date (fallback to end of month)
-      const today = new Date();
-      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-          .toISOString()
-          .split("T")[0];
-      const dueDate = formatDate(data.dueDate || endOfMonth);
+      // ✅ Always trust backend for due date (from PropertyConfiguration)
+      const dueDate = formatDate(data.dueDate);
 
-      // ✅ Fetch Rates
+      // ✅ Fetch property billing stats to compute per-cu/kWh rate
       const rateRes = await axios.get(
           `/api/landlord/billing/checkPropertyBillingStats?property_id=${data.property.property_id}`
       );
       const billing = rateRes.data.billingData;
+
       setPropertyRates({
         waterRate:
             billing?.water?.total && billing?.water?.consumption
@@ -91,54 +88,41 @@ export default function CreateUnitBill() {
                 : 0,
       });
 
-      // ✅ Prefill if existing billing
+      // ✅ Extract billing info (always returned even if new)
       const eb = data.existingBilling;
-      if (eb) {
-        setHasExistingBilling(true);
 
-        setForm((prev) => ({
-          ...prev,
-          readingDate: formatDate(eb.reading_date) || prev.readingDate,
-          dueDate: formatDate(eb.due_date) || dueDate,
-          waterPrevReading: eb.water_prev ?? "",
-          waterCurrentReading: eb.water_curr ?? "",
-          electricityPrevReading: eb.elec_prev ?? "",
-          electricityCurrentReading: eb.elec_curr ?? "",
-        }));
+      // 🧩 Always prefill the form using backend’s readings (safe fallback)
+      setForm((prev) => ({
+        ...prev,
+        readingDate: formatDate(eb?.reading_date) || formatDate(new Date()),
+        dueDate: formatDate(eb?.due_date) || dueDate,
+        waterPrevReading: eb?.water_prev ?? "",
+        waterCurrentReading: eb?.water_curr ?? "",
+        electricityPrevReading: eb?.elec_prev ?? "",
+        electricityCurrentReading: eb?.elec_curr ?? "",
+      }));
 
-        setExtraExpenses(
-            eb.additional_charges?.map((c) => ({
-              charge_id: c.id,
-              type: c.charge_type,
-              amount: c.amount,
-              fromDB: true,
-            })) || []
-        );
+      // ✅ Charges (if any)
+      setExtraExpenses(
+          eb?.additional_charges?.map((c) => ({
+            charge_id: c.id,
+            type: c.charge_type,
+            amount: c.amount,
+            fromDB: !!eb.billing_id,
+          })) || []
+      );
 
-        setDiscounts(
-            eb.discounts?.map((d) => ({
-              charge_id: d.id,
-              type: d.charge_type,
-              amount: d.amount,
-              fromDB: true,
-            })) || []
-        );
+      setDiscounts(
+          eb?.discounts?.map((d) => ({
+            charge_id: d.id,
+            type: d.charge_type,
+            amount: d.amount,
+            fromDB: !!eb.billing_id,
+          })) || []
+      );
 
-
-      } else {
-        setHasExistingBilling(false);
-        setExtraExpenses([]);
-        setDiscounts([]);
-        setForm((prev) => ({
-          ...prev,
-          readingDate: formatDate(today),
-          dueDate,
-          waterPrevReading: "",
-          waterCurrentReading: "",
-          electricityPrevReading: "",
-          electricityCurrentReading: "",
-        }));
-      }
+      // ✅ Determine billing state
+      setHasExistingBilling(!!eb?.billing_id);
     } catch (error) {
       console.error("Error fetching unit data:", error);
       Swal.fire("Error", "Failed to load property or unit details.", "error");
@@ -209,6 +193,7 @@ export default function CreateUnitBill() {
     try {
       const bill = calculateBill();
 
+      // ✅ Combine additional and discount charges
       const formattedCharges = [
         ...extraExpenses
             .filter((e) => e.type && parseFloat(e.amount) > 0)
@@ -240,19 +225,16 @@ export default function CreateUnitBill() {
         additionalCharges: formattedCharges,
       };
 
-      // ✅ Use PUT if existing billing, otherwise POST
-      const url = hasExistingBilling
-          ? "/api/landlord/billing/createUnitMonthlyBilling"
-          : "/api/landlord/billing/createUnitMonthlyBilling";
-
-      const method = hasExistingBilling ? "post" : "post";
+      // ✅ Use PUT for existing billing, POST for new
+      const url = "/api/landlord/billing/submetered/createUnitMonthlyBilling";
+      const method = hasExistingBilling ? "put" : "post";
 
       const res = await axios({ method, url, data: payload });
 
       if (res.status === 200 || res.status === 201) {
         const successMsg = hasExistingBilling
             ? "Billing updated successfully!"
-            : "Billing saved successfully!";
+            : "Billing created successfully!";
 
         const confirmNext = await Swal.fire({
           title: successMsg,
