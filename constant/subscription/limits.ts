@@ -7,6 +7,7 @@ export const listingLimits = {
         maxReports: 3,
         maxBilling: 2,
         maxProspect: 3,
+        maxPDC: 0,
     },
     "Standard Plan": {
         maxProperties: 5,
@@ -15,6 +16,7 @@ export const listingLimits = {
         maxReports: Infinity,
         maxBilling: 10,
         maxProspect: 10,
+        maxPDC: 20,
     },
     "Premium Plan": {
         maxProperties: 20,
@@ -23,5 +25,6 @@ export const listingLimits = {
         maxReports: Infinity,
         maxBilling: Infinity,
         maxProspect: Infinity,
+        maxPDC: 100,
     },
 };

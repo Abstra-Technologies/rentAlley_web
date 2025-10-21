@@ -14,33 +14,55 @@ import {
     RefreshCcw,
     User,
     CalendarDays,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import PDCUploadModal from "@/components/landlord/pdc/PDCUploadModal";
 import useAuthStore from "@/zustand/authStore";
+import useSubscription from "@/hooks/landlord/useSubscription";
+import { listingLimits } from "@/constant/subscription/limits";
 
 export default function PDCManagementPage() {
     const { user } = useAuthStore();
     const landlord_id = user?.landlord_id;
+    const { subscription, loading: loadingSubscription } = useSubscription(landlord_id);
 
     const [pdcList, setPdcList] = useState<any[]>([]);
+    const [totalPDCCount, setTotalPDCCount] = useState(0); // New state for total PDC count
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedPDC, setSelectedPDC] = useState<any>(null);
     const [viewModalOpen, setViewModalOpen] = useState(false);
     const [filterStatus, setFilterStatus] = useState("all");
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 1,
+    });
 
+    /** ✅ Fetch PDCs with Pagination and Total Count */
     const fetchPDCs = async () => {
         if (!landlord_id) return;
         setLoading(true);
         try {
             const params = new URLSearchParams();
             params.append("landlord_id", landlord_id);
+            params.append("page", pagination.page.toString());
+            params.append("limit", pagination.limit.toString());
             if (filterStatus !== "all") params.append("status", filterStatus);
 
             const { data } = await axios.get(`/api/landlord/pdc/getAll?${params.toString()}`);
             setPdcList(data.data || []);
+            setTotalPDCCount(data.totalCount || 0); // Set total PDC count
+            setPagination((prev) => ({
+                ...prev,
+                total: data.pagination?.total || 0,
+                totalPages: data.pagination?.totalPages || 1,
+            }));
         } catch (error: any) {
             console.error("❌ Failed to fetch PDCs:", error.message);
+            Swal.fire("Error", error.response?.data?.error || "Failed to fetch PDCs.", "error");
         } finally {
             setLoading(false);
         }
@@ -48,8 +70,21 @@ export default function PDCManagementPage() {
 
     useEffect(() => {
         fetchPDCs();
-    }, [landlord_id, filterStatus]);
+    }, [landlord_id, filterStatus, pagination.page, pagination.limit]);
 
+    /** ✅ Memoized subscription + limits logic */
+    const limitData = useMemo(() => {
+        const plan = subscription?.plan_name || "Free Plan";
+        const planLimits = listingLimits[plan];
+        const maxPDC = planLimits?.maxPDC ?? 0;
+        const usedPDC = totalPDCCount; // Use totalPDCCount instead of pdcList.length
+
+        return { plan, maxPDC, usedPDC };
+    }, [subscription, totalPDCCount]);
+
+    const { plan, maxPDC, usedPDC } = limitData;
+
+    /** ✅ Status update handler */
     const handleMarkStatus = async (pdc_id: number, status: "cleared" | "bounced") => {
         const confirm = await Swal.fire({
             title: `Mark as ${status}?`,
@@ -69,7 +104,7 @@ export default function PDCManagementPage() {
         }
     };
 
-    // ✅ MRT Columns
+    /** ✅ Table Columns */
     const columns = useMemo<MRT_ColumnDef<any>[]>(
         () => [
             { accessorKey: "check_number", header: "Check #" },
@@ -89,8 +124,8 @@ export default function PDCManagementPage() {
                 header: "Amount",
                 Cell: ({ cell }) => (
                     <span className="text-blue-700 font-semibold">
-            {formatCurrency(cell.getValue<number>())}
-          </span>
+                        {formatCurrency(cell.getValue<number>())}
+                    </span>
                 ),
             },
             {
@@ -120,8 +155,8 @@ export default function PDCManagementPage() {
                                 colorMap[status] || "bg-gray-50 text-gray-700 border-gray-200"
                             }`}
                         >
-              {status}
-            </span>
+                            {status}
+                        </span>
                     );
                 },
             },
@@ -161,6 +196,7 @@ export default function PDCManagementPage() {
                                     </button>
                                 </>
                             )}
+
                             {pdc.status === "bounced" && (
                                 <button
                                     onClick={() =>
@@ -183,25 +219,92 @@ export default function PDCManagementPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50 p-4 sm:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                        <BackButton label="Back to Dashboard" />
-                        <h1 className="text-2xl sm:text-3xl font-bold mt-4 text-gray-800">
-                            Post-Dated Check Management
-                        </h1>
-                        <p className="text-gray-500 text-sm">
-                            Manage rent checks, track statuses, and maintain compliance.
-                        </p>
+                {/* HEADER SECTION */}
+                <div className="flex flex-col gap-5 sm:gap-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <BackButton label="Back to Dashboard" />
+                            <h1 className="text-2xl sm:text-3xl font-bold mt-4 text-gray-800">
+                                Post-Dated Check Management
+                            </h1>
+                            <p className="text-gray-500 text-sm">
+                                Manage all post-dated checks uploaded under your lease agreements.
+                            </p>
+                        </div>
+
+                        {/* Upload Button */}
+                        <button
+                            onClick={() => {
+                                if (loadingSubscription) return;
+                                if (!subscription) {
+                                    Swal.fire({
+                                        title: "Subscription Required",
+                                        text: "You need an active subscription to use PDC management.",
+                                        icon: "warning",
+                                    });
+                                    return;
+                                }
+                                if (maxPDC === 0) {
+                                    Swal.fire({
+                                        title: "Feature Locked",
+                                        text: "Your current plan does not support Post-Dated Checks.",
+                                        icon: "info",
+                                    });
+                                    return;
+                                }
+                                if (usedPDC >= maxPDC && maxPDC !== Infinity) {
+                                    Swal.fire({
+                                        title: "Limit Reached",
+                                        text: `You’ve already uploaded ${maxPDC} PDCs for your ${plan}.`,
+                                        icon: "error",
+                                    });
+                                    return;
+                                }
+                                setIsModalOpen(true);
+                            }}
+                            disabled={loadingSubscription || maxPDC === 0 || usedPDC >= maxPDC}
+                            className={`inline-flex items-center px-5 py-2.5 rounded-xl font-semibold transition-all active:scale-95 shadow-md ${
+                                loadingSubscription || maxPDC === 0 || usedPDC >= maxPDC
+                                    ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                                    : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-lg"
+                            }`}
+                        >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload New PDC
+                        </button>
                     </div>
 
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium active:scale-95"
-                    >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload New PDC
-                    </button>
+                    {/* Usage Bar */}
+                    <div className="p-4 bg-gradient-to-r from-blue-50 via-emerald-50 to-blue-50 rounded-xl border border-emerald-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                <CalendarDays className="w-4 h-4 text-emerald-600" />
+                                <span>Total PDCs Uploaded</span>
+                            </span>
+                            <span className="text-sm font-semibold text-blue-700">
+                                {usedPDC}/{maxPDC === Infinity ? "∞" : maxPDC}
+                            </span>
+                        </div>
+
+                        <div className="relative w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500"
+                                style={{
+                                    width: `${
+                                        maxPDC === Infinity ? 100 : Math.min((usedPDC / maxPDC) * 100, 100)
+                                    }%`,
+                                }}
+                            />
+                        </div>
+
+                        <p className="mt-2 text-xs text-gray-500">
+                            {maxPDC === Infinity
+                                ? "Unlimited PDC uploads under your Premium Plan."
+                                : usedPDC >= maxPDC
+                                    ? "Upload limit reached. Upgrade to add more."
+                                    : "Each uploaded PDC counts toward your plan’s total upload limit."}
+                        </p>
+                    </div>
                 </div>
 
                 {/* ✅ Status Filter Bar */}
@@ -209,7 +312,10 @@ export default function PDCManagementPage() {
                     {["all", "pending", "cleared", "bounced", "replaced"].map((status) => (
                         <button
                             key={status}
-                            onClick={() => setFilterStatus(status)}
+                            onClick={() => {
+                                setFilterStatus(status);
+                                setPagination((prev) => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
+                            }}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                                 filterStatus === status
                                     ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
@@ -227,7 +333,6 @@ export default function PDCManagementPage() {
                         <div className="p-8 text-center text-gray-500">Loading PDCs...</div>
                     ) : (
                         <>
-                            {/* Desktop: Material Table */}
                             <div className="hidden md:block">
                                 <MaterialReactTable
                                     columns={columns}
@@ -235,6 +340,20 @@ export default function PDCManagementPage() {
                                     enableColumnResizing
                                     enableSorting
                                     enableGlobalFilter
+                                    manualPagination
+                                    rowCount={pagination.total}
+                                    state={{ pagination: { pageIndex: pagination.page - 1, pageSize: pagination.limit } }}
+                                    onPaginationChange={(updater) => {
+                                        const newPagination = updater({
+                                            pageIndex: pagination.page - 1,
+                                            pageSize: pagination.limit,
+                                        });
+                                        setPagination({
+                                            ...pagination,
+                                            page: newPagination.pageIndex + 1,
+                                            limit: newPagination.pageSize,
+                                        });
+                                    }}
                                     muiTablePaperProps={{
                                         elevation: 0,
                                         sx: { borderRadius: "12px" },
@@ -262,8 +381,8 @@ export default function PDCManagementPage() {
                                                             : "bg-red-50 text-red-700 border-red-200"
                                                 }`}
                                             >
-                        {pdc.status}
-                      </span>
+                                                {pdc.status}
+                                            </span>
                                         </div>
                                         <p className="text-sm text-gray-600 mt-1">
                                             {pdc.bank_name} • {formatCurrency(pdc.amount)}
@@ -300,6 +419,44 @@ export default function PDCManagementPage() {
                                         </div>
                                     </div>
                                 ))}
+                                {/* Mobile Pagination */}
+                                <div className="flex items-center justify-between mt-4">
+                                    <button
+                                        onClick={() =>
+                                            setPagination((prev) => ({
+                                                ...prev,
+                                                page: Math.max(prev.page - 1, 1),
+                                            }))
+                                        }
+                                        disabled={pagination.page === 1}
+                                        className={`p-2 rounded-lg ${
+                                            pagination.page === 1
+                                                ? "text-gray-400 cursor-not-allowed"
+                                                : "text-blue-600 hover:bg-blue-50"
+                                        }`}
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <span className="text-sm text-gray-600">
+                                        Page {pagination.page} of {pagination.totalPages}
+                                    </span>
+                                    <button
+                                        onClick={() =>
+                                            setPagination((prev) => ({
+                                                ...prev,
+                                                page: Math.min(prev.page + 1, pagination.totalPages),
+                                            }))
+                                        }
+                                        disabled={pagination.page === pagination.totalPages}
+                                        className={`p-2 rounded-lg ${
+                                            pagination.page === pagination.totalPages
+                                                ? "text-gray-400 cursor-not-allowed"
+                                                : "text-blue-600 hover:bg-blue-50"
+                                        }`}
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
                         </>
                     )}
@@ -348,7 +505,6 @@ export default function PDCManagementPage() {
                                     <strong>Notes:</strong> {selectedPDC.notes || "—"}
                                 </p>
 
-                                {/* ✅ Clickable Thumbnail */}
                                 {selectedPDC.uploaded_image_url && (
                                     <div className="mt-3">
                                         <p className="text-sm text-gray-600 mb-1 font-medium">Check Image:</p>
@@ -359,12 +515,9 @@ export default function PDCManagementPage() {
                                             onClick={() =>
                                                 Swal.fire({
                                                     html: `
-                    <img 
-                      src="${selectedPDC.uploaded_image_url}" 
-                      alt="Zoomed Check"
-                      style="max-height:80vh; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.2);"
-                    />
-                  `,
+                            <img src="${selectedPDC.uploaded_image_url}" 
+                              alt="Zoomed Check"
+                              style="max-height:80vh; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.2);" />`,
                                                     background: "rgba(0,0,0,0.85)",
                                                     showConfirmButton: false,
                                                     showCloseButton: true,
@@ -382,9 +535,7 @@ export default function PDCManagementPage() {
                         </div>
                     </div>
                 )}
-
             </div>
         </div>
     );
 }
-
