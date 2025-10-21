@@ -18,7 +18,7 @@
 #     to set the Java Heap base and to place the Java Heap above 32GB virtual address.
 # This output file may be truncated or incomplete.
 #
-#  Out of Memory Error (os_windows.cpp:3898), pid=34596, tid=34116
+#  Out of Memory Error (os_windows.cpp:3898), pid=3000, tid=9660
 #
 # JRE version:  (21.0.7+6) (build )
 # Java VM: OpenJDK 64-Bit Server VM (21.0.7+6-b1038.58, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
@@ -30,13 +30,13 @@
 Command Line: git4idea.http.GitAskPassApp Username for 'https://github.com': 
 
 Host: AMD Ryzen 9 5900HS with Radeon Graphics        , 16 cores, 15G,  Windows 11 , 64 bit Build 26100 (10.0.26100.2702)
-Time: Tue Oct 21 16:25:43 2025 Malay Peninsula Standard Time elapsed time: 0.027365 seconds (0d 0h 0m 0s)
+Time: Tue Oct 21 18:05:43 2025 Malay Peninsula Standard Time elapsed time: 0.024980 seconds (0d 0h 0m 0s)
 
 ---------------  T H R E A D  ---------------
 
-Current thread (0x000002078a4de730):  JavaThread "Unknown thread" [_thread_in_vm, id=34116, stack(0x00000096d9c00000,0x00000096d9d00000) (1024K)]
+Current thread (0x0000023dff9f76b0):  JavaThread "Unknown thread" [_thread_in_vm, id=9660, stack(0x000000ff3f500000,0x000000ff3f600000) (1024K)]
 
-Stack: [0x00000096d9c00000,0x00000096d9d00000]
+Stack: [0x000000ff3f500000,0x000000ff3f600000]
 Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
 V  [jvm.dll+0x6e7c19]
 V  [jvm.dll+0x8c5f53]
@@ -72,15 +72,15 @@ Java Threads: ( => current thread )
 Total: 0
 
 Other Threads:
-  0x000002078c8c4300 WorkerThread "GC Thread#0"                     [id=36564, stack(0x00000096d9d00000,0x00000096d9e00000) (1024K)]
-  0x000002078c8d66f0 ConcurrentGCThread "G1 Main Marker"            [id=12908, stack(0x00000096d9e00000,0x00000096d9f00000) (1024K)]
-  0x000002078c8d8100 WorkerThread "G1 Conc#0"                       [id=34932, stack(0x00000096d9f00000,0x00000096da000000) (1024K)]
+  0x0000023dffa55cc0 WorkerThread "GC Thread#0"                     [id=31476, stack(0x000000ff3f600000,0x000000ff3f700000) (1024K)]
+  0x0000023dffa680b0 ConcurrentGCThread "G1 Main Marker"            [id=35648, stack(0x000000ff3f700000,0x000000ff3f800000) (1024K)]
+  0x0000023dffa6a260 WorkerThread "G1 Conc#0"                       [id=35564, stack(0x000000ff3f800000,0x000000ff3f900000) (1024K)]
 
 [error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffb9c7498f7]
 VM state: not at safepoint (not fully initialized)
 
 VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
-[0x00007ffb9d0d1bc8] Heap_lock - owner thread: 0x000002078a4de730
+[0x00007ffb9d0d1bc8] Heap_lock - owner thread: 0x0000023dff9f76b0
 
 Heap address: 0x0000000709800000, size: 3944 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
 
@@ -99,10 +99,10 @@ Heap:
 
 Heap Regions: E=young(eden), S=young(survivor), O=old, HS=humongous(starts), HC=humongous(continues), CS=collection set, F=free, TAMS=top-at-mark-start, PB=parsable bottom
 
-Card table byte_map: [0x00000207a08d0000,0x00000207a1090000] _byte_map_base: 0x000002079d084000
+Card table byte_map: [0x0000023d941e0000,0x0000023d949a0000] _byte_map_base: 0x0000023d90994000
 
-Marking Bits: (CMBitMap*) 0x000002078c8c4900
- Bits: [0x00000207a1090000, 0x00000207a4e30000)
+Marking Bits: (CMBitMap*) 0x0000023dffa562c0
+ Bits: [0x0000023d949a0000, 0x0000023d98740000)
 
 GC Heap History (0 events):
 No events
@@ -148,14 +148,14 @@ Dynamic libraries:
 0x00007ffcab900000 - 0x00007ffcabcb4000 	C:\WINDOWS\System32\KERNELBASE.dll
 0x00007ffca52b0000 - 0x00007ffca534c000 	C:\WINDOWS\SYSTEM32\apphelp.dll
 0x00007ffcab6f0000 - 0x00007ffcab83b000 	C:\WINDOWS\System32\ucrtbase.dll
-0x00007ffc950a0000 - 0x00007ffc950b8000 	C:\Program Files\JetBrains\WebStorm 2025.2\jbr\bin\jli.dll
 0x00007ffc95ea0000 - 0x00007ffc95ebb000 	C:\Program Files\JetBrains\WebStorm 2025.2\jbr\bin\VCRUNTIME140.dll
+0x00007ffc950a0000 - 0x00007ffc950b8000 	C:\Program Files\JetBrains\WebStorm 2025.2\jbr\bin\jli.dll
 0x00007ffcac700000 - 0x00007ffcac8c9000 	C:\WINDOWS\System32\USER32.dll
 0x00007ffcabe80000 - 0x00007ffcabea7000 	C:\WINDOWS\System32\win32u.dll
 0x00007ffc96290000 - 0x00007ffc96520000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.2702_none_3e069454e335fc5e\COMCTL32.dll
 0x00007ffcad860000 - 0x00007ffcad88a000 	C:\WINDOWS\System32\GDI32.dll
-0x00007ffcabd50000 - 0x00007ffcabe7b000 	C:\WINDOWS\System32\gdi32full.dll
 0x00007ffcac000000 - 0x00007ffcac0a9000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ffcabd50000 - 0x00007ffcabe7b000 	C:\WINDOWS\System32\gdi32full.dll
 0x00007ffcabf50000 - 0x00007ffcabff3000 	C:\WINDOWS\System32\msvcp_win.dll
 0x00007ffcac8d0000 - 0x00007ffcac8ff000 	C:\WINDOWS\System32\IMM32.DLL
 0x00007ffc97220000 - 0x00007ffc9722c000 	C:\Program Files\JetBrains\WebStorm 2025.2\jbr\bin\vcruntime140_1.dll
@@ -236,7 +236,7 @@ JNI global refs: 0, weak refs: 0
 JNI global refs memory usage: 0, weak refs: 0
 
 Process memory usage:
-Resident Set Size: 13888K (0% of 16153752K total physical memory with 1311180K free physical memory)
+Resident Set Size: 13876K (0% of 16153752K total physical memory with 2847644K free physical memory)
 
 OOME stack traces (most recent first):
 Classloader memory used:
@@ -245,17 +245,17 @@ Classloader memory used:
 
 OS:
  Windows 11 , 64 bit Build 26100 (10.0.26100.2702)
-OS uptime: 0 days 9:11 hours
+OS uptime: 0 days 10:51 hours
 Hyper-V role detected
 
 CPU: total 16 (initial active 16) (16 cores per cpu, 2 threads per core) family 25 model 80 stepping 0 microcode 0xa50000c, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4a, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, sha, fma, vzeroupper, clflush, clflushopt, hv, rdtscp, rdpid, fsrm, f16c, cet_ss
 Processor Information for the first 16 processors :
   Max Mhz: 3301, Current Mhz: 2003, Mhz Limit: 3301
 
-Memory: 4k page, system-wide physical 15775M (1280M free)
-TotalPageFile size 36787M (AvailPageFile size 235M)
+Memory: 4k page, system-wide physical 15775M (2780M free)
+TotalPageFile size 36787M (AvailPageFile size 20M)
 current process WorkingSet (physical memory assigned to process): 13M, peak: 13M
-current process commit charge ("private bytes"): 71M, peak: 319M
+current process commit charge ("private bytes"): 71M, peak: 318M
 
 vm_info: OpenJDK 64-Bit Server VM (21.0.7+6-b1038.58) for windows-amd64 JRE (21.0.7+6-b1038.58), built on 2025-07-07 by "builduser" with MS VC++ 16.10 / 16.11 (VS2019)
 

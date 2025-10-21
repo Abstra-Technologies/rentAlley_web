@@ -26,22 +26,34 @@ export default function TenantBilling({ agreement_id, user_id }) {
         const res = await axios.get(`/api/tenant/billing/viewCurrentBilling`, {
           params: { agreement_id, user_id },
         });
-        console.log(res);
+
+        console.log("📦 Full Billing Response:", res.data);
+
+        // ✅ Extract post-dated checks
+        const pdcChecks = res.data.postDatedChecks || [];
+
+        // ✅ Build normalized billing array
         const billings = res.data.billing
             ? [
               {
                 ...res.data.billing,
-                billingAdditionalCharges: res.data.billingAdditionalCharges || [],
+                billingAdditionalCharges:
+                    res.data.billingAdditionalCharges || [],
                 leaseAdditionalExpenses: res.data.leaseAdditionalExpenses || [],
                 breakdown: res.data.breakdown || {},
                 propertyBillingTypes: res.data.propertyBillingTypes || {},
                 propertyConfig: res.data.propertyConfig || {},
+                postDatedChecks: pdcChecks, // ✅ added for PDC display
               },
             ]
             : [];
 
-        console.log('billing property config: ', billings.propertyConfig);
+        // ✅ Correct logging reference
+        if (billings.length > 0) {
+          console.log("🏠 Billing Property Config:", billings[0].propertyConfig);
+        }
 
+        // ✅ Flatten meter readings
         const rawMeterReadings = res.data.meterReadings || {};
         const flatReadings = [
           ...(rawMeterReadings.water || []),
@@ -51,7 +63,7 @@ export default function TenantBilling({ agreement_id, user_id }) {
         setBillingData(billings);
         setMeterReadings(flatReadings);
       } catch (err) {
-        console.error("Billing fetch error:", err);
+        console.error("❌ Billing fetch error:", err);
         setError("Failed to fetch billing data.");
       } finally {
         setLoading(false);
@@ -265,6 +277,47 @@ export default function TenantBilling({ agreement_id, user_id }) {
                       </div>
                     </div>
                   </div>
+
+                  {/* 🏦 PDC Information */}
+                  {bill.postDatedChecks && bill.postDatedChecks.length > 0 && (
+                      <div className="px-6 py-4 bg-blue-50 border-t border-blue-200">
+                        <h3 className="text-sm font-semibold text-blue-900 flex items-center gap-2 mb-3">
+                          💳 Post-Dated Check Details
+                        </h3>
+                        <div className="divide-y divide-blue-100 rounded-lg border border-blue-200 bg-white">
+                          {bill.postDatedChecks.map((pdc, idx) => (
+                              <div key={idx} className="p-3 text-sm text-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <p>
+                                    <span className="font-medium text-gray-900">{pdc.bank_name}</span>{" "}
+                                    • Check No. <strong>{pdc.check_number}</strong>
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Issue Date: {formatDate(pdc.due_date)} | Amount:{" "}
+                                    <span className="font-semibold">{formatCurrency(pdc.amount)}</span>
+                                  </p>
+                                </div>
+                                <div className="mt-2 sm:mt-0">
+            <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    pdc.status === "cleared"
+                        ? "bg-green-100 text-green-700"
+                        : pdc.status === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : pdc.status === "bounced"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-700"
+                }`}
+            >
+              {pdc.status}
+            </span>
+                                </div>
+                              </div>
+                          ))}
+                        </div>
+                      </div>
+                  )}
+
 
                   {/* Billing Breakdown */}
                   <div className="px-6 py-4">

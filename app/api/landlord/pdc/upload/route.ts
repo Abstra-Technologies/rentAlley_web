@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-    const connection = await db.getConnection(); // explicit connection for transaction
+    const connection = await db.getConnection();
     await connection.beginTransaction();
 
     try {
@@ -15,44 +15,36 @@ export async function POST(req: NextRequest) {
             check_number,
             bank_name,
             amount,
-            issue_date,
+            issue_date, // ✅ renamed (was issue_date)
             notes,
             uploaded_image_url,
         } = body;
 
-        console.log('issue date', issue_date);
+        console.log("📩 Incoming PDC upload:", body);
 
-        // ✅ Input Validation
+        // ✅ Required fields
         if (!lease_id || !check_number || !amount || !issue_date) {
-            await connection.rollback();
-            connection.release();
-            return NextResponse.json(
-                { error: "Missing required fields." },
-                { status: 400 }
-            );
+            throw new Error("Missing required fields: lease_id, check_number, amount, due_date.");
         }
 
+        // ✅ Validate amount
         const parsedAmount = parseFloat(amount);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
-            await connection.rollback();
-            connection.release();
-            return NextResponse.json(
-                { error: "Invalid amount specified." },
-                { status: 400 }
-            );
+            throw new Error("Invalid amount specified.");
+        }
+
+        // ✅ Validate date format (must be YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(issue_date)) {
+            throw new Error("Invalid date format. Use YYYY-MM-DD.");
         }
 
         const formattedDate = new Date(issue_date);
         if (isNaN(formattedDate.getTime())) {
-            await connection.rollback();
-            connection.release();
-            return NextResponse.json(
-                { error: "Invalid date format for issue_date." },
-                { status: 400 }
-            );
+            throw new Error("Invalid or unparseable due_date.");
         }
 
-        // ✅ IDEMPOTENCE: Check if PDC already exists for same lease/check_number
+        // ✅ Idempotence: Check duplicates
         const [existing]: any = await connection.query(
             `SELECT pdc_id FROM PostDatedCheck WHERE lease_id = ? AND check_number = ? LIMIT 1`,
             [lease_id, check_number]
@@ -63,8 +55,7 @@ export async function POST(req: NextRequest) {
             connection.release();
             return NextResponse.json(
                 {
-                    message:
-                        "A PDC with this check number already exists for this lease. No duplicate created.",
+                    message: "A PDC with this check number already exists for this lease.",
                     pdc_id: existing[0].pdc_id,
                     idempotent: true,
                 },
@@ -72,7 +63,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // ✅ ATOMIC INSERT
+        // ✅ Insert record atomically
         const [result]: any = await connection.query(
             `
             INSERT INTO PostDatedCheck
@@ -90,9 +81,10 @@ export async function POST(req: NextRequest) {
             ]
         );
 
-        // ✅ Commit transaction
         await connection.commit();
         connection.release();
+
+        console.log(`✅ PDC inserted for lease_id ${lease_id} with check #${check_number}`);
 
         return NextResponse.json(
             {
@@ -103,7 +95,7 @@ export async function POST(req: NextRequest) {
             { status: 201 }
         );
     } catch (error: any) {
-        console.error("❌ PDC Transaction Error:", error);
+        console.error("❌ PDC Upload Error:", error.message);
 
         try {
             await connection.rollback();
@@ -113,21 +105,28 @@ export async function POST(req: NextRequest) {
             connection.release();
         }
 
+        // Handle common cases
         if (error.code === "ER_DUP_ENTRY") {
             return NextResponse.json(
-                {
-                    error:
-                        "A check with this number already exists for this lease.",
-                },
+                { error: "A check with this number already exists for this lease." },
                 { status: 409 }
             );
         }
 
+        if (error.message.includes("Missing required")) {
+            return NextResponse.json({ error: error.message }, { status: 400 });
+        }
+
+        if (error.message.includes("Invalid date")) {
+            return NextResponse.json({ error: error.message }, { status: 400 });
+        }
+
+        if (error.message.includes("Invalid amount")) {
+            return NextResponse.json({ error: error.message }, { status: 400 });
+        }
+
         return NextResponse.json(
-            {
-                error: "Internal server error.",
-                details: error.message,
-            },
+            { error: "Internal server error.", details: error.message },
             { status: 500 }
         );
     }

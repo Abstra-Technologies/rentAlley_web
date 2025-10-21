@@ -43,11 +43,12 @@ export async function GET(
 
         const bill = rows[0];
 
-        // 🔹 2. Get tenant details (via active lease)
+        // 🔹 2. Get Tenant info
         const [tenantRows]: any = await db.query(
             `
                 SELECT
                     t.tenant_id,
+                    la.agreement_id,
                     u.user_id,
                     u.firstName,
                     u.lastName,
@@ -57,6 +58,7 @@ export async function GET(
                          JOIN Tenant t ON la.tenant_id = t.tenant_id
                          JOIN User u ON t.user_id = u.user_id
                 WHERE la.unit_id = ?
+                ORDER BY la.start_date DESC
                 LIMIT 1
             `,
             [bill.unit_id]
@@ -82,21 +84,14 @@ export async function GET(
             }
             : null;
 
-        // 🔹 3. Fetch PropertyConfiguration for due day
+        // 🔹 3. Get Property Config
         const [configRows]: any = await db.query(
-            `
-        SELECT billingDueDay
-        FROM PropertyConfiguration
-        WHERE property_id = ?
-        LIMIT 1
-      `,
+            `SELECT billingDueDay FROM PropertyConfiguration WHERE property_id = ? LIMIT 1`,
             [bill.property_id]
         );
-
         const config = configRows?.[0] || {};
         const billingDueDay = Number(config.billingDueDay || 1);
 
-        // ✅ Compute due date from PropertyConfig
         const billingPeriod = new Date(bill.billing_period);
         const dueDate = new Date(
             billingPeriod.getFullYear(),
@@ -105,236 +100,262 @@ export async function GET(
         );
         const dueDateStr = dueDate.toLocaleDateString("en-CA");
 
-        // 🔹 4. Additional Charges and Lease Expenses
+        // 🔹 4. Additional Charges
         const [addCharges]: any = await db.query(
-            `SELECT charge_category, charge_type, amount 
-       FROM BillingAdditionalCharge 
-       WHERE billing_id = ?`,
+            `SELECT charge_category, charge_type, amount
+             FROM BillingAdditionalCharge
+             WHERE billing_id = ?`,
             [billingId]
         );
 
-        const [leaseRows]: any = await db.query(
+        // 🔹 5. Post-Dated Checks for this lease/month
+        const [pdcRows]: any = await db.query(
             `
-        SELECT agreement_id, start_date, end_date,
-               advance_payment_amount, is_advance_payment_paid
-        FROM LeaseAgreement
-        WHERE unit_id = ?
-        ORDER BY start_date DESC
-        LIMIT 1
-      `,
-            [bill.unit_id]
+                SELECT bank_name, check_number, amount, due_date, status
+                FROM PostDatedCheck
+                WHERE lease_id = ?
+                  AND MONTH(due_date) = MONTH(?)
+                  AND YEAR(due_date) = YEAR(?)
+                ORDER BY due_date ASC
+            `,
+            [tenant?.agreement_id, bill.billing_period, bill.billing_period]
         );
 
-        const lease = leaseRows?.[0] || null;
-
-        const [leaseExpenses]: any = lease
-            ? await db.query(
-                `SELECT expense_type, amount, frequency 
-           FROM LeaseAdditionalExpense 
-           WHERE agreement_id = ?`,
-                [lease.agreement_id]
-            )
-            : [[]];
-
-        // 🔹 5. Compute advance deduction
+        // 🔹 6. Advance payment computation
         const advanceMonths = toNum(bill.advance_payment_months);
-        const perMonthAdvance = lease ? toNum(lease.advance_payment_amount) : 0;
         const advanceDeductRequired =
-            lease && lease.is_advance_payment_paid
-                ? perMonthAdvance * (advanceMonths || 0)
-                : 0;
+            advanceMonths > 0 ? toNum(bill.rent_amount) * advanceMonths : 0;
 
-        // 🔹 6. Build charge & expense rows
+        // 🔹 7. Build charge rows
         const chargesRows = (addCharges || [])
             .map(
                 (c: any) => `
-          <tr>
-            <td>${c.charge_type} ${c.charge_category === "discount" ? "(discount)" : ""}</td>
-            <td>${c.charge_category === "discount" ? "-" : ""}${php(c.amount)}</td>
-          </tr>`
+        <tr>
+          <td>${c.charge_type} ${
+                    c.charge_category === "discount" ? "(discount)" : ""
+                }</td>
+          <td>${c.charge_category === "discount" ? "-" : ""}${php(c.amount)}</td>
+        </tr>`
             )
             .join("");
 
-        const expensesRows = (leaseExpenses || [])
-            .map(
-                (e: any) => `
-          <tr>
-            <td>${e.expense_type} ${e.frequency ? `(${e.frequency})` : ""}</td>
-            <td>${php(e.amount)}</td>
-          </tr>`
-            )
-            .join("");
+        // 🔹 8. Build PDC section rows
+        const pdcRowsHtml =
+            pdcRows.length > 0
+                ? pdcRows
+                    .map(
+                        (p: any) => `
+              <tr>
+                <td>${p.bank_name}</td>
+                <td>${p.check_number}</td>
+                <td>${php(p.amount)}</td>
+                <td>${new Date(p.due_date).toLocaleDateString("en-CA")}</td>
+                <td>${p.status}</td>
+              </tr>`
+                    )
+                    .join("")
+                : `<tr><td colspan="5" style="text-align:center;color:#6b7280;">No post-dated checks found for this month.</td></tr>`;
 
-        // 🔹 7. Build HTML PDF Template
+        // 🔹 9. Build HTML
         const html = `
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <style>
-            body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-            h1, h2 { color: #064e3b; margin: 0 0 6px; }
-            .muted { color: #6B7280; font-size: 12px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-            th, td { border: 1px solid #E5E7EB; padding: 8px; font-size: 13px; }
-            th { background: #F9FAFB; text-align: left; }
-            .total { font-weight: bold; background: #F0F9FF; }
-            .section { margin-top: 18px; }
-          </style>
-        </head>
-        <body>
-          <div style="text-align:center; border-bottom: 2px solid #0f766e; padding-bottom: 10px; margin-bottom: 20px;">
-            <h2 style="margin:0; font-size: 22px; color:#064e3b; font-weight:700;">UpKyp</h2>
-            <p style="margin:4px 0 0; font-size: 12px; color:#6b7280;">Your Trusted Rental Management Partner</p>
-            <h2>Monthly Billing Statement</h2>
-          </div>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /* 🌈 Full-page dark gradient background (UpKyp brand) */
+      html, body {
+        height: 100%;
+        margin: 0;
+        font-family: "Inter", Arial, sans-serif;
+        color: #f9fafb;
+        background: linear-gradient(135deg, #064e3b 0%, #1e3a8a 100%);
+        background-attachment: fixed;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        position: relative;
+      }
 
-          <!-- Tenant Details -->
-<!-- Tenant + Property Header -->
-<div
-  style="
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, #f9fafb 0%, #ecfdf5 100%);
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    margin-bottom: 24px;
-  "
->
-  <!-- Tenant Info (Left) -->
-  <div style="flex: 1; min-width: 240px;">
-    ${
+      /* 💧 Subtle watermark */
+      body::before {
+        content: "UpKyp - Connect More. Manage Less";
+        position: fixed;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        font-size: 42px;
+        font-weight: 700;
+        color: rgba(255,255,255,0.05);
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
+      }
+
+      .content {
+        padding: 48px;
+        z-index: 2;
+        position: relative;
+      }
+
+      /* 🌿 Header: visible on dark bg */
+      .header {
+        text-align: center;
+        margin-bottom: 36px;
+        color: #ffffff;
+      }
+      .header-logo {
+        font-size: 40px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #10b981;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        margin: 0;
+      }
+      .header-tagline {
+        font-size: 14px;
+        color: #d1fae5;
+        opacity: 0.9;
+        margin: 4px 0 12px;
+      }
+      .header-divider {
+        height: 2px;
+        width: 100px;
+        margin: 0 auto 14px;
+        background: linear-gradient(to right, #10b981, #3b82f6);
+        border-radius: 9999px;
+      }
+      .header-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #bfdbfe;
+        margin: 0;
+      }
+
+      /* Layout blocks (no card background) */
+      .section {
+        margin-top: 32px;
+      }
+
+      .flex-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th, td {
+        border: 1px solid rgba(255,255,255,0.25);
+        padding: 8px;
+        font-size: 13px;
+      }
+      th {
+        background: rgba(255,255,255,0.15);
+        text-align: left;
+        color: #f9fafb;
+      }
+      td {
+        background: rgba(255,255,255,0.08);
+        color: #f9fafb;
+      }
+      .total {
+        font-weight: bold;
+        background: rgba(16,185,129,0.25);
+        color: #ffffff;
+      }
+
+      .section h2 {
+        color: #a7f3d0;
+        margin-bottom: 8px;
+        font-size: 14px; /* smaller headers */
+        letter-spacing: 0.3px;
+        border-left: 3px solid #10b981;
+        padding-left: 6px;
+      }
+
+      strong { color:#ffffff; }
+      .muted { color: #d1d5db; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <!-- 🌿 Header -->
+      <div class="header">
+        <h1 class="header-logo">UpKyp</h1>
+        <p class="header-tagline">Connect More. Manage Less.</p>
+        <div class="header-divider"></div>
+        <h2 class="header-title">Monthly Billing Statement</h2>
+      </div>
+
+      <!-- Tenant + Property -->
+      <div class="flex-between" style="margin-bottom:28px;">
+        <div>
+          ${
             decryptedTenant
-                ? `
-        <div style="line-height: 1.4;">
-          <div style="font-size: 18px; font-weight: 700; color: #064e3b;">
-            ${decryptedTenant.firstName} ${decryptedTenant.lastName}
-          </div>
-          <div style="font-size: 13px; color: #4b5563; margin-top: 2px;">
-            ${decryptedTenant.email}
-          </div>
-          <div style="font-size: 13px; color: #4b5563; margin-top: 1px;">
-            ${decryptedTenant.phoneNumber}
-          </div>
-        </div>`
-                : `<div style="color: #9ca3af; font-size: 13px;">Tenant information unavailable</div>`
+                ? `<strong>${decryptedTenant.firstName} ${decryptedTenant.lastName}</strong><br/>
+                 <span style="font-size:13px;">${decryptedTenant.email}</span><br/>
+                 <span style="font-size:13px;">${decryptedTenant.phoneNumber}</span>`
+                : `<span class="muted">Tenant info unavailable</span>`
         }
-  </div>
-
-  <!-- Property Info (Right) -->
-  <div
-    style="
-      flex: 1;
-      min-width: 240px;
-      text-align: right;
-      line-height: 1.5;
-    "
-  >
-    <div style="font-size: 15px; font-weight: 700; color: #065f46;">
-      ${bill.property_name}
-    </div>
-    <div style="font-size: 13px; color: #4b5563;">
-      ${bill.city}, ${bill.province}
-    </div>
-    <div style="font-size: 13px; color: #4b5563; margin-top: 2px;">
-      Unit: ${bill.unit_name}
-    </div>
-  </div>
-</div>
-
-
-<!-- Key Billing Summary Card -->
-<div
-  style="
-    background: linear-gradient(135deg, #e0f2fe 0%, #ecfdf5 100%);
-    border: 1px solid #d1fae5;
-    border-radius: 12px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  "
->
-  <h3
-    style="
-      margin-bottom: 12px;
-      font-size: 18px;
-      color: #065f46;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    "
-  >
-    Billing Summary
-  </h3>
-
-  <div
-    style="
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      font-size: 14px;
-      color: #1f2937;
-    "
-  >
-    <div style="flex: 1;">
-      <div style="font-weight: 600; color: #047857;">Billing Period</div>
-      <div style="font-size: 15px; color: #111827; margin-top: 2px;">
-        ${bill.billing_period}
+        </div>
+        <div style="text-align:right;">
+          <strong>${bill.property_name}</strong><br/>
+          <span style="font-size:13px;">${bill.city}, ${bill.province}</span><br/>
+          <span style="font-size:13px;">Unit: ${bill.unit_name}</span>
+        </div>
       </div>
-    </div>
 
-    <div style="flex: 1;">
-      <div style="font-weight: 600; color: #047857;">Due Date</div>
-      <div style="font-size: 15px; color: #111827; margin-top: 2px;">
-        ${dueDateStr}
-      </div>
-    </div>
+      <!-- Summary -->
+      <table>
+        <tr><th>Billing Period</th><th>Due Date</th><th>Total Due</th></tr>
+        <tr>
+          <td>${bill.billing_period}</td>
+          <td>${dueDateStr}</td>
+          <td><strong>₱${php(bill.total_amount_due)}</strong></td>
+        </tr>
+      </table>
 
-    <div style="flex: 1; text-align: right;">
-      <div style="font-weight: 600; color: #047857;">Total Amount Due</div>
-      <div
-        style="
-          font-size: 20px;
-          font-weight: 800;
-          color: #064e3b;
-          margin-top: 2px;
-        "
-      >
-        ₱${php(bill.total_amount_due)}
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-          <div class="section">
-            <h2>Breakdown</h2>
-            <table>
-              <tr><th>Description</th><th>Amount (₱)</th></tr>
-              <tr><td>Base Rent</td><td>${php(bill.rent_amount)}</td></tr>
-              ${
+      <!-- Breakdown -->
+      <div class="section">
+        <h2>Billing Breakdown</h2>
+        <table>
+          <tr><th>Description</th><th>Amount (₱)</th></tr>
+          <tr><td>Base Rent</td><td>${php(bill.rent_amount)}</td></tr>
+          ${
             advanceDeductRequired > 0
-                ? `<tr><td>Advance Payment Deduction (${advanceMonths} month${
-                    advanceMonths > 1 ? "s" : ""
-                })</td><td>-${php(advanceDeductRequired)}</td></tr>`
+                ? `<tr><td>Advance Payment Deduction (${advanceMonths} month${advanceMonths > 1 ? "s" : ""})</td><td>-${php(advanceDeductRequired)}</td></tr>`
                 : ""
         }
-              ${chargesRows || ""}
-              ${expensesRows || ""}
-              <tr class="total"><td>Total Amount Due</td><td>${php(
-            bill.total_amount_due
-        )}</td></tr>
-            </table>
-          </div>
-        </body>
-      </html>
-    `;
+          ${chargesRows || ""}
+          <tr class="total"><td>Total Amount Due</td><td>${php(bill.total_amount_due)}</td></tr>
+        </table>
+      </div>
 
-        // 🔹 8. Generate PDF
+      <!-- Post-Dated Checks -->
+      <div class="section">
+        <h2>Post-Dated Checks</h2>
+        <table>
+          <tr>
+            <th>Bank</th>
+            <th>Check #</th>
+            <th>Amount (₱)</th>
+            <th>Issue Date</th>
+            <th>Status</th>
+          </tr>
+          ${pdcRowsHtml}
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+`;
+
+        // 🔹 10. Generate PDF
         const browser = await puppeteer.launch({
             headless: "new",
             args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -354,7 +375,7 @@ export async function GET(
     } catch (err: any) {
         console.error("❌ PDF generation error:", err);
         return NextResponse.json(
-            { error: "Failed to generate billing PDF" },
+            { error: "Failed to generate billing PDF", details: err.message },
             { status: 500 }
         );
     }

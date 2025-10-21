@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
         );
         const propertyConfig = configRows.length ? configRows[0] : null;
 
-        // 🔹 4. Fetch Current Month Billing (Total amount is taken directly)
+        // 🔹 4. Fetch Current Month Billing
         const [billingRows]: any = await db.query(
             `
                 SELECT *
@@ -120,14 +120,35 @@ export async function GET(req: NextRequest) {
         );
         const billing = billingRows.length ? billingRows[0] : null;
 
-        // 🔹 5. Utility Readings
+        // 🔹 5. Fetch PDC for this billing period
+        const [pdcRows]: any = await db.query(
+            `
+                SELECT
+                    pdc_id,
+                    check_number,
+                    bank_name,
+                    amount,
+                    due_date,
+                    status,
+                    uploaded_image_url
+                FROM PostDatedCheck
+                WHERE lease_id = ?
+                  AND MONTH(due_date) = MONTH(CURRENT_DATE())
+                  AND YEAR(due_date) = YEAR(CURRENT_DATE())
+                ORDER BY due_date ASC
+            `,
+            [agreementId]
+        );
+        const pdcForMonth = pdcRows.length ? pdcRows : [];
+
+        // 🔹 6. Utility Readings
         const [meterReadings]: any = await db.query(
             `
-                SELECT *
-                FROM MeterReading
-                WHERE unit_id = ?
-                ORDER BY utility_type, reading_date DESC
-            `,
+        SELECT *
+        FROM MeterReading
+        WHERE unit_id = ?
+        ORDER BY utility_type, reading_date DESC
+      `,
             [unitId]
         );
 
@@ -142,7 +163,7 @@ export async function GET(req: NextRequest) {
                 groupedReadings.electricity.push(r);
         }
 
-        // 🔹 6. Additional Charges
+        // 🔹 7. Additional Charges
         let billingAdditionalCharges: any[] = [];
         if (billing) {
             const [charges]: any = await db.query(
@@ -152,15 +173,14 @@ export async function GET(req: NextRequest) {
             billingAdditionalCharges = charges;
         }
 
-        // 🔹 7. Lease-level Additional Expenses
+        // 🔹 8. Lease-level Additional Expenses
         const [leaseExpenses]: any = await db.query(
             `SELECT * FROM LeaseAdditionalExpense WHERE agreement_id = ?`,
             [agreementId]
         );
 
-        // 🔹 8. Compute Base Breakdown
+        // 🔹 9. Compute Breakdown
         const baseRent = parseFloat(rent_amount || 0);
-
         const breakdown = {
             base_rent: baseRent,
             water: billing?.total_water_amount || 0,
@@ -174,13 +194,15 @@ export async function GET(req: NextRequest) {
                 : baseRent,
         };
 
-        // ✅ 9. Simplified Response — no late fee computation
+        // ✅ 10. Return simplified response (includes PDC info)
         return NextResponse.json(
             {
                 billing: billing
                     ? {
                         ...billing,
-                        total_amount_due: parseFloat(billing.total_amount_due || 0).toFixed(2),
+                        total_amount_due: parseFloat(
+                            billing.total_amount_due || 0
+                        ).toFixed(2),
                     }
                     : {
                         billing_period: new Date(),
@@ -196,6 +218,7 @@ export async function GET(req: NextRequest) {
                 },
                 breakdown,
                 propertyConfig,
+                postDatedChecks: pdcForMonth, // ✅ added here
             },
             { status: 200 }
         );

@@ -324,14 +324,13 @@ export default function PDCUploadModal({ open, onClose, landlord_id }: PDCUpload
         return `${yyyy}-${mm}-${dd}`;
     };
 
-// Converts YYYY-MM-DD → MM-DD-YYYY for saving/submission
+// ✅ Ensures consistent YYYY-MM-DD format (for saving/submission)
     const formatForStorage = (dateStr: string) => {
         if (!dateStr) return "";
         const [yyyy, mm, dd] = dateStr.split("-");
         if (!yyyy || !mm || !dd) return "";
-        return `${mm}-${dd}-${yyyy}`;
+        return `${yyyy}-${mm}-${dd}`; // ✅ Keep ISO / MySQL-compatible order
     };
-
 
     if (!open) return null;
 
@@ -553,25 +552,28 @@ export default function PDCUploadModal({ open, onClose, landlord_id }: PDCUpload
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                                    <CalendarDays className="w-4 h-4 text-emerald-500" /> Issue Date
+                                    <CalendarDays className="w-4 h-4 text-emerald-500" /> Due Date
                                 </label>
+
                                 <input
                                     type="date"
                                     name="issue_date"
-                                    value={formatForInput(form.issue_date)}
+                                    value={form.issue_date || ""}
                                     onChange={(e) =>
                                         setForm((prev) => ({
                                             ...prev,
-                                            issue_date: formatForStorage(e.target.value),
+                                            issue_date: e.target.value,
                                         }))
                                     }
                                     className="w-full border border-gray-300 rounded-lg p-2 text-sm"
                                     required
                                 />
+
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Format: <strong>MM-DD-YYYY</strong> (e.g., 11-05-2025)
+                                    Format: <strong>YYYY-MM-DD</strong> (e.g., 2025-11-05)
                                 </p>
                             </div>
+
 
 
                         </div>
