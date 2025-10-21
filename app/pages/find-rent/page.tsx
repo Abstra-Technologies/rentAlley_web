@@ -9,8 +9,9 @@ import ActiveFilters from "../../../components/find-rent/ActiveFilters";
 import GridView from "../../../components/find-rent/GridView";
 import ListView from "../../../components/find-rent/ListView";
 import MapView from "../../../components/find-rent/MapView";
+import { Suspense } from "react";
 
-export default function UnitSearchPage() {
+ function UnitSearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [units, setUnits] = useState<Unit[]>([]);
@@ -236,5 +237,14 @@ export default function UnitSearchPage() {
         )}
       </main>
     </div>
+  );
+}
+
+
+export default function UnitSearchPage() {
+  return (
+      <Suspense fallback={<LoadingScreen message="Loading search results..." />}>
+        <UnitSearchContent />
+      </Suspense>
   );
 }

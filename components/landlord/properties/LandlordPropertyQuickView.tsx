@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { MapPin, Home } from "lucide-react";
 import usePropertyStore from "@/zustand/property/usePropertyStore";
+import useSubscription from "@/hooks/landlord/useSubscription";
 
 interface Props {
     landlordId: number | undefined;
@@ -13,12 +14,13 @@ interface Props {
 export default function LandlordPropertyMarquee({ landlordId }: Props) {
     const router = useRouter();
     const { properties, loading, fetchAllProperties } = usePropertyStore();
+    const { subscription, loading: subscriptionLoading } = useSubscription(landlordId); // ✅ fetch subscription
 
     useEffect(() => {
         if (landlordId) fetchAllProperties(landlordId);
     }, [landlordId, fetchAllProperties]);
 
-    if (loading) {
+    if (loading || subscriptionLoading) {
         return (
             <div className="w-full text-center text-gray-500 py-6 animate-pulse">
                 Loading properties...
@@ -34,14 +36,22 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
         );
     }
 
+    // ✅ apply subscription limit
+    const propertyLimit = subscription?.listingLimits?.maxProperties || 3; // fallback to 3
+    const limitedProperties = properties.slice(0, propertyLimit);
+
+    console.log('property limit', propertyLimit);
+
     return (
         <div className="relative overflow-hidden w-full py-3 group">
             <div className="marquee-wrapper flex gap-4 hover:[animation-play-state:paused]">
-                {[...properties, ...properties].map((property, index) => (
+                {[...limitedProperties, ...limitedProperties].map((property, index) => (
                     <div
                         key={`${property.property_id}-${index}`}
                         onClick={() =>
-                            router.push(`/pages/landlord/property-listing/view-unit/${property.property_id}`)
+                            router.push(
+                                `/pages/landlord/property-listing/view-unit/${property.property_id}`
+                            )
                         }
                         className="relative min-w-[260px] sm:min-w-[280px] bg-white border border-gray-100 rounded-2xl shadow-md hover:shadow-lg cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] group/property"
                     >
@@ -62,9 +72,9 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
 
                             {/* Hover Overlay */}
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/property:opacity-100 transition-all duration-300">
-                                <span className="px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-full shadow-lg">
-                                    View Property
-                                </span>
+                <span className="px-4 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-full shadow-lg">
+                  View Property
+                </span>
                             </div>
                         </div>
 

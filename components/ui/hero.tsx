@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRef, useEffect } from "react";
@@ -14,14 +13,14 @@ export default function HeroText() {
 
     useEffect(() => {
         if (titleRef.current && subtitleRef.current) {
-            // Split heading into characters
-            const split = new SplitText(titleRef.current, { type: "chars" });
+            // Split heading & subtitle into animation targets
+            const splitTitle = new SplitText(titleRef.current, { type: "chars" });
             const splitSubtitle = new SplitText(subtitleRef.current, { type: "words" });
 
-            const tl = gsap.timeline();
+            const tl = gsap.timeline({ delay: 0.3 });
 
-            // Animate heading chars
-            tl.from(split.chars, {
+            // Animate main tagline
+            tl.from(splitTitle.chars, {
                 opacity: 0,
                 y: 60,
                 stagger: 0.05,
@@ -29,38 +28,60 @@ export default function HeroText() {
                 duration: 1,
             });
 
-            // Animate subtitle with text reveal effect
+            // Animate initial benefit words
             tl.from(
                 splitSubtitle.words,
                 {
                     opacity: 0,
                     y: 20,
-                    stagger: 0.1,
+                    stagger: 0.08,
                     duration: 0.8,
                     ease: "power3.out",
                 },
-                "-=0.5" // start slightly before title finishes
+                "-=0.4"
             );
+
+            // Cycle through benefits (fade text transitions)
+            const benefits = [
+                "Simplify property management.",
+                "Empower tenants with transparency.",
+                "Automate billing and payments.",
+                "Track maintenance effortlessly.",
+                "Grow your rental business with confidence.",
+            ];
+
+            const textTimeline = gsap.timeline({ repeat: -1, repeatDelay: 1.5 });
+            benefits.forEach((text) => {
+                textTimeline.to(subtitleRef.current, {
+                    duration: 1,
+                    opacity: 1,
+                    onComplete: () => {
+                        subtitleRef.current!.textContent = text;
+                    },
+                });
+                textTimeline.to(subtitleRef.current, {
+                    duration: 1,
+                    opacity: 1,
+                });
+            });
         }
     }, []);
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 overflow-hidden">
+        <div className="flex flex-col items-center justify-center px-6 overflow-hidden text-center">
             <h1
                 ref={titleRef}
-                className="text-6xl md:text-5xl font-bold mb-4 text-center"
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 text-white "
             >
-                Rent with No Compromises
+                Connect More. Manage Less.
             </h1>
+
             <p
                 ref={subtitleRef}
-                className="text-white text-xl"
+                className="text-blue-50 text-lg sm:text-xl lg:text-2xl font-medium max-w-2xl"
             >
-                Enjoy a home that offers everything you've been searching for, all in
-                one place.
+                Built for landlords and tenants who value simplicity.
             </p>
-
-
         </div>
     );
 }

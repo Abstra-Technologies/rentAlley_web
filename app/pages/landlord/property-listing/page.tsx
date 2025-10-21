@@ -99,12 +99,39 @@ const PropertyListingPage = () => {
     router.push(`../landlord/property-listing/edit-property/${propertyId}`);
   };
 
-  const handleView = useCallback((property, event) => {
+  const handleView = useCallback(async (property, event) => {
     event.stopPropagation();
-    router.push(
-      `/pages/landlord/property-listing/view-unit/${property.property_id}`
-    );
-  });
+
+    try {
+      const res = await fetch("/api/landlord/subscription/limits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          landlord_id: user?.landlord_id,
+          property_id: property.property_id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        Swal.fire({
+          icon: "error",
+          title: "Access Denied",
+          text:
+              data.error ||
+              `This property exceeds your plan limit (${data.maxAllowed} properties allowed).`,
+          confirmButtonColor: "#ef4444",
+        });
+        return;
+      }
+
+      router.push(`/pages/landlord/property-listing/view-unit/${property.property_id}`);
+    } catch (err) {
+      console.error("Error checking access:", err);
+      Swal.fire("Error", "Unable to validate property access.", "error");
+    }
+  }, [router, user]);
 
   const handleAddProperty = () => {
     // Validation logic remains the same
@@ -243,19 +270,6 @@ const PropertyListingPage = () => {
     startIndex,
     startIndex + itemsPerPage
   );
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "approved":
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-      case "pending":
-        return <ClockIcon className="h-5 w-5 text-yellow-500" />;
-      case "rejected":
-        return <XCircleIcon className="h-5 w-5 text-red-500" />;
-      default:
-        return <ExclamationCircleIcon className="h-5 w-5 text-gray-500" />;
-    }
-  };
 
   const getStatusBanner = () => {
     if (!verificationStatus && !subscription) {
@@ -562,17 +576,22 @@ const PropertyListingPage = () => {
           <div className="mb-8">
             {currentProperties.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {currentProperties.map((property, index) => (
-                  <PropertyCard
-                    key={property.property_id}
-                    property={property}
-                    index={index}
-                    subscription={subscription}
-                    handleView={handleView}
-                    handleEdit={handleEdit}
-                    handleDelete={handleDelete}
-                  />
-                ))}
+                {currentProperties.map((property, idx) => {
+                  const globalIndex = startIndex + idx;
+                  return (
+                      <PropertyCard
+                          key={property.property_id}
+                          property={property}
+                          index={globalIndex}
+                          subscription={subscription}
+                          totalProperties={filteredProperties.length}
+                          handleView={handleView}
+                          handleEdit={handleEdit}
+                          handleDelete={handleDelete}
+                      />
+                  );
+                })}
+
               </div>
             ) : (
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 p-12 text-center">

@@ -70,54 +70,28 @@ const MaintenanceRequestPage = () => {
     };
     fetchRequests();
   }, [landlordId]);
-
-  // Filter requests based on plan
+// Strictly enforce maintenance request visibility based on plan limits
   useEffect(() => {
-    if (!allRequests.length) return;
-
-    const filteredByTab = allRequests.filter(
-        (req) => req.status.toLowerCase() === activeTab
-    );
+    if (!allRequests.length || !subscription) return;
 
     const maxMaintenanceRequest =
-        subscription?.listingLimits?.maxMaintenanceRequest || 5;
+        subscription?.listingLimits?.maxMaintenanceRequest ?? 5;
 
-    if (activeTab === "completed") {
-      setVisibleRequests(filteredByTab);
-      setHiddenRequestCount(0);
-      return;
-    }
-
-    const completedRequests = allRequests.filter(
-        (request) => request.status.toLowerCase() === "completed"
-    );
-
-    const activeRequests = allRequests.filter(
-        (request) => request.status.toLowerCase() !== "completed"
-    );
-
-    const sortedActiveRequests = [...activeRequests].sort(
+    // Always sort by creation date so oldest requests count first toward the plan limit
+    const sortedRequests = [...allRequests].sort(
         (a, b) => new Date(a.created_at) - new Date(b.created_at)
     );
 
-    const visibleActiveCount = Math.min(
-        maxMaintenanceRequest === Infinity
-            ? activeRequests.length
-            : maxMaintenanceRequest,
-        activeRequests.length
+    // Only include requests within the plan limit
+    const visibleWithinLimit = sortedRequests.slice(0, maxMaintenanceRequest);
+
+    // Then apply tab filter to only show relevant ones
+    const visibleTabRequests = visibleWithinLimit.filter(
+        (req) => req.status.toLowerCase() === activeTab
     );
 
-    const visibleActiveRequestIds = sortedActiveRequests
-        .slice(0, visibleActiveCount)
-        .map((req) => req.request_id);
-
-    const visibleTabRequests = filteredByTab.filter((req) => {
-      if (req.status.toLowerCase() === "completed") return true;
-      return visibleActiveRequestIds.includes(req.request_id);
-    });
-
     setVisibleRequests(visibleTabRequests);
-    setHiddenRequestCount(filteredByTab.length - visibleTabRequests.length);
+    setHiddenRequestCount(0); // 🚫 no more hidden note system
   }, [allRequests, subscription, activeTab]);
 
   // Disable updates when no active subscription
@@ -276,15 +250,13 @@ const MaintenanceRequestPage = () => {
         </div>
 
         {/* Warning Message */}
-        {hiddenRequestCount > 0 && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm">
-            <strong>Note:</strong> {hiddenRequestCount} maintenance request
-            {hiddenRequestCount !== 1 ? "s" : ""}{" "}
-            {hiddenRequestCount !== 1 ? "are" : "is"} hidden due to your plan
-            limit. Complete some active requests to view these or upgrade your
-            plan.
-          </div>
+        {allRequests.length > visibleRequests.length && (
+            <div className="mb-4 p-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700 text-sm">
+              Some maintenance requests are locked and not visible due  to your plan limit.
+              Upgrade your plan to manage all requests.
+            </div>
         )}
+
 
         {/* Tabs */}
         <div className="mb-6">

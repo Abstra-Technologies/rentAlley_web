@@ -8,6 +8,7 @@ import { Search, Loader, ArrowRight } from "lucide-react";
 import Footer from "../components/navigation/footer";
 import LoadingScreen from "@/components/loadingScreen";
 import UnitCard from "../components/find-rent/UnitCard";
+import HeroText from "@/components/ui/hero";
 
 interface Unit {
   unit_id: string;
@@ -135,16 +136,8 @@ export default function SplashScreen() {
         <div className="relative z-10 h-full flex flex-col justify-between sm:justify-center items-center px-4 py-8 sm:py-12">
           {/* Main Heading */}
           <div className="w-full max-w-4xl text-center mt-12 sm:mt-0">
-            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 leading-tight">
-              Find Your
-              <span className="block bg-gradient-to-r from-blue-300 via-emerald-300 to-blue-300 bg-clip-text text-transparent">
-                Perfect Home
-              </span>
-            </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-blue-50 max-w-2xl mx-auto px-2">
-              Discover verified rental units that match your lifestyle. Simple,
-              transparent, and stress-free.
-            </p>
+            <HeroText />
+
           </div>
 
           {/* Search Bar */}

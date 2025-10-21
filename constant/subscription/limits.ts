@@ -9,9 +9,9 @@ export const listingLimits = {
         maxProspect: 3,
     },
     "Standard Plan": {
-        maxProperties: 10,
+        maxProperties: 5,
         maxUnits: 10,
-        maxMaintenanceRequest: 50,
+        maxMaintenanceRequest: 10,
         maxReports: Infinity,
         maxBilling: 10,
         maxProspect: 10,
