@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Unit, FilterState } from "../../../types/types";
 import LoadingScreen from "@/components/loadingScreen";
 import MobileSearchHeader from "../../../components/find-rent/MobileSearchHeader";
@@ -11,40 +11,111 @@ import ListView from "../../../components/find-rent/ListView";
 import MapView from "../../../components/find-rent/MapView";
 import { Suspense } from "react";
 
- function UnitSearchContent() {
+function getFiltersFromUrl(
+  params: Readonly<URLSearchParams> | null
+): FilterState {
+  return {
+    searchQuery: params?.get("searchQuery") || "",
+    propertyType: params?.get("propertyType") || "",
+    furnishing: params?.get("furnishing") || "",
+    minPrice: Number(params?.get("minPrice")) || 0,
+    maxPrice: Number(params?.get("maxPrice")) || 0,
+    minSize: Number(params?.get("minSize")) || 0,
+    bedSpacing: params?.get("bedSpacing") || "",
+  };
+}
+
+function UnitSearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("grid");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
 
-  // Initialize filters from URL search params
-  const initialSearchQuery = searchParams?.get("searchQuery") || "";
+  const filters: FilterState = useMemo(
+    () => getFiltersFromUrl(searchParams),
+    [searchParams]
+  );
+  const currentPage: number = useMemo(
+    () => Number(searchParams?.get("page")) || 1,
+    [searchParams]
+  );
 
-  const [filters, setFilters] = useState<FilterState>({
-    searchQuery: initialSearchQuery,
-    propertyType: "",
-    furnishing: "",
-    minPrice: 0,
-    maxPrice: 0,
-    minSize: 0,
-    bedSpacing: "",
-  });
+  const createParams = useCallback(
+    (newFilters: FilterState, newPage: number) => {
+      const params = new URLSearchParams();
 
-  // Update search query when URL params change
-  useEffect(() => {
-    if (initialSearchQuery) {
-      setFilters((prev) => ({
-        ...prev,
-        searchQuery: initialSearchQuery,
-      }));
-    }
-  }, [initialSearchQuery]);
+      if (newFilters.searchQuery.trim()) {
+        params.set("searchQuery", newFilters.searchQuery.trim());
+      }
+      if (newFilters.propertyType) {
+        params.set("propertyType", newFilters.propertyType);
+      }
+      if (newFilters.furnishing) {
+        params.set("furnishing", newFilters.furnishing);
+      }
+      if (newFilters.minPrice > 0) {
+        params.set("minPrice", newFilters.minPrice.toString());
+      }
+      if (newFilters.maxPrice > 0) {
+        params.set("maxPrice", newFilters.maxPrice.toString());
+      }
+      if (newFilters.minSize > 0) {
+        params.set("minSize", newFilters.minSize.toString());
+      }
+      if (newFilters.bedSpacing) {
+        params.set("bedSpacing", newFilters.bedSpacing);
+      }
 
-  // Fetch units on component mount
+      if (newPage > 1) {
+        params.set("page", newPage.toString());
+      }
+
+      return params;
+    },
+    []
+  );
+
+  const handleUnitClick = useCallback(
+    (unitId: string, propertyId: string) => {
+      router.push(`/pages/find-rent/${propertyId}/${unitId}`);
+    },
+    [router]
+  );
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      const newParams = createParams(filters, newPage);
+      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+    },
+    [router, pathname, filters, createParams]
+  );
+
+  const handleSearchChange = useCallback(
+    (newQuery: string) => {
+      const newFilters = { ...filters, searchQuery: newQuery };
+      const newParams = createParams(newFilters, 1);
+      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+    },
+    [router, pathname, filters, createParams]
+  );
+
+  const handleFiltersChange = useCallback(
+    (newFilters: FilterState) => {
+      const newParams = createParams(newFilters, 1);
+      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+    },
+    [router, pathname, createParams]
+  );
+
+  const handleClearFilters = useCallback(() => {
+    router.push(pathname);
+  }, [router, pathname]);
+
   useEffect(() => {
     async function fetchUnits() {
       try {
@@ -124,49 +195,6 @@ import { Suspense } from "react";
     return { totalPages, paginatedUnits };
   }, [filteredUnits, currentPage, itemsPerPage]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
-
-  const handleUnitClick = useCallback(
-    (unitId: string, propertyId: string) => {
-      router.push(`/pages/find-rent/${propertyId}/${unitId}`);
-    },
-    [router]
-  );
-
-  const handleClearFilters = useCallback(() => {
-    setFilters({
-      searchQuery: "",
-      propertyType: "",
-      furnishing: "",
-      minPrice: 0,
-      maxPrice: 0,
-      minSize: 0,
-      bedSpacing: "",
-    });
-
-    router.push("/pages/find-rent");
-  }, [router]);
-
-  const handleSearchChange = useCallback(
-    (newQuery: string) => {
-      setFilters((prev) => ({
-        ...prev,
-        searchQuery: newQuery,
-      }));
-
-      if (newQuery.trim()) {
-        router.push(
-          `/pages/find-rent?searchQuery=${encodeURIComponent(newQuery)}`
-        );
-      } else {
-        router.push("/pages/find-rent");
-      }
-    },
-    [router]
-  );
-
   if (loading) {
     return <LoadingScreen message="Finding perfect units for you..." />;
   }
@@ -175,21 +203,7 @@ import { Suspense } from "react";
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-emerald-50">
       <MobileSearchHeader
         filters={filters}
-        setFilters={(newFilters) => {
-          setFilters(newFilters);
-
-          if (newFilters.searchQuery !== filters.searchQuery) {
-            if (newFilters.searchQuery.trim()) {
-              router.push(
-                `/pages/find-rent?searchQuery=${encodeURIComponent(
-                  newFilters.searchQuery
-                )}`
-              );
-            } else {
-              router.push("/pages/find-rent");
-            }
-          }
-        }}
+        setFilters={handleFiltersChange}
         viewMode={viewMode}
         setViewMode={setViewMode}
         filteredUnits={filteredUnits}
@@ -208,7 +222,7 @@ import { Suspense } from "react";
             totalPages={paginationData.totalPages}
             totalItems={filteredUnits.length}
             itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
             onUnitClick={handleUnitClick}
             onClearFilters={handleClearFilters}
           />
@@ -221,7 +235,7 @@ import { Suspense } from "react";
             totalPages={paginationData.totalPages}
             totalItems={filteredUnits.length}
             itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
             onUnitClick={handleUnitClick}
             onClearFilters={handleClearFilters}
           />
@@ -240,11 +254,10 @@ import { Suspense } from "react";
   );
 }
 
-
 export default function UnitSearchPage() {
   return (
-      <Suspense fallback={<LoadingScreen message="Loading search results..." />}>
-        <UnitSearchContent />
-      </Suspense>
+    <Suspense fallback={<LoadingScreen message="Loading search results..." />}>
+      <UnitSearchContent />
+    </Suspense>
   );
 }
