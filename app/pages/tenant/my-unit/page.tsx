@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import { HiMailOpen } from "react-icons/hi";
+import { IoMailOpen } from "react-icons/io5";
+import { MdRefresh } from "react-icons/md";
+import { SparklesIcon } from "@heroicons/react/24/outline";
 
 import useAuthStore from "@/zustand/authStore";
 import { useChatStore } from "@/zustand/chatStore";
@@ -44,9 +46,7 @@ const useUnits = (tenantId: string | undefined) => {
       const res = await axios.get(
         `/api/tenant/activeRent?tenantId=${tenantId}`
       );
-      console.log(res);
       setUnits(res.data || []);
-      console.log("my units: ", res.data);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Failed to load units";
@@ -73,6 +73,7 @@ export default function MyUnit() {
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRefetching, setIsRefetching] = useState(false);
   const itemsPerPage = 10;
   const [loadingRenewal, setLoadingRenewal] = useState(false);
 
@@ -112,6 +113,12 @@ export default function MyUnit() {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefetching(true);
+    await refetch();
+    setIsRefetching(false);
+  }, [refetch]);
 
   const handleUploadProof = useCallback(
     async (unitId: string, agreementId: string, amountPaid: number) => {
@@ -336,6 +343,7 @@ export default function MyUnit() {
             customClass: { popup: "rounded-xl" },
           });
           setShowRenewalForm(null);
+          refetch();
         }
       } catch (error: any) {
         await Swal.fire({
@@ -430,70 +438,95 @@ export default function MyUnit() {
 
       <div className="flex-1 md:ml-64">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {/* Header Section */}
-          <div className="mb-6 sm:mb-8">
+          <div className="mb-8 sm:mb-10">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
-                  My Units
-                </h1>
-                <p className="text-gray-600 text-sm sm:text-base">
+                <div className="flex items-center gap-2 mb-2">
+                  <SparklesIcon className="w-6 h-6 text-emerald-600" />
+                  <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                    My Units
+                  </h1>
+                </div>
+                <p className="text-gray-600 text-sm sm:text-base ml-8">
                   Manage your rental properties and track your leases
                 </p>
               </div>
 
-              <button
-                onClick={handleViewInvitations}
-                className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm sm:text-base whitespace-nowrap"
-              >
-                <HiMailOpen className="text-lg" />
-                <span>View Invitations</span>
-              </button>
+              <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefetching}
+                  className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl transition-all font-medium text-sm sm:text-base whitespace-nowrap disabled:opacity-50"
+                  title="Refresh data"
+                >
+                  <MdRefresh
+                    className={`text-lg ${isRefetching ? "animate-spin" : ""}`}
+                  />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
+                <button
+                  onClick={handleViewInvitations}
+                  className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-gradient-to-r from-blue-500 to-emerald-500 hover:shadow-lg text-white rounded-xl transition-all font-medium text-sm sm:text-base whitespace-nowrap"
+                >
+                  <IoMailOpen className="text-lg" />
+                  <span>Invitations</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Analytics Section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 sm:mb-8">
-            {/* Lease Counter */}
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 sm:p-6 border border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
+            <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 p-5 sm:p-6 border border-gray-100">
               <LeaseCounter tenantId={user?.tenant_id} />
             </div>
 
-            {/* Applications Counter */}
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 sm:p-6 border border-gray-200">
+            <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 p-5 sm:p-6 border border-gray-100">
               <ApplicationsCounter tenantId={user?.tenant_id} />
             </div>
 
-            {/* Billing Counter */}
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 sm:p-6 border border-gray-200 sm:col-span-2 lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 p-5 sm:p-6 border border-gray-100 sm:col-span-2 lg:col-span-1">
               <BillingCounter tenantId={user?.tenant_id} />
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="mb-6 sm:mb-8 border-t border-gray-200"></div>
+          <div className="mb-8 sm:mb-10 bg-gradient-to-r from-transparent via-gray-200 to-transparent h-px"></div>
 
           {error && <ErrorBoundary error={error} onRetry={refetch} />}
 
           {!error && (
             <>
-              <SearchAndFilter
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                totalUnits={units.length}
-                filteredCount={filteredUnits.length}
-              />
+              <div className="mb-6 sm:mb-8">
+                <SearchAndFilter
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  totalUnits={units.length}
+                  filteredCount={filteredUnits.length}
+                />
+              </div>
 
               {filteredUnits.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                  <EmptyState
-                    searchQuery={searchQuery}
-                    onClearSearch={() => setSearchQuery("")}
-                  />
-                </div>
+                <EmptyState
+                  searchQuery={searchQuery}
+                  onClearSearch={() => setSearchQuery("")}
+                />
               ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="p-4 sm:p-6">
+                    <div className="mb-6 flex items-center justify-between">
+                      <div>
+                        <h2 className="text-lg font-bold text-gray-900">
+                          Your Properties
+                        </h2>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {filteredUnits.length}{" "}
+                          {filteredUnits.length === 1
+                            ? "property"
+                            : "properties"}{" "}
+                          found
+                        </p>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                       {paginatedUnits.map((unit) => (
                         <UnitCard
@@ -513,13 +546,15 @@ export default function MyUnit() {
                     </div>
                   </div>
 
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    totalItems={filteredUnits.length}
-                    itemsPerPage={itemsPerPage}
-                  />
+                  {totalPages > 1 && (
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                      totalItems={filteredUnits.length}
+                      itemsPerPage={itemsPerPage}
+                    />
+                  )}
                 </div>
               )}
 
