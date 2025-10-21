@@ -96,7 +96,25 @@ export default function PaymentHistoryWidget({
   };
 
   const recentPayments = payments.slice(0, 5);
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount_paid, 0);
+
+  // FIX: Safely calculate total with proper number handling
+  const totalPaid = payments.reduce((sum, p) => {
+    const amount = Number(p.amount_paid);
+    return sum + (isNaN(amount) ? 0 : amount);
+  }, 0);
+
+  // FIX: Format the display value safely
+  const formatTotalPaid = () => {
+    if (totalPaid === 0) return "₱0";
+
+    if (totalPaid >= 1000) {
+      return `₱${(totalPaid / 1000).toLocaleString(undefined, {
+        maximumFractionDigits: 1,
+      })}k`;
+    }
+
+    return `₱${totalPaid.toLocaleString()}`;
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -126,19 +144,17 @@ export default function PaymentHistoryWidget({
         <div className="p-3 sm:p-4 bg-emerald-50 border border-emerald-200 rounded-lg sm:rounded-xl">
           <p className="text-xs text-gray-600 mb-2 sm:mb-3">Total Paid</p>
           <p className="text-lg sm:text-2xl font-bold text-emerald-600">
-            ₱
-            {(totalPaid / 1000).toLocaleString(undefined, {
-              maximumFractionDigits: 0,
-            })}
-            k
+            {formatTotalPaid()}
           </p>
         </div>
       </div>
 
-      {/* Payments List - Scrollable */}
-      <div className="flex-1 overflow-y-auto space-y-2 mb-2 -mx-4 sm:mx-0 px-4 sm:px-0">
+      {/* Payments List - Scrollable with max height */}
+      <div className="flex-1 space-y-2 mb-2 -mx-4 sm:mx-0 px-4 sm:px-0 max-h-64 overflow-y-auto">
         {recentPayments.map((payment) => {
           const statusBadge = getStatusBadge(payment.payment_status);
+          const paymentAmount = Number(payment.amount_paid);
+
           return (
             <div
               key={payment.payment_id}
@@ -161,7 +177,7 @@ export default function PaymentHistoryWidget({
                   </p>
                 </div>
                 <p className="font-bold text-transparent bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-right whitespace-nowrap">
-                  ₱{payment.amount_paid.toLocaleString()}
+                  ₱{isNaN(paymentAmount) ? "0" : paymentAmount.toLocaleString()}
                 </p>
               </div>
 
