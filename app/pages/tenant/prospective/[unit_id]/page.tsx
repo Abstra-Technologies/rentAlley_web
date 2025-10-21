@@ -1,5 +1,3 @@
-
-
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -20,6 +18,8 @@ import {
   Step,
   StepLabel,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { FiUploadCloud } from "react-icons/fi";
 
@@ -34,11 +34,13 @@ const TenantApplicationForm = () => {
   const { user } = useAuth();
   const router = useRouter();
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [hasApplied, setHasApplied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [propertyDetails, setPropertyDetails] = useState(null);
-
   const [activeStep, setActiveStep] = useState(0);
 
   const [formData, setFormData] = useState({
@@ -59,23 +61,20 @@ const TenantApplicationForm = () => {
   const validIdRef = useRef(null);
   const incomeRef = useRef(null);
 
-
+  // ✅ Fetch profile + property info
   useEffect(() => {
     if (!user?.user_id || !user?.tenant_id) return;
-
-    console.log('user bday:', user?.user_id);
 
     const fetchTenantData = async () => {
       try {
         const res = await axios.get(`/api/tenant/profile`, {
           params: { tenant_id: user.tenant_id },
         });
-
-        if (res.data.tenant) {
-          const t = res.data.tenant;
+        const t = res.data.tenant;
+        if (t) {
           setFormData((prev) => ({
             ...prev,
-            occupation: user.occupation || "",
+            occupation: t.occupation || "",
             employment_type: t.employment_type || "",
             monthly_income: t.monthly_income || "",
           }));
@@ -88,8 +87,6 @@ const TenantApplicationForm = () => {
     fetchTenantData();
   }, [user]);
 
-
-  // Fetch property
   useEffect(() => {
     if (!unit_id) return;
     axios
@@ -100,7 +97,6 @@ const TenantApplicationForm = () => {
         .catch((err) => console.error("Fetch error:", err.message));
   }, [unit_id]);
 
-  // Check application
   useEffect(() => {
     if (!user || !unit_id) return;
     axios
@@ -113,10 +109,8 @@ const TenantApplicationForm = () => {
         .finally(() => setLoading(false));
   }, [user, unit_id]);
 
-  // Preload user info
   useEffect(() => {
     if (unit_id) {
-      // @ts-ignore
       setFormData((prev) => ({
         ...prev,
         unit_id,
@@ -144,12 +138,10 @@ const TenantApplicationForm = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    if (!user?.user_id || !user?.tenant_id) {
+    if (!user?.user_id || !user?.tenant_id)
       return Swal.fire("Error", "Please log in.", "error");
-    }
-    if (!validIdFile) {
+    if (!validIdFile)
       return Swal.fire("Error", "Please upload a valid ID.", "error");
-    }
     if (
         !formData.address ||
         !formData.occupation ||
@@ -169,18 +161,15 @@ const TenantApplicationForm = () => {
     if (!confirm.isConfirmed) return;
 
     setIsSubmitting(true);
-    const loadingSwal = Swal.fire({
+    Swal.fire({
       title: "Submitting...",
       text: "Please wait while we process your application.",
       allowOutsideClick: false,
       allowEscapeKey: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
+      didOpen: () => Swal.showLoading(),
     });
 
     try {
-      // ✅ Build FormData payload
       const fd = new FormData();
       fd.append("user_id", user.user_id);
       fd.append("tenant_id", user.tenant_id);
@@ -195,23 +184,19 @@ const TenantApplicationForm = () => {
       if (validIdFile) fd.append("valid_id", validIdFile);
       if (incomeFile) fd.append("income_proof", incomeFile);
 
-      // ✅ Send to backend
       await axios.post("/api/tenant/applications/submitApplication", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // ✅ Close loading and show success
       Swal.close();
       await Swal.fire({
         title: "Success!",
         text: "Your application has been submitted successfully.",
         icon: "success",
-        confirmButtonText: "Continue",
         timer: 2000,
         showConfirmButton: false,
       });
 
-      // ✅ Redirect after a short delay
       router.push("/pages/tenant/prospective/success");
     } catch (err) {
       Swal.close();
@@ -222,17 +207,16 @@ const TenantApplicationForm = () => {
   };
 
   if (!user || loading) {
-    return <LoadingScreen message="Just a moment, preparing your form..." />;
+    return <LoadingScreen message="Preparing your form..." />;
   }
 
   if (hasApplied) {
-
     return (
         <Box
             display="flex"
             justifyContent="center"
             alignItems="center"
-            minHeight="60vh"
+            minHeight="70vh"
             px={2}
         >
           <Box
@@ -244,13 +228,7 @@ const TenantApplicationForm = () => {
               boxShadow={3}
               bgcolor="background.paper"
           >
-            {/* Icon */}
-            <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                mb={2}
-            >
+            <Box mb={2}>
               <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="56"
@@ -269,28 +247,24 @@ const TenantApplicationForm = () => {
               </svg>
             </Box>
 
-            {/* Message */}
-            <Typography variant="h5" fontWeight={600} gutterBottom>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
               Application Already Submitted
             </Typography>
-            <Typography variant="body1" color="text.secondary" mb={4}>
-              You have already applied for this property. Please check your units or
-              explore other available rentals.
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              You’ve already applied for this property. Check your units or find
+              other available listings.
             </Typography>
 
-            {/* Actions */}
             <Box display="flex" justifyContent="center" gap={2} flexWrap="wrap">
               <Button
                   variant="contained"
                   color="primary"
-                  size="large"
                   onClick={() => router.push("/pages/tenant/my-unit")}
               >
                 View My Units
               </Button>
               <Button
                   variant="outlined"
-                  size="large"
                   onClick={() => router.push("/pages/find-rent")}
               >
                 Find Another
@@ -299,20 +273,38 @@ const TenantApplicationForm = () => {
           </Box>
         </Box>
     );
-
-
   }
 
   return (
-      <Box maxWidth="md" mx="auto" py={6}>
-        <Typography variant="h4" align="center" gutterBottom>
+      <Box
+          maxWidth={{ xs: "100%", sm: "600px", md: "700px" }}
+          mx="auto"
+          py={{ xs: 3, sm: 6 }}
+          px={{ xs: 2, sm: 4 }}
+      >
+        <Typography
+            variant={isMobile ? "h6" : "h4"}
+            align="center"
+            fontWeight={700}
+            gutterBottom
+        >
           {propertyDetails
               ? `${propertyDetails.property_name} – Unit ${propertyDetails.unit_name} Tenant Application`
               : "Tenant Application Form"}
         </Typography>
 
         {/* Stepper */}
-        <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
+        <Stepper
+            activeStep={activeStep}
+            alternativeLabel={!isMobile}
+            orientation={isMobile ? "vertical" : "horizontal"}
+            sx={{
+              mb: { xs: 3, sm: 4 },
+              "& .MuiStepLabel-label": {
+                fontSize: { xs: "0.8rem", sm: "1rem" },
+              },
+            }}
+        >
           {steps.map((label) => (
               <Step key={label}>
                 <StepLabel>{label}</StepLabel>
@@ -320,10 +312,11 @@ const TenantApplicationForm = () => {
           ))}
         </Stepper>
 
+        {/* Form Steps */}
         <form onSubmit={handleFormSubmit}>
           {/* Step 1 */}
           {activeStep === 0 && (
-              <Box display="grid" gap={3}>
+              <Box display="grid" gap={2}>
                 <TextField
                     label="First Name"
                     value={formData.firstName}
@@ -350,21 +343,19 @@ const TenantApplicationForm = () => {
                       const age = today.getFullYear() - selectedDate.getFullYear();
                       const monthDiff = today.getMonth() - selectedDate.getMonth();
                       const dayDiff = today.getDate() - selectedDate.getDate();
-
-                      // Check if user is at least 18 years old
                       if (
                           age > 18 ||
-                          (age === 18 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
+                          (age === 18 &&
+                              (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
                       ) {
                         setFormData({ ...formData, birthDate: e.target.value });
                       } else {
-                        // Optionally, reset the field or show an error
-                        setFormData({ ...formData, birthDate: '' });
-                        alert('You must be 18 or older.');
+                        setFormData({ ...formData, birthDate: "" });
+                        alert("You must be 18 or older.");
                       }
                     }}
                     InputLabelProps={{ shrink: true }}
-                    inputProps={{ max: new Date().toISOString().split('T')[0] }} // Prevents future dates
+                    inputProps={{ max: new Date().toISOString().split("T")[0] }}
                     fullWidth
                 />
                 <TextField
@@ -373,16 +364,11 @@ const TenantApplicationForm = () => {
                     value={formData.phoneNumber}
                     onChange={(e) => {
                       const value = e.target.value;
-                      // Allow only digits and ensure length is 11 to 12
                       if (/^\d{0,12}$/.test(value)) {
                         setFormData({ ...formData, phoneNumber: value });
                       }
                     }}
-                    inputProps={{
-                      pattern: "\\d{11,12}",
-                      maxLength: 12,
-                      minLength: 11
-                    }}
+                    inputProps={{ maxLength: 12, minLength: 11 }}
                     fullWidth
                 />
                 <TextField
@@ -390,9 +376,6 @@ const TenantApplicationForm = () => {
                     type="email"
                     InputProps={{ readOnly: true }}
                     value={formData.email}
-                    onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                    }
                     fullWidth
                 />
                 <TextField
@@ -408,7 +391,7 @@ const TenantApplicationForm = () => {
 
           {/* Step 2 */}
           {activeStep === 1 && (
-              <Box display="grid" gap={3}>
+              <Box display="grid" gap={2}>
                 <FormControl fullWidth>
                   <InputLabel>Occupation</InputLabel>
                   <Select
@@ -432,7 +415,10 @@ const TenantApplicationForm = () => {
                       value={formData.employment_type}
                       label="Employment Type"
                       onChange={(e) =>
-                          setFormData({ ...formData, employment_type: e.target.value })
+                          setFormData({
+                            ...formData,
+                            employment_type: e.target.value,
+                          })
                       }
                   >
                     {employmentTypes.map((t) => (
@@ -449,7 +435,10 @@ const TenantApplicationForm = () => {
                       value={formData.monthly_income}
                       label="Monthly Income"
                       onChange={(e) =>
-                          setFormData({ ...formData, monthly_income: e.target.value })
+                          setFormData({
+                            ...formData,
+                            monthly_income: e.target.value,
+                          })
                       }
                   >
                     {monthlyIncomeRanges.map((m) => (
@@ -464,7 +453,7 @@ const TenantApplicationForm = () => {
 
           {/* Step 3 */}
           {activeStep === 2 && (
-              <Box display="grid" gap={4}>
+              <Box display="grid" gap={3}>
                 {/* Valid ID */}
                 <Box
                     p={3}
@@ -472,19 +461,26 @@ const TenantApplicationForm = () => {
                     textAlign="center"
                     borderRadius={2}
                     onClick={() => validIdRef.current.click()}
-                    sx={{ cursor: "pointer" }}
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": { borderColor: "primary.main", bgcolor: "#f9f9f9" },
+                    }}
                 >
                   <FiUploadCloud size={28} className="mx-auto mb-2" />
-                  <Typography>Upload or Capture Valid ID (JPEG/PNG)</Typography>
+                  <Typography variant="body2">
+                    Upload or Capture Valid ID (JPEG/PNG)
+                  </Typography>
                   <input
                       type="file"
                       ref={validIdRef}
                       hidden
                       accept="image/jpeg,image/png"
-                      capture="environment" // ✅ opens camera by default on mobile
+                      capture="environment"
                       onChange={(e) => handleFileSelect(e, "id")}
                   />
-                  {validIdFile && <Typography>{validIdFile.name}</Typography>}
+                  {validIdFile && (
+                      <Typography variant="caption">{validIdFile.name}</Typography>
+                  )}
                 </Box>
 
                 {/* Proof of Income */}
@@ -494,63 +490,110 @@ const TenantApplicationForm = () => {
                     textAlign="center"
                     borderRadius={2}
                     onClick={() => incomeRef.current.click()}
-                    sx={{ cursor: "pointer" }}
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": { borderColor: "primary.main", bgcolor: "#f9f9f9" },
+                    }}
                 >
                   <FiUploadCloud size={28} className="mx-auto mb-2" />
-                  <Typography>Upload or Capture Proof of Income</Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    Accepted: Certificate of Employment, Latest Payslips, Bank Statements, Income Tax Return (ITR),
-                    Employment Contract, Letter of Employment, Remittance Slips, Proof of Freelance Income,
-                    Government-issued Benefit Slips (e.g., SSS, GSIS, Pension),
-                    Company-issued Salary Certificate, or Other Official Proof of Income
+                  <Typography variant="body2">
+                    Upload or Capture Proof of Income
                   </Typography>
-
+                  <Typography
+                      variant="caption"
+                      color="textSecondary"
+                      display={{ xs: "none", sm: "block" }}
+                  >
+                    Accepted: Certificate of Employment, Payslips, Bank Statements,
+                    ITR, Employment Contract, etc.
+                  </Typography>
                   <input
                       type="file"
                       ref={incomeRef}
                       hidden
                       accept="image/jpeg,image/png,application/pdf"
-                      capture="environment" // ✅ camera option on supported devices
+                      capture="environment"
                       onChange={(e) => handleFileSelect(e, "income")}
                   />
-                  {incomeFile && <Typography>{incomeFile.name}</Typography>}
+                  {incomeFile && (
+                      <Typography variant="caption">{incomeFile.name}</Typography>
+                  )}
                 </Box>
               </Box>
           )}
 
-
           {/* Navigation Buttons */}
-          <Box display="flex" justifyContent="space-between" mt={4}>
-            {activeStep > 0 && (
-                <Button
-                    variant="outlined"
-                    type="button"
-                    onClick={() => setActiveStep((s) => s - 1)}
-                >
-                  Back
-                </Button>
-            )}
-            {activeStep < steps.length - 1 ? (
-                <Button
-                    variant="contained"
-                    type="button"
-                    onClick={() => setActiveStep((s) => s + 1)}
-                >
-                  Next
-                </Button>
-            ) : (
-                <Button
-                    variant="contained"
-                    color="success"
-                    type="button"   // ✅ prevent auto-submit
-                    onClick={handleFormSubmit}  // ✅ only trigger validation here
-                    disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Application"}
-                </Button>
-            )}
-          </Box>
+          {/* Navigation Buttons */}
+          <Box
+              display="flex"
+              flexDirection={{ xs: "column", sm: "row" }}
+              justifyContent="space-between"
+              alignItems={{ xs: "stretch", sm: "center" }}
+              gap={2}
+              mt={4}
+          >
+            {/* Left: Cancel */}
+            <Button
+                variant="text"
+                color="error"
+                fullWidth={isMobile}
+                onClick={() => {
+                  Swal.fire({
+                    title: "Cancel Application?",
+                    text: "Your progress will not be saved. Do you want to return to property listings?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Yes, cancel",
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      router.replace(`/pages/find-rent/${propertyDetails?.property_id}/${unit_id}`);                    }
+                  });
+                }}
+            >
+              Cancel Application
+            </Button>
 
+            {/* Step Navigation */}
+            <Box
+                display="flex"
+                flexDirection={{ xs: "column", sm: "row" }}
+                justifyContent="flex-end"
+                gap={2}
+                flexGrow={1}
+            >
+              {activeStep > 0 && (
+                  <Button
+                      variant="outlined"
+                      fullWidth={isMobile}
+                      onClick={() => setActiveStep((s) => s - 1)}
+                  >
+                    Back
+                  </Button>
+              )}
+              {activeStep < steps.length - 1 ? (
+                  <Button
+                      variant="contained"
+                      fullWidth={isMobile}
+                      onClick={() => setActiveStep((s) => s + 1)}
+                  >
+                    Next
+                  </Button>
+              ) : (
+                  <Button
+                      variant="contained"
+                      color="success"
+                      fullWidth={isMobile}
+                      type="button"
+                      onClick={handleFormSubmit}
+                      disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Application"}
+                  </Button>
+              )}
+            </Box>
+          </Box>
 
         </form>
       </Box>
