@@ -21,9 +21,10 @@ interface CombinedQueryResult extends RowDataPacket {
 }
 
 interface UserResult extends RowDataPacket {
-  full_name: string;
-  contact_number: string;
-  profile_photo: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  profilePicture: string;
 }
 
 const SECRET_KEY = process.env.ENCRYPTION_SECRET;
@@ -33,29 +34,29 @@ export async function GET(req: NextRequest) {
 
   if (!rentId) {
     return NextResponse.json(
-      { message: "Unit ID is required" },
-      { status: 400 }
+        { message: "Unit ID is required" },
+        { status: 400 }
     );
   }
 
   try {
     const combinedQuery = `
-      SELECT 
-        u.*, 
+      SELECT
+        u.*,
         p.property_name, p.property_type, p.amenities AS property_amenities,
         p.property_id,
         p.description,
-        p.street, p.brgy_district, p.city, p.province, p.zip_code, p.latitude, p.longitude, 
+        p.street, p.brgy_district, p.city, p.province, p.zip_code, p.latitude, p.longitude,
         p.flexipay_enabled, p.late_fee,
-        p.min_stay, 
-        p.accepted_payment_methods, 
+        p.min_stay,
+        p.accepted_payment_methods,
         p.security_deposit_months,
-        p.advance_payment_months,   
-        p.landlord_id,             
-        l.user_id                  
+        p.advance_payment_months,
+        p.landlord_id,
+        l.user_id
       FROM Unit u
-      JOIN Property p ON u.property_id = p.property_id
-      LEFT JOIN Landlord l ON p.landlord_id = l.landlord_id
+             JOIN Property p ON u.property_id = p.property_id
+             LEFT JOIN Landlord l ON p.landlord_id = l.landlord_id
       WHERE u.unit_id = ?
     `;
 
@@ -70,50 +71,54 @@ export async function GET(req: NextRequest) {
     const rawDetails = results[0] as CombinedQueryResult;
     const userId = rawDetails.user_id;
 
-    let userInfo: Partial<UserResult> & { [key: string]: any } = {
+    let userInfo: Partial<UserResult> & { full_name?: string } = {
+      firstName: "Landlord",
+      lastName: "Unavailable",
+      phoneNumber: "",
+      profilePicture: "",
       full_name: "Landlord Name Unavailable",
-      contact_number: "",
-      profile_photo: "",
     };
 
     if (userId) {
       try {
         const userQuery = `
-                SELECT full_name, contact_number, profile_photo 
-                FROM User 
-                WHERE user_id = ?
-            `;
+          SELECT firstName, lastName, phoneNumber, profilePicture
+          FROM User
+          WHERE user_id = ?
+        `;
 
         const [userResults] = await db.execute<UserResult[]>(userQuery, [
           userId,
         ]);
         if (userResults && userResults.length > 0) {
-          userInfo = userResults[0];
+          userInfo = {
+            ...userResults[0],
+            full_name: `${userResults[0].firstName ?? ""} ${
+                userResults[0].lastName ?? ""
+            }`.trim(),
+          };
         }
       } catch (userError) {
-        console.error(
-          "Error fetching user details (User table/column issue?):",
-          userError
-        );
+        console.error("Error fetching user details:", userError);
       }
     }
 
     const [photoResults] = await db.query(
-      `SELECT photo_url FROM UnitPhoto WHERE unit_id = ?`,
-      [rentId]
+        `SELECT photo_url FROM UnitPhoto WHERE unit_id = ?`,
+        [rentId]
     );
 
     const decryptedPhotos = (photoResults as any[])
-      .map((photo: any) => {
-        try {
-          if (!photo.photo_url) return null;
-          return decryptData(JSON.parse(photo.photo_url), SECRET_KEY);
-        } catch (error) {
-          console.warn("Photo decryption/parsing failed for one item:", error);
-          return null;
-        }
-      })
-      .filter(Boolean);
+        .map((photo: any) => {
+          try {
+            if (!photo.photo_url) return null;
+            return decryptData(JSON.parse(photo.photo_url), SECRET_KEY);
+          } catch (error) {
+            console.warn("Photo decryption failed:", error);
+            return null;
+          }
+        })
+        .filter(Boolean);
 
     const rentAmount = parseFloat(rawDetails.rent_amount);
 
@@ -127,9 +132,9 @@ export async function GET(req: NextRequest) {
       is_advance_payment_paid: 0,
       is_security_deposit_paid: 0,
 
-      landlord_name: userInfo.full_name || "Landlord Name Unavailable",
-      landlord_contact: userInfo.contact_number || "",
-      landlord_photo: userInfo.profile_photo || "",
+      landlord_name: userInfo.full_name,
+      landlord_contact: userInfo.phoneNumber || "",
+      landlord_photo: userInfo.profilePicture || "",
 
       photos: decryptedPhotos,
 
@@ -143,8 +148,8 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Critical error fetching unit details:", error);
     return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
+        { message: "Internal Server Error" },
+        { status: 500 }
     );
   }
 }

@@ -1,873 +1,341 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import LeaseUpload from "./LeaseUpload";
-import Image from "next/image";
-import Link from "next/link";
 import Swal from "sweetalert2";
-import { FaArrowLeft, FaCheckCircle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import {
-  DocumentTextIcon,
-  EnvelopeIcon,
-  IdentificationIcon,
-  ArrowLeftIcon,
-} from "@heroicons/react/24/outline";
-import {
-  HiOutlineBriefcase,
-  HiOutlineCurrencyDollar,
-  HiOutlineUser,
-} from "react-icons/hi";
-import { PhoneIcon } from "lucide-react";
-import { MapPinIcon } from "lucide-react";
-import { UserIcon } from "lucide-react";
-import NoTenantAssigned from "../../../components/landlord/properties/NoTenantAssigned";
-// @ts-ignore
-const LeaseDetails = ({ unitId }) => {
-  const router = useRouter();
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import CurrentTenant from "@/components/landlord/activeLease/CurrentTenant";
+import LeaseActions from "@/components/landlord/activeLease/LeaseActions";
 
+export default function LeaseDetails({ unitId }) {
+  const router = useRouter();
   const [lease, setLease] = useState(null);
   const [tenant, setTenant] = useState(null);
+  const [propertyName, setPropertyName] = useState("");
+  const [unitName, setUnitName] = useState("");
+  const [leaseMode, setLeaseMode] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("unoccupied");
-  const [unitName, setUnitName] = useState("");
-  const [propertyName, setPropertyName] = useState("");
-  const [unitPhoto, setUnitPhotos] = useState("");
-  const [activeTab, setActiveTab] = useState("details");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [inviteCode, setInviteCode] = useState("");
-  const [leaseFile, setLeaseFile] = useState(null);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [leaseMode, setLeaseMode] = useState<"generate" | "upload" | null>(null);
-  const [IsGenerating, setIsGenerating] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("tenant");
+
+  const formatDate = (date) =>
+      date
+          ? new Date(date).toLocaleDateString("en-PH", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+          : "N/A";
 
   useEffect(() => {
-    fetchLeaseDetails();
-    fetchTenantDetails();
-    fetchStatus();
-    fetchUnitDetails();
+    fetchAllData();
   }, [unitId]);
 
-  // @ts-ignore
-  const formatDate = (dateString) => {
-    if (!dateString) {
-      return "N/A";
-    }
-
+  const fetchAllData = async () => {
     try {
-      const date = new Date(dateString);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
+      setLoading(true);
+      const [leaseRes, tenantRes, unitRes] = await Promise.all([
+        axios.get(`/api/leaseAgreement/getLeasePerUnit?unit_id=${unitId}`),
+        axios.get(`/api/landlord/prospective/getApprovedTenantsDetails?unit_id=${unitId}`),
+        axios.get(`/api/propertyListing/getPropertyDetailByUnitId?unit_id=${unitId}`),
+      ]);
 
-      return `${year}-${month}-${day}`;
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "Invalid Date";
-    }
-  };
-
-  const fetchUnitDetails = async () => {
-    try {
-      const res = await axios.get(
-          `/api/propertyListing/getPropertyDetailByUnitId?unit_id=${unitId}`
-      );
-
-      if (res.data?.propertyDetails) {
-        const d = res.data.propertyDetails;
-        setPropertyName(d.property_name || "");
-        setUnitName(d.unit_name || "");
-        setPropertyId(d.property_id || null);
-      }
-
-      // 🧹 Safely handle unitPhotos
-      const photos = res.data?.unitPhotos;
-      if (Array.isArray(photos)) {
-        setUnitPhotos(photos);
-      } else if (typeof photos === "string") {
-        // Sometimes backend might return a single string instead of array
-        setUnitPhotos([photos]);
-      } else {
-        setUnitPhotos([]); // default to empty
-      }
-    } catch (err) {
-      console.error("Error fetching unit details:", err);
-      setUnitPhotos([]); // prevent map error on catch
-    }
-  };
-
-  const fetchStatus = async () => {
-    try {
-      const response = await axios.get(
-        `/api/landlord/properties/getCurrentStatus?unitId=${unitId}`
-      );
-      if (response.data.status) {
-        setStatus(response.data.status);
-      }
-    } catch (error) {
-      console.error("Error fetching status:", error);
-    }
-  };
-
-  const fetchLeaseDetails = async () => {
-    try {
-      const response = await axios.get(
-        `/api/leaseAgreement/getLeasePerUnit?unit_id=${unitId}`
-      );
-
-      if (response.data.length > 0) {
-        const leaseData = response.data[0];
+      const leaseData = leaseRes.data;
+      if (leaseData?.agreement_id) {
         setLease(leaseData);
-        setStartDate(leaseData?.start_date || "");
-        setEndDate(leaseData?.end_date || "");
-
-        console.log("Lease Data: ", leaseData);
+        setStartDate(leaseData.start_date || "");
+        setEndDate(leaseData.end_date || "");
+      } else {
+        setLease(null);
+        setStartDate("");
+        setEndDate("");
       }
-    } catch (error) {
-      console.error("Error fetching lease details:", error);
-    }
-  };
 
-  const fetchTenantDetails = async () => {
-    setIsLoading(true);
-    try {
-      if (unitId) {
-        const response = await axios.get(
-          `/api/landlord/prospective/getApprovedTenantsDetails?unit_id=${unitId}`
-        );
+      const tenantData = tenantRes.data;
+      setTenant(tenantData && Object.keys(tenantData).length > 0 ? tenantData : null);
 
-        console.log("Tenant API Response:", response.data);
-        if (response.data) {
-          setTenant(response.data);
-        }
+      const prop = unitRes.data?.propertyDetails;
+      if (prop) {
+        setPropertyName(prop.property_name || "Unnamed Property");
+        setUnitName(prop.unit_name || "Unnamed Unit");
+      } else {
+        setPropertyName("");
+        setUnitName("");
       }
-    } catch (error) {
-      console.error("Error fetching tenant details:", error);
-      // @ts-ignore
-      setError("Failed to load tenant information");
+    } catch (err: any) {
+      console.error("❌ Error fetching lease/unit/tenant data:", err);
+      Swal.fire("Error", "Failed to load lease, tenant, or unit details.", "error");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleDeleteLease = async () => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "This action will permanently delete the lease agreement!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await axios.delete(
-            `/api/leaseAgreement/deleteLeaseAgreement?unit_id=${unitId}`
-          );
-          Swal.fire("Deleted!", "Lease agreement has been deleted.", "success");
-          setLease(null);
-        } catch (error) {
-          console.error("Error deleting lease:", error);
-          Swal.fire("Error!", "Failed to delete lease agreement.", "error");
-        }
-      }
-    });
+  const handleGenerateLease = () => {
+    if (!lease?.agreement_id) {
+      return Swal.fire(
+          "No Lease Record",
+          "Approve the tenant first — a draft lease will be created.",
+          "warning"
+      );
+    }
+    router.push(`/pages/lease/generate/${lease?.agreement_id}`);
   };
 
-  const handleSendInvite = async () => {
-    const res = await fetch("/api/invite", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: inviteEmail,
-        unitId,
-        propertyName,
-        unitName,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      Swal.fire("Sent!", "Invitation email sent to tenant.", "success");
-    } else {
-      Swal.fire("Error", data.error || "Could not send invite.", "error");
+  const handleUploadLease = () => {
+    if (!lease?.agreement_id) {
+      return Swal.fire(
+          "No Lease Record",
+          "Please create a lease record before uploading.",
+          "warning"
+      );
     }
+    router.push(`/pages/lease/scan/${lease.agreement_id}`);
   };
 
-
-  const handleGenerateLease = async () => {
-    if (!startDate || !endDate) {
-      Swal.fire("Error", "Start and end date are required", "error");
-      return;
-    }
-
-    if (endDate <= startDate) {
-      Swal.fire("Error", "End date must be after start date", "error");
-      return;
-    }
-
-    try {
-      setIsGenerating(true);
-
-      // Collect payload from state
-      const payload = {
-        tenantName: tenant ? `${tenant?.firstName} ${tenant?.lastName}` : "Tenant",
-        tenantEmail: tenant?.email || "",
-        propertyName,
-        unitName,
-        startDate,
-        endDate,
-        unitId,
-        monthlyRent: lease?.rent_amount || null,
-        securityDeposit: lease?.sec_deposit || null,
-      };
-
-      // ✅ Redirect to rich text editor page with query params
-      const query = new URLSearchParams(payload as any).toString();
-      router.push(`/pages/lease/generate/${unitId}?${query}`);
-    } catch (err) {
-      console.error("Error preparing lease:", err);
-      Swal.fire("Error", "Failed to prepare lease", "error");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleUploadLease = async () => {
-    try {
-      const payload = {
-        tenantName: tenant ? `${tenant?.firstName} ${tenant?.lastName}` : "Tenant",
-        tenantEmail: tenant?.email || "",
-        propertyName,
-        unitName,
-        startDate,
-        endDate,
-        unitId,
-        monthlyRent: lease?.rent_amount || null,
-        securityDeposit: lease?.sec_deposit || null,
-      };
-
-      // ✅ Save payload locally so scan page can retrieve it
-      localStorage.setItem("lease_upload_payload", JSON.stringify(payload));
-
-      // Redirect with only unitId
-      router.push(`/pages/lease/scan/${unitId}`);
-    } catch (err) {
-      console.error("Error preparing upload lease:", err);
-      Swal.fire("Error", "Failed to prepare upload lease", "error");
-    }
-  };
-  // only if user select not to upload
   const handleSaveDates = async () => {
-    if (!startDate || !endDate) {
-      Swal.fire("Error", "Start and end date are required", "error");
-      return;
-    }
+    if (!startDate || !endDate)
+      return Swal.fire("Error", "Start and end date are required.", "error");
 
-    if (endDate <= startDate) {
-      Swal.fire("Error", "End date must be after start date", "error");
-      return;
-    }
+    if (endDate <= startDate)
+      return Swal.fire("Error", "End date must be after start date.", "error");
 
-    // ⚠️ Warn landlord about proceeding without a lease
-    const confirm = await Swal.fire({
-      title: "Proceed Without a Signed Lease?",
+    // Ask landlord if they want to configure deposit/advance
+    const { value: config } = await Swal.fire({
+      title: "Configure Security & Advance Payment?",
       html: `
-      <p class="text-gray-700 text-sm leading-relaxed">
-        You're about to activate this tenant without attaching a lease document.
-        <br/><br/>
-        <strong>Warning:</strong> Proceeding without a signed lease can lead to disputes or legal issues.
-        <br/><br/>
-        It's highly recommended to have a written agreement for protection.
-      </p>
+      <div style="text-align:left">
+        <p class="text-gray-600 text-sm mb-3">
+          You can optionally configure the security deposit and advance payment for this lease.
+          <br/><br/>
+          <em>If left empty, these values will default to ₱0.</em>
+        </p>
+        <input id="swal-deposit" type="number" placeholder="Security Deposit (₱)" class="swal2-input" />
+        <input id="swal-advance" type="number" placeholder="Advance Payment (₱)" class="swal2-input" />
+      </div>
     `,
-      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#2563eb",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Yes, continue anyway",
+      confirmButtonText: "Save & Activate",
+      cancelButtonText: "Skip",
+      preConfirm: () => {
+        const deposit = (document.getElementById("swal-deposit") as HTMLInputElement)?.value || "0";
+        const advance = (document.getElementById("swal-advance") as HTMLInputElement)?.value || "0";
+        return { deposit, advance };
+      },
     });
 
-    if (!confirm.isConfirmed) return;
+    if (!config) return; // User cancelled
+
+    Swal.fire({
+      title: "Activating Lease...",
+      text: "Please wait while we update lease details.",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
 
     try {
-      // ✅ Only update lease dates
-      const leaseDateRes = await fetch("/api/leaseAgreement/updateLeaseDateSet", {
+      const res = await fetch("/api/leaseAgreement/updateLeaseDateSet", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           unit_id: unitId,
           start_date: startDate,
           end_date: endDate,
-          continueWithoutFile: true, // optional flag for backend
+          security_deposit_amount: parseFloat(config.deposit) || 0,
+          advance_payment_amount: parseFloat(config.advance) || 0,
         }),
       });
 
-      if (!leaseDateRes.ok) {
-        const errorText = await leaseDateRes.text();
-        console.error("Lease date update failed:", errorText);
-        throw new Error(
-            `Lease date update failed with status ${leaseDateRes.status}`
-        );
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Lease update failed:", data);
+        return Swal.fire("Error", data.error || "Failed to update lease.", "error");
       }
 
-      await Swal.fire(
-          "Success!",
-          "Tenant marked as active without a signed lease agreement.",
-          "success"
-      );
-      window.location.reload();
+      Swal.fire({
+        icon: "success",
+        title: "Lease Activated!",
+        text: "Lease dates, deposit, and advance payment saved successfully. Tenant has been notified.",
+        confirmButtonText: "OK",
+      });
 
-      fetchLeaseDetails?.();
+      fetchAllData();
     } catch (error) {
-      console.error(error);
-      Swal.fire("Error", "Failed to save lease", "error");
+      console.error("Error updating lease:", error);
+      Swal.fire("Error", "Something went wrong while saving lease details.", "error");
     }
   };
 
+  const handleTerminateLease = async () => {
+    const confirm = await Swal.fire({
+      title: "Terminate Lease?",
+      text: "This will mark the lease as terminated but retain record.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, terminate",
+    });
+    if (!confirm.isConfirmed) return;
+
+    await fetch("/api/leaseAgreement/terminateLease", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ unit_id: unitId }),
+    });
+    Swal.fire("Terminated!", "Lease has been terminated.", "success");
+    fetchAllData();
+  };
+
+  const handleSendInvite = async () => {
+    const { value: email } = await Swal.fire({
+      title: "Invite Tenant",
+      input: "email",
+      inputPlaceholder: "Enter tenant email",
+      confirmButtonText: "Send Invite",
+      showCancelButton: true,
+    });
+    if (!email) return;
+
+    await fetch("/api/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, unitId, propertyName, unitName }),
+    });
+    Swal.fire("Sent!", "Invitation email sent.", "success");
+  };
+
+  if (loading)
+    return <p className="text-center text-gray-500 mt-10">Loading lease details...</p>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
-      {/* Enhanced Back Button */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4 sm:mb-6 p-2 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        <span className="hidden sm:inline">Back to Units</span>
-        <span className="sm:hidden">Back</span>
-      </button>
+      <div className="min-h-screen bg-gray-50 p-6">
+        {/* Back */}
+        <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6 p-2 hover:bg-blue-50 rounded-lg transition"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          Back to Units
+        </button>
 
-      {/* Enhanced Header Section */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-4 sm:mb-6 border border-gray-200">
-        <div className="relative h-48 sm:h-56 bg-gradient-to-r from-blue-600 to-purple-600">
-          {unitPhoto ? (
-            <Image
-              src={unitPhoto}
-              alt="Unit Photo"
-              layout="fill"
-              objectFit="cover"
-              className="rounded-t-2xl"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-              <div className="text-center text-white">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <UserIcon className="h-8 w-8" />
-                </div>
-                <p className="text-white/80">No Image Available</p>
-              </div>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
-            <h1 className="text-white text-xl sm:text-2xl font-bold mb-1">
-              {propertyName || "Property Name"}
-            </h1>
-            <p className="text-white/90 text-sm sm:text-base">
-              Unit {unitName || "Unit Name"}
-            </p>
-            {/* Status Badge */}
-            <div className="mt-3">
-              <span
-                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
-                  status === "occupied"
-                    ? "bg-green-100 text-green-800 border border-green-200"
-                    : "bg-red-100 text-red-800 border border-red-200"
-                }`}
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 mb-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">{propertyName}</h1>
+          <p className="text-gray-600">Unit: {unitName}</p>
+
+          {!tenant && (
+              <button
+                  onClick={handleSendInvite}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
               >
-                {status === "occupied" ? "Occupied" : "Available"}
-              </span>
-            </div>
-          </div>
+                Send Tenant Invite
+              </button>
+          )}
         </div>
 
-        {/* No Tenant Warning */}
-        {!tenant && (
-            <NoTenantAssigned unitId={unitId} handleSendInvite={handleSendInvite} />
+        {/* Tabs */}
+        <div className="flex border-b mb-6 space-x-6">
+          <button
+              onClick={() => setActiveTab("tenant")}
+              className={`pb-2 px-3 font-medium ${
+                  activeTab === "tenant"
+                      ? "border-b-2 border-blue-600 text-blue-700"
+                      : "text-gray-500 hover:text-blue-600"
+              }`}
+          >
+            Current Tenant & Lease
+          </button>
+          <button
+              onClick={() => setActiveTab("config")}
+              className={`pb-2 px-3 font-medium ${
+                  activeTab === "config"
+                      ? "border-b-2 border-blue-600 text-blue-700"
+                      : "text-gray-500 hover:text-blue-600"
+              }`}
+          >
+            Unit Config
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "tenant" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: Tenant Info */}
+              <div>
+                <CurrentTenant tenant={tenant} formatDate={formatDate} />
+              </div>
+
+              {/* Right: Lease Actions or Existing Lease Info */}
+              <div>
+                {lease?.start_date && lease?.end_date ? (
+                    <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+                      <h2 className="text-lg font-bold text-gray-800 mb-3">📄 Active Lease Details</h2>
+
+                      {/* Dates */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
+                        <div className="p-3 bg-gray-50 rounded-lg border">
+                          <p className="text-gray-500 font-medium">Start Date</p>
+                          <p className="text-gray-800 font-semibold">{formatDate(lease.start_date)}</p>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg border">
+                          <p className="text-gray-500 font-medium">End Date</p>
+                          <p className="text-gray-800 font-semibold">{formatDate(lease.end_date)}</p>
+                        </div>
+                      </div>
+
+                      {/* Agreement Link */}
+                      {lease?.agreement_url ? (
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                            <p className="text-blue-700 font-semibold mb-1">Existing Lease Document</p>
+                            <a
+                                href={lease.agreement_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 underline"
+                            >
+                              View Lease Agreement
+                            </a>
+                          </div>
+                      ) : (
+                          <p className="text-sm text-gray-500 italic">
+                            No uploaded or generated agreement yet.
+                          </p>
+                      )}
+
+                      {/* Terminate Button */}
+                      <button
+                          onClick={handleTerminateLease}
+                          className="mt-5 w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-semibold text-sm"
+                      >
+                        Terminate Lease
+                      </button>
+                    </div>
+                ) : (
+                    <LeaseActions
+                        lease={lease}
+                        leaseMode={leaseMode}
+                        setLeaseMode={setLeaseMode}
+                        unitId={unitId}
+                        startDate={startDate}
+                        endDate={endDate}
+                        setStartDate={setStartDate}
+                        setEndDate={setEndDate}
+                        handleGenerateLease={handleGenerateLease}
+                        handleUploadLease={handleUploadLease}
+                        handleSaveDates={handleSaveDates}
+                        handleTerminateLease={handleTerminateLease}
+                    />
+                )}
+              </div>
+            </div>
         )}
 
-        {/* Enhanced Tab Navigation */}
-        <div className="border-t border-gray-200">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            {[
-              { id: "details", label: "Tenant Details", icon: UserIcon },
-              {
-                id: "maintenance",
-                label: "Maintenance",
-                icon: DocumentTextIcon,
-              },
-              { id: "history", label: "History", icon: DocumentTextIcon },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 font-medium text-sm whitespace-nowrap border-b-2 transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "text-blue-600 border-blue-600 bg-blue-50/50"
-                      : "text-gray-500 hover:text-gray-700 border-transparent hover:bg-gray-50"
-                  }`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.label.split(" ")[0]}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+
+        {activeTab === "config" && (
+            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 text-center text-gray-500">
+              <p>⚙️ Unit configuration details will appear here.</p>
+            </div>
+        )}
       </div>
-
-      {/* Tab tenant details */}
-      {activeTab === "details" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-
-          {/* Tenant Information Card */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="p-4 sm:p-6">
-              {/* Profile Header */}
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gray-100 overflow-hidden flex-shrink-0 shadow-md">
-                  {tenant?.profilePicture ? (
-                      <Image
-                          src={tenant?.profilePicture}
-                          alt="Profile"
-                          width={80}
-                          height={80}
-                          className="w-full h-full object-cover"
-                      />
-                  ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                        <UserIcon className="h-8 w-8 text-gray-500" />
-                      </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
-                    {tenant
-                        ? `${tenant?.firstName} ${tenant?.lastName}`
-                        : "No Tenant Assigned"}
-                  </h2>
-                  {tenant?.birthDate && (
-                      <p className="text-gray-500 text-sm">
-                        Born: {formatDate(tenant?.birthDate)}
-                      </p>
-                  )}
-                </div>
-              </div>
-
-              {tenant ? (
-                  <div className="space-y-6">
-                    {/* Info grid 2 per row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {[
-                        { icon: EnvelopeIcon, label: "Email", value: tenant?.email },
-                        { icon: PhoneIcon, label: "Phone", value: tenant?.phoneNumber },
-                        { icon: HiOutlineBriefcase, label: "Occupation", value: tenant?.occupation },
-                        {
-                          icon: HiOutlineCurrencyDollar,
-                          label: "Monthly Income",
-                          value: tenant?.monthlyIncome?.replace("_", "-"),
-                        },
-                        { icon: HiOutlineUser, label: "Employment", value: tenant?.employmentType },
-                        { icon: MapPinIcon, label: "Address", value: tenant?.address },
-                      ].map((item, index) => {
-                        const Icon = item.icon;
-                        return (
-                            <div
-                                key={index}
-                                className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"
-                            >
-                              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0 mt-0.5">
-                                <Icon className="h-4 w-4 text-gray-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                                  {item.label}
-                                </p>
-                                <p className="text-gray-800 font-medium break-words">
-                                  {item.value || "Not provided"}
-                                </p>
-                              </div>
-                            </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Valid ID Section */}
-                    {tenant?.validId ? (
-                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                              <IdentificationIcon className="h-6 w-6 text-blue-600" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-semibold text-blue-800 mb-1">Government ID</p>
-                              <Link
-                                  href={tenant?.validId}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
-                              >
-                                View Verification Document
-                              </Link>
-                            </div>
-                            <FaCheckCircle className="text-green-500 h-5 w-5" />
-                          </div>
-                        </div>
-                    ) : (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                          <p className="text-gray-500 text-center">No ID verification available</p>
-                        </div>
-                    )}
-
-                    {/* Proof of Income Section */}
-                    {tenant?.proofOfIncome ? (
-                        <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                              <HiOutlineCurrencyDollar className="h-6 w-6 text-purple-600" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-semibold text-purple-800 mb-1">Proof of Income</p>
-                              <Link
-                                  href={tenant?.proofOfIncome}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-purple-600 hover:text-purple-800 underline text-sm font-medium"
-                              >
-                                View Document
-                              </Link>
-                            </div>
-                            <FaCheckCircle className="text-green-500 h-5 w-5" />
-                          </div>
-                        </div>
-                    ) : (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                          <p className="text-gray-500 text-center">No proof of income uploaded</p>
-                        </div>
-                    )}
-                  </div>
-              ) : (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <UserIcon className="h-8 w-8 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500">No tenant information available</p>
-                  </div>
-              )}
-            </div>
-          </div>
-
-          {/* Lease Agreement Card  */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="p-4 sm:p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
-                  <DocumentTextIcon className="h-5 w-5 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-800">Lease Agreement</h2>
-              </div>
-
-              {!tenant ? (
-                  // 🔔 Warning if no tenant assigned
-                  <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 rounded-xl">
-                    <h3 className="font-semibold text-amber-800 mb-2">No Tenant Assigned</h3>
-                    <p className="text-amber-700 text-sm">
-                      You need to assign a tenant before creating or uploading a lease
-                      agreement. Please invite or approve a tenant for this unit.
-                    </p>
-                  </div>
-              ) : (
-                  <>
-                    {/* Current Lease Dates Display */}
-                    {lease?.start_date && lease?.end_date && (
-                        <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                          <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
-                            <FaCheckCircle className="text-green-600" />
-                            Active Lease Period
-                          </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="bg-white p-3 rounded-lg shadow-sm">
-                              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                                Start Date
-                              </p>
-                              <p className="text-gray-800 font-semibold">
-                                {formatDate(lease.start_date)}
-                              </p>
-                            </div>
-                            <div className="bg-white p-3 rounded-lg shadow-sm">
-                              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                                End Date
-                              </p>
-                              <p className="text-gray-800 font-semibold">
-                                {formatDate(lease.end_date)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                    )}
-                    {/* Lease Document Section */}
-                    <div className="mb-6">
-                      <h3 className="font-semibold text-gray-800 mb-4">Lease Document</h3>
-
-                      {lease?.agreement_url ? (
-                          // ✅ Case 1: Lease file exists
-                          <>
-                            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                              <p className="font-semibold text-blue-800 mb-1">Lease Agreement File</p>
-                              <Link
-                                  href={lease.agreement_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
-                              >
-                                View Document
-                              </Link>
-                            </div>
-
-                            {/* Terminate button (file exists + dates set) */}
-                            {lease?.start_date && lease?.end_date && (
-                                <div className="mt-4">
-                                  <button
-                                      onClick={() => {
-                                        Swal.fire({
-                                          title: "Terminate Lease?",
-                                          text: "This will mark the lease as terminated but keep a record for history.",
-                                          icon: "warning",
-                                          showCancelButton: true,
-                                          confirmButtonColor: "#d33",
-                                          cancelButtonColor: "#3085d6",
-                                          confirmButtonText: "Yes, terminate it",
-                                        }).then(async (result) => {
-                                          if (result.isConfirmed) {
-                                            try {
-                                              await fetch("/api/leaseAgreement/terminateLease", {
-                                                method: "PUT",
-                                                headers: { "Content-Type": "application/json" },
-                                                body: JSON.stringify({ unit_id: unitId }),
-                                              });
-                                              Swal.fire("Terminated!", "Lease has been terminated.", "success");
-                                              fetchLeaseDetails?.();
-                                            } catch (error) {
-                                              console.error("Error terminating lease:", error);
-                                              Swal.fire("Error!", "Failed to terminate lease.", "error");
-                                            }
-                                          }
-                                        });
-                                      }}
-                                      className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-lg shadow-md transition"
-                                  >
-                                    Terminate Lease
-                                  </button>
-                                </div>
-                            )}
-                          </>
-                      ) : (
-                          // ⚙️ Case 2: No file exists yet
-                          <>
-                            {/* Only show date input fields if no dates are set */}
-                            {!lease?.start_date && !lease?.end_date && (
-                                <div className="mb-6">
-                                  <h3 className="font-semibold text-gray-800 mb-4">Set Lease Dates</h3>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Start Date
-                                      </label>
-                                      <input
-                                          type="date"
-                                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                                          value={startDate}
-                                          onChange={(e) => setStartDate(e.target.value)}
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        End Date
-                                      </label>
-                                      <input
-                                          type="date"
-                                          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none transition-all bg-gray-50 focus:bg-white"
-                                          value={endDate}
-                                          onChange={(e) => setEndDate(e.target.value)}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                            )}
-
-                            {/* Toggle Buttons */}
-                            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                              <button
-                                  onClick={() => setLeaseMode("generate")}
-                                  className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
-                                      leaseMode === "generate"
-                                          ? "bg-emerald-600 text-white border-emerald-600"
-                                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                                  }`}
-                              >
-                                Use System Template
-                              </button>
-
-                              <button
-                                  onClick={() => setLeaseMode("upload")}
-                                  className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
-                                      leaseMode === "upload"
-                                          ? "bg-green-600 text-white border-green-600"
-                                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                                  }`}
-                              >
-                                Upload Lease
-                              </button>
-
-                              <button
-                                  onClick={() => setLeaseMode("continue")}
-                                  className={`flex-1 py-2 px-4 rounded-lg font-medium border transition ${
-                                      leaseMode === "continue"
-                                          ? "bg-blue-600 text-white border-blue-600"
-                                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                                  }`}
-                              >
-                                Continue Without Agreement
-                              </button>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="space-y-3">
-                              {leaseMode === "generate" && (
-                                  <button
-                                      className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl disabled:opacity-50"
-                                      onClick={handleGenerateLease}
-                                  >
-                                    Generate Lease Agreement
-                                  </button>
-                              )}
-
-                              {leaseMode === "upload" && (
-                                  <button
-                                      className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold py-3 px-6 rounded-xl"
-                                      onClick={handleUploadLease}
-                                  >
-                                    Upload Lease Agreement
-                                  </button>
-                              )}
-
-                              {leaseMode === "continue" && (
-                                  <button
-                                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-6 rounded-xl"
-                                      onClick={handleSaveDates}
-                                  >
-                                    Continue Without Agreement
-                                  </button>
-                              )}
-
-                              {/* 🆕 Terminate button */}
-                              {lease?.start_date && lease?.end_date && (
-                                  <div className="mt-4">
-                                    <button
-                                        onClick={() => {
-                                          Swal.fire({
-                                            title: "Terminate Lease?",
-                                            text: "This will mark the lease as terminated but keep a record for history.",
-                                            icon: "warning",
-                                            showCancelButton: true,
-                                            confirmButtonColor: "#d33",
-                                            cancelButtonColor: "#3085d6",
-                                            confirmButtonText: "Yes, terminate it",
-                                          }).then(async (result) => {
-                                            if (result.isConfirmed) {
-                                              try {
-                                                await fetch("/api/leaseAgreement/terminateLease", {
-                                                  method: "PUT",
-                                                  headers: { "Content-Type": "application/json" },
-                                                  body: JSON.stringify({ unit_id: unitId }),
-                                                });
-                                                Swal.fire("Terminated!", "Lease has been terminated.", "success");
-                                                fetchLeaseDetails?.();
-                                              } catch (error) {
-                                                console.error("Error terminating lease:", error);
-                                                Swal.fire("Error!", "Failed to terminate lease.", "error");
-                                              }
-                                            }
-                                          });
-                                        }}
-                                        className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-lg shadow-md transition"
-                                    >
-                                      Terminate Lease
-                                    </button>
-                                  </div>
-                              )}
-                            </div>
-
-                          </>
-                      )}
-                    </div>
-
-                  </>
-              )}
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {/* Maintenance Tab */}
-      {activeTab === "maintenance" && (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-md">
-              <DocumentTextIcon className="h-5 w-5 text-white" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-800">
-              Maintenance Requests
-            </h2>
-          </div>
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <DocumentTextIcon className="h-8 w-8 text-gray-400" />
-            </div>
-            <p className="text-gray-500 font-medium mb-2">
-              No Maintenance Requests
-            </p>
-            <p className="text-gray-400 text-sm">
-              All maintenance requests will appear here
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* History Tab */}
-      {activeTab === "history" && (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md">
-              <DocumentTextIcon className="h-5 w-5 text-white" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-800">Tenant History</h2>
-          </div>
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <UserIcon className="h-8 w-8 text-gray-400" />
-            </div>
-            <p className="text-gray-500 font-medium mb-2">
-              No Previous Tenants
-            </p>
-            <p className="text-gray-400 text-sm">
-              Historical tenant information will appear here
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
   );
-};
-
-export default LeaseDetails;
+}

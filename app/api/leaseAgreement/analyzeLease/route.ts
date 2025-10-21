@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const file = formData.get("leaseFile") as File | null;
-        const unitId = (formData.get("unit_id") as string | null)?.trim();
+        const unitId = (formData.get("agreement_id") as string | null)?.trim();
 
         if (!file) {
             return NextResponse.json(

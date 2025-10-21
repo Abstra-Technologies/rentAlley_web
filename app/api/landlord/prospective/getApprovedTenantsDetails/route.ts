@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     // Step 1: Check LeaseAgreement (pending or active)
     const [leaseRows] = await connection.execute(
-        `SELECT tenant_id
+        `SELECT tenant_id, agreement_id
          FROM LeaseAgreement
          WHERE unit_id = ? AND status IN ('pending','active')
          LIMIT 1`,
@@ -105,6 +105,7 @@ export async function GET(req: NextRequest) {
       employmentType: tenant.employment_type,
       monthlyIncome: tenant.monthly_income,
       validId: valid_id_encrypted ? safeDecrypt(valid_id_encrypted) : null,
+      agreement_id: tenant.agreement_id
     };
 
     return NextResponse.json(response, { status: 200 });

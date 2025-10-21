@@ -56,12 +56,12 @@ export async function POST(req: NextRequest) {
         const encryptedUrl = JSON.stringify(encryptData(s3Url, process.env.ENCRYPTION_SECRET!));
 
         // Flags for payment statuses
-        const isSecPaid = !securityDepositAmount ? 1 : 0;
-        const isAdvPaid = !advancePaymentAmount ? 1 : 0;
+        const isSecPaid = securityDepositAmount === 0 || securityDepositAmount === null ? 1 : 0;
+        const isAdvPaid = advancePaymentAmount === 0 || advancePaymentAmount === null ? 1 : 0;
 
         await connection.beginTransaction();
 
-        // 🧩 Get tenant + unit from existing LeaseAgreement
+        // 🧩 Fetch tenant_id and unit_id from LeaseAgreement
         const [leaseRows]: any = await connection.execute(
             `SELECT tenant_id, unit_id FROM LeaseAgreement WHERE agreement_id = ? LIMIT 1`,
             [agreement_id]
@@ -77,22 +77,22 @@ export async function POST(req: NextRequest) {
 
         const { tenant_id, unit_id } = leaseRows[0];
 
-        // 🧩 Update existing lease
+        // 🧩 Update LeaseAgreement record
         await connection.execute(
             `
-                UPDATE LeaseAgreement
-                SET
-                    start_date = ?,
-                    end_date = ?,
-                    agreement_url = ?,
-                    security_deposit_amount = ?,
-                    advance_payment_amount = ?,
-                    is_security_deposit_paid = ?,
-                    is_advance_payment_paid = ?,
-                    status = ?,
-                    updated_at = NOW()
-                WHERE agreement_id = ?
-            `,
+        UPDATE LeaseAgreement
+        SET
+          start_date = ?,
+          end_date = ?,
+          agreement_url = ?,
+          security_deposit_amount = ?,
+          advance_payment_amount = ?,
+          is_security_deposit_paid = ?,
+          is_advance_payment_paid = ?,
+          status = ?,
+          updated_at = NOW()
+        WHERE agreement_id = ?
+      `,
             [
                 startDate,
                 endDate,
@@ -106,39 +106,45 @@ export async function POST(req: NextRequest) {
             ]
         );
 
+        // 🧩 Mark the Unit as occupied
+        await connection.execute(
+            `UPDATE Unit SET status = 'occupied', updated_at = NOW() WHERE unit_id = ?`,
+            [unit_id]
+        );
+
         // 🧩 If unsigned, create pending signatures
         if (signatureOption === "docusign") {
             await connection.execute(
                 `INSERT INTO LeaseSignature (agreement_id, role, status)
-                 VALUES (?, 'landlord', 'pending'), (?, 'tenant', 'pending')`,
+         VALUES (?, 'landlord', 'pending'), (?, 'tenant', 'pending')`,
                 [agreement_id, agreement_id]
             );
         }
 
-        // 🧩 Get tenant's user_id to notify
+        // 🧩 Fetch tenant user_id
         const [tenantUser]: any = await connection.execute(
             `
-                SELECT u.user_id
-                FROM Tenant t
-                         JOIN User u ON t.user_id = u.user_id
-                WHERE t.tenant_id = ?
-                LIMIT 1
-            `,
+        SELECT u.user_id
+        FROM Tenant t
+        JOIN User u ON t.user_id = u.user_id
+        WHERE t.tenant_id = ?
+        LIMIT 1
+      `,
             [tenant_id]
         );
 
         if (tenantUser.length > 0) {
             const user_id = tenantUser[0].user_id;
 
-            // 🏠 Fetch property and unit name
+            // 🏠 Fetch property & unit name for notification
             const [propInfo]: any = await connection.execute(
                 `
-    SELECT p.property_name, u.unit_name
-    FROM Unit u
-    JOIN Property p ON u.property_id = p.property_id
-    WHERE u.unit_id = ?
-    LIMIT 1
-    `,
+          SELECT p.property_name, u.unit_name
+          FROM Unit u
+          JOIN Property p ON u.property_id = p.property_id
+          WHERE u.unit_id = ?
+          LIMIT 1
+        `,
                 [unit_id]
             );
 
@@ -151,9 +157,9 @@ export async function POST(req: NextRequest) {
             // 🧩 Create tenant notification
             await connection.execute(
                 `
-                    INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
-                    VALUES (?, ?, ?, ?, 0, NOW())
-                `,
+          INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
+          VALUES (?, ?, ?, ?, 0, NOW())
+        `,
                 [
                     user_id,
                     notifTitle,
@@ -163,12 +169,11 @@ export async function POST(req: NextRequest) {
             );
         }
 
-
         await connection.commit();
 
         return NextResponse.json({
             success: true,
-            message: "Lease uploaded and saved successfully.",
+            message: "Lease uploaded, unit marked occupied, and notifications sent.",
             s3Url,
         });
     } catch (error: any) {

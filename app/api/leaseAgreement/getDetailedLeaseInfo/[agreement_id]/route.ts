@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
@@ -21,82 +20,103 @@ export async function GET(
     console.log("agreement_id api:", agreement_id);
 
     try {
-        // 🔑 Lease + Property + Unit + Tenant
+        // 🔑 Lease + Property + Unit + Tenant + PropertyConfig
         const [leaseRows] = await db.execute(
-            `SELECT 
-          la.agreement_id AS lease_id,
-          la.start_date,
-          la.end_date,
-          la.status AS lease_status,
-          la.agreement_url,
-          la.security_deposit_amount,
-          la.advance_payment_amount,
-          la.is_security_deposit_paid,
-          la.is_advance_payment_paid,
-          la.grace_period_days,
-          la.late_penalty_amount,
-          la.billing_due_day,
-          p.property_name,
-          u.unit_name,
-          u.rent_amount,
-          t.tenant_id,
-          usr.firstName AS enc_firstName,
-          usr.lastName AS enc_lastName,
-          usr.email AS enc_email,  
-          usr.phoneNumber as enc_phoneNumber
-       FROM LeaseAgreement la
-       JOIN Unit u ON la.unit_id = u.unit_id
-       JOIN Property p ON u.property_id = p.property_id
-       JOIN Tenant t ON la.tenant_id = t.tenant_id
-       JOIN User usr ON t.user_id = usr.user_id
-       WHERE la.agreement_id = ?;`,
+            `
+                SELECT
+                    la.agreement_id AS lease_id,
+                    la.start_date,
+                    la.end_date,
+                    la.status AS lease_status,
+                    la.agreement_url,
+                    la.security_deposit_amount,
+                    la.advance_payment_amount,
+                    la.is_security_deposit_paid,
+                    la.is_advance_payment_paid,
+                    la.grace_period_days AS lease_grace_period,
+                    la.late_penalty_amount AS lease_late_fee,
+                    la.billing_due_day AS lease_due_day,
+                    p.property_id,
+                    p.property_name,
+                    u.unit_name,
+                    u.rent_amount,
+                    t.tenant_id,
+                    usr.firstName AS enc_firstName,
+                    usr.lastName AS enc_lastName,
+                    usr.email AS enc_email,
+                    usr.phoneNumber as enc_phoneNumber,
+                    pc.billingDueDay AS config_due_day,
+                    pc.gracePeriodDays AS config_grace_period,
+                    pc.lateFeeAmount AS config_late_fee
+                FROM LeaseAgreement la
+                         JOIN Unit u ON la.unit_id = u.unit_id
+                         JOIN Property p ON u.property_id = p.property_id
+                         JOIN Tenant t ON la.tenant_id = t.tenant_id
+                         JOIN User usr ON t.user_id = usr.user_id
+                         LEFT JOIN PropertyConfiguration pc ON pc.property_id = p.property_id
+                WHERE la.agreement_id = ?;
+            `,
             [agreement_id]
         );
 
-        // @ts-ignore
         if (!leaseRows || leaseRows.length === 0) {
-            return NextResponse.json({ message: "Lease not found" }, { status: 404 });
+            return NextResponse.json(
+                { message: "Lease not found" },
+                { status: 404 }
+            );
         }
 
-        // @ts-ignore
         const lease: any = leaseRows[0];
 
-        // 🧑‍🤝‍🧑 Decrypt tenant name
-        let tenantFirstName = "";
-        let tenantLastName = "";
-        let tenantEmail = "";
-        let tenantPhoneNumber = "";
+        // 🧩 Resolve where config values came from
+        const billing_due_day =
+            lease.config_due_day ?? lease.lease_due_day ?? 1;
+        const grace_period_days =
+            lease.config_grace_period ?? lease.lease_grace_period ?? 3;
+        const late_penalty_amount =
+            lease.config_late_fee ?? lease.lease_late_fee ?? 0;
+
+        // 🧠 Track source for UI info
+        const info_source = {
+            billing_due_day: lease.config_due_day ? "property_config" : "lease",
+            grace_period_days: lease.config_grace_period ? "property_config" : "lease",
+            late_penalty_amount: lease.config_late_fee ? "property_config" : "lease",
+        };
+
+        // 🧑‍🤝‍🧑 Decrypt tenant info
+        let tenantFirstName = "",
+            tenantLastName = "",
+            tenantEmail = "",
+            tenantPhoneNumber = "";
         try {
-            // @ts-ignore
             tenantFirstName = decryptData(JSON.parse(lease.enc_firstName), SECRET_KEY);
-            // @ts-ignore
             tenantLastName = decryptData(JSON.parse(lease.enc_lastName), SECRET_KEY);
-            // @ts-ignore
             tenantEmail = decryptData(JSON.parse(lease.enc_email), SECRET_KEY);
-            // @ts-ignore
             tenantPhoneNumber = lease.enc_phoneNumber
                 ? decryptData(JSON.parse(lease.enc_phoneNumber), SECRET_KEY)
-                : lease.enc_phoneNumber || ""; // Fallback if phoneNumber is not encrypted
+                : lease.enc_phoneNumber || "";
         } catch (err) {
-            console.error("Decryption failed for tenant name:", err);
+            console.error("Decryption failed for tenant info:", err);
         }
 
-        // 📝 PDCs
+        // 🧾 Fetch PDCs
         const [pdcRows] = await db.execute(
-            `SELECT 
-          pdc_id,
-          check_number,
-          bank_name,
-          amount,
-          due_date,
-          status
-       FROM PostDatedCheck
-       WHERE lease_id = ?
-       ORDER BY due_date ASC;`,
+            `
+                SELECT
+                    pdc_id,
+                    check_number,
+                    bank_name,
+                    amount,
+                    due_date,
+                    status
+                FROM PostDatedCheck
+                WHERE lease_id = ?
+                ORDER BY due_date ASC;
+            `,
             [agreement_id]
         );
 
-        // ✅ Response
+        // ✅ Response payload
         return NextResponse.json(
             {
                 lease_id: lease.lease_id,
@@ -109,17 +129,21 @@ export async function GET(
                 agreement_url: lease.agreement_url,
                 email: tenantEmail,
                 phoneNumber: tenantPhoneNumber,
-                // Financial terms
+
+                // 💰 Financial terms
+                rent_amount: lease.rent_amount,
                 security_deposit_amount: lease.security_deposit_amount,
                 advance_payment_amount: lease.advance_payment_amount,
                 is_security_deposit_paid: lease.is_security_deposit_paid,
                 is_advance_payment_paid: lease.is_advance_payment_paid,
-                grace_period_days: lease.grace_period_days,
-                late_penalty_amount: lease.late_penalty_amount,
-                billing_due_day: lease.billing_due_day,
-                rent_amount: lease.rent_amount,
 
-                // Related data
+                // ⚙️ Property configuration-based defaults
+                billing_due_day,
+                grace_period_days,
+                late_penalty_amount,
+                info_source, // tells frontend where data came from
+
+                // 🧾 PDC list
                 pdcs: pdcRows,
             },
             { status: 200 }

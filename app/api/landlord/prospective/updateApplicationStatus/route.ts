@@ -2,11 +2,9 @@ import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 
-// 🔑 Web Push keys
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
 
-// Configure web-push
 webpush.setVapidDetails(
     "mailto:your-email@example.com",
     VAPID_PUBLIC_KEY,
@@ -14,17 +12,12 @@ webpush.setVapidDetails(
 );
 
 export async function PUT(req: NextRequest) {
+  let connection;
   try {
     const { unitId, status, message, tenant_id } = await req.json();
 
-    console.log('application status:', status);
-    console.log('unit id:', unitId);
-
     if (!["pending", "approved", "disapproved"].includes(status)) {
-      return NextResponse.json(
-          { message: "Invalid status value" },
-          { status: 400 }
-      );
+      return NextResponse.json({ message: "Invalid status value" }, { status: 400 });
     }
 
     if (status === "disapproved" && (!message || message.trim() === "")) {
@@ -34,60 +27,69 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    // 📌 Fetch user_id from Tenant table
-    const [tenantResult] = await db.query(
+    connection = await db.getConnection();
+
+    // 📌 Get user_id from tenant
+    const [tenantResult]: any = await connection.query(
         "SELECT user_id FROM Tenant WHERE tenant_id = ?",
         [tenant_id]
     );
-
-    // @ts-ignore
-    if (!tenantResult || tenantResult.length === 0) {
-      return NextResponse.json(
-          { message: "Tenant not found" },
-          { status: 404 }
-      );
+    if (!tenantResult.length) {
+      return NextResponse.json({ message: "Tenant not found" }, { status: 404 });
     }
-
-    // @ts-ignore
     const user_id = tenantResult[0].user_id;
 
-    // 📌 Fetch property & unit details
-    const [unitDetails]: any = await db.query(
+    // 📌 Get property/unit details
+    const [unitDetails]: any = await connection.query(
         `SELECT u.unit_name, p.property_name
        FROM Unit u
        JOIN Property p ON u.property_id = p.property_id
        WHERE u.unit_id = ?`,
         [unitId]
     );
-
     const propertyName = unitDetails?.[0]?.property_name || "Unknown Property";
     const unitName = unitDetails?.[0]?.unit_name || "Unknown Unit";
 
-    // 📌 Update status and optional message
-    await db.query(
+    // 📌 Update application status
+    await connection.query(
         `UPDATE ProspectiveTenant
-         SET status = ?, message = ?, updated_at = CURRENT_TIMESTAMP
-         WHERE unit_id = ? AND tenant_id = ?`,
+       SET status = ?, message = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE unit_id = ? AND tenant_id = ?`,
         [status, message || null, unitId, tenant_id]
     );
 
-    // 📌 Build notification
     let notificationMessage = "Your tenant application status has been updated.";
     if (status === "approved") {
-      notificationMessage = `🎉 Your unit (${propertyName} - ${unitName}) has been approved!`;
+      notificationMessage = `🎉 Your application for ${propertyName} - ${unitName} has been approved!`;
+
+      // ✅ Check if a LeaseAgreement already exists
+      const [existingLease]: any = await connection.query(
+          `SELECT agreement_id FROM LeaseAgreement WHERE tenant_id = ? AND unit_id = ? LIMIT 1`,
+          [tenant_id, unitId]
+      );
+
+      // ✅ Create LeaseAgreement if not yet existing
+      if (!existingLease.length) {
+        await connection.query(
+            `INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, status, created_at)
+           VALUES (?, ?, NULL, NULL, 'draft', CURRENT_TIMESTAMP)`,
+            [tenant_id, unitId]
+        );
+        console.log("🆕 LeaseAgreement created for approved tenant:", tenant_id);
+      }
     } else if (status === "disapproved") {
-      notificationMessage = `❌ Your unit (${propertyName} - ${unitName}) application was disapproved. Reason: ${message}`;
+      notificationMessage = `❌ Your application for ${propertyName} - ${unitName} was disapproved. Reason: ${message}`;
     }
 
-    // Save notification in DB
-    await db.query(
+    // 📌 Save notification in DB
+    await connection.query(
         `INSERT INTO Notification (user_id, title, body, is_read, created_at)
          VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)`,
         [user_id, "Tenant Application Update", notificationMessage]
     );
 
-    // 📌 Fetch push subscriptions
-    const [subs]: any = await db.query(
+    // 📌 Fetch push subscriptions for user
+    const [subs]: any = await connection.query(
         `SELECT endpoint, p256dh, auth
          FROM user_push_subscriptions
          WHERE user_id = ?`,
@@ -104,25 +106,19 @@ export async function PUT(req: NextRequest) {
       for (const sub of subs) {
         const subscription = {
           endpoint: sub.endpoint,
-          keys: {
-            p256dh: sub.p256dh,
-            auth: sub.auth,
-          },
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
         };
 
         try {
           await webpush.sendNotification(subscription, payload);
-          console.log("✅ Sent push notification:", sub.endpoint);
+          console.log("✅ Push sent to:", sub.endpoint);
         } catch (err: any) {
-          console.error("❌ Failed push:", err);
-
-          // Remove invalid subscriptions
+          console.error("❌ Push failed:", err.message);
           if (err.statusCode === 410 || err.statusCode === 404) {
-            await db.execute(
+            await connection.query(
                 `DELETE FROM user_push_subscriptions WHERE endpoint = ?`,
                 [sub.endpoint]
             );
-            await db.end();
             console.log("🗑️ Removed invalid subscription:", sub.endpoint);
           }
         }
@@ -139,5 +135,7 @@ export async function PUT(req: NextRequest) {
         { message: "Server Error", error: error.message },
         { status: 500 }
     );
+  } finally {
+    if (connection) connection.release();
   }
 }
