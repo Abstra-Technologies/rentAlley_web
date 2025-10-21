@@ -1,92 +1,123 @@
 "use client";
 
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
-interface Props {
-    currentPage: number;
-    totalPages: number;
-    onPageChange: (page: number) => void;
-    totalItems: number;
-    itemsPerPage: number;
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  totalItems: number;
+  itemsPerPage: number;
 }
 
 export default function Pagination({
-                                       currentPage,
-                                       totalPages,
-                                       onPageChange,
-                                       totalItems,
-                                       itemsPerPage,
-                                   }: Props) {
-    const getPageNumbers = () => {
-        const pages: (number | "...")[] = [];
-        const maxVisible = typeof window !== "undefined" && window.innerWidth < 640 ? 3 : 5;
+  currentPage,
+  totalPages,
+  onPageChange,
+  totalItems,
+  itemsPerPage,
+}: PaginationProps) {
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-        if (totalPages <= maxVisible) {
-            for (let i = 1; i <= totalPages; i++) pages.push(i);
-        } else {
-            if (currentPage <= 2) {
-                pages.push(1, 2, 3, "...", totalPages);
-            } else if (currentPage >= totalPages - 1) {
-                pages.push(1, "...", totalPages - 2, totalPages - 1, totalPages);
-            } else {
-                pages.push(1, "...", currentPage, "...", totalPages);
-            }
-        }
-        return pages;
-    };
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxPagesToShow = 5;
+    const halfWindow = Math.floor(maxPagesToShow / 2);
 
-    const startItem = (currentPage - 1) * itemsPerPage + 1;
-    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+    let startPage = Math.max(1, currentPage - halfWindow);
+    let endPage = Math.min(totalPages, currentPage + halfWindow);
 
-    if (totalPages <= 1) return null;
+    if (endPage - startPage < maxPagesToShow - 1) {
+      if (startPage === 1) {
+        endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+      } else {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+    }
 
-    return (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 border-t border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-b-xl">
-            {/* Info */}
-            <div className="text-sm text-gray-600 order-2 sm:order-1">
-                Showing <span className="font-semibold text-blue-700">{startItem}</span>-
-                <span className="font-semibold text-blue-700">{endItem}</span> of{" "}
-                <span className="font-semibold text-emerald-700">{totalItems}</span> units
+    if (startPage > 1) {
+      pages.push(1);
+      if (startPage > 2) pages.push("...");
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) pages.push("...");
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 sm:py-6 border-t border-gray-200">
+      <div className="text-sm text-gray-600">
+        <span className="font-medium text-gray-900">{startItem}</span>
+        <span className="text-gray-500"> - </span>
+        <span className="font-medium text-gray-900">{endItem}</span>
+        <span className="text-gray-500"> of </span>
+        <span className="font-medium text-gray-900">{totalItems}</span>
+        <span className="text-gray-500"> items</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="p-2 sm:p-2.5 rounded-lg border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-emerald-300 text-gray-600 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200"
+          aria-label="Previous page"
+        >
+          <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+
+        <div className="flex items-center gap-1 sm:gap-2">
+          {pageNumbers.map((page, idx) => (
+            <div key={idx}>
+              {page === "..." ? (
+                <span className="px-2 py-1 sm:px-3 sm:py-2 text-gray-500 text-sm">
+                  ...
+                </span>
+              ) : (
+                <button
+                  onClick={() => onPageChange(page as number)}
+                  disabled={page === currentPage}
+                  className={`min-w-[2.25rem] sm:min-w-[2.5rem] px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                    page === currentPage
+                      ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white shadow-lg"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-transparent hover:border-emerald-300"
+                  }`}
+                  aria-label={`Go to page ${page}`}
+                  aria-current={page === currentPage ? "page" : undefined}
+                >
+                  {page}
+                </button>
+              )}
             </div>
-
-            {/* Buttons */}
-            <nav className="flex items-center gap-1 order-1 sm:order-2">
-                <button
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-l-md hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                    <FaChevronLeft className="w-3 h-3" />
-                </button>
-
-                {getPageNumbers().map((page, index) =>
-                        page === "..." ? (
-                            <span key={index} className="px-3 py-2 text-sm text-gray-500">
-              ...
-            </span>
-                        ) : (
-                            <button
-                                key={index}
-                                onClick={() => onPageChange(page as number)}
-                                className={`px-3 py-2 text-sm font-medium border transition-all ${
-                                    currentPage === page
-                                        ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white border-transparent shadow-md"
-                                        : "bg-white border-gray-300 text-gray-600 hover:bg-blue-50"
-                                }`}
-                            >
-                                {page}
-                            </button>
-                        )
-                )}
-
-                <button
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-r-md hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                    <FaChevronRight className="w-3 h-3" />
-                </button>
-            </nav>
+          ))}
         </div>
-    );
+
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="p-2 sm:p-2.5 rounded-lg border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-emerald-300 text-gray-600 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200"
+          aria-label="Next page"
+        >
+          <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+      </div>
+
+      <div className="text-sm text-gray-600 text-center sm:text-right">
+        Page
+        <span className="font-medium text-gray-900 mx-1">{currentPage}</span>
+        of
+        <span className="font-medium text-gray-900 mx-1">{totalPages}</span>
+      </div>
+    </div>
+  );
 }
