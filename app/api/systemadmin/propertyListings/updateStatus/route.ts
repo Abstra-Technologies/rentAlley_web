@@ -37,6 +37,7 @@ webpush.setVapidDetails(
 );
 
 export async function POST(req: NextRequest) {
+  let connection: mysql.Connection | null = null;
   try {
     const cookieHeader = req.headers.get("cookie") || "";
     const cookies = parse(cookieHeader);
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const connection = await mysql.createConnection({
+    connection = await mysql.createConnection({
       host: process.env.DB_HOST!,
       user: process.env.DB_USER!,
       password: process.env.DB_PASSWORD!,
@@ -111,34 +112,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let finalNotificationTitle = NotificationTemplates.GENERAL.TITLE(status);
+    let finalNotificationBody = NotificationTemplates.GENERAL.BODY(
+      status,
+      message
+    );
+
     if (currentStatus === "Rejected" && attempts >= 2) {
-      const notificationTitle =
+      finalNotificationTitle =
         NotificationTemplates.REJECTED_TWICE.TITLE(status);
-      const notificationBody = NotificationTemplates.REJECTED_TWICE.BODY(
+      finalNotificationBody = NotificationTemplates.REJECTED_TWICE.BODY(
         status,
         message
       );
 
       await connection.execute(
         `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
-        [user_id, notificationTitle, notificationBody]
+        [user_id, finalNotificationTitle, finalNotificationBody]
       );
     }
 
     if (status === "Verified") {
-      const verifiedTitle = NotificationTemplates.VERIFIED.TITLE;
-      const verifiedBody = NotificationTemplates.VERIFIED.BODY(
+      finalNotificationTitle = NotificationTemplates.VERIFIED.TITLE;
+      finalNotificationBody = NotificationTemplates.VERIFIED.BODY(
         POINTS.PROPERTY_VERIFIED
       );
 
       await connection.execute(
         `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
-        [user_id, verifiedTitle, verifiedBody]
+        [user_id, finalNotificationTitle, finalNotificationBody]
       );
 
       await connection.execute(
         `UPDATE User SET points = points + ? WHERE user_id = ?`,
         [POINTS.PROPERTY_VERIFIED, user_id]
+      );
+    }
+
+    if (
+      status !== "Verified" &&
+      !(currentStatus === "Rejected" && attempts >= 2)
+    ) {
+      await connection.execute(
+        `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
+        [user_id, finalNotificationTitle, finalNotificationBody]
       );
     }
 
@@ -151,28 +168,18 @@ export async function POST(req: NextRequest) {
       [status, message || null, currentadmin_id, newAttempts, property_id]
     );
 
-    const notificationTitle = NotificationTemplates.GENERAL.TITLE(status);
-    const notificationBody = NotificationTemplates.GENERAL.BODY(
-      status,
-      message
-    );
-
-    await connection.execute(
-      `INSERT INTO Notification (user_id, title, body, is_read, created_at) VALUES (?, ?, ?, 0, NOW())`,
-      [user_id, notificationTitle, notificationBody]
-    );
-
     const [subs]: any = await connection.execute(
       `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
       [user_id]
     );
 
     await connection.end();
+    connection = null;
 
     if (subs.length > 0) {
       const payload = JSON.stringify({
-        title: notificationTitle,
-        body: notificationBody,
+        title: finalNotificationTitle,
+        body: finalNotificationBody,
         url: "/",
       });
 
@@ -217,6 +224,9 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: any) {
     console.error("Error updating property status:", error);
+    if (connection) {
+      await connection.end();
+    }
     return new Response(
       JSON.stringify({ message: "Error updating property status" }),
       { status: 500 }
