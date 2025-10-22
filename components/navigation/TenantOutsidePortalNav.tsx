@@ -31,7 +31,9 @@ export default function TenantOutsidePortalNav() {
 
     const fetchUndecidedApplications = async () => {
       try {
-        const res = await fetch(`/api/tenant/applications/pendingApplications?tenant_id=${user?.tenant_id}`);
+        const res = await fetch(
+          `/api/tenant/applications/pendingApplications?tenant_id=${user?.tenant_id}`
+        );
         const data = await res.json();
         setUndecidedApplications(data.count || 0);
       } catch (error) {
@@ -41,8 +43,6 @@ export default function TenantOutsidePortalNav() {
 
     fetchUndecidedApplications();
   }, [user?.tenant_id]);
-
-
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -128,10 +128,8 @@ export default function TenantOutsidePortalNav() {
     <div className="flex h-screen bg-gray-50">
       {/* Desktop Sidebar - Fixed and Sticky */}
       <div className="hidden md:block fixed left-0 top-16 w-64 bg-white shadow-lg h-[calc(100vh-4rem)] overflow-y-auto z-30 border-r border-gray-200">
-
         <div className="p-4">
-          <h1 className="text-lg font-semibold bg-gradient-to-r from-indigo-800 to-purple-600 bg-clip-text text-transparent">
-          </h1>
+          <h1 className="text-lg font-semibold bg-gradient-to-r from-indigo-800 to-purple-600 bg-clip-text text-transparent"></h1>
         </div>
 
         <nav className="px-3 pb-4">
@@ -198,7 +196,7 @@ export default function TenantOutsidePortalNav() {
       </div>
 
       {/* Mobile Menu Button - Floating */}
-      <div className="md:hidden fixed bottom-6 right-6 z-50">
+      <div className="md:hidden fixed top-20 right-4 z-40">
         <button
           onClick={toggleMobileMenu}
           className={`
