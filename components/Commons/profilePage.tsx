@@ -1,7 +1,6 @@
-
 "use client";
 import { CITIZENSHIPS } from "../../constant/citizenship";
-import  occupations  from "../../constant/occupations";
+import occupations from "../../constant/occupations";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -15,18 +14,35 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
-import {
-  UserIcon,
-  ShieldCheckIcon,
-  ArrowRightOnRectangleIcon,
-} from "@heroicons/react/24/outline";
 import axios from "axios";
 import { logEvent } from "../../utils/gtag";
 import DeleteAccountButton from "../authentication/deleteAccountButton";
 import useAuthStore from "../../zustand/authStore";
-import TenantDetails from "../../components/tenant/profile/profileData";
-import LandlordDetails from "../../components/Commons/profile/landlordDetails";
 
+interface ProfileData {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  email: string;
+  civil_status: string;
+  occupation: string;
+  citizenship: string;
+  birthDate: string;
+  address: string;
+}
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  occupation: string;
+  citizenship: string;
+  civil_status: string;
+  birthDate?: string;
+  address: string;
+}
+
+type VerificationStatus = "approved" | "pending" | "not verified" | null;
 
 export default function ProfilePage() {
   const { user, loading } = useAuthStore();
@@ -34,41 +50,36 @@ export default function ProfilePage() {
   const user_id = user?.user_id;
   const userType = user?.userType;
 
-  const [profileData, setProfileData] = useState({
+  const [profileData, setProfileData] = useState<ProfileData>({
     firstName: "",
     lastName: "",
     phoneNumber: "",
     email: "",
-    civil_status:"",
+    civil_status: "",
     occupation: "",
-    citizenship:"",
-    birthDate:"",
+    citizenship: "",
+    birthDate: "",
     address: "",
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedFile, setSelectedFile] = useState(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [uploading, setUploading] = useState(false);
-  const [profilePicture, setProfilePicture] = useState("");
-  const [editing, setEditing] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [verificationStatus, setVerificationStatus] = useState(null);
 
-  const [formData, setFormData] = useState({
+  const [profilePicture, setProfilePicture] = useState<string>("");
+  const [editing, setEditing] = useState<boolean>(false);
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus>(null);
+
+  const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
     phoneNumber: "",
     occupation: "",
-    citizenship:"",
-    civil_status:"",
+    citizenship: "",
+    civil_status: "",
     address: "",
-
   });
-
 
   useEffect(() => {
     if (user) {
-      setProfileData(user);
+      setProfileData(user as ProfileData);
       setProfilePicture(
         user.profilePicture || "https://via.placeholder.com/150"
       );
@@ -76,12 +87,11 @@ export default function ProfilePage() {
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         phoneNumber: user.phoneNumber || "",
-        occupation: user.occupation || '',
-        citizenship: user.citizenship || '',
-        civil_status: user.civil_status || '',
+        occupation: user.occupation || "",
+        citizenship: user.citizenship || "",
+        civil_status: user.civil_status || "",
         birthDate: user.birthDate || "",
         address: user.address || "",
-
       });
     }
   }, [user]);
@@ -91,9 +101,10 @@ export default function ProfilePage() {
       axios
         .get(`/api/landlord/verification-upload/status?user_id=${user.user_id}`)
         .then((response) => {
-          console.log("Verification Status Response:", response.data);
           if (response.data.verification_status) {
-            setVerificationStatus(response.data.verification_status);
+            setVerificationStatus(
+              response.data.verification_status as VerificationStatus
+            );
           } else {
             setVerificationStatus("not verified");
           }
@@ -105,25 +116,30 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = async (event) => {
-    const file = event.target.files[0];
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
     if (!file) return;
-    setSelectedFile(file);
+
     setProfilePicture(URL.createObjectURL(file));
 
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
+    const uploadFormData = new FormData();
+    uploadFormData.append("file", file);
 
     try {
       const response = await axios.post(
         "/api/profile/uploadProfilePic",
-        formData,
+        uploadFormData,
         {
           headers: { "Content-Type": "multipart/form-data" },
         }
@@ -139,12 +155,14 @@ export default function ProfilePage() {
       useAuthStore.getState().updateUser({
         profilePicture: newImageUrl,
       });
-
-      console.log("Image uploaded:", newImageUrl);
     } catch (error) {
       console.error("Upload failed:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Upload Failed",
+        text: "Failed to upload profile picture. Please try again.",
+      });
     }
-    setUploading(false);
   };
 
   const handleUpdateProfile = async () => {
@@ -184,7 +202,7 @@ export default function ProfilePage() {
             Verified
           </div>
         );
-      case "pending": // pending
+      case "pending":
         return (
           <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
             <Clock className="w-4 h-4 mr-1.5" />
@@ -230,13 +248,22 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) return <p>Loading profile...</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-semibold text-blue-600 mb-6">
+          <h1 className="text-3xl font-semibold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent mb-2">
             Profile Settings
           </h1>
           <p className="text-gray-600">
@@ -245,7 +272,8 @@ export default function ProfilePage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-12">
+          {/* Header with Profile Picture */}
+          <div className="relative bg-gradient-to-r from-blue-600 to-emerald-600 px-8 py-12">
             <div className="flex flex-col sm:flex-row items-center sm:items-end space-y-6 sm:space-y-0 sm:space-x-6">
               <div className="relative group">
                 <label className="cursor-pointer block">
@@ -278,7 +306,7 @@ export default function ProfilePage() {
 
               <div className="text-center sm:text-left flex-1">
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  {user?.firstName}
+                  {user?.firstName} {user?.lastName}
                 </h2>
                 <p className="text-blue-100 mb-4 capitalize">
                   {user?.userType} Account
@@ -293,10 +321,11 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* Content Sections */}
           <div className="p-8 space-y-10">
             {/* General Information */}
             <section>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">
                 General Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -306,18 +335,18 @@ export default function ProfilePage() {
                     First Name
                   </label>
                   {editing ? (
-                      <input
-                          type="text"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                          placeholder="Enter your first name"
-                      />
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Enter your first name"
+                    />
                   ) : (
-                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                        {profileData?.firstName}
-                      </div>
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                      {profileData?.firstName}
+                    </div>
                   )}
                 </div>
 
@@ -327,18 +356,18 @@ export default function ProfilePage() {
                     Last Name
                   </label>
                   {editing ? (
-                      <input
-                          type="text"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                          placeholder="Enter your last name"
-                      />
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Enter your last name"
+                    />
                   ) : (
-                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                        {profileData?.lastName}
-                      </div>
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                      {profileData?.lastName}
+                    </div>
                   )}
                 </div>
 
@@ -348,23 +377,24 @@ export default function ProfilePage() {
                     Civil Status
                   </label>
                   {editing ? (
-                      <select
-                          name="civil_status"
-                          value={formData.civil_status}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                      >
-                        <option value="single">Single</option>
-                        <option value="married">Married</option>
-                        <option value="widowed">Widowed</option>
-                        <option value="divorced">Divorced</option>
-                        <option value="separated">Separated</option>
-                        <option value="other">Other</option>
-                      </select>
+                    <select
+                      name="civil_status"
+                      value={formData.civil_status}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    >
+                      <option value="">Select civil status</option>
+                      <option value="single">Single</option>
+                      <option value="married">Married</option>
+                      <option value="widowed">Widowed</option>
+                      <option value="divorced">Divorced</option>
+                      <option value="separated">Separated</option>
+                      <option value="other">Other</option>
+                    </select>
                   ) : (
-                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium capitalize">
-                        {profileData?.civil_status || "Not Provided"}
-                      </div>
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium capitalize">
+                      {profileData?.civil_status || "Not Provided"}
+                    </div>
                   )}
                 </div>
 
@@ -374,17 +404,17 @@ export default function ProfilePage() {
                     Birth Date
                   </label>
                   {editing ? (
-                      <input
-                          type="date"
-                          name="birthDate"
-                          value={formData.birthDate || ""}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                      />
+                    <input
+                      type="date"
+                      name="birthDate"
+                      value={formData.birthDate || ""}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    />
                   ) : (
-                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                        {profileData?.birthDate || "Not provided"}
-                      </div>
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                      {profileData?.birthDate || "Not provided"}
+                    </div>
                   )}
                 </div>
 
@@ -394,28 +424,25 @@ export default function ProfilePage() {
                     Citizenship
                   </label>
                   {editing ? (
-                      <select
-                          name="citizenship"
-                          value={formData.citizenship}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg
-                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                 transition-all duration-200 bg-white"
-                      >
-                        {CITIZENSHIPS.map((c) => (
-                            <option key={c.value} value={c.value}>
-                              {c.label}
-                            </option>
-                        ))}
-                      </select>
+                    <select
+                      name="citizenship"
+                      value={formData.citizenship}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    >
+                      <option value="">Select citizenship</option>
+                      {CITIZENSHIPS.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
-                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200
-                    rounded-lg text-gray-700">
-                        {
-                            CITIZENSHIPS.find((c) => c.value === profileData?.citizenship)?.label ||
-                            "Not provided"
-                        }
-                      </div>
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                      {CITIZENSHIPS.find(
+                        (c) => c.value === profileData?.citizenship
+                      )?.label || "Not provided"}
+                    </div>
                   )}
                 </div>
 
@@ -425,28 +452,25 @@ export default function ProfilePage() {
                     Occupation
                   </label>
                   {editing ? (
-                      <select
-                          name="occupation"
-                          value={formData.occupation}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg
-                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                 transition-all duration-200 bg-white"
-                      >
-                        {occupations.map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {o.label}
-                            </option>
-                        ))}
-                      </select>
+                    <select
+                      name="occupation"
+                      value={formData.occupation}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                    >
+                      <option value="">Select occupation</option>
+                      {occupations.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
-                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200
-                    rounded-lg text-gray-700">
-                        {
-                            occupations.find((o) => o.value === profileData?.occupation)?.label ||
-                            "Not provided"
-                        }
-                      </div>
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                      {occupations.find(
+                        (o) => o.value === profileData?.occupation
+                      )?.label || "Not provided"}
+                    </div>
                   )}
                 </div>
 
@@ -456,30 +480,26 @@ export default function ProfilePage() {
                     Address
                   </label>
                   {editing ? (
-                      <textarea
-                          name="address"
-                          value={formData.address}
-                          onChange={handleChange}
-                          rows={2}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg
-                 focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                 transition-all duration-200 bg-white"
-                          placeholder="Enter your full address"
-                      />
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      rows={2}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Enter your full address"
+                    />
                   ) : (
-                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200
-                    rounded-lg text-gray-700">
-                        {profileData?.address || "Not provided"}
-                      </div>
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                      {profileData?.address || "Not provided"}
+                    </div>
                   )}
                 </div>
-
               </div>
             </section>
 
             {/* Contact Information */}
             <section>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">
                 Contact Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -488,8 +508,8 @@ export default function ProfilePage() {
                   <label className="block text-sm font-semibold text-gray-700">
                     Email Address
                     <span className="text-xs text-gray-500 font-normal ml-2">
-            (Read-only)
-          </span>
+                      (Read-only)
+                    </span>
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium">
                     {profileData?.email}
@@ -502,18 +522,18 @@ export default function ProfilePage() {
                     Phone Number
                   </label>
                   {editing ? (
-                      <input
-                          type="text"
-                          name="phoneNumber"
-                          value={formData.phoneNumber}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                          placeholder="Enter your phone number"
-                      />
+                    <input
+                      type="text"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      placeholder="Enter your phone number"
+                    />
                   ) : (
-                      <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                        {profileData?.phoneNumber || "Not provided"}
-                      </div>
+                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                      {profileData?.phoneNumber || "Not provided"}
+                    </div>
                   )}
                 </div>
               </div>
@@ -521,7 +541,7 @@ export default function ProfilePage() {
 
             {/* Account Settings */}
             <section>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">
                 Account Settings
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -529,8 +549,8 @@ export default function ProfilePage() {
                   <label className="block text-sm font-semibold text-gray-700">
                     Account Type
                     <span className="text-xs text-gray-500 font-normal ml-2">
-            (Read-only)
-          </span>
+                      (Read-only)
+                    </span>
                   </label>
                   <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium capitalize">
                     {user?.userType}
@@ -538,32 +558,9 @@ export default function ProfilePage() {
                 </div>
               </div>
             </section>
-
-
-
-            {/* Role-specific details */}
-            {user?.userType === "tenant" && (
-
-                <section>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Tenant Information</h3>
-                  {/*<TenantDetails userId={user?.user_id} />*/}
-                </section>
-
-            )}
-
-            {user?.userType === "landlord" && (
-
-                <section>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Landlord Information</h3>
-                  {/*<LandlordDetails landlord_id={user?.landlord_id} />*/}
-                </section>
-
-            )}
           </div>
 
-
-
-
+          {/* Footer Actions */}
           <div className="bg-gray-50 px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             <DeleteAccountButton user_id={user_id} userType={userType} />
 
@@ -578,7 +575,7 @@ export default function ProfilePage() {
                   );
                   handleUpdateProfile();
                 }}
-                className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
+                className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Save Changes
@@ -594,14 +591,13 @@ export default function ProfilePage() {
                   );
                   setEditing(true);
                 }}
-                className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
+                className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 Edit Profile
               </button>
             )}
           </div>
-
         </div>
       </div>
     </div>
