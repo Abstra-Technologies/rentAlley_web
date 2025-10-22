@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ScrollText, Users2, Users, Building2, Bug } from "lucide-react";
+import { Home, ScrollText, Users2, Users, Building2, Bug, EthernetPort  } from "lucide-react";
 
 export default function SideNavAdmin({ admin }) {
   const pathname = usePathname();
@@ -17,6 +17,11 @@ export default function SideNavAdmin({ admin }) {
       href: "/pages/system_admin/co_admin/list",
       icon: Users2,
       label: "Add Co-admin",
+    },
+    {
+      href: "/pages/system_admin/ip_restrict",
+      icon: EthernetPort ,
+      label: "IP Configurations",
     },
     {
       href: "/pages/system_admin/tenant_landlord/tenant_mgt",

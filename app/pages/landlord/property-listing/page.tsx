@@ -28,6 +28,7 @@ import Pagination from "@mui/material/Pagination";
 import { AlertCircle } from 'lucide-react';
 import useSubscription from "@/hooks/landlord/useSubscription";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
+import { FiArrowRight } from "react-icons/fi";
 
 const PropertyListingPage = () => {
   const router = useRouter();
@@ -375,15 +376,16 @@ const PropertyListingPage = () => {
                 Subscription Required
               </h3>
               <p className="text-blue-700 mb-4">
-                Activate a subscription plan to start listing properties and
+                Purchase a plan to start listing properties and
                 reach potential tenants.
               </p>
-              <Link
-                href="/pages/landlord/subscription_plan/pricing"
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all duration-200"
+              <button
+                  onClick={() => router.push("/pages/landlord/subsciption_plan/pricing")}
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all duration-200"
               >
                 View Plans
-              </Link>
+                <FiArrowRight className="ml-2 w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>

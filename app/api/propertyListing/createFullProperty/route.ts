@@ -1,8 +1,8 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { encryptData } from "@/crypto/encrypt";
+import { generatePropertyId } from "@/utils/id_generator";
 
 const s3Client = new S3Client({
     region: process.env.NEXT_AWS_REGION!,
@@ -42,7 +42,6 @@ async function uploadToS3(file: any, folder: string) {
 
 export async function POST(req: NextRequest) {
     const formData = await req.formData();
-    console.log('form data: ', formData);
     const landlord_id = formData.get("landlord_id")?.toString();
     const propertyRaw = formData.get("property")?.toString();
 
@@ -64,11 +63,13 @@ export async function POST(req: NextRequest) {
     try {
         await connection.beginTransaction();
 
-        // 1️⃣ Insert property with separated billing types
+        // ✅ Generate a custom alphanumeric property_id
+        const propertyId = generatePropertyId();
+
         // 1️⃣ Insert property with separated billing types + new fields
-        const [result] = await connection.execute(
+        await connection.execute(
             `INSERT INTO Property (
-                landlord_id, property_name, property_type, amenities, street,
+                property_id, landlord_id, property_name, property_type, amenities, street,
                 brgy_district, city, zip_code, province,
                 water_billing_type, electricity_billing_type,
                 description, floor_area,
@@ -77,8 +78,9 @@ export async function POST(req: NextRequest) {
                 accepted_payment_methods, latitude, longitude,
                 rent_increase_percent, security_deposit_months, advance_payment_months,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
+                propertyId, // ✅ use generated ID
                 landlord_id,
                 property.propertyName,
                 property.propertyType,
@@ -106,10 +108,6 @@ export async function POST(req: NextRequest) {
                 property.advancePaymentMonths || 0,
             ]
         );
-
-
-        // @ts-ignore
-        const propertyId = result.insertId;
 
         // 2️⃣ Upload property photos
         for (const file of photos) {
@@ -158,4 +156,3 @@ export async function POST(req: NextRequest) {
         connection.release();
     }
 }
-

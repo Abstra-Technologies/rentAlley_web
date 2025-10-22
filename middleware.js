@@ -44,14 +44,24 @@ export async function middleware(req) {
     const decoded = await verifyToken(token);
 
     if (!decoded) {
-      if (req.nextUrl.pathname.startsWith("/pages/tenant")) {
-        return NextResponse.redirect(new URL("/pages/auth/login", req.url));
-      } else if (req.nextUrl.pathname.startsWith("/pages/landlord")) {
-        return NextResponse.redirect(new URL("/pages/auth/login", req.url));
-      } else {
+      const protectedPaths = [
+        "/pages/tenant",
+        "/pages/landlord",
+        "/pages/admin",
+        "/pages/commons",
+        "/pages/payment",
+        "/pages/lease",
+      ];
+
+      const isProtected = protectedPaths.some((path) =>
+          req.nextUrl.pathname.startsWith(path)
+      );
+
+      if (isProtected) {
         return NextResponse.redirect(new URL("/pages/auth/login", req.url));
       }
     }
+
 
     const { userType, role, permissions } = decoded;
     const pathname = req.nextUrl.pathname;
