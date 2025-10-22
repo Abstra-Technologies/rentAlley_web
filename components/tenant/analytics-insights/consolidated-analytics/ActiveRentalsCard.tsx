@@ -71,50 +71,66 @@ export default function ActiveRentConsolidatedCards({
   }
 
   return (
-    <div className="w-full space-y-5">
-      {/* Total Active Counter */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg text-center text-white">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <HomeIcon className="w-5 h-5" />
-          <h2 className="text-sm font-semibold tracking-wide uppercase">
+    <div className="w-full h-full flex flex-col">
+      {/* Header with icon - Consistent with Payables */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center flex-shrink-0">
+            <HomeIcon className="w-4 h-4 text-emerald-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">
             Active Rentals
-          </h2>
+          </h3>
         </div>
-        <p className="text-4xl sm:text-5xl font-bold">{totalActive}</p>
-        <p className="text-emerald-50 text-sm mt-2">
-          {totalActive === 1 ? "active unit" : "active units"}
-        </p>
+        <p className="text-xs text-gray-600 ml-10">Your current properties</p>
       </div>
 
-      {/* Units List */}
+      {/* Total Counter - Compact version matching Payables */}
+      <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 shadow-sm text-center text-white mb-4">
+        <p className="text-xs font-semibold tracking-wide uppercase opacity-90 mb-1">
+          Active Units
+        </p>
+        <p className="text-3xl font-bold">{totalActive}</p>
+      </div>
+
+      {/* Units List - Scrollable matching Payables height */}
       {units && units.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-gray-600 px-2 uppercase tracking-wide">
-            Your Properties
-          </p>
+        <div className="flex-1 space-y-2 overflow-y-auto max-h-[400px]">
           {units.map((unit) => (
             <div
               key={unit.unit_id}
-              className="p-3 sm:p-4 bg-white rounded-lg border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all"
+              className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 hover:border-emerald-200 transition-all"
             >
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex-shrink-0">
-                  <HomeIcon className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-start gap-2.5">
+                <div className="p-1.5 bg-white rounded-lg flex-shrink-0">
+                  <HomeIcon className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">
+                  <h4 className="text-sm font-bold text-gray-900 truncate">
                     {unit.unit_name}
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1 truncate">
+                  </h4>
+                  <p className="text-xs text-gray-600 mt-0.5 truncate">
                     {unit.property_name}
                   </p>
                 </div>
-                <span className="px-2 py-1 text-xs font-bold bg-emerald-100 text-emerald-700 rounded-full flex-shrink-0">
+                <span className="px-2 py-0.5 text-xs font-bold bg-emerald-100 text-emerald-700 rounded-full flex-shrink-0">
                   Active
                 </span>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {units && units.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-8 px-4">
+          <div className="p-3 bg-gray-100 rounded-full mb-2">
+            <HomeIcon className="w-6 h-6 text-gray-400" />
+          </div>
+          <p className="text-gray-500 text-center text-sm font-medium">
+            No active rentals
+          </p>
         </div>
       )}
     </div>

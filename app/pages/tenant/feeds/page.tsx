@@ -9,7 +9,7 @@ import AnnouncementFeeds from "@/components/tenant/feeds/announcement";
 import TenantLeaseReminderBanner from "@/components/tenant/currentRent/TenantLeaseReminderBanner";
 import LoadingScreen from "@/components/loadingScreen";
 import NameModal from "@/components/Commons/profile/accountSetupName";
-import { BellIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { BellIcon } from "@heroicons/react/24/outline";
 
 export default function TenantFeedsPage() {
   const { user, fetchSession, loading } = useAuthStore();
@@ -56,7 +56,7 @@ export default function TenantFeedsPage() {
             </div>
 
             {/* Header Section */}
-            <div className="mb-8 sm:mb-10">
+            <div className="mb-6 sm:mb-8">
               <div className="flex items-center gap-2 mb-2">
                 <BellIcon className="w-6 h-6 text-emerald-600" />
                 <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
@@ -68,47 +68,26 @@ export default function TenantFeedsPage() {
               </p>
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-              {/* Main Feed Section */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Feed Header */}
-                <div className="flex items-center gap-2 px-6 py-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-                  <div className="p-2 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg">
-                    <SparklesIcon className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">
-                      Latest Announcements
-                    </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Important updates from your properties
-                    </p>
-                  </div>
-                </div>
-
-                {/* Announcement Feed */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  <AnnouncementFeeds tenant_id={user?.tenant_id} />
+            {/* Quick Stats Cards - Horizontal Layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              {/* Payables Widget */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                <div className="p-4 sm:p-5">
+                  <TenantPayables tenant_id={user?.tenant_id} />
                 </div>
               </div>
 
-              {/* Sidebar Widgets */}
-              <div className="lg:col-span-1 space-y-6">
-                {/* Payables Widget */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
-                  <div className="p-5 sm:p-6">
-                    <TenantPayables tenant_id={user?.tenant_id} />
-                  </div>
-                </div>
-
-                {/* Active Rentals Widget */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
-                  <div className="p-5 sm:p-6">
-                    <ActiveRentConsolidatedCards tenant_id={user?.tenant_id} />
-                  </div>
+              {/* Active Rentals Widget */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                <div className="p-4 sm:p-5">
+                  <ActiveRentConsolidatedCards tenant_id={user?.tenant_id} />
                 </div>
               </div>
+            </div>
+
+            {/* Announcement Feed - Now with integrated header */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <AnnouncementFeeds tenant_id={user?.tenant_id} />
             </div>
           </div>
         </div>
