@@ -52,18 +52,23 @@ export default function DownloadPage() {
                 {isPWAInstalled ? (
                     <p className="text-emerald-300 font-semibold">✅ App already installed</p>
                 ) : deferredPrompt ? (
-                    <button
-                        onClick={handleInstall}
-                        className="flex items-center gap-2 px-6 py-3 bg-emerald-500 justify-center text-white rounded-lg shadow hover:bg-emerald-600 transition"
-                    >
-                        <Download className="w-5 h-5" />
-                        Install App
-                    </button>
+                    <div className="flex justify-center">
+                        <button
+                            onClick={handleInstall}
+                            className="flex items-center gap-2 px-6 py-3 bg-emerald-500 justify-center text-white rounded-lg shadow-lg
+                 hover:bg-emerald-600 transition-transform duration-300
+                 animate-bounce hover:scale-105 active:scale-95"
+                        >
+                            <Download className="w-5 h-5" />
+                            Install App
+                        </button>
+                    </div>
                 ) : (
                     <p className="text-gray-300 text-sm">
                         Open this site in your mobile/desktop browser to install the app.
                     </p>
                 )}
+
             </div>
         </div>
     );

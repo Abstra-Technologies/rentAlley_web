@@ -2,6 +2,7 @@
 export interface Unit {
   unit_id: string;
   unit_name: string;
+  unit_style:string;
   unit_size: number;
   rent_amount: number;
   furnish: string;

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
+import { generateLeaseId } from "@/utils/id_generator"; // ✅ Import lease ID generator
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
@@ -42,9 +43,9 @@ export async function PUT(req: NextRequest) {
     // 📌 Get property/unit details
     const [unitDetails]: any = await connection.query(
         `SELECT u.unit_name, p.property_name
-       FROM Unit u
-       JOIN Property p ON u.property_id = p.property_id
-       WHERE u.unit_id = ?`,
+         FROM Unit u
+                JOIN Property p ON u.property_id = p.property_id
+         WHERE u.unit_id = ?`,
         [unitId]
     );
     const propertyName = unitDetails?.[0]?.property_name || "Unknown Property";
@@ -53,12 +54,13 @@ export async function PUT(req: NextRequest) {
     // 📌 Update application status
     await connection.query(
         `UPDATE ProspectiveTenant
-       SET status = ?, message = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE unit_id = ? AND tenant_id = ?`,
+         SET status = ?, message = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE unit_id = ? AND tenant_id = ?`,
         [status, message || null, unitId, tenant_id]
     );
 
     let notificationMessage = "Your tenant application status has been updated.";
+
     if (status === "approved") {
       notificationMessage = `🎉 Your application for ${propertyName} - ${unitName} has been approved!`;
 
@@ -68,14 +70,31 @@ export async function PUT(req: NextRequest) {
           [tenant_id, unitId]
       );
 
-      // ✅ Create LeaseAgreement if not yet existing
+      // ✅ Generate unique lease_id if creating a new LeaseAgreement
       if (!existingLease.length) {
+        let lease_id = generateLeaseId();
+        let isUnique = false;
+
+        while (!isUnique) {
+          const [existing]: any = await connection.query(
+              `SELECT 1 FROM LeaseAgreement WHERE agreement_id = ? LIMIT 1`,
+              [lease_id]
+          );
+          if (existing.length === 0) {
+            isUnique = true;
+          } else {
+            lease_id = generateLeaseId(); // regenerate until unique
+          }
+        }
+
+        // ✅ Insert LeaseAgreement with generated ID
         await connection.query(
-            `INSERT INTO LeaseAgreement (tenant_id, unit_id, start_date, end_date, status, created_at)
-           VALUES (?, ?, NULL, NULL, 'draft', CURRENT_TIMESTAMP)`,
-            [tenant_id, unitId]
+            `INSERT INTO LeaseAgreement (agreement_id, tenant_id, unit_id, start_date, end_date, status, created_at)
+             VALUES (?, ?, ?, NULL, NULL, 'draft', CURRENT_TIMESTAMP)`,
+            [lease_id, tenant_id, unitId]
         );
-        console.log("🆕 LeaseAgreement created for approved tenant:", tenant_id);
+
+        console.log("🆕 LeaseAgreement created for approved tenant:", tenant_id, "Lease ID:", lease_id);
       }
     } else if (status === "disapproved") {
       notificationMessage = `❌ Your application for ${propertyName} - ${unitName} was disapproved. Reason: ${message}`;
