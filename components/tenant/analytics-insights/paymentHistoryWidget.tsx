@@ -98,10 +98,12 @@ export default function PaymentHistoryWidget({
   const recentPayments = payments.slice(0, 5);
 
   // FIX: Safely calculate total with proper number handling
-  const totalPaid = payments.reduce((sum, p) => {
-    const amount = Number(p.amount_paid);
-    return sum + (isNaN(amount) ? 0 : amount);
-  }, 0);
+  const totalPaid = payments
+    .filter((p) => p.payment_status.toLowerCase() === "confirmed")
+    .reduce((sum, p) => {
+      const amount = Number(p.amount_paid);
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
 
   // FIX: Format the display value safely
   const formatTotalPaid = () => {
