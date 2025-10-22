@@ -1,6 +1,6 @@
-
 "use client";
 import { useEffect, useState } from "react";
+import { Inbox } from "lucide-react"; // ✅ added icon
 
 interface TenantActivity {
     log_id: number;
@@ -20,7 +20,6 @@ export default function TenantActivity({
 }) {
     const [activities, setActivities] = useState<TenantActivity[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showAll, setShowAll] = useState(false);
 
     useEffect(() => {
         if (!landlord_id) return;
@@ -43,34 +42,46 @@ export default function TenantActivity({
 
     if (loading) {
         return (
-            <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-                Loading tenant activities...
+            <div
+                className="flex items-center justify-center min-h-[180px] sm:min-h-[220px]
+        bg-white rounded-2xl border border-gray-100 shadow-md
+        transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg text-center"
+            >
+                <p className="text-sm sm:text-base text-gray-500">Loading tenant activities...</p>
             </div>
         );
     }
 
     if (activities.length === 0) {
         return (
-            <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-                No tenant activities found.
+            <div
+                className="flex flex-col items-center justify-center min-h-[180px] sm:min-h-[220px]
+        bg-white rounded-2xl border border-gray-100 shadow-md
+        transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg text-center"
+            >
+                <Inbox className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mb-2" />
+                <p className="text-sm sm:text-base text-gray-500 font-medium">
+                    No tenant activities found.
+                </p>
             </div>
         );
     }
 
-    // Decide how many activities to show
-    const visibleActivities = showAll ? activities : activities.slice(0, 4);
+    // ✅ Only show top 5 most recent
+    const visibleActivities = activities.slice(0, 5);
 
     return (
-        <div className="bg-white rounded-2xl shadow-md border border-gray-100">
+        <div
+            className="bg-white rounded-2xl border border-gray-100 shadow-md
+      transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+        >
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">
+            <div className="px-4 sm:px-6 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                     Tenant Activity Log
                 </h2>
-                <span className="text-xs text-gray-500">
-          {showAll
-              ? `Showing all ${activities.length} activities`
-              : `Showing latest 4 activities`}
+                <span className="text-[11px] sm:text-xs text-gray-500">
+          Showing latest 5 activities
         </span>
             </div>
 
@@ -79,30 +90,30 @@ export default function TenantActivity({
                 {visibleActivities.map((act) => (
                     <div
                         key={act.log_id}
-                        className="px-6 py-4 flex items-center hover:bg-gray-50 transition"
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 flex items-center hover:bg-gray-50 transition-all duration-200"
                     >
                         {/* Avatar */}
                         <img
                             src={act.profilePicture || "/default-avatar.png"}
                             alt="Tenant"
-                            className="w-11 h-11 rounded-full mr-4 object-cover"
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full mr-3 sm:mr-4 object-cover"
                         />
 
                         {/* Details */}
-                        <div className="flex-1">
-                            <p className="text-sm text-gray-800">
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm sm:text-base text-gray-800 leading-tight">
                 <span className="font-medium text-gray-900">
                   {act.firstName} {act.lastName}
                 </span>{" "}
                                 {act.action}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 truncate">
                                 {act.property_name} • Unit {act.unit_name}
                             </p>
                         </div>
 
                         {/* Timestamp */}
-                        <div className="text-xs text-gray-400 whitespace-nowrap">
+                        <div className="text-[10px] sm:text-xs text-gray-400 whitespace-nowrap ml-2">
                             {new Date(act.timestamp).toLocaleString("en-US", {
                                 month: "short",
                                 day: "numeric",
@@ -114,19 +125,6 @@ export default function TenantActivity({
                     </div>
                 ))}
             </div>
-
-            {/* Footer */}
-            {activities.length > 4 && (
-                <div className="px-6 py-3 border-t border-gray-200 text-center">
-                    <button
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                        onClick={() => setShowAll(!showAll)}
-                    >
-                        {showAll ? "Show Less" : "Show More"}
-                    </button>
-                </div>
-            )}
         </div>
     );
 }
-

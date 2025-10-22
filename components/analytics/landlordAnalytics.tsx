@@ -185,11 +185,33 @@ const LandlordPropertyChart = () => {
                 <LandlordPropertyMarquee landlordId={user?.landlord_id} />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                    <div className="lg:col-span-2">
+                    {/* Revenue Performance (col-span-2) with View Revenue hover overlay */}
+                    <div
+                        onClick={() => router.push(`/pages/landlord/analytics/detailed/revenue`)}
+                        className="relative bg-white rounded-xl shadow-sm p-5 cursor-pointer
+               hover:shadow-md hover:bg-gray-50 transition group lg:col-span-2"
+                    >
+                        {/* Chart content always visible */}
                         <RevenuePerformanceChart landlordId={user?.landlord_id} />
+
+                        {/* Hover label — does not block chart interaction */}
+                        <div
+                            className="absolute inset-0 flex items-center justify-center
+                 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                        >
+      <span
+          className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium
+                   px-3 py-1 rounded-full shadow-md border border-gray-200"
+      >
+        View Revenue →
+      </span>
+                        </div>
                     </div>
+
+                    {/* Tenant Activity (unchanged) */}
                     <TenantActivity landlord_id={user?.landlord_id} />
                 </div>
+
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
                     <UpcomingVisitsWidget landlordId={user?.landlord_id} />

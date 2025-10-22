@@ -25,12 +25,6 @@ interface PropertyData {
     securityDepositMonths: number;
     advancePaymentMonths: number;
     rentIncreasePercent: number;
-    lateFee: number;
-    assocDues: number;
-    paymentFrequency: string;
-
-    bedSpacing: number;
-    availBeds: number;
 
     flexiPayEnabled: boolean;
     paymentMethodsAccepted: string[];
@@ -87,12 +81,6 @@ const initialPropertyState: PropertyData = {
     securityDepositMonths: 0,
     advancePaymentMonths: 0,
     rentIncreasePercent: 0,
-    lateFee: 0,
-    assocDues: 0,
-    paymentFrequency: "",
-
-    bedSpacing: 0,
-    availBeds: 0,
 
     flexiPayEnabled: false,
     paymentMethodsAccepted: [],

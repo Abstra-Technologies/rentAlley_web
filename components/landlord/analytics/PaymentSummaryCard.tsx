@@ -1,5 +1,3 @@
-
-
 "use client";
 import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell } from "recharts";
@@ -29,7 +27,8 @@ export default function PaymentSummaryCard({
                 const pendingAmount = Number(data.total_pending || 0);
                 const overdueAmount = Number(data.total_overdue || 0);
                 const collectedAmount = Number(data.total_collected || 0);
-                const totalAmount = pendingAmount + overdueAmount + collectedAmount;
+                const totalAmount =
+                    pendingAmount + overdueAmount + collectedAmount;
 
                 setPending(pendingAmount);
                 setOverdue(overdueAmount);
@@ -37,6 +36,11 @@ export default function PaymentSummaryCard({
                 setTotal(totalAmount);
             } catch (err) {
                 console.error("Error fetching data:", err);
+                // ✅ Ensure zero state still renders chart
+                setPending(0);
+                setOverdue(0);
+                setCollected(0);
+                setTotal(0);
             } finally {
                 setLoading(false);
             }
@@ -53,13 +57,22 @@ export default function PaymentSummaryCard({
         );
     }
 
-    const data = [
-        { name: "Collected", value: collected },
-        { name: "Pending", value: pending },
-        { name: "Overdue", value: overdue },
-    ];
+    // ✅ Always render chart (even if all 0)
+    const data =
+        pending === 0 && overdue === 0 && collected === 0
+            ? [
+                { name: "No Data", value: 1 }, // placeholder slice
+            ]
+            : [
+                { name: "Collected", value: collected },
+                { name: "Pending", value: pending },
+                { name: "Overdue", value: overdue },
+            ];
 
-    const COLORS = ["#22c55e", "#3b82f6", "#fb923c"];
+    const COLORS =
+        pending === 0 && overdue === 0 && collected === 0
+            ? ["#e5e7eb"] // light gray when no data
+            : ["#22c55e", "#3b82f6", "#fb923c"];
 
     return (
         <div>
@@ -90,9 +103,9 @@ export default function PaymentSummaryCard({
             {/* Tablet/Desktop Design (compact with chart) */}
             <div
                 className="hidden sm:flex rounded-xl border border-white/10
-    bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80
-    backdrop-blur-xl shadow-lg p-6 md:p-10 flex-col md:flex-row
-    items-center justify-between gap-6 min-h-[280px]"
+          bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80
+          backdrop-blur-xl shadow-lg p-6 md:p-10 flex-col md:flex-row
+          items-center justify-between gap-6 min-h-[280px]"
             >
                 {/* Upcoming + Overdue */}
                 <div className="text-center flex-1">
@@ -109,7 +122,11 @@ export default function PaymentSummaryCard({
 
                 {/* Chart */}
                 <div className="flex flex-col items-center justify-center flex-1">
-                    <PieChart width={120} height={120} className="md:w-[150px] md:h-[150px]">
+                    <PieChart
+                        width={120}
+                        height={120}
+                        className="md:w-[150px] md:h-[150px]"
+                    >
                         <Pie
                             data={data}
                             cx="50%"
@@ -117,6 +134,7 @@ export default function PaymentSummaryCard({
                             innerRadius={35}
                             outerRadius={55}
                             dataKey="value"
+                            isAnimationActive={false} // ✅ keeps static circle for no data
                         >
                             {data.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index]} />
@@ -139,8 +157,6 @@ export default function PaymentSummaryCard({
                     <p className="text-xs md:text-sm text-gray-200">Collected</p>
                 </div>
             </div>
-
-
         </div>
     );
 }

@@ -34,6 +34,8 @@ const RevenuePerformanceChart = ({ landlordId }) => {
             })
             .catch((err) => {
                 console.error("Error fetching revenue data", err);
+                // ✅ fallback if request fails
+                setData([]);
             })
             .finally(() => {
                 setLoading(false);
@@ -54,14 +56,15 @@ const RevenuePerformanceChart = ({ landlordId }) => {
         );
     }
 
-    // @ts-ignore
-    if (data.every((d) => d.revenue === 0)) {
-        return (
-            <div className="p-4 bg-white rounded-2xl shadow text-center">
-                <p className="text-gray-500">No revenue data available for this period.</p>
-            </div>
-        );
-    }
+    // ✅ Ensure frame always exists even if no data or all zero
+    const hasValidData = data.length > 0 && !data.every((d) => d.revenue === 0);
+    const chartData = hasValidData
+        ? data
+        : [
+            { month: "Jan", revenue: 0 },
+            { month: "Feb", revenue: 0 },
+            { month: "Mar", revenue: 0 },
+        ];
 
     return (
         <div className="p-3 sm:p-4 bg-white rounded-xl sm:rounded-2xl shadow">
@@ -71,11 +74,11 @@ const RevenuePerformanceChart = ({ landlordId }) => {
 
             {/* Mobile view: Area Chart */}
             <ResponsiveContainer width="100%" height={200} className="sm:hidden">
-                <AreaChart data={data}>
+                <AreaChart data={chartData}>
                     <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                         </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="2 2" vertical={false} stroke="#E5E7EB" />
@@ -114,7 +117,7 @@ const RevenuePerformanceChart = ({ landlordId }) => {
 
             {/* Desktop/Tablet view: Bar Chart */}
             <ResponsiveContainer width="100%" height={300} className="hidden sm:block">
-                <BarChart data={data} barSize={35}>
+                <BarChart data={chartData} barSize={35}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                     <XAxis
                         dataKey="month"
@@ -149,10 +152,15 @@ const RevenuePerformanceChart = ({ landlordId }) => {
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
+
+            {/* ✅ Message overlay for clarity when no data */}
+            {!hasValidData && (
+                <p className="text-center text-xs sm:text-sm text-gray-500 mt-2">
+                    No revenue data available for this period.
+                </p>
+            )}
         </div>
     );
-
-
 };
 
 export default RevenuePerformanceChart;
