@@ -28,3 +28,11 @@ export function generateLandlordId(): string {
 export function generateTenantId(): string {
     return "UPKYPT" + randomAlphaNumeric(10);
 }
+
+export function generateProspectiveTenantId(): string {
+    return "UPKYPPT" + randomAlphaNumeric(10);
+}
+
+export function generateLeaseId(): string {
+    return "UPKYPL" + randomAlphaNumeric(10);
+}

@@ -110,19 +110,15 @@ export async function GET(req: NextRequest) {
     const [result] = await db.execute(query, queryParams);
     const units = Array.isArray(result) ? result : [];
 
-    console.log(` Units API: Found ${units.length} unoccupied units`);
 
-    if (units.length > 0) {
-      console.log(
-        " Sample units:",
-        units.slice(0, 3).map((u: any) => ({
-          id: u.unit_id,
-          name: u.unit_name,
-          status: u.status,
-          property: u.property_name,
-        }))
-      );
+    if (units.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        message: "No available units found.",
+      });
     }
+
 
     // Transform and Decrypt data
     const decryptedUnits = units.map((unit: any) => {

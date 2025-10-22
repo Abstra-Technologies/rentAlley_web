@@ -101,7 +101,7 @@ export default function LeaseDetails({ unitId }) {
       return Swal.fire("Error", "End date must be after start date.", "error");
 
     // Ask landlord if they want to configure deposit/advance
-    const { value: config } = await Swal.fire({
+    const { value: config, isConfirmed, isDismissed } = await Swal.fire({
       title: "Configure Security & Advance Payment?",
       html: `
       <div style="text-align:left">
@@ -124,7 +124,9 @@ export default function LeaseDetails({ unitId }) {
       },
     });
 
-    if (!config) return; // User cancelled
+    // ✅ Even if user clicks "Skip", proceed with default values (0)
+    const deposit = config?.deposit || "0";
+    const advance = config?.advance || "0";
 
     Swal.fire({
       title: "Activating Lease...",
@@ -141,8 +143,8 @@ export default function LeaseDetails({ unitId }) {
           unit_id: unitId,
           start_date: startDate,
           end_date: endDate,
-          security_deposit_amount: parseFloat(config.deposit) || 0,
-          advance_payment_amount: parseFloat(config.advance) || 0,
+          security_deposit_amount: parseFloat(deposit) || 0,
+          advance_payment_amount: parseFloat(advance) || 0,
         }),
       });
 
