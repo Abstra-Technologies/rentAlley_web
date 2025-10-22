@@ -124,8 +124,8 @@ const Navbar = () => {
 
     if (user?.userType === "tenant") {
       return [
-        { href: "/pages/tenant/feeds", label: "Explore", icon: "explore" },
-        { href: "/pages/find-rent", label: "Browse", icon: "search" },
+        { href: "/pages/tenant/feeds", label: "Feed", icon: "feed" },
+        { href: "/pages/find-rent", label: "Find", icon: "search" },
         { href: "/pages/tenant/chat", label: "Chat", icon: "chat" },
         {
           href: "/pages/tenant/visit-history",
@@ -154,7 +154,7 @@ const Navbar = () => {
   const renderMobileIcon = (icon) => {
     const iconClass = "w-5 h-5";
     switch (icon) {
-      case "explore":
+      case "feed":
         return (
           <svg
             className={iconClass}
@@ -166,7 +166,7 @@ const Navbar = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
             />
           </svg>
         );
@@ -182,7 +182,7 @@ const Navbar = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M13 10V3L4 14h7v7l9-11h-7z"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
         );
@@ -214,7 +214,7 @@ const Navbar = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
         );
