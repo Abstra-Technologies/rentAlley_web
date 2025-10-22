@@ -4,7 +4,15 @@ import { useState, useEffect, FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Loader, ArrowRight } from "lucide-react";
+import {
+  Search,
+  Loader,
+  ArrowRight,
+  CheckCircle,
+  MapPin,
+  Home,
+  Shield,
+} from "lucide-react";
 import Footer from "../components/navigation/footer";
 import LoadingScreen from "@/components/loadingScreen";
 import UnitCard from "../components/find-rent/UnitCard";
@@ -26,11 +34,6 @@ interface Unit {
   furnish: string;
   avail_beds: number;
   flexipay_enabled: number;
-}
-
-interface UnitCardProps {
-  unit: Unit;
-  onClick: () => void;
 }
 
 export default function SplashScreen() {
@@ -117,111 +120,145 @@ export default function SplashScreen() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50">
-      {/* Hero Section */}
-      <div className="relative min-h-screen sm:min-h-[600px] lg:h-[700px] w-full">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/hero-section.jpeg"
-            alt="Cityscape"
-            fill
-            className="object-cover brightness-40"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/40"></div>
+    <div className="flex flex-col min-h-screen bg-white">
+      {/* Hero Section - Modern Clean Design */}
+      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-emerald-600 overflow-hidden">
+        {/* Subtle animated background elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 h-full flex flex-col justify-between sm:justify-center items-center px-4 py-8 sm:py-12">
-          {/* Main Heading */}
-          <div className="w-full max-w-4xl text-center mt-12 sm:mt-0">
-            <HeroText />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-32 pb-20 sm:pb-32">
+          {/* Hero Content */}
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Trust Badge */}
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/30">
+              <Shield className="w-4 h-4 text-white" />
+              <span className="text-sm font-medium text-white">
+                Verified Rentals • Real Homes, Real Connections
+              </span>
+            </div>
 
-          </div>
+            {/* Main Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+              Find Your Perfect Home in the Philippines
+            </h1>
 
-          {/* Search Bar */}
-          <form
-            onSubmit={handleSearch}
-            className="w-full max-w-4xl mt-8 sm:mt-12 px-4 sm:px-0"
-          >
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-blue-100">
-              <div className="flex flex-col sm:flex-row gap-0">
-                <div className="flex-1 flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 bg-white">
-                  <Search className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            {/* Subheadline */}
+            <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto">
+              Discover verified rental properties with transparent pricing and
+              instant booking.
+            </p>
+
+            {/* Primary CTA Search Bar */}
+            <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-8">
+              <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
+                  <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   <input
                     type="text"
-                    placeholder="Search by location, property..."
+                    placeholder="Enter city or location..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full outline-none text-sm sm:text-base text-gray-900 placeholder-gray-400"
+                    className="w-full outline-none text-base text-gray-900 placeholder-gray-400 bg-transparent"
                   />
                 </div>
-
                 <button
                   type="submit"
-                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-6 py-3 sm:py-4 font-semibold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95"
+                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 whitespace-nowrap"
                 >
                   <Search className="w-5 h-5" />
-                  <span className="hidden sm:inline">Search</span>
+                  Search Properties
                 </button>
               </div>
-            </div>
-          </form>
+            </form>
 
-          {/* Quick Links */}
-          <div className="mt-8 sm:mt-10 flex flex-wrap gap-2 justify-center px-4">
-            {["Manila", "Quezon", "Taguig", "Makati"].map((city) => (
-              <button
-                key={city}
-                onClick={() =>
-                  router.push(`/pages/find-rent?searchQuery=${city}`)
-                }
-                className="px-4 py-2 bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-full text-xs sm:text-sm font-medium hover:bg-white/30 transition-all active:scale-95"
-              >
-                {city}
-              </button>
-            ))}
+            {/* Popular Searches */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              <span className="text-sm text-white/70">Popular:</span>
+              {["Manila", "Quezon City", "Makati", "Taguig"].map((city) => (
+                <button
+                  key={city}
+                  onClick={() =>
+                    router.push(`/pages/find-rent?searchQuery=${city}`)
+                  }
+                  className="px-4 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/20 transition-all"
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Value Propositions - Clean Three Column */}
+      <section className="py-16 sm:py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {[
+              {
+                icon: <Shield className="w-8 h-8" />,
+                title: "Verified Properties",
+                description:
+                  "Every listing is verified for authenticity and accuracy",
+              },
+              {
+                icon: <Home className="w-8 h-8" />,
+                title: "Instant Booking",
+                description:
+                  "Book your ideal home in minutes with our streamlined process",
+              },
+              {
+                icon: <CheckCircle className="w-8 h-8" />,
+                title: "Transparent Pricing",
+                description:
+                  "No hidden fees. See complete pricing details upfront",
+              },
+            ].map((feature, index) => (
+              <div key={index} className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-600 text-white rounded-2xl mb-4 shadow-lg">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Featured Units Section */}
-      <section className="py-8 sm:py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Featured Units
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
-                Handpicked homes perfect for you
-              </p>
-            </div>
-            <Link
-              href="/pages/find-rent"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-emerald-600 font-semibold transition-colors"
-            >
-              View All
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+      <section className="py-16 sm:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Featured Properties
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Hand-selected homes that meet our highest standards
+            </p>
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader className="w-8 h-8 text-blue-600 animate-spin" />
+            <div className="flex justify-center py-16">
+              <Loader className="w-10 h-10 text-blue-600 animate-spin" />
             </div>
           ) : featuredUnits.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-blue-100 p-8 sm:p-12 text-center">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                No units available
+            <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
+              <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No properties available
               </h3>
-              <p className="text-gray-600 text-sm sm:text-base">
-                Check back soon for featured listings
+              <p className="text-gray-600">
+                New listings coming soon. Check back shortly!
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
               {featuredUnits.map((unit) => (
                 <UnitCard
                   key={unit.unit_id}
@@ -235,83 +272,96 @@ export default function SplashScreen() {
               ))}
             </div>
           )}
+
+          <div className="text-center">
+            <Link
+              href="/pages/find-rent"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              View All Properties
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* About Section */}
-      <section className="py-8 sm:py-16 px-4 bg-gradient-to-r from-gray-900 to-gray-800">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 items-center">
-            <div className="text-white order-2 lg:order-1">
-              <p className="text-xs sm:text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-2 sm:mb-3">
-                About Upkyp
-              </p>
-              <h2 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6">
-                Find Your Dream Property Today
+      {/* Social Proof Section */}
+      <section className="py-16 bg-gradient-to-br from-gray-900 to-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="text-white">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+                Join Our Growing Community of Happy Renters
               </h2>
-              <p className="text-sm sm:text-base text-gray-300 mb-6 sm:mb-8 leading-relaxed">
-                Upkyp connects you with verified rental units across the
-                Philippines. We make property hunting simple, transparent, and
-                stress-free.
+              <p className="text-lg text-gray-300 mb-8">
+                Upkyp is building a trusted rental network in the Philippines
+                with verified listings, transparent pricing, and reliable
+                support for both tenants and landlords.
               </p>
+
+              {/* Trust-Based Highlights */}
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                {[
+                  { value: "✔", label: "Verified Properties" },
+                  { value: "💬", label: "Transparent Pricing" },
+                  { value: "🤝", label: "Exceptional Support" },
+                ].map((stat, index) => (
+                  <div key={index} className="text-center">
+                    <div className="text-3xl mb-1">{stat.value}</div>
+                    <div className="text-sm text-gray-400">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
               <Link
                 href="/pages/about-us"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all active:scale-95"
+                className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
               >
-                Learn More
-                <ArrowRight className="w-4 h-4" />
+                Learn More About Us
+                <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
 
-            <div className="relative h-64 sm:h-80 lg:h-96 rounded-2xl overflow-hidden order-1 lg:order-2 shadow-xl">
+            <div className="relative h-80 lg:h-96 rounded-2xl overflow-hidden shadow-2xl">
               <Image
                 src="/images/aboutrent.jpeg"
-                alt="Properties"
+                alt="Happy renters"
                 fill
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Recently Added Units Section */}
-      <section className="py-8 sm:py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Recently Added
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
-                Latest units on Upkyp
-              </p>
-            </div>
-            <Link
-              href="/pages/find-rent"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-emerald-600 font-semibold transition-colors"
-            >
-              Explore All
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+      {/* Recently Added Section */}
+      <section className="py-16 sm:py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Recently Added
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Fresh listings added daily from verified landlords
+            </p>
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader className="w-8 h-8 text-blue-600 animate-spin" />
+            <div className="flex justify-center py-16">
+              <Loader className="w-10 h-10 text-blue-600 animate-spin" />
             </div>
           ) : recentUnits.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-blue-100 p-8 sm:p-12 text-center">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                No units available
+            <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
+              <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No recent listings
               </h3>
-              <p className="text-gray-600 text-sm sm:text-base">
-                New listings coming soon
+              <p className="text-gray-600">
+                New properties are added regularly
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
               {recentUnits.map((unit) => (
                 <UnitCard
                   key={unit.unit_id}
@@ -325,25 +375,43 @@ export default function SplashScreen() {
               ))}
             </div>
           )}
+
+          <div className="text-center">
+            <Link
+              href="/pages/find-rent"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Explore All Listings
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-8 sm:py-12 px-4 bg-gradient-to-r from-blue-600 to-emerald-600">
-        <div className="max-w-4xl mx-auto text-center text-white">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
-            Ready to find your perfect home?
+      {/* Final CTA Section */}
+      <section className="py-16 sm:py-20 bg-gradient-to-r from-blue-600 to-emerald-600">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Ready to Find Your Dream Home?
           </h2>
-          <p className="text-sm sm:text-base text-blue-100 mb-6 sm:mb-8">
-            Join thousands of renters finding verified units on Upkyp
+          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
+            Join thousands discovering their perfect rental on Upkyp
           </p>
-          <Link
-            href="/pages/find-rent"
-            className="inline-flex items-center gap-2 bg-white text-blue-600 px-6 sm:px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all active:scale-95"
-          >
-            Start Searching
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/pages/find-rent"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Start Searching
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <Link
+              href="/pages/partner"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white font-semibold rounded-xl hover:bg-white/20 transition-all duration-200"
+            >
+              List Your Property
+            </Link>
+          </div>
         </div>
       </section>
 
