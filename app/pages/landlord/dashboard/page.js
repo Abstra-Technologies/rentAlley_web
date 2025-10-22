@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import useAuthStore from "../../../../zustand/authStore";
-import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
-import LandlordPropertyChart from "../../../../components/analytics/landlordAnalytics";
+import useAuthStore from "@/zustand/authStore";
+import LandlordLayout from "@/components/navigation/sidebar-landlord";
+import LandlordPropertyChart from "@/components/analytics/landlordAnalytics";
 
 export default function LandlordDashboard() {
   const { user, loading, fetchSession } = useAuthStore();

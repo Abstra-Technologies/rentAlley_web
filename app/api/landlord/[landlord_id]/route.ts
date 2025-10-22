@@ -48,8 +48,8 @@ export async function GET(
     let photoUrl = null;
 
     try {
-      firstName = decryptData(JSON.parse(landlord.enc_firstName), SECRET_KEY);
-      lastName = decryptData(JSON.parse(landlord.enc_lastName), SECRET_KEY);
+      firstName = decryptData(JSON.parse(landlord.enc_firstName), SECRET_KEY) || "Unknown";
+      lastName = decryptData(JSON.parse(landlord.enc_lastName), SECRET_KEY) || "Unknown";
       email = decryptData(JSON.parse(landlord.enc_email), SECRET_KEY);
       phone = landlord.enc_phone
           ? decryptData(JSON.parse(landlord.enc_phone), SECRET_KEY)

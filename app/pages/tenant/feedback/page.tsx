@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ReviewForm from "@/components/tenant/currentRent/feedbackForm";
 import useAuthStore from "@/zustand/authStore";
 import LoadingScreen from "@/components/loadingScreen";
 
-export default function SubmitReviewPage() {
+function ReviewPageContent() {
     const { user, admin, fetchSession } = useAuthStore();
     const [reviewSubmitted, setReviewSubmitted] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -41,11 +41,20 @@ export default function SubmitReviewPage() {
                 ) : (
                     <ReviewForm
                         tenant_id={user?.tenant_id}
-                        agreement_id={agreementId} // ✅ now properly passed
+                        agreement_id={agreementId}
                         onReviewSubmitted={() => setReviewSubmitted(true)}
                     />
                 )}
             </div>
         </div>
+    );
+}
+
+// ✅ Wrap in Suspense to handle useSearchParams
+export default function SubmitReviewPage() {
+    return (
+        <Suspense fallback={<LoadingScreen message="Loading feedback form..." />}>
+            <ReviewPageContent />
+        </Suspense>
     );
 }
