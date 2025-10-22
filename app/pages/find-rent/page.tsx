@@ -1,14 +1,14 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Unit, FilterState } from "../../../types/types";
+import { Unit, FilterState } from "@/types/types";
 import LoadingScreen from "@/components/loadingScreen";
-import MobileSearchHeader from "../../../components/find-rent/MobileSearchHeader";
-import MobileFiltersPanel from "../../../components/find-rent/MobileFiltersPanel";
-import ActiveFilters from "../../../components/find-rent/ActiveFilters";
-import GridView from "../../../components/find-rent/GridView";
-import ListView from "../../../components/find-rent/ListView";
-import MapView from "../../../components/find-rent/MapView";
+import MobileSearchHeader from "@/components/find-rent/MobileSearchHeader";
+import MobileFiltersPanel from "@/components/find-rent/MobileFiltersPanel";
+import ActiveFilters from "@/components/find-rent/ActiveFilters";
+import GridView from "@/components/find-rent/GridView";
+import ListView from "@/components/find-rent/ListView";
+import MapView from "@/components/find-rent/MapView";
 import { Suspense } from "react";
 
 function getFiltersFromUrl(
