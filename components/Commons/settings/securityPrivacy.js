@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import useAuth from "../../hooks/useSession";
-import { logEvent } from "../../utils/gtag";
+import useAuth from "../../../hooks/useSession";
+import { logEvent } from "../../../utils/gtag";
 import {
   UserIcon,
   ShieldCheckIcon,
   ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import Swal from "sweetalert2";
-import SideNavProfile from "../navigation/sidebar-profile";
-import useAuthStore from "../../zustand/authStore";
-import ChangePasswordModal from "../Commons/setttings/changePassword";
-import TwoFactorToggle from "../Commons/setttings/TwoFactorToggle";
+import SideNavProfile from "../../navigation/sidebar-profile";
+import useAuthStore from "@/zustand/authStore";
+import ChangePasswordModal from "../setttings/changePassword";
+import TwoFactorToggle from "../setttings/TwoFactorToggle";
 
 export default function SecurityPage() {
   const { user, loading, error } = useAuthStore();
@@ -156,8 +156,8 @@ export default function SecurityPage() {
           Security & Privacy
         </h1>
         <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md">
-          <ChangePasswordModal userId={user?.id} />
-          <TwoFactorToggle user_id={user.user_id} />
+          <ChangePasswordModal userId={user?.user_id} />
+          <TwoFactorToggle user_id={user?.user_id} />
         </div>
       </div>
   );

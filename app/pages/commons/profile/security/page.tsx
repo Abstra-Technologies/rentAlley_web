@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import SideNavProfile from "@/components/navigation/sidebar-profile";
-import SecurityPage from "@/components/Commons/securityPrivacy";
+import SecurityPage from "@/components/Commons/settings/securityPrivacy";
 
 
 export default function LandlordSecurityPrivacy() {
