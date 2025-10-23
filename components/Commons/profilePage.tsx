@@ -1,6 +1,6 @@
 "use client";
-import { CITIZENSHIPS } from "../../constant/citizenship";
-import occupations from "../../constant/occupations";
+import { CITIZENSHIPS } from "@/constant/citizenship";
+import occupations from "@/constant/occupations";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -15,9 +15,10 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import axios from "axios";
-import { logEvent } from "../../utils/gtag";
+import { logEvent } from "@/utils/gtag";
 import DeleteAccountButton from "../authentication/deleteAccountButton";
-import useAuthStore from "../../zustand/authStore";
+import useAuthStore from "@/zustand/authStore";
+import LoadingContent from "../ui/loadingContent";
 
 interface ProfileData {
   firstName: string;
@@ -248,16 +249,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-          <p className="text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
+  <LoadingContent name="profile" />
 
   return (
     <div className="flex-1 bg-gray-50 min-h-screen">

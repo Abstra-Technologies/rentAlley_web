@@ -8,6 +8,11 @@ export async function POST(req: NextRequest) {
         const { email, unitId, propertyName, unitName, startDate, endDate } =
             await req.json();
 
+        console.log(email, unitId, propertyName, unitName, startDate, endDate);
+        console.log('property name', propertyName);
+        console.log('unit name', unitName);
+
+
         if (!email || !unitId || !propertyName || !unitName) {
             return NextResponse.json(
                 { error: "Missing required fields." },

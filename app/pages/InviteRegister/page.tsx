@@ -63,7 +63,21 @@ import { Suspense } from 'react';
         }
     };
 
-    if (loading || loadingInvite) return <div className="p-4 text-center">Loading...</div>;
+     if (loading || loadingInvite)
+         return (
+             <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50">
+                 {/* Animated spinner */}
+                 <div className="relative w-12 h-12 mb-6">
+                     <div className="absolute inset-0 rounded-full border-4 border-blue-200"></div>
+                     <div className="absolute inset-0 rounded-full border-4 border-t-blue-600 animate-spin"></div>
+                 </div>
+
+                 {/* Animated text */}
+                 <p className="text-gray-700 font-medium text-base sm:text-lg animate-pulse text-center px-6">
+                     Loading your <span className="text-blue-700 font-semibold">Invitation details</span>...
+                 </p>
+             </div>
+         );
 
     if (expired || !inviteDetails) {
         return (
@@ -72,7 +86,6 @@ import { Suspense } from 'react';
             </div>
         );
     }
-
 
      return (
          <div
@@ -83,38 +96,48 @@ import { Suspense } from 'react';
                  backgroundPosition: "center",
              }}
          >
-             {/* Overlay for readability */}
-             <div className="absolute inset-0 bg-black/50" />
+             {/* Dark gradient overlay for readability */}
+             <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/70" />
 
-             {/* Centered card */}
-             <div className="relative z-10 max-w-md w-full mx-auto p-8 rounded-2xl text-center shadow-lg bg-white/90 backdrop-blur-sm">
-                 <h1 className="text-2xl font-bold text-gray-800 mb-2">You're Invited!</h1>
-                 <p className="text-gray-600 mb-6">
-                     You’ve been invited to join this unit as a tenant. Access your lease, payments, and updates all in one place.
+             {/* Centered responsive card */}
+             <div className="relative z-10 w-[90%] max-w-md mx-auto px-6 sm:px-8 py-10 rounded-3xl text-center shadow-2xl bg-white/90 backdrop-blur-md border border-white/30">
+                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">
+                     You’re Invited!
+                 </h1>
+
+                 <p className="text-gray-600 mb-8 text-sm sm:text-base leading-relaxed">
+                     You’ve been invited to join this unit as a tenant. Access your lease,
+                     payments, and updates all in one place.
                  </p>
 
-                 <div className="bg-white border border-blue-200 rounded-xl p-4 mb-6 shadow-sm">
-                     <p className="text-lg font-semibold text-blue-800 mb-1">
+                 {/* Property & Unit Info */}
+                 <div className="bg-gradient-to-br from-blue-50 to-emerald-50 border border-blue-200 rounded-2xl p-5 mb-8 shadow-inner text-left sm:text-center">
+                     <p className="text-base sm:text-lg font-semibold text-blue-800 mb-1 break-words">
                          {inviteDetails.property_name}
                      </p>
-                     <p className="text-gray-700">
-                         Unit:{" "}
-                         <span className="font-medium text-gray-900">
+
+                     <p className="text-gray-700 text-sm sm:text-base">
+                         Unit:
+                         <span
+                             className="block mt-2 text-xl sm:text-2xl font-extrabold text-transparent bg-clip-text
+                       bg-gradient-to-r from-blue-600 to-emerald-600 tracking-tight drop-shadow-sm"
+                         >
             {inviteDetails.unit_name}
           </span>
                      </p>
                  </div>
+
+                 {/* CTA Button */}
                  <button
                      onClick={handleJoin}
-                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-xl shadow-md hover:shadow-lg transition-all"
+                     className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700
+                   text-white font-semibold py-3.5 sm:py-4 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base"
                  >
                      Accept Invitation & Join Unit
                  </button>
              </div>
          </div>
      );
-
-
 
  }
 

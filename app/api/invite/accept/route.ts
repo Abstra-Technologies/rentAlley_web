@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import webpush from "web-push";
+import { generateLeaseId } from "@/utils/id_generator";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
@@ -76,24 +77,38 @@ export async function POST(req: Request) {
             );
         }
 
-        // 4️⃣ Create lease record (mark as ACTIVE)
-        const [leaseResult]: any = await conn.query(
-            `INSERT INTO LeaseAgreement (
-                tenant_id, unit_id, start_date, end_date, status,
-                is_security_deposit_paid, is_advance_payment_paid
-            ) VALUES (?, ?, ?, ?, 'active', 1, 1)`,
-            [tenant.tenant_id, invite.unitId, leaseStart, leaseEnd]
+        // 4️⃣ Generate unique Lease ID
+        let leaseId = generateLeaseId();
+        let [exists]: any = await conn.query(
+            `SELECT 1 FROM LeaseAgreement WHERE agreement_id = ?`,
+            [leaseId]
         );
 
-        const newLeaseId = leaseResult.insertId;
+        // Regenerate until unique
+        while (exists.length > 0) {
+            leaseId = generateLeaseId();
+            [exists] = await conn.query(
+                `SELECT 1 FROM LeaseAgreement WHERE agreement_id = ?`,
+                [leaseId]
+            );
+        }
 
-        // 5️⃣ Update InviteCode → USED
+        // 5️⃣ Create lease record (mark as ACTIVE)
+        await conn.query(
+            `INSERT INTO LeaseAgreement (
+          agreement_id, tenant_id, unit_id, start_date, end_date, status,
+          is_security_deposit_paid, is_advance_payment_paid
+       ) VALUES (?, ?, ?, ?, ?, 'active', 1, 1)`,
+            [leaseId, tenant.tenant_id, invite.unitId, leaseStart, leaseEnd]
+        );
+
+        // 6️⃣ Update InviteCode → USED
         await conn.query(
             `UPDATE InviteCode SET status = 'USED' WHERE code = ?`,
             [inviteCode]
         );
 
-        // 6️⃣ Mark Unit → OCCUPIED
+        // 7️⃣ Mark Unit → OCCUPIED
         await conn.query(
             `UPDATE Unit
              SET status = 'occupied', updated_at = CURRENT_TIMESTAMP
@@ -101,7 +116,7 @@ export async function POST(req: Request) {
             [invite.unitId]
         );
 
-        // 7️⃣ Fetch landlord info
+        // 8️⃣ Fetch landlord info
         const [landlordRows]: any = await conn.query(
             `SELECT l.user_id, p.property_name, u.unit_name, u.unit_id, p.property_id
              FROM Unit u
@@ -122,14 +137,14 @@ export async function POST(req: Request) {
             const notifBody = `Your tenant has accepted the invite. The lease is now active for ${propertyName} - ${unitName}.`;
             const notifUrl = `/pages/landlord/property-listing/view-unit/${propertyId}/unit-details/${unitId}`;
 
-            // 8️⃣ Save landlord notification
+            // 9️⃣ Save landlord notification
             await conn.query(
                 `INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
                  VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
                 [landlordUserId, notifTitle, notifBody, notifUrl]
             );
 
-            // 9️⃣ Push notification
+            // 🔟 Push notification
             const [subs]: any = await conn.query(
                 `SELECT endpoint, p256dh, auth
                  FROM user_push_subscriptions
@@ -174,6 +189,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
             success: true,
             message: "Lease created, unit marked occupied, landlord notified.",
+            lease_id: leaseId,
         });
     } catch (error: any) {
         console.error("Invite accept error:", error);
