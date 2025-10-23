@@ -28,7 +28,7 @@ export default function PDCManagementPage() {
     const { subscription, loading: loadingSubscription } = useSubscription(landlord_id);
 
     const [pdcList, setPdcList] = useState<any[]>([]);
-    const [totalPDCCount, setTotalPDCCount] = useState(0); // New state for total PDC count
+    const [totalPDCCount, setTotalPDCCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedPDC, setSelectedPDC] = useState<any>(null);
@@ -41,7 +41,6 @@ export default function PDCManagementPage() {
         totalPages: 1,
     });
 
-    /** ✅ Fetch PDCs with Pagination and Total Count */
     const fetchPDCs = async () => {
         if (!landlord_id) return;
         setLoading(true);
@@ -61,7 +60,7 @@ export default function PDCManagementPage() {
                 totalPages: data.pagination?.totalPages || 1,
             }));
         } catch (error: any) {
-            console.error("❌ Failed to fetch PDCs:", error.message);
+            console.error("Failed to fetch PDCs:", error.message);
             Swal.fire("Error", error.response?.data?.error || "Failed to fetch PDCs.", "error");
         } finally {
             setLoading(false);
@@ -72,7 +71,6 @@ export default function PDCManagementPage() {
         fetchPDCs();
     }, [landlord_id, filterStatus, pagination.page, pagination.limit]);
 
-    /** ✅ Memoized subscription + limits logic */
     const limitData = useMemo(() => {
         const plan = subscription?.plan_name || "Free Plan";
         const planLimits = listingLimits[plan];
@@ -84,7 +82,6 @@ export default function PDCManagementPage() {
 
     const { plan, maxPDC, usedPDC } = limitData;
 
-    /** ✅ Status update handler */
     const handleMarkStatus = async (pdc_id: number, status: "cleared" | "bounced") => {
         const confirm = await Swal.fire({
             title: `Mark as ${status}?`,
@@ -104,7 +101,6 @@ export default function PDCManagementPage() {
         }
     };
 
-    /** ✅ Table Columns */
     const columns = useMemo<MRT_ColumnDef<any>[]>(
         () => [
             { accessorKey: "check_number", header: "Check #" },

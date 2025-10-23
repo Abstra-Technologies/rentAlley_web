@@ -15,25 +15,31 @@ export async function POST(req: NextRequest) {
             check_number,
             bank_name,
             amount,
-            issue_date, // ✅ renamed (was issue_date)
+            issue_date, // date string in YYYY-MM-DD
             notes,
             uploaded_image_url,
         } = body;
 
         console.log("📩 Incoming PDC upload:", body);
 
-        // ✅ Required fields
-        if (!lease_id || !check_number || !amount || !issue_date) {
-            throw new Error("Missing required fields: lease_id, check_number, amount, due_date.");
+        // ✅ Required fields validation
+        if (
+            !lease_id ||
+            typeof lease_id !== "string" ||
+            !check_number ||
+            !amount ||
+            !issue_date
+        ) {
+            throw new Error("Missing required fields: lease_id, check_number, amount, issue_date.");
         }
 
         // ✅ Validate amount
         const parsedAmount = parseFloat(amount);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
-            throw new Error("Invalid amount specified.");
+            throw new Error("Invalid amount specified. Must be a positive number.");
         }
 
-        // ✅ Validate date format (must be YYYY-MM-DD)
+        // ✅ Validate date format (YYYY-MM-DD)
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (!dateRegex.test(issue_date)) {
             throw new Error("Invalid date format. Use YYYY-MM-DD.");
@@ -41,10 +47,10 @@ export async function POST(req: NextRequest) {
 
         const formattedDate = new Date(issue_date);
         if (isNaN(formattedDate.getTime())) {
-            throw new Error("Invalid or unparseable due_date.");
+            throw new Error("Invalid or unparseable issue_date.");
         }
 
-        // ✅ Idempotence: Check duplicates
+        // ✅ Check duplicate by check number and lease
         const [existing]: any = await connection.query(
             `SELECT pdc_id FROM PostDatedCheck WHERE lease_id = ? AND check_number = ? LIMIT 1`,
             [lease_id, check_number]
@@ -63,12 +69,12 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // ✅ Insert record atomically
+        // ✅ Insert safely
         const [result]: any = await connection.query(
             `
-            INSERT INTO PostDatedCheck
+                INSERT INTO PostDatedCheck
                 (lease_id, check_number, bank_name, amount, due_date, notes, uploaded_image_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `,
             [
                 lease_id,
@@ -90,6 +96,10 @@ export async function POST(req: NextRequest) {
             {
                 message: "Post-dated check recorded successfully.",
                 pdc_id: result.insertId,
+                lease_id,
+                amount: parsedAmount,
+                check_number,
+                uploaded_image_url,
                 idempotent: false,
             },
             { status: 201 }
@@ -105,7 +115,7 @@ export async function POST(req: NextRequest) {
             connection.release();
         }
 
-        // Handle common cases
+        // 🎯 Error categorization
         if (error.code === "ER_DUP_ENTRY") {
             return NextResponse.json(
                 { error: "A check with this number already exists for this lease." },

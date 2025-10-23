@@ -69,13 +69,11 @@ export default function LeaseContractsPage() {
         <LandlordLayout>
             <div className="p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
                 <header className="mb-6">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Lease Contracts</h1>
+                    <h1 className="gradient-header">Lease Contracts</h1>
                     <p className="text-gray-500 mt-1">
                         Easily manage your lease agreements and view renewal requests from tenants.
                     </p>
                 </header>
-
-                <LeaseStatusInfo />
 
                 {/* 🧾 Renewal Requests Widget */}
                 <section className="mt-6 mb-8">
@@ -83,10 +81,24 @@ export default function LeaseContractsPage() {
                         <div className="flex items-center justify-between mb-3">
                             <h2 className="text-lg font-semibold text-gray-800">Renewal Requests</h2>
                             <Tooltip title="Refresh">
-                                <IconButton onClick={() => window.location.reload()}>
+                                <IconButton
+                                    onClick={async () => {
+                                        try {
+                                            setLoading(true);
+                                            const res = await fetch(`/api/landlord/properties/getRenewalRequest?landlord_id=${user?.landlord_id}`);
+                                            const data = await res.json();
+                                            setRenewals(data);
+                                        } catch (err) {
+                                            console.error("Failed to refresh renewal requests:", err);
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}
+                                >
                                     <RefreshIcon color="primary" />
                                 </IconButton>
                             </Tooltip>
+
                         </div>
 
                         {renewals.length === 0 ? (

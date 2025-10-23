@@ -208,6 +208,11 @@ function Login() {
 
             {/* Login Form Right */}
             <div className="w-full max-w-md bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 sm:p-10 lg:p-12 border border-white/30 mt-10 lg:mt-0">
+              {errorMessage && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-center animate-fade-in">
+                    <p className="text-sm font-medium text-red-700">{errorMessage}</p>
+                  </div>
+              )}
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                 {/* Email */}
                 <div>

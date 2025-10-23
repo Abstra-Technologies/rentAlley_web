@@ -13,13 +13,12 @@ import {
 import { BackButton } from "@/components/navigation/backButton";
 import LoadingScreen from "@/components/loadingScreen";
 
-
-import LeaseInfo from "../../../../components/landlord/activeLease/leaseInfo";
-import LeasePayments from "../../../../components/landlord/activeLease/leasePayments";
+import LeaseInfo from "@/components/landlord/activeLease/leaseInfo";
+import LeasePayments from "@/components/landlord/activeLease/leasePayments";
 // import LeaseBilling from "./LeaseBilling";
 // import LeasePayments from "./LeasePayments";
 // import LeaseRequests from "./LeaseRequests";
-// import LeasePDCs from "./LeasePDCs";
+import LeasePDCs from "@/components/landlord/activeLease/LeasePDCs";
 
 interface BillingDetail {
     billing_id: number;
@@ -53,6 +52,7 @@ interface LeaseDetails {
         bank_name: string;
         amount: number;
         due_date: string;
+        uploaded_image_url:string;
         status: "pending" | "cleared" | "bounced" | "replaced";
     }[];
     payments?: {
@@ -81,6 +81,7 @@ export default function LeaseDetailsPage() {
                     `/api/leaseAgreement/getDetailedLeaseInfo/${agreement_id}`
                 );
                 const data = await res.json();
+                console.log('lease info:', data);
                 setLease(data);
             } catch (err) {
                 console.error("Error fetching lease details:", err);
@@ -122,9 +123,9 @@ export default function LeaseDetailsPage() {
             <BackButton label="Go Back" />
 
             <div className="space-y-2">
-                <Typography variant="h4" fontWeight="bold" className="text-gray-800">
+                <h4 className='gradient-header'>
                      {lease.property_name} - {lease.unit_name}
-                </Typography>
+                </h4>
                 <Typography variant="subtitle1" color="text.secondary" className="text-sm md:text-base">
                     Manage and review this lease agreement.
                     All details displayed are based on the current lease agreement document. Any modifications require notifying the tenant.
@@ -143,16 +144,14 @@ export default function LeaseDetailsPage() {
                 <Tab label="Info" />
                 <Tab label="Billing Statements" />
                 <Tab label="Payments" />
-                {/*<Tab label="Requests" />*/}
                 <Tab label="PDCs" />
             </Tabs>
 
-            {/* Tab Contents as Components */}
+            {/* Tab Contents */}
             {tab === 0 && <LeaseInfo lease={lease} />}
-            {/*{tab === 1 && <LeaseBilling lease={lease} />}*/}
             {tab === 2 && <LeasePayments lease={lease} />}
-            {/*{tab === 3 && <LeaseRequests lease={lease} />}*/}
-            {/*{tab === 4 && <LeasePDCs lease={lease} />}*/}
+            {tab === 3 && <LeasePDCs lease={lease} />}
+
         </Box>
     );
 }

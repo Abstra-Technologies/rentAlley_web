@@ -20,12 +20,13 @@ interface PDCUploadModalProps {
 export default function PDCUploadModal({ open, onClose, landlord_id }: PDCUploadModalProps) {
     const [properties, setProperties] = useState<any[]>([]);
     const [units, setUnits] = useState<any[]>([]);
-    const [selectedProperty, setSelectedProperty] = useState<number | null>(null);
-    const [selectedUnit, setSelectedUnit] = useState<number | null>(null);
+    const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
+    const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
+    const [selectedLeaseId, setSelectedLeaseId] = useState<string | null>(null);
+
     const [uploading, setUploading] = useState(false);
     const [mode, setMode] = useState<"none" | "manual" | "ai">("none");
     const [analyzing, setAnalyzing] = useState(false);
-    const [selectedLeaseId, setSelectedLeaseId] = useState<number | null>(null);
 
     const [form, setForm] = useState({
         check_number: "",
@@ -315,8 +316,6 @@ export default function PDCUploadModal({ open, onClose, landlord_id }: PDCUpload
         onClose();
     };
 
-
-    // Converts MM-DD-YYYY → YYYY-MM-DD for the date input
     const formatForInput = (dateStr: string) => {
         if (!dateStr) return "";
         const [mm, dd, yyyy] = dateStr.split("-");
@@ -396,7 +395,7 @@ export default function PDCUploadModal({ open, onClose, landlord_id }: PDCUpload
                             </label>
                             <select
                                 className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                onChange={(e) => setSelectedProperty(Number(e.target.value))}
+                                onChange={(e) => setSelectedProperty(e.target.value || null)}
                                 value={selectedProperty || ""}
                                 required
                             >
@@ -416,7 +415,7 @@ export default function PDCUploadModal({ open, onClose, landlord_id }: PDCUpload
                             </label>
                             <select
                                 className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-                                onChange={(e) => setSelectedUnit(Number(e.target.value))}
+                                onChange={(e) => setSelectedUnit(e.target.value || null)}
                                 value={selectedUnit || ""}
                                 required
                                 disabled={!units.length}
@@ -552,7 +551,7 @@ export default function PDCUploadModal({ open, onClose, landlord_id }: PDCUpload
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                                    <CalendarDays className="w-4 h-4 text-emerald-500" /> Due Date
+                                    <CalendarDays className="w-4 h-4 text-emerald-500" /> Issue Date
                                 </label>
 
                                 <input

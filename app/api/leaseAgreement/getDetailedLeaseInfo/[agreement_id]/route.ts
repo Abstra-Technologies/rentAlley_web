@@ -108,6 +108,7 @@ export async function GET(
                     bank_name,
                     amount,
                     due_date,
+                    uploaded_image_url,
                     status
                 FROM PostDatedCheck
                 WHERE lease_id = ?
@@ -116,7 +117,6 @@ export async function GET(
             [agreement_id]
         );
 
-        // ✅ Response payload
         return NextResponse.json(
             {
                 lease_id: lease.lease_id,
