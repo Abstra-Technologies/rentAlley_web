@@ -51,7 +51,9 @@ const useAuthStore = create(
             is_2fa_enabled: data.is_2fa_enabled || false,
             tenant_id: data.tenant_id || null,
             points: data.points || 0,
-              address: data.address || null,
+              address: safeParse(data.address)
+                  ? decryptData(safeParse(data.address), encryptionKey)
+                  : null,
               citizenship: data.citizenship || null,
               civil_status: data.civil_status || null,
               occupation: data.occupation || null,

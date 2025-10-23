@@ -19,13 +19,24 @@ export default function SendTenantInviteModal({
   const [loading, setLoading] = useState(false);
 
   // Fetch landlord properties on modal open
+// Fetch landlord properties on modal open
   useEffect(() => {
     if (!open || !landlord_id) return;
+
     const fetchProperties = async () => {
       try {
         const res = await fetch(`/api/landlord/${landlord_id}/properties`);
         const data = await res.json();
-        setProperties(data.data || []);
+
+        // ✅ Normalize field names (in case backend returns camelCase)
+        const normalized =
+            data.data?.map((p: any) => ({
+              property_id: p.property_id ?? p.propertyId,
+              property_name: p.property_name ?? p.propertyName,
+              ...p,
+            })) || [];
+
+        setProperties(normalized);
       } catch (err) {
         console.error("Error fetching properties:", err);
       }
@@ -77,9 +88,11 @@ export default function SendTenantInviteModal({
 
     try {
       const property = properties.find(
-          (p) => p.property_id === parseInt(selectedProperty)
+          (p) => String(p.property_id) === String(selectedProperty)
       );
-      const unit = units.find((u) => u.unit_id === parseInt(selectedUnit));
+      const unit = units.find(
+          (u) => String(u.unit_id) === String(selectedUnit)
+      );
 
       const res = await fetch("/api/invite", {
         method: "POST",
@@ -208,7 +221,7 @@ export default function SendTenantInviteModal({
                         </option>
                         {units.map((u) => (
                             <option key={u.unit_id} value={u.unit_id}>
-                              {u.unit_name}
+                              {u.unit_name} - {u.status}
                             </option>
                         ))}
                       </select>
