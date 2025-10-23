@@ -14,7 +14,7 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
-import { ReceiptText } from 'lucide-react';
+import { ReceiptText } from "lucide-react";
 
 import Swal from "sweetalert2";
 import { MdOutlinePayments } from "react-icons/md";
@@ -78,7 +78,7 @@ const menuItems = [
   // Tertiary
   {
     href: "/pages/landlord/pdcManagement",
-    icon: ReceiptText ,
+    icon: ReceiptText,
     label: "PDC Management",
     priority: 3,
   },
@@ -112,7 +112,6 @@ const LandlordLayout = ({ children }) => {
   };
 
   const handleNavigation = (label, href) => {
-    // Close mobile menu immediately for better UX
     setIsMobileMenuOpen(false);
 
     Swal.fire({
@@ -130,6 +129,7 @@ const LandlordLayout = ({ children }) => {
     }, 500);
   };
 
+  const isActive = (href) => pathname === href;
 
   const primaryItems = menuItems.filter((item) => item.priority === 1);
   const secondaryItems = menuItems.filter((item) => item.priority === 2);
@@ -137,7 +137,6 @@ const LandlordLayout = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-
       <div className="hidden md:block fixed left-0 top-0 w-64 bg-white shadow-lg h-full overflow-y-auto z-30">
         <div className="p-6">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
@@ -148,7 +147,7 @@ const LandlordLayout = ({ children }) => {
         <nav className="px-4 pb-6">
           <ul className="space-y-1">
             {menuItems.map(({ href, icon: Icon, label }) => {
-              const isActive = pathname === href;
+              const active = isActive(href);
               return (
                 <li key={href} className="relative group">
                   <button
@@ -156,7 +155,7 @@ const LandlordLayout = ({ children }) => {
                     className={`
                       flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
                       ${
-                        isActive
+                        active
                           ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700 font-semibold shadow-sm"
                           : "hover:bg-gray-50 text-gray-700"
                       }
@@ -167,7 +166,7 @@ const LandlordLayout = ({ children }) => {
                         absolute left-0 top-0 h-full w-1 rounded-r 
                         bg-gradient-to-b from-blue-600 via-teal-500 to-emerald-400
                         ${
-                          isActive
+                          active
                             ? "opacity-100"
                             : "opacity-0 group-hover:opacity-100"
                         }
@@ -176,11 +175,11 @@ const LandlordLayout = ({ children }) => {
                     />
                     <Icon
                       className={`w-5 h-5 mr-3 ${
-                        isActive ? "text-blue-700" : "text-gray-500"
+                        active ? "text-blue-700" : "text-gray-500"
                       }`}
                     />
                     <span className="flex-1 text-left">{label}</span>
-                    {isActive && (
+                    {active && (
                       <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-600 to-emerald-500" />
                     )}
                   </button>
@@ -191,8 +190,7 @@ const LandlordLayout = ({ children }) => {
         </nav>
       </div>
 
-
-      <div className="md:hidden fixed bottom-6 right-6 z-50">
+      <div className="md:hidden fixed top-20 right-4 z-40">
         <button
           onClick={toggleMobileMenu}
           className={`
@@ -212,22 +210,17 @@ const LandlordLayout = ({ children }) => {
         </button>
       </div>
 
-
       {isMobileMenuOpen && (
         <>
-
           <div
-            className="md:hidden fixed inset-0 bg-black bg-opacity-50 transition-opacity z-40"
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 transition-opacity z-30"
             onClick={toggleMobileMenu}
           />
 
-
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[75vh] overflow-hidden">
-
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-3xl shadow-2xl max-h-[75vh] overflow-hidden">
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
             </div>
-
 
             <div className="px-6 pb-4 border-b border-gray-100">
               <h2 className="text-xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
@@ -238,17 +231,15 @@ const LandlordLayout = ({ children }) => {
               </p>
             </div>
 
-
             <div className="overflow-y-auto max-h-[calc(75vh-100px)]">
               <nav className="p-4">
-
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
                     Quick Actions
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
                     {primaryItems.map(({ href, icon: Icon, label }) => {
-                      const isActive = pathname === href;
+                      const active = isActive(href);
                       return (
                         <button
                           key={href}
@@ -256,7 +247,7 @@ const LandlordLayout = ({ children }) => {
                           className={`
                             flex flex-col items-center p-4 rounded-2xl transition-all duration-200 border-2
                             ${
-                              isActive
+                              active
                                 ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200 text-blue-700"
                                 : "bg-white border-gray-100 hover:border-gray-200 text-gray-700 hover:shadow-md"
                             }
@@ -266,7 +257,7 @@ const LandlordLayout = ({ children }) => {
                             className={`
                             p-3 rounded-xl mb-2
                             ${
-                              isActive
+                              active
                                 ? "bg-gradient-to-r from-blue-100 to-emerald-100"
                                 : "bg-gray-50"
                             }
@@ -274,7 +265,7 @@ const LandlordLayout = ({ children }) => {
                           >
                             <Icon
                               className={`w-6 h-6 ${
-                                isActive ? "text-blue-700" : "text-gray-500"
+                                active ? "text-blue-700" : "text-gray-500"
                               }`}
                             />
                           </div>
@@ -287,14 +278,13 @@ const LandlordLayout = ({ children }) => {
                   </div>
                 </div>
 
-
                 <div className="mb-4">
                   <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
                     Operations
                   </h3>
                   <div className="space-y-2">
                     {secondaryItems.map(({ href, icon: Icon, label }) => {
-                      const isActive = pathname === href;
+                      const active = isActive(href);
                       return (
                         <button
                           key={href}
@@ -302,7 +292,7 @@ const LandlordLayout = ({ children }) => {
                           className={`
                             flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
                             ${
-                              isActive
+                              active
                                 ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700"
                                 : "hover:bg-gray-50 text-gray-700"
                             }
@@ -310,7 +300,7 @@ const LandlordLayout = ({ children }) => {
                         >
                           <Icon
                             className={`w-5 h-5 mr-3 ${
-                              isActive ? "text-blue-700" : "text-gray-500"
+                              active ? "text-blue-700" : "text-gray-500"
                             }`}
                           />
                           <span className="flex-1 text-left font-medium">
@@ -318,7 +308,7 @@ const LandlordLayout = ({ children }) => {
                           </span>
                           <ChevronRight
                             className={`w-4 h-4 ${
-                              isActive ? "text-blue-700" : "text-gray-400"
+                              active ? "text-blue-700" : "text-gray-400"
                             }`}
                           />
                         </button>
@@ -327,14 +317,13 @@ const LandlordLayout = ({ children }) => {
                   </div>
                 </div>
 
-   
                 <div className="mb-4">
                   <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
                     More
                   </h3>
                   <div className="space-y-1">
                     {tertiaryItems.map(({ href, icon: Icon, label }) => {
-                      const isActive = pathname === href;
+                      const active = isActive(href);
                       return (
                         <button
                           key={href}
@@ -342,7 +331,7 @@ const LandlordLayout = ({ children }) => {
                           className={`
                             flex items-center w-full px-4 py-2.5 rounded-lg transition-all duration-200
                             ${
-                              isActive
+                              active
                                 ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700"
                                 : "hover:bg-gray-50 text-gray-600"
                             }
@@ -350,7 +339,7 @@ const LandlordLayout = ({ children }) => {
                         >
                           <Icon
                             className={`w-4 h-4 mr-3 ${
-                              isActive ? "text-blue-700" : "text-gray-500"
+                              active ? "text-blue-700" : "text-gray-500"
                             }`}
                           />
                           <span className="flex-1 text-left text-sm font-medium">
@@ -361,6 +350,7 @@ const LandlordLayout = ({ children }) => {
                     })}
                   </div>
                 </div>
+
                 <div className="h-6"></div>
               </nav>
             </div>

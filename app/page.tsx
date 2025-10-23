@@ -121,18 +121,14 @@ export default function SplashScreen() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Hero Section - Modern Clean Design */}
       <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-emerald-600 overflow-hidden">
-        {/* Subtle animated background elements */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-32 pb-20 sm:pb-32">
-          {/* Hero Content */}
           <div className="text-center max-w-4xl mx-auto">
-            {/* Trust Badge */}
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/30">
               <Shield className="w-4 h-4 text-white" />
               <span className="text-sm font-medium text-white">
@@ -140,18 +136,15 @@ export default function SplashScreen() {
               </span>
             </div>
 
-            {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
               Find Your Perfect Home in the Philippines
             </h1>
 
-            {/* Subheadline */}
             <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto">
               Discover verified rental properties with transparent pricing and
               instant booking.
             </p>
 
-            {/* Primary CTA Search Bar */}
             <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-8">
               <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2">
                 <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
@@ -174,7 +167,6 @@ export default function SplashScreen() {
               </div>
             </form>
 
-            {/* Popular Searches */}
             <div className="flex flex-wrap gap-2 justify-center">
               <span className="text-sm text-white/70">Popular:</span>
               {["Manila", "Quezon City", "Makati", "Taguig"].map((city) => (
@@ -193,7 +185,6 @@ export default function SplashScreen() {
         </div>
       </div>
 
-      {/* Value Propositions - Clean Three Column */}
       <section className="py-16 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
@@ -231,7 +222,6 @@ export default function SplashScreen() {
         </div>
       </section>
 
-      {/* Featured Units Section */}
       <section className="py-16 sm:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -285,7 +275,6 @@ export default function SplashScreen() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
       <section className="py-16 bg-gradient-to-br from-gray-900 to-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -299,7 +288,6 @@ export default function SplashScreen() {
                 support for both tenants and landlords.
               </p>
 
-              {/* Trust-Based Highlights */}
               <div className="grid grid-cols-3 gap-6 mb-8">
                 {[
                   { value: "✔", label: "Verified Properties" },
@@ -334,7 +322,6 @@ export default function SplashScreen() {
         </div>
       </section>
 
-      {/* Recently Added Section */}
       <section className="py-16 sm:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -388,7 +375,6 @@ export default function SplashScreen() {
         </div>
       </section>
 
-      {/* Final CTA Section */}
       <section className="py-16 sm:py-20 bg-gradient-to-r from-blue-600 to-emerald-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">

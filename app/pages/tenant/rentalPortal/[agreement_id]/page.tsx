@@ -92,11 +92,9 @@ export default function RentPortalPage() {
   return (
     <TenantLayout agreement_id={agreementId}>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50">
-        {/* Header - Mobile Optimized */}
-        <div className="bg-white border-b border-blue-100 shadow-sm sticky top-0 z-40">
+        <div className="bg-white border-b border-blue-100 shadow-sm sticky top-0 z-30 md:z-40">
           <div className="px-4 py-4 sm:px-6 sm:py-6">
             <div className="flex flex-col gap-3 sm:gap-4">
-              {/* Breadcrumb */}
               <nav className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 overflow-x-auto">
                 <span className="text-gray-500 whitespace-nowrap">Portal</span>
                 <svg
@@ -120,14 +118,16 @@ export default function RentPortalPage() {
               {/* Main Title & Status */}
               <div className="flex flex-col gap-3">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+                  <h1 className="text-xl sm:text-3xl font-bold text-gray-900 leading-tight">
                     {unitInfo?.property_name && unitInfo?.unit_name ? (
                       <>
                         <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
                           {unitInfo.property_name}
                         </span>
-                        <span className="text-gray-600 text-xl sm:text-2xl ml-2">
-                          Unit {unitInfo.unit_name}
+                        <span className="text-gray-600 text-lg sm:text-2xl ml-2">
+                          {unitInfo.unit_name.toLowerCase().startsWith("unit")
+                            ? unitInfo.unit_name
+                            : `Unit ${unitInfo.unit_name}`}
                         </span>
                       </>
                     ) : (
@@ -153,14 +153,12 @@ export default function RentPortalPage() {
 
         {/* Main Content */}
         <div className="px-4 py-4 sm:px-6 sm:py-8 space-y-6 sm:space-y-8 pb-8">
-          {/* Move-in Checklist Section */}
           {showMoveInChecklist && (
             <section>
               <MoveInChecklist agreement_id={agreementId} />
             </section>
           )}
 
-          {/* Quick Stats Section */}
           <section>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 flex items-center justify-center flex-shrink-0">
@@ -186,7 +184,6 @@ export default function RentPortalPage() {
               </div>
             </div>
 
-            {/* Cards - Single column on mobile, stacked responsive */}
             <div className="space-y-4">
               <div className="bg-white rounded-2xl shadow-sm border border-blue-100 hover:shadow-md hover:border-emerald-200 transition-all duration-300 min-h-64">
                 <div className="p-4 sm:p-6 h-full">
@@ -210,7 +207,6 @@ export default function RentPortalPage() {
             </div>
           </section>
 
-          {/* Details Section */}
           <section>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 flex items-center justify-center flex-shrink-0">
@@ -236,7 +232,6 @@ export default function RentPortalPage() {
               </div>
             </div>
 
-            {/* Cards Stack */}
             <div className="space-y-4">
               <div
                 onClick={() =>
