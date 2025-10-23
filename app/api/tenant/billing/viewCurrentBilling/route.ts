@@ -7,17 +7,17 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get("user_id");
 
     try {
-        // 🔹 1. Resolve Tenant & Agreement
+        // 🧭 1. Resolve Tenant
         let tenantId: number | null = null;
-
         if (userId) {
             const [tenantRows]: any = await db.query(
                 `SELECT tenant_id FROM Tenant WHERE user_id = ? LIMIT 1`,
                 [userId]
             );
-            tenantId = tenantRows.length ? tenantRows[0].tenant_id : null;
+            tenantId = tenantRows[0]?.tenant_id || null;
         }
 
+        // 🧾 2. Resolve Agreement
         if (!agreementId && tenantId) {
             const [agreements]: any = await db.query(
                 `
@@ -29,15 +29,7 @@ export async function GET(req: NextRequest) {
                 `,
                 [tenantId]
             );
-
-            if (!agreements.length) {
-                return NextResponse.json(
-                    { message: "No active lease found for tenant." },
-                    { status: 404 }
-                );
-            }
-
-            agreementId = agreements[0].agreement_id;
+            agreementId = agreements[0]?.agreement_id || null;
         }
 
         if (!agreementId) {
@@ -47,12 +39,13 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // 🔹 2. Get Lease, Unit, Property Details
+        // 🏠 3. Lease, Unit, Property
         const [leaseRows]: any = await db.query(
             `
                 SELECT
                     l.unit_id,
                     u.property_id,
+                    u.unit_name,
                     u.rent_amount,
                     p.water_billing_type,
                     p.electricity_billing_type,
@@ -76,6 +69,7 @@ export async function GET(req: NextRequest) {
         const {
             unit_id: unitId,
             property_id: propertyId,
+            unit_name: unitName,
             rent_amount,
             water_billing_type,
             electricity_billing_type,
@@ -84,10 +78,12 @@ export async function GET(req: NextRequest) {
             is_advance_payment_paid,
         } = leaseRows[0];
 
+        const baseRent = parseFloat(rent_amount || 0);
         const totalAdvanceRequired =
-            parseFloat(advance_payment_amount || 0) * (advance_payment_months || 0);
+            parseFloat(advance_payment_amount || 0) *
+            parseInt(advance_payment_months || 0);
 
-        // 🔹 3. Get Property Configuration
+        // ⚙️ 4. Property Configuration
         const [configRows]: any = await db.query(
             `
                 SELECT
@@ -104,9 +100,9 @@ export async function GET(req: NextRequest) {
             `,
             [propertyId]
         );
-        const propertyConfig = configRows.length ? configRows[0] : null;
+        const propertyConfig = configRows[0] || null;
 
-        // 🔹 4. Fetch Current Month Billing
+        // 💡 5. Current Billing (if exists)
         const [billingRows]: any = await db.query(
             `
                 SELECT *
@@ -118,9 +114,9 @@ export async function GET(req: NextRequest) {
             `,
             [unitId]
         );
-        const billing = billingRows.length ? billingRows[0] : null;
+        const billing = billingRows[0] || null;
 
-        // 🔹 5. Fetch PDC for this billing period
+        // 💳 6. PDC (Post-Dated Checks)
         const [pdcRows]: any = await db.query(
             `
                 SELECT
@@ -139,9 +135,33 @@ export async function GET(req: NextRequest) {
             `,
             [agreementId]
         );
-        const pdcForMonth = pdcRows.length ? pdcRows : [];
 
-        // 🔹 6. Utility Readings
+        // 🔎 7. Check for Payment Proofs (manual uploads)
+        // let paymentProofs: any[] = [];
+        // if (billing) {
+        //     const [proofRows]: any = await db.query(
+        //         `
+        //   SELECT id, status, created_at
+        //   FROM PaymentProof
+        //   WHERE billing_id = ?
+        //   ORDER BY created_at DESC
+        // `,
+        //         [billing.billing_id]
+        //     );
+        //     paymentProofs = proofRows || [];
+        // }
+
+        // 🧮 Determine if any payment is still under processing
+        const hasPendingPdc = pdcRows.some(
+            (pdc: any) => ["pending", "processing"].includes(pdc.status)
+        );
+        // const hasPendingProof = paymentProofs.some(
+        //     (p: any) => ["processing", "verifying"].includes(p.status)
+        // );
+        // const paymentProcessing = hasPendingPdc || hasPendingProof;
+        const paymentProcessing = hasPendingPdc;
+
+        // 🔌 8. Utility Readings (latest 2 per type)
         const [meterReadings]: any = await db.query(
             `
         SELECT *
@@ -151,7 +171,6 @@ export async function GET(req: NextRequest) {
       `,
             [unitId]
         );
-
         const groupedReadings = { water: [], electricity: [] };
         for (const r of meterReadings) {
             if (r.utility_type === "water" && groupedReadings.water.length < 2)
@@ -163,7 +182,7 @@ export async function GET(req: NextRequest) {
                 groupedReadings.electricity.push(r);
         }
 
-        // 🔹 7. Additional Charges
+        // ➕ 9. Additional Charges
         let billingAdditionalCharges: any[] = [];
         if (billing) {
             const [charges]: any = await db.query(
@@ -173,14 +192,13 @@ export async function GET(req: NextRequest) {
             billingAdditionalCharges = charges;
         }
 
-        // 🔹 8. Lease-level Additional Expenses
+        // 🧾 10. Lease-Level Extra Expenses
         const [leaseExpenses]: any = await db.query(
             `SELECT * FROM LeaseAdditionalExpense WHERE agreement_id = ?`,
             [agreementId]
         );
 
-        // 🔹 9. Compute Breakdown
-        const baseRent = parseFloat(rent_amount || 0);
+        // 🧮 11. Build breakdown
         const breakdown = {
             base_rent: baseRent,
             water: billing?.total_water_amount || 0,
@@ -194,34 +212,36 @@ export async function GET(req: NextRequest) {
                 : baseRent,
         };
 
-        // ✅ 10. Return simplified response (includes PDC info)
-        return NextResponse.json(
-            {
-                billing: billing
-                    ? {
-                        ...billing,
-                        total_amount_due: parseFloat(
-                            billing.total_amount_due || 0
-                        ).toFixed(2),
-                    }
-                    : {
-                        billing_period: new Date(),
-                        total_amount_due: baseRent.toFixed(2),
-                        status: "unpaid",
-                    },
-                meterReadings: groupedReadings,
-                billingAdditionalCharges,
-                leaseAdditionalExpenses: leaseExpenses,
-                propertyBillingTypes: {
-                    water: water_billing_type,
-                    electricity: electricity_billing_type,
+        // 🧩 12. Assemble response
+        const response = {
+            billing: billing
+                ? {
+                    ...billing,
+                    unit_name: unitName,
+                    billing_period: billing.billing_period || new Date(),
+                    total_amount_due: parseFloat(billing.total_amount_due || 0).toFixed(2),
+                }
+                : {
+                    billing_period: new Date(),
+                    total_amount_due: baseRent.toFixed(2),
+                    status: "unpaid",
+                    unit_name: unitName,
                 },
-                breakdown,
-                propertyConfig,
-                postDatedChecks: pdcForMonth, // ✅ added here
+            meterReadings: groupedReadings,
+            billingAdditionalCharges,
+            leaseAdditionalExpenses: leaseExpenses,
+            propertyBillingTypes: {
+                water: water_billing_type,
+                electricity: electricity_billing_type,
             },
-            { status: 200 }
-        );
+            breakdown,
+            propertyConfig,
+            postDatedChecks: pdcRows,
+            // paymentProofs,
+            paymentProcessing, // ✅ new key for frontend banner
+        };
+
+        return NextResponse.json(response, { status: 200 });
     } catch (error: any) {
         console.error("❌ Tenant Billing API error:", error);
         return NextResponse.json(

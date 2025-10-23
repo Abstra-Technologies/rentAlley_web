@@ -2,10 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import useAuthStore from "../../../../zustand/authStore";
-import TenantLayout from "../../../../components/navigation/sidebar-tenant";
-import TenantBilling from "../../../../components/tenant/billing/currentBilling";
-import PreviousBilling from "../../../../components/tenant/billing/prevBillingList";
+import useAuthStore from "@/zustand/authStore";
+import TenantLayout from "@/components/navigation/sidebar-tenant";
+import TenantBilling from "@/components/tenant/billing/currentBilling";
+import PreviousBilling from "@/components/tenant/billing/prevBillingList";
 
 function BillingContent() {
   const { user, fetchSession } = useAuthStore();
