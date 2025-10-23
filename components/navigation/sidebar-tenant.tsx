@@ -20,16 +20,16 @@ interface TenantLayoutProps {
   agreement_id?: string | number;
 }
 
+interface PropertyInfo {
+  property_name: string;
+  unit_name: string;
+}
+
 const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
-  const [propertyInfo, setPropertyInfo] = useState<{
-    property_name: string;
-    unit_name: string;
-  } | null>(null);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  const [propertyInfo, setPropertyInfo] = useState<PropertyInfo | null>(null);
 
   useEffect(() => {
     if (!agreement_id) return;
@@ -119,11 +119,10 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Desktop Sidebar - Fixed and Sticky (only if agreement_id exists) */}
       {agreement_id && (
         <div className="hidden md:block fixed left-0 top-0 w-64 bg-white shadow-lg h-full overflow-y-auto z-30">
           <div className="p-6">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-green-800 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
               Tenant Portal
             </h1>
           </div>
@@ -131,12 +130,12 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
           <nav className="px-4 pb-6">
             <ul className="space-y-1">
               {propertyInfo && (
-                <div className="px-5 py-4 mb-4 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl shadow-md">
+                <div className="px-5 py-4 mb-4 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-2xl shadow-md">
                   <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide line-clamp-2">
                     {propertyInfo.property_name}
                   </h2>
                   <p className="text-sm text-blue-50 mt-1 flex items-center gap-1">
-                    <Home className="w-4 h-4 text-emerald-100 flex-shrink-0" />
+                    <Home className="w-4 h-4 text-blue-100 flex-shrink-0" />
                     Unit{" "}
                     <span className="font-semibold text-white">
                       {propertyInfo.unit_name}
@@ -156,19 +155,18 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
                         flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
                         ${
                           isExit
-                            ? "bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90 active:scale-95"
+                            ? "bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90"
                             : isActive
-                            ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 font-semibold shadow-sm"
-                            : "hover:bg-gray-50 text-gray-700 active:bg-gray-100"
+                            ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700 font-semibold shadow-sm"
+                            : "hover:bg-gray-50 text-gray-700"
                         }
                       `}
                     >
-                      {/* Active indicator bar */}
                       {!isExit && (
                         <span
                           className={`
                             absolute left-0 top-0 h-full w-1 rounded-r 
-                            bg-gradient-to-b from-green-600 via-teal-500 to-blue-600
+                            bg-gradient-to-b from-blue-600 via-teal-500 to-emerald-400
                             ${
                               isActive
                                 ? "opacity-100"
@@ -179,23 +177,18 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
                         />
                       )}
 
-                      {/* Icon */}
                       <Icon
-                        className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                        className={`w-5 h-5 mr-3 ${
                           isExit
                             ? "text-white"
                             : isActive
-                            ? "text-green-700"
+                            ? "text-blue-700"
                             : "text-gray-500"
                         }`}
                       />
-
-                      {/* Label */}
-                      <span className="flex-1 text-left truncate">{label}</span>
-
-                      {/* Active dot indicator */}
+                      <span className="flex-1 text-left">{label}</span>
                       {isActive && !isExit && (
-                        <div className="h-2 w-2 rounded-full bg-gradient-to-r from-green-600 to-blue-600 flex-shrink-0" />
+                        <div className="h-2 w-2 rounded-full bg-gradient-to-r from-blue-600 to-emerald-500" />
                       )}
                     </button>
                   </li>
@@ -206,17 +199,16 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
         </div>
       )}
 
-      {/* Mobile Menu Button - Floating (only if agreement_id exists) */}
       {agreement_id && (
-        <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <div className="md:hidden fixed top-20 right-4 z-40">
           <button
             onClick={toggleMobileMenu}
             className={`
-              p-4 rounded-full shadow-lg transition-all duration-300 transform active:scale-95
+              p-4 rounded-full shadow-lg transition-all duration-300 transform
               ${
                 isMobileMenuOpen
                   ? "bg-red-500 hover:bg-red-600 rotate-90"
-                  : "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 hover:scale-110"
+                  : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 hover:scale-110"
               }
             `}
           >
@@ -229,36 +221,21 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
         </div>
       )}
 
-      {/* Mobile Menu - Bottom Sheet Style (only if agreement_id exists) */}
+      {/* Mobile Menu - Bottom Sheet Style */}
       {agreement_id && isMobileMenuOpen && (
         <>
-          {/* Backdrop - No color, just clickable area */}
           <div
-            className="md:hidden fixed inset-0 z-40"
-            onClick={() => setIsMobileMenuOpen(false)}
-            role="presentation"
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 transition-opacity z-30"
+            onClick={toggleMobileMenu}
           />
 
-          <div
-            className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[75vh] overflow-hidden flex flex-col transition-transform duration-300"
-            onTouchStart={(e) => setTouchStart(e.targetTouches[0].clientY)}
-            onTouchEnd={(e) => {
-              setTouchEnd(e.changedTouches[0].clientY);
-
-              if (e.changedTouches[0].clientY - touchStart > 50) {
-                setIsMobileMenuOpen(false);
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Handle Bar */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-3xl shadow-2xl max-h-[75vh] overflow-hidden">
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
             </div>
 
-            {/* Header */}
             <div className="px-6 pb-4 border-b border-gray-100">
-              <h2 className="text-xl font-bold bg-gradient-to-r from-green-800 to-blue-600 bg-clip-text text-transparent">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
                 Tenant Portal
               </h2>
               <p className="text-gray-500 text-sm mt-1">
@@ -266,14 +243,14 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
               </p>
             </div>
 
-            <div className="overflow-y-auto flex-1">
+            {/* Navigation - Scrollable */}
+            <div className="overflow-y-auto max-h-[calc(75vh-100px)]">
               <nav className="p-4 space-y-4">
-                {/* Essential Services - Primary Items */}
                 <div>
-                  <h3 className="text-xs font-semibold text-gray-600 mb-3 px-2 uppercase tracking-wider">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
                     Essential Services
                   </h3>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {primaryItems.map(({ href, icon: Icon, label }) => {
                       const isActive = getIsActive(href);
                       return (
@@ -281,47 +258,41 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
                           key={href}
                           onClick={() => handleNavigation(href)}
                           className={`
-                            flex items-center w-full p-4 rounded-xl transition-all duration-200 border-2 active:scale-95
+                            flex flex-col items-center p-4 rounded-2xl transition-all duration-200 border-2
                             ${
                               isActive
-                                ? "bg-gradient-to-br from-green-50 to-blue-50 border-green-300 text-green-700 font-semibold shadow-sm"
-                                : "bg-white border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50"
+                                ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200 text-blue-700"
+                                : "bg-white border-gray-100 hover:border-gray-200 text-gray-700 hover:shadow-md"
                             }
                           `}
                         >
                           <div
                             className={`
-                              p-3 rounded-lg mr-3 flex-shrink-0
+                              p-3 rounded-xl mb-2
                               ${
                                 isActive
-                                  ? "bg-gradient-to-r from-green-100 to-blue-100"
-                                  : "bg-gray-100"
+                                  ? "bg-gradient-to-r from-blue-100 to-emerald-100"
+                                  : "bg-gray-50"
                               }
                             `}
                           >
                             <Icon
                               className={`w-6 h-6 ${
-                                isActive ? "text-green-700" : "text-gray-600"
+                                isActive ? "text-blue-700" : "text-gray-500"
                               }`}
                             />
                           </div>
-                          <span className="flex-1 text-left font-medium text-sm md:text-base">
+                          <span className="text-sm font-medium text-center">
                             {label}
                           </span>
-                          <ChevronRight
-                            className={`w-5 h-5 flex-shrink-0 ${
-                              isActive ? "text-green-700" : "text-gray-400"
-                            }`}
-                          />
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Communication & Support */}
                 <div>
-                  <h3 className="text-xs font-semibold text-gray-600 mb-3 px-2 uppercase tracking-wider">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-3 px-2">
                     Communication & Support
                   </h3>
                   <div className="space-y-2">
@@ -332,25 +303,25 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
                           key={href}
                           onClick={() => handleNavigation(href)}
                           className={`
-                            flex items-center w-full px-4 py-3 rounded-lg transition-all duration-200 active:scale-95
+                            flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200
                             ${
                               isActive
-                                ? "bg-gradient-to-r from-green-50 to-blue-50 text-green-700 font-semibold"
+                                ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700"
                                 : "hover:bg-gray-50 text-gray-700"
                             }
                           `}
                         >
                           <Icon
-                            className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                              isActive ? "text-green-700" : "text-gray-500"
+                            className={`w-5 h-5 mr-3 ${
+                              isActive ? "text-blue-700" : "text-gray-500"
                             }`}
                           />
-                          <span className="flex-1 text-left font-medium text-sm">
+                          <span className="flex-1 text-left font-medium">
                             {label}
                           </span>
                           <ChevronRight
-                            className={`w-4 h-4 flex-shrink-0 ${
-                              isActive ? "text-green-700" : "text-gray-400"
+                            className={`w-4 h-4 ${
+                              isActive ? "text-blue-700" : "text-gray-400"
                             }`}
                           />
                         </button>
@@ -359,25 +330,24 @@ const TenantLayout = ({ children, agreement_id }: TenantLayoutProps) => {
                   </div>
                 </div>
 
-                {/* Exit Portal */}
                 {exitItem && (
                   <div className="border-t border-gray-100 pt-4">
                     <button
                       onClick={() => handleNavigation(exitItem.href)}
-                      className="flex items-center w-full p-4 rounded-xl transition-all duration-200 bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90 active:scale-95"
+                      className="flex items-center w-full p-4 rounded-2xl transition-all duration-200 bg-gradient-to-r from-red-500 to-rose-500 text-white hover:opacity-90 border-2 border-red-400/30"
                     >
-                      <div className="p-3 rounded-lg mr-3 bg-white/20 flex-shrink-0">
+                      <div className="p-3 rounded-lg mr-3 bg-white/20">
                         <exitItem.icon className="w-6 h-6" />
                       </div>
-                      <span className="flex-1 text-left font-medium text-sm md:text-base">
+                      <span className="flex-1 text-left font-medium">
                         {exitItem.label}
                       </span>
-                      <ChevronRight className="w-5 h-5 flex-shrink-0" />
+                      <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
                 )}
 
-                <div className="h-4"></div>
+                <div className="h-6"></div>
               </nav>
             </div>
           </div>
