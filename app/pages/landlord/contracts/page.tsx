@@ -105,33 +105,99 @@ export default function LeaseContractsPage() {
                             <p className="text-sm text-gray-500">No renewal requests at the moment.</p>
                         ) : (
                             <div className="space-y-3">
-                                {renewals.map((req) => (
-                                    <div
-                                        key={req.id}
-                                        className="flex justify-between items-center bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-100 rounded-xl p-3 hover:shadow-md transition-all"
-                                    >
-                                        <div>
-                                            <p className="font-semibold text-gray-800">
-                                                {req.tenant_name} —  {req.property_name} unit {req.unit_name}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                                Requested {formatDate(req.requested_start_date)} →{" "}
-                                                {formatDate(req.requested_end_date)}
-                                            </p>
-                                            <p className="text-xs text-gray-500 capitalize">
-                                                Status: {req.status}
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => router.push(`/pages/lease/${req.id}?tab=renewal`)}
-                                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm font-medium hover:opacity-90"
+                                {renewals
+                                    // 🧩 Filter out processed renewals
+                                    .filter((req) => req.status === "pending")
+                                    .map((req) => (
+                                        <div
+                                            key={req.id}
+                                            className="flex justify-between items-center bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-100 rounded-xl p-3 hover:shadow-md transition-all"
                                         >
-                                            Review
-                                        </button>
-                                    </div>
-                                ))}
+                                            <div>
+                                                <p className="font-semibold text-gray-800">
+                                                    {req.tenant_name} — {req.property_name} unit {req.unit_name}
+                                                </p>
+                                                <p className="text-sm text-gray-600">
+                                                    Requested {formatDate(req.requested_start_date)} →{" "}
+                                                    {formatDate(req.requested_end_date)}
+                                                </p>
+                                                <p className="text-xs text-gray-500 capitalize">
+                                                    Status: {req.status}
+                                                </p>
+                                            </div>
+
+                                            {/* 🧩 Action buttons (only visible for pending requests) */}
+                                            {req.status === "pending" && (
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                setLoading(true);
+                                                                const res = await fetch(`/api/leaseAgreement/updateRenewalStatus`, {
+                                                                    method: "PUT",
+                                                                    headers: { "Content-Type": "application/json" },
+                                                                    body: JSON.stringify({ id: req.id, status: "approved" }),
+                                                                });
+                                                                if (!res.ok) throw new Error("Failed to approve request");
+                                                                const updated = await res.json();
+
+                                                                // 🧩 Update state and hide processed one
+                                                                setRenewals((prev) =>
+                                                                    prev.filter((r) => r.id !== req.id)
+                                                                );
+                                                            } catch (err) {
+                                                                console.error(err);
+                                                                alert("Error approving renewal");
+                                                            } finally {
+                                                                setLoading(false);
+                                                            }
+                                                        }}
+                                                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-green-600 text-white text-sm font-medium hover:opacity-90"
+                                                    >
+                                                        Approve
+                                                    </button>
+
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                setLoading(true);
+                                                                const res = await fetch(`/api/leaseAgreement/updateRenewalStatus`, {
+                                                                    method: "PUT",
+                                                                    headers: { "Content-Type": "application/json" },
+                                                                    body: JSON.stringify({ id: req.id, status: "declined" }),
+                                                                });
+                                                                if (!res.ok) throw new Error("Failed to reject request");
+                                                                const updated = await res.json();
+
+                                                                // 🧩 Update state and hide processed one
+                                                                setRenewals((prev) =>
+                                                                    prev.filter((r) => r.id !== req.id)
+                                                                );
+                                                            } catch (err) {
+                                                                console.error(err);
+                                                                alert("Error rejecting renewal");
+                                                            } finally {
+                                                                setLoading(false);
+                                                            }
+                                                        }}
+                                                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-pink-600 text-white text-sm font-medium hover:opacity-90"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+
+                                {/* 🧩 Fallback if all processed */}
+                                {renewals.filter((req) => req.status === "pending").length === 0 && (
+                                    <p className="text-sm text-gray-500">No pending renewal requests.</p>
+                                )}
                             </div>
                         )}
+
+
+
                     </div>
                 </section>
 

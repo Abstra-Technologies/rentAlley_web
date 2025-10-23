@@ -24,7 +24,7 @@ interface Payment {
 }
 
 interface Lease {
-  agreement_id: number;
+  agreement_id: string;
   property_name: string;
   unit_name: string;
   start_date: string;
@@ -34,7 +34,7 @@ interface Lease {
 export default function TenantLeasePayments({
   agreement_id,
 }: {
-  agreement_id: number;
+  agreement_id: string;
 }) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [lease, setLease] = useState<Lease | null>(null);
@@ -103,7 +103,6 @@ export default function TenantLeasePayments({
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-      <TenantOutsidePortalNav />
 
       <div className="flex-1">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
