@@ -406,7 +406,7 @@ export default function SplashScreen() {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
-              href="/pages/partner"
+              href="/pages/auth/selectRole"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white font-semibold rounded-xl hover:bg-white/20 transition-all duration-200"
             >
               List Your Property
