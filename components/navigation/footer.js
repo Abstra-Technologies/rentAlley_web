@@ -10,17 +10,14 @@ import Image from "next/image";
 const Footer = () => {
   return (
     <footer className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white relative overflow-hidden">
-      {/* Decorative Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10">
-        {/* Main Footer Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
-            {/* Brand Section - Takes more space */}
             <div className="lg:col-span-4">
               <Link href="/" className="inline-block mb-4">
                 <Image
@@ -37,7 +34,6 @@ const Footer = () => {
                 trusted partner in modern property management.
               </p>
 
-              {/* Social Links */}
               <div className="flex space-x-3">
                 {[
                   {
@@ -73,7 +69,6 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Product Links */}
             <div className="lg:col-span-2">
               <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
                 Product
@@ -97,7 +92,6 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* Company Links */}
             <div className="lg:col-span-2">
               <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
                 Company
@@ -120,7 +114,6 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* Legal Links */}
             <div className="lg:col-span-2">
               <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
                 Legal
@@ -142,7 +135,6 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* Contact Info */}
             <div className="lg:col-span-2">
               <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
                 Contact
@@ -209,7 +201,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="border-t border-white/20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
