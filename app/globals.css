@@ -281,3 +281,9 @@ body {
 .animate-fade-in {
   animation: fade-in 0.3s ease-in-out;
 }
+
+.goog-te-banner-frame.skiptranslate,
+.goog-logo-link,
+.goog-te-gadget {
+  display: none !important;
+}

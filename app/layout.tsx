@@ -7,6 +7,7 @@ import InstallPrompt from "@/components/Commons/installPrompt";
 import Head from "next/head";
 import CookiesPermission from "@/components/Commons/setttings/cookiesPermission";
 import PushInit from "@/components/notification/pushNotifMobile";
+import GoogleTranslateProvider from "@/components/GoogleTranslateProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -43,9 +44,12 @@ export default function RootLayout({
         </Head>
         <body>
         <ClientLayout>
+
+
             {children}
             <InstallPrompt />
             <CookiesPermission />
+            {/*<GoogleTranslateProvider />*/}
             {/* <FeedbackWidget /> */}
         </ClientLayout>
         </body>

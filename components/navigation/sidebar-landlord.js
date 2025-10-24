@@ -83,6 +83,12 @@ const menuItems = [
     priority: 3,
   },
   {
+    href: "/pages/landlord/taxManagement",
+    icon: ReceiptText,
+    label: "Tax Management",
+    priority: 3,
+  },
+  {
     href: "/pages/landlord/analytics/performance",
     icon: IoAnalytics,
     label: "Analytics",
