@@ -70,33 +70,6 @@ const LandlordPropertyChart = () => {
         }
     }, [user?.points, loading]);
 
-    // Fetch analytics
-    useEffect(() => {
-        if (!user?.landlord_id) return;
-        const landlord_id = user.landlord_id;
-
-        fetch(`/api/analytics/landlord/getActiveListings?landlord_id=${landlord_id}`)
-            .then((res) => res.json())
-            .then((data) => setTotalProperties(data.totalActiveListings || 0));
-
-        fetch(`/api/analytics/landlord/occupancyRateProperty?landlord_id=${landlord_id}`)
-            .then((res) => res.json())
-            .then((data) => {
-                const raw = data?.occupancyRate ?? data?.occupancy_rate ?? 0;
-                let num =
-                    typeof raw === "string"
-                        ? parseFloat(raw.replace("%", ""))
-                        : Number(raw);
-                if (num > 0 && num <= 1) num *= 100;
-                setOccupancyRate(Number.isFinite(num) ? num : 0);
-            })
-            .catch(() => setOccupancyRate(0));
-
-        fetch(`/api/analytics/landlord/getTotalTenants?landlord_id=${landlord_id}`)
-            .then((res) => res.json())
-            .then((data) => setTotalTenants(data?.total_tenants || 0));
-    }, [user?.landlord_id]);
-
     return (
         <div className="bg-gray-50 min-h-screen px-2 sm:px-6">
             {showAlert && <PointsEarnedAlert points={user?.points} />}
