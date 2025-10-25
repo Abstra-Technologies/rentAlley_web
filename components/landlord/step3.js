@@ -13,8 +13,11 @@ export function StepThree() {
   const [loading, setLoading] = useState(false);
 
   const onDrop = (acceptedFiles) => {
-    // Just pass the File[] — the store handles object URL creation safely
-    setPhotos(acceptedFiles);
+    const newPhotos = acceptedFiles.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setPhotos([...photos, ...newPhotos]);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -40,28 +43,9 @@ export function StepThree() {
     setProperty({ ...property, [name]: newValue });
   };
 
-  const removeImage = (index: number) => {
-    const target = photos[index];
-
-    if (
-        target &&
-        typeof target.previewUrl === "string" &&
-        target.previewUrl.startsWith("blob:")
-    ) {
-      try {
-        URL.revokeObjectURL(target.previewUrl);
-      } catch {
-        console.warn("Skipping invalid blob URL revoke");
-      }
-    }
-
-    // ✅ Remove only that one image
-    const updated = photos.filter((_, i) => i !== index);
-
-    // ✅ Let Zustand handle persistence automatically
-    setPhotos(updated);
+  const removeImage = (index) => {
+    setPhotos(photos.filter((_, i) => i !== index));
   };
-
 
   const handleGenerateDescription = async () => {
     setLoading(true);
@@ -520,12 +504,10 @@ export function StepThree() {
                       <div key={index} className="relative group">
                         <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                           <img
-                              src={file?.previewUrl || file?.preview || ""}
-                              alt={file?.name || "Property preview"}
-                              onError={(e) => (e.currentTarget.src = "/placeholder.png")} // fallback if blob is revoked
-                              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                            src={file.preview}
+                            alt="Property preview"
+                            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                           />
-
                         </div>
                         <button
                           type="button"

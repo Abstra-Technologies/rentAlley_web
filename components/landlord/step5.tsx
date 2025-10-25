@@ -22,7 +22,7 @@ export function StepFive() {
   const [outdoorPreview, setOutdoorPreview] = useState(null);
   const [docType, setDocType] = useState("business_permit"); // default choice
 
-  const MAX_FILE_SIZE_MB = 10;
+  const MAX_FILE_SIZE_MB = 20;
   const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
   useEffect(() => {

@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
             lateFeeAmount,
             gracePeriodDays,
             water_billing_type,
-            elec_billing_type,
+            electricity_billing_type,
         } = await req.json();
 
         if (!property_id) {
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
             SET water_billing_type = ?, electricity_billing_type = ?, updated_at = NOW()
             WHERE property_id = ?
             `,
-            [water_billing_type, elec_billing_type, property_id]
+            [water_billing_type, electricity_billing_type, property_id]
         );
 
         // 🧱 Step 2: Update or insert configuration in PropertyConfiguration

@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 export default function SendTenantInviteModal({
                                                 landlord_id,
                                               }: {
-  landlord_id: number;
+  landlord_id: string;
 }) {
   const [open, setOpen] = useState(false);
   const [properties, setProperties] = useState<any[]>([]);

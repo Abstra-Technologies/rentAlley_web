@@ -36,3 +36,7 @@ export function generateProspectiveTenantId(): string {
 export function generateLeaseId(): string {
     return "UPKYPL" + randomAlphaNumeric(10);
 }
+
+export function generateBillId(): string {
+    return "UPKYPBILL" + randomAlphaNumeric(6);
+}

@@ -1,3 +1,6 @@
+
+// unit details page
+
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -6,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import CurrentTenant from "@/components/landlord/activeLease/CurrentTenant";
 import LeaseActions from "@/components/landlord/activeLease/LeaseActions";
+import MeterReadings from "@/components/landlord/properties/units/MeterReadings";
 
 export default function LeaseDetails({ unitId }) {
   const router = useRouter();
@@ -17,7 +21,13 @@ export default function LeaseDetails({ unitId }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("tenant");
+// 🧭 Load saved tab from localStorage (specific to this unit)
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window !== "undefined" && unitId) {
+      return localStorage.getItem(`leaseDetailsActiveTab_${unitId}`) || "tenant";
+    }
+    return "tenant";
+  });
 
   const formatDate = (date) =>
       date
@@ -31,6 +41,12 @@ export default function LeaseDetails({ unitId }) {
   useEffect(() => {
     fetchAllData();
   }, [unitId]);
+
+  useEffect(() => {
+    if (unitId && activeTab) {
+      localStorage.setItem(`leaseDetailsActiveTab_${unitId}`, activeTab);
+    }
+  }, [activeTab, unitId]);
 
   const fetchAllData = async () => {
     try {
@@ -248,14 +264,14 @@ export default function LeaseDetails({ unitId }) {
             Current Tenant & Lease
           </button>
           <button
-              onClick={() => setActiveTab("config")}
+              onClick={() => setActiveTab("meter")}
               className={`pb-2 px-3 font-medium ${
                   activeTab === "config"
                       ? "border-b-2 border-blue-600 text-blue-700"
                       : "text-gray-500 hover:text-blue-600"
               }`}
           >
-            Unit Config
+            Meter Reading
           </button>
         </div>
 
@@ -332,12 +348,11 @@ export default function LeaseDetails({ unitId }) {
             </div>
         )}
 
-
-        {activeTab === "config" && (
-            <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 text-center text-gray-500">
-              <p>⚙️ Unit configuration details will appear here.</p>
-            </div>
+        {activeTab === "meter" && (
+            <MeterReadings unitId={unitId} />
         )}
+
+
       </div>
   );
 }

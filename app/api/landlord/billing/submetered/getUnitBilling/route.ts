@@ -11,8 +11,12 @@ function lastDayOfMonth(d = new Date()) {
 function ymd(date: Date | string | null) {
     if (!date) return null;
     const d = new Date(date);
-    return d.toISOString().split("T")[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
 }
+
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -46,52 +50,57 @@ export async function GET(req: NextRequest) {
         );
         const billingDueDay: number = configRows[0]?.billingDueDay ?? 30;
 
+        console.log("property billingDueDay:", billingDueDay);
+
         // Helpers for readings
-        const getReadingForMonth = async (utility: "water" | "electricity", monthDate: Date) => {
-            // Latest reading in the same month as monthDate
+        const getReadingForMonth = async (
+            utility: "water" | "electricity",
+            monthDate: Date
+        ) => {
             const [rows] = await db.execute<RowDataPacket[]>(
                 `
-        SELECT reading_id, unit_id, utility_type, reading_date, previous_reading, current_reading
-        FROM MeterReading
-        WHERE unit_id = ?
-          AND utility_type = ?
-          AND DATE_FORMAT(reading_date, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
-        ORDER BY reading_date DESC
-        LIMIT 1
-        `,
+                    SELECT reading_id, unit_id, utility_type, reading_date, previous_reading, current_reading
+                    FROM MeterReading
+                    WHERE unit_id = ?
+                      AND utility_type = ?
+                      AND DATE_FORMAT(reading_date, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
+                    ORDER BY reading_date DESC
+                    LIMIT 1
+                `,
                 [unit_id, utility, ymd(monthDate)]
             );
             return rows[0] ?? null;
         };
 
-        const getPrevReadingValue = async (utility: "water" | "electricity", monthDate: Date) => {
-            // Prefer latest reading in the previous calendar month
+        const getPrevReadingValue = async (
+            utility: "water" | "electricity",
+            monthDate: Date
+        ) => {
             const [prevMonthRow] = await db.execute<RowDataPacket[]>(
                 `
-        SELECT current_reading
-        FROM MeterReading
-        WHERE unit_id = ?
-          AND utility_type = ?
-          AND DATE_FORMAT(reading_date, '%Y-%m') = DATE_FORMAT(DATE_SUB(?, INTERVAL 1 MONTH), '%Y-%m')
-        ORDER BY reading_date DESC
-        LIMIT 1
-        `,
+                    SELECT current_reading
+                    FROM MeterReading
+                    WHERE unit_id = ?
+                      AND utility_type = ?
+                      AND DATE_FORMAT(reading_date, '%Y-%m') = DATE_FORMAT(DATE_SUB(?, INTERVAL 1 MONTH), '%Y-%m')
+                    ORDER BY reading_date DESC
+                    LIMIT 1
+                `,
                 [unit_id, utility, ymd(monthDate)]
             );
 
             if (prevMonthRow.length > 0) return prevMonthRow[0].current_reading;
 
-            // If there’s no reading last month, get the last reading BEFORE this month
             const [beforeRow] = await db.execute<RowDataPacket[]>(
                 `
-        SELECT current_reading
-        FROM MeterReading
-        WHERE unit_id = ?
-          AND utility_type = ?
-          AND reading_date < DATE_FORMAT(?, '%Y-%m-01')
-        ORDER BY reading_date DESC
-        LIMIT 1
-        `,
+                    SELECT current_reading
+                    FROM MeterReading
+                    WHERE unit_id = ?
+                      AND utility_type = ?
+                      AND reading_date < DATE_FORMAT(?, '%Y-%m-01')
+                    ORDER BY reading_date DESC
+                    LIMIT 1
+                `,
                 [unit_id, utility, ymd(monthDate)]
             );
 
@@ -106,12 +115,12 @@ export async function GET(req: NextRequest) {
         // 3) Look up any billing for this month (for charges only)
         const [billingRows] = await db.execute<RowDataPacket[]>(
             `
-      SELECT *
-      FROM Billing
-      WHERE unit_id = ?
-        AND billing_period BETWEEN ? AND ?
-      LIMIT 1
-      `,
+                SELECT *
+                FROM Billing
+                WHERE unit_id = ?
+                  AND billing_period BETWEEN ? AND ?
+                LIMIT 1
+            `,
             [unit_id, ymd(monthStart), ymd(monthEnd)]
         );
 
@@ -129,14 +138,16 @@ export async function GET(req: NextRequest) {
 
             const [charges] = await db.execute<RowDataPacket[]>(
                 `
-        SELECT id, charge_category, charge_type, amount
-        FROM BillingAdditionalCharge
-        WHERE billing_id = ?
-        `,
+                    SELECT id, charge_category, charge_type, amount
+                    FROM BillingAdditionalCharge
+                    WHERE billing_id = ?
+                `,
                 [billing_id]
             );
 
-            additional = charges.filter((c: any) => c.charge_category === "additional");
+            additional = charges.filter(
+                (c: any) => c.charge_category === "additional"
+            );
             discounts = charges.filter((c: any) => c.charge_category === "discount");
         }
 
@@ -147,7 +158,6 @@ export async function GET(req: NextRequest) {
         const waterPrevValue = await getPrevReadingValue("water", today);
         const elecPrevValue = await getPrevReadingValue("electricity", today);
 
-        // If truly first reading ever (no prev value), fall back to stored previous_reading in current row
         const water_prev =
             waterPrevValue ?? (waterCurr ? waterCurr.previous_reading : null);
         const water_curr = waterCurr ? waterCurr.current_reading : null;
@@ -156,18 +166,20 @@ export async function GET(req: NextRequest) {
             elecPrevValue ?? (elecCurr ? elecCurr.previous_reading : null);
         const elec_curr = elecCurr ? elecCurr.current_reading : null;
 
-        // Reading date (for due date derivation)
+        // Reading date (for info only)
         const readingDateForDue =
             (waterCurr && waterCurr.reading_date) ||
             (elecCurr && elecCurr.reading_date) ||
             null;
 
-        // 5) Compute due date from PropertyConfiguration for the month of reading (or current month)
+        // 5) Adjusted: Compute due date strictly from billingDueDay number (1–31)
         const refDate = readingDateForDue ? new Date(readingDateForDue) : today;
         const year = refDate.getFullYear();
         const month = refDate.getMonth();
+
+        // ensure the day doesn’t exceed the actual number of days in this month
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const safeDay = Math.min(billingDueDay, daysInMonth);
+        const safeDay = Math.min(Math.max(1, billingDueDay), daysInMonth);
         const computedDueDate = ymd(new Date(year, month, safeDay));
 
         // Compose response object

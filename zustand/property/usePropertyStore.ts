@@ -180,15 +180,9 @@ const usePropertyStore = create<PropertyStore>()(
             name: "property-store",
             partialize: (state) => ({
                 property: state.property,
-                photos: state.photos,
                 properties: state.properties,
                 propertyTypes: state.propertyTypes,
                 selectedProperty: state.selectedProperty,
-                govID: state.govID,
-                submittedDoc: state.submittedDoc,
-                docType: state.docType,
-                indoorPhoto: state.indoorPhoto,
-                outdoorPhoto: state.outdoorPhoto,
             }),
         }
     )

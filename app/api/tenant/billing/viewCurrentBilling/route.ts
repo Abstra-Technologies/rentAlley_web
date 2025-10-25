@@ -21,12 +21,12 @@ export async function GET(req: NextRequest) {
         if (!agreementId && tenantId) {
             const [agreements]: any = await db.query(
                 `
-                    SELECT agreement_id
-                    FROM LeaseAgreement
-                    WHERE tenant_id = ?
-                    ORDER BY start_date DESC
-                    LIMIT 1
-                `,
+          SELECT agreement_id
+          FROM LeaseAgreement
+          WHERE tenant_id = ?
+          ORDER BY start_date DESC
+          LIMIT 1
+        `,
                 [tenantId]
             );
             agreementId = agreements[0]?.agreement_id || null;
@@ -42,21 +42,21 @@ export async function GET(req: NextRequest) {
         // 🏠 3. Lease, Unit, Property
         const [leaseRows]: any = await db.query(
             `
-                SELECT
-                    l.unit_id,
-                    u.property_id,
-                    u.unit_name,
-                    u.rent_amount,
-                    p.water_billing_type,
-                    p.electricity_billing_type,
-                    p.advance_payment_months,
-                    l.advance_payment_amount,
-                    l.is_advance_payment_paid
-                FROM LeaseAgreement l
-                         JOIN Unit u ON l.unit_id = u.unit_id
-                         JOIN Property p ON u.property_id = p.property_id
-                WHERE l.agreement_id = ?
-            `,
+          SELECT
+              l.unit_id,
+              u.property_id,
+              u.unit_name,
+              u.rent_amount,
+              p.water_billing_type,
+              p.electricity_billing_type,
+              p.advance_payment_months,
+              l.advance_payment_amount,
+              l.is_advance_payment_paid
+          FROM LeaseAgreement l
+                   JOIN Unit u ON l.unit_id = u.unit_id
+                   JOIN Property p ON u.property_id = p.property_id
+          WHERE l.agreement_id = ?
+      `,
             [agreementId]
         );
 
@@ -86,18 +86,18 @@ export async function GET(req: NextRequest) {
         // ⚙️ 4. Property Configuration
         const [configRows]: any = await db.query(
             `
-                SELECT
-                    billingReminderDay,
-                    billingDueDay,
-                    notifyEmail,
-                    notifySms,
-                    lateFeeType,
-                    lateFeeAmount,
-                    gracePeriodDays
-                FROM PropertyConfiguration
-                WHERE property_id = ?
-                LIMIT 1
-            `,
+          SELECT
+              billingReminderDay,
+              billingDueDay,
+              notifyEmail,
+              notifySms,
+              lateFeeType,
+              lateFeeAmount,
+              gracePeriodDays
+          FROM PropertyConfiguration
+          WHERE property_id = ?
+          LIMIT 1
+      `,
             [propertyId]
         );
         const propertyConfig = configRows[0] || null;
@@ -105,13 +105,13 @@ export async function GET(req: NextRequest) {
         // 💡 5. Current Billing (if exists)
         const [billingRows]: any = await db.query(
             `
-                SELECT *
-                FROM Billing
-                WHERE unit_id = ?
-                  AND MONTH(billing_period) = MONTH(CURRENT_DATE())
-                  AND YEAR(billing_period) = YEAR(CURRENT_DATE())
-                LIMIT 1
-            `,
+          SELECT *
+          FROM Billing
+          WHERE unit_id = ?
+            AND MONTH(billing_period) = MONTH(CURRENT_DATE())
+            AND YEAR(billing_period) = YEAR(CURRENT_DATE())
+          LIMIT 1
+      `,
             [unitId]
         );
         const billing = billingRows[0] || null;
@@ -119,46 +119,27 @@ export async function GET(req: NextRequest) {
         // 💳 6. PDC (Post-Dated Checks)
         const [pdcRows]: any = await db.query(
             `
-                SELECT
-                    pdc_id,
-                    check_number,
-                    bank_name,
-                    amount,
-                    due_date,
-                    status,
-                    uploaded_image_url
-                FROM PostDatedCheck
-                WHERE lease_id = ?
-                  AND MONTH(due_date) = MONTH(CURRENT_DATE())
-                  AND YEAR(due_date) = YEAR(CURRENT_DATE())
-                ORDER BY due_date ASC
-            `,
+          SELECT
+              pdc_id,
+              check_number,
+              bank_name,
+              amount,
+              due_date,
+              status,
+              uploaded_image_url
+          FROM PostDatedCheck
+          WHERE lease_id = ?
+            AND MONTH(due_date) = MONTH(CURRENT_DATE())
+            AND YEAR(due_date) = YEAR(CURRENT_DATE())
+          ORDER BY due_date ASC
+      `,
             [agreementId]
         );
-
-        // 🔎 7. Check for Payment Proofs (manual uploads)
-        // let paymentProofs: any[] = [];
-        // if (billing) {
-        //     const [proofRows]: any = await db.query(
-        //         `
-        //   SELECT id, status, created_at
-        //   FROM PaymentProof
-        //   WHERE billing_id = ?
-        //   ORDER BY created_at DESC
-        // `,
-        //         [billing.billing_id]
-        //     );
-        //     paymentProofs = proofRows || [];
-        // }
 
         // 🧮 Determine if any payment is still under processing
         const hasPendingPdc = pdcRows.some(
             (pdc: any) => ["pending", "processing"].includes(pdc.status)
         );
-        // const hasPendingProof = paymentProofs.some(
-        //     (p: any) => ["processing", "verifying"].includes(p.status)
-        // );
-        // const paymentProcessing = hasPendingPdc || hasPendingProof;
         const paymentProcessing = hasPendingPdc;
 
         // 🔌 8. Utility Readings (latest 2 per type)
@@ -198,7 +179,26 @@ export async function GET(req: NextRequest) {
             [agreementId]
         );
 
-        // 🧮 11. Build breakdown
+        // 💧⚡ 11. Fetch latest Concessionaire Rates for property
+        const [concessionaireRows]: any = await db.query(
+            `
+        SELECT
+          water_total / NULLIF(water_consumption, 0) AS water_rate,
+          electricity_total / NULLIF(electricity_consumption, 0) AS electricity_rate,
+          billing_period
+        FROM ConcessionaireBilling
+        WHERE property_id = ?
+        ORDER BY billing_period DESC
+        LIMIT 1
+      `,
+            [propertyId]
+        );
+        const concessionaire = concessionaireRows[0] || {
+            water_rate: 0,
+            electricity_rate: 0,
+        };
+
+        // 🧮 12. Build breakdown
         const breakdown = {
             base_rent: baseRent,
             water: billing?.total_water_amount || 0,
@@ -212,14 +212,16 @@ export async function GET(req: NextRequest) {
                 : baseRent,
         };
 
-        // 🧩 12. Assemble response
+        // 🧩 13. Assemble response
         const response = {
             billing: billing
                 ? {
                     ...billing,
                     unit_name: unitName,
                     billing_period: billing.billing_period || new Date(),
-                    total_amount_due: parseFloat(billing.total_amount_due || 0).toFixed(2),
+                    total_amount_due: parseFloat(
+                        billing.total_amount_due || 0
+                    ).toFixed(2),
                 }
                 : {
                     billing_period: new Date(),
@@ -230,16 +232,22 @@ export async function GET(req: NextRequest) {
             meterReadings: groupedReadings,
             billingAdditionalCharges,
             leaseAdditionalExpenses: leaseExpenses,
+
+            // 🔧 Combined billing types + concessionaire rates
             propertyBillingTypes: {
-                water: water_billing_type,
-                electricity: electricity_billing_type,
+                water_billing_type,
+                electricity_billing_type,
+                water_rate: concessionaire.water_rate || 0,
+                electricity_rate: concessionaire.electricity_rate || 0,
+                billing_period: concessionaire.billing_period || null,
             },
+
             breakdown,
             propertyConfig,
             postDatedChecks: pdcRows,
-            // paymentProofs,
-            paymentProcessing, // ✅ new key for frontend banner
+            paymentProcessing,
         };
+        console.log('response', response);
 
         return NextResponse.json(response, { status: 200 });
     } catch (error: any) {
