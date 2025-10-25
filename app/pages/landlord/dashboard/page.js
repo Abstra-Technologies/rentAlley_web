@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import useAuthStore from "@/zustand/authStore";
 import LandlordLayout from "@/components/navigation/sidebar-landlord";
-import LandlordPropertyChart from "@/components/analytics/landlordAnalytics";
+import LandlordMainDashboard from "@/components/landlord/main_dashboard/main_dashboard";
 
 export default function LandlordDashboard() {
   const { user, loading, fetchSession } = useAuthStore();
@@ -11,7 +11,7 @@ export default function LandlordDashboard() {
   return (
       <LandlordLayout>
         <div className="px-2 sm:px-0">
-          <LandlordPropertyChart />
+          <LandlordMainDashboard />
         </div>
       </LandlordLayout>
   );

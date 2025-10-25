@@ -4,33 +4,30 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
 import PointsEarnedAlert from "../Commons/alertPoints";
-import LandlordProfileStatus from "../landlord/profile/LandlordProfileStatus";
+import LandlordProfileStatus from "../profile/LandlordProfileStatus";
 import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
 import SearchLeaseBar from "@/components/landlord/activeLease/SearchLeaseBar";
 import LandlordSubscriptionStatus from "@/components/landlord/profile/LandlordSubscriptionStatus";
 import LandlordCreditsSummary from "@/components/landlord/widgets/LandlordCreditsSummary";
 import LandlordPropertyMarquee from "@/components/landlord/properties/LandlordPropertyQuickView";
-import PaymentSummaryCard from "../landlord/analytics/PaymentSummaryCard";
-import TenantActivity from "../landlord/widgets/TenantActivity";
-import ProspectiveTenantsWidget from "../landlord/widgets/leads";
-import LeaseWidget from "../landlord/analytics/leaseCountWidget";
-import TaskWidget from "../landlord/widgets/taskToDo";
+import PaymentSummaryCard from "../analytics/PaymentSummaryCard";
+import TenantActivity from "../widgets/TenantActivity";
+import ProspectiveTenantsWidget from "../widgets/leads";
+import LeaseWidget from "../analytics/leaseCountWidget";
+import TaskWidget from "../widgets/taskToDo";
 import { TrendingUp, Users, Home, DollarSign } from "lucide-react";
-
 // Dynamic imports
 const RevenuePerformanceChart = dynamic(
-    () => import("../landlord/analytics/revenuePerformance"),
+    () => import("../analytics/revenuePerformance"),
     { ssr: false }
 );
 const UpcomingVisitsWidget = dynamic(
-    () => import("../landlord/properties/propertyVisit"),
+    () => import("../properties/propertyVisit"),
     { ssr: false }
 );
-
-// ✅ Mobile Layout
 import MobileLandlordAnalytics from "@/components/landlord/mobile_layour/MobileLandlordAnalytics";
 
-const LandlordPropertyChart = () => {
+const LandlordMainDashboard = () => {
     const { user, fetchSession, loading } = useAuthStore();
     const router = useRouter();
     const [occupancyRate, setOccupancyRate] = useState(0);
@@ -198,4 +195,4 @@ const LandlordPropertyChart = () => {
     );
 };
 
-export default LandlordPropertyChart;
+export default LandlordMainDashboard;
