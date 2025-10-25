@@ -6,6 +6,7 @@ export interface UnitDetails {
   unit_id: string;
   unit_name: string;
 
+  unit_style: string;
   unit_size: number;
   bed_spacing: number;
   avail_beds: number;
