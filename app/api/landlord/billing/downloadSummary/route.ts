@@ -53,85 +53,159 @@ export async function GET(req: NextRequest) {
 
         // 🧾 Generate HTML table for Puppeteer
         const html = `
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: 'Arial', sans-serif;
-              padding: 20px;
-              color: #333;
-            }
-            h1 {
-              text-align: center;
-              color: #2563eb;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 20px;
-              font-size: 13px;
-            }
-            th, td {
-              border: 1px solid #ddd;
-              padding: 10px;
-              text-align: left;
-            }
-            th {
-              background-color: #f4f7fb;
-              color: #111827;
-              font-weight: bold;
-            }
-            tr:nth-child(even) {
-              background-color: #f9fafb;
-            }
-            .footer {
-              text-align: center;
-              font-size: 12px;
-              color: #6b7280;
-              margin-top: 30px;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Billing Summary – ${now.toLocaleString("default", {
+<html>
+  <head>
+    <style>
+      body {
+        font-family: 'Inter', 'Arial', sans-serif;
+        color: #1f2937;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+      }
+
+      /* Header */
+      header {
+        background: linear-gradient(90deg, #10b981, #2563eb);
+        color: white;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      header h1 {
+        font-size: 20px;
+        margin: 0;
+        font-weight: 700;
+      }
+      header img {
+        height: 28px;
+      }
+
+      /* Content */
+      .content {
+        padding: 16px 24px;
+      }
+      h2 {
+        text-align: left;
+        color: #1e40af;
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      p.subtext {
+        color: #6b7280;
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th, td {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 8px 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #f3f4f6;
+        color: #111827;
+        font-weight: 600;
+      }
+      tr:nth-child(even) {
+        background-color: #fafafa;
+      }
+
+      /* Info section */
+      .summary-info {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .summary-info strong {
+        color: #2563eb;
+      }
+
+      /* Footer */
+      footer {
+        margin-top: 32px;
+        padding: 10px 0;
+        text-align: center;
+        color: white;
+        font-size: 12px;
+        background: linear-gradient(90deg, #2563eb, #10b981);
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>UpKyp Billing Summary</h1>
+      <img src="https://upkyp.s3.amazonaws.com/assets/upkyp-logo-light.png" alt="UpKyp Logo" />
+    </header>
+
+    <div class="content">
+      <h2>Billing Summary – ${now.toLocaleString("default", {
             month: "long",
-        })} ${currentYear}</h1>
-          <table>
-            <thead>
-              <tr>
-                <th>Billing ID</th>
-                <th>Unit Name</th>
-                <th>Billing Period</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Total Amount (₱)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows
+        })} ${currentYear}</h2>
+      <p class="subtext">
+        This report contains the complete list of unit billings for this property generated
+        in the current month. It includes billing IDs, status, due dates, and total payable amounts.
+      </p>
+
+      <div class="summary-info">
+        <p><strong>Property ID:</strong> ${property_id}</p>
+        <p><strong>Total Units Billed:</strong> ${rows.length}</p>
+        <p><strong>Generated On:</strong> ${new Date().toLocaleString("en-PH", {
+            dateStyle: "long",
+            timeStyle: "short",
+        })}</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Billing ID</th>
+            <th>Unit Name</th>
+            <th>Billing Period</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Total Amount (₱)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows
             .map(
                 (r: any) => `
-                <tr>
-                  <td>${r.billing_id}</td>
-                  <td>${r.unit_name}</td>
-                  <td>${r.billing_period ? new Date(r.billing_period).toLocaleDateString("en-PH") : "-"}</td>
-                  <td>${r.due_date ? new Date(r.due_date).toLocaleDateString("en-PH") : "-"}</td>
-                  <td>${r.status}</td>
-                  <td>${r.total_amount_due?.toLocaleString("en-PH", {
+              <tr>
+                <td>${r.billing_id}</td>
+                <td>${r.unit_name}</td>
+                <td>${r.billing_period ? new Date(r.billing_period).toLocaleDateString("en-PH") : "-"}</td>
+                <td>${r.due_date ? new Date(r.due_date).toLocaleDateString("en-PH") : "-"}</td>
+                <td>${r.status}</td>
+                <td>${r.total_amount_due?.toLocaleString("en-PH", {
                     style: "currency",
                     currency: "PHP",
                 })}</td>
-                </tr>`
+              </tr>`
             )
             .join("")}
-            </tbody>
-          </table>
-          <div class="footer">
-            Generated by UpKyp Property Management System
-          </div>
-        </body>
-      </html>
-    `;
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      Ⓒ ${new Date().getFullYear()} UpKyp Property Management System — Empowering Landlords with Automation
+    </footer>
+  </body>
+</html>
+`;
 
         // 🧠 Launch Puppeteer and render PDF
         const browser = await puppeteer.launch({

@@ -5,6 +5,7 @@ import { MaterialReactTable, type MRT_ColumnDef } from "material-react-table";
 import axios from "axios";
 import { formatCurrency, formatDate } from "@/utils/formatter/formatters";
 import { useRouter } from "next/navigation";
+import { Download } from 'lucide-react';
 
 interface PaymentLog {
     payment_id: number;
@@ -144,6 +145,36 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: string }
         ],
         []
     );
+    const handleDownloadReport = async () => {
+        try {
+            const res = await axios.get(`/api/landlord/reports/paymentList`, {
+                params: {
+                    landlord_id,
+                    property_id: selectedProperty !== "all" ? selectedProperty : undefined,
+                    month: selectedMonth || undefined,
+                },
+                responseType: "blob",
+            });
+
+            const blob = new Blob([res.data], { type: "application/pdf" });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const monthLabel = selectedMonth ? selectedMonth.replace("-", "_") : "all";
+            const propertyLabel =
+                selectedProperty === "all"
+                    ? "All_Properties"
+                    : properties.find((p) => p.property_id === selectedProperty)?.property_name?.replace(/\s+/g, "_") ||
+                    "Property";
+
+            link.href = url;
+            link.download = `Payment_Report_${propertyLabel}_${monthLabel}.pdf`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Error downloading report:", error);
+            alert("Failed to download report. Please try again.");
+        }
+    };
 
     return (
         <div className="p-4 sm:p-6 bg-white rounded-2xl shadow-md border border-gray-100">
@@ -183,6 +214,14 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: string }
                     />
                 </div>
             </div>
+            <button
+                onClick={handleDownloadReport}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:from-blue-700 hover:to-emerald-700 shadow-sm transition-all disabled:opacity-50"
+            >
+                <Download />
+                ️ Download Report
+            </button>
 
             {/* Payment Logs Table */}
             <MaterialReactTable

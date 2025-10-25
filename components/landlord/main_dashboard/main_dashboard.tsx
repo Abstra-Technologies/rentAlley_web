@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
-import PointsEarnedAlert from "../Commons/alertPoints";
+import PointsEarnedAlert from "@/components/Commons/alertPoints";
 import LandlordProfileStatus from "../profile/LandlordProfileStatus";
 import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
 import SearchLeaseBar from "@/components/landlord/activeLease/SearchLeaseBar";
