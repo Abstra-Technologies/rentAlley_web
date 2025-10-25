@@ -9,24 +9,59 @@ import { useRouter } from "next/navigation";
 interface PaymentLog {
     payment_id: number;
     agreement_id: number;
+    property_name?: string;
     payment_type: string;
     amount_paid: number;
     payment_status: string;
     payment_date: string;
-    request_reference_number?: string;
+    receipt_reference?: string;
 }
 
-export default function PaymentLogsPage({ landlord_id }: { landlord_id: number }) {
+interface Property {
+    property_id: string;
+    property_name: string;
+}
+
+export default function PaymentLogsPage({ landlord_id }: { landlord_id: string }) {
     const [data, setData] = useState<PaymentLog[]>([]);
     const [loading, setLoading] = useState(true);
+    const [properties, setProperties] = useState<Property[]>([]);
+    const [selectedProperty, setSelectedProperty] = useState<string>("all");
+    const [selectedMonth, setSelectedMonth] = useState<string>("");
     const router = useRouter();
 
     useEffect(() => {
         if (!landlord_id) return;
 
-        const fetchPayments = async () => {
+        const fetchProperties = async () => {
             try {
-                const res = await axios.get(`/api/landlord/payments/getPaymentList?landlord_id=${landlord_id}`);
+                const res = await fetch(`/api/landlord/${landlord_id}/properties`);
+                if (!res.ok) throw new Error("Failed to fetch properties");
+                const data = await res.json();
+
+                // Adjust to match your API structure
+                setProperties(data.data || []);
+            } catch (error) {
+                console.error("❌ Error fetching properties:", error);
+            }
+        };
+
+        fetchProperties();
+    }, [landlord_id]);
+
+    useEffect(() => {
+        if (!landlord_id) return;
+
+        const fetchPayments = async () => {
+            setLoading(true);
+            try {
+                const res = await axios.get(`/api/landlord/payments/getPaymentList`, {
+                    params: {
+                        landlord_id,
+                        property_id: selectedProperty !== "all" ? selectedProperty : undefined,
+                        month: selectedMonth || undefined,
+                    },
+                });
                 setData(res.data || []);
             } catch (error) {
                 console.error("Error fetching payment logs:", error);
@@ -36,7 +71,7 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: number }
         };
 
         fetchPayments();
-    }, [landlord_id]);
+    }, [landlord_id, selectedProperty, selectedMonth]);
 
     const columns = useMemo<MRT_ColumnDef<PaymentLog>[]>(
         () => [
@@ -48,7 +83,8 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: number }
             {
                 accessorKey: "property_name",
                 header: "Property",
-                size: 80,
+                size: 150,
+                Cell: ({ cell }) => <span className="text-gray-800">{cell.getValue<string>() || "—"}</span>,
             },
             {
                 accessorKey: "payment_type",
@@ -111,17 +147,49 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: number }
 
     return (
         <div className="p-4 sm:p-6 bg-white rounded-2xl shadow-md border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-                <h1 className="text-lg sm:text-xl font-bold text-gray-800 bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                    Payment Logs
-                </h1>
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div>
+                    <h1 className="text-2xl sm:text-xl font-bold text-gray-800 bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                        Payment Logs
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                        View all tenant payments filtered by property and month.
+                    </p>
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
+                    {/* Property Selector */}
+                    <select
+                        value={selectedProperty}
+                        onChange={(e) => setSelectedProperty(e.target.value)}
+                        className="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="all">All Properties</option>
+                        {properties.map((p) => (
+                            <option key={p.property_id} value={p.property_id}>
+                                {p.property_name}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Month Selector */}
+                    <input
+                        type="month"
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(e.target.value)}
+                        className="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                </div>
             </div>
 
+            {/* Payment Logs Table */}
             <MaterialReactTable
                 columns={columns}
                 data={data}
                 state={{ isLoading: loading }}
-                enableColumnFilters={true}
+                enableColumnFilters={false}
                 enablePagination={true}
                 enableSorting={true}
                 initialState={{ pagination: { pageSize: 10, pageIndex: 0 } }}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { generateBillId } from "@/utils/id_generator";
 
 /**
  * Shared logic for creating or updating a billing record
@@ -69,6 +70,7 @@ async function upsertBilling(req: NextRequest) {
         const isUpdate = existing.length > 0;
 
         if (isUpdate) {
+            // ✅ UPDATE existing billing
             billing_id = existing[0].billing_id;
             await connection.query(
                 `
@@ -90,15 +92,33 @@ async function upsertBilling(req: NextRequest) {
                 ]
             );
         } else {
-            const [insertResult]: any = await connection.query(
+            // ✅ Generate new billing_id (VARCHAR)
+            let newBillingId = generateBillId();
+            let [check]: any = await connection.query(
+                "SELECT billing_id FROM Billing WHERE billing_id = ? LIMIT 1",
+                [newBillingId]
+            );
+            while (check.length > 0) {
+                newBillingId = generateBillId();
+                [check] = await connection.query(
+                    "SELECT billing_id FROM Billing WHERE billing_id = ? LIMIT 1",
+                    [newBillingId]
+                );
+            }
+
+            billing_id = newBillingId;
+
+            await connection.query(
                 `
-                    INSERT INTO Billing (
-                        lease_id, unit_id, billing_period,
-                        total_water_amount, total_electricity_amount,
-                        total_amount_due, due_date, status, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'unpaid', NOW())
-                `,
+            INSERT INTO Billing (
+                billing_id, lease_id, unit_id, billing_period,
+                total_water_amount, total_electricity_amount,
+                total_amount_due, due_date, status, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', NOW())
+        `,
                 [
+                    billing_id,
                     lease_id,
                     unit_id,
                     readingDate,
@@ -108,7 +128,6 @@ async function upsertBilling(req: NextRequest) {
                     dueDate,
                 ]
             );
-            billing_id = insertResult.insertId;
         }
 
         // 3️⃣ Upsert Meter Readings — safely update per month & utility type
@@ -127,17 +146,16 @@ async function upsertBilling(req: NextRequest) {
 
         for (const r of readings) {
             if (r.prev && r.curr) {
-                // 🔍 Check if reading already exists for this month & utility
                 const [existingReading]: any = await connection.query(
                     `
-            SELECT reading_id
-            FROM MeterReading
-            WHERE unit_id = ?
-              AND utility_type = ?
-              AND MONTH(reading_date) = MONTH(?)
-              AND YEAR(reading_date) = YEAR(?)
-            LIMIT 1
-          `,
+                        SELECT reading_id
+                        FROM MeterReading
+                        WHERE unit_id = ?
+                          AND utility_type = ?
+                          AND MONTH(reading_date) = MONTH(?)
+                          AND YEAR(reading_date) = YEAR(?)
+                        LIMIT 1
+                    `,
                     [unit_id, r.type, readingDate, readingDate]
                 );
 
@@ -145,23 +163,23 @@ async function upsertBilling(req: NextRequest) {
                     // ✅ Update existing reading
                     await connection.query(
                         `
-              UPDATE MeterReading
-              SET previous_reading = ?, 
-                  current_reading = ?, 
-                  reading_date = ?, 
-                  updated_at = NOW()
-              WHERE reading_id = ?
-            `,
+                            UPDATE MeterReading
+                            SET previous_reading = ?,
+                                current_reading = ?,
+                                reading_date = ?,
+                                updated_at = NOW()
+                            WHERE reading_id = ?
+                        `,
                         [r.prev, r.curr, readingDate, existingReading[0].reading_id]
                     );
                 } else {
                     // 🆕 Insert new reading
                     await connection.query(
                         `
-              INSERT INTO MeterReading 
-                (unit_id, utility_type, reading_date, previous_reading, current_reading)
-              VALUES (?, ?, ?, ?, ?)
-            `,
+                            INSERT INTO MeterReading
+                            (unit_id, utility_type, reading_date, previous_reading, current_reading)
+                            VALUES (?, ?, ?, ?, ?)
+                        `,
                         [unit_id, r.type, readingDate, r.prev, r.curr]
                     );
                 }

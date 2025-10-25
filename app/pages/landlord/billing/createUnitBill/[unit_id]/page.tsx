@@ -5,6 +5,7 @@ import axios from "axios";
 import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 import Swal from "sweetalert2";
 import { BackButton } from "@/components/navigation/backButton";
+import PropertyRatesModal from "@/components/landlord/properties/utilityRatesSetter";
 
 export default function CreateUnitBill() {
   const { unit_id } = useParams();
@@ -15,6 +16,7 @@ export default function CreateUnitBill() {
     waterRate: 0,
     electricityRate: 0,
   });
+  const [isRateModalOpen, setIsRateModalOpen] = useState(false);
 
   const [extraExpenses, setExtraExpenses] = useState<
       { type: string; amount: number; fromDB?: boolean }[]
@@ -58,7 +60,6 @@ export default function CreateUnitBill() {
       setUnit(data.unit);
       setProperty(data.property);
 
-      // ✅ Always format dates safely (YYYY-MM-DD)
       const formatDate = (d: any) => {
         if (!d) return "";
         try {
@@ -70,6 +71,7 @@ export default function CreateUnitBill() {
 
       // ✅ Always trust backend for due date (from PropertyConfiguration)
       const dueDate = formatDate(data.dueDate);
+
 
       // ✅ Fetch property billing stats to compute per-cu/kWh rate
       const rateRes = await axios.get(
@@ -121,7 +123,6 @@ export default function CreateUnitBill() {
           })) || []
       );
 
-      // ✅ Determine billing state
       setHasExistingBilling(!!eb?.billing_id);
     } catch (error) {
       console.error("Error fetching unit data:", error);
@@ -375,18 +376,17 @@ export default function CreateUnitBill() {
     }
   };
 
-
   // ===== Discounts Handlers =====
   const handleAddDiscount = () => {
     setDiscounts([...discounts, { type: "", amount: 0 }]);
   };
+
   const handleDiscountChange = (idx: number, field: string, value: string) => {
     const updated = [...discounts];
     if (field === "amount") updated[idx].amount = parseFloat(value) || 0;
     else updated[idx].type = value;
     setDiscounts(updated);
   };
-
 
   if (!unit || !property)
     return <div className="text-center mt-10 text-gray-500">Loading...</div>;
@@ -413,17 +413,16 @@ export default function CreateUnitBill() {
           <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-8">
             {/* ================= LEFT COLUMN: Billing Form ================= */}
             <div className="space-y-6">
+
               {/* ===== Property Rates ===== */}
-              <div className="mb-6 bg-gray-50 border border-gray-200 rounded-xl p-5">
-                <h2 className="font-semibold text-gray-800 mb-3">
-                  Current Property Rates
-                </h2>
+              <div className="mb-6 bg-gradient-to-br from-emerald-50 to-green-50 border border-green-200 rounded-xl p-5 shadow-sm">
+
                 <div className="text-sm text-gray-700 space-y-2">
                   {property.water_billing_type === "submetered" && (
                       <div>
                         <p>💧 Water Rate: ₱{propertyRates.waterRate.toFixed(2)} per m³</p>
                         <p className="text-xs text-gray-500 italic">
-                          Derived from latest property concessionaire billing.
+                          Computation is derived from the current water billing.
                         </p>
                       </div>
                   )}
@@ -431,12 +430,13 @@ export default function CreateUnitBill() {
                       <div>
                         <p>⚡ Electricity Rate: ₱{propertyRates.electricityRate.toFixed(2)} per kWh</p>
                         <p className="text-xs text-gray-500 italic">
-                          Based on current property electricity consumption.
+                          Computation is derived from the current electricity billing.
                         </p>
                       </div>
                   )}
                 </div>
               </div>
+
               {/* ===== Dates ===== */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* === Reading Date === */}
@@ -468,31 +468,21 @@ export default function CreateUnitBill() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Due Date
                   </label>
+
                   <input
                       type="date"
                       name="dueDate"
                       value={form.dueDate || ""}
-                      readOnly
-                      className="w-full border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+                      onChange={handleChange}
+                      className="w-full border border-gray-300 rounded-md p-2 bg-white text-gray-800 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {property?.hasBillingDueDate ? (
-                        <>
-                          📅 Automatically set based on your{" "}
-                          <span className="font-medium text-gray-700">
-            property configuration
-          </span>.
-                        </>
-                    ) : (
-                        <>
-                          📅 Defaulted to the{" "}
-                          <span className="font-medium text-gray-700">
-            last day of this month
-          </span>.
-                        </>
-                    )}
+                    📅 This due date is based on your{" "}
+                    <span className="font-medium text-gray-700">PropertyConfiguration billingDueDay set.</span>.
                   </p>
+
                 </div>
+
               </div>
 
               {/* ===== Meter Readings ===== */}
@@ -502,23 +492,47 @@ export default function CreateUnitBill() {
                       <h3 className="font-semibold text-blue-800 mb-2">💧 Water Meter</h3>
                       <div className="space-y-3">
                         <input
-                            type="number"
+                            type="text"
                             name="waterPrevReading"
                             placeholder="Previous Reading"
                             value={form.waterPrevReading}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/[^0-9.]/g, ""); // digits + one dot
+                              if ((value.match(/\./g) || []).length > 1) return; // prevent multiple dots
+
+                              // ✅ limit to 6 digits before dot and 2 after
+                              const parts = value.split(".");
+                              if (parts[0].length > 6) parts[0] = parts[0].slice(0, 6);
+                              if (parts[1]?.length > 2) parts[1] = parts[1].slice(0, 2);
+                              value = parts.join(".");
+
+                              setForm((prev) => ({ ...prev, waterPrevReading: value }));
+                            }}
+                            inputMode="decimal"
                             readOnly={!!form.fromDB}
+                            maxLength={9} // safety fallback (6+dot+2)
                             className={`w-full border border-gray-300 rounded-md p-2 ${
                                 form.fromDB ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
                             }`}
                         />
+
                         <input
-                            type="number"
+                            type="text"
                             name="waterCurrentReading"
                             placeholder="Current Reading"
                             value={form.waterCurrentReading}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/[^0-9.]/g, "");
+                              if ((value.match(/\./g) || []).length > 1) return;
+                              const parts = value.split(".");
+                              if (parts[0].length > 6) parts[0] = parts[0].slice(0, 6);
+                              if (parts[1]?.length > 2) parts[1] = parts[1].slice(0, 2);
+                              value = parts.join(".");
+                              setForm((prev) => ({ ...prev, waterCurrentReading: value }));
+                            }}
+                            inputMode="decimal"
                             readOnly={!!form.fromDB}
+                            maxLength={9}
                             className={`w-full border border-gray-300 rounded-md p-2 ${
                                 form.fromDB ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
                             }`}
@@ -529,28 +543,47 @@ export default function CreateUnitBill() {
 
                 {property.electricity_billing_type === "submetered" && (
                     <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                      <h3 className="font-semibold text-yellow-800 mb-2">
-                        ⚡ Electricity Meter
-                      </h3>
+                      <h3 className="font-semibold text-yellow-800 mb-2">⚡ Electricity Meter</h3>
                       <div className="space-y-3">
                         <input
-                            type="number"
+                            type="text"
                             name="electricityPrevReading"
                             placeholder="Previous Reading"
                             value={form.electricityPrevReading}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/[^0-9.]/g, "");
+                              if ((value.match(/\./g) || []).length > 1) return;
+                              const parts = value.split(".");
+                              if (parts[0].length > 6) parts[0] = parts[0].slice(0, 6);
+                              if (parts[1]?.length > 2) parts[1] = parts[1].slice(0, 2);
+                              value = parts.join(".");
+                              setForm((prev) => ({ ...prev, electricityPrevReading: value }));
+                            }}
+                            inputMode="decimal"
                             readOnly={!!form.fromDB}
+                            maxLength={9}
                             className={`w-full border border-gray-300 rounded-md p-2 ${
                                 form.fromDB ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
                             }`}
                         />
+
                         <input
-                            type="number"
+                            type="text"
                             name="electricityCurrentReading"
                             placeholder="Current Reading"
                             value={form.electricityCurrentReading}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/[^0-9.]/g, "");
+                              if ((value.match(/\./g) || []).length > 1) return;
+                              const parts = value.split(".");
+                              if (parts[0].length > 6) parts[0] = parts[0].slice(0, 6);
+                              if (parts[1]?.length > 2) parts[1] = parts[1].slice(0, 2);
+                              value = parts.join(".");
+                              setForm((prev) => ({ ...prev, electricityCurrentReading: value }));
+                            }}
+                            inputMode="decimal"
                             readOnly={!!form.fromDB}
+                            maxLength={9}
                             className={`w-full border border-gray-300 rounded-md p-2 ${
                                 form.fromDB ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
                             }`}

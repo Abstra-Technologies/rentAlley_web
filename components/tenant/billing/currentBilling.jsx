@@ -188,25 +188,52 @@ export default function TenantBilling({ agreement_id, user_id }) {
 
         <div className="space-y-6">
           {billingData.map((bill) => {
+
+            // ✅ Compute all relevant amounts
             const { lateFee, daysLate } = computeLateFeeAndDays(bill);
             bill.lateFee = lateFee;
             bill.daysLate = daysLate;
 
-            const baseRent = toNumber(bill.breakdown?.base_rent);
+            const baseRent = toNumber(bill.breakdown?.base_rent || 0);
+            const waterAmt = toNumber(bill.total_water_amount || 0);
+            const elecAmt = toNumber(bill.total_electricity_amount || 0);
+
+// Optional: include recurring monthly lease extras
+            const leaseMonthlyExtras = (bill.leaseAdditionalExpenses || []).reduce((sum, e) => {
+              if (e.frequency === "monthly") return sum + toNumber(e.amount);
+              return sum;
+            }, 0);
+
+// Advance payment deduction if applicable
             const advancePayment =
                 bill.breakdown?.is_advance_payment_paid &&
                 bill.breakdown?.advance_payment_required > 0
                     ? toNumber(bill.breakdown.advance_payment_required)
                     : 0;
-            const additionalCharges = (bill.billingAdditionalCharges || []).reduce(
-                (sum, c) => {
-                  const amt = toNumber(c.amount);
-                  return c.charge_category === "discount" ? sum - amt : sum + amt;
-                },
-                0
-            );
-            const subtotal = baseRent - advancePayment + lateFee + additionalCharges;
+
+// Additional or discount charges
+            const additionalCharges = (bill.billingAdditionalCharges || []).reduce((sum, c) => {
+              const amt = toNumber(c.amount);
+              return c.charge_category === "discount" ? sum - amt : sum + amt;
+            }, 0);
+
+            /**
+             * 🧮 Correct subtotal:
+             * base rent + water + electricity + monthly extras + other charges
+             * - advance payment + late fee
+             */
+            const subtotal =
+                baseRent +
+                waterAmt +
+                elecAmt +
+                leaseMonthlyExtras +
+                additionalCharges -
+                advancePayment +
+                lateFee;
+
+// for display consistency
             const totalDue = toNumber(bill.total_amount_due);
+
 
             const isDefaultBilling = !bill.billing_id;
             const hasPendingChecks = hasPendingPDC(bill);
@@ -314,6 +341,82 @@ export default function TenantBilling({ agreement_id, user_id }) {
                       subtotal={subtotal}
                   />
 
+
+                  {/* 🔌 Submetered Readings Section */}
+                  {meterReadings.length > 0 && (
+                      <div className="px-6 py-4 bg-emerald-50 border-t border-emerald-200 rounded-b-xl">
+                        <h3 className="text-sm sm:text-base font-semibold text-emerald-900 flex items-center gap-2 mb-3">
+                          📊 Submeter Readings
+                        </h3>
+
+                        <div className="divide-y divide-emerald-100 rounded-lg border border-emerald-200 bg-white shadow-sm">
+                          {meterReadings.map((reading, idx) => {
+                            const prev = Number(reading.previous_reading || 0);
+                            const curr = Number(reading.current_reading || 0);
+                            const usage = Math.max(curr - prev, 0);
+
+                            // ✅ Get rates from propertyBillingTypes (backend now includes concessionaire rates)
+                            const rate =
+                                reading.utility_type === "water"
+                                    ? Number(
+                                        billingData[0]?.propertyBillingTypes?.water_rate ||
+                                        billingData[0]?.propertyBillingTypes?.waterRate ||
+                                        0
+                                    )
+                                    : Number(
+                                        billingData[0]?.propertyBillingTypes?.electricity_rate ||
+                                        billingData[0]?.propertyBillingTypes?.electricityRate ||
+                                        0
+                                    );
+
+                            const total = usage * rate;
+
+                            return (
+                                <div
+                                    key={idx}
+                                    className="p-3 sm:p-4 text-sm sm:text-base flex flex-col sm:flex-row sm:items-center sm:justify-between transition hover:bg-emerald-50/70"
+                                >
+                                  {/* Left Side */}
+                                  <div>
+                                    <p className="font-medium text-gray-900 capitalize flex items-center gap-1">
+                                      {reading.utility_type === "water" ? "💧" : "⚡"}{" "}
+                                      {reading.utility_type} Reading
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      Date: {formatDate(reading.reading_date)}
+                                    </p>
+                                  </div>
+
+                                  {/* Right Side */}
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mt-2 sm:mt-0 text-gray-700">
+              <span>
+                Prev: <span className="font-semibold">{prev}</span>
+              </span>
+                                    <span>
+                Curr: <span className="font-semibold">{curr}</span>
+              </span>
+                                    <span>
+                Usage:{" "}
+                                      <span className="font-semibold">
+                  {usage.toFixed(2)}{" "}
+                                        {reading.utility_type === "water" ? "m³" : "kWh"}
+                </span>
+              </span>
+                                    <span className="text-emerald-700 font-medium whitespace-nowrap">
+                Rate: ₱{rate.toFixed(2)} × {usage.toFixed(2)} ={" "}
+                                      <span className="font-semibold text-emerald-900">
+                  {formatCurrency(total)}
+                </span>
+              </span>
+                                  </div>
+                                </div>
+                            );
+                          })}
+                        </div>
+
+                      </div>
+                  )}
+
                   {/* 🏦 PDC Section */}
                   {bill.postDatedChecks && bill.postDatedChecks.length > 0 && (
                       <PostDatedCheckSection pdcs={bill.postDatedChecks} />
@@ -368,13 +471,52 @@ export default function TenantBilling({ agreement_id, user_id }) {
 
 /* --- Subcomponents --- */
 function BillingBreakdown({ bill, baseRent, advancePayment, lateFee, subtotal }) {
+  const hasWater = Number(bill.total_water_amount) > 0;
+  const hasElectricity = Number(bill.total_electricity_amount) > 0;
+
   return (
       <div className="px-4 sm:px-6 py-4">
         <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
           Billing Breakdown
         </h2>
         <div className="divide-y divide-gray-200 rounded-lg border bg-white">
+
+          {/* 🏠 Base Rent */}
           <BreakdownRow label="Base Rent" value={formatCurrency(baseRent)} />
+
+          {/* 💧 Water Bill (if any) */}
+          {hasWater && (
+              <BreakdownRow
+                  label="Water Bill"
+                  note={
+                    bill.meterReadings?.water
+                        ? `Submetered — ${bill.meterReadings.water[0]?.previous_reading || 0} → ${
+                            bill.meterReadings.water[0]?.current_reading || 0
+                        }`
+                        : undefined
+                  }
+                  value={formatCurrency(bill.total_water_amount)}
+                  highlight="cyan"
+              />
+          )}
+
+          {/* ⚡ Electricity Bill (if any) */}
+          {hasElectricity && (
+              <BreakdownRow
+                  label="Electricity Bill"
+                  note={
+                    bill.meterReadings?.electricity
+                        ? `Submetered — ${bill.meterReadings.electricity[0]?.previous_reading || 0} → ${
+                            bill.meterReadings.electricity[0]?.current_reading || 0
+                        }`
+                        : undefined
+                  }
+                  value={formatCurrency(bill.total_electricity_amount)}
+                  highlight="purple"
+              />
+          )}
+
+          {/* 💰 Advance Payment */}
           {advancePayment > 0 && (
               <BreakdownRow
                   label={`Advance Payment Deduction (${bill.breakdown?.advance_months} month${
@@ -384,6 +526,8 @@ function BillingBreakdown({ bill, baseRent, advancePayment, lateFee, subtotal })
                   highlight="yellow"
               />
           )}
+
+          {/* ⚠️ Late Payment */}
           <BreakdownRow
               label="Late Payment Penalty"
               note={
@@ -398,6 +542,8 @@ function BillingBreakdown({ bill, baseRent, advancePayment, lateFee, subtotal })
               label="Days Late"
               value={`${bill.daysLate || 0} day${bill.daysLate === 1 ? "" : "s"}`}
           />
+
+          {/* ➕ Additional Charges */}
           {bill.billingAdditionalCharges?.map((c, idx) => (
               <BreakdownRow
                   key={idx}
@@ -407,6 +553,8 @@ function BillingBreakdown({ bill, baseRent, advancePayment, lateFee, subtotal })
                   highlight="gray"
               />
           ))}
+
+          {/* 🧮 Subtotal */}
           <BreakdownRow
               label="Subtotal"
               value={formatCurrency(subtotal)}

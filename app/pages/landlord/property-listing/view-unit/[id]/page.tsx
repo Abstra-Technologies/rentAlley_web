@@ -25,6 +25,7 @@ import { usePropertyData } from "@/hooks/usePropertyData";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import AIUnitGenerator from "@/components/landlord/ai/AIUnitGenerator";
 import LandlordSubscriptionPlanComponent from "@/components/landlord/subscrription";
+import ConcessionaireBillingHistory from "@/components/landlord/properties/ConcessionaireBillingHistory";
 
 const ViewUnitPage = () => {
   const { id } = useParams();
@@ -49,14 +50,24 @@ const ViewUnitPage = () => {
   const [hasBillingForMonth, setHasBillingForMonth] = useState(false);
   const [unitBillingStatus, setUnitBillingStatus] = useState<Record<string, boolean>>({});
   const [propertyDetails, setPropertyDetails] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("units");
+// 🧭 Load the last active tab from localStorage or default to 'units'
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("viewUnitActiveTab") || "units";
+    }
+    return "units";
+  });
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
 
   //  get property, subscription, and units with hook
   const { property, subscription, units, error, isLoading, loadingSubscription } =
       usePropertyData(property_id, landlord_id);
 
-  console.log('units data:', units);
+  useEffect(() => {
+    if (activeTab) {
+      localStorage.setItem("viewUnitActiveTab", activeTab);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (!property_id) return;
@@ -119,6 +130,7 @@ const ViewUnitPage = () => {
     setBillingForm({ ...billingForm, [name]: value });
   };
 
+  //  for utility ratess and getting if billing is alredy set.
   const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -272,7 +284,6 @@ const ViewUnitPage = () => {
     });
   };
 
-
   if (error) {
     return (
         <LandlordLayout>
@@ -377,6 +388,8 @@ const ViewUnitPage = () => {
                   </div>
                 )}
             </div>
+
+
           </div>
 
           {/* 🔧 Action Buttons Section */}
@@ -591,8 +604,10 @@ const ViewUnitPage = () => {
             {[
               { id: "units", label: "Units", icon: HomeIcon },
               { id: "documents", label: "Documents", icon: ClipboardDocumentListIcon },
-              { id: "analytics", label: "Analytics", icon: BuildingOffice2Icon },
+              // { id: "analytics", label: "Analytics", icon: BuildingOffice2Icon },
               { id: "configuration", label: "Configuration", icon: Cog6ToothIcon },
+              { id: "utility_history", label: "Utility History", icon: Cog6ToothIcon },
+
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -646,7 +661,6 @@ const ViewUnitPage = () => {
               </>
           )}
 
-
           {/* Documents Tab */}
           {activeTab === "documents" && (
             <div className="p-4 sm:p-6">
@@ -655,53 +669,78 @@ const ViewUnitPage = () => {
           )}
 
           {/* Analytics Tab */}
-          {activeTab === "analytics" && (
-            <div className="p-4 sm:p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2 rounded-lg shadow-sm">
-                  <BuildingOffice2Icon className="h-5 w-5 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  Engagement Analytics
-                </h2>
-              </div>
+          {/*{activeTab === "analytics" && (*/}
+          {/*  <div className="p-4 sm:p-6">*/}
+          {/*    <div className="flex items-center gap-3 mb-6">*/}
+          {/*      <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-2 rounded-lg shadow-sm">*/}
+          {/*        <BuildingOffice2Icon className="h-5 w-5 text-white" />*/}
+          {/*      </div>*/}
+          {/*      <h2 className="text-xl font-bold text-gray-800">*/}
+          {/*        Engagement Analytics*/}
+          {/*      </h2>*/}
+          {/*    </div>*/}
 
-              <p className="text-gray-600 mb-6">
-                Track how your property performs with detailed engagement
-                insights.
-              </p>
+          {/*    <p className="text-gray-600 mb-6">*/}
+          {/*      Track how your property performs with detailed engagement*/}
+          {/*      insights.*/}
+          {/*    </p>*/}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl shadow-sm">
-                  <h3 className="text-lg font-bold text-blue-700 mb-2">
-                    Page Views
-                  </h3>
-                  <p className="text-3xl font-bold text-blue-900 mb-1">1,240</p>
-                  <p className="text-xs text-blue-600">+12% from last month</p>
-                </div>
+          {/*    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">*/}
+          {/*      <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl shadow-sm">*/}
+          {/*        <h3 className="text-lg font-bold text-blue-700 mb-2">*/}
+          {/*          Page Views*/}
+          {/*        </h3>*/}
+          {/*        <p className="text-3xl font-bold text-blue-900 mb-1">1,240</p>*/}
+          {/*        <p className="text-xs text-blue-600">+12% from last month</p>*/}
+          {/*      </div>*/}
 
-                <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-2xl shadow-sm">
-                  <h3 className="text-lg font-bold text-green-700 mb-2">
-                    Inquiries
-                  </h3>
-                  <p className="text-3xl font-bold text-green-900 mb-1">56</p>
-                  <p className="text-xs text-green-600">+8% from last month</p>
-                </div>
+          {/*      <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-2xl shadow-sm">*/}
+          {/*        <h3 className="text-lg font-bold text-green-700 mb-2">*/}
+          {/*          Inquiries*/}
+          {/*        </h3>*/}
+          {/*        <p className="text-3xl font-bold text-green-900 mb-1">56</p>*/}
+          {/*        <p className="text-xs text-green-600">+8% from last month</p>*/}
+          {/*      </div>*/}
 
-                <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl shadow-sm">
-                  <h3 className="text-lg font-bold text-purple-700 mb-2">
-                    Shares
-                  </h3>
-                  <p className="text-3xl font-bold text-purple-900 mb-1">19</p>
-                  <p className="text-xs text-purple-600">+3% from last month</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/*      <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl shadow-sm">*/}
+          {/*        <h3 className="text-lg font-bold text-purple-700 mb-2">*/}
+          {/*          Shares*/}
+          {/*        </h3>*/}
+          {/*        <p className="text-3xl font-bold text-purple-900 mb-1">19</p>*/}
+          {/*        <p className="text-xs text-purple-600">+3% from last month</p>*/}
+          {/*      </div>*/}
+          {/*    </div>*/}
+          {/*  </div>*/}
+          {/*)}*/}
 
           {/* Configuration Tab */}
           {activeTab === "configuration" && (
-              <PropertyConfiguration propertyId={property_id} />
+              <PropertyConfiguration
+                  propertyId={property_id}
+                  onUpdate={async () => {
+                    try {
+                      const response = await axios.get("/api/propertyListing/getPropDetailsById", {
+                        params: { property_id },
+                      });
+                      setPropertyDetails(response.data.property);
+                      Swal.fire({
+                        icon: "success",
+                        title: "Updated!",
+                        text: "Utility settings updated and rates reloaded.",
+                        timer: 1500,
+                        showConfirmButton: false,
+                      });
+                    } catch (error) {
+                      console.error("Failed to reload property details after update:", error);
+                    }
+                  }}
+              />
+          )}
+
+          {activeTab === "utility_history" && (
+              <div className="p-4 sm:p-6">
+                <ConcessionaireBillingHistory propertyId={property_id} />
+              </div>
           )}
 
         </div>
@@ -733,11 +772,8 @@ const ViewUnitPage = () => {
             </div>
           </div>
       )}
-
     </LandlordLayout>
-
   );
-
 };
 
 export default ViewUnitPage;

@@ -184,7 +184,16 @@ export default function AddNewProperty() {
         });
         return false;
       }
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "image/heic",
+        "image/heif",
+        "image/bmp",
+        "image/tiff",
+      ];
       for (let photo of photos) {
         if (!allowedTypes.includes(photo.file?.type)) {
           Swal.fire({

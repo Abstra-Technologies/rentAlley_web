@@ -176,11 +176,31 @@ const LandlordPropertyChart = () => {
 
                 {/* Analytics Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <div className="lg:col-span-2">
-                        <PaymentSummaryCard landlord_id={user?.landlord_id} />
+                    {/* Payment Summary Card with Hover Overlay */}
+                    <div
+                        onClick={() => router.push(`/pages/landlord/analytics/detailed/paymentLogs`)}
+                        className="lg:col-span-2 relative group cursor-pointer transition-all duration-300"
+                    >
+                        {/* Card itself */}
+                        <div className="transform group-hover:-translate-y-1 group-hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden">
+                            <PaymentSummaryCard landlord_id={user?.landlord_id} />
+                        </div>
+
+                        {/* Hover Overlay Gradient */}
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-600/0 via-emerald-500/0 to-emerald-600/0 group-hover:from-blue-600/10 group-hover:via-emerald-500/10 group-hover:to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none" />
+
+                        {/* Hover Text Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      <span className="bg-white/80 text-gray-800 text-sm font-medium px-4 py-1.5 rounded-full shadow-md backdrop-blur-md">
+        View Payment History →
+      </span>
+                        </div>
                     </div>
+
+                    {/* Task Widget */}
                     <TaskWidget landlordId={user?.landlord_id} />
                 </div>
+
 
                 <LandlordPropertyMarquee landlordId={user?.landlord_id} />
 

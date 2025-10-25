@@ -13,25 +13,26 @@ import {
 import { UTILITY_BILLING_TYPES } from "@/constant/utilityBillingType";
 
 interface PropertyConfigurationProps {
-    propertyId: number;
+    propertyId: string;
+    onUpdate?: () => void;
+
 }
 
-export default function PropertyConfiguration({ propertyId }: PropertyConfigurationProps) {
+export default function PropertyConfiguration({ propertyId, onUpdate  }: PropertyConfigurationProps) {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [configForm, setConfigForm] = useState({
         billingReminderDay: 1,
-        billingDueDay: 1,
+        billingDueDay: 30,
         notifyEmail: false,
         notifySms: false,
         lateFeeType: "fixed",
         lateFeeAmount: 0,
         gracePeriodDays: 3,
         water_billing_type: "included",
-        elec_billing_type: "included",
+        electricity_billing_type: "included",
     });
 
-    // 🔹 Fetch property + config
     useEffect(() => {
         if (!propertyId) return;
         const fetchConfig = async () => {
@@ -47,7 +48,7 @@ export default function PropertyConfiguration({ propertyId }: PropertyConfigurat
                         lateFeeAmount: res.data.lateFeeAmount || 0,
                         gracePeriodDays: res.data.gracePeriodDays || 3,
                         water_billing_type: res.data.water_billing_type || "included",
-                        elec_billing_type: res.data.elec_billing_type || "included",
+                        electricity_billing_type: res.data.electricity_billing_type || "included",
                     });
                 }
                 console.log('proerty congfig', res.data);
@@ -60,17 +61,16 @@ export default function PropertyConfiguration({ propertyId }: PropertyConfigurat
         fetchConfig();
     }, [propertyId]);
 
-    // 🔹 Handle field changes with alert for billing type
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type, checked } = e.target;
 
-        if (name === "water_billing_type" || name === "elec_billing_type") {
+        if (name === "water_billing_type" || name === "electricity_billing_type") {
             const confirm = await Swal.fire({
                 icon: "warning",
                 title: "Changing Billing Type",
                 text: `Changing the ${name === "water_billing_type" ? "Water" : "Electricity"} billing type may affect how tenant billings are generated. Do you want to continue?`,
                 showCancelButton: true,
-                confirmButtonText: "Yes, change it",
+                confirmButtonText: "Ok, well noted.",
                 cancelButtonText: "Cancel",
                 confirmButtonColor: "#2563eb",
                 cancelButtonColor: "#9ca3af",
@@ -90,7 +90,6 @@ export default function PropertyConfiguration({ propertyId }: PropertyConfigurat
         }));
     };
 
-    // 🔹 Handle save
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
@@ -99,7 +98,10 @@ export default function PropertyConfiguration({ propertyId }: PropertyConfigurat
                 property_id: propertyId,
                 ...configForm,
             });
-            Swal.fire("Saved!", "Property configuration updated successfully.", "success");
+            Swal.fire("Saved!", "Property configuration updated successfully.", "success")
+                .then(() => {
+                    if (onUpdate) onUpdate();
+                });
         } catch (err) {
             console.error("Failed to save config:", err);
             Swal.fire("Error", "Could not save configuration", "error");
@@ -240,8 +242,8 @@ export default function PropertyConfiguration({ propertyId }: PropertyConfigurat
                                 Electricity Billing Type
                             </label>
                             <select
-                                name="elec_billing_type"
-                                value={configForm.elec_billing_type}
+                                name="electricity_billing_type"
+                                value={configForm.electricity_billing_type}
                                 onChange={handleChange}
                                 className="w-full rounded-lg border border-gray-300 shadow-sm focus:ring-yellow-500 focus:border-yellow-500 text-sm p-2.5"
                             >

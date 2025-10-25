@@ -1,17 +1,19 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db"; // adjust to your db path
+import { db } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const landlordId = searchParams.get("landlord_id");
+        const propertyId = searchParams.get("property_id");
+        const month = searchParams.get("month"); // format: YYYY-MM
 
         if (!landlordId) {
             return NextResponse.json({ error: "Missing landlord_id" }, { status: 400 });
         }
 
-        const query = `
+        // ✅ Base query
+        let query = `
       SELECT
           p.payment_id,
           p.payment_type,
@@ -25,14 +27,32 @@ export async function GET(req: NextRequest) {
           JOIN LeaseAgreement la ON p.agreement_id = la.agreement_id
           JOIN Unit u ON la.unit_id = u.unit_id
           JOIN Property pr ON u.property_id = pr.property_id
-      WHERE pr.landlord_id = ?;
+      WHERE pr.landlord_id = ?
     `;
 
-        const [rows] = await db.execute(query, [landlordId]);
+        const params: any[] = [landlordId];
+
+        // ✅ Optional property filter
+        if (propertyId) {
+            query += ` AND pr.property_id = ?`;
+            params.push(propertyId);
+        }
+
+        // ✅ Optional month filter
+        if (month) {
+            // e.g. month = "2025-10" → BETWEEN '2025-10-01' AND '2025-10-31'
+            query += ` AND DATE_FORMAT(p.payment_date, '%Y-%m') = ?`;
+            params.push(month);
+        }
+
+        // ✅ Order by newest payment first
+        query += ` ORDER BY p.payment_date DESC`;
+
+        const [rows]: any = await db.query(query, params);
 
         return NextResponse.json(rows, { status: 200 });
     } catch (error) {
-        console.error("Error fetching payments:", error);
-        return NextResponse.json({ error: "Database error" }, { status: 500 });
+        console.error("❌ Error fetching payments:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

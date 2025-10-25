@@ -303,9 +303,7 @@ export function StepThree() {
           <div className="space-y-4 sm:space-y-6">
             <div className="flex items-center space-x-3 mb-4 sm:mb-6">
               <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-xs sm:text-sm">
-                  3
-                </span>
+                <span className="text-white font-bold text-xs sm:text-sm">3</span>
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
                 Utility Billing
@@ -318,23 +316,23 @@ export function StepThree() {
                 <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
                   <span>Water Billing Type</span>
                   <FaInfoCircle
-                    className="text-blue-600 text-base cursor-pointer hover:text-blue-700 transition-colors"
-                    onClick={() => setIsModalOpen(true)}
+                      className="text-blue-600 text-base cursor-pointer hover:text-blue-700 transition-colors"
+                      onClick={() => setIsModalOpen(true)}
                   />
                 </label>
                 <select
-                  name="waterBillingType"
-                  value={property.waterBillingType || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
+                    name="waterBillingType"
+                    value={property.waterBillingType || ""}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
                 >
                   <option value="" disabled>
                     Select water billing type
                   </option>
                   {UTILITY_BILLING_TYPES.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
                   ))}
                 </select>
               </div>
@@ -344,65 +342,76 @@ export function StepThree() {
                 <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
                   <span>Electricity Billing Type</span>
                   <FaInfoCircle
-                    className="text-blue-600 text-base cursor-pointer hover:text-blue-700 transition-colors"
-                    onClick={() => setIsModalOpen(true)}
+                      className="text-blue-600 text-base cursor-pointer hover:text-blue-700 transition-colors"
+                      onClick={() => setIsModalOpen(true)}
                   />
                 </label>
                 <select
-                  name="electricityBillingType"
-                  value={property.electricityBillingType || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
+                    name="electricityBillingType"
+                    value={property.electricityBillingType || ""}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
                 >
                   <option value="" disabled>
                     Select electricity billing type
                   </option>
                   {UTILITY_BILLING_TYPES.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
                   ))}
                 </select>
               </div>
             </div>
 
+            {/* ℹ️ Informational warning (always visible) */}
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-700 font-medium">
+                ⚠️ Please choose carefully — utility billing types cannot be modified after property creation.
+              </p>
+              <p className="text-xs text-amber-600 mt-1 leading-relaxed">
+                If you need to change this later, you must request assistance from a system administrator or delete the property and recreate it with the correct settings.
+              </p>
+            </div>
+
             {/* Utility Info Modal */}
             {isModalOpen && (
-              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-                <div className="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900">
-                    Utility Billing Types
-                  </h3>
-                  <ul className="space-y-3 text-gray-700 text-sm">
-                    <li className="flex items-start space-x-2">
-                      <span className="font-semibold text-blue-600 min-w-0 flex-shrink-0">
-                        Included:
-                      </span>
-                      <span>Rent amount covers the utility cost.</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="font-semibold text-green-600 min-w-0 flex-shrink-0">
-                        Direct:
-                      </span>
-                      <span>Tenant pays the utility provider directly.</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="font-semibold text-orange-600 min-w-0 flex-shrink-0">
-                        Submetered:
-                      </span>
-                      <span>Tenant is billed based on actual usage.</span>
-                    </li>
-                  </ul>
-                  <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="mt-6 w-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-3 rounded-lg font-semibold hover:from-blue-600 hover:to-emerald-600 transition-all duration-200"
-                  >
-                    Got it
-                  </button>
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+                  <div className="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900">
+                      Utility Billing Types
+                    </h3>
+                    <ul className="space-y-3 text-gray-700 text-sm">
+                      <li className="flex items-start space-x-2">
+            <span className="font-semibold text-blue-600 flex-shrink-0">
+              Included:
+            </span>
+                        <span>Rent amount covers the utility cost.</span>
+                      </li>
+                      <li className="flex items-start space-x-2">
+            <span className="font-semibold text-green-600 flex-shrink-0">
+              Direct:
+            </span>
+                        <span>Tenant pays the utility provider directly.</span>
+                      </li>
+                      <li className="flex items-start space-x-2">
+            <span className="font-semibold text-orange-600 flex-shrink-0">
+              Submetered:
+            </span>
+                        <span>Tenant is billed based on actual usage.</span>
+                      </li>
+                    </ul>
+                    <button
+                        onClick={() => setIsModalOpen(false)}
+                        className="mt-6 w-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-3 rounded-lg font-semibold hover:from-blue-600 hover:to-emerald-600 transition-all duration-200"
+                    >
+                      Got it
+                    </button>
+                  </div>
                 </div>
-              </div>
             )}
           </div>
+
         </div>
       </div>
 
@@ -433,8 +442,9 @@ export function StepThree() {
 
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                You'll need at least 3 photos to get started. You can add more
-                later.
+                You'll need at least <span className="font-semibold text-gray-800">3 photos</span> to get started.
+                These images will be <span className="text-blue-700 font-medium"> visible to the public </span>
+                on your property listing. You can always add or update photos later.
               </p>
 
               {/* Dropzone */}
