@@ -33,25 +33,27 @@ export async function GET(req: NextRequest) {
     );
 
     if (!leaseRecords?.length) {
-      return NextResponse.json(
-          { message: "No leases found" },
-          { status: 404 }
-      );
+      return NextResponse.json({ message: "No leases found" }, { status: 404 });
     }
 
     const result = [];
 
     for (const lease of leaseRecords) {
-      // 🔹 Fetch unit and property details
+      // 🔹 Fetch unit, property, and landlord details (with landlord user_id)
       const [unitDetails]: any = await db.query(
           `
             SELECT
               u.unit_id, u.unit_name, u.unit_size, u.unit_style,
               u.rent_amount, u.furnish, u.status,
               p.property_id, p.property_name, p.property_type, p.min_stay, p.landlord_id,
-              p.city, p.zip_code, p.province, p.street, p.brgy_district
+              p.city, p.zip_code, p.province, p.street, p.brgy_district,
+              l.user_id AS landlord_user_id,
+              u2.firstName AS enc_first_name,
+              u2.lastName AS enc_last_name
             FROM Unit u
                    INNER JOIN Property p ON u.property_id = p.property_id
+                   INNER JOIN Landlord l ON p.landlord_id = l.landlord_id
+                   INNER JOIN User u2 ON l.user_id = u2.user_id
             WHERE u.unit_id = ?
           `,
           [lease.unit_id]
@@ -60,14 +62,24 @@ export async function GET(req: NextRequest) {
       if (!unitDetails?.length) continue;
       const unit = unitDetails[0];
 
+      // ✅ Decrypt landlord name safely
+      let landlordName = "Landlord";
+      try {
+        const first = decryptData(JSON.parse(unit.enc_first_name), SECRET_KEY);
+        const last = decryptData(JSON.parse(unit.enc_last_name), SECRET_KEY);
+        landlordName = `${first} ${last}`.trim();
+      } catch (err) {
+        console.warn("⚠️ Failed to decrypt landlord name:", err);
+      }
+
       // 🔹 Check for pending proof of initial payment
       const [pendingPayment]: any = await db.query(
           `
-        SELECT COUNT(*) AS pending_count
-        FROM Payment
-        WHERE agreement_id = ?
-          AND payment_status = 'pending'
-          AND payment_type = 'initial_payment'
+          SELECT COUNT(*) AS pending_count
+          FROM Payment
+          WHERE agreement_id = ?
+            AND payment_status = 'pending'
+            AND payment_type = 'initial_payment'
         `,
           [lease.agreement_id]
       );
@@ -77,11 +89,11 @@ export async function GET(req: NextRequest) {
       // 🔹 Fetch property configuration (billingDueDay)
       const [propertyConfig]: any = await db.query(
           `
-        SELECT billingDueDay
-        FROM PropertyConfiguration
-        WHERE property_id = ?
-        LIMIT 1
-        `,
+            SELECT billingDueDay
+            FROM PropertyConfiguration
+            WHERE property_id = ?
+            LIMIT 1
+          `,
           [unit.property_id]
       );
 
@@ -94,14 +106,11 @@ export async function GET(req: NextRequest) {
 
       if (billingDueDay) {
         due_day = billingDueDay;
-
-        // ✅ Compute CURRENT MONTH’S due date only (no next month logic)
         const today = new Date();
         const year = today.getFullYear();
-        const month = today.getMonth(); // current month always
-
+        const month = today.getMonth();
         const due = new Date(year, month, billingDueDay);
-        due_date = due.toLocaleDateString("en-CA"); // YYYY-MM-DD format
+        due_date = due.toLocaleDateString("en-CA"); // YYYY-MM-DD
       }
 
       console.log(`📦 Unit: ${unit.unit_name}`);
@@ -133,7 +142,7 @@ export async function GET(req: NextRequest) {
                   .filter(Boolean)
               : [];
 
-      // 🔹 Combine everything
+      // 🔹 Combine everything (keep all original fields)
       result.push({
         ...unit,
         unit_photos: decryptedPhotos,
@@ -159,8 +168,12 @@ export async function GET(req: NextRequest) {
         zip_code: unit.zip_code,
 
         // ✅ Billing Info
-        due_day, // e.g. 4
-        due_date, // e.g. "2025-10-04"
+        due_day,
+        due_date,
+
+        // ✅ NEW: Landlord user details
+        landlord_user_id: unit.landlord_user_id,
+        landlord_name: landlordName, // decrypted now
       });
     }
 

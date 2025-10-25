@@ -1,4 +1,6 @@
 // @utils/id_generation.ts
+import type {} from "node:fs"; // ✅ Makes this a TS module without affecting runtime
+
 const { db } = require("../lib/cronDB");
 
 async function generateBillID() {
@@ -18,7 +20,6 @@ async function generateBillID() {
             isUnique = true;
         }
     }
-
     return billId;
 }
 

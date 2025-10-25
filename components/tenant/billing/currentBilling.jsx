@@ -217,11 +217,6 @@ export default function TenantBilling({ agreement_id, user_id }) {
               return c.charge_category === "discount" ? sum - amt : sum + amt;
             }, 0);
 
-            /**
-             * 🧮 Correct subtotal:
-             * base rent + water + electricity + monthly extras + other charges
-             * - advance payment + late fee
-             */
             const subtotal =
                 baseRent +
                 waterAmt +

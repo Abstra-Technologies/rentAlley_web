@@ -28,7 +28,7 @@ export default function ChatComponent({ userId, preselectedChat }) {
   useEffect(() => {
     if (!userId) return;
 
-    let isMounted = true; // 🧩 prevents state updates if component unmounts
+    let isMounted = true;
 
     const fetchChats = async () => {
       setLoading(true);
@@ -53,7 +53,7 @@ export default function ChatComponent({ userId, preselectedChat }) {
     fetchChats();
 
     return () => {
-      isMounted = false; // 🧼 cleanup on unmount
+      isMounted = false;
     };
   }, [userId]);
 

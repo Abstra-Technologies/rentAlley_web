@@ -14,7 +14,7 @@ const s3Client = new S3Client({
 
 const encryptionSecret = process.env.ENCRYPTION_SECRET!;
 
-// 🔑 Web Push keys
+// 🔑 Web Push setup
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
 webpush.setVapidDetails("mailto:support@upkyp.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -40,21 +40,36 @@ export async function POST(req: NextRequest) {
 
     try {
         const formData = await req.formData();
-        const property_ids = formData.getAll("property_ids[]").map(Number);
-        const subject = formData.get("subject") as string;
-        const description = formData.get("description") as string;
-        const landlord_id = Number(formData.get("landlord_id"));
 
-        if (!property_ids || property_ids.length === 0 || !subject || !description || !landlord_id) {
+        // 🔧 FIXED: Keep as string (alphanumeric IDs like UPKYPxxxx)
+        const property_ids = formData.getAll("property_ids[]").map(String);
+        const subject = (formData.get("subject") as string)?.trim();
+        const description = (formData.get("description") as string)?.trim();
+        const landlord_id = String(formData.get("landlord_id"));
+
+        if (!property_ids.length || !subject || !description || !landlord_id) {
             return NextResponse.json({ message: "All fields are required" }, { status: 400 });
         }
 
-        // Collect uploaded files
+        // ✅ Validate property IDs exist before inserting
+        const [existingProps]: any = await db.execute(
+            `SELECT property_id FROM Property WHERE property_id IN (${property_ids.map(() => "?").join(",")})`,
+            property_ids
+        );
+
+        const existingIds = existingProps.map((p: any) => p.property_id);
+        const invalidIds = property_ids.filter(id => !existingIds.includes(id));
+        if (invalidIds.length > 0) {
+            return NextResponse.json(
+                { message: `Invalid property IDs: ${invalidIds.join(", ")}` },
+                { status: 400 }
+            );
+        }
+
+        // ✅ Collect uploaded files
         const files: File[] = [];
         for (const [, value] of formData.entries()) {
-            if (value instanceof File) {
-                files.push(value);
-            }
+            if (value instanceof File) files.push(value);
         }
 
         // Fetch landlord → user_id
@@ -68,35 +83,34 @@ export async function POST(req: NextRequest) {
         }
         const user_id = landlord.user_id;
 
-        // Prepare queries
+        // Queries
         const insertAnnouncementQuery = `
-        INSERT INTO Announcement (property_id, landlord_id, subject, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, NOW(), NOW());
-    `;
+            INSERT INTO Announcement (property_id, landlord_id, subject, description, created_at, updated_at)
+            VALUES (?, ?, ?, ?, NOW(), NOW());
+        `;
         const insertPhotoQuery = `
-        INSERT INTO AnnouncementPhoto (announcement_id, photo_url, created_at)
-        VALUES (?, ?, NOW());
+      INSERT INTO AnnouncementPhoto (announcement_id, photo_url, created_at)
+      VALUES (?, ?, NOW());
     `;
         const tenantQuery = `
-        SELECT DISTINCT t.user_id
-        FROM LeaseAgreement la
-                 JOIN Tenant t ON la.tenant_id = t.tenant_id
-                 JOIN Unit u ON la.unit_id = u.unit_id
-        WHERE u.property_id = ? AND la.status = 'active'
+      SELECT DISTINCT t.user_id
+      FROM LeaseAgreement la
+      JOIN Tenant t ON la.tenant_id = t.tenant_id
+      JOIN Unit u ON la.unit_id = u.unit_id
+      WHERE u.property_id = ? AND la.status = 'active';
     `;
         const notificationQuery = `
-        INSERT INTO Notification (user_id, title, body, is_read, created_at)
-        VALUES (?, ?, ?, 0, NOW())
+      INSERT INTO Notification (user_id, title, body, is_read, created_at)
+      VALUES (?, ?, ?, 0, NOW());
     `;
 
         const maxBodyLength = 300;
         const truncatedDescription =
-            description.length > maxBodyLength
-                ? description.slice(0, maxBodyLength) + "..."
-                : description;
+            description.length > maxBodyLength ? description.slice(0, maxBodyLength) + "..." : description;
 
         const createdAnnouncements: any[] = [];
 
+        // 🧾 Process each property
         for (const property_id of property_ids) {
             const [result]: any = await db.execute(insertAnnouncementQuery, [
                 property_id,
@@ -105,14 +119,12 @@ export async function POST(req: NextRequest) {
                 description,
             ]);
             const announcement_id = result.insertId;
-
             const photoRecords: string[] = [];
 
-            // Upload and save photos
+            // Upload photos to S3
             if (files.length > 0) {
                 for (const file of files) {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const buffer = Buffer.from(arrayBuffer);
+                    const buffer = Buffer.from(await file.arrayBuffer());
                     const sanitizedFilename = sanitizeFilename(file.name);
                     const fileName = `announcementPhoto/${Date.now()}_${sanitizedFilename}`;
                     const photoUrl = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${fileName}`;
@@ -132,14 +144,11 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            // Find active tenants
-            const [tenants] = await db.execute(tenantQuery, [property_id]);
-
-            for (const tenant of tenants as any[]) {
-                // Save Notification
+            // Notify tenants via DB + Push
+            const [tenants]: any = await db.execute(tenantQuery, [property_id]);
+            for (const tenant of tenants) {
                 await db.execute(notificationQuery, [tenant.user_id, subject, truncatedDescription]);
 
-                // Fetch WebPush subs
                 const [subs]: any = await db.execute(
                     `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
                     [tenant.user_id]
@@ -153,29 +162,21 @@ export async function POST(req: NextRequest) {
                     });
 
                     for (const sub of subs) {
-                        const subscription = {
-                            endpoint: sub.endpoint,
-                            keys: { p256dh: sub.p256dh, auth: sub.auth },
-                        };
-
                         try {
-                            await webpush.sendNotification(subscription, payload);
-                            console.log("✅ Push sent to tenant:", sub.endpoint);
+                            await webpush.sendNotification(
+                                { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+                                payload
+                            );
                         } catch (err: any) {
                             console.error("❌ Push failed:", err.message);
                             if (err.statusCode === 410 || err.statusCode === 404) {
-                                await db.execute(
-                                    `DELETE FROM user_push_subscriptions WHERE endpoint = ?`,
-                                    [sub.endpoint]
-                                );
-                                console.log("🗑️ Removed invalid subscription:", sub.endpoint);
+                                await db.execute(`DELETE FROM user_push_subscriptions WHERE endpoint = ?`, [sub.endpoint]);
                             }
                         }
                     }
                 }
             }
 
-            // Save for Activity Log summary
             createdAnnouncements.push({
                 announcement_id,
                 property_id,
@@ -184,19 +185,19 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // 🧾 Insert detailed Activity Log
+        // 🧠 Activity Log
         await db.execute(
             `INSERT INTO ActivityLog (
-         user_id, action, description, target_table, target_id, old_value, new_value,
-         endpoint, http_method, status_code, ip_address, user_agent, device_type, is_suspicious, timestamp
-       )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())`,
+                user_id, action, description, target_table, target_id, old_value, new_value,
+                endpoint, http_method, status_code, ip_address, user_agent, device_type, is_suspicious, timestamp
+            )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())`,
             [
                 user_id,
                 "Created Announcement",
                 `Created announcement "${subject}" for ${property_ids.length} property(ies).`,
                 "Announcement",
-                String(createdAnnouncements.map(a => a.announcement_id).join(",")),
+                createdAnnouncements.map(a => a.announcement_id).join(","),
                 null,
                 JSON.stringify(createdAnnouncements),
                 endpoint,
@@ -208,13 +209,9 @@ export async function POST(req: NextRequest) {
             ]
         );
 
-        return NextResponse.json(
-            { message: "Announcements created and notifications sent." },
-            { status: 201 }
-        );
+        return NextResponse.json({ message: "Announcements created and notifications sent." }, { status: 201 });
     } catch (error: any) {
         console.error("Error creating announcement:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ message: "Internal Server Error", error: error.message }, { status: 500 });
     }
 }
-

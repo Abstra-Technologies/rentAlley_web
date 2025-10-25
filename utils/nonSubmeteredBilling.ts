@@ -1,6 +1,6 @@
 const cron = require("node-cron");
 const { db } = require("../lib/cronDB");
-const { generateBillID } = require("../utils/automated/id_generators");
+const { generateBillId } = require("@utils/id_generator");
 require("dotenv").config();
 
 
@@ -52,7 +52,7 @@ async function generateNonSubmeteredBilling() {
 
         if (existing.length === 0) {
             // 🟢 Generate unique bill_id first
-            const billId = await generateBillID();
+            const billId = await generateBillId();
 
             // 🟢 Create new billing record
             const [result]: any = await db.query(

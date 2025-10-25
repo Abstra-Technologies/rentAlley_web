@@ -36,12 +36,12 @@ const menuItems = [
     label: "Properties",
     priority: 1,
   },
-  {
-    href: "/pages/landlord/list_of_tenants",
-    icon: BsFilePersonFill,
-    label: "Tenants",
-    priority: 1,
-  },
+  // {
+  //   href: "/pages/landlord/list_of_tenants",
+  //   icon: BsFilePersonFill,
+  //   label: "Tenants",
+  //   priority: 1,
+  // },
   {
     href: "/pages/landlord/payments",
     icon: MdOutlinePayments,

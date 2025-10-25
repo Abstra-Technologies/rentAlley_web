@@ -22,7 +22,7 @@ export async function GET(
     try {
         const billingId = params.billing_id;
 
-        // 🔹 1. Get Billing + Unit + Property
+        // 1️⃣ Get Billing + Unit + Property
         const [rows]: any = await db.query(
             `
                 SELECT b.*,
@@ -43,7 +43,7 @@ export async function GET(
 
         const bill = rows[0];
 
-        // 🔹 2. Get Tenant info
+        // 2️⃣ Tenant info
         const [tenantRows]: any = await db.query(
             `
                 SELECT
@@ -84,7 +84,7 @@ export async function GET(
             }
             : null;
 
-        // 🔹 3. Get Property Config
+        // 3️⃣ Property config (due date)
         const [configRows]: any = await db.query(
             `SELECT billingDueDay FROM PropertyConfiguration WHERE property_id = ? LIMIT 1`,
             [bill.property_id]
@@ -100,7 +100,7 @@ export async function GET(
         );
         const dueDateStr = dueDate.toLocaleDateString("en-CA");
 
-        // 🔹 4. Additional Charges
+        // 4️⃣ Additional charges
         const [addCharges]: any = await db.query(
             `SELECT charge_category, charge_type, amount
              FROM BillingAdditionalCharge
@@ -108,7 +108,7 @@ export async function GET(
             [billingId]
         );
 
-        // 🔹 5. Post-Dated Checks for this lease/month
+        // 5️⃣ Post-Dated Checks
         const [pdcRows]: any = await db.query(
             `
                 SELECT bank_name, check_number, amount, due_date, status
@@ -121,48 +121,68 @@ export async function GET(
             [tenant?.agreement_id, bill.billing_period, bill.billing_period]
         );
 
-        // 🔹 6. Advance payment computation
+        // 6️⃣ Meter Readings
+        const [meterRows]: any = await db.query(
+            `
+        SELECT utility_type, previous_reading, current_reading, reading_date
+        FROM MeterReading
+        WHERE unit_id = ?
+          AND MONTH(reading_date) = MONTH(?)
+          AND YEAR(reading_date) = YEAR(?)
+        ORDER BY utility_type ASC
+      `,
+            [bill.unit_id, bill.billing_period, bill.billing_period]
+        );
+
+        const water = meterRows.find((m: any) => m.utility_type === "water");
+        const elec = meterRows.find((m: any) => m.utility_type === "electricity");
+
+        const waterUsage = water
+            ? toNum(water.current_reading) - toNum(water.previous_reading)
+            : 0;
+        const elecUsage = elec
+            ? toNum(elec.current_reading) - toNum(elec.previous_reading)
+            : 0;
+
+        // 7️⃣ Advance payment computation
         const advanceMonths = toNum(bill.advance_payment_months);
         const advanceDeductRequired =
             advanceMonths > 0 ? toNum(bill.rent_amount) * advanceMonths : 0;
 
-        // 🔹 7. Build charge rows
+        // 8️⃣ Charges rows
         const chargesRows = (addCharges || [])
             .map(
                 (c: any) => `
-        <tr>
-          <td>${c.charge_type} ${
-                    c.charge_category === "discount" ? "(discount)" : ""
-                }</td>
-          <td>${c.charge_category === "discount" ? "-" : ""}${php(c.amount)}</td>
-        </tr>`
+      <tr>
+        <td>${c.charge_type} ${c.charge_category === "discount" ? "(discount)" : ""}</td>
+        <td>${c.charge_category === "discount" ? "-" : ""}${php(c.amount)}</td>
+      </tr>`
             )
             .join("");
 
-        // 🔹 8. Build PDC section rows
+        // 9️⃣ PDC HTML
         const pdcRowsHtml =
             pdcRows.length > 0
                 ? pdcRows
                     .map(
                         (p: any) => `
-              <tr>
-                <td>${p.bank_name}</td>
-                <td>${p.check_number}</td>
-                <td>${php(p.amount)}</td>
-                <td>${new Date(p.due_date).toLocaleDateString("en-CA")}</td>
-                <td>${p.status}</td>
-              </tr>`
+          <tr>
+            <td>${p.bank_name}</td>
+            <td>${p.check_number}</td>
+            <td>${php(p.amount)}</td>
+            <td>${new Date(p.due_date).toLocaleDateString("en-CA")}</td>
+            <td>${p.status}</td>
+          </tr>`
                     )
                     .join("")
                 : `<tr><td colspan="5" style="text-align:center;color:#6b7280;">No post-dated checks found for this month.</td></tr>`;
 
-        // 🔹 9. Build HTML
+        // 🔹 10️⃣ PDF HTML (with Meter Reading Section)
         const html = `
 <html>
   <head>
     <meta charset="utf-8" />
     <style>
-      /* 🌈 Full-page dark gradient background (UpKyp brand) */
       html, body {
         height: 100%;
         margin: 0;
@@ -174,8 +194,6 @@ export async function GET(
         print-color-adjust: exact;
         position: relative;
       }
-
-      /* 💧 Subtle watermark */
       body::before {
         content: "UpKyp - Connect More. Manage Less";
         position: fixed;
@@ -187,104 +205,26 @@ export async function GET(
         color: rgba(255,255,255,0.05);
         white-space: nowrap;
         pointer-events: none;
-        user-select: none;
-        z-index: 0;
       }
+      .content { padding: 48px; position: relative; z-index: 2; }
+      .header { text-align: center; margin-bottom: 36px; color: #fff; }
+      .header-logo { font-size: 40px; font-weight: 800; color: #10b981; text-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+      .header-tagline { font-size: 14px; color: #d1fae5; opacity: 0.9; margin-top: 4px; }
+      .header-divider { height: 2px; width: 100px; margin: 10px auto; background: linear-gradient(to right,#10b981,#3b82f6); border-radius: 9999px; }
+      .header-title { font-size: 20px; font-weight: 600; color: #bfdbfe; }
 
-      .content {
-        padding: 48px;
-        z-index: 2;
-        position: relative;
-      }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+      th, td { border: 1px solid rgba(255,255,255,0.25); padding: 8px; }
+      th { background: rgba(255,255,255,0.15); color: #f9fafb; }
+      td { background: rgba(255,255,255,0.08); }
+      .total { background: rgba(16,185,129,0.25); font-weight: bold; }
 
-      /* 🌿 Header: visible on dark bg */
-      .header {
-        text-align: center;
-        margin-bottom: 36px;
-        color: #ffffff;
-      }
-      .header-logo {
-        font-size: 40px;
-        font-weight: 800;
-        letter-spacing: -0.5px;
-        color: #10b981;
-        text-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        margin: 0;
-      }
-      .header-tagline {
-        font-size: 14px;
-        color: #d1fae5;
-        opacity: 0.9;
-        margin: 4px 0 12px;
-      }
-      .header-divider {
-        height: 2px;
-        width: 100px;
-        margin: 0 auto 14px;
-        background: linear-gradient(to right, #10b981, #3b82f6);
-        border-radius: 9999px;
-      }
-      .header-title {
-        font-size: 20px;
-        font-weight: 600;
-        color: #bfdbfe;
-        margin: 0;
-      }
-
-      /* Layout blocks (no card background) */
-      .section {
-        margin-top: 32px;
-      }
-
-      .flex-between {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 12px;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 12px;
-      }
-      th, td {
-        border: 1px solid rgba(255,255,255,0.25);
-        padding: 8px;
-        font-size: 13px;
-      }
-      th {
-        background: rgba(255,255,255,0.15);
-        text-align: left;
-        color: #f9fafb;
-      }
-      td {
-        background: rgba(255,255,255,0.08);
-        color: #f9fafb;
-      }
-      .total {
-        font-weight: bold;
-        background: rgba(16,185,129,0.25);
-        color: #ffffff;
-      }
-
-      .section h2 {
-        color: #a7f3d0;
-        margin-bottom: 8px;
-        font-size: 14px; /* smaller headers */
-        letter-spacing: 0.3px;
-        border-left: 3px solid #10b981;
-        padding-left: 6px;
-      }
-
-      strong { color:#ffffff; }
-      .muted { color: #d1d5db; font-size: 12px; }
+      .section { margin-top: 32px; }
+      .section h2 { color: #a7f3d0; font-size: 14px; border-left: 3px solid #10b981; padding-left: 6px; margin-bottom: 8px; }
     </style>
   </head>
   <body>
     <div class="content">
-      <!-- 🌿 Header -->
       <div class="header">
         <h1 class="header-logo">UpKyp</h1>
         <p class="header-tagline">Connect More. Manage Less.</p>
@@ -293,14 +233,14 @@ export async function GET(
       </div>
 
       <!-- Tenant + Property -->
-      <div class="flex-between" style="margin-bottom:28px;">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;margin-bottom:28px;">
         <div>
           ${
             decryptedTenant
                 ? `<strong>${decryptedTenant.firstName} ${decryptedTenant.lastName}</strong><br/>
                  <span style="font-size:13px;">${decryptedTenant.email}</span><br/>
                  <span style="font-size:13px;">${decryptedTenant.phoneNumber}</span>`
-                : `<span class="muted">Tenant info unavailable</span>`
+                : `<span style="color:#d1d5db;font-size:12px;">Tenant info unavailable</span>`
         }
         </div>
         <div style="text-align:right;">
@@ -313,12 +253,18 @@ export async function GET(
       <!-- Summary -->
       <table>
         <tr><th>Billing Period</th><th>Due Date</th><th>Total Due</th></tr>
-        <tr>
-          <td>${bill.billing_period}</td>
-          <td>${dueDateStr}</td>
-          <td><strong>₱${php(bill.total_amount_due)}</strong></td>
-        </tr>
+        <tr><td>${bill.billing_period}</td><td>${dueDateStr}</td><td><strong>₱${php(bill.total_amount_due)}</strong></td></tr>
       </table>
+
+      <!-- Meter Readings -->
+      <div class="section">
+        <h2>Meter Reading Summary</h2>
+        <table>
+          <tr><th>Utility</th><th>Previous</th><th>Current</th><th>Consumption</th><th>Total</th></tr>
+          <tr><td>Water</td><td>${water ? water.previous_reading : "—"}</td><td>${water ? water.current_reading : "—"}</td><td>${waterUsage || 0}</td><td>${php(bill.total_water_amount)}</td></tr>
+          <tr><td>Electricity</td><td>${elec ? elec.previous_reading : "—"}</td><td>${elec ? elec.current_reading : "—"}</td><td>${elecUsage || 0}</td><td>${php(bill.total_electricity_amount)}</td></tr>
+        </table>
+      </div>
 
       <!-- Breakdown -->
       <div class="section">
@@ -336,17 +282,11 @@ export async function GET(
         </table>
       </div>
 
-      <!-- Post-Dated Checks -->
+      <!-- PDC -->
       <div class="section">
         <h2>Post-Dated Checks</h2>
         <table>
-          <tr>
-            <th>Bank</th>
-            <th>Check #</th>
-            <th>Amount (₱)</th>
-            <th>Issue Date</th>
-            <th>Status</th>
-          </tr>
+          <tr><th>Bank</th><th>Check #</th><th>Amount (₱)</th><th>Issue Date</th><th>Status</th></tr>
           ${pdcRowsHtml}
         </table>
       </div>
@@ -355,7 +295,7 @@ export async function GET(
 </html>
 `;
 
-        // 🔹 10. Generate PDF
+        // 11️⃣ Generate PDF
         const browser = await puppeteer.launch({
             headless: "new",
             args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -366,7 +306,6 @@ export async function GET(
         await browser.close();
 
         return new NextResponse(pdfBuffer, {
-            status: 200,
             headers: {
                 "Content-Type": "application/pdf",
                 "Content-Disposition": `attachment; filename="billing-statement-${billingId}.pdf"`,

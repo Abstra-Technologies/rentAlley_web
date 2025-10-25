@@ -27,6 +27,7 @@ import RenewalRequestForm from "@/components/tenant/currentRent/RenewalRequestFo
 // Types & utils
 import { Unit } from "@/types/units";
 import { formatCurrency } from "@/utils/formatter/formatters";
+import { decryptData } from "@/crypto/encrypt";
 
 // Hook to fetch units
 const useUnits = (tenantId: string | undefined) => {
@@ -272,7 +273,19 @@ export default function MyUnit() {
   );
 
   const handleContactLandlord = useCallback(() => {
-    if (!units?.[0]?.landlord_id || !user?.user_id) {
+    const landlordUserId = units?.[0]?.landlord_user_id;
+    let landlordName = units?.[0]?.landlord_name || "Landlord";
+
+    try {
+      // 🧩 Attempt decryption if it looks like JSON (your encrypt/decrypt uses JSON.stringify)
+      if (landlordName.startsWith("{") || landlordName.startsWith("[")) {
+        landlordName = decryptData(JSON.parse(landlordName), process.env.ENCRYPTION_SECRET);
+      }
+    } catch (err) {
+      console.warn("Failed to decrypt landlord name:", err);
+    }
+
+    if (!landlordUserId || !user?.user_id) {
       Swal.fire({
         icon: "error",
         title: "Unable to Contact",
@@ -282,15 +295,14 @@ export default function MyUnit() {
       return;
     }
 
-    const chatRoom = `chat_${[user.user_id, units[0].landlord_id]
-      .sort()
-      .join("_")}`;
+    const chatRoom = `chat_${[user.user_id, landlordUserId].sort().join("_")}`;
     const setChatData = useChatStore.getState().setPreselectedChat;
+
     setChatData({
       chat_room: chatRoom,
-      landlord_id: units[0].landlord_id,
-      name: units[0].landlord_name || "Landlord",
-      tenant_id: user.tenant_id || null,
+      landlord_id: landlordUserId,
+      name: landlordName, // ✅ decrypted before passing
+      tenant_id: user.user_id,
     });
 
     Swal.fire({
@@ -302,8 +314,7 @@ export default function MyUnit() {
       customClass: { popup: "rounded-xl" },
       didClose: () => router.push("/pages/tenant/chat"),
     });
-  }, [units, user?.user_id, user?.tenant_id, router]);
-
+  }, [units, user?.user_id, router]);
   const handleAccessPortal = useCallback(
     (agreementId: string) => {
       router.push(`/pages/tenant/rentalPortal/${agreementId}`);
