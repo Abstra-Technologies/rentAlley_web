@@ -90,6 +90,8 @@ const Navbar = () => {
       return [
         { href: "/pages/landlord/inbox", label: "Inbox" },
         { href: "/pages/landlord/dashboard", label: "Dashboard" },
+        { href: "/pages/landlord/chat", label: "Chat" },
+
       ];
     }
 

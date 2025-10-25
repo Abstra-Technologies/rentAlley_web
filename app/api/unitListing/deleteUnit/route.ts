@@ -11,9 +11,7 @@ export async function DELETE(req: NextRequest) {
 
     const connection = await db.getConnection();
     try {
-        console.log("🗑️ Deleting unit with ID:", unit_id);
 
-        // Check if the unit exists
         const [unitRows]: any = await connection.execute(
             `SELECT * FROM Unit WHERE unit_id = ?`,
             [unit_id]
@@ -38,12 +36,10 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
-        // Proceed with deletion
         await connection.beginTransaction();
         await connection.execute(`DELETE FROM Unit WHERE unit_id = ?`, [unit_id]);
         await connection.commit();
 
-        console.log(`✅ Unit ${unit_id} deleted successfully.`);
         return NextResponse.json({
             success: true,
             message: "Unit listing deleted successfully",

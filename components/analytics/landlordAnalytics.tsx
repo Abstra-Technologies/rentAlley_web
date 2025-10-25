@@ -151,28 +151,28 @@ const LandlordPropertyChart = () => {
 
             {/* 🖥️ Desktop Analytics */}
             <div className="hidden sm:block">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
-                        <p className="text-gray-500 text-sm">Total Properties</p>
-                        <p className="text-2xl font-bold text-gray-800">{totalProperties}</p>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-emerald-500">
-                        <p className="text-gray-500 text-sm">Occupancy Rate</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                            {occupancyRate.toFixed(1)}%
-                        </p>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-teal-500">
-                        <p className="text-gray-500 text-sm">Total Tenants</p>
-                        <p className="text-2xl font-bold text-gray-800">{totalTenants}</p>
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
-                        <p className="text-gray-500 text-sm">Total Receivables</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                            ₱{totalReceivables.toFixed(2)}
-                        </p>
-                    </div>
-                </div>
+                {/*<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">*/}
+                {/*    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">*/}
+                {/*        <p className="text-gray-500 text-sm">Total Properties</p>*/}
+                {/*        <p className="text-2xl font-bold text-gray-800">{totalProperties}</p>*/}
+                {/*    </div>*/}
+                {/*    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-emerald-500">*/}
+                {/*        <p className="text-gray-500 text-sm">Occupancy Rate</p>*/}
+                {/*        <p className="text-2xl font-bold text-gray-800">*/}
+                {/*            {occupancyRate.toFixed(1)}%*/}
+                {/*        </p>*/}
+                {/*    </div>*/}
+                {/*    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-teal-500">*/}
+                {/*        <p className="text-gray-500 text-sm">Total Tenants</p>*/}
+                {/*        <p className="text-2xl font-bold text-gray-800">{totalTenants}</p>*/}
+                {/*    </div>*/}
+                {/*    <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">*/}
+                {/*        <p className="text-gray-500 text-sm">Total Receivables</p>*/}
+                {/*        <p className="text-2xl font-bold text-gray-800">*/}
+                {/*            ₱{totalReceivables.toFixed(2)}*/}
+                {/*        </p>*/}
+                {/*    </div>*/}
+                {/*</div>*/}
 
                 {/* Analytics Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
