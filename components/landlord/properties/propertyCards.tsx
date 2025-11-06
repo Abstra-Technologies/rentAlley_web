@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
     BuildingOffice2Icon,
     HomeIcon,
@@ -67,11 +66,12 @@ const PropertyCard = ({
 
     const statusConfig = getStatusConfig();
 
-    // Example analytics placeholders
-    const totalUnits = property.total_units || 10;
-    const occupiedUnits = property.occupied_units || 7;
-    const totalIncome = property.total_income || 45200;
-    const occupancyRate = Math.round((occupiedUnits / totalUnits) * 100);
+    // ✅ Real analytics from API
+    const totalUnits = property.total_units || 0;
+    const occupiedUnits = property.occupied_units || 0;
+    const totalIncome = property.total_income || 0;
+    const occupancyRate =
+        totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
 
     return (
         <div
@@ -79,7 +79,7 @@ const PropertyCard = ({
                 isLockedByPlan ? "opacity-70 pointer-events-none" : ""
             }`}
         >
-            {/* 📸 Compact Image */}
+            {/* 📸 Property Image */}
             <div className="relative flex-shrink-0 w-full sm:w-28 h-24 overflow-hidden rounded-md">
                 {property?.photos?.length ? (
                     <Image
@@ -94,7 +94,8 @@ const PropertyCard = ({
                         <BuildingOffice2Icon className="h-8 w-8 text-gray-400" />
                     </div>
                 )}
-                {/* Badge */}
+
+                {/* Verification Badge */}
                 <div className="absolute top-1.5 right-1.5">
                     <div
                         className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${statusConfig.badge}`}
@@ -105,7 +106,7 @@ const PropertyCard = ({
                 </div>
             </div>
 
-            {/* 🏠 Main Content Area */}
+            {/* 🏠 Main Info + Analytics */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-3">
                 {/* Property Info */}
                 <div className="flex-1 min-w-[180px]">
@@ -122,8 +123,9 @@ const PropertyCard = ({
                     </div>
                 </div>
 
-                {/* 📊 Analytics - evenly spread, inline */}
+                {/* 📊 Analytics */}
                 <div className="flex flex-1 justify-evenly sm:justify-around text-xs sm:text-sm">
+                    {/* Occupancy Rate */}
                     <div className="flex items-center gap-1.5">
                         <UsersIcon className="h-4 w-4 text-emerald-600" />
                         <div>
@@ -136,6 +138,7 @@ const PropertyCard = ({
                         </div>
                     </div>
 
+                    {/* Total Income */}
                     <div className="flex items-center gap-1.5">
                         <BanknotesIcon className="h-4 w-4 text-blue-600" />
                         <div>
@@ -149,7 +152,7 @@ const PropertyCard = ({
                     </div>
                 </div>
 
-                {/* ⚙️ Action Buttons */}
+                {/* ⚙️ Actions */}
                 <div className="flex flex-wrap gap-1.5 justify-end">
                     <button
                         onClick={(e) => handleView(property, e)}

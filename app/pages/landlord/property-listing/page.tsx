@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import usePropertyStore from "../../../../zustand/property/usePropertyStore";
+import usePropertyStore from "@/zustand/property/usePropertyStore";
 import Image from "next/image";
 import axios from "axios";
 import Swal from "sweetalert2";
