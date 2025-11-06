@@ -17,13 +17,9 @@ export default function PDCPerPropertyPage() {
 
     return (
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
-                {/* Back Navigation */}
-                <div className="mb-6">
-                    <BackButton label="Back to Property Overview" />
-                </div>
 
                 {/* Header */}
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-lg p-5 sm:p-6 mb-6">
+                <div className="bg-white border border-gray-100 rounded-2xl shadow-lg p-5 sm:p-6 mb-6 mt-4">
                     {/* 🔹 Header Row */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         {/* Left — Icon + Title */}
