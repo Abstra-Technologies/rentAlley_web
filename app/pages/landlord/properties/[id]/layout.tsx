@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { Users } from 'lucide-react';
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -77,6 +78,13 @@ export default function PropertyLayout({
       icon: FileText,
       description: "Post-dated checks",
     },
+      {
+          id: "Prospectives",
+          label: "Prospectives",
+          href: `/pages/landlord/properties/${id}/prospectives`,
+          icon: Users ,
+          description: "rental applications",
+      },
     {
       id: "documents",
       label: "Documents",
