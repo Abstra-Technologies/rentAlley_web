@@ -100,11 +100,12 @@ export default function InterestedTenants({ propertyId, landlordId }) {
         });
 
         router.push(
-            `/pages/landlord/properties/${propertyId}/prospectives/details?tenant_id=${tenant.tenant_id}`
+            `/pages/landlord/properties/${propertyId}/prospectives/details?tenant_id=${tenant.tenant_id}&unit_id=${tenant.unit_id}`
         );
 
         Swal.close();
     };
+
 
     const handleUpgradeClick = () => {
         Swal.fire({

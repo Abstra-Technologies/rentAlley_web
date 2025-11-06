@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
 
+// ✅ helper to safely decrypt JSON fields
 function safeDecrypt(value: any) {
     if (!value) return null;
     try {
@@ -38,6 +39,12 @@ export async function GET(req: NextRequest) {
         pt.created_at,
         pt.tenant_id,
         pt.proof_of_income,
+        un.unit_id,                -- ✅ from Unit table
+        un.unit_name,
+        p.property_id,
+        p.property_name,
+        p.city,
+        p.province,
         u.firstName,
         u.lastName,
         u.email,
@@ -47,11 +54,7 @@ export async function GET(req: NextRequest) {
         u.address,
         u.occupation,
         t.employment_type,
-        t.monthly_income,
-        un.unit_name,
-        p.property_name,
-        p.city,
-        p.province
+        t.monthly_income
       FROM ProspectiveTenant pt
       JOIN Tenant t ON pt.tenant_id = t.tenant_id
       JOIN User u ON t.user_id = u.user_id
@@ -91,7 +94,7 @@ export async function GET(req: NextRequest) {
             monthly_income: tenant.monthly_income,
         }));
 
-        // if tenant_id is provided, return single object instead of array
+        // ✅ if tenant_id provided → return single object
         if (tenant_id) {
             return NextResponse.json(decryptedRows[0], { status: 200 });
         }

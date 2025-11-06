@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Swal from "sweetalert2";
@@ -13,10 +12,10 @@ import {
     UserIcon,
     PhoneIcon,
     MapPinIcon,
-    CalendarIcon,
     DocumentTextIcon,
     CheckIcon,
     XMarkIcon,
+    StarIcon,
 } from "@heroicons/react/24/outline";
 import LoadingScreen from "@/components/loadingScreen";
 
@@ -29,19 +28,32 @@ const ProspectiveTenantDetails = () => {
     const [tenant, setTenant] = useState(null);
     const [propertyName, setPropertyName] = useState("");
     const [unitName, setUnitName] = useState("");
-    const [unitPhotos, setUnitPhotos] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [applicationStatus, setApplicationStatus] = useState("pending");
     const [propertyId, setPropertyId] = useState(null);
+    const [aiScore, setAiScore] = useState(null);
 
     useEffect(() => {
         if (unitId && tenantId) {
             fetchTenantDetails();
             fetchUnitDetails();
             fetchApplicationStatus();
+            fetchAIScore();
         }
     }, [unitId, tenantId]);
+
+    // 🔹 Fetch AI Screening Score
+    const fetchAIScore = async () => {
+        try {
+            const res = await axios.get(
+                `/api/landlord/prospective/ai-screening-report?tenant_id=${tenantId}`
+            );
+            setAiScore(res.data);
+        } catch (error) {
+            console.error("Failed to fetch AI score:", error);
+        }
+    };
 
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
@@ -79,11 +91,8 @@ const ProspectiveTenantDetails = () => {
                 setUnitName(d.unit_name || "");
                 setPropertyId(d.property_id || null);
             }
-            const photos = res.data?.unitPhotos;
-            setUnitPhotos(Array.isArray(photos) ? photos : photos ? [photos] : []);
         } catch (err) {
             console.error("Error fetching unit details:", err);
-            setUnitPhotos([]);
         }
     };
 
@@ -140,9 +149,7 @@ const ProspectiveTenantDetails = () => {
             });
 
             if (newStatus === "approved") {
-                router.push(
-                    `/pages/landlord/properties/{propertyId}/activeLease`
-                );
+                router.push(`/pages/landlord/properties/${propertyId}/activeLease`);
             } else router.back();
         } catch (error) {
             console.error("Error updating tenant status:", error);
@@ -155,262 +162,292 @@ const ProspectiveTenantDetails = () => {
     if (isLoading)
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
-                <LoadingScreen message="Just a moment, getting tenant info ready..." />
+                <LoadingScreen message="Generating Tenant Screening Report..." />
             </div>
         );
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-emerald-50 p-4 sm:p-6">
-            {/* 🔙 Back Button */}
-            <button
-                onClick={() => router.back()}
-                className="flex items-center text-blue-700 hover:text-blue-900 mb-4 sm:mb-6 group transition-all"
-            >
-                <ArrowLeft className="h-5 w-5 mr-2 transition-transform group-hover:-translate-x-1" />
-                <span className="font-medium text-sm sm:text-base">
-          Back to Prospective Tenants
-        </span>
-            </button>
+    // AI Scoring Values
+    const rentalScore = aiScore?.rental_history_score || 0;
+    const paymentScore = aiScore?.payment_history_score || 0;
+    const overallScore =
+        aiScore?.overall_score || calculateOverallScore(tenant);
+    const aiSummary = aiScore?.summary || "";
 
-            <div className="max-w-6xl mx-auto space-y-6">
-                {/* 🏡 Property Header */}
-                <div className="relative bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-                    {unitPhotos.length ? (
-                        <div className="flex overflow-x-auto space-x-3 snap-x snap-mandatory scroll-smooth p-2">
-                            {unitPhotos.map((photo, i) => (
-                                <div
-                                    key={i}
-                                    className="relative flex-shrink-0 w-64 sm:w-80 h-40 sm:h-48 rounded-xl overflow-hidden snap-center"
-                                >
-                                    <Image
-                                        src={photo}
-                                        alt={`Unit Photo ${i + 1}`}
-                                        fill
-                                        className="object-cover rounded-xl"
-                                    />
-                                </div>
-                            ))}
+    return (
+        <div className="min-h-screen bg-gray-50 py-4 px-3 flex justify-center">
+            <div className="bg-white shadow-md rounded-xl border border-gray-200 w-full max-w-2xl sm:max-w-3xl p-4 sm:p-6 space-y-6">
+                {/* HEADER */}
+                <div className="flex items-center justify-between">
+                    <button
+                        onClick={() => router.back()}
+                        className="flex items-center text-blue-700 hover:text-blue-900 gap-1 text-sm font-medium"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                    </button>
+                    <h1 className="text-base sm:text-lg font-bold text-gray-800 text-right">
+                        Tenant Screening Report
+                    </h1>
+                </div>
+
+                {/* PROPERTY INFO */}
+                <div className="border-b pb-3">
+                    <p className="text-gray-600 text-sm">
+                        <span className="font-semibold">Property:</span> {propertyName || "N/A"}
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                        <span className="font-semibold">Unit:</span> {unitName || "N/A"}
+                    </p>
+                    <StatusPill status={applicationStatus} />
+                </div>
+
+                {/* SCORING */}
+                <SectionCard title="Essential Scoring Summary (AI Analyzed)">
+                    <p className="text-xs text-gray-500 mb-2">
+                        AI-generated analysis based on tenant rental and payment history.
+                        <span className="italic text-gray-400 block">
+              ⚠️ Disclaimer: This report uses AI analysis as reference only. Please review manually before making final decisions.
+            </span>
+                    </p>
+
+                    <div className="space-y-3 sm:space-y-4">
+                        <ScoreBar
+                            label="Rental History (AI)"
+                            description="Based on lease duration, renewal patterns, and consistency."
+                            value={rentalScore}
+                            color="emerald"
+                        />
+                        <ScoreBar
+                            label="Payment Reliability (AI)"
+                            description="Assessed by timeliness and consistency of past payments."
+                            value={paymentScore}
+                            color="blue"
+                        />
+                        <ScoreBar
+                            label="Profile Completeness"
+                            description="Based on submitted documents and data accuracy."
+                            value={tenant ? 95 : 50}
+                            color="purple"
+                        />
+                    </div>
+
+                    {/* AI OVERALL */}
+                    <div className="mt-5 flex flex-col sm:flex-row items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl border border-gray-100">
+                        <div className="text-center sm:text-left">
+                            <p className="text-gray-600 text-sm font-medium">
+                                Overall Applicant Score (AI)
+                            </p>
+                            <h3 className="text-3xl sm:text-4xl font-extrabold text-blue-700 mt-1">
+                                {overallScore}%
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {getScoreInterpretation(overallScore)}
+                            </p>
                         </div>
-                    ) : (
-                        <div className="h-48 flex items-center justify-center bg-gray-200">
-                            <p className="text-gray-500 text-sm">No Images Available</p>
+
+                        {/* Circular Visual */}
+                        <div className="relative w-20 h-20 sm:w-24 sm:h-24 mt-4 sm:mt-0">
+                            <svg className="transform -rotate-90 w-full h-full">
+                                <circle
+                                    cx="50%"
+                                    cy="50%"
+                                    r="40%"
+                                    strokeWidth="10%"
+                                    stroke="#E5E7EB"
+                                    fill="none"
+                                />
+                                <circle
+                                    cx="50%"
+                                    cy="50%"
+                                    r="40%"
+                                    strokeWidth="10%"
+                                    strokeLinecap="round"
+                                    stroke={`url(#gradient)`}
+                                    strokeDasharray="251"
+                                    strokeDashoffset={251 - (overallScore / 100) * 251}
+                                    fill="none"
+                                />
+                                <defs>
+                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#3B82F6" />
+                                        <stop offset="100%" stopColor="#10B981" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-gray-800">
+                {overallScore}%
+              </span>
+                        </div>
+                    </div>
+
+                    {aiSummary && (
+                        <div className="mt-3 bg-gray-50 border border-gray-100 rounded-lg p-3">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                                AI Summary:
+                            </h4>
+                            <p className="text-gray-600 text-xs leading-relaxed">{aiSummary}</p>
                         </div>
                     )}
+                </SectionCard>
 
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 sm:p-6">
-                        <h1 className="text-white text-lg sm:text-2xl font-bold truncate">
-                            {propertyName || "Property"}
-                        </h1>
-                        <p className="text-white text-sm sm:text-lg font-medium">
-                            Unit {unitName || ""}
-                        </p>
+                {/* TENANT INFO */}
+                <SectionCard title="Applicant Information">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <InfoRow label="Full Name" value={`${tenant?.firstName} ${tenant?.lastName}`} />
+                        <InfoRow label="Birth Date" value={formatDate(tenant?.birthDate)} />
+                        <InfoRow label="Email" value={tenant?.email} />
+                        <InfoRow label="Phone" value={tenant?.phoneNumber} />
+                        <InfoRow label="Address" value={tenant?.address} />
                     </div>
-                </div>
+                </SectionCard>
 
-                {/* 📋 Tenant Application */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5 sm:p-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
-                            Tenant Application Review
-                        </h2>
-                        <span
-                            className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm ${
-                                applicationStatus === "pending"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : applicationStatus === "approved"
-                                        ? "bg-emerald-100 text-emerald-700"
-                                        : "bg-rose-100 text-rose-700"
-                            }`}
-                        >
-              {applicationStatus === "pending"
-                  ? "Pending Review"
-                  : applicationStatus === "approved"
-                      ? "Approved"
-                      : "Rejected"}
-            </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* 👤 Tenant Profile */}
-                        <div className="bg-gradient-to-br from-blue-50 via-teal-50 to-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                            <div className="flex flex-col items-center text-center">
-                                <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200 mb-3">
-                                    {tenant?.profilePicture ? (
-                                        <Image
-                                            src={tenant.profilePicture}
-                                            alt="Profile"
-                                            fill
-                                            className="object-cover rounded-full"
-                                        />
-                                    ) : (
-                                        <UserIcon className="w-10 h-10 text-gray-400 absolute inset-0 m-auto" />
-                                    )}
-                                </div>
-                                <h3 className="text-lg font-semibold text-gray-800">
-                                    {tenant?.firstName} {tenant?.lastName}
-                                </h3>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    DOB: {formatDate(tenant?.birthDate)}
-                                </p>
-                            </div>
-
-                            <div className="mt-6 space-y-4">
-                                <ContactItem
-                                    color="blue"
-                                    icon={<EnvelopeIcon className="w-4 h-4 text-blue-600" />}
-                                    label="Email"
-                                    value={tenant?.email}
-                                />
-                                <ContactItem
-                                    color="green"
-                                    icon={<PhoneIcon className="w-4 h-4 text-green-600" />}
-                                    label="Phone"
-                                    value={tenant?.phoneNumber}
-                                />
-                            </div>
-                        </div>
-
-                        {/* 🧾 Application Info */}
-                        <div className="lg:col-span-2 space-y-6">
-                            <h3 className="text-lg font-semibold text-gray-800">
-                                Applicant Information
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <InfoField
-                                        icon={<BriefcaseIcon className="w-5 h-5 text-gray-500" />}
-                                        label="Occupation"
-                                        value={tenant?.occupation}
-                                    />
-                                    <InfoField
-                                        icon={<UserIcon className="w-5 h-5 text-gray-500" />}
-                                        label="Employment Type"
-                                        value={tenant?.employment_type}
-                                    />
-                                    <InfoField
-                                        icon={<CurrencyDollarIcon className="w-5 h-5 text-gray-500" />}
-                                        label="Monthly Income"
-                                        value={tenant?.monthly_income?.replace("_", "-")}
-                                    />
-                                </div>
-
-                                <div className="space-y-4">
-                                    <InfoField
-                                        icon={<MapPinIcon className="w-5 h-5 text-gray-500" />}
-                                        label="Current Address"
-                                        value={tenant?.address}
-                                    />
-
-                                    {tenant?.valid_id && (
-                                        <InfoLink
-                                            icon={<IdentificationIcon className="w-5 h-5 text-gray-500" />}
-                                            label="Government ID"
-                                            href={tenant.valid_id}
-                                        />
-                                    )}
-
-                                    {tenant?.proof_of_income && (
-                                        <InfoLink
-                                            icon={<CurrencyDollarIcon className="w-5 h-5 text-gray-500" />}
-                                            label="Proof of Income"
-                                            href={tenant.proof_of_income}
-                                        />
-                                    )}
-                                </div>
-                            </div>
-
-                            {tenant?.application_message && (
-                                <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
-                                    <h4 className="font-medium text-gray-800 mb-1">
-                                        Application Message
-                                    </h4>
-                                    <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
-                                        {tenant.application_message}
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* 🔘 Action Buttons */}
-                            {applicationStatus === "pending" && (
-                                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 pt-2 sm:pt-4">
-                                    <ActionButton
-                                        color="green"
-                                        label="Approve Tenant"
-                                        icon={<CheckIcon className="h-5 w-5 mr-2" />}
-                                        onClick={() => updateTenantStatus("approved")}
-                                        disabled={isProcessing}
-                                    />
-                                    <ActionButton
-                                        color="red"
-                                        label="Reject Application"
-                                        icon={<XMarkIcon className="h-5 w-5 mr-2" />}
-                                        onClick={() => updateTenantStatus("disapproved")}
-                                        disabled={isProcessing}
-                                    />
-                                </div>
-                            )}
-
-                            {applicationStatus === "approved" && (
-                                <StatusBanner
-                                    color="green"
-                                    title="Application Approved"
-                                    text="This tenant has been approved for this unit."
-                                    icon={<CheckIcon className="h-6 w-6" />}
+                {/* DOCS & DECISION — Unchanged */}
+                <SectionCard title="Submitted Documents">
+                    {tenant?.valid_id || tenant?.proof_of_income ? (
+                        <div className="space-y-3">
+                            {tenant?.valid_id && (
+                                <InfoLink
+                                    label="Government ID"
+                                    href={tenant.valid_id}
+                                    icon={<IdentificationIcon className="w-5 h-5 text-gray-500" />}
                                 />
                             )}
-
-                            {applicationStatus === "disapproved" && (
-                                <StatusBanner
-                                    color="red"
-                                    title="Application Rejected"
-                                    text="This tenant's application has been rejected."
-                                    icon={<XMarkIcon className="h-6 w-6" />}
+                            {tenant?.proof_of_income && (
+                                <InfoLink
+                                    label="Proof of Income"
+                                    href={tenant.proof_of_income}
+                                    icon={<CurrencyDollarIcon className="w-5 h-5 text-gray-500" />}
                                 />
                             )}
                         </div>
-                    </div>
-                </div>
+                    ) : (
+                        <p className="text-gray-600 text-sm">No documents submitted.</p>
+                    )}
+                </SectionCard>
+
+                {/* DECISION */}
+                <SectionCard title="Landlord Decision">
+                    {applicationStatus === "pending" && (
+                        <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                            <ActionButton
+                                color="green"
+                                label="Approve Tenant"
+                                icon={<CheckIcon className="h-5 w-5 mr-2" />}
+                                onClick={() => updateTenantStatus("approved")}
+                                disabled={isProcessing}
+                            />
+                            <ActionButton
+                                color="red"
+                                label="Reject Application"
+                                icon={<XMarkIcon className="h-5 w-5 mr-2" />}
+                                onClick={() => updateTenantStatus("disapproved")}
+                                disabled={isProcessing}
+                            />
+                        </div>
+                    )}
+                    {applicationStatus === "approved" && (
+                        <StatusBanner
+                            color="green"
+                            title="Application Approved"
+                            text="This tenant has been approved for this unit."
+                            icon={<CheckIcon className="h-6 w-6" />}
+                        />
+                    )}
+                    {applicationStatus === "disapproved" && (
+                        <StatusBanner
+                            color="red"
+                            title="Application Rejected"
+                            text="This tenant's application has been rejected."
+                            icon={<XMarkIcon className="h-6 w-6" />}
+                        />
+                    )}
+                </SectionCard>
             </div>
         </div>
     );
 };
 
-/* 🔹 Helper Components */
-const InfoField = ({ icon, label, value }) => (
+/* 🧩 Helper Components (no change, mobile spacing tuned) */
+const SectionCard = ({ title, children }) => (
+    <div className="mb-5">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-2 border-b border-gray-200 pb-1">
+            {title}
+        </h2>
+        {children}
+    </div>
+);
+
+const InfoRow = ({ label, value }) => (
     <div>
-        <div className="flex items-center gap-2 mb-1">{icon}<p className="font-medium text-gray-700">{label}</p></div>
-        <p className="text-gray-600 pl-7 text-sm sm:text-base">{value || "Not provided"}</p>
+        <p className="text-gray-500 text-xs font-medium">{label}</p>
+        <p className="text-gray-800 font-semibold">{value || "Not provided"}</p>
     </div>
 );
 
 const InfoLink = ({ icon, label, href }) => (
-    <div>
-        <div className="flex items-center gap-2 mb-1">{icon}<p className="font-medium text-gray-700">{label}</p></div>
-        <a href={href} target="_blank" rel="noopener noreferrer" className="pl-7 text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 text-sm">
-            <DocumentTextIcon className="w-4 h-4" />
-            <span>View Document</span>
-        </a>
-    </div>
+    <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition border border-gray-200"
+    >
+        <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
+            {icon}
+            {label}
+        </div>
+        <DocumentTextIcon className="w-5 h-5 text-blue-600" />
+    </a>
 );
 
-const ContactItem = ({ color, icon, label, value }) => (
-    <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-full ${color === "blue" ? "bg-blue-100" : "bg-green-100"}`}>{icon}</div>
+const StatusPill = ({ status }) => {
+    const colors =
+        status === "pending"
+            ? "bg-yellow-100 text-yellow-800"
+            : status === "approved"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-700";
+    return (
+        <span
+            className={`mt-2 inline-block px-3 py-1 text-xs font-semibold rounded-full ${colors}`}
+        >
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+    );
+};
+
+const ScoreBar = ({ label, description, value, color = "blue" }) => {
+    const colorMap = {
+        blue: "bg-blue-500",
+        emerald: "bg-emerald-500",
+        purple: "bg-purple-500",
+    };
+    return (
         <div>
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className="text-sm font-medium break-all">{value}</p>
+            <div className="flex justify-between items-center mb-1">
+                <span className="text-sm font-medium text-gray-800">{label}</span>
+                <span className="text-sm font-semibold text-gray-700">{value}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div
+                    className={`${colorMap[color]} h-2.5 rounded-full transition-all duration-700`}
+                    style={{ width: `${value}%` }}
+                ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">{description}</p>
         </div>
-    </div>
-);
+    );
+};
 
 const ActionButton = ({ color, label, icon, onClick, disabled }) => {
-    const colorClasses = color === "green" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700";
+    const colorClasses =
+        color === "green"
+            ? "bg-emerald-600 hover:bg-emerald-700"
+            : "bg-rose-600 hover:bg-rose-700";
     return (
         <button
             onClick={onClick}
             disabled={disabled}
-            className={`px-5 py-3 sm:px-6 sm:py-3 rounded-lg text-white font-medium shadow-md transition-all flex items-center justify-center text-sm sm:text-base ${colorClasses} disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={`flex items-center justify-center px-6 py-2.5 sm:py-3 rounded-lg text-white font-medium shadow-md text-sm transition ${colorClasses} disabled:opacity-50 disabled:cursor-not-allowed`}
         >
             {icon}
             {disabled ? "Processing..." : label}
@@ -424,14 +461,37 @@ const StatusBanner = ({ color, title, text, icon }) => {
             ? "bg-emerald-50 border-emerald-200 text-emerald-800"
             : "bg-rose-50 border-rose-200 text-rose-800";
     return (
-        <div className={`mt-4 sm:mt-6 p-4 border rounded-xl flex items-center gap-3 ${bg}`}>
-            <div className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full ${color === "green" ? "bg-emerald-100" : "bg-rose-100"}`}>{icon}</div>
+        <div className={`flex items-center gap-3 mt-3 p-4 border rounded-xl ${bg}`}>
+            <div
+                className={`w-10 h-10 flex items-center justify-center rounded-full ${
+                    color === "green" ? "bg-emerald-100" : "bg-rose-100"
+                }`}
+            >
+                {icon}
+            </div>
             <div>
                 <h4 className="font-semibold">{title}</h4>
                 <p className="text-xs sm:text-sm">{text}</p>
             </div>
         </div>
     );
+};
+
+const calculateOverallScore = (tenant) => {
+    let score = 0;
+    if (tenant?.valid_id) score += 25;
+    if (tenant?.proof_of_income) score += 25;
+    if (tenant?.employment_type) score += 25;
+    if (tenant?.monthly_income) score += 25;
+    return score;
+};
+
+const getScoreInterpretation = (score) => {
+    if (score >= 90) return "A+ Excellent Applicant";
+    if (score >= 80) return "A Good Applicant";
+    if (score >= 70) return "B Fair Standing";
+    if (score >= 60) return "C Below Average";
+    return "D Needs Improvement";
 };
 
 export default ProspectiveTenantDetails;

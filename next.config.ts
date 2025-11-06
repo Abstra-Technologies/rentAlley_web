@@ -47,6 +47,11 @@ const baseConfig: NextConfig = {
             },
             {
                 protocol: "https",
+                hostname: "cdn-icons-png.flaticon.com",
+                pathname: "/**",
+            },
+            {
+                protocol: "https",
                 hostname: "photos.app.goo.gl",
             },
         ],
