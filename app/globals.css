@@ -1,0 +1,503 @@
+@import "leaflet/dist/leaflet.css";
+@import "leaflet.markercluster/dist/MarkerCluster.css";
+@import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+@import "@fortawesome/fontawesome-svg-core/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #ffffff;
+    --foreground: #1a1818;
+  }
+}
+
+@font-face {
+  font-family: "Typographica";
+  src: url("../public/fonts/typographica.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.typographica {
+  font-family: "Typographica", sans-serif;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* ===================================
+   CUSTOM COMPONENT CLASSES
+   =================================== */
+
+@layer components {
+  /* ===================================
+     PAGE LAYOUT COMPONENTS
+     =================================== */
+
+  /* Main content wrapper with sidebar offset */
+  .page-content-wrapper {
+    @apply flex-1 md:ml-64;
+  }
+
+  /* Sticky top navigation bar */
+  .page-header {
+    @apply sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm;
+  }
+
+  .page-header-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .page-header-inner {
+    @apply flex items-center justify-between h-16;
+  }
+
+  /* Header title section */
+  .page-header-title-section {
+    @apply flex items-center gap-2 sm:gap-3;
+  }
+
+  .page-header-icon {
+    @apply w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-md;
+  }
+
+  .page-header-icon svg {
+    @apply w-5 h-5 sm:w-6 sm:h-6 text-white;
+  }
+
+  .page-header-title {
+    @apply text-lg sm:text-xl font-bold text-gray-900;
+  }
+
+  .page-header-subtitle {
+    @apply text-xs text-gray-500 font-medium hidden sm:block;
+  }
+
+  /* Main content area */
+  .page-main-content {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8;
+  }
+
+  /* ===================================
+     CARD COMPONENTS
+     =================================== */
+
+  /* Standard white card */
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300;
+  }
+
+  .card-elevated {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300;
+  }
+
+  .card-padding {
+    @apply p-4 sm:p-5;
+  }
+
+  .card-padding-lg {
+    @apply p-5 sm:p-6 md:p-8;
+  }
+
+  /* ===================================
+     SECTION COMPONENTS
+     =================================== */
+
+  /* Section header with accent bar */
+  .section-header {
+    @apply flex items-center gap-2 mb-5;
+  }
+
+  .section-header-accent {
+    @apply w-1 h-6 bg-gradient-to-b from-blue-500 to-emerald-500 rounded-full;
+  }
+
+  .section-header-title {
+    @apply text-lg font-bold text-gray-900;
+  }
+
+  /* ===================================
+     BADGE COMPONENTS
+     =================================== */
+
+  /* Status badge */
+  .status-badge {
+    @apply flex items-center gap-2 px-3 py-1.5 rounded-lg border font-semibold text-sm;
+  }
+
+  .status-badge-pending {
+    @apply bg-amber-50 border-amber-200 text-amber-700;
+  }
+
+  .status-badge-success {
+    @apply bg-emerald-50 border-emerald-200 text-emerald-700;
+  }
+
+  .status-badge-error {
+    @apply bg-red-50 border-red-200 text-red-700;
+  }
+
+  .status-badge-info {
+    @apply bg-blue-50 border-blue-200 text-blue-700;
+  }
+
+  .status-badge-neutral {
+    @apply bg-gray-50 border-gray-200 text-gray-700;
+  }
+
+  /* ===================================
+     BUTTON COMPONENTS
+     =================================== */
+
+  /* Primary gradient button */
+  .btn-gradient {
+    @apply flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 text-white rounded-lg transition-all font-semibold text-sm shadow-md hover:shadow-lg;
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all font-semibold text-sm border border-gray-200;
+  }
+
+  /* Danger button */
+  .btn-danger {
+    @apply flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all font-semibold text-sm shadow-md hover:shadow-lg;
+  }
+
+  /* Icon button */
+  .btn-icon {
+    @apply p-2 rounded-lg hover:bg-gray-100 transition-colors;
+  }
+
+  /* ===================================
+     STAT CARD COMPONENTS
+     =================================== */
+
+  .stat-card {
+    @apply bg-white rounded-xl p-4 sm:p-5 border-2 border-gray-100 hover:border-blue-200 transition-all;
+  }
+
+  .stat-card-header {
+    @apply flex items-center justify-between;
+  }
+
+  .stat-card-label {
+    @apply text-xs sm:text-sm text-gray-600 font-medium;
+  }
+
+  .stat-card-value {
+    @apply text-xl sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1;
+  }
+
+  .stat-card-icon-wrapper {
+    @apply p-2 sm:p-3 rounded-lg;
+  }
+
+  /* Stat card variants */
+  .stat-card-primary {
+    @apply border-blue-100 hover:border-blue-200;
+  }
+
+  .stat-card-primary .stat-card-icon-wrapper {
+    @apply bg-blue-50;
+  }
+
+  .stat-card-success {
+    @apply border-emerald-100 hover:border-emerald-200;
+  }
+
+  .stat-card-success .stat-card-label {
+    @apply text-emerald-700;
+  }
+
+  .stat-card-success .stat-card-value {
+    @apply text-emerald-600;
+  }
+
+  .stat-card-success .stat-card-icon-wrapper {
+    @apply bg-emerald-50;
+  }
+
+  /* ===================================
+     GRADIENT UTILITIES (EXISTING)
+     =================================== */
+
+  .gradient-header {
+    @apply text-4xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent select-none;
+  }
+
+  .gardient-subtitle {
+    @apply text-xl text-gray-700 leading-tight select-none;
+  }
+
+  .gradient-hero {
+    @apply text-3xl font-semibold mb-4 bg-gradient-to-r from-blue-700 via-emerald-600 to-blue-500 bg-clip-text text-transparent;
+  }
+}
+
+/* ===================================
+   SCROLLBAR UTILITIES (EXISTING)
+   =================================== */
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ===================================
+   ANIMATIONS (EXISTING)
+   =================================== */
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 4s ease infinite;
+}
+
+@keyframes gradient-border {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-border {
+  background-size: 200% 200%;
+  animation: gradient-border 4s ease infinite;
+}
+
+@keyframes gradient-x {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 3s ease infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+/* ===================================
+   LEAFLET MAP CUSTOMIZATIONS (EXISTING)
+   =================================== */
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  width: 240px !important;
+}
+
+.leaflet-popup-tip-container {
+  display: none;
+}
+
+.leaflet-marker-icon {
+  transition: transform 0.2s ease;
+}
+
+.leaflet-marker-icon:hover {
+  transform: scale(1.1);
+  z-index: 1000 !important;
+}
+
+.custom-marker-icon {
+  background: none;
+  border: none;
+  transition: transform 0.2s ease;
+}
+
+.custom-marker-icon:hover {
+  transform: scale(1.15);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  z-index: 1000 !important;
+}
+
+.custom-unit-marker {
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.custom-unit-marker:hover {
+  transform: scale(1.15);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  z-index: 1000;
+}
+
+.marker-cluster-wrapper {
+  background: transparent !important;
+}
+
+.marker-cluster-custom {
+  background: linear-gradient(135deg, #3b82f6, #10b981);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 3px solid white;
+  transition: transform 0.2s ease;
+}
+
+.marker-cluster-custom:hover {
+  transform: scale(1.1);
+}
+
+.marker-cluster-inner {
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.marker-cluster-small {
+  width: 40px;
+  height: 40px;
+}
+
+.marker-cluster-medium {
+  width: 50px;
+  height: 50px;
+}
+
+.marker-cluster-large {
+  width: 60px;
+  height: 60px;
+}
+
+.custom-leaflet-popup .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.custom-leaflet-popup .leaflet-popup-content {
+  margin: 0;
+  width: 240px !important;
+}
+
+.custom-popup-content {
+  padding: 16px;
+}
+
+.popup-header {
+  margin-bottom: 8px;
+}
+
+.popup-unit-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #3b82f6, #10b981);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.popup-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 8px 0 4px 0;
+}
+
+.popup-type {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.popup-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 12px;
+}
+
+.popup-price span {
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.popup-button {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #3b82f6, #10b981);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.popup-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* ===================================
+   GOOGLE TRANSLATE FIXES (EXISTING)
+   =================================== */
+
+.goog-te-banner-frame.skiptranslate,
+.goog-logo-link,
+.goog-te-gadget {
+  display: none !important;
+}
