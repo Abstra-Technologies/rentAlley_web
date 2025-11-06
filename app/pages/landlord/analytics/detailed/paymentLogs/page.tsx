@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 import useAuthStore from "@/zustand/authStore";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
 import PaymentLogsPage from "@/components/landlord/analytics/detailed/paymentLogs";
 
 export default function PaymentLogs() {
