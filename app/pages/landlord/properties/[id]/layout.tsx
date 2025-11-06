@@ -48,74 +48,72 @@ export default function PropertyLayout({
   const city = property?.city || "";
   const province = property?.province || "";
 
-  // ✅ FIXED: Added unique IDs to each menu item
-  const menu = [
-    {
-      id: "units",
-      label: "Units",
-      href: `/pages/landlord/properties/${id}`,
-      icon: Home,
-      description: "Manage property units",
-    },
-    {
-      id: "active-lease",
-      label: "Active Lease",
-      href: `/pages/landlord/properties/${id}/activeLease`,
-      icon: ScrollText,
-      description: "View current leases",
-    },
-    {
-      id: "billing",
-      label: "Billing",
-      href: `/pages/landlord/properties/${id}/billing`,
-      icon: CreditCard,
-      description: "Manage payments",
-    },
-    {
-      id: "pdc-management",
-      label: "PDC Management",
-      href: `/pages/landlord/properties/${id}/pdcManagement`,
-      icon: FileText,
-      description: "Post-dated checks",
-    },
-      {
-          id: "Prospectives",
-          label: "Prospectives",
-          href: `/pages/landlord/properties/${id}/prospectives`,
-          icon: Users ,
-          description: "rental applications",
-      },
-    {
-      id: "documents",
-      label: "Documents",
-      href: `/pages/landlord/properties/${id}/documents`,
-      icon: FileText,
-      description: "Property documents",
-    },
-    {
-      id: "analytics",
-      label: "Analytics",
-      href: `/pages/landlord/properties/${id}/analytics`,
-      icon: BarChart3,
-      description: "Performance metrics",
-    },
-    {
-      id: "utilities",
-      label: "Utilities",
-      href: `/pages/landlord/properties/${id}/utilities`,
-      icon: Zap,
-      description: "Utility management",
-    },
-    {
-      id: "configuration",
-      label: "Configuration",
-      href: `/pages/landlord/properties/${id}/configurations`,
-      icon: SlidersHorizontal,
-      description: "Property settings",
-    },
-  ];
+    const menu = [
+        {
+            id: "units",
+            label: "Units",
+            href: `/pages/landlord/properties/${id}`,
+            icon: Home,
+            description: "View and organize your property’s available spaces",
+        },
+        {
+            id: "active-lease",
+            label: "Active Lease",
+            href: `/pages/landlord/properties/${id}/activeLease`,
+            icon: ScrollText,
+            description: "Monitor ongoing rental agreements and tenants",
+        },
+        {
+            id: "billing",
+            label: "Billing",
+            href: `/pages/landlord/properties/${id}/billing`,
+            icon: CreditCard,
+            description: "Track and manage monthly rent and utility charges",
+        },
+        {
+            id: "pdc-management",
+            label: "PDC Management",
+            href: `/pages/landlord/properties/${id}/pdcManagement`,
+            icon: FileText,
+            description: "Handle and record post-dated checks with ease",
+        },
+        {
+            id: "Prospectives",
+            label: "Prospectives",
+            href: `/pages/landlord/properties/${id}/prospectives`,
+            icon: Users,
+            description: "Review and approve incoming rental applications",
+        },
+        {
+            id: "documents",
+            label: "Documents",
+            href: `/pages/landlord/properties/${id}/documents`,
+            icon: FileText,
+            description: "Store and access property-related files securely",
+        },
+        {
+            id: "analytics",
+            label: "Analytics",
+            href: `/pages/landlord/properties/${id}/analytics`,
+            icon: BarChart3,
+            description: "Gain insights from your property’s performance data",
+        },
+        {
+            id: "utilities",
+            label: "Utilities",
+            href: `/pages/landlord/properties/${id}/utilities`,
+            icon: Zap,
+            description: "Set and monitor sub-meter readings and rates",
+        },
+        {
+            id: "configuration",
+            label: "Configuration",
+            href: `/pages/landlord/properties/${id}/configurations`,
+            icon: SlidersHorizontal,
+            description: "Adjust settings and fine-tune property preferences",
+        },
+    ];
 
-  // Close sidebar when route changes on mobile
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname]);
