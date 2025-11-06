@@ -137,17 +137,10 @@ export default function InterestedTenants({ propertyId, landlordId }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
-                    <button
-                        className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition"
-                        onClick={() => router.back()}
-                    >
-                        <AiOutlineArrowLeft className="text-xl" />
-                        <span className="font-medium">Back to Properties</span>
-                    </button>
 
                     <div className="text-center sm:text-right">
                         <h2 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-blue-600 to-emerald-500 bg-clip-text text-transparent">
-                            Interested Tenants
+                            Prospective Tenants
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
                             Tenants who applied for any unit under your property.

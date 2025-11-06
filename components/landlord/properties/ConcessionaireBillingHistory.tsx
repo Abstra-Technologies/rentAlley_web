@@ -115,14 +115,10 @@ export default function ConcessionaireBillingHistory({
 
     return (
         <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-3 sm:p-6 overflow-hidden">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2 flex items-center gap-2">
-                🧾 Concessionaire Utility Cost History
-            </h2>
+
             <p className="text-sm text-gray-600 mb-4 sm:mb-6">
-                These records reflect utility costs inputted from concessionaires such as{" "}
-                <span className="font-medium text-gray-800">Meralco</span>,{" "}
-                <span className="font-medium text-gray-800">Maynilad</span>, or other local providers.{" "}
-                They serve as the basis for computing the submetered water and electricity charges
+                These records reflect utility costs inputted from your utility providers.{" "}
+                It also serve as the basis for computing the submetered water and electricity charges
                 applied to each tenant unit.
             </p>
 

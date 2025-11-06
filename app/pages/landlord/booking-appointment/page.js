@@ -597,10 +597,10 @@ const BookingAppointment = () => {
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-              Booking Calendar
+             Calendar
             </h1>
             <p className="text-gray-600">
-              Manage property visits and appointment requests
+              Manage property visits requests
             </p>
           </div>
 

@@ -92,9 +92,9 @@ export default function PropertyLayout({
             description: "Access property files",
         },
         {
-            id: "analytics",
-            label: "Analytics",
-            href: `/pages/landlord/properties/${id}/analytics`,
+            id: "Reports",
+            label: "Reports",
+            href: `/pages/landlord/properties/${id}/reports`,
             icon: BarChart3,
             description: "View performance data",
         },

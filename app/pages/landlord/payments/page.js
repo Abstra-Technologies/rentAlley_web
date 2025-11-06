@@ -41,7 +41,7 @@ export default function PaymentsPage() {
                 Property Payments
               </h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                Track tenant payments, deposits, and pending reviews
+                  View and oversee tenant payment records
               </p>
             </div>
           </div>

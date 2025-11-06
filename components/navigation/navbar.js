@@ -179,16 +179,9 @@ const Navbar = () => {
                   ? "/pages/landlord/dashboard"
                   : "/"
               }
-              className="flex items-center space-x-2 transition-opacity hover:opacity-90"
+              className="flex text-3xl items-center space-x-2 transition-opacity hover:opacity-90 text-white font-bold"
             >
-              <Image
-                src="/upkyp.png"
-                alt="UpKyp Logo"
-                width={120}
-                height={30}
-                priority
-                className="h-8 w-auto"
-              />
+            Upkyp
             </Link>
 
             <div className="flex items-center space-x-1 ml-auto">
