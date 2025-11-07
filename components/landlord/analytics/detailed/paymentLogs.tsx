@@ -261,38 +261,78 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: string }
 
                 {/* ===== Right: Details Panel ===== */}
                 {selectedPayment && (
-                    <div className="lg:w-1/3 bg-white border border-gray-200 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+                    <div className="lg:w-1/3 bg-white border border-gray-200 shadow-sm rounded-2xl p-5 flex flex-col justify-between relative">
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setSelectedPayment(null)}
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition"
+                            title="Close details"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
                         <div>
-                            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            {/* Header */}
+                            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2 pr-8">
                                 <FileText className="w-5 h-5 text-blue-600" /> Payment Details
                             </h2>
 
+                            {/* Details */}
                             <div className="space-y-3 text-sm text-gray-700">
+                                {/* Basic IDs */}
                                 <p>
-                                    <span className="font-medium text-gray-500">Reference No:</span>{" "}
+                                    <span className="font-medium text-gray-500">Payment ID:</span>{" "}
                                     {selectedPayment.payment_id}
                                 </p>
                                 <p>
+                                    <span className="font-medium text-gray-500">Bill ID:</span>{" "}
+                                    {selectedPayment.bill_id || "—"}
+                                </p>
+                                <p>
+                                    <span className="font-medium text-gray-500">Agreement ID:</span>{" "}
+                                    {selectedPayment.agreement_id || "—"}
+                                </p>
+
+                                {/* Linked Info */}
+                                <p>
                                     <span className="font-medium text-gray-500">Tenant:</span>{" "}
-                                    {selectedPayment.tenant_name}
+                                    {selectedPayment.tenant_name || "N/A"}
                                 </p>
                                 <p>
                                     <span className="font-medium text-gray-500">Property:</span>{" "}
-                                    {selectedPayment.property_name}
+                                    {selectedPayment.property_name || "N/A"}
                                 </p>
                                 <p>
                                     <span className="font-medium text-gray-500">Unit:</span>{" "}
-                                    {selectedPayment.unit_name}
+                                    {selectedPayment.unit_name || "N/A"}
                                 </p>
+
+                                {/* Payment Type and Method */}
                                 <p className="flex items-center gap-1">
                                     <CreditCard className="w-4 h-4 text-gray-500" />{" "}
-                                    {selectedPayment.payment_type}
+                                    {selectedPayment.payment_type === "billing"
+                                        ? "Billing Payment"
+                                        : "Initial Payment"}
                                 </p>
+                                <p>
+                                    <span className="font-medium text-gray-500">Payment Method ID:</span>{" "}
+                                    {selectedPayment.payment_method_id || "—"}
+                                </p>
+
+                                {/* Amount and Status */}
                                 <p>
                                     <span className="font-medium text-gray-500">Amount Paid:</span>{" "}
                                     <span className="text-emerald-700 font-semibold">
-                    {formatCurrency(selectedPayment.amount_paid)}
-                  </span>
+            {formatCurrency(selectedPayment.amount_paid)}
+          </span>
                                 </p>
                                 <p>
                                     <span className="font-medium text-gray-500">Status:</span>{" "}
@@ -302,21 +342,57 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: string }
                                                 ? "bg-emerald-100 text-emerald-700"
                                                 : selectedPayment.payment_status === "pending"
                                                     ? "bg-yellow-100 text-yellow-700"
-                                                    : "bg-red-100 text-red-700"
+                                                    : selectedPayment.payment_status === "failed"
+                                                        ? "bg-red-100 text-red-700"
+                                                        : "bg-gray-100 text-gray-600"
                                         }`}
                                     >
-                    {selectedPayment.payment_status}
-                  </span>
+            {selectedPayment.payment_status}
+          </span>
                                 </p>
+
+                                {/* References */}
+                                <p>
+                                    <span className="font-medium text-gray-500">Receipt Reference:</span>{" "}
+                                    {selectedPayment.receipt_reference || "—"}
+                                </p>
+
+                                {/* Dates */}
                                 <p className="flex items-center gap-1">
                                     <CalendarClock className="w-4 h-4 text-gray-500" />{" "}
+                                    <span className="font-medium text-gray-500">Payment Date:</span>{" "}
                                     {formatDate(selectedPayment.payment_date)}
                                 </p>
+                                <p>
+                                    <span className="font-medium text-gray-500">Created At:</span>{" "}
+                                    {formatDate(selectedPayment.created_at)}
+                                </p>
+                                <p>
+                                    <span className="font-medium text-gray-500">Last Updated:</span>{" "}
+                                    {formatDate(selectedPayment.updated_at)}
+                                </p>
+
+                                {/* Proof of Payment */}
+                                {selectedPayment.proof_of_payment && (
+                                    <div className="mt-3">
+            <span className="font-medium text-gray-500 block mb-1">
+              Proof of Payment:
+            </span>
+                                        <a
+                                            href={selectedPayment.proof_of_payment}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 hover:underline text-sm"
+                                        >
+                                            View uploaded file
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         </div>
-
                     </div>
                 )}
+
             </div>
         </div>
     );
