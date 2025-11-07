@@ -2,183 +2,200 @@
 import React from "react";
 import Image from "next/image";
 import {
-    BuildingOffice2Icon,
-    HomeIcon,
-    PencilSquareIcon,
-    TrashIcon,
-    MapPinIcon,
-    CheckCircleIcon,
-    ClockIcon,
-    XCircleIcon,
-    LockClosedIcon,
-    UsersIcon,
-    BanknotesIcon,
-} from "@heroicons/react/24/outline";
+  Building2,
+  MapPin,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Lock,
+  Eye,
+  Edit2,
+  Trash2,
+  Users,
+  DollarSign,
+} from "lucide-react";
 
 const PropertyCard = ({
-                          property,
-                          index,
-                          subscription,
-                          totalProperties,
-                          handleView,
-                          handleEdit,
-                          handleDelete,
-                      }: any) => {
-    const maxProperties = subscription?.listingLimits?.maxProperties || 0;
-    const isLockedByPlan =
-        subscription && totalProperties > maxProperties && index + 1 > maxProperties;
+  property,
+  index,
+  subscription,
+  totalProperties,
+  handleView,
+  handleEdit,
+  handleDelete,
+}: any) => {
+  const maxProperties = subscription?.listingLimits?.maxProperties || 0;
+  const isLockedByPlan =
+    subscription &&
+    totalProperties > maxProperties &&
+    index + 1 > maxProperties;
 
-    const isRejected = property?.verification_status === "Rejected";
-    const isPending = property?.verification_status === "Pending";
-    const isVerified = property?.verification_status === "Verified";
+  const isRejected = property?.verification_status === "Rejected";
+  const isPending = property?.verification_status === "Pending";
+  const isVerified = property?.verification_status === "Verified";
 
-    const getStatusConfig = () => {
-        if (isLockedByPlan)
-            return {
-                badge: "bg-gray-200 text-gray-700",
-                icon: <LockClosedIcon className="w-4 h-4" />,
-                text: "Locked",
-            };
-        if (isRejected)
-            return {
-                badge: "bg-red-100 text-red-700",
-                icon: <XCircleIcon className="w-4 h-4" />,
-                text: "Rejected",
-            };
-        if (isPending)
-            return {
-                badge: "bg-yellow-100 text-yellow-700",
-                icon: <ClockIcon className="w-4 h-4" />,
-                text: "Pending",
-            };
-        if (isVerified)
-            return {
-                badge: "bg-green-100 text-green-700",
-                icon: <CheckCircleIcon className="w-4 h-4" />,
-                text: "Verified",
-            };
-        return {
-            badge: "bg-gray-100 text-gray-600",
-            icon: <ClockIcon className="w-4 h-4" />,
-            text: "Unknown",
-        };
+  const getStatusConfig = () => {
+    if (isLockedByPlan)
+      return {
+        badge: "bg-gray-100 text-gray-700 border-gray-200",
+        icon: <Lock className="w-3 h-3" />,
+        text: "Locked",
+      };
+    if (isRejected)
+      return {
+        badge: "bg-red-50 text-red-700 border-red-200",
+        icon: <XCircle className="w-3 h-3" />,
+        text: "Rejected",
+      };
+    if (isPending)
+      return {
+        badge: "bg-amber-50 text-amber-700 border-amber-200",
+        icon: <Clock className="w-3 h-3" />,
+        text: "Pending",
+      };
+    if (isVerified)
+      return {
+        badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        icon: <CheckCircle className="w-3 h-3" />,
+        text: "Verified",
+      };
+    return {
+      badge: "bg-gray-50 text-gray-600 border-gray-200",
+      icon: <Clock className="w-3 h-3" />,
+      text: "Unknown",
     };
+  };
 
-    const statusConfig = getStatusConfig();
+  const statusConfig = getStatusConfig();
 
-    // ✅ Real analytics from API
-    const totalUnits = property.total_units || 0;
-    const occupiedUnits = property.occupied_units || 0;
-    const totalIncome = property.total_income || 0;
-    const occupancyRate =
-        totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
 
-    return (
-        <div
-            className={`flex flex-col sm:flex-row items-center gap-3 w-full bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 p-3 ${
-                isLockedByPlan ? "opacity-70 pointer-events-none" : ""
-            }`}
-        >
-            {/* 📸 Property Image */}
-            <div className="relative flex-shrink-0 w-full sm:w-28 h-24 overflow-hidden rounded-md">
-                {property?.photos?.length ? (
-                    <Image
-                        src={property.photos[0].photo_url}
-                        alt={property.property_name || "Property image"}
-                        width={300}
-                        height={200}
-                        className="object-cover w-full h-full"
-                    />
-                ) : (
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                        <BuildingOffice2Icon className="h-8 w-8 text-gray-400" />
-                    </div>
-                )}
+  const totalUnits = property.total_units || 0;
+  const occupiedUnits = property.occupied_units || 0;
+  const totalIncome = property.total_income || 0;
+  const occupancyRate =
+    totalUnits > 0 ? Math.round((occupiedUnits / totalUnits) * 100) : 0;
 
-                {/* Verification Badge */}
-                <div className="absolute top-1.5 right-1.5">
-                    <div
-                        className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${statusConfig.badge}`}
-                    >
-                        {statusConfig.icon}
-                        <span>{statusConfig.text}</span>
-                    </div>
-                </div>
+  return (
+    <div
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden ${
+        isLockedByPlan ? "opacity-60 pointer-events-none" : ""
+      }`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4">
+        {/* Image Section */}
+        <div className="relative flex-shrink-0 w-full sm:w-24 h-24 rounded-lg overflow-hidden">
+          {property?.photos?.length ? (
+            <Image
+              src={property.photos[0].photo_url}
+              alt={property.property_name || "Property image"}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <Building2 className="h-8 w-8 text-gray-400" />
             </div>
+          )}
 
-            {/* 🏠 Main Info + Analytics */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full gap-3">
-                {/* Property Info */}
-                <div className="flex-1 min-w-[180px]">
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 line-clamp-1">
-                        {property.property_name || "Unnamed Property"}
-                    </h3>
-                    <div className="flex items-start text-gray-600 text-xs mt-0.5">
-                        <MapPinIcon className="h-3.5 w-3.5 mr-1 text-blue-500 flex-shrink-0" />
-                        <p className="line-clamp-1">
-                            {[property.street, property.city, property.province]
-                                .filter(Boolean)
-                                .join(", ") || "Address not specified"}
-                        </p>
-                    </div>
-                </div>
-
-                {/* 📊 Analytics */}
-                <div className="flex flex-1 justify-evenly sm:justify-around text-xs sm:text-sm">
-                    {/* Occupancy Rate */}
-                    <div className="flex items-center gap-1.5">
-                        <UsersIcon className="h-4 w-4 text-emerald-600" />
-                        <div>
-                            <p className="text-gray-500 font-medium leading-tight">
-                                Occupancy
-                            </p>
-                            <p className="font-semibold text-gray-800 leading-tight">
-                                {occupancyRate}%
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Total Income */}
-                    <div className="flex items-center gap-1.5">
-                        <BanknotesIcon className="h-4 w-4 text-blue-600" />
-                        <div>
-                            <p className="text-gray-500 font-medium leading-tight">
-                                Total Income
-                            </p>
-                            <p className="font-semibold text-gray-800 leading-tight">
-                                ₱{totalIncome.toLocaleString()}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ⚙️ Actions */}
-                <div className="flex flex-wrap gap-1.5 justify-end">
-                    <button
-                        onClick={(e) => handleView(property, e)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-gradient-to-r from-blue-500 to-emerald-500 text-white hover:from-blue-600 hover:to-emerald-600"
-                    >
-                        <HomeIcon className="w-3.5 h-3.5" />
-                        View
-                    </button>
-                    <button
-                        onClick={(e) => handleEdit(property.property_id, e)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200"
-                    >
-                        <PencilSquareIcon className="w-3.5 h-3.5" />
-                        Edit
-                    </button>
-                    <button
-                        onClick={(e) => handleDelete(property.property_id, e)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-                    >
-                        <TrashIcon className="w-3.5 h-3.5" />
-                        Delete
-                    </button>
-                </div>
+          {/* Status Badge */}
+          <div className="absolute top-1.5 left-1.5">
+            <div
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border backdrop-blur-sm bg-white/95 ${statusConfig.badge}`}
+            >
+              {statusConfig.icon}
+              <span>{statusConfig.text}</span>
             </div>
+          </div>
         </div>
-    );
+
+        {/* Property Info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-bold text-gray-900 mb-1 truncate">
+            {property.property_name || "Unnamed Property"}
+          </h3>
+          <div className="flex items-start text-gray-600 text-sm">
+            <MapPin className="h-4 w-4 mr-1.5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="line-clamp-1">
+              {[property.street, property.city, property.province]
+                .filter(Boolean)
+                .join(", ") || "Address not specified"}
+            </p>
+          </div>
+        </div>
+
+        {/* Analytics*/}
+        <div className="hidden md:flex items-center gap-8 mr-20">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-emerald-600" />
+            <div>
+              <p className="text-xs text-gray-600">Occupancy</p>
+              <p className="text-sm font-bold text-gray-900">
+                {occupancyRate}%
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-blue-600" />
+            <div>
+              <p className="text-xs text-gray-600">Total Income</p>
+              <p className="text-sm font-bold text-gray-900">
+                ₱{totalIncome.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 sm:gap-1.5 flex-shrink-0 ml-10">
+          <button
+            onClick={(e) => handleView(property, e)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            <span className="hidden lg:inline">View</span>
+          </button>
+          <button
+            onClick={(e) => handleEdit(property.property_id, e)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+          >
+            <Edit2 className="w-4 h-4" />
+            <span className="hidden lg:inline">Edit</span>
+          </button>
+          <button
+            onClick={(e) => handleDelete(property.property_id, e)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden lg:inline">Delete</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Analytics */}
+      <div className="md:hidden flex items-center justify-around border-t border-gray-100 px-4 py-3 bg-gray-50">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-emerald-600" />
+          <div>
+            <p className="text-xs text-gray-600">Occupancy</p>
+            <p className="text-sm font-bold text-gray-900">{occupancyRate}%</p>
+          </div>
+        </div>
+
+        <div className="w-px h-10 bg-gray-200"></div>
+
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-blue-600" />
+          <div>
+            <p className="text-xs text-gray-600">Total Income</p>
+            <p className="text-sm font-bold text-gray-900">
+              ₱{totalIncome.toLocaleString()}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default PropertyCard;

@@ -2,32 +2,24 @@
 import React, { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import usePropertyStore from "@/zustand/property/usePropertyStore";
-import Image from "next/image";
 import axios from "axios";
 import Swal from "sweetalert2";
 import {
-  BuildingOffice2Icon,
-  HomeIcon,
-  PlusCircleIcon,
-  PencilSquareIcon,
-  TrashIcon,
-  MapPinIcon,
-  ExclamationCircleIcon,
-  MagnifyingGlassIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/outline";
+  Building2,
+  Plus,
+  Search,
+  AlertCircle,
+  Clock,
+  XCircle,
+  ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 import useAuthStore from "@/zustand/authStore";
 import LoadingScreen from "@/components/loadingScreen";
 import PropertyCard from "@/components/landlord/properties/propertyCards";
-import FBShareButton from "@/components/landlord/properties/shareToFacebook";
 import Pagination from "@mui/material/Pagination";
-import { AlertCircle } from "lucide-react";
 import useSubscription from "@/hooks/landlord/useSubscription";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
-import { FiArrowRight } from "react-icons/fi";
 
 const PropertyListingPage: React.FC = () => {
   const router = useRouter();
@@ -42,8 +34,9 @@ const PropertyListingPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const itemsPerPage = 9;
-  const { subscription, loadingSubscription, errorSubscription } =
-    useSubscription(user?.landlord_id);
+  const { subscription, loadingSubscription } = useSubscription(
+    user?.landlord_id
+  );
 
   const handlePageChange = (
     event: React.ChangeEvent<unknown>,
@@ -273,6 +266,8 @@ const PropertyListingPage: React.FC = () => {
     return (
       property?.property_name?.toLowerCase().includes(query) ||
       property?.address?.toLowerCase().includes(query) ||
+      property?.street?.toLowerCase().includes(query) ||
+      property?.city?.toLowerCase().includes(query) ||
       property?.property_id?.toString().includes(query)
     );
   });
@@ -286,29 +281,28 @@ const PropertyListingPage: React.FC = () => {
   const getStatusBanner = () => {
     if (!verificationStatus && !subscription) {
       return (
-        <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="flex items-start space-x-3 sm:space-x-4">
-            <div className="flex-shrink-0">
-              <ExclamationCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
+        <div className="bg-white rounded-lg shadow-sm border border-red-200 p-4 mb-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-red-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-red-800 mb-2">
+              <h3 className="text-base font-bold text-gray-900 mb-1">
                 Account Setup Required
               </h3>
-              <p className="text-sm sm:text-base text-red-700 mb-3 sm:mb-4">
-                Complete your account setup to start listing properties and
-                attracting tenants.
+              <p className="text-sm text-gray-600 mb-3">
+                Complete your account setup to start listing properties.
               </p>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <div className="flex flex-wrap gap-2">
                 <Link
                   href="/pages/landlord/verification"
-                  className="inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
                 >
                   Verify Account
                 </Link>
                 <Link
                   href="/pages/landlord/subscription_plan/pricing"
-                  className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
                 >
                   Choose Plan
                 </Link>
@@ -321,23 +315,23 @@ const PropertyListingPage: React.FC = () => {
 
     if (verificationStatus === "pending") {
       return (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="flex items-start space-x-3 sm:space-x-4">
-            <div className="flex-shrink-0">
-              <ClockIcon className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
+        <div className="bg-white rounded-lg shadow-sm border border-amber-200 p-4 mb-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Clock className="h-5 w-5 text-amber-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-yellow-800 mb-2">
+              <h3 className="text-base font-bold text-gray-900 mb-1">
                 Verification Under Review
               </h3>
-              <p className="text-sm sm:text-base text-yellow-700 mb-2">
+              <p className="text-sm text-gray-600 mb-2">
                 Your account verification is being reviewed. You'll be notified
                 once approved.
               </p>
               {!subscription && (
                 <Link
                   href="/pages/landlord/subscription_plan/pricing"
-                  className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
                 >
                   Choose a Plan
                 </Link>
@@ -350,22 +344,22 @@ const PropertyListingPage: React.FC = () => {
 
     if (verificationStatus === "rejected") {
       return (
-        <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="flex items-start space-x-3 sm:space-x-4">
-            <div className="flex-shrink-0">
-              <XCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-red-500" />
+        <div className="bg-white rounded-lg shadow-sm border border-red-200 p-4 mb-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <XCircle className="h-5 w-5 text-red-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-red-800 mb-2">
+              <h3 className="text-base font-bold text-gray-900 mb-1">
                 Verification Rejected
               </h3>
-              <p className="text-sm sm:text-base text-red-700 mb-3 sm:mb-4">
+              <p className="text-sm text-gray-600 mb-3">
                 Your verification was rejected. Please review and resubmit your
                 documents.
               </p>
               <Link
                 href="/pages/landlord/verification"
-                className="inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
               >
                 Resubmit Documents
               </Link>
@@ -377,16 +371,16 @@ const PropertyListingPage: React.FC = () => {
 
     if (!subscription || subscription?.is_active !== 1) {
       return (
-        <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="flex items-start space-x-3 sm:space-x-4">
-            <div className="flex-shrink-0">
-              <BuildingOffice2Icon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+        <div className="bg-white rounded-lg shadow-sm border border-blue-200 p-4 mb-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Building2 className="h-5 w-5 text-blue-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-2">
+              <h3 className="text-base font-bold text-gray-900 mb-1">
                 Subscription Required
               </h3>
-              <p className="text-sm sm:text-base text-blue-700 mb-3 sm:mb-4">
+              <p className="text-sm text-gray-600 mb-3">
                 Purchase a plan to start listing properties and reach potential
                 tenants.
               </p>
@@ -394,10 +388,10 @@ const PropertyListingPage: React.FC = () => {
                 onClick={() =>
                   router.push("/pages/landlord/subscription_plan/pricing")
                 }
-                className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all duration-200 text-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all text-sm"
               >
                 View Plans
-                <FiArrowRight className="ml-2 w-4 h-4" />
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -409,23 +403,23 @@ const PropertyListingPage: React.FC = () => {
       properties.length >= (subscription?.listingLimits?.maxProperties || 0)
     ) {
       return (
-        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="flex items-start space-x-3 sm:space-x-4">
-            <div className="flex-shrink-0">
-              <ExclamationCircleIcon className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
+        <div className="bg-white rounded-lg shadow-sm border border-orange-200 p-4 mb-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-orange-800 mb-2">
+              <h3 className="text-base font-bold text-gray-900 mb-1">
                 Property Limit Reached
               </h3>
-              <p className="text-sm sm:text-base text-orange-700 mb-3 sm:mb-4">
+              <p className="text-sm text-gray-600 mb-3">
                 You've reached your plan limit of{" "}
                 {subscription?.listingLimits?.maxProperties} properties. Upgrade
                 to add more listings.
               </p>
               <Link
                 href="/pages/landlord/subscription_plan/pricing"
-                className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white rounded-lg font-medium transition-all duration-200 text-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-lg font-medium transition-all text-sm"
               >
                 Upgrade Plan
               </Link>
@@ -440,13 +434,13 @@ const PropertyListingPage: React.FC = () => {
 
   if (error) {
     return (
-        <ErrorBoundary
-          error={
-            error.message ||
-            "Failed to load data. Please check your internet connection or try again."
-          }
-          onRetry={() => window.location.reload()}
-        />
+      <ErrorBoundary
+        error={
+          error.message ||
+          "Failed to load data. Please check your internet connection or try again."
+        }
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
@@ -460,197 +454,188 @@ const PropertyListingPage: React.FC = () => {
 
   if (loading) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
-          <LoadingScreen message="Fetching your properties, please wait..." />
-        </div>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
+        <LoadingScreen message="Fetching your properties, please wait..." />
+      </div>
     );
   }
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-
-        <div className="p-3 pt-16 pb-20 sm:p-6 md:pt-6 md:pb-6 lg:py-8 lg:pr-8">
-          {/* Status Banner */}
-          {!isFetchingVerification && getStatusBanner()}
-
-            {/* Header + Search Container */}
-            <div className="sticky top-0 z-30 bg-gradient-to-b from-white/95 to-white/85 backdrop-blur-md border-b border-gray-200">
-                {/* Header Section */}
-                <div className="bg-white rounded-none shadow-none border-b border-gray-100 overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-5 sm:px-8 py-5 sm:py-7 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div className="flex items-start sm:items-center gap-3">
-                            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3 flex-shrink-0">
-                                <BuildingOffice2Icon className="h-8 w-8 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                                    Property Listings
-                                </h1>
-                                <p className="text-blue-100 text-sm sm:text-base">
-                                    Manage your properties and attract tenants
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-4 justify-end">
-                            {subscription && (
-                                <div className="flex flex-col items-end">
-            <span className="text-white/90 text-sm mb-1">
-              Properties: {properties.length}/
-                {subscription?.listingLimits?.maxProperties}
-            </span>
-                                    <div className="w-40 h-2 bg-white/20 rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full transition-all duration-300 ${
-                                                properties.length >=
-                                                subscription?.listingLimits?.maxProperties
-                                                    ? "bg-red-400"
-                                                    : "bg-green-400"
-                                            }`}
-                                            style={{
-                                                width: `${Math.min(
-                                                    (properties.length /
-                                                        subscription?.listingLimits?.maxProperties) *
-                                                    100,
-                                                    100
-                                                )}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            <button
-                                className={`flex items-center space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-all duration-200 ${
-                                    isAddDisabled
-                                        ? "bg-white/20 text-white/50 cursor-not-allowed"
-                                        : "bg-white text-blue-600 hover:bg-blue-50 shadow-lg hover:shadow-xl"
-                                }`}
-                                onClick={handleAddProperty}
-                                disabled={isAddDisabled}
-                            >
-                                {isFetchingVerification || loadingSubscription || isNavigating ? (
-                                    <>
-                                        <svg
-                                            className="animate-spin h-4 w-4"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                            />
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            />
-                                        </svg>
-                                        <span>{isNavigating ? "Opening..." : "Loading..."}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <PlusCircleIcon className="h-5 w-5" />
-                                        <span>Add Property</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Search Section */}
-                <div className="bg-white border-t border-gray-100 p-4 sm:p-5 shadow-sm">
-                    <div className="max-w-3xl mx-auto">
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search properties by name, address, or ID..."
-                                className="w-full pl-11 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition"
-                            />
-                        </div>
-                    </div>
-                </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 pt-20 pb-4 md:pt-6 md:pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-6 h-6 text-blue-600" />
             </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Property Listings
+              </h1>
+              <p className="text-gray-600 text-sm">
+                Manage your properties and attract tenants
+              </p>
+            </div>
+          </div>
 
-
-            {/* Properties Grid */}
-          <div className="mb-8">
-            {currentProperties.length > 0 ? (
-                <div className="flex flex-col gap-3 sm:gap-4 lg:gap-5">
-                    {currentProperties.map((property: any, idx: number) => {
-                        const globalIndex = startIndex + idx;
-                        return (
-                            <PropertyCard
-                                key={property.property_id}
-                                property={property}
-                                index={globalIndex}
-                                subscription={subscription}
-                                totalProperties={filteredProperties.length}
-                                handleView={handleView}
-                                handleEdit={handleEdit}
-                                handleDelete={handleDelete}
-                            />
-                        );
-                    })}
-                </div>
-
-            ) : (
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-10 text-center">
-                <div className="max-w-md mx-auto">
-                  <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-blue-100 to-emerald-100 rounded-full flex items-center justify-center">
-                    <BuildingOffice2Icon className="h-12 w-12 text-blue-500" />
+          <div className="flex items-center gap-3">
+            {subscription && (
+              <div className="bg-gray-50 rounded-lg border border-gray-200 px-4 py-2">
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <span className="text-xs text-gray-600 font-medium block">
+                      Properties
+                    </span>
+                    <span className="text-lg font-bold text-gray-900">
+                      {properties.length} /{" "}
+                      {subscription?.listingLimits?.maxProperties}
+                    </span>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {searchQuery
-                      ? "No matching properties"
-                      : "No properties yet"}
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    {searchQuery
-                      ? "Try adjusting your search criteria to find what you're looking for."
-                      : "Start building your property portfolio by adding your first listing."}
-                  </p>
-                  {!searchQuery && !isAddDisabled && (
-                    <button
-                      onClick={handleAddProperty}
-                      className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-                    >
-                      <PlusCircleIcon className="h-5 w-5" />
-                      <span>Add Your First Property</span>
-                    </button>
-                  )}
+                  <div className="flex flex-col gap-1">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          properties.length >=
+                          subscription?.listingLimits?.maxProperties
+                            ? "bg-red-500"
+                            : "bg-gradient-to-r from-blue-600 to-emerald-600"
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            (properties.length /
+                              subscription?.listingLimits?.maxProperties) *
+                              100,
+                            100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-gray-500 text-right">
+                      {Math.round(
+                        (properties.length /
+                          subscription?.listingLimits?.maxProperties) *
+                          100
+                      )}
+                      % used
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Pagination */}
-          {filteredProperties.length > itemsPerPage && (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
-              <div className="flex justify-center">
-                <Pagination
-                  count={Math.ceil(filteredProperties.length / itemsPerPage)}
-                  page={page}
-                  onChange={handlePageChange}
-                  color="primary"
-                  shape="rounded"
-                  size="large"
-                />
+            {/* Add Property Button */}
+            <button
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap ${
+                isAddDisabled
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                  : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg"
+              }`}
+              onClick={handleAddProperty}
+              disabled={isAddDisabled}
+            >
+              {isFetchingVerification || loadingSubscription || isNavigating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">
+                    {isNavigating ? "Opening..." : "Loading..."}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-5 h-5" />
+                  <span className="text-sm">Add Property</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="relative max-w-2xl">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search properties by name, address, or ID..."
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="px-4 pb-24 md:pb-8 md:px-8 lg:px-12 xl:px-16 pt-5">
+        {/* Status Banner */}
+        {!isFetchingVerification && getStatusBanner()}
+
+        {/* Properties Grid */}
+        <div className="mb-6">
+          {currentProperties.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              {currentProperties.map((property: any, idx: number) => {
+                const globalIndex = startIndex + idx;
+                return (
+                  <PropertyCard
+                    key={property.property_id}
+                    property={property}
+                    index={globalIndex}
+                    subscription={subscription}
+                    totalProperties={filteredProperties.length}
+                    handleView={handleView}
+                    handleEdit={handleEdit}
+                    handleDelete={handleDelete}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center">
+                  <Building2 className="h-10 w-10 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  {searchQuery ? "No matching properties" : "No properties yet"}
+                </h3>
+                <p className="text-sm text-gray-600 mb-5">
+                  {searchQuery
+                    ? "Try adjusting your search criteria to find what you're looking for."
+                    : "Start building your property portfolio by adding your first listing."}
+                </p>
+                {!searchQuery && !isAddDisabled && (
+                  <button
+                    onClick={handleAddProperty}
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-5 py-2.5 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg text-sm"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Add Your First Property</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {filteredProperties.length > itemsPerPage && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex justify-center">
+              <Pagination
+                count={Math.ceil(filteredProperties.length / itemsPerPage)}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+                shape="rounded"
+                size="large"
+              />
+            </div>
+          </div>
+        )}
       </div>
+    </div>
   );
 };
 
