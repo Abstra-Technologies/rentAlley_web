@@ -51,11 +51,15 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
             ) : units && units.length > 0 ? (
                 <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 shadow-sm overflow-hidden">
                     {units.map((unit) => (
+
                         <div
                             key={unit.unit_id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4
+  bg-gray-100 border border-gray-200 rounded-xl cursor-pointer transition-all duration-300
+  hover:bg-gradient-to-r from-blue-100 to-emerald-100 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-200/80 hover:-translate-y-[2px]"
                         >
-                            {/* Left Section */}
+
+                        {/* Left Section */}
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 flex-1">
                                 <div className="flex items-center gap-3 min-w-[180px]">
                                     <div className="h-10 w-10 flex items-center justify-center bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full">
