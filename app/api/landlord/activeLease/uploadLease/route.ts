@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // ✅ Validate allowed file types
+        // ✅ Validate file type
         const allowedTypes = [
             "application/pdf",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -39,50 +39,40 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // ✅ Convert the uploaded file to a Base64 string
+        // ✅ Prepare file for upload
         const fileBuffer = Buffer.from(await lease_file.arrayBuffer());
-        const base64File = fileBuffer.toString("base64");
-
-        // ✅ Encrypt the Base64 content using your AES-256-GCM util
-        const encryptedPayload = encryptData(base64File, SECRET_KEY);
-
-        // Convert the encryption object into JSON for upload
-        const encryptedJson = JSON.stringify(encryptedPayload);
-        const encryptedBuffer = Buffer.from(encryptedJson, "utf8");
-
-        // ✅ Generate unique file name
         const fileExt = lease_file.name.split(".").pop();
-        const fileKey = `leases/${agreement_id}_${randomUUID()}.${fileExt}.enc`;
+        const fileKey = `leases/${agreement_id}_${randomUUID()}.${fileExt}`;
 
-        // ✅ Upload encrypted file to S3
-        const uploadParams = {
-            Bucket: process.env.NEXT_S3_BUCKET_NAME!,
-            Key: fileKey,
-            Body: encryptedBuffer,
-            ContentType: "application/json", // storing encrypted JSON
-        };
+        // ✅ Upload raw file to S3 (unencrypted)
+        await s3
+            .upload({
+                Bucket: process.env.NEXT_S3_BUCKET_NAME!,
+                Key: fileKey,
+                Body: fileBuffer,
+                ContentType: lease_file.type,
+            })
+            .promise();
 
-        await s3.upload(uploadParams).promise();
+        // ✅ Generate the public S3 URL
+        const s3Url = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${fileKey}`;
 
-        const rawUrl = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${fileKey}`;
-
-        // ✅ Encrypt the S3 URL before saving to DB
-        const encryptedUrlObj = encryptData(rawUrl, SECRET_KEY);
+        // ✅ Encrypt the URL only (same pattern as property verification)
+        const encryptedUrlObj = encryptData(s3Url, SECRET_KEY);
         const encryptedUrlJson = JSON.stringify(encryptedUrlObj);
 
-        // ✅ Update LeaseAgreement table
         await db.query(
             `UPDATE LeaseAgreement 
-       SET agreement_url = ?, updated_at = NOW() 
-       WHERE agreement_id = ?`,
+         SET agreement_url = ?, updated_at = NOW() 
+         WHERE agreement_id = ?`,
             [encryptedUrlJson, agreement_id]
         );
 
         return NextResponse.json(
             {
-                message: "Lease document encrypted & uploaded successfully.",
+                message: "Lease document uploaded & URL encrypted successfully.",
                 agreement_id,
-                agreement_url: rawUrl, // you can return decrypted URL for immediate UI access if needed
+                agreement_url: s3Url,
             },
             { status: 200 }
         );
