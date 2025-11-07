@@ -176,12 +176,16 @@ const ViewPropertyDetailedPage = () => {
                 </div>
 
                 {/* Right — Action Buttons */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3 sm:gap-4">
                     <button
                         onClick={handleAddUnitClick}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm font-medium rounded-lg shadow hover:from-blue-700 hover:to-emerald-700 transition-all"
+                        className="flex items-center justify-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5
+    bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-base sm:text-sm font-semibold
+    rounded-xl shadow-md hover:from-blue-700 hover:to-emerald-700 active:scale-[0.98]
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+    transition-all w-full sm:w-auto"
                     >
-                        <PlusCircleIcon className="h-4 w-4" />
+                        <PlusCircleIcon className="h-5 w-5 sm:h-4 sm:w-4" />
                         Add Unit
                     </button>
 
@@ -197,9 +201,14 @@ const ViewPropertyDetailedPage = () => {
                             }
                             setIsAIGeneratorOpen(true);
                         }}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-sm font-medium rounded-lg shadow hover:from-emerald-700 hover:to-teal-800 transition-all"
+                        className="flex items-center justify-center gap-2 px-5 py-3 sm:px-6 sm:py-3.5
+    bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-base sm:text-sm font-semibold
+    rounded-xl shadow-md hover:from-emerald-700 hover:to-teal-800 active:scale-[0.98]
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500
+    transition-all w-full sm:w-auto"
                     >
-                        🤖 Generate with AI
+                        <span className="text-lg sm:text-base">🤖</span>
+                        Generate with AI
                     </button>
                 </div>
             </div>
