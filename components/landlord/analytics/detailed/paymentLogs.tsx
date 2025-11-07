@@ -261,10 +261,27 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: string }
 
                 {/* ===== Right: Details Panel ===== */}
                 {selectedPayment && (
-                    <div className="lg:w-1/3 bg-white border border-gray-200 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+                    <div className="lg:w-1/3 bg-white border border-gray-200 shadow-sm rounded-2xl p-5 flex flex-col justify-between relative">
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setSelectedPayment(null)}
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition"
+                            title="Close details"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
                         <div>
                             {/* Header */}
-                            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2 pr-8">
                                 <FileText className="w-5 h-5 text-blue-600" /> Payment Details
                             </h2>
 
@@ -373,9 +390,6 @@ export default function PaymentLogsPage({ landlord_id }: { landlord_id: string }
                                 )}
                             </div>
                         </div>
-
-                        {/* Footer Action */}
-
                     </div>
                 )}
 
