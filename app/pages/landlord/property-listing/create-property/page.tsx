@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
 import { useRouter } from "next/navigation";
 import StepCounter from "@/components/step-counter";
 import { StepOne } from "@/components/landlord/step1";
@@ -8,7 +7,7 @@ import { StepTwo } from "@/components/landlord/step2";
 import { StepThree } from "@/components/landlord/step3";
 import { StepFive } from "@/components/landlord/step5";
 import { StepFour } from "@/components/landlord/step4";
-
+import { ArrowLeft, ArrowRight, X, Check, Loader2 } from "lucide-react";
 import axios from "axios";
 import usePropertyStore from "@/zustand/property/usePropertyStore";
 import useAuthStore from "@/zustand/authStore";
@@ -19,14 +18,16 @@ export default function AddNewProperty() {
   const router = useRouter();
   const [step, setStep] = useState(() => {
     const savedStep =
-        typeof window !== "undefined"
-            ? localStorage.getItem("addPropertyStep")
-            : null;
+      typeof window !== "undefined"
+        ? localStorage.getItem("addPropertyStep")
+        : null;
     return savedStep ? Number(savedStep) : 1;
   });
   const { fetchSession, user } = useAuthStore();
   const [submitting, setSubmitting] = useState(false);
-  const { subscription, loadingSubscription } = useSubscription(user?.landlord_id);
+  const { subscription, loadingSubscription } = useSubscription(
+    user?.landlord_id
+  );
 
   useEffect(() => {
     if (loadingSubscription || !user?.landlord_id) return;
@@ -94,12 +95,12 @@ export default function AddNewProperty() {
   const validateStep = () => {
     if (step === 1) {
       if (
-          !property.propertyName ||
-          !property.street ||
-          !property.brgyDistrict ||
-          !property.city ||
-          !property.province ||
-          !property.zipCode
+        !property.propertyName ||
+        !property.street ||
+        !property.brgyDistrict ||
+        !property.city ||
+        !property.province ||
+        !property.zipCode
       ) {
         Swal.fire({
           title: "Missing Details",
@@ -207,11 +208,10 @@ export default function AddNewProperty() {
       }
     }
 
-    // ✅ Step 4 now simplified to only rentIncreasePercent, deposits, advance, etc.
     if (step === 4) {
       if (
-          property.rentIncreasePercent == null ||
-          property.rentIncreasePercent < 0
+        property.rentIncreasePercent == null ||
+        property.rentIncreasePercent < 0
       ) {
         Swal.fire({
           title: "Missing Rent Increase",
@@ -222,8 +222,8 @@ export default function AddNewProperty() {
         return false;
       }
       if (
-          property.securityDepositMonths == null ||
-          property.securityDepositMonths < 0
+        property.securityDepositMonths == null ||
+        property.securityDepositMonths < 0
       ) {
         Swal.fire({
           title: "Missing Security Deposit",
@@ -234,8 +234,8 @@ export default function AddNewProperty() {
         return false;
       }
       if (
-          property.advancePaymentMonths == null ||
-          property.advancePaymentMonths < 0
+        property.advancePaymentMonths == null ||
+        property.advancePaymentMonths < 0
       ) {
         Swal.fire({
           title: "Missing Advance Payment",
@@ -248,7 +248,12 @@ export default function AddNewProperty() {
     }
 
     if (step === 5) {
-      if (!submittedDoc?.file || !govID?.file || !indoorPhoto || !outdoorPhoto) {
+      if (
+        !submittedDoc?.file ||
+        !govID?.file ||
+        !indoorPhoto ||
+        !outdoorPhoto
+      ) {
         Swal.fire({
           title: "Missing Documents",
           text: "Please upload all required documents.",
@@ -272,7 +277,7 @@ export default function AddNewProperty() {
   };
 
   const nextStep = () =>
-      validateStep() && setStep((prev) => Math.min(prev + 1, 5));
+    validateStep() && setStep((prev) => Math.min(prev + 1, 5));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const handleSubmit = async (e) => {
@@ -355,153 +360,91 @@ export default function AddNewProperty() {
   };
 
   return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-            {/* Header */}
-            <div className="text-center mb-6 sm:mb-8">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                Add New Property
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
-                Fill in the details below to list your property and start attracting tenants.
-              </p>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Proper spacing for navbar and sidebar */}
+      <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
+        {/* Header - Compact and clean */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">
+            Add New Property
+          </h1>
+          <p className="text-sm text-gray-600">
+            Fill in the details below to list your property and start attracting
+            tenants.
+          </p>
+        </div>
 
-            <StepCounter currentStep={step} />
+        {/* Step Counter */}
+        <div className="mb-6">
+          <StepCounter currentStep={step} />
+        </div>
 
-            <div className="space-y-6 sm:space-y-8">
-              <div className="min-h-[600px]">{renderStep()}</div>
+        {/* Form Content */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div className="p-4 md:p-6">{renderStep()}</div>
+        </div>
 
-              {/* Navigation Buttons */}
-              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 overflow-hidden sticky bottom-4 z-10">
-                <div className="p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                    {/* Back Button */}
-                    <div className="flex">
-                      {step > 1 && (
-                          <button
-                              onClick={prevStep}
-                              disabled={submitting}
-                              className="flex items-center space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 text-gray-700 disabled:text-gray-400 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base"
-                          >
-                            <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                              <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 19l-7-7 7-7"
-                              />
-                            </svg>
-                            <span>Back</span>
-                          </button>
-                      )}
-                    </div>
+        {/* Navigation Buttons - Sticky at bottom on mobile */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky bottom-4 md:static">
+          <div className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              {/* Left Side: Back + Cancel */}
+              <div className="flex items-center gap-2">
+                {step > 1 && (
+                  <button
+                    onClick={prevStep}
+                    disabled={submitting}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 text-gray-700 disabled:text-gray-400 rounded-lg font-medium transition-colors text-sm"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Back</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleCancel}
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors text-sm"
+                >
+                  <X className="w-4 h-4" />
+                  <span className="hidden sm:inline">Cancel</span>
+                </button>
+              </div>
 
-                    {/* Cancel Button */}
-                    <button
-                        onClick={handleCancel}
-                        disabled={submitting}
-                        className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg sm:rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base"
-                    >
-                      <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                      >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                      <span>Cancel</span>
-                    </button>
-
-                    {/* Continue / Submit */}
-                    <div className="flex">
-                      {step < 5 ? (
-                          <button
-                              onClick={nextStep}
-                              className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base shadow-lg hover:shadow-xl"
-                              disabled={submitting}
-                          >
-                            <span>Continue</span>
-                            <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                              <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </button>
-                      ) : (
-                          <button
-                              onClick={handleSubmit}
-                              disabled={submitting}
-                              className="flex items-center space-x-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base shadow-lg hover:shadow-xl"
-                          >
-                            {submitting ? (
-                                <>
-                                  <svg
-                                      className="animate-spin -ml-1 mr-2 h-4 w-4"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                  >
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                    ></circle>
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    ></path>
-                                  </svg>
-                                  <span>Submitting...</span>
-                                </>
-                            ) : (
-                                <>
-                                  <svg
-                                      className="w-4 h-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                  <span>Submit Listing</span>
-                                </>
-                            )}
-                          </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+              {/* Right Side: Continue / Submit */}
+              <div>
+                {step < 5 ? (
+                  <button
+                    onClick={nextStep}
+                    disabled={submitting}
+                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg text-sm"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Submit Listing</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
   );
 }
