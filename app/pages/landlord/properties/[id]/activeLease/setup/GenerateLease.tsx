@@ -84,12 +84,27 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
         }
 
         try {
+            // ✅ Ensure valid start_date and end_date
+            const startDate =
+                form.start_date || leaseDetails?.start_date?.split("T")[0];
+            const endDate = form.end_date || leaseDetails?.end_date?.split("T")[0];
+
+            if (!startDate || !endDate) {
+                Swal.fire({
+                    title: "Missing Lease Dates",
+                    text: "Please make sure both start and end dates are selected before generating the lease.",
+                    icon: "error",
+                    confirmButtonColor: "#dc2626",
+                });
+                return;
+            }
+
             const payload = {
                 agreement_id,
                 property_id,
                 lease_type: form.lease_type || "residential",
-                start_date: form.start_date,
-                end_date: form.end_date,
+                start_date: startDate,
+                end_date: endDate,
                 rent_amount: form.rent_amount,
                 security_deposit: form.security_deposit,
                 advance_payment: form.advance_payment,
@@ -122,15 +137,15 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                 Swal.fire({
                     title: "Lease Generated!",
                     html: `
-            <div class="text-sm text-gray-700 mt-2">
-              Lease for <strong>${leaseDetails?.tenant_name}</strong> at <strong>${leaseDetails?.property_name}</strong>
-              has been successfully generated.
-            </div>
-          `,
+          <div class="text-sm text-gray-700 mt-2">
+            Lease for <strong>${leaseDetails?.tenant_name}</strong> at <strong>${leaseDetails?.property_name}</strong>
+            has been successfully generated.
+          </div>
+        `,
                     icon: "success",
                     confirmButtonColor: "#059669",
                 });
-                setStep(4); // proceed to signing
+                setStep(4);
             } else {
                 Swal.fire({
                     title: "Lease Generated",
@@ -169,12 +184,10 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                 agreement_id,
                 email: leaseDetails?.landlord_email,
                 role: "landlord",
-                otp_code: otpCode, // ✅ ensure this comes from state
+                otp_code: otpCode,
             };
 
-            console.log("Sending payload:", payload); // 🔍 Debug line
-
-            const res = await axios.post("/api/landlord/activeLease/veritfyOtp", payload); // ✅ fixed URL
+            const res = await axios.post("/api/landlord/activeLease/veritfyOtp", payload);
 
             if (res.data?.success) {
                 Swal.fire({
@@ -183,6 +196,7 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                     icon: "success",
                     confirmButtonColor: "#059669",
                 });
+                setStep(5);
             } else {
                 Swal.fire("Error", res.data?.error || "Invalid OTP.", "error");
             }

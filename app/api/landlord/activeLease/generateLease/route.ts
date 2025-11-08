@@ -52,6 +52,9 @@ export async function POST(req: NextRequest) {
             attestation,
         } = body;
 
+        console.log('start date', start_date);
+        console.log('end date', end_date);
+
         if (!agreement_id || !property_id) {
             return NextResponse.json({ error: "Missing required parameters." }, { status: 400 });
         }

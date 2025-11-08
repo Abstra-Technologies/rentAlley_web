@@ -341,26 +341,26 @@ export default function MyUnit() {
 
         <div className="page-main-content">
           {/* Analytics Section */}
-          <div className="mb-8">
-            <div className="section-header">
-              <div className="section-header-accent"></div>
-              <h2 className="section-header-title">Analytics Overview</h2>
-            </div>
+          {/*<div className="mb-8">*/}
+          {/*  <div className="section-header">*/}
+          {/*    <div className="section-header-accent"></div>*/}
+          {/*    <h2 className="section-header-title">Analytics Overview</h2>*/}
+          {/*  </div>*/}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="card card-padding">
-                <LeaseCounter tenantId={user?.tenant_id} />
-              </div>
+          {/*  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">*/}
+          {/*    <div className="card card-padding">*/}
+          {/*      <LeaseCounter tenantId={user?.tenant_id} />*/}
+          {/*    </div>*/}
 
-              <div className="card card-padding">
-                <ApplicationsCounter tenantId={user?.tenant_id} />
-              </div>
+          {/*    <div className="card card-padding">*/}
+          {/*      <ApplicationsCounter tenantId={user?.tenant_id} />*/}
+          {/*    </div>*/}
 
-              <div className="card card-padding">
-                <BillingCounter tenantId={user?.tenant_id} />
-              </div>
-            </div>
-          </div>
+          {/*    <div className="card card-padding">*/}
+          {/*      <BillingCounter tenantId={user?.tenant_id} />*/}
+          {/*    </div>*/}
+          {/*  </div>*/}
+          {/*</div>*/}
 
           {/* Properties Section */}
           <div>

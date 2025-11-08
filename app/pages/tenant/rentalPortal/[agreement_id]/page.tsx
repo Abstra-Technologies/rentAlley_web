@@ -5,7 +5,7 @@ import useAuthStore from "@/zustand/authStore";
 import { useEffect, useState } from "react";
 import LeaseDurationTracker from "@/components/tenant/analytics-insights/LeaseAgreementWidget";
 import PaymentDueWidget from "@/components/tenant/analytics-insights/paymentDue";
-import PaymentHistoryWidget from "@/components/tenant/analytics-insights/paymentHistoryWidget";
+import PendingDocumentsWidget from "@/components/tenant/analytics-insights/PendingDocumentsWidget";
 import AnnouncementWidget from "@/components/tenant/analytics-insights/announcementWidgets";
 import MoveInChecklist from "@/components/tenant/currentRent/MoveInChecklist";
 import axios from "axios";
@@ -194,25 +194,12 @@ export default function RentPortalPage() {
                 </div>
               </div>
 
-              {/* Payment History - Spans 1 col, positioned nicely */}
-              <div
-                onClick={() =>
-                  router.push(
-                    `/pages/tenant/paymentHistory/currentLeasePayment?agreement_id=${agreementId}`
-                  )
-                }
-                className="group relative bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-emerald-200 transition-all duration-300 cursor-pointer overflow-hidden"
-              >
-                <div className="p-6">
-                  <PaymentHistoryWidget agreement_id={agreementId} />
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md hover:border-red-200 transition-all duration-300">
+                    <div className="p-6">
+                        <PendingDocumentsWidget agreement_id={agreementId} />
+                    </div>
                 </div>
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-emerald-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-center justify-center">
-                  <span className="bg-white/95 backdrop-blur-sm text-gray-800 text-sm font-bold px-4 py-2 rounded-full shadow-lg border border-blue-200">
-                    View Full History →
-                  </span>
-                </div>
-              </div>
+
             </div>
           </section>
 

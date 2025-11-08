@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { decryptData } from "@/crypto/encrypt"; // ✅ added correct import
 import nodemailer from "nodemailer";
 import moment from "moment-timezone";
 
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 🔹 Get timezone from User table
+        // 🔹 Get timezone from User table (if not found, default to Asia/Manila)
         const [userRows]: any = await db.query(
             `SELECT timezone FROM User WHERE JSON_UNQUOTE(JSON_EXTRACT(email, '$.ciphertext')) = ? OR email = ? LIMIT 1`,
             [email, email]
@@ -73,29 +74,87 @@ export async function POST(req: NextRequest) {
             .tz(timezone)
             .format("MMMM D, YYYY h:mm A");
 
-        // 🔹 Insert or update LeaseSignature record correctly
+        // 🔹 Upsert landlord record with OTP
         await db.query(
             `
-        INSERT INTO LeaseSignature (
-          agreement_id,
-          email,
-          role,
-          otp_code,
-          otp_sent_at,
-          otp_expires_at,
-          status
-        )
-        VALUES (?, ?, ?, ?, UTC_TIMESTAMP(), ?, 'pending')
-        ON DUPLICATE KEY UPDATE
-          otp_code = VALUES(otp_code),
-          otp_sent_at = VALUES(otp_sent_at),
-          otp_expires_at = VALUES(otp_expires_at),
-          status = 'pending';
+      INSERT INTO LeaseSignature (
+        agreement_id,
+        email,
+        role,
+        otp_code,
+        otp_sent_at,
+        otp_expires_at,
+        status
+      )
+      VALUES (?, ?, ?, ?, UTC_TIMESTAMP(), ?, 'pending')
+      ON DUPLICATE KEY UPDATE
+        otp_code = VALUES(otp_code),
+        otp_sent_at = VALUES(otp_sent_at),
+        otp_expires_at = VALUES(otp_expires_at),
+        status = 'pending';
       `,
             [agreement_id, email, role, otp, expiryUTC]
         );
 
-        // 🔹 Send OTP email
+        // 🔹 If landlord triggered this, ensure tenant record exists (blank)
+        if (role === "landlord") {
+            const [tenantRows]: any = await db.query(
+                `
+        SELECT t.email AS tenant_email
+        FROM LeaseAgreement la
+        JOIN Tenant tn ON la.tenant_id = tn.tenant_id
+        JOIN User t ON tn.user_id = t.user_id
+        WHERE la.agreement_id = ?
+        LIMIT 1;
+        `,
+                [agreement_id]
+            );
+
+            if (tenantRows.length > 0) {
+                let tenantEmail: string | null = null;
+
+                try {
+                    const enc = tenantRows[0].tenant_email;
+                    // 🧩 Attempt to decrypt tenant email (if encrypted JSON)
+                    if (enc?.startsWith("{") || enc?.startsWith("[")) {
+                        tenantEmail = decryptData(
+                            JSON.parse(enc),
+                            process.env.ENCRYPTION_SECRET!
+                        );
+                    } else {
+                        tenantEmail = enc; // already plain text
+                    }
+                } catch (err) {
+                    console.warn(
+                        `⚠️ Failed to decrypt tenant email for agreement_id ${agreement_id}`,
+                        err
+                    );
+                }
+
+                if (tenantEmail) {
+                    await db.query(
+                        `
+            INSERT INTO LeaseSignature (
+              agreement_id,
+              email,
+              role,
+              status
+            )
+            VALUES (?, ?, 'tenant', 'pending')
+            ON DUPLICATE KEY UPDATE
+              email = VALUES(email),
+              status = 'pending',
+              otp_code = NULL,
+              otp_expires_at = NULL,
+              otp_sent_at = NULL;
+            `,
+                        [agreement_id, tenantEmail]
+                    );
+                }
+            }
+        }
+
+        // 🔹 Send OTP email (to landlord or tenant)
         await sendOtpEmail(email, otp, localExpiry, timezone);
 
         return NextResponse.json({
