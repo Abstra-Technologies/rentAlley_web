@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
 import {
@@ -8,7 +8,6 @@ import {
     Building2,
     User2,
     AlertCircle,
-    ArrowLeft,
     FileSignature,
 } from "lucide-react";
 import { useState } from "react";
@@ -18,7 +17,6 @@ const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function PropertyLeasesPage() {
     const { id } = useParams();
-    const router = useRouter();
     const { data, error, isLoading } = useSWR(
         `/api/landlord/activeLease/getByProperty?property_id=${id}`,
         fetcher
@@ -26,19 +24,8 @@ export default function PropertyLeasesPage() {
 
     const [selectedLease, setSelectedLease] = useState(null);
 
-    const handleSetupClick = (lease) => {
-        const agreementId = lease.agreement_id || lease.lease_id;
-        router.push(`/pages/landlord/properties/${id}/activeLease/setup/${agreementId}`);
-    };
-
-    const handleLeaseClick = (lease) => {
-        if (lease.lease_status === "active") {
-            router.push(
-                `/pages/landlord/properties/${id}/activeLease/leaseDetails/${
-                    lease.agreement_id || lease.lease_id
-                }`
-            );
-        }
+    const handleLeaseAction = (lease) => {
+        setSelectedLease(lease); // Open side panel for both setup and view
     };
 
     if (isLoading) {
@@ -79,7 +66,6 @@ export default function PropertyLeasesPage() {
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
-
                 {/* Header */}
                 <div className="mb-6">
                     <div className="flex items-start gap-3">
@@ -170,20 +156,22 @@ export default function PropertyLeasesPage() {
                         </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {lease.lease_status === "draft" ? (
+                                            {["draft", "active"].includes(lease.lease_status) ? (
                                                 <button
-                                                    onClick={() => handleSetupClick(lease)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all text-sm"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleLeaseAction(lease);
+                                                    }}
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+                                                        lease.lease_status === "draft"
+                                                            ? "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
+                                                            : "bg-gray-600 hover:bg-gray-700 text-white"
+                                                    }`}
                                                 >
                                                     <FileSignature className="w-4 h-4" />
-                                                    Setup
-                                                </button>
-                                            ) : lease.lease_status === "active" ? (
-                                                <button
-                                                    onClick={() => handleLeaseClick(lease)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors text-sm"
-                                                >
-                                                    View Details
+                                                    {lease.lease_status === "draft"
+                                                        ? "Setup"
+                                                        : "View Details"}
                                                 </button>
                                             ) : (
                                                 <span className="text-gray-400 text-xs">—</span>

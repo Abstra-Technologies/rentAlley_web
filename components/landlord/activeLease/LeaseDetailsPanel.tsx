@@ -4,277 +4,254 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import {
-  X,
-  FileText,
-  Calendar,
-  User,
-  Building2,
-  FileDown,
-  AlertCircle,
-  Mail,
-  Phone,
-  FileCog,
+    X,
+    FileText,
+    Calendar,
+    User,
+    Building2,
+    FileDown,
+    AlertCircle,
+    Mail,
+    Phone,
+    FileCog,
 } from "lucide-react";
 import { formatDate } from "@/utils/formatter/formatters";
 
 export default function LeaseDetailsPanel({ lease, onClose }) {
-  const router = useRouter();
+    const router = useRouter();
+    const [signatures, setSignatures] = useState<any[]>([]);
+    const [trackingEnabled, setTrackingEnabled] = useState(false);
 
-  const [signatures, setSignatures] = useState<any[]>([]);
-  const [trackingEnabled, setTrackingEnabled] = useState(false);
+    if (!lease) return null;
 
-  if (!lease) return null;
+    const hasAgreement = !!lease.agreement_url;
+    const pdfUrl = lease.agreement_url;
+    const signedCount = signatures.filter((s) => s.status === "signed").length;
+    const totalCount = 2;
+    const signatureProgress = Math.round((signedCount / totalCount) * 100);
 
-  const hasAgreement = !!lease.agreement_url;
-  const pdfUrl = lease.agreement_url;
+    useEffect(() => {
+        setSignatures([]);
+        setTrackingEnabled(false);
 
-  const signedCount = signatures.filter((s) => s.status === "signed").length;
-  const totalCount = 2;
-  const signatureProgress = Math.round((signedCount / totalCount) * 100);
+        if (!lease?.lease_id) return;
 
-  useEffect(() => {
-    setSignatures([]);
-    setTrackingEnabled(false);
+        axios
+            .get(`/api/landlord/activeLease/signatureTracking?agreement_id=${lease.lease_id}`)
+            .then((res) => {
+                const data = res.data;
+                const sigs = data && Array.isArray(data.signatures) ? data.signatures : [];
+                setSignatures(sigs);
+                setTrackingEnabled(Boolean(data.tracking_enabled));
+            })
+            .catch((err) => console.error("Failed to fetch signatures", err));
+    }, [lease?.lease_id]);
 
-    if (!lease?.lease_id) return;
+    // 👉 Redirect based on status
+    const handleViewLeaseRedirect = () => {
+        const agreementId = lease.agreement_id || lease.lease_id;
+        if (lease.lease_status === "draft") {
+            router.push(`/pages/landlord/properties/${lease.property_id}/activeLease/setup/${agreementId}`);
+        } else {
+            router.push(`/pages/landlord/properties/${lease.property_id}/activeLease/leaseDetails/${agreementId}`);
+        }
+    };
 
-    axios
-      .get(
-        `/api/landlord/activeLease/signatureTracking?agreement_id=${lease.lease_id}`
-      )
-      .then((res) => {
-        const data = res.data;
-        const sigs =
-          data && Array.isArray(data.signatures) ? data.signatures : [];
-        setSignatures(sigs);
-        setTrackingEnabled(Boolean(data.tracking_enabled));
-      })
-      .catch((err) => console.error("Failed to fetch signatures", err));
-  }, [lease?.lease_id]);
+    const handleSetupLeaseRedirect = () => {
+        const agreementId = lease.agreement_id || lease.lease_id;
+        router.push(`/pages/landlord/properties/${lease.property_id}/activeLease/setup/${agreementId}`);
+    };
 
-  const handleSetupLeaseRedirect = () => {
-    const agreementId = lease.agreement_id || lease.lease_id;
-    router.push(
-      `/pages/landlord/properties/${lease.property_id}/activeLease/setup?agreement_id=${agreementId}`
-    );
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="flex flex-col w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden max-h-[85vh]">
-        {/* Header - Fixed */}
-        <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-white flex-shrink-0" />
-            <h2 className="text-base font-bold text-white">Lease Details</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-lg p-1 transition-colors flex-shrink-0"
-            title="Close details"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4 space-y-3">
-            {/* Lease ID */}
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Lease ID</p>
-              <p className="text-sm font-semibold text-gray-900">
-                {lease.lease_id || "—"}
-              </p>
-            </div>
-
-            {/* Unit */}
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Unit</p>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-blue-600" />
-                <p className="text-sm font-semibold text-gray-900">
-                  {lease.unit_name}
-                </p>
-              </div>
-            </div>
-
-            {/* Tenant */}
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Tenant</p>
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-blue-600" />
-                <p className="text-sm font-semibold text-gray-900">
-                  {lease.tenant_name}
-                </p>
-              </div>
-            </div>
-
-            {/* Email */}
-            {lease.tenant_email && (
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">Email</p>
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <p className="text-sm text-gray-900 break-all">
-                    {lease.tenant_email}
-                  </p>
+    return (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="flex flex-col w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden max-h-[85vh]">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-white" />
+                        <h2 className="text-base font-bold text-white">Lease Details</h2>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-white hover:bg-white/20 rounded-lg p-1 transition-colors"
+                        title="Close details"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
-              </div>
-            )}
 
-            {/* Phone */}
-            {lease.tenant_phone && (
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">Phone</p>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <p className="text-sm text-gray-900">{lease.tenant_phone}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Start & End Date - Combined */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">
-                  Start Date
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <p className="text-sm text-gray-900">
-                    {lease.start_date ? formatDate(lease.start_date) : "N/A"}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">
-                  End Date
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <p className="text-sm text-gray-900">
-                    {lease.end_date ? formatDate(lease.end_date) : "N/A"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Agreement Document */}
-            <div className="pt-3 border-t border-gray-200">
-              <p className="text-xs font-medium text-gray-500 mb-2">
-                Agreement Document
-              </p>
-              {hasAgreement ? (
-                <a
-                  href={pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-medium text-sm transition-colors border border-blue-200 w-full justify-center"
-                >
-                  <FileDown className="w-4 h-4" />
-                  View Document
-                </a>
-              ) : (
-                <div className="flex flex-col gap-2 text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium">
-                      No agreement uploaded yet.
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleSetupLeaseRedirect}
-                    className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-sm hover:from-blue-700 hover:to-emerald-700 transition-all"
-                  >
-                    <FileCog className="w-4 h-4" />
-                    Setup Lease
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Signature Progress */}
-            {Array.isArray(signatures) &&
-              signatures.length === 2 &&
-              trackingEnabled && (
-                <div className="pt-3 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-2">
-                    Signature Progress
-                  </p>
-
-                  {/* Progress bar */}
-                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                    <div
-                      className={`h-2 rounded-full transition-all ${
-                        signatureProgress === 100
-                          ? "bg-gradient-to-r from-emerald-500 to-green-600"
-                          : "bg-gradient-to-r from-blue-500 to-indigo-600"
-                      }`}
-                      style={{ width: `${signatureProgress}%` }}
-                    />
-                  </div>
-
-                  {/* Summary text */}
-                  <p className="text-xs text-gray-600 mb-2">
-                    {signatureProgress === 100
-                      ? "Both parties have signed the lease."
-                      : `${signatureProgress}% completed — ${2 - signedCount} ${
-                          2 - signedCount > 1 ? "parties" : "party"
-                        } remaining.`}
-                  </p>
-
-                  {/* Signatures list */}
-                  <div className="space-y-2">
-                    {signatures.map((sig) => (
-                      <div
-                        key={sig.id ?? sig.role}
-                        className={`flex items-center justify-between text-xs px-2.5 py-2 rounded-lg border ${
-                          sig.status === "signed"
-                            ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                            : "bg-gray-50 border-gray-200 text-gray-600"
-                        }`}
-                      >
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <span className="font-semibold capitalize">
-                            {sig.role}
-                          </span>
-                          {sig.email && (
-                            <span className="text-xs text-gray-500 truncate">
-                              {sig.email}
-                            </span>
-                          )}
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="p-4 space-y-3">
+                        {/* Lease ID */}
+                        <div>
+                            <p className="text-xs font-medium text-gray-500 mb-1">Lease ID</p>
+                            <p className="text-sm font-semibold text-gray-900">
+                                {lease.lease_id || "—"}
+                            </p>
                         </div>
 
-                        <span className="text-xs ml-2 flex-shrink-0">
-                          {sig.status === "signed"
+                        {/* Unit */}
+                        <div>
+                            <p className="text-xs font-medium text-gray-500 mb-1">Unit</p>
+                            <div className="flex items-center gap-2">
+                                <Building2 className="w-4 h-4 text-blue-600" />
+                                <p className="text-sm font-semibold text-gray-900">{lease.unit_name}</p>
+                            </div>
+                        </div>
+
+                        {/* Tenant */}
+                        <div>
+                            <p className="text-xs font-medium text-gray-500 mb-1">Tenant</p>
+                            <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-blue-600" />
+                                <p className="text-sm font-semibold text-gray-900">{lease.tenant_name}</p>
+                            </div>
+                        </div>
+
+                        {/* Email */}
+                        {lease.tenant_email && (
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Email</p>
+                                <div className="flex items-center gap-2">
+                                    <Mail className="w-4 h-4 text-gray-400" />
+                                    <p className="text-sm text-gray-900 break-all">{lease.tenant_email}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Phone */}
+                        {lease.tenant_phone && (
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Phone</p>
+                                <div className="flex items-center gap-2">
+                                    <Phone className="w-4 h-4 text-gray-400" />
+                                    <p className="text-sm text-gray-900">{lease.tenant_phone}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Start & End Date */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">Start Date</p>
+                                <div className="flex items-center gap-1.5">
+                                    <Calendar className="w-4 h-4 text-gray-400" />
+                                    <p className="text-sm text-gray-900">
+                                        {lease.start_date ? formatDate(lease.start_date) : "N/A"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-medium text-gray-500 mb-1">End Date</p>
+                                <div className="flex items-center gap-1.5">
+                                    <Calendar className="w-4 h-4 text-gray-400" />
+                                    <p className="text-sm text-gray-900">
+                                        {lease.end_date ? formatDate(lease.end_date) : "N/A"}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Agreement Document */}
+                        <div className="pt-3 border-t border-gray-200">
+                            <p className="text-xs font-medium text-gray-500 mb-2">Agreement Document</p>
+                            {hasAgreement ? (
+                                <a
+                                    href={pdfUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-medium text-sm transition-colors border border-blue-200 w-full justify-center"
+                                >
+                                    <FileDown className="w-4 h-4" />
+                                    View Document
+                                </a>
+                            ) : (
+                                <div className="flex flex-col gap-2 text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                                    <div className="flex items-start gap-2">
+                                        <AlertCircle className="w-4 h-4 mt-0.5" />
+                                        <p className="text-xs font-medium">No agreement uploaded yet.</p>
+                                    </div>
+                                    <button
+                                        onClick={handleSetupLeaseRedirect}
+                                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-sm hover:from-blue-700 hover:to-emerald-700 transition-all"
+                                    >
+                                        <FileCog className="w-4 h-4" />
+                                        Setup Lease
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Signature Progress */}
+                        {Array.isArray(signatures) && signatures.length === 2 && trackingEnabled && (
+                            <div className="pt-3 border-t border-gray-200">
+                                <p className="text-xs font-medium text-gray-500 mb-2">Signature Progress</p>
+
+                                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                    <div
+                                        className={`h-2 rounded-full transition-all ${
+                                            signatureProgress === 100
+                                                ? "bg-gradient-to-r from-emerald-500 to-green-600"
+                                                : "bg-gradient-to-r from-blue-500 to-indigo-600"
+                                        }`}
+                                        style={{ width: `${signatureProgress}%` }}
+                                    />
+                                </div>
+
+                                <p className="text-xs text-gray-600 mb-2">
+                                    {signatureProgress === 100
+                                        ? "Both parties have signed the lease."
+                                        : `${signatureProgress}% completed — ${2 - signedCount} ${
+                                            2 - signedCount > 1 ? "parties" : "party"
+                                        } remaining.`}
+                                </p>
+
+                                <div className="space-y-2">
+                                    {signatures.map((sig) => (
+                                        <div
+                                            key={sig.id ?? sig.role}
+                                            className={`flex items-center justify-between text-xs px-2.5 py-2 rounded-lg border ${
+                                                sig.status === "signed"
+                                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                                                    : "bg-gray-50 border-gray-200 text-gray-600"
+                                            }`}
+                                        >
+                                            <div className="flex flex-col min-w-0 flex-1">
+                                                <span className="font-semibold capitalize">{sig.role}</span>
+                                                {sig.email && (
+                                                    <span className="text-xs text-gray-500 truncate">{sig.email}</span>
+                                                )}
+                                            </div>
+                                            <span className="text-xs ml-2 flex-shrink-0">
+                        {sig.status === "signed"
                             ? `Signed ${
                                 sig.signed_at
-                                  ? new Date(sig.signed_at).toLocaleDateString()
-                                  : ""
-                              }`
+                                    ? new Date(sig.signed_at).toLocaleDateString()
+                                    : ""
+                            }`
                             : "Pending"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                      </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-              )}
-          </div>
-        </div>
 
-        {/* Action Button - Fixed at bottom */}
-        <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
-          <button
-            onClick={handleSetupLeaseRedirect}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
-          >
-            <FileCog className="w-4 h-4" />
-            View Lease
-          </button>
+                {/* Footer Action */}
+                <div className="p-4 border-t border-gray-200 bg-white">
+                    <button
+                        onClick={handleViewLeaseRedirect}
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
+                    >
+                        <FileCog className="w-4 h-4" />
+                        View Lease
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
