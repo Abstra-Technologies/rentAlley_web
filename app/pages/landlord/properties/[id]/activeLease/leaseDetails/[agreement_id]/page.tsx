@@ -15,6 +15,7 @@ import LoadingScreen from "@/components/loadingScreen";
 import LeaseInfo from "@/components/landlord/activeLease/leaseInfo";
 import LeasePayments from "@/components/landlord/activeLease/leasePayments";
 import LeasePDCs from "@/components/landlord/activeLease/LeasePDCs";
+import LeaseBilling from "@/components/landlord/activeLease/LeaseBilling";
 
 interface BillingDetail {
   billing_id: number;
@@ -213,25 +214,14 @@ export default function LeaseDetailsPage() {
             </div>
           </div>
 
+
           {/* Tab Content */}
           <div className="p-4 md:p-6">
             {activeTab === "info" && <LeaseInfo lease={lease} />}
 
-            {activeTab === "billing" && (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center">
-                  <Receipt className="h-10 w-10 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  Billing Statements
-                </h3>
-                <p className="text-sm text-gray-600">
-                  This section is under development
-                </p>
-              </div>
-            )}
+              {activeTab === "billing" && <LeaseBilling lease_id={lease.lease_id} />}
 
-            {activeTab === "payments" && <LeasePayments lease={lease} />}
+              {activeTab === "payments" && <LeasePayments lease={lease} />}
 
             {activeTab === "pdcs" && <LeasePDCs lease={lease} />}
           </div>

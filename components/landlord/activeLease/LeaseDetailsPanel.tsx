@@ -276,7 +276,7 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
           >
             <FileCog className="w-4 h-4" />
-            View Lease
+            View More Info.
           </button>
         </div>
       </div>

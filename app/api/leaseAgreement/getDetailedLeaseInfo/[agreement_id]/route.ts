@@ -102,7 +102,6 @@ export async function GET(
             console.error("Decryption failed for tenant info:", err);
         }
 
-        // 🧾 Decrypt agreement URL
         let agreementUrl: string | null = null;
         try {
             if (lease.agreement_url) {
@@ -114,7 +113,6 @@ export async function GET(
             agreementUrl = null;
         }
 
-        // 🧾 Fetch PDCs
         const [pdcRows]: any = await db.execute(
             `
       SELECT
@@ -132,7 +130,6 @@ export async function GET(
             [agreement_id]
         );
 
-        // ✅ Final JSON response
         return NextResponse.json(
             {
                 lease_id: lease.lease_id,
@@ -142,7 +139,7 @@ export async function GET(
                 start_date: lease.start_date,
                 end_date: lease.end_date,
                 lease_status: lease.lease_status,
-                agreement_url: agreementUrl, // ✅ decrypted, direct link
+                agreement_url: agreementUrl,
                 email: tenantEmail,
                 phoneNumber: tenantPhoneNumber,
                 property_id: lease.property_id,

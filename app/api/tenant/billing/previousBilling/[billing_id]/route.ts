@@ -1,4 +1,3 @@
-// app/api/tenant/billing/[billing_id]/route.ts
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 import { NextRequest, NextResponse } from "next/server";

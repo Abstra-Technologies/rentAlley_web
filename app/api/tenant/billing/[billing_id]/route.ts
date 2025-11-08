@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import puppeteer from "puppeteer";
 import { decryptData } from "@/crypto/encrypt";
-
+import { formatDate } from "@/utils/formatter/formatters";
 const toNum = (v: any) => {
     if (v === null || v === undefined) return 0;
     const n = typeof v === "number" ? v : Number(v);
@@ -90,12 +90,15 @@ export async function GET(
         );
         const config = configRows?.[0] || {};
         const billingDueDay = Number(config.billingDueDay || 1);
-        const billingPeriod = new Date(bill.billing_period);
+        const billingDate = new Date(bill.billing_period);
+        const formattedBillingPeriod = formatDate(billingDate);
+
         const dueDate = new Date(
-            billingPeriod.getFullYear(),
-            billingPeriod.getMonth(),
+            billingDate.getFullYear(),
+            billingDate.getMonth(),
             billingDueDay
         );
+
         const dueDateStr = dueDate.toLocaleDateString("en-CA");
 
         // 4️⃣ Additional charges
@@ -294,7 +297,7 @@ export async function GET(
       <!-- Summary -->
       <table>
         <tr><th>Billing Period</th><th>Due Date</th><th>Total Due</th></tr>
-        <tr><td>${bill.billing_period}</td><td>${dueDateStr}</td><td><strong>₱${php(adjustedTotal)}</strong></td></tr>
+        <tr><td>${bill.formattedBillingPeriod}</td><td>${dueDateStr}</td><td><strong>₱${php(adjustedTotal)}</strong></td></tr>
       </table>
 
       ${meterSection}
