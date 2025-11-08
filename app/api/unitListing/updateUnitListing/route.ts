@@ -19,7 +19,7 @@ export async function PUT(req: Request) {
       `SELECT * FROM Unit WHERE unit_id = ?`,
       [id]
     );
-// @ts-ignore
+    // @ts-ignore
     if (rows.length === 0) {
       return NextResponse.json({ error: "Unit not found" }, { status: 404 });
     }
@@ -37,23 +37,28 @@ export async function PUT(req: Request) {
       rentAmt,
       furnish,
       status,
-        amenities,
+      amenities,
     } = body;
 
     await connection.beginTransaction();
-    const amenityString = Array.isArray(amenities) ? amenities.join(",") : amenities || "";
+    const amenityString = Array.isArray(amenities)
+      ? amenities.join(",")
+      : amenities || "";
 
+    // ✅ Fixed: Match the number of placeholders (7) with the number of values (7)
     const [result] = await connection.execute(
       `UPDATE Unit SET
-        unit_name = ?, unit_size = ?, bed_spacing = ?,
-        avail_beds = ?, rent_amount = ?, furnish = ?, status = ?, 
-        amenities = ?, updated_at = CURRENT_TIMESTAMP
+        unit_name = ?, 
+        unit_size = ?,
+        rent_amount = ?, 
+        furnish = ?, 
+        status = ?, 
+        amenities = ?, 
+        updated_at = CURRENT_TIMESTAMP
        WHERE unit_id = ?`,
       [
         unitName,
         unitSize,
-        bedSpacing,
-        availBeds,
         rentAmt,
         furnish,
         status ?? "unoccupied",
