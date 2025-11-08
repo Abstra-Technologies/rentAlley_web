@@ -2,32 +2,35 @@
 
 import { useParams } from "next/navigation";
 import ConcessionaireBillingHistory from "@/components/landlord/properties/ConcessionaireBillingHistory";
+import { Zap, Droplets } from "lucide-react";
 
 export default function UtilityHistoryPage() {
-    const { id } = useParams();
-    const property_id = id;
+  const { id } = useParams();
+  const property_id = id;
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50 p-3 sm:p-6">
-            <div className="w-full max-w-[95rem] mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 p-6 sm:p-8">
-                {/* Header Section */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-                            Utility Cost History
-                        </h1>
-                        <p className="text-sm sm:text-base text-gray-600 mt-1">
-                            View all historical utility cost for this property.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Table Container */}
-                <div className="w-full overflow-x-auto bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-100 shadow-sm p-3 sm:p-4">
-                    <ConcessionaireBillingHistory propertyId={property_id} />
-                </div>
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+      <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+        {/* Header */}
+        <div className="mb-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
+              <Zap className="w-5 h-5 text-white" />
             </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                Utility Cost History
+              </h1>
+              <p className="text-xs md:text-sm text-gray-600 mt-0.5">
+                View all historical utility costs for this property
+              </p>
+            </div>
+          </div>
         </div>
 
-    );
+        {/* Component */}
+        <ConcessionaireBillingHistory propertyId={property_id} />
+      </div>
+    </div>
+  );
 }
