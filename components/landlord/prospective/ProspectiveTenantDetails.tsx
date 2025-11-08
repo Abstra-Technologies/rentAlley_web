@@ -43,7 +43,6 @@ const ProspectiveTenantDetails = () => {
         }
     }, [unitId, tenantId]);
 
-    // 🔹 Fetch AI Screening Score
     const fetchAIScore = async () => {
         try {
             const res = await axios.get(

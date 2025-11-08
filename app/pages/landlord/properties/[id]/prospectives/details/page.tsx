@@ -4,7 +4,7 @@ import ProspectiveTenantDetails from "@/components/landlord/prospective/Prospect
 import LandlordLayout from "@/components/navigation/sidebar-landlord";
 
 const ProspectiveTenantDetailedPage = () => {
-    const { id } = useParams(); // 👈 propertyId from folder [id]
+    const { id } = useParams();
     const propertyId = id;
 
     const searchParams = useSearchParams();

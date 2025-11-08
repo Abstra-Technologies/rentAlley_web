@@ -61,7 +61,6 @@ const TenantApplicationForm = () => {
   const validIdRef = useRef(null);
   const incomeRef = useRef(null);
 
-  // ✅ Fetch profile + property info
   useEffect(() => {
     if (!user?.user_id || !user?.tenant_id) return;
 
