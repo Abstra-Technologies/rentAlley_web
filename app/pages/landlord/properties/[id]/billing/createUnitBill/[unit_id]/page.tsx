@@ -169,7 +169,6 @@ export default function CreateUnitBill() {
         electricityCurrentReading: eb?.elec_curr ?? "",
       }));
 
-      // ✅ Charges (if any)
       setExtraExpenses(
           eb?.additional_charges?.map((c: any) => ({
             charge_id: c.id,
@@ -214,69 +213,72 @@ export default function CreateUnitBill() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ====== BILL CALCULATION (with PDC-aware adjusted total) ======
-  // MODIFIED: This function now correctly calculates adjustedTotal
-  // based on 'cleared' PDC status, matching the handleSubmit logic.
-// ====== BILL CALCULATION (with correct PDC logic) ======
-  const calculateBill = () => {
-    const wPrev = parseFloat(form.waterPrevReading) || 0;
-    const wCurr = parseFloat(form.waterCurrentReading) || 0;
-    const ePrev = parseFloat(form.electricityPrevReading) || 0;
-    const eCurr = parseFloat(form.electricityCurrentReading) || 0;
+// ====== BILL CALCULATION (fixed rent fallback + pdc covered amount) ======
+    const calculateBill = () => {
+        const wPrev = parseFloat(form.waterPrevReading) || 0;
+        const wCurr = parseFloat(form.waterCurrentReading) || 0;
+        const ePrev = parseFloat(form.electricityPrevReading) || 0;
+        const eCurr = parseFloat(form.electricityCurrentReading) || 0;
 
-    const waterUsage = Math.max(0, wCurr - wPrev);
-    const elecUsage = Math.max(0, eCurr - ePrev);
+        const waterUsage = Math.max(0, wCurr - wPrev);
+        const elecUsage = Math.max(0, eCurr - ePrev);
 
-    const waterCost = +(waterUsage * (propertyRates.waterRate || 0)).toFixed(2);
-    const elecCost = +(elecUsage * (propertyRates.electricityRate || 0)).toFixed(2);
+        const waterCost = +(waterUsage * (propertyRates.waterRate || 0)).toFixed(2);
+        const elecCost = +(elecUsage * (propertyRates.electricityRate || 0)).toFixed(2);
 
-    const rent = Number(unit?.effective_rent_amount ?? 0);
-    console.log('rent amount: 22: ', rent);
-    const dues = Number(property?.assoc_dues ?? 0);
-    const lateFee = Number(property?.late_fee ?? 0);
+        const rent = Number(
+            unit?.effective_rent_amount || unit?.rent_amount || 0
+        );
 
-    const totalExtraCharges = extraExpenses.reduce(
-        (sum, item) => sum + (parseFloat(String(item.amount)) || 0),
-        0
-    );
-    const totalDiscounts = discounts.reduce(
-        (sum, item) => sum + (parseFloat(String(item.amount)) || 0),
-        0
-    );
 
-    // Base total (everything included)
-    const totalBeforePdc =
-        rent + dues + waterCost + elecCost + totalExtraCharges - totalDiscounts;
+        console.log('rent amount with ?? condition: ', rent);
 
-    console.log('total before pdc:', totalBeforePdc);
+        const dues = Number(property?.assoc_dues ?? 0);
+        const lateFee = Number(property?.late_fee ?? 0);
 
-    // 🧮 PDC logic — only deduct from rent if cleared
-    const pdcAmount = Number(pdc?.amount || 0);
-    const pdcCleared = pdc?.status === "cleared";
+        const totalExtraCharges = extraExpenses.reduce(
+            (sum, item) => sum + (parseFloat(String(item.amount)) || 0),
+            0
+        );
+        const totalDiscounts = discounts.reduce(
+            (sum, item) => sum + (parseFloat(String(item.amount)) || 0),
+            0
+        );
 
-    const rentAfterPdc = pdcCleared
-        ? Math.max(0, rent - Math.min(pdcAmount, rent))
-        : rent;
+        // Base total (everything included) — this ALWAYS includes rent
+        const totalBeforePdc =
+            rent + dues + waterCost + elecCost + totalExtraCharges - totalDiscounts;
 
-    const adjustedTotal =
-        rentAfterPdc + dues + waterCost + elecCost + totalExtraCharges - totalDiscounts;
+        // 🧮 PDC logic — only deduct from rent if cleared
+        const pdcAmount = Number(pdc?.amount || 0);
+        const pdcCleared = pdc?.status === "cleared";
 
-    return {
-      waterUsage,
-      elecUsage,
-      waterCost,
-      elecCost,
-      rent,
-      dues,
-      lateFee,
-      totalExtraCharges,
-      totalDiscounts,
-      totalBeforePdc,
-      adjustedTotal,
-      pdcAmount,
-      pdcCleared,
+        // amount of rent covered by PDC (cap at rent)
+        const pdcCoveredAmount = pdcCleared ? Math.min(pdcAmount, rent) : 0;
+
+        const rentAfterPdc = Math.max(0, rent - pdcCoveredAmount);
+
+        const adjustedTotal =
+            rentAfterPdc + dues + waterCost + elecCost + totalExtraCharges - totalDiscounts;
+
+        return {
+            waterUsage,
+            elecUsage,
+            waterCost,
+            elecCost,
+            rent,
+            dues,
+            lateFee,
+            totalExtraCharges,
+            totalDiscounts,
+            totalBeforePdc,
+            adjustedTotal,
+            pdcAmount,
+            pdcCleared,
+            pdcCoveredAmount, // <-- helpful for UI messaging
+        };
     };
-  };
+
 
 
   // ====== PDC: Mark as Cleared ======
@@ -1085,19 +1087,35 @@ export default function CreateUnitBill() {
                         <div className="h-px bg-white/30 my-1"></div>
 
                         {/* Final total (deduct rent only if cleared) */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-base font-semibold">Total Amount Due</span>
-                          <span className="text-2xl font-extrabold">
-        ₱
-                            {Number(
-                                pdc?.status === "cleared"
-                                    ? bill?.adjustedTotal ?? 0
-                                    : bill?.totalBeforePdc ?? 0
-                            ).toFixed(2)}
-      </span>
-                        </div>
+                          <div className="flex items-center justify-between">
+                              <span className="text-base font-semibold">Total Amount Due</span>
+                              <span className="text-2xl font-extrabold">
+    ₱
+                                  {(
+                                      pdc?.status === "cleared"
+                                          ? bill?.adjustedTotal ?? 0 // ✅ Rent reduced by cleared PDC
+                                          : bill?.totalBeforePdc ?? 0 // ✅ Full amount if no PDC or not cleared
+                                  ).toLocaleString("en-PH", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                  })}
+  </span>
+                          </div>
 
-                        {/* Explanation */}
+                          {/* Optional: PDC message for clarity */}
+                          {pdc && (
+                              <p className="mt-2 text-xs italic text-white/90">
+                                  {pdc.status === "cleared"
+                                      ? `✅ Cleared PDC applied — ₱${(bill?.pdcCoveredAmount || 0).toLocaleString("en-PH", {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                      })} deducted from rent.`
+                                      : `⚠️ PDC not cleared — full rent amount still included.`}
+                              </p>
+                          )}
+
+
+                          {/* Explanation */}
                         {pdc && (
                             <>
                               {pdc.status === "cleared" ? (
