@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -10,9 +11,9 @@ import {
   Building2,
   FileDown,
   AlertCircle,
-  Eye,
   Mail,
   Phone,
+  FileCog,
 } from "lucide-react";
 import { formatDate } from "@/utils/formatter/formatters";
 
@@ -51,16 +52,16 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
       .catch((err) => console.error("Failed to fetch signatures", err));
   }, [lease?.lease_id]);
 
-  const handleViewLease = () => {
+  const handleSetupLeaseRedirect = () => {
     const agreementId = lease.agreement_id || lease.lease_id;
     router.push(
-      `/pages/landlord/properties/${lease.property_id}/activeLease/leaseDetails/${agreementId}`
+      `/pages/landlord/properties/${lease.property_id}/activeLease/setup?agreement_id=${agreementId}`
     );
   };
 
   return (
-    <div className="w-full h-full flex items-center justify-center p-4">
-      <div className="flex flex-col w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden max-h-[85vh]">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="flex flex-col w-full max-w-2xl bg-white rounded-xl shadow-xl overflow-hidden max-h-[85vh]">
         {/* Header - Fixed */}
         <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -176,9 +177,20 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
                   View Document
                 </a>
               ) : (
-                <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded-lg">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs">No agreement uploaded yet.</p>
+                <div className="flex flex-col gap-2 text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs font-medium">
+                      No agreement uploaded yet.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleSetupLeaseRedirect}
+                    className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-sm hover:from-blue-700 hover:to-emerald-700 transition-all"
+                  >
+                    <FileCog className="w-4 h-4" />
+                    Setup Lease
+                  </button>
                 </div>
               )}
             </div>
@@ -255,11 +267,11 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
         {/* Action Button - Fixed at bottom */}
         <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
           <button
-            onClick={handleViewLease}
+            onClick={handleSetupLeaseRedirect}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
           >
-            <Eye className="w-4 h-4" />
-            View Full Details
+            <FileCog className="w-4 h-4" />
+            View Lease
           </button>
         </div>
       </div>
