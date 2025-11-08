@@ -19,7 +19,6 @@ import { formatDate } from "@/utils/formatter/formatters";
 
 export default function LeaseDetailsPanel({ lease, onClose }) {
   const router = useRouter();
-
   const [signatures, setSignatures] = useState<any[]>([]);
   const [trackingEnabled, setTrackingEnabled] = useState(false);
 
@@ -27,7 +26,6 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
 
   const hasAgreement = !!lease.agreement_url;
   const pdfUrl = lease.agreement_url;
-
   const signedCount = signatures.filter((s) => s.status === "signed").length;
   const totalCount = 2;
   const signatureProgress = Math.round((signedCount / totalCount) * 100);
@@ -52,10 +50,23 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
       .catch((err) => console.error("Failed to fetch signatures", err));
   }, [lease?.lease_id]);
 
+  const handleViewLeaseRedirect = () => {
+    const agreementId = lease.agreement_id || lease.lease_id;
+    if (lease.lease_status === "draft") {
+      router.push(
+        `/pages/landlord/properties/${lease.property_id}/activeLease/setup/${agreementId}`
+      );
+    } else {
+      router.push(
+        `/pages/landlord/properties/${lease.property_id}/activeLease/leaseDetails/${agreementId}`
+      );
+    }
+  };
+
   const handleSetupLeaseRedirect = () => {
     const agreementId = lease.agreement_id || lease.lease_id;
     router.push(
-      `/pages/landlord/properties/${lease.property_id}/activeLease/setup?agreement_id=${agreementId}`
+      `/pages/landlord/properties/${lease.property_id}/activeLease/setup/${agreementId}`
     );
   };
 
@@ -78,7 +89,6 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
 
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 space-y-3">
-            {/* Lease ID & Unit - Combined Row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-xs font-medium text-gray-500 mb-1">
@@ -88,6 +98,7 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
                   {lease.lease_id || "—"}
                 </p>
               </div>
+
               <div>
                 <p className="text-xs font-medium text-gray-500 mb-1">Unit</p>
                 <div className="flex items-center gap-2">
@@ -99,7 +110,6 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
               </div>
             </div>
 
-            {/* Tenant & Email - Combined Row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-xs font-medium text-gray-500 mb-1">Tenant</p>
@@ -117,7 +127,7 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
                     Email
                   </p>
                   <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <Mail className="w-4 h-4 text-gray-400" />
                     <p className="text-sm text-gray-900 truncate">
                       {lease.tenant_email}
                     </p>
@@ -126,7 +136,6 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
               )}
             </div>
 
-            {/* Phone - Moved here to group with contact info */}
             {lease.tenant_phone && (
               <div>
                 <p className="text-xs font-medium text-gray-500 mb-1">Phone</p>
@@ -137,7 +146,6 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
               </div>
             )}
 
-            {/* Start & End Date - Combined Row (Lease Term) */}
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
               <div>
                 <p className="text-xs font-medium text-gray-500 mb-1">
@@ -164,7 +172,6 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
               </div>
             </div>
 
-            {/* Agreement Document */}
             <div className="pt-3 border-t border-gray-200">
               <p className="text-xs font-medium text-gray-500 mb-2">
                 Agreement Document
@@ -198,7 +205,6 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
               )}
             </div>
 
-            {/* Signature Progress */}
             {Array.isArray(signatures) &&
               signatures.length === 2 &&
               trackingEnabled && (
@@ -266,7 +272,7 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
 
         <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
           <button
-            onClick={handleSetupLeaseRedirect}
+            onClick={handleViewLeaseRedirect}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
           >
             <FileCog className="w-4 h-4" />
