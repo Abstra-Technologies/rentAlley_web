@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useDropzone } from "react-dropzone";
 import Swal from "sweetalert2";
 import { z } from "zod";
+import { Plus, Upload, X } from "lucide-react";
 import furnishingTypes from "@/constant/furnishingTypes";
 import unitTypes from "@/constant/unitTypes";
 import AmenitiesSelector from "@/components/landlord/properties/unitAmenities";
@@ -32,7 +33,7 @@ export default function UnitListingForm() {
     rentAmt: "",
     furnish: "",
     amenities: [],
-    unitType:'',
+    unitType: "",
   });
 
   const [photos, setPhotos] = useState<File[]>([]);
@@ -45,7 +46,7 @@ export default function UnitListingForm() {
       if (!propertyId) return;
       try {
         const res = await fetch(
-            `/api/propertyListing/getPropDetailsById?property_id=${propertyId}`
+          `/api/propertyListing/getPropDetailsById?property_id=${propertyId}`
         );
         if (!res.ok) throw new Error("Failed to fetch property");
         const data = await res.json();
@@ -64,16 +65,16 @@ export default function UnitListingForm() {
       return {
         ...prev,
         amenities: isSelected
-            ? prev.amenities.filter((a) => a !== amenityName)
-            : [...prev.amenities, amenityName],
+          ? prev.amenities.filter((a) => a !== amenityName)
+          : [...prev.amenities, amenityName],
       };
     });
   };
 
   const handleChange = async (
-      e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, type, value } = e.target;
+    const { name, value } = e.target;
 
     setFormData((prevData) => ({
       ...prevData,
@@ -83,15 +84,15 @@ export default function UnitListingForm() {
     if (name === "unitName" && value.trim() !== "") {
       try {
         const res = await fetch(
-            `/api/unitListing/checkUnitName?property_id=${propertyId}&unitName=${encodeURIComponent(
-                value.trim()
-            )}`
+          `/api/unitListing/checkUnitName?property_id=${propertyId}&unitName=${encodeURIComponent(
+            value.trim()
+          )}`
         );
         const data = await res.json();
         setUnitNameError(
-            data.exists
-                ? "This unit name is already in use for this property."
-                : ""
+          data.exists
+            ? "This unit name is already in use for this property."
+            : ""
         );
       } catch (err) {
         console.error("Error checking unit name:", err);
@@ -121,18 +122,19 @@ export default function UnitListingForm() {
         title: "Validation Error",
         text: result.error.errors.map((err) => err.message).join(", "),
         icon: "error",
+        confirmButtonColor: "#ef4444",
       });
       return;
     }
 
     const confirmSubmit = await Swal.fire({
-      title: "Are you sure?",
+      title: "Create Unit?",
       text: "Do you want to submit this unit listing?",
-      icon: "warning",
+      icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, submit it!",
+      confirmButtonColor: "#10b981",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, create it!",
     });
 
     if (!confirmSubmit.isConfirmed) return;
@@ -155,12 +157,22 @@ export default function UnitListingForm() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      Swal.fire("Success!", "Unit created successfully!", "success").then(() => {
+      Swal.fire({
+        title: "Success!",
+        text: "Unit created successfully!",
+        icon: "success",
+        confirmButtonColor: "#10b981",
+      }).then(() => {
         router.replace(propURL);
       });
     } catch (error: any) {
       console.error("Error creating unit:", error);
-      Swal.fire("Error!", `Error creating unit: ${error.message}`, "error");
+      Swal.fire({
+        title: "Error!",
+        text: `Error creating unit: ${error.message}`,
+        icon: "error",
+        confirmButtonColor: "#ef4444",
+      });
     } finally {
       setLoading(false);
     }
@@ -169,346 +181,289 @@ export default function UnitListingForm() {
   const handleCancel = () => {
     router.replace(`/pages/landlord/properties/${propertyId}`);
   };
-  return (
-      <>
-        <DisableNavigation />
 
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-blue-600 to-emerald-600 shadow-lg">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-              <div className="flex items-center space-x-3 sm:space-x-4">
-                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2 sm:p-3 flex-shrink-0">
-                  <svg
-                      className="w-6 h-6 sm:w-8 sm:h-8 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                  >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white truncate">
-                    Create New Unit
-                  </h1>
-                  <p className="text-blue-100 mt-1 text-sm sm:text-base truncate">
-                    Adding unit to{" "}
-                    <span className="font-semibold">{propertyName}</span>
-                  </p>
-                </div>
+  return (
+    <>
+      <DisableNavigation />
+
+      <div className="min-h-screen bg-gray-50">
+        {/* Proper spacing for navbar */}
+        <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Plus className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Create New Unit
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  Adding unit to{" "}
+                  <span className="font-semibold">{propertyName}</span>
+                </p>
               </div>
             </div>
           </div>
 
           {/* Form Container */}
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-              <form
-                  onSubmit={handleSubmit}
-                  className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8"
-              >
-                {/* Basic Information Section */}
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-xs sm:text-sm">
-                      1
-                    </span>
-                    </div>
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
-                      Basic Information
-                    </h2>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-6">
+              {/* Basic Information Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
+                  <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-xs">1</span>
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Basic Information
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Unit Name */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Unit Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="unitName"
+                      value={formData.unitName}
+                      onChange={handleChange}
+                      placeholder="e.g., Unit 101, Studio A"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 transition-colors text-sm ${
+                        unitNameError
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
+                      }`}
+                    />
+                    {unitNameError && (
+                      <p className="text-xs text-red-500">{unitNameError}</p>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    {/* Unit Name */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Unit Name <span className="text-red-500">*</span>
-                      </label>
+                  {/* Unit Size */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Unit Size <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
                       <input
-                          type="text"
-                          name="unitName"
-                          value={formData.unitName}
-                          onChange={handleChange}
-                          placeholder="e.g., Unit 101, Studio A"
-                          className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg sm:rounded-xl focus:ring-2 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base ${
-                              unitNameError
-                                  ? "border-red-500 focus:ring-red-500"
-                                  : "border-gray-300 focus:ring-blue-500"
-                          }`}
+                        type="number"
+                        name="unitSize"
+                        value={formData.unitSize}
+                        onChange={handleChange}
+                        placeholder="25"
+                        className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
                       />
-                      {unitNameError && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {unitNameError}
-                          </p>
-                      )}
-                    </div>
-
-                    {/* Unit Size */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Unit Size <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                            type="number"
-                            name="unitSize"
-                            value={formData.unitSize}
-                            onChange={handleChange}
-                            placeholder="25"
-                            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
-                        />
-                        <span className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm sm:text-base">
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
                         sqm
                       </span>
-                      </div>
                     </div>
+                  </div>
 
-
-                    {/* Unit Type */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Unit Type <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                          name="unitType"
-                          value={formData.unitType || ""}
-                          onChange={handleChange}
-                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
-                      >
-                        <option value="" disabled>
-                          Select unit type
+                  {/* Unit Type */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Unit Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="unitType"
+                      value={formData.unitType || ""}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
+                    >
+                      <option value="" disabled>
+                        Select unit type
+                      </option>
+                      {unitTypes.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
-                        {unitTypes.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                        ))}
-                      </select>
-                    </div>
-
+                      ))}
+                    </select>
                   </div>
 
                   {/* Rent Amount */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Monthly Rent Amount <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Monthly Rent <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative max-w-full sm:max-w-md">
-                    <span className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm sm:text-base">
-                      ₱
-                    </span>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
+                        ₱
+                      </span>
                       <input
-                          type="number"
-                          name="rentAmt"
-                          value={formData.rentAmt}
-                          onChange={handleChange}
-                          placeholder="5000"
-                          min={0}
-                          className="w-full pl-7 sm:pl-8 pr-3 sm:pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
+                        type="number"
+                        name="rentAmt"
+                        value={formData.rentAmt}
+                        onChange={handleChange}
+                        placeholder="5000"
+                        min={0}
+                        className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
                       />
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Features Section */}
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-xs sm:text-sm">
-                      2
-                    </span>
-                    </div>
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
-                      Unit Features
-                    </h2>
+              {/* Features Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
+                  <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-xs">2</span>
                   </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Unit Features
+                  </h2>
+                </div>
 
-                  {/* Furnishing */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Furnishing Type <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        name="furnish"
-                        value={formData.furnish}
-                        onChange={handleChange}
-                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 transition-colors duration-200 bg-gray-50 focus:bg-white text-sm sm:text-base"
-                    >
-                      <option value="" disabled>
-                        Select furnishing type
+                {/* Furnishing */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Furnishing Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="furnish"
+                    value={formData.furnish}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
+                  >
+                    <option value="" disabled>
+                      Select furnishing type
+                    </option>
+                    {furnishingTypes.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
                       </option>
-                      {furnishingTypes.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                      ))}
-                    </select>
-                  </div>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Amenities */}
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Amenities
-                    </label>
-                  </div>
-
-                  <div className="bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg sm:rounded-xl p-4 sm:p-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Amenities
+                  </label>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <AmenitiesSelector
-                        selectedAmenities={formData.amenities}
-                        onAmenityChange={handleAmenityChange}
+                      selectedAmenities={formData.amenities}
+                      onAmenityChange={handleAmenityChange}
                     />
                   </div>
                 </div>
+              </div>
 
-                {/* Photos Section */}
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-xs sm:text-sm">
-                      3
-                    </span>
-                    </div>
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
-                      Unit Photos <span className="text-red-500">*</span>
-                    </h2>
+              {/* Photos Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
+                  <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-xs">3</span>
                   </div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Unit Photos <span className="text-red-500">*</span>
+                  </h2>
+                </div>
 
-                  {/* Dropzone */}
-                  <div
-                      {...getRootProps()}
-                      className={`relative border-2 border-dashed rounded-lg sm:rounded-xl p-6 sm:p-8 transition-all duration-300 cursor-pointer group ${
-                          isDragActive
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+                {/* Dropzone */}
+                <div
+                  {...getRootProps()}
+                  className={`relative border-2 border-dashed rounded-lg p-8 transition-all cursor-pointer ${
+                    isDragActive
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  <div className="text-center space-y-3">
+                    <div
+                      className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                        isDragActive ? "bg-blue-100" : "bg-gray-100"
                       }`}
-                  >
-                    <input {...getInputProps()} />
-                    <div className="text-center space-y-3 sm:space-y-4">
-                      <div
-                          className={`mx-auto w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-colors duration-300 ${
-                              isDragActive
-                                  ? "bg-blue-100"
-                                  : "bg-gray-100 group-hover:bg-blue-50"
-                          }`}
+                    >
+                      <Upload
+                        className={`w-6 h-6 ${
+                          isDragActive ? "text-blue-600" : "text-gray-400"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <p
+                        className={`text-base font-medium ${
+                          isDragActive ? "text-blue-600" : "text-gray-700"
+                        }`}
                       >
-                        <svg
-                            className={`w-6 h-6 sm:w-8 sm:h-8 transition-colors duration-300 ${
-                                isDragActive
-                                    ? "text-blue-600"
-                                    : "text-gray-400 group-hover:text-blue-500"
-                            }`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                          <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                          />
-                        </svg>
-                      </div>
-                      <div>
-                        <p
-                            className={`text-base sm:text-lg font-medium transition-colors duration-300 ${
-                                isDragActive ? "text-blue-600" : "text-gray-700"
-                            }`}
-                        >
-                          {isDragActive
-                              ? "Drop photos here"
-                              : "Upload unit photos"}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Drag and drop or click to select multiple images
-                        </p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          Supported formats: JPG, PNG, GIF (Max 10MB each)
-                        </p>
-                      </div>
+                        {isDragActive
+                          ? "Drop photos here"
+                          : "Upload unit photos"}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Drag and drop or click to select images
+                      </p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Photo Previews */}
-                  {photos.length > 0 && (
-                      <div className="space-y-3 sm:space-y-4">
-                        <h3 className="text-sm font-semibold text-gray-700">
-                          Uploaded Photos ({photos.length})
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-                          {photos.map((photo, index) => (
-                              <div key={index} className="relative group">
-                                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                                  <Image
-                                      src={URL.createObjectURL(photo)}
-                                      alt={`Unit photo ${index + 1}`}
-                                      width={200}
-                                      height={200}
-                                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                                  />
-                                </div>
-                                <button
-                                    type="button"
-                                    className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 hover:bg-red-600 text-white p-1 sm:p-1.5 rounded-full text-xs transition-colors duration-200 opacity-0 group-hover:opacity-100 shadow-lg"
-                                    onClick={() => {
-                                      const newPhotos = [...photos];
-                                      newPhotos.splice(index, 1);
-                                      setPhotos(newPhotos);
-                                    }}
-                                >
-                                  <svg
-                                      className="w-3 h-3"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                  </svg>
-                                </button>
-                              </div>
-                          ))}
+                {/* Photo Previews */}
+                {photos.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Uploaded Photos ({photos.length})
+                    </h3>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                      {photos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                            <Image
+                              src={URL.createObjectURL(photo)}
+                              alt={`Unit photo ${index + 1}`}
+                              width={200}
+                              height={200}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full transition-colors opacity-0 group-hover:opacity-100 shadow-lg"
+                            onClick={() => {
+                              const newPhotos = [...photos];
+                              newPhotos.splice(index, 1);
+                              setPhotos(newPhotos);
+                            }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </div>
-                      </div>
-                  )}
-                </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 sm:pt-8 border-t border-gray-200">
-                  <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1 sm:flex-none sm:order-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-400 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:shadow-none text-sm sm:text-base"
-                  >
-                    {loading ? "Creating Unit..." : "Create Unit"}
-                  </button>
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-5 py-2 text-gray-700 hover:bg-gray-50 border border-gray-300 rounded-lg font-medium transition-colors text-sm"
+                >
+                  Cancel
+                </button>
 
-                  <button
-                      type="button"
-                      onClick={handleCancel}
-                      className="flex-1 sm:flex-none sm:order-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-5 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-400 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg text-sm disabled:cursor-not-allowed"
+                >
+                  {loading ? "Creating Unit..." : "Create Unit"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </>
+      </div>
+    </>
   );
 }
