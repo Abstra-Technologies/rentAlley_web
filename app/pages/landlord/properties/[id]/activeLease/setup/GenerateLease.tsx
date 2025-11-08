@@ -24,8 +24,10 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
     const [otpSent, setOtpSent] = useState(false);
     const [otpCode, setOtpCode] = useState("");
     const [leaseFileUrl, setLeaseFileUrl] = useState<string>("");
-
+    const [resending, setResending] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
     // 🔹 Load Property Configuration (defaults)
+
     useEffect(() => {
         const fetchConfig = async () => {
             try {
@@ -49,6 +51,13 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
         };
         fetchConfig();
     }, [property_id, leaseDetails]);
+
+    useEffect(() => {
+        if (cooldown > 0) {
+            const timer = setInterval(() => setCooldown((prev) => prev - 1), 1000);
+            return () => clearInterval(timer);
+        }
+    }, [cooldown]);
 
     // 🔹 Handle form changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,6 +157,68 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
             Swal.fire("OTP Sent!", "Check your email for the 6-digit code.", "success");
         } catch (err: any) {
             Swal.fire("Error", err.response?.data?.error || "Failed to send OTP.", "error");
+        }
+    };
+
+    const handleVerifyOtp = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+        e?.preventDefault();
+        e?.stopPropagation();
+
+        try {
+            const payload = {
+                agreement_id,
+                email: leaseDetails?.landlord_email,
+                role: "landlord",
+                otp_code: otpCode, // ✅ ensure this comes from state
+            };
+
+            console.log("Sending payload:", payload); // 🔍 Debug line
+
+            const res = await axios.post("/api/landlord/activeLease/veritfyOtp", payload); // ✅ fixed URL
+
+            if (res.data?.success) {
+                Swal.fire({
+                    title: "OTP Verified!",
+                    text: "Lease successfully signed and verified.",
+                    icon: "success",
+                    confirmButtonColor: "#059669",
+                });
+            } else {
+                Swal.fire("Error", res.data?.error || "Invalid OTP.", "error");
+            }
+        } catch (error) {
+            console.error("Error verifying OTP:", error);
+            Swal.fire("Error", "Failed to verify OTP.", "error");
+        }
+    };
+
+    const handleResendOtp = async () => {
+        if (cooldown > 0) return;
+
+        try {
+            setResending(true);
+            const res = await axios.post(`/api/landlord/activeLease/sendOtp`, {
+                agreement_id,
+                role: "landlord", // or "tenant"
+                email: leaseDetails?.landlord_email, // ensure you pass the registered email
+            });
+
+            if (res.data?.success) {
+                Swal.fire({
+                    title: "OTP Sent!",
+                    text: "A new verification code has been sent to your registered email.",
+                    icon: "success",
+                    confirmButtonColor: "#059669",
+                });
+                setCooldown(60); // 60 seconds cooldown before resend
+            } else {
+                Swal.fire("Error", res.data?.error || "Failed to resend OTP.", "error");
+            }
+        } catch (error: any) {
+            console.error("Resend OTP error:", error);
+            Swal.fire("Error", "Could not resend OTP. Please try again.", "error");
+        } finally {
+            setResending(false);
         }
     };
 
@@ -914,8 +985,6 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                     </a>
                 </div>
             )}
-
-
 
         </div>
     );
