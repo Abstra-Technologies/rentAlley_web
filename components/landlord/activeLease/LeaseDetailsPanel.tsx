@@ -59,13 +59,13 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="flex flex-col w-full max-w-lg bg-white rounded-lg shadow-xl overflow-hidden">
+    <div className="w-full h-full flex items-center justify-center p-4">
+      <div className="flex flex-col w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden max-h-[85vh]">
         {/* Header - Fixed */}
-        <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-6 py-4 flex items-center justify-between flex-shrink-0">
+        <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-4 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-white flex-shrink-0" />
-            <h2 className="text-lg font-bold text-white">Lease Details</h2>
+            <h2 className="text-base font-bold text-white">Lease Details</h2>
           </div>
           <button
             onClick={onClose}
@@ -78,23 +78,21 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
 
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-4">
+          <div className="p-4 space-y-3">
             {/* Lease ID */}
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1.5">
-                Lease ID
-              </p>
-              <p className="text-base font-semibold text-gray-900">
+              <p className="text-xs font-medium text-gray-500 mb-1">Lease ID</p>
+              <p className="text-sm font-semibold text-gray-900">
                 {lease.lease_id || "—"}
               </p>
             </div>
 
             {/* Unit */}
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1.5">Unit</p>
+              <p className="text-xs font-medium text-gray-500 mb-1">Unit</p>
               <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-blue-600" />
-                <p className="text-base font-semibold text-gray-900">
+                <Building2 className="w-4 h-4 text-blue-600" />
+                <p className="text-sm font-semibold text-gray-900">
                   {lease.unit_name}
                 </p>
               </div>
@@ -102,10 +100,10 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
 
             {/* Tenant */}
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1.5">Tenant</p>
+              <p className="text-xs font-medium text-gray-500 mb-1">Tenant</p>
               <div className="flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-600" />
-                <p className="text-base font-semibold text-gray-900">
+                <User className="w-4 h-4 text-blue-600" />
+                <p className="text-sm font-semibold text-gray-900">
                   {lease.tenant_name}
                 </p>
               </div>
@@ -114,11 +112,9 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
             {/* Email */}
             {lease.tenant_email && (
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1.5">
-                  Email
-                </p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Email</p>
                 <div className="flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-gray-400" />
+                  <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <p className="text-sm text-gray-900 break-all">
                     {lease.tenant_email}
                   </p>
@@ -129,46 +125,43 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
             {/* Phone */}
             {lease.tenant_phone && (
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1.5">
-                  Phone
-                </p>
+                <p className="text-xs font-medium text-gray-500 mb-1">Phone</p>
                 <div className="flex items-center gap-2">
-                  <Phone className="w-5 h-5 text-gray-400" />
-                  <p className="text-base text-gray-900">
-                    {lease.tenant_phone}
-                  </p>
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <p className="text-sm text-gray-900">{lease.tenant_phone}</p>
                 </div>
               </div>
             )}
 
-            {/* Start Date */}
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1.5">
-                Start Date
-              </p>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <p className="text-base text-gray-900">
-                  {lease.start_date ? formatDate(lease.start_date) : "N/A"}
+            {/* Start & End Date - Combined */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  Start Date
                 </p>
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <p className="text-sm text-gray-900">
+                    {lease.start_date ? formatDate(lease.start_date) : "N/A"}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* End Date */}
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1.5">
-                End Date
-              </p>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <p className="text-base text-gray-900">
-                  {lease.end_date ? formatDate(lease.end_date) : "N/A"}
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">
+                  End Date
                 </p>
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <p className="text-sm text-gray-900">
+                    {lease.end_date ? formatDate(lease.end_date) : "N/A"}
+                  </p>
+                </div>
               </div>
             </div>
 
             {/* Agreement Document */}
-            <div className="pt-4 border-t border-gray-200">
+            <div className="pt-3 border-t border-gray-200">
               <p className="text-xs font-medium text-gray-500 mb-2">
                 Agreement Document
               </p>
@@ -177,15 +170,15 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
                   href={pdfUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-medium text-sm transition-colors border border-blue-200 w-full justify-center"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-medium text-sm transition-colors border border-blue-200 w-full justify-center"
                 >
                   <FileDown className="w-4 h-4" />
                   View Document
                 </a>
               ) : (
-                <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                <div className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-200 p-2.5 rounded-lg">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm">No agreement uploaded yet.</p>
+                  <p className="text-xs">No agreement uploaded yet.</p>
                 </div>
               )}
             </div>
@@ -194,15 +187,15 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
             {Array.isArray(signatures) &&
               signatures.length === 2 &&
               trackingEnabled && (
-                <div className="pt-4 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-3">
+                <div className="pt-3 border-t border-gray-200">
+                  <p className="text-xs font-medium text-gray-500 mb-2">
                     Signature Progress
                   </p>
 
                   {/* Progress bar */}
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                     <div
-                      className={`h-2.5 rounded-full transition-all ${
+                      className={`h-2 rounded-full transition-all ${
                         signatureProgress === 100
                           ? "bg-gradient-to-r from-emerald-500 to-green-600"
                           : "bg-gradient-to-r from-blue-500 to-indigo-600"
@@ -212,7 +205,7 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
                   </div>
 
                   {/* Summary text */}
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-xs text-gray-600 mb-2">
                     {signatureProgress === 100
                       ? "Both parties have signed the lease."
                       : `${signatureProgress}% completed — ${2 - signedCount} ${
@@ -225,7 +218,7 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
                     {signatures.map((sig) => (
                       <div
                         key={sig.id ?? sig.role}
-                        className={`flex items-center justify-between text-sm px-3 py-2.5 rounded-lg border ${
+                        className={`flex items-center justify-between text-xs px-2.5 py-2 rounded-lg border ${
                           sig.status === "signed"
                             ? "bg-emerald-50 border-emerald-200 text-emerald-700"
                             : "bg-gray-50 border-gray-200 text-gray-600"
@@ -256,18 +249,18 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
                   </div>
                 </div>
               )}
-
-            {/* Action Button */}
-            <div className="pt-6 border-t border-gray-200">
-              <button
-                onClick={handleViewLease}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
-              >
-                <Eye className="w-4 h-4" />
-                View Full Details
-              </button>
-            </div>
           </div>
+        </div>
+
+        {/* Action Button - Fixed at bottom */}
+        <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
+          <button
+            onClick={handleViewLease}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
+          >
+            <Eye className="w-4 h-4" />
+            View Full Details
+          </button>
         </div>
       </div>
     </div>
