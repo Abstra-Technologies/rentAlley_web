@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const agreement_id = searchParams.get("agreement_id");
 
-        console.log('agreement_id', agreement_id);
+        console.log("agreement_id", agreement_id);
 
         if (!agreement_id) {
             return NextResponse.json(
@@ -19,12 +19,13 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // 🔹 Fetch the tenant’s lease signature + related data
+        // 🔹 Fetch lease details and tenant signature
         const [rows]: any = await db.query(
             `
       SELECT 
           la.agreement_id,
           la.status AS agreement_status,
+          la.agreement_url,
           ls.id AS signature_id,
           ls.status AS signature_status,
           ls.signed_at,
@@ -69,6 +70,19 @@ export async function GET(req: NextRequest) {
             console.warn(`⚠️ Failed to decrypt tenant email for agreement_id ${agreement_id}`, err);
         }
 
+        // 🔹 Decrypt lease document URL if encrypted
+        let leaseUrl: string | null = null;
+        try {
+            if (data.agreement_url?.startsWith("{") || data.agreement_url?.startsWith("[")) {
+                leaseUrl = decryptData(
+                    JSON.parse(data.agreement_url),
+                    process.env.ENCRYPTION_SECRET!
+                );
+            }
+        } catch (err) {
+            console.warn(`⚠️ Failed to decrypt lease URL for agreement_id ${agreement_id}`, err);
+        }
+
         // 🔹 Build simplified tenant signature info
         const tenantSignature = {
             id: data.signature_id ?? null,
@@ -77,13 +91,14 @@ export async function GET(req: NextRequest) {
             email: tenantEmail,
         };
 
-        // 🔹 Return tenant-focused lease status
+        // 🔹 Return tenant-focused lease status + document
         return NextResponse.json({
             success: true,
             agreement_id: Number(agreement_id),
             agreement_status: data.agreement_status,
             property_name: data.property_name,
             unit_name: data.unit_name,
+            agreement_url: leaseUrl,
             tenant_signature: tenantSignature,
             updated_at: new Date().toISOString(),
         });
