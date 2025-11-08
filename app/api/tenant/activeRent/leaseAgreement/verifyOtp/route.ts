@@ -1,106 +1,121 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import moment from "moment-timezone";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * ✅ POST /api/tenant/activeLease/verifyOtp
- * Body: { agreement_id: string, role: "tenant", email: string, otp_code: string }
+ * Body: { agreement_id: string, role: "tenant", otp_code: string }
  */
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
-        const { agreement_id, role, email, otp_code } = body;
+        const { agreement_id, role, otp_code } = await req.json();
 
-        // 🔹 Validate input
-        if (!agreement_id || !role || !email || !otp_code) {
+        console.log("🟦 Tenant Verify OTP →", { agreement_id, role, otp_code });
+
+        // 🔹 Validate required fields
+        if (!agreement_id || !role || !otp_code) {
             return NextResponse.json(
-                { error: "Missing required fields (agreement_id, role, email, otp_code)." },
+                { error: "Missing required fields (agreement_id, role, otp_code)." },
                 { status: 400 }
             );
         }
 
-        // 🔹 Fetch OTP record for this lease and tenant
-        const [rows]: any = await db.query(
+        // 🔹 Fetch most recent OTP record for tenant
+        const [records]: any = await db.query(
             `
       SELECT id, otp_code, otp_expires_at, status
       FROM LeaseSignature
-      WHERE agreement_id = ? AND role = 'tenant' AND email = ?
+      WHERE agreement_id = ? AND role = ?
+      ORDER BY id DESC
       LIMIT 1;
       `,
-            [agreement_id, email]
+            [agreement_id, role]
         );
 
-        if (!rows?.length) {
-            return NextResponse.json(
-                { error: "No OTP record found for this tenant and lease." },
-                { status: 404 }
-            );
+        if (!records || records.length === 0) {
+            return NextResponse.json({ error: "No OTP record found." }, { status: 404 });
         }
 
-        const record = rows[0];
+        const record = records[0];
+        const now = new Date();
+        const expiry = new Date(record.otp_expires_at);
 
-        // 🔹 Check if already signed
-        if (record.status === "signed") {
-            return NextResponse.json({
-                success: true,
-                message: "Lease already signed by tenant.",
-            });
-        }
-
-        // 🔹 Check OTP validity
-        const nowUTC = moment.utc();
-        const expiryUTC = moment(record.otp_expires_at);
-
-        if (!record.otp_code || record.otp_code !== otp_code) {
-            return NextResponse.json({ error: "Invalid OTP code." }, { status: 400 });
-        }
-
-        if (nowUTC.isAfter(expiryUTC)) {
+        // 🔹 Check expiration
+        if (now > expiry) {
             return NextResponse.json({ error: "OTP has expired." }, { status: 400 });
         }
 
-        // 🔹 Mark as signed
+        // 🔹 Check match
+        if (record.otp_code !== otp_code) {
+            return NextResponse.json({ error: "Invalid OTP code." }, { status: 400 });
+        }
+
+        // 🔹 If already signed
+        if (record.status === "signed") {
+            return NextResponse.json({
+                success: true,
+                message: `${role} has already signed this lease.`,
+            });
+        }
+
+        // 🔹 Gather client metadata
+        const verifiedIp = req.headers.get("x-forwarded-for") || req.ip || "unknown";
+        const userAgent = req.headers.get("user-agent") || "unknown";
+
+        // 🔹 Update this tenant signature
         await db.query(
             `
       UPDATE LeaseSignature
-      SET status = 'signed', signed_at = UTC_TIMESTAMP(), otp_code = NULL
-      WHERE id = ?;
+      SET 
+          status = 'signed',
+          signed_at = NOW(),
+          verified_ip = ?,
+          verified_user_agent = ?
+      WHERE agreement_id = ? AND role = ?;
       `,
-            [record.id]
+            [verifiedIp, userAgent, agreement_id, role]
         );
 
-        // 🔹 Optionally check if landlord also signed → mark lease as "active"
-        const [signatures]: any = await db.query(
+        // 🔹 Check if both parties have signed → activate lease
+        await db.query(
             `
-      SELECT COUNT(*) AS signed_count
-      FROM LeaseSignature
-      WHERE agreement_id = ? AND status = 'signed';
+      UPDATE LeaseAgreement la
+      SET la.status = (
+        SELECT 
+          CASE 
+            WHEN (
+              SELECT COUNT(*) 
+              FROM LeaseSignature 
+              WHERE agreement_id = la.agreement_id AND status = 'signed'
+            ) = 2
+            THEN 'active'
+            ELSE la.status
+          END
+      ),
+      la.signed_at = CASE 
+        WHEN (
+          SELECT COUNT(*) 
+          FROM LeaseSignature 
+          WHERE agreement_id = la.agreement_id AND status = 'signed'
+        ) = 2
+        THEN NOW()
+        ELSE la.signed_at
+      END
+      WHERE la.agreement_id = ?;
       `,
             [agreement_id]
         );
 
-        if (signatures?.[0]?.signed_count >= 2) {
-            await db.query(
-                `
-        UPDATE LeaseAgreement
-        SET status = 'active', signed_at = UTC_TIMESTAMP()
-        WHERE agreement_id = ?;
-        `,
-                [agreement_id]
-            );
-        }
-
         return NextResponse.json({
             success: true,
-            message: "OTP verified and lease signed successfully.",
+            message: `OTP verified successfully. ${role} signature recorded.`,
         });
-    } catch (error: any) {
-        console.error("❌ Tenant verifyOtp error:", error);
+    } catch (err: any) {
+        console.error("❌ verifyOtp error:", err);
         return NextResponse.json(
-            { error: "Failed to verify OTP. " + (error.message || "") },
+            { error: "Failed to verify OTP. " + (err.message || "") },
             { status: 500 }
         );
     }
