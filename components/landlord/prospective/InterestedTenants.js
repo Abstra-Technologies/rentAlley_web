@@ -170,62 +170,48 @@ export default function InterestedTenants({ propertyId, landlordId }) {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 md:pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-24 lg:pt-8">
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+      <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
         {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <div className="flex items-start gap-3 mb-2">
+        <div className="mb-5">
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <Users className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
                 Prospective Tenants
               </h1>
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              <p className="text-xs md:text-sm text-gray-600 mt-0.5">
                 Tenants who applied for units in this property
               </p>
             </div>
           </div>
-
-          {propertyDetails && (
-            <div className="mt-3 flex items-start gap-2 text-xs sm:text-sm">
-              <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <span className="font-medium text-gray-700 block">
-                  {propertyDetails.property_name}
-                </span>
-                <span className="text-gray-600 block sm:inline">
-                  {propertyDetails.city}, {propertyDetails.province}
-                </span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Subscription Info Banner */}
         {subscription && (
           <div
-            className={`mb-4 sm:mb-6 rounded-lg border p-3 sm:p-4 ${
+            className={`mb-5 rounded-lg border p-3 md:p-4 ${
               subscription.plan_name === "Premium Plan"
                 ? "bg-gradient-to-r from-blue-50 to-emerald-50 border-blue-200"
                 : "bg-amber-50 border-amber-200"
             }`}
           >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
+                <p className="font-semibold text-gray-900 mb-1 text-sm">
                   {subscription.plan_name === "Premium Plan"
                     ? "🎉 Premium Plan Active"
                     : subscription.plan_name}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-700">
+                <p className="text-xs md:text-sm text-gray-700">
                   {subscription.plan_name === "Premium Plan"
                     ? "You have unlimited access to all prospective tenants"
                     : `Viewing ${subscription.listingLimits.maxProspect} of ${tenants.length} tenants`}
                 </p>
                 {hiddenTenants.length > 0 && (
-                  <p className="text-xs sm:text-sm text-amber-700 mt-1 font-medium">
+                  <p className="text-xs md:text-sm text-amber-700 mt-1 font-medium">
                     {hiddenTenants.length} tenant(s) hidden — upgrade to view
                     all
                   </p>
@@ -234,7 +220,7 @@ export default function InterestedTenants({ propertyId, landlordId }) {
               {hiddenTenants.length > 0 && (
                 <button
                   onClick={handleUpgradeClick}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium text-sm transition-all shadow-sm w-full sm:w-auto flex-shrink-0"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium text-sm transition-all shadow-sm w-full md:w-auto flex-shrink-0"
                 >
                   <ArrowUpCircle className="w-4 h-4" />
                   Upgrade Plan
@@ -245,23 +231,23 @@ export default function InterestedTenants({ propertyId, landlordId }) {
         )}
 
         {/* Stats Bar */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4 mb-5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Users className="w-4 sm:w-5 h-4 sm:h-5 text-blue-600 flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-medium text-gray-700">
+              <Users className="w-4 md:w-5 h-4 md:h-5 text-blue-600 flex-shrink-0" />
+              <span className="text-xs md:text-sm font-medium text-gray-700">
                 Showing {visibleTenants.length} of {tenants.length} total
                 tenants
               </span>
             </div>
-            <span className="text-xs sm:text-sm text-blue-600 font-medium">
+            <span className="text-xs md:text-sm text-blue-600 font-medium">
               Property-wide view
             </span>
           </div>
         </div>
 
         {/* Tenant Cards - Mobile */}
-        <div className="block lg:hidden space-y-3 mb-6">
+        <div className="block md:hidden space-y-3">
           {visibleTenants.length > 0 ? (
             visibleTenants.map((tenant) => (
               <div
@@ -282,37 +268,35 @@ export default function InterestedTenants({ propertyId, landlordId }) {
                       className="rounded-full border-2 border-gray-200 flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 text-sm sm:text-base mb-1.5 break-words">
+                      <h3 className="font-bold text-gray-900 text-sm mb-1.5 break-words">
                         {tenant.firstName} {tenant.lastName}
                       </h3>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${getStatusStyle(
-                            tenant.status
-                          )}`}
-                        >
-                          {getStatusIcon(tenant.status)}
-                          {tenant.status}
-                        </span>
-                      </div>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border ${getStatusStyle(
+                          tenant.status
+                        )}`}
+                      >
+                        {getStatusIcon(tenant.status)}
+                        {tenant.status}
+                      </span>
                     </div>
                   </div>
 
                   {/* Contact Info */}
                   <div className="space-y-2 mb-3 pb-3 border-b border-gray-100">
-                    <div className="flex items-start gap-2 text-xs sm:text-sm">
+                    <div className="flex items-start gap-2 text-xs">
                       <Mail className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-700 break-all">
                         {tenant.email}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2 text-xs">
                       <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
                       <span className="text-gray-700">
                         {tenant.phoneNumber}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2 text-xs">
                       <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
                       <span className="font-medium text-gray-900">
                         {tenant.unit_name || "—"}
@@ -336,7 +320,7 @@ export default function InterestedTenants({ propertyId, landlordId }) {
               <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-blue-600" />
               </div>
-              <p className="text-gray-900 font-semibold text-base sm:text-lg mb-1">
+              <p className="text-gray-900 font-semibold text-base mb-1">
                 No Applications Yet
               </p>
               <p className="text-gray-500 text-sm">
@@ -347,29 +331,29 @@ export default function InterestedTenants({ propertyId, landlordId }) {
         </div>
 
         {/* Tenant Table - Desktop */}
-        <div className="hidden lg:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Tenant
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Contact
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Unit Applied
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Action
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 bg-white">
                 {visibleTenants.length > 0 ? (
                   visibleTenants.map((tenant) => (
                     <tr
@@ -377,7 +361,7 @@ export default function InterestedTenants({ propertyId, landlordId }) {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       {/* Tenant */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <Image
                             src={
@@ -396,8 +380,8 @@ export default function InterestedTenants({ propertyId, landlordId }) {
                       </td>
 
                       {/* Contact */}
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
+                      <td className="px-4 py-3">
+                        <div className="space-y-0.5">
                           <div className="flex items-center gap-2 text-sm text-gray-700">
                             <Mail className="w-3.5 h-3.5 text-gray-400" />
                             {tenant.email}
@@ -410,7 +394,7 @@ export default function InterestedTenants({ propertyId, landlordId }) {
                       </td>
 
                       {/* Unit Applied */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Building2 className="w-4 h-4 text-blue-600" />
                           <span className="font-medium text-gray-900 text-sm">
@@ -420,7 +404,7 @@ export default function InterestedTenants({ propertyId, landlordId }) {
                       </td>
 
                       {/* Status */}
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border ${getStatusStyle(
                             tenant.status
@@ -432,7 +416,7 @@ export default function InterestedTenants({ propertyId, landlordId }) {
                       </td>
 
                       {/* Action */}
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 py-3 text-center">
                         <button
                           onClick={() => handleTenantClick(tenant)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
@@ -445,7 +429,7 @@ export default function InterestedTenants({ propertyId, landlordId }) {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12">
+                    <td colSpan={5} className="px-4 py-12">
                       <div className="text-center">
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                           <Users className="w-8 h-8 text-blue-600" />
