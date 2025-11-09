@@ -205,11 +205,30 @@ export async function GET(
             ? `
       <div class="section">
         <h2>Meter Reading Summary</h2>
-        <table>
-          <tr><th>Utility</th><th>Previous</th><th>Current</th><th>Consumption</th><th>Total</th></tr>
-          <tr><td>Water</td><td>${water ? water.previous_reading : "—"}</td><td>${water ? water.current_reading : "—"}</td><td>${waterUsage || 0}</td><td>${php(bill.total_water_amount)}</td></tr>
-          <tr><td>Electricity</td><td>${elec ? elec.previous_reading : "—"}</td><td>${elec ? elec.current_reading : "—"}</td><td>${elecUsage || 0}</td><td>${php(bill.total_electricity_amount)}</td></tr>
-        </table>
+     <table>
+  <tr>
+    <th>Utility</th>
+    <th>Previous</th>
+    <th>Current</th>
+    <th>Consumption</th>
+    <th>Total (₱)</th>
+  </tr>
+  <tr>
+    <td>💧 Water</td>
+    <td>${water ? water.previous_reading : "—"}</td>
+    <td>${water ? water.current_reading : "—"}</td>
+    <td>${waterUsage ? `${waterUsage} m³` : "0 m³"}</td>
+    <td>${php(bill.total_water_amount)}</td>
+  </tr>
+  <tr>
+    <td>⚡ Electricity</td>
+    <td>${elec ? elec.previous_reading : "—"}</td>
+    <td>${elec ? elec.current_reading : "—"}</td>
+    <td>${elecUsage ? `${elecUsage} kWh` : "0 kWh"}</td>
+    <td>${php(bill.total_electricity_amount)}</td>
+  </tr>
+</table>
+
       </div>`
             : "";
 
@@ -297,7 +316,7 @@ export async function GET(
       <!-- Summary -->
       <table>
         <tr><th>Billing Period</th><th>Due Date</th><th>Total Due</th></tr>
-        <tr><td>${bill.formattedBillingPeriod}</td><td>${dueDateStr}</td><td><strong>₱${php(adjustedTotal)}</strong></td></tr>
+        <tr><td>${formattedBillingPeriod}</td><td>${dueDateStr}</td><td><strong>₱${php(adjustedTotal)}</strong></td></tr>
       </table>
 
       ${meterSection}
