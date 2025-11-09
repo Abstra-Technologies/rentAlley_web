@@ -13,37 +13,34 @@ export async function GET(req: NextRequest) {
         connection = await db.getConnection();
 
         let query = `
-            SELECT
-                u.*,
-                la.agreement_id AS lease_agreement_id,
-                la.start_date,
-                la.end_date,
-                la.billing_due_day,
-                la.status AS lease_status,
-                CASE
-                    WHEN DAY(CURDATE()) <= la.billing_due_day
-                        THEN DATE(CONCAT(YEAR(CURDATE()), '-', MONTH(CURDATE()), '-', la.billing_due_day))
-                    ELSE DATE(CONCAT(YEAR(CURDATE()), '-', MONTH(CURDATE()) + 1, '-', la.billing_due_day))
-                    END AS next_due_date,
-                CASE
-                    WHEN EXISTS (
-                        SELECT 1 FROM LeaseAgreement lap
-                        WHERE lap.unit_id = u.unit_id AND lap.status = 'pending'
-                    )
-                        THEN 1 ELSE 0
-                    END AS hasPendingLease,
-                usr.firstName AS enc_firstName,
-                usr.lastName AS enc_lastName,
-                DATE_FORMAT(u.updated_at, '%Y-%m-%d %H:%i:%s') AS last_updated
-            FROM Unit u
-                     LEFT JOIN LeaseAgreement la
-                               ON la.unit_id = u.unit_id AND la.status = 'active'
-                     LEFT JOIN Tenant t
-                               ON la.tenant_id = t.tenant_id
-                     LEFT JOIN User usr
-                               ON t.user_id = usr.user_id
-            WHERE 1=1
-        `;
+      SELECT
+          u.unit_id,
+          u.property_id,
+          u.unit_name,
+          u.unit_size,
+          u.unit_style,
+          u.rent_amount,
+          u.furnish,
+          u.amenities,
+          u.status AS unit_status, 
+          DATE_FORMAT(u.updated_at, '%Y-%m-%d %H:%i:%s') AS last_updated,
+          la.agreement_id AS lease_agreement_id,
+          la.start_date,
+          la.end_date,
+          la.billing_due_day,
+          la.status AS lease_status,
+          usr.firstName AS enc_firstName,
+          usr.lastName AS enc_lastName
+      FROM Unit u
+      LEFT JOIN LeaseAgreement la 
+        ON la.unit_id = u.unit_id 
+        AND la.status IN ('active', 'completed', 'pending') -- optional context
+      LEFT JOIN Tenant t 
+        ON la.tenant_id = t.tenant_id
+      LEFT JOIN User usr 
+        ON t.user_id = usr.user_id
+      WHERE 1=1
+    `;
 
         const params: any[] = [];
 
@@ -57,6 +54,8 @@ export async function GET(req: NextRequest) {
             params.push(property_id);
         }
 
+        query += ` ORDER BY u.created_at DESC`;
+
         const [rows] = await connection.execute(query, params);
         const result: any[] = [];
 
@@ -67,21 +66,17 @@ export async function GET(req: NextRequest) {
             try {
                 if (row.enc_firstName) {
                     const parsedFirst = JSON.parse(row.enc_firstName);
-                    const decryptedFirst = decryptData(parsedFirst, process.env.ENCRYPTION_SECRET);
-                    decryptedRow.enc_firstName = decryptedFirst;
+                    decryptedRow.enc_firstName = decryptData(parsedFirst, process.env.ENCRYPTION_SECRET);
                 }
 
                 if (row.enc_lastName) {
                     const parsedLast = JSON.parse(row.enc_lastName);
-                    const decryptedLast = decryptData(parsedLast, process.env.ENCRYPTION_SECRET);
-                    decryptedRow.enc_lastName = decryptedLast;
+                    decryptedRow.enc_lastName = decryptData(parsedLast, process.env.ENCRYPTION_SECRET);
                 }
 
                 if (decryptedRow.enc_firstName || decryptedRow.enc_lastName) {
                     tenant_name = `${decryptedRow.enc_firstName || ""} ${decryptedRow.enc_lastName || ""}`.trim();
                 }
-
-                console.log("Decrypted tenant:", tenant_name);
             } catch (decryptionError) {
                 console.error(`Decryption failed for unit ID ${row.unit_id}:`, decryptionError);
                 decryptedRow.enc_firstName = null;
@@ -90,7 +85,21 @@ export async function GET(req: NextRequest) {
             }
 
             result.push({
-                ...decryptedRow,
+                unit_id: row.unit_id,
+                property_id: row.property_id,
+                unit_name: row.unit_name,
+                unit_size: row.unit_size,
+                unit_style: row.unit_style,
+                rent_amount: row.rent_amount,
+                furnish: row.furnish,
+                amenities: row.amenities,
+                status: row.unit_status, // ✅ direct from DB
+                last_updated: row.last_updated,
+                lease_agreement_id: row.lease_agreement_id || null,
+                lease_status: row.lease_status || null,
+                start_date: row.start_date || null,
+                end_date: row.end_date || null,
+                billing_due_day: row.billing_due_day || null,
                 tenant_name,
             });
         }

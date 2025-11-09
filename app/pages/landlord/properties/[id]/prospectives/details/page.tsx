@@ -1,7 +1,6 @@
 "use client";
 import { useSearchParams, useParams } from "next/navigation";
 import ProspectiveTenantDetails from "@/components/landlord/prospective/ProspectiveTenantDetails";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
 
 const ProspectiveTenantDetailedPage = () => {
     const { id } = useParams();

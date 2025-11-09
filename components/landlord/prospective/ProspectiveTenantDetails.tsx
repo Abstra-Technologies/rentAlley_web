@@ -37,6 +37,9 @@ const ProspectiveTenantDetails = () => {
   const [propertyId, setPropertyId] = useState(null);
   const [aiScore, setAiScore] = useState(null);
 
+    const [isApproving, setIsApproving] = useState(false);
+    const [isDisapproving, setIsDisapproving] = useState(false);
+
   useEffect(() => {
     if (unitId && tenantId) {
       fetchTenantDetails();
@@ -112,54 +115,62 @@ const ProspectiveTenantDetails = () => {
     }
   };
 
-  const updateTenantStatus = async (newStatus) => {
-    let disapprovalReason = null;
+  //  function to update if reject or acceot.
+    const updateTenantStatus = async (newStatus) => {
+        let disapprovalReason = null;
 
-    if (newStatus === "disapproved") {
-      const { value } = await Swal.fire({
-        title: "Disapprove Tenant",
-        input: "textarea",
-        inputLabel: "Provide a reason for disapproval",
-        inputPlaceholder: "Type your reason here...",
-        showCancelButton: true,
-      });
-      if (!value) return;
-      disapprovalReason = value;
-    }
+        try {
+            if (newStatus === "approved") setIsApproving(true);
+            if (newStatus === "disapproved") setIsDisapproving(true);
 
-    setIsProcessing(true);
-    try {
-      const payload = {
-        unitId,
-        tenant_id: tenant?.tenant_id,
-        status: newStatus,
-        message: disapprovalReason,
-      };
+            // 🟥 Handle disapproval message
+            if (newStatus === "disapproved") {
+                const { value } = await Swal.fire({
+                    title: "Disapprove Tenant",
+                    input: "textarea",
+                    inputLabel: "Provide a reason for disapproval",
+                    inputPlaceholder: "Type your reason here...",
+                    showCancelButton: true,
+                });
+                if (!value) {
+                    setIsDisapproving(false);
+                    return; // cancelled
+                }
+                disapprovalReason = value;
+            }
 
-      await axios.put(
-        "/api/landlord/prospective/updateApplicationStatus",
-        payload
-      );
+            const payload = {
+                unitId,
+                tenant_id: tenant?.tenant_id,
+                status: newStatus,
+                message: disapprovalReason,
+            };
 
-      setApplicationStatus(newStatus);
+            await axios.put("/api/landlord/prospective/updateApplicationStatus", payload);
 
-      await Swal.fire({
-        icon: "success",
-        title: "Status Updated",
-        text: `Tenant application marked as ${newStatus}.`,
-        confirmButtonColor: "#3085d6",
-      });
+            setApplicationStatus(newStatus);
 
-      if (newStatus === "approved") {
-        router.push(`/pages/landlord/properties/${propertyId}/activeLease`);
-      } else router.back();
-    } catch (error) {
-      console.error("Error updating tenant status:", error);
-      Swal.fire("Error!", "Failed to update tenant status.", "error");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+            await Swal.fire({
+                icon: "success",
+                title: "Status Updated",
+                text: `Tenant application marked as ${newStatus}.`,
+                confirmButtonColor: "#3085d6",
+            });
+
+            if (newStatus === "approved") {
+                router.push(`/pages/landlord/properties/${propertyId}/activeLease`);
+            } else {
+                router.back();
+            }
+        } catch (error) {
+            console.error("Error updating tenant status:", error);
+            Swal.fire("Error!", "Failed to update tenant status.", "error");
+        } finally {
+            // Reset both flags
+            setIsApproving(false);
+            setIsDisapproving(false);
+        }
+    };
 
   if (isLoading)
     return (
@@ -201,13 +212,6 @@ const ProspectiveTenantDetails = () => {
       <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
         {/* Header */}
         <div className="mb-5">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm mb-3 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Prospectives
-          </button>
 
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -451,28 +455,42 @@ const ProspectiveTenantDetails = () => {
                 Application Decision
               </h2>
 
-              {applicationStatus === "pending" && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => updateTenantStatus("approved")}
-                    disabled={isProcessing}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    {isProcessing ? "Processing..." : "Approve Tenant"}
-                  </button>
-                  <button
-                    onClick={() => updateTenantStatus("disapproved")}
-                    disabled={isProcessing}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    {isProcessing ? "Processing..." : "Reject Application"}
-                  </button>
-                </div>
-              )}
+                {applicationStatus === "pending" && (
+                    <div className="space-y-3">
+                        {/* ✅ Approve Button */}
+                        <button
+                            onClick={() => updateTenantStatus("approved")}
+                            disabled={isApproving || isDisapproving}
+                            className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all shadow-sm 
+        ${
+                                isApproving
+                                    ? "bg-emerald-400 cursor-not-allowed text-white"
+                                    : "bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white"
+                            }`}
+                        >
+                            <CheckCircle className="w-4 h-4" />
+                            {isApproving ? "Approving..." : "Approve Tenant"}
+                        </button>
 
-              {applicationStatus === "approved" && (
+                        {/* ❌ Reject Button */}
+                        <button
+                            onClick={() => updateTenantStatus("disapproved")}
+                            disabled={isApproving || isDisapproving}
+                            className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all shadow-sm 
+        ${
+                                isDisapproving
+                                    ? "bg-red-400 cursor-not-allowed text-white"
+                                    : "bg-red-600 hover:bg-red-700 text-white"
+                            }`}
+                        >
+                            <XCircle className="w-4 h-4" />
+                            {isDisapproving ? "Rejecting..." : "Reject Application"}
+                        </button>
+                    </div>
+                )}
+
+
+                {applicationStatus === "approved" && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">

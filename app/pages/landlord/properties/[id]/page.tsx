@@ -14,7 +14,6 @@ import Swal from "sweetalert2";
 import { Home, Plus, Sparkles } from "lucide-react";
 import useAuthStore from "@/zustand/authStore";
 import UnitsTab from "@/components/landlord/properties/UnitsTab";
-import PropertyRatesModal from "@/components/landlord/properties/utilityRatesSetter";
 import { Pagination } from "@mui/material";
 import { usePropertyData } from "@/hooks/usePropertyData";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
@@ -46,7 +45,6 @@ const ViewPropertyDetailedPage = () => {
   const [propertyDetails, setPropertyDetails] = useState<any>(null);
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
 
-  // fetch property, subscription, and units
   const { subscription, units, error, isLoading } = usePropertyData(
     property_id,
     landlord_id
@@ -60,58 +58,6 @@ const ViewPropertyDetailedPage = () => {
     setPage(value);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setBillingForm({ ...billingForm, [name]: value });
-  };
-
-  const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const url = "/api/landlord/billing/savePropertyUtilityBillingMonthly";
-      await axios.post(url, { property_id, ...billingForm });
-      Swal.fire({
-        title: "Success",
-        text: "Billing saved successfully.",
-        icon: "success",
-        confirmButtonColor: "#10b981",
-      });
-      setIsModalOpen(false);
-    } catch {
-      Swal.fire({
-        title: "Error",
-        text: "Failed to save billing.",
-        icon: "error",
-        confirmButtonColor: "#ef4444",
-      });
-    }
-  };
-
-  useEffect(() => {
-    const fetchUnitBillingStatus = async () => {
-      if (!units || units.length === 0) return;
-      const statusMap: Record<string, boolean> = {};
-      await Promise.all(
-        units.map(async (unit: any) => {
-          try {
-            const response = await axios.get(
-              `/api/landlord/billing/getUnitDetails/billingStatus?unit_id=${unit.unit_id}`
-            );
-            statusMap[unit.unit_id] =
-              response.data?.hasBillForThisMonth || false;
-          } catch (error) {
-            console.error(
-              `Error fetching billing status for unit ${unit.unit_id}`,
-              error
-            );
-          }
-        })
-      );
-      setUnitBillingStatus(statusMap);
-    };
-    fetchUnitBillingStatus();
-  }, [units]);
 
   const handleEditUnit = (unitId: number) => {
     router.push(
@@ -272,18 +218,6 @@ const ViewPropertyDetailedPage = () => {
           )}
         </div>
       </div>
-
-      {/* Property Utility Rate Modal */}
-      <PropertyRatesModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        billingData={billingData}
-        billingForm={billingForm}
-        propertyDetails={propertyDetails}
-        hasBillingForMonth={false}
-        handleInputChange={handleInputChange}
-        handleSaveOrUpdateBilling={handleSaveOrUpdateBilling}
-      />
 
       {/* AI Generator Modal */}
       {isAIGeneratorOpen && (
