@@ -46,7 +46,7 @@ export default function ProspectiveTenantsWidget({
 
     const handleViewTenant = (t: ProspectiveTenant) => {
         router.push(
-            `/pages/landlord/property-listing/view-unit/view-tenant/${t.id}?unit_id=${t.unit_id}&tenant_id=${t.tenant_id}`
+            `/pages/landlord/properties/${t.property_id}/prospectives/details?tenant_id=${t.tenant_id}&unit_id=${t.unit_id}`
         );
     };
 

@@ -210,8 +210,13 @@ export async function POST(req: NextRequest) {
             unitName = landlordData[0].unit_name || unitName;
         }
 
-        // 📬 Build new URL
-        const url = `/app/pages/landlord/properties/${propertyId}/prospectives/details`;
+        // ✅ Include tenant_id and unit_id in redirect URL
+        const queryParams = new URLSearchParams({
+            tenant_id: tenant_id!,
+            unit_id: unit_id!,
+        }).toString();
+
+        const url = `/pages/landlord/properties/${propertyId}/prospectives/details?${queryParams}`;
 
         // 🛎️ Create Notification
         if (landlordUserId) {
