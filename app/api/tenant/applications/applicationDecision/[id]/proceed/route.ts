@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import webpush from "web-push";
+import { generateLeaseId } from "@/utils/id_generator";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
 
 webpush.setVapidDetails(
-    "mailto:your-email@example.com",
+    "mailto:support@upkyp.com",
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
 );
@@ -17,7 +18,7 @@ interface Params {
     };
 }
 
-export async function PATCH(req: NextRequest, { params }: Params) {
+export async function POST(req: NextRequest, { params }: Params) {
     const prospectiveTenantId = params.id;
     const { decision } = await req.json();
 
@@ -28,110 +29,180 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         );
     }
 
+    let connection;
     try {
-        // Only allow update if already approved
-        const [rows]: any = await db.query(
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        // ✅ Verify approved prospective tenant
+        const [rows]: any = await connection.query(
             `SELECT * FROM ProspectiveTenant WHERE id = ? AND status = 'approved'`,
             [prospectiveTenantId]
         );
 
         if (rows.length === 0) {
-            return NextResponse.json({
-                error: "Application not found or not approved.",
-            }, { status: 404 });
+            return NextResponse.json(
+                { error: "Application not found or not approved." },
+                { status: 404 }
+            );
         }
 
         const prospective = rows[0];
-        const unitId = prospective.unit_id;
+        const { unit_id: unitId, tenant_id: tenantId } = prospective;
 
-        await db.query(
+        // ✅ Update ProspectiveTenant.proceeded
+        await connection.query(
             `UPDATE ProspectiveTenant SET proceeded = ? WHERE id = ?`,
             [decision, prospectiveTenantId]
         );
 
-        // Fetch landlord info from property/unit
-        const [landlordRows]: any = await db.query(
-            `SELECT l.user_id, p.property_name, u.unit_name, u.unit_id, p.property_id
-       FROM Unit u
-       JOIN Property p ON u.property_id = p.property_id
-       JOIN Landlord l ON p.landlord_id = l.landlord_id
-       WHERE u.unit_id = ?`,
+        // ✅ Fetch landlord + property info
+        const [landlordRows]: any = await connection.query(
+            `
+      SELECT 
+        l.user_id AS landlord_user_id, 
+        p.property_id, p.property_name, 
+        u.unit_id, u.unit_name
+      FROM Unit u
+      JOIN Property p ON u.property_id = p.property_id
+      JOIN Landlord l ON p.landlord_id = l.landlord_id
+      WHERE u.unit_id = ?
+      `,
             [unitId]
         );
 
-        if (landlordRows.length > 0) {
-            const landlordUserId = landlordRows[0].user_id;
-            const propertyName = landlordRows[0].property_name;
-            const unitName = landlordRows[0].unit_name;
-            const propertyId = landlordRows[0].property_id;
+        if (!landlordRows.length) {
+            return NextResponse.json(
+                { error: "Landlord or property not found." },
+                { status: 404 }
+            );
+        }
 
-            let notifTitle: string;
-            let notifBody: string;
-            const url: string = `/pages/landlord/property-listing/view-unit/${propertyId}/unit-details/${unitId}`;
+        const {
+            landlord_user_id,
+            property_name,
+            property_id,
+            unit_name,
+        } = landlordRows[0];
 
-            if (decision === "yes") {
-                notifTitle = `Prospective Tenant Proceed - ${propertyName} - ${unitName}`;
-                notifBody = `A prospective tenant has decided to proceed with the application for your unit (${propertyName} - ${unitName}). Please prepare the lease agreement.`;
-            } else {
-                notifTitle = `Prospective Tenant Declined - ${propertyName} - ${unitName}`;
-                notifBody = `A prospective tenant has decided not to proceed with the application for your unit (${propertyName} - ${unitName}).`;
+        const url = `/pages/landlord/properties/${property_id}/activeLease`;
+        let notifTitle = "";
+        let notifBody = "";
+
+        // ✅ Tenant proceeds with lease
+        if (decision === "yes") {
+            notifTitle = `Tenant Proceeded - ${property_name} (${unit_name})`;
+            notifBody = `A tenant has confirmed proceeding with the lease for ${property_name} - ${unit_name}. Please prepare the draft lease.`;
+
+            // Check existing lease
+            const [existingLease]: any = await connection.query(
+                `SELECT agreement_id FROM LeaseAgreement WHERE tenant_id = ? AND unit_id = ? LIMIT 1`,
+                [tenantId, unitId]
+            );
+
+            // Create new draft lease if none exists
+            if (!existingLease.length) {
+                let leaseId = generateLeaseId();
+                let unique = false;
+
+                while (!unique) {
+                    const [exists]: any = await connection.query(
+                        `SELECT 1 FROM LeaseAgreement WHERE agreement_id = ? LIMIT 1`,
+                        [leaseId]
+                    );
+                    if (!exists.length) unique = true;
+                    else leaseId = generateLeaseId();
+                }
+
+                await connection.query(
+                    `
+          INSERT INTO LeaseAgreement (
+            agreement_id, tenant_id, unit_id, start_date, end_date, status, created_at
+          )
+          VALUES (?, ?, ?, NULL, NULL, 'draft', CURRENT_TIMESTAMP)
+          `,
+                    [leaseId, tenantId, unitId]
+                );
+                console.log("✅ Lease draft created:", leaseId);
             }
 
-            // Save notification with URL
-            await db.query(
-                `INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
-         VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
-                [landlordUserId, notifTitle, notifBody, url]
+            // Update unit status to occupied
+            await connection.query(
+                `UPDATE Unit SET status = 'occupied', updated_at = CURRENT_TIMESTAMP WHERE unit_id = ?`,
+                [unitId]
             );
+        }
+        // ❌ Tenant declines
+        else {
+            notifTitle = `Tenant Declined - ${property_name} (${unit_name})`;
+            notifBody = `A tenant has declined to proceed with the lease for ${property_name} - ${unit_name}. The unit is now available again.`;
 
-            // Fetch push subscriptions
-            const [subs]: any = await db.query(
-                `SELECT endpoint, p256dh, auth 
-         FROM user_push_subscriptions 
-         WHERE user_id = ?`,
-                [landlordUserId]
+            await connection.query(
+                `UPDATE Unit SET status = 'unoccupied', updated_at = CURRENT_TIMESTAMP WHERE unit_id = ?`,
+                [unitId]
             );
+        }
 
-            if (subs.length > 0) {
-                const payload = JSON.stringify({
-                    title: notifTitle,
-                    body: notifBody,
-                    url,
-                });
+        // ✅ Insert Notification
+        await connection.query(
+            `
+      INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
+      VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
+      `,
+            [landlord_user_id, notifTitle, notifBody, url]
+        );
 
-                for (const sub of subs) {
-                    const subscription = {
-                        endpoint: sub.endpoint,
-                        keys: {
-                            p256dh: sub.p256dh,
-                            auth: sub.auth,
-                        },
-                    };
+        // ✅ Send Web Push Notification
+        const [subs]: any = await connection.query(
+            `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
+            [landlord_user_id]
+        );
 
-                    try {
-                        await webpush.sendNotification(subscription, payload);
-                        console.log("✅ Sent push notification to landlord:", sub.endpoint);
-                    } catch (err: any) {
-                        console.error("❌ Failed push:", err);
-                        // Remove invalid subscription
-                        if (err.statusCode === 410 || err.statusCode === 404) {
-                            await db.execute(
-                                `DELETE FROM user_push_subscriptions WHERE endpoint = ?`,
-                                [sub.endpoint]
-                            );
-                            console.log("🗑️ Removed invalid subscription:", sub.endpoint);
-                        }
+        if (subs.length > 0) {
+            const payload = JSON.stringify({
+                title: notifTitle,
+                body: notifBody,
+                url,
+                icon: `${process.env.NEXT_PUBLIC_BASE_URL}/icons/notification-icon.png`,
+            });
+
+            for (const sub of subs) {
+                const subscription = {
+                    endpoint: sub.endpoint,
+                    keys: { p256dh: sub.p256dh, auth: sub.auth },
+                };
+                try {
+                    await webpush.sendNotification(subscription, payload);
+                    console.log("✅ Sent push notification:", sub.endpoint);
+                } catch (err: any) {
+                    console.error("❌ Push failed:", err);
+                    if (err.statusCode === 410 || err.statusCode === 404) {
+                        await connection.query(
+                            `DELETE FROM user_push_subscriptions WHERE endpoint = ?`,
+                            [sub.endpoint]
+                        );
                     }
                 }
             }
         }
 
-        return NextResponse.json({ success: true, proceeded: decision });
+        await connection.commit();
+        return NextResponse.json({
+            success: true,
+            proceeded: decision,
+            message:
+                decision === "yes"
+                    ? "Lease created and unit marked as occupied."
+                    : "Tenant declined. Unit marked as unoccupied.",
+        });
     } catch (error) {
-        console.error("Error updating tenant decision:", error);
+        console.error("❌ Error processing tenant decision:", error);
+        if (connection) await connection.rollback();
         return NextResponse.json(
-            { error: "Database server error." },
+            { error: "Server error while processing tenant decision." },
             { status: 500 }
         );
+    } finally {
+        if (connection) connection.release();
     }
 }

@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
-import { generateLeaseId } from "@/utils/id_generator";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
@@ -62,7 +61,7 @@ export async function PUT(req: NextRequest) {
         const propertyId = unitDetails?.[0]?.property_id || null;
         const currentStatus = unitDetails?.[0]?.current_status || "unoccupied";
 
-        // 🧩 Update ProspectiveTenant
+        // 🧩 Update ProspectiveTenant record
         await connection.query(
             `
       UPDATE ProspectiveTenant
@@ -72,66 +71,18 @@ export async function PUT(req: NextRequest) {
             [status, message || null, unitId, tenant_id]
         );
 
-        // Initialize notification content
         let title = "Tenant Application Update";
         let bodyMessage = "Your tenant application status has been updated.";
         let redirectUrl = "/pages/tenant/myApplications";
 
-        // 🔹 Handle status-specific logic
         if (status === "approved") {
             title = "🎉 Application Approved!";
             bodyMessage = `
         Congratulations! Your application for <b>${propertyName}</b> - <b>${unitName}</b> has been <b>approved</b>.<br/>
-        You can now proceed to confirm and review your lease agreement in your dashboard.
+        Please confirm your interest to proceed and finalize your lease in your dashboard.
       `;
 
-            // 🟩 Check for existing lease
-            const [existingLease]: any = await connection.query(
-                `
-        SELECT agreement_id 
-        FROM LeaseAgreement 
-        WHERE tenant_id = ? AND unit_id = ? 
-        LIMIT 1
-        `,
-                [tenant_id, unitId]
-            );
-
-            // 🆕 Create lease draft if none exists
-            if (!existingLease.length) {
-                let lease_id = generateLeaseId();
-                let isUnique = false;
-
-                while (!isUnique) {
-                    const [exists]: any = await connection.query(
-                        `SELECT 1 FROM LeaseAgreement WHERE agreement_id = ? LIMIT 1`,
-                        [lease_id]
-                    );
-                    if (!exists.length) isUnique = true;
-                    else lease_id = generateLeaseId();
-                }
-
-                await connection.query(
-                    `
-          INSERT INTO LeaseAgreement (
-            agreement_id, tenant_id, unit_id, start_date, end_date, status, created_at
-          )
-          VALUES (?, ?, ?, NULL, NULL, 'draft', CURRENT_TIMESTAMP)
-          `,
-                    [lease_id, tenant_id, unitId]
-                );
-            } else {
-                // If it already exists, ensure it's still draft
-                await connection.query(
-                    `
-          UPDATE LeaseAgreement 
-          SET status = 'draft', updated_at = CURRENT_TIMESTAMP
-          WHERE tenant_id = ? AND unit_id = ? AND status NOT IN ('active', 'cancelled')
-          `,
-                    [tenant_id, unitId]
-                );
-            }
-
-            // ✅ Update Unit → Reserved (only if not already occupied)
+            // 🟩 Mark unit as reserved — no lease creation yet
             if (currentStatus !== "occupied") {
                 await connection.query(
                     `
@@ -144,7 +95,7 @@ export async function PUT(req: NextRequest) {
             }
         }
 
-        // 🟥 Disapproved logic
+        // 🟥 Landlord Disapproved
         else if (status === "disapproved") {
             title = "❌ Application Disapproved";
             bodyMessage = `
@@ -152,7 +103,7 @@ export async function PUT(req: NextRequest) {
         <b>Reason:</b> ${message}.
       `;
 
-            // 🔹 Return the unit to available
+            // Return unit to available
             await connection.query(
                 `
         UPDATE Unit
@@ -163,14 +114,14 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        // 🟨 Pending logic
+        // 🟨 Still Pending
         else if (status === "pending") {
             title = "🕓 Application Under Review";
             bodyMessage = `
         Your application for <b>${propertyName}</b> - <b>${unitName}</b> is still <b>under review</b> by the landlord.
       `;
 
-            // 🔹 Keep unit available for others to apply
+            // Unit remains open
             await connection.query(
                 `
         UPDATE Unit

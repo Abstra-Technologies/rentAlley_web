@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
-  DocumentIcon,
-  EyeIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
-  ExclamationCircleIcon,
-  ArrowRightIcon,
+    DocumentIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+    ClockIcon,
+    ExclamationCircleIcon,
+    ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -16,444 +15,291 @@ import LoadingScreen from "@/components/loadingScreen";
 import TenantOutsidePortalNav from "@/components/navigation/TenantOutsidePortalNav";
 
 type Application = {
-  id: number;
-  unit_id: number | null;
-  valid_id: string;
-  proof_of_income?: string;
-  message?: string;
-  status: "pending" | "approved" | "disapproved";
-  created_at: string;
-  updated_at: string;
-  property_name?: string;
-  proceeded?: "yes" | "no";
+    id: number;
+    unit_id: number | null;
+    valid_id: string;
+    proof_of_income?: string;
+    message?: string;
+    status: "pending" | "approved" | "disapproved";
+    created_at: string;
+    updated_at: string;
+    property_name?: string;
+    proceeded?: "yes" | "no";
 };
 
 export default function MyApplications({ tenantId }: { tenantId: number }) {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [processingId, setProcessingId] = useState<number | null>(null);
-  const router = useRouter();
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+    const [applications, setApplications] = useState<Application[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [processingId, setProcessingId] = useState<number | null>(null);
+    const router = useRouter();
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
 
-  useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        const res = await fetch(
-          `/api/tenant/applications/listofApplications?tenantId=${tenantId}`
-        );
-        const result = await res.json();
+    useEffect(() => {
+        const fetchApplications = async () => {
+            try {
+                const res = await fetch(
+                    `/api/tenant/applications/listofApplications?tenantId=${tenantId}`
+                );
+                const result = await res.json();
 
-        if (!res.ok) {
-          throw new Error(result.message || "Failed to fetch applications.");
-        }
+                if (!res.ok) {
+                    throw new Error(result.message || "Failed to fetch applications.");
+                }
 
-        if (Array.isArray(result)) {
-          setApplications(result);
-        } else if (Array.isArray(result.applications)) {
-          setApplications(result.applications);
+                if (Array.isArray(result)) {
+                    setApplications(result);
+                } else if (Array.isArray(result.applications)) {
+                    setApplications(result.applications);
+                } else {
+                    throw new Error("Unexpected response format.");
+                }
+            } catch (err: any) {
+                setError(err.message || "Something went wrong");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (tenantId) {
+            fetchApplications();
         } else {
-          throw new Error("Unexpected response format.");
+            router.push("/tenant/login");
         }
-      } catch (err: any) {
-        setError(err.message || "Something went wrong");
-      } finally {
-        setLoading(false);
-      }
+    }, [tenantId, router]);
+
+    const handleTenantDecision = async (
+        applicationId: number,
+        decision: "yes" | "no"
+    ) => {
+        try {
+            setProcessingId(applicationId);
+            await axios.post(
+                `/api/tenant/applications/applicationDecision/${applicationId}/proceed`,
+                { decision }
+            );
+            setApplications((prev) =>
+                prev.map((a) =>
+                    a.id === applicationId ? { ...a, proceeded: decision } : a
+                )
+            );
+        } catch (error) {
+            console.error("Failed to update tenant decision", error);
+            alert("Something went wrong. Please try again.");
+        } finally {
+            setProcessingId(null);
+        }
     };
 
-    if (tenantId) {
-      fetchApplications();
-    } else {
-      router.push("/tenant/login");
-    }
-  }, [tenantId, router]);
-
-  const handleTenantDecision = async (
-    applicationId: number,
-    decision: "yes" | "no"
-  ) => {
-    try {
-      setProcessingId(applicationId);
-      await axios.patch(
-        `/api/tenant/applications/applicationDecision/${applicationId}/proceed`,
-        { decision }
-      );
-      setApplications((prev) =>
-        prev.map((a) =>
-          a.id === applicationId ? { ...a, proceeded: decision } : a
-        )
-      );
-    } catch (error) {
-      console.error("Failed to update tenant decision", error);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const paginatedApps = applications.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-  const totalPages = Math.ceil(applications.length / pageSize);
-
-  // Stats
-  const stats = {
-    total: applications.length,
-    pending: applications.filter((a) => a.status === "pending").length,
-    approved: applications.filter((a) => a.status === "approved").length,
-    disapproved: applications.filter((a) => a.status === "disapproved").length,
-  };
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
-        <LoadingScreen message="Just a moment, getting your applications ready..." />
-      </div>
+    const paginatedApps = applications.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
     );
-  }
+    const totalPages = Math.ceil(applications.length / pageSize);
 
-  return (
-    <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-      <TenantOutsidePortalNav />
-
-      <div className="flex-1">
-        {/* Top Navigation Bar */}
-        <div className="page-header">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="page-header-inner">
-              <div className="page-header-title-section">
-                <div className="page-header-icon">
-                  <DocumentIcon />
-                </div>
-                <div>
-                  <h1 className="page-header-title">My Applications</h1>
-                  <p className="page-header-subtitle">
-                    Track your rental applications
-                  </p>
-                </div>
-              </div>
-
-              {/* Quick Stats - Desktop Only */}
-              {applications.length > 0 && (
-                <div className="hidden md:flex items-center gap-3">
-                  {stats.pending > 0 && (
-                    <div className="status-badge status-badge-pending">
-                      <ClockIcon className="w-4 h-4" />
-                      <span>{stats.pending} Pending</span>
-                    </div>
-                  )}
-                  {stats.approved > 0 && (
-                    <div className="status-badge status-badge-success">
-                      <CheckCircleIcon className="w-4 h-4" />
-                      <span>{stats.approved} Approved</span>
-                    </div>
-                  )}
-                </div>
-              )}
+    if (loading) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
+                <LoadingScreen message="Just a moment, getting your applications ready..." />
             </div>
-          </div>
-        </div>
+        );
+    }
 
-        {/* Main Content Area */}
-        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {/* Error State */}
-          {error && (
-            <div className="mb-6 p-4 sm:p-6 bg-gradient-to-br from-rose-50 to-red-50 rounded-2xl border border-red-200">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-red-100 rounded-lg flex-shrink-0">
-                  <ExclamationCircleIcon className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-red-900 text-sm">
-                    Failed to Load Applications
-                  </h3>
-                  <p className="text-red-700 text-sm mt-1">{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {applications.length === 0 && !error && (
-            <div className="card-elevated">
-              <div className="flex flex-col items-center justify-center py-16 px-4 sm:px-6">
-                <div className="p-4 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full mb-4">
-                  <DocumentIcon className="w-8 h-8 text-emerald-600" />
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 text-center">
-                  No Applications Yet
-                </h3>
-                <p className="text-gray-600 text-sm sm:text-base text-center max-w-md">
-                  You haven't submitted any rental applications yet. Browse
-                  available properties to get started.
-                </p>
-                <button
-                  onClick={() => router.push("/pages/tenant/my-unit")}
-                  className="btn-gradient mt-6"
-                >
-                  <DocumentIcon className="w-4 h-4" />
-                  Browse Properties
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Applications List */}
-          {applications.length > 0 && !error && (
-            <div className="space-y-4 sm:space-y-6">
-              {/* Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                <div className="stat-card stat-card-primary">
-                  <div className="stat-card-header">
-                    <div>
-                      <p className="stat-card-label">Total Applications</p>
-                      <p className="stat-card-value">{stats.total}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 text-center hover:shadow-md transition-shadow">
-                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
-                    Pending Review
-                  </p>
-                  <p className="text-3xl font-bold text-amber-900 mt-2">
-                    {stats.pending}
-                  </p>
-                </div>
-
-                <div className="stat-card stat-card-success">
-                  <div className="stat-card-header">
-                    <div>
-                      <p className="stat-card-label">Approved</p>
-                      <p className="stat-card-value">{stats.approved}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Applications Cards */}
-              <div className="space-y-4">
-                {paginatedApps.map((app) => (
-                  <article key={app.id} className="card-elevated">
-                    {/* Status Header */}
-                    <div className={`px-5 py-4 ${getStatusStyles(app.status)}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {getStatusIcon(app.status)}
-                          <div>
-                            <h3 className="font-bold text-base sm:text-lg">
-                              {app.property_name || "Property Name"}
-                            </h3>
-                            <p className="text-xs sm:text-sm opacity-90 mt-0.5">
-                              Applied on{" "}
-                              {new Date(app.created_at).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              )}
-                            </p>
-                          </div>
+    return (
+        <div className="flex min-h-screen bg-gray-50">
+            <div className="page-content-wrapper">
+                {/* Main Content */}
+                <main className="page-main-content px-6 pt-6 pb-12">
+                    {/* Header */}
+                    <header className="flex flex-col items-start mb-8">
+                        <div className="flex items-center gap-3 mb-3">
+                            <DocumentIcon className="w-8 h-8 text-blue-600" />
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-900">My Applications</h1>
+                                <p className="text-gray-600 text-sm">
+                                    Track and manage your rental applications
+                                </p>
+                            </div>
                         </div>
-                        <span className="px-3 py-1 bg-white/80 backdrop-blur-sm rounded-full font-bold text-xs uppercase tracking-wide">
-                          {app.status}
-                        </span>
-                      </div>
-                    </div>
+                    </header>
 
-                    {/* Content */}
-                    <div className="p-5 space-y-4">
-                      {/* Message */}
-                      {app.message && (
-                        <div className="p-4 bg-gray-50 rounded-xl">
-                          <h4 className="font-bold text-gray-900 mb-2 text-sm">
-                            Message from Landlord
-                          </h4>
-                          <p className="text-gray-700 text-sm leading-relaxed">
-                            {app.message}
-                          </p>
+                    {/* Error */}
+                    {error && (
+                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex gap-2 items-center mb-6">
+                            <ExclamationCircleIcon className="w-5 h-5 text-red-600" />
+                            {error}
                         </div>
-                      )}
-
-                      {/* Documents */}
-                      <div>
-                        <h4 className="font-bold text-gray-900 mb-3 text-sm">
-                          Submitted Documents
-                        </h4>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <a
-                            href={app.valid_id}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all"
-                          >
-                            <EyeIcon className="w-4 h-4" />
-                            View Valid ID
-                          </a>
-                          {app.proof_of_income && (
-                            <a
-                              href={app.proof_of_income}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all"
-                            >
-                              <EyeIcon className="w-4 h-4" />
-                              View Proof of Income
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Decision Section */}
-                      {app.status === "approved" && !app.proceeded && (
-                        <div className="p-4 sm:p-5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
-                          <h4 className="font-bold text-emerald-900 mb-4 flex items-center gap-2 text-sm">
-                            <CheckCircleIcon className="w-5 h-5" />
-                            Application Approved! What's next?
-                          </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <button
-                              onClick={() =>
-                                handleTenantDecision(app.id, "yes")
-                              }
-                              disabled={processingId === app.id}
-                              className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                            >
-                              <CheckCircleIcon className="w-4 h-4" />
-                              Proceed with Lease
-                            </button>
-                            <button
-                              onClick={() => handleTenantDecision(app.id, "no")}
-                              disabled={processingId === app.id}
-                              className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                            >
-                              <XCircleIcon className="w-4 h-4" />
-                              Decline
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Decision Result */}
-                      {app.status === "approved" && app.proceeded && (
-                        <div
-                          className={`p-4 rounded-xl border flex items-center gap-3 ${
-                            app.proceeded === "yes"
-                              ? "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200"
-                              : "bg-gradient-to-br from-gray-100 to-gray-50 border-gray-200"
-                          }`}
-                        >
-                          {app.proceeded === "yes" ? (
-                            <>
-                              <CheckCircleIcon className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                              <span className="font-semibold text-emerald-900 text-sm">
-                                You chose to proceed with the lease
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <XCircleIcon className="w-5 h-5 text-gray-600 flex-shrink-0" />
-                              <span className="font-semibold text-gray-900 text-sm">
-                                You declined this lease
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Disapproved */}
-                      {app.status === "disapproved" && (
-                        <div className="p-4 bg-gradient-to-br from-rose-50 to-red-50 rounded-xl border border-red-200 flex items-center gap-3">
-                          <XCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0" />
-                          <div>
-                            <p className="font-semibold text-red-900 text-sm">
-                              Application Not Approved
-                            </p>
-                            <p className="text-red-700 text-xs mt-1">
-                              The landlord did not approve this application. Try
-                              applying to other properties.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ArrowRightIcon className="w-4 h-4 transform rotate-180" />
-                  </button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`w-8 h-8 rounded-lg font-semibold text-sm transition-all ${
-                            currentPage === page
-                              ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      )
                     )}
-                  </div>
 
-                  <button
-                    onClick={() =>
-                      setCurrentPage(Math.min(totalPages, currentPage + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    <ArrowRightIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+                    {/* Empty */}
+                    {!error && applications.length === 0 && (
+                        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center shadow-sm">
+                            <DocumentIcon className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                            <h3 className="font-semibold text-gray-800">No Applications Yet</h3>
+                            <p className="text-sm text-gray-600 mt-1 mb-5">
+                                Browse available properties to start your first application.
+                            </p>
+                            <button
+                                onClick={() => router.push("/pages/tenant/my-unit")}
+                                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-medium text-sm hover:opacity-90"
+                            >
+                                Browse Properties
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Applications List (Stacked Style) */}
+                    {applications.length > 0 && (
+                        <div className="divide-y divide-gray-200 bg-white border border-gray-200 rounded-lg shadow-sm">
+                            {paginatedApps.map((app) => (
+                                <div key={app.id} className="p-4 sm:p-5 hover:bg-gray-50 transition-all">
+                                    {/* Top Section */}
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-1">
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
+                                                {app.property_name || "Property"}
+                                            </h3>
+
+                                            {/* ✅ Show Unit Name Below Property */}
+                                            {app.unit_name && (
+                                                <p className="text-sm text-gray-700 font-medium">
+                                                    Unit: <span className="text-gray-900">{app.unit_name}</span>
+                                                </p>
+                                            )}
+
+                                            <p className="text-xs text-gray-500">
+                                                Applied on{" "}
+                                                {new Date(app.created_at).toLocaleDateString("en-US", {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                    year: "numeric",
+                                                })}
+                                            </p>
+
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {getStatusIcon(app.status)}
+                                            <span
+                                                className={`text-xs font-semibold ${
+                                                    app.status === "approved"
+                                                        ? "text-emerald-700"
+                                                        : app.status === "disapproved"
+                                                            ? "text-red-700"
+                                                            : "text-amber-700"
+                                                }`}
+                                            >
+                      {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                    </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Message */}
+                                    {app.message && (
+                                        <p className="text-sm text-gray-700 italic border-l-4 border-blue-500 pl-3 mb-2">
+                                            “{app.message}”
+                                        </p>
+                                    )}
+
+                                    {/* Decision Buttons */}
+                                    {app.status === "approved" && !app.proceeded && (
+                                        <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                                            <button
+                                                onClick={() => handleTenantDecision(app.id, "yes")}
+                                                disabled={processingId === app.id}
+                                                className="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50"
+                                            >
+                                                {processingId === app.id
+                                                    ? "Processing..."
+                                                    : "Proceed with Lease"}
+                                            </button>
+                                            <button
+                                                onClick={() => handleTenantDecision(app.id, "no")}
+                                                disabled={processingId === app.id}
+                                                className="flex-1 px-4 py-2.5 bg-gray-300 text-gray-800 text-sm rounded-lg font-semibold hover:bg-gray-400 disabled:opacity-50"
+                                            >
+                                                {processingId === app.id ? "Processing..." : "Decline"}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Decision Display */}
+                                    {app.status === "approved" && app.proceeded && (
+                                        <div
+                                            className={`mt-3 p-3 rounded-lg text-sm font-medium border ${
+                                                app.proceeded === "yes"
+                                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                                    : "bg-gray-100 text-gray-800 border-gray-200"
+                                            }`}
+                                        >
+                                            {app.proceeded === "yes"
+                                                ? "✅ You chose to proceed with this lease"
+                                                : "❌ You declined this lease"}
+                                        </div>
+                                    )}
+
+                                    {/* Disapproved */}
+                                    {app.status === "disapproved" && (
+                                        <div className="mt-3 p-3 bg-rose-50 border border-rose-200 text-sm text-rose-700 rounded-lg">
+                                            ❌ Application not approved — you can apply for other units.
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-2 mt-8">
+                            <button
+                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
+                            >
+                                <ArrowRightIcon className="w-4 h-4 rotate-180" />
+                            </button>
+                            <div className="flex gap-1">
+                                {Array.from({ length: totalPages }, (_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        className={`w-8 h-8 text-sm rounded-lg font-semibold ${
+                                            currentPage === i + 1
+                                                ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
+                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
+                            >
+                                <ArrowRightIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+                </main>
             </div>
-          )}
         </div>
-      </div>
-    </div>
-  );
+    );
+
+
 }
 
-function getStatusStyles(status: string): string {
-  switch (status) {
-    case "approved":
-      return "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-900 border-b border-emerald-300";
-    case "disapproved":
-      return "bg-gradient-to-r from-rose-100 to-red-100 text-red-900 border-b border-red-300";
-    case "pending":
-    default:
-      return "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 border-b border-amber-300";
-  }
-}
-
+/* --- Status Icon --- */
 function getStatusIcon(status: string) {
-  switch (status) {
-    case "approved":
-      return <CheckCircleIcon className="w-5 h-5 text-emerald-600" />;
-    case "disapproved":
-      return <XCircleIcon className="w-5 h-5 text-red-600" />;
-    case "pending":
-    default:
-      return <ClockIcon className="w-5 h-5 text-amber-600" />;
-  }
+    switch (status) {
+        case "approved":
+            return <CheckCircleIcon className="w-5 h-5 text-emerald-600" />;
+        case "disapproved":
+            return <XCircleIcon className="w-5 h-5 text-red-600" />;
+        case "pending":
+        default:
+            return <ClockIcon className="w-5 h-5 text-amber-600" />;
+    }
 }

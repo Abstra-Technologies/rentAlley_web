@@ -1,9 +1,8 @@
 "use client";
 
 import { Suspense } from "react";
-import useAuthStore from "../../../../zustand/authStore";
-import TenantLayout from "../../../../components/navigation/sidebar-tenant";
-import MyApplications from "../../../../components/tenant/myApplication/MyApplications";
+import useAuthStore from "@/zustand/authStore";
+import MyApplications from "@/components/tenant/myApplication/MyApplications";
 import { useEffect, useState } from "react";
 import TenantOutsidePortalNav from "@/components/navigation/TenantOutsidePortalNav";
 
@@ -23,14 +22,17 @@ function TenantMyApplicationsContent() {
 }
 
 export default function TenantMyApplicationsPage() {
-  return (
-    <Suspense fallback={<div>Loading My Applications...</div>}>
-      <div className="flex min-h-screen bg-gray-50">
-        <TenantOutsidePortalNav />
-        <div className="flex-1 md:ml-64">
-            <TenantMyApplicationsContent />
-        </div>
-      </div>
-    </Suspense>
-  );
+    return (
+        <Suspense fallback={<div>Loading My Applications...</div>}>
+            <div className="flex min-h-screen w-full bg-gray-50">
+                {/* Sidebar Navigation */}
+                <TenantOutsidePortalNav />
+
+                {/* Main Content Wrapper */}
+                <div className="flex-1 w-full overflow-x-hidden">
+                    <TenantMyApplicationsContent />
+                </div>
+            </div>
+        </Suspense>
+    );
 }

@@ -25,7 +25,7 @@ export default function PropertyLeasesPage() {
     const [selectedLease, setSelectedLease] = useState(null);
 
     const handleLeaseAction = (lease) => {
-        setSelectedLease(lease); // Open side panel for both setup and view
+        setSelectedLease(lease);
     };
 
     if (isLoading) {

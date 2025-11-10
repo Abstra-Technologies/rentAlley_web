@@ -54,7 +54,7 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
     const agreementId = lease.agreement_id || lease.lease_id;
     if (lease.lease_status === "draft") {
       router.push(
-        `/pages/landlord/properties/${lease.property_id}/activeLease/setup/${agreementId}`
+        `/pages/landlord/properties/${lease.property_id}/activeLease/setup?agreement_id=${agreementId}`
       );
     } else {
       router.push(
@@ -66,7 +66,7 @@ export default function LeaseDetailsPanel({ lease, onClose }) {
   const handleSetupLeaseRedirect = () => {
     const agreementId = lease.agreement_id || lease.lease_id;
     router.push(
-      `/pages/landlord/properties/${lease.property_id}/activeLease/setup/${agreementId}`
+      `/pages/landlord/properties/${lease.property_id}/activeLease/setup?agreement_id=${agreementId}`
     );
   };
 
