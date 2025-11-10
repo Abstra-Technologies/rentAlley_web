@@ -68,7 +68,6 @@ const MaintenanceRequestPage = () => {
         setVisibleRequests(filtered);
     }, [allRequests, activeTab]);
 
-    // 🧩 Update status
     const updateStatus = async (request_id, newStatus, additionalData = {}) => {
         try {
             await axios.put("/api/maintenance/updateStatus", {
@@ -91,7 +90,6 @@ const MaintenanceRequestPage = () => {
         }
     };
 
-    // 🧩 Handle scheduling
     const handleStartClick = (id) => {
         setCurrentRequestId(id);
         setShowCalendar(true);
@@ -111,7 +109,6 @@ const MaintenanceRequestPage = () => {
         setShowModal(true);
     };
 
-    // 🧩 Dynamic action buttons per status
     const getActionButton = (request) => {
         switch (activeTab) {
             case "pending":
@@ -150,7 +147,6 @@ const MaintenanceRequestPage = () => {
         }
     };
 
-    // 🧩 Tab configurations
     const getTabConfig = (tab) => {
         const configs = {
             pending: { icon: Clock, color: "text-amber-600", count: 0 },
@@ -168,7 +164,6 @@ const MaintenanceRequestPage = () => {
         return config;
     };
 
-    // 🧩 Render UI
     return (
         <Suspense fallback={<div>Loading...</div>}>
             <SearchParamsWrapper setActiveTab={setActiveTab} />
