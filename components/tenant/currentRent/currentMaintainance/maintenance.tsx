@@ -317,54 +317,6 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
                     </div>
                 )}
 
-                {/* Summary Stats (unchanged) */}
-                {!loading && maintenanceRequests.length > 0 && (
-                    <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                        <h3 className="text-base font-bold text-gray-900 mb-4">Request Summary</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            {[
-                                {
-                                    label: "Total Requests",
-                                    count: statusCounts.all,
-                                    color: "from-blue-500 to-blue-600",
-                                    icon: Square3Stack3DIcon,
-                                },
-                                {
-                                    label: "Pending",
-                                    count: statusCounts.pending,
-                                    color: "from-amber-500 to-amber-600",
-                                    icon: ClockIcon,
-                                },
-                                {
-                                    label: "In Progress",
-                                    count: statusCounts["in-progress"],
-                                    color: "from-purple-500 to-purple-600",
-                                    icon: WrenchScrewdriverIcon,
-                                },
-                                {
-                                    label: "Completed",
-                                    count: statusCounts.completed,
-                                    color: "from-emerald-500 to-emerald-600",
-                                    icon: CheckCircleIcon,
-                                },
-                            ].map((stat) => (
-                                <div
-                                    key={stat.label}
-                                    className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-3 border border-gray-200"
-                                >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className={`p-1.5 bg-gradient-to-br ${stat.color} rounded-md`}>
-                                            <stat.icon className="w-4 h-4 text-white" />
-                                        </div>
-                                        <div className="text-xl font-bold text-gray-900">{stat.count}</div>
-                                    </div>
-                                    <div className="text-xs font-semibold text-gray-600">{stat.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
                 {/* Image Zoom Modal */}
                 {zoomedImage && (
                     <div
