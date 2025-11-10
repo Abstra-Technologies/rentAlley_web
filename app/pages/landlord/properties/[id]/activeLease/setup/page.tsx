@@ -11,6 +11,7 @@ import {
     Loader2,
     FileText,
     FileCheck,
+    Upload,
     ClipboardList,
 } from "lucide-react";
 import { formatDate } from "@/utils/formatter/formatters";
@@ -50,32 +51,54 @@ export default function SetupLeasePage() {
         if (e.target.files && e.target.files.length > 0) setFile(e.target.files[0]);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    // only for upoad setup only.
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
         if (!file) {
             Swal.fire("Missing File", "Please upload the lease agreement document.", "warning");
             return;
         }
 
-        const formData = new FormData();
+        const formData = new FormData(e.currentTarget);
+
         formData.append("agreement_id", agreement_id!);
         formData.append("property_id", property_id as string);
         formData.append("lease_file", file);
 
+        if (leaseDetails) {
+            formData.append("tenant_id", leaseDetails.tenant_id);
+            formData.append("landlord_id", leaseDetails.landlord_id);
+        }
+
+        const start_date = formData.get("start_date");
+        const end_date = formData.get("end_date");
+        if (!start_date || !end_date) {
+            Swal.fire("Incomplete", "Please provide lease start and end dates.", "warning");
+            return;
+        }
+
         setIsUploading(true);
         try {
-            await axios.post(`/api/landlord/activeLease/uploadLease`, formData, {
+            const res = await axios.post(`/api/landlord/activeLease/uploadLease`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
+
             Swal.fire({
                 title: "Success",
-                text: "Lease agreement uploaded successfully!",
+                text: "Lease document and details uploaded successfully!",
                 icon: "success",
                 confirmButtonColor: "#059669",
             });
+
+            // Redirect to active lease view
             router.push(`/pages/landlord/properties/${property_id}/activeLease`);
-        } catch (error) {
-            Swal.fire("Upload Failed", "Please try again later.", "error");
+        } catch (error: any) {
+            console.error("Upload error:", error);
+            const errMsg =
+                error.response?.data?.message ||
+                "There was a problem uploading the lease document. Please try again later.";
+            Swal.fire("Upload Failed", errMsg, "error");
         } finally {
             setIsUploading(false);
         }
@@ -148,20 +171,100 @@ export default function SetupLeasePage() {
                 </div>
             )}
 
-            {/* Step 2 */}
+            {/* Step 2 - Uppload only */}
             {step === 2 && selectedMode === "upload" && (
                 <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
                     <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                         <FileText className="w-5 h-5 text-blue-600" /> Upload Lease Document
                     </h2>
 
+                    {/* Lease Info Summary */}
+                    <div className="p-4 mb-6 bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 rounded-xl">
+                        <h3 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <ClipboardList className="w-4 h-4 text-blue-600" /> Tenant & Lease Information
+                        </h3>
+                        {leaseDetails ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+                                <p><span className="font-medium text-gray-800">Tenant:</span> {leaseDetails.tenant_name || "N/A"}</p>
+                                <p><span className="font-medium text-gray-800">Email:</span> {leaseDetails.tenant_email || "N/A"}</p>
+                                <p><span className="font-medium text-gray-800">Unit:</span> {leaseDetails.unit_name || "N/A"}</p>
+                                <p><span className="font-medium text-gray-800">Property:</span> {leaseDetails.property_name || "N/A"}</p>
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 text-sm italic">Loading tenant details...</p>
+                        )}
+                    </div>
+
+                    {/* Editable Lease Fields */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Lease Start Date</label>
+                            <input
+                                type="date"
+                                name="start_date"
+                                required
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Lease End Date</label>
+                            <input
+                                type="date"
+                                name="end_date"
+                                required
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Rent (₱)</label>
+                            <input
+                                type="number"
+                                name="rent_amount"
+                                min="0"
+                                step="0.01"
+                                defaultValue={leaseDetails?.rent_amount || ""}
+                                required
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Security Deposit (₱)</label>
+                            <input
+                                type="number"
+                                name="security_deposit"
+                                min="0"
+                                step="0.01"
+                                defaultValue={leaseDetails?.security_deposit || ""}
+                                required
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Advance Payment (₱)</label>
+                            <input
+                                type="number"
+                                name="advance_payment"
+                                min="0"
+                                step="0.01"
+                                defaultValue={leaseDetails?.advance_payment || ""}
+                                required
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    {/* File Upload */}
                     <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
                         <label className="flex flex-col items-center justify-center w-full sm:w-1/2 h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
                             <div className="flex flex-col items-center justify-center text-gray-600">
                                 <Upload className="w-8 h-8 text-blue-500 mb-2" />
                                 <span className="text-sm font-medium">
-                  {file ? file.name : "Click to upload or drag file here"}
-                </span>
+                        {file ? file.name : "Click to upload or drag file here"}
+                    </span>
                                 <span className="text-xs text-gray-400 mt-1">Supported: PDF, DOCX</span>
                             </div>
                             <input type="file" accept=".pdf,.docx" onChange={handleFileChange} className="hidden" />
@@ -176,6 +279,7 @@ export default function SetupLeasePage() {
                         )}
                     </div>
 
+                    {/* Footer Buttons */}
                     <div className="mt-6 flex justify-between">
                         <button
                             type="button"
@@ -203,6 +307,8 @@ export default function SetupLeasePage() {
                     </div>
                 </form>
             )}
+
+
 
             {step === 2 && selectedMode === "generate" && (
                 <GenerateLease property_id={property_id} agreement_id={agreement_id} leaseDetails={leaseDetails} />
