@@ -2,9 +2,9 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import useAuthStore from "../../../../zustand/authStore";
-import TenantLayout from "../../../../components/navigation/sidebar-tenant";
-import MaintenanceRequestList from "../../../../components/tenant/currentRent/currentMaintainance/maintenance";
+import useAuthStore from "@/zustand/authStore";
+import TenantLayout from "@/components/navigation/sidebar-tenant";
+import MaintenanceRequestList from "@/components/tenant/currentRent/currentMaintainance/maintenance";
 
 function TenantMaintenanceContent() {
   const { user } = useAuthStore();
