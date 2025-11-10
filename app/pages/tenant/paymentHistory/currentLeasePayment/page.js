@@ -18,15 +18,7 @@ function TenantPaymentsContent() {
   return (
     <TenantLayout agreement_id={agreementId}>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 -m-4 md:-m-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Back Button */}
-          <button
-            onClick={() => router.back()}
-            className="mb-6 flex items-center gap-2 px-4 py-2.5 text-gray-700 hover:text-gray-900 font-medium text-sm bg-white hover:bg-gray-50 rounded-xl transition-all border-2 border-gray-200 shadow-sm hover:shadow-md"
-          >
-            <ArrowLeftIcon className="w-4 h-4" />
-            Back
-          </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
           {/* Content */}
           {agreementId ? (

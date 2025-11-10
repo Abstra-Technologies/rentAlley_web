@@ -1,10 +1,10 @@
 "use client";
 
 import { Suspense } from "react";
-import TenantLayout from "../../../../components/navigation/sidebar-tenant";
-import Announcements from "../../../../components/annoucemen/announcementList";
+import TenantLayout from "@/components/navigation/sidebar-tenant";
+import Announcements from "@/components/annoucemen/announcementList";
 import { useSearchParams } from "next/navigation";
-import useAuthStore from "../../../../zustand/authStore";
+import useAuthStore from "@/zustand/authStore";
 
 function AnnouncementWrapper() {
   const searchParams = useSearchParams();
