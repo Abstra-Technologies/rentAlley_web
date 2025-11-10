@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import MaintenanceRequestForm from "../../../../../components/maintenance/maintenanceRequestForm";
+import MaintenanceRequestForm from "@/components/maintenance/maintenanceRequestForm";
 
 export default function AddMaintenancePage() {
   return (

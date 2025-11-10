@@ -40,3 +40,7 @@ export function generateLeaseId(): string {
 export function generateBillId(): string {
     return "UPKYPBILL" + randomAlphaNumeric(6);
 }
+
+export function generateMaintenanceId(): string {
+    return "UPKYPBILL" + randomAlphaNumeric(4);
+}
