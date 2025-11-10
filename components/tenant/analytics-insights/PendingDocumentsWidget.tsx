@@ -7,20 +7,18 @@ import { X } from "lucide-react";
 import useAuthStore from "@/zustand/authStore";
 
 export default function TenantLeaseModal({ agreement_id }: { agreement_id: string }) {
-    const { user, fetchSession } = useAuthStore(); // ✅ detect user type (tenant/landlord)
+    const { user, fetchSession } = useAuthStore();
     const [leaseData, setLeaseData] = useState<any>(null);
-    const [showModal, setShowModal] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [otpCode, setOtpCode] = useState("");
     const [verifying, setVerifying] = useState(false);
     const [loading, setLoading] = useState(true);
     const [cooldown, setCooldown] = useState(0);
-    // 🧭 Ensure session is loaded
+
     useEffect(() => {
         if (!user) fetchSession();
     }, [user, fetchSession]);
 
-    // ⏳ OTP cooldown timer
     useEffect(() => {
         if (cooldown <= 0) return;
         const timer = setInterval(() => setCooldown((c) => c - 1), 1000);
@@ -78,7 +76,12 @@ export default function TenantLeaseModal({ agreement_id }: { agreement_id: strin
                     icon: "success",
                     confirmButtonColor: "#059669",
                 });
-                setShowModal(false);
+                // Refresh the lease data to show updated signature status
+                const refreshed = await axios.get(
+                    `/api/tenant/activeRent/leaseAgreement/signatureStatus?agreement_id=${agreement_id}`
+                );
+                setLeaseData(refreshed.data);
+                setOtpSent(false);
             } else {
                 Swal.fire("Error", res.data?.error || "Invalid OTP.", "error");
             }
@@ -116,6 +119,7 @@ export default function TenantLeaseModal({ agreement_id }: { agreement_id: strin
 
     const tenantSignature = leaseData?.tenant_signature || {};
     const isTenant = user?.userType === "tenant";
+    const hasSignatureRecord = !!tenantSignature?.id; // ✅ Only true if LeaseSignature record exists
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all p-6 sm:p-8 w-full max-w-3xl mx-auto">
@@ -145,9 +149,9 @@ export default function TenantLeaseModal({ agreement_id }: { agreement_id: strin
                 </p>
             </div>
 
-            {/* View Link */}
+            {/* Lease Document Link */}
             {leaseData?.agreement_url && (
-                <div className="mb-4">
+                <div className="mb-6">
                     <a
                         href={leaseData.agreement_url}
                         target="_blank"
@@ -159,84 +163,89 @@ export default function TenantLeaseModal({ agreement_id }: { agreement_id: strin
                 </div>
             )}
 
-            {/* Signature Section */}
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <h3 className="font-semibold text-gray-800 mb-2 text-sm uppercase tracking-wide">
-                    Tenant Signature Details
-                </h3>
-                <p className="text-sm text-gray-600">
-                    <strong>Email:</strong> {tenantSignature?.email || "N/A"}
-                </p>
-                <p className="text-sm text-gray-600 mb-2">
-                    <strong>Status:</strong>{" "}
-                    <span
-                        className={`font-bold ${
-                            tenantSignature.status === "signed"
-                                ? "text-emerald-600"
-                                : tenantSignature.status === "pending"
-                                    ? "text-amber-500"
-                                    : "text-gray-500"
-                        }`}
-                    >
-            {tenantSignature.status || "pending"}
-          </span>
-                </p>
+            {/* Only show this section if LeaseSignature exists */}
+            {hasSignatureRecord && (
+                <>
+                    {/* Tenant Signature Info */}
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <h3 className="font-semibold text-gray-800 mb-2 text-sm uppercase tracking-wide">
+                            Tenant Signature Details
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                            <strong>Email:</strong> {tenantSignature?.email || "N/A"}
+                        </p>
+                        <p className="text-sm text-gray-600 mb-2">
+                            <strong>Status:</strong>{" "}
+                            <span
+                                className={`font-bold ${
+                                    tenantSignature.status === "signed"
+                                        ? "text-emerald-600"
+                                        : tenantSignature.status === "pending"
+                                            ? "text-amber-500"
+                                            : "text-gray-500"
+                                }`}
+                            >
+                {tenantSignature.status || "pending"}
+              </span>
+                        </p>
 
-                {tenantSignature.signed_at && (
-                    <p className="text-xs text-gray-500 mt-1">
-                        Signed on{" "}
-                        {new Date(tenantSignature.signed_at).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                        })}
-                    </p>
-                )}
-            </div>
+                        {tenantSignature.signed_at && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                Signed on{" "}
+                                {new Date(tenantSignature.signed_at).toLocaleString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })}
+                            </p>
+                        )}
+                    </div>
 
-            {/* 🔐 OTP Section */}
-            {isTenant && tenantSignature.status === "pending" && (
-                <div className="mt-6 space-y-3">
-                    {!otpSent ? (
-                        <button
-                            onClick={handleSendOtp}
-                            className="w-full px-5 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl font-semibold text-base hover:from-blue-700 hover:to-emerald-700 transition-all"
-                        >
-                            Authenticate & Sign Lease
-                        </button>
-                    ) : (
-                        <>
-                            <input
-                                type="text"
-                                maxLength={6}
-                                value={otpCode}
-                                onChange={(e) => setOtpCode(e.target.value)}
-                                placeholder="Enter 6-digit OTP"
-                                className="w-full border border-gray-300 rounded-lg p-4 text-center tracking-widest text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                            />
-
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                    {/* OTP Section (Only for tenant and pending signature) */}
+                    {isTenant && tenantSignature.status === "pending" && (
+                        <div className="mt-6 space-y-3">
+                            {!otpSent ? (
                                 <button
-                                    onClick={handleVerifyOtp}
-                                    disabled={verifying}
-                                    className="flex-1 mb-2 sm:mb-0 px-5 py-4 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-all disabled:opacity-60"
+                                    onClick={handleSendOtp}
+                                    className="w-full px-5 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl font-semibold text-base hover:from-blue-700 hover:to-emerald-700 transition-all"
                                 >
-                                    {verifying ? "Verifying..." : "Verify & Sign"}
+                                    Authenticate & Sign Lease
                                 </button>
+                            ) : (
+                                <>
+                                    <input
+                                        type="text"
+                                        maxLength={6}
+                                        value={otpCode}
+                                        onChange={(e) => setOtpCode(e.target.value)}
+                                        placeholder="Enter 6-digit OTP"
+                                        className="w-full border border-gray-300 rounded-lg p-4 text-center tracking-widest text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                    />
 
-                                <button
-                                    onClick={handleResendOtp}
-                                    disabled={cooldown > 0}
-                                    className="w-full sm:w-auto px-4 py-4 text-sm font-semibold rounded-xl border border-blue-500 text-blue-600 hover:bg-blue-50 transition-all disabled:opacity-50"
-                                >
-                                    {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
-                                </button>
-                            </div>
-                        </>
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                                        <button
+                                            onClick={handleVerifyOtp}
+                                            disabled={verifying}
+                                            className="flex-1 mb-2 sm:mb-0 px-5 py-4 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-all disabled:opacity-60"
+                                        >
+                                            {verifying ? "Verifying..." : "Verify & Sign"}
+                                        </button>
+
+                                        <button
+                                            onClick={handleResendOtp}
+                                            disabled={cooldown > 0}
+                                            className="w-full sm:w-auto px-4 py-4 text-sm font-semibold rounded-xl border border-blue-500 text-blue-600 hover:bg-blue-50 transition-all disabled:opacity-50"
+                                        >
+                                            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     )}
-                </div>
+                </>
             )}
         </div>
     );
