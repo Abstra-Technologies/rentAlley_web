@@ -98,8 +98,6 @@ const AssetsManagementPage = () => {
     return (
         <>
             <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
-                {/* Header */}
-                <BackButton label="Back to Property" />
 
                 <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 mb-6">
                     <div className="flex items-start gap-3 mb-4">
