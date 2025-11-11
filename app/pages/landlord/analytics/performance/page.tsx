@@ -83,7 +83,7 @@ export default function PropertyPerformancePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
           <p className="text-gray-600 text-sm">Loading analytics...</p>
         </div>
       </div>
@@ -92,49 +92,22 @@ export default function PropertyPerformancePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile: pt-20 for top navbar + pb-24 for bottom nav | Desktop: normal padding */}
-      <div className="px-4 pt-20 pb-24 sm:px-6 lg:px-8 md:pt-8 md:pb-8 max-w-7xl mx-auto">
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <div className="flex items-start gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <BarChart3 className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Property Performance Analytics
-              </h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                Monitor key metrics and track property performance at a glance
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              <span className="text-gray-600">Key Performance Indicators</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-              <span className="text-gray-600">Financial Trends</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-              <span className="text-gray-600">Tenant & Property Insights</span>
-            </div>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+            Property Performance Analytics
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-base">
+            Monitor key metrics and track property performance at a glance
+          </p>
         </div>
 
         {/* 🎯 SECTION 1: KPI Cards - MOST IMPORTANT (Top Priority) */}
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Building2 className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-              Key Performance Indicators
-            </h2>
-          </div>
+        <section className="mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+            Key Performance Indicators
+          </h2>
           <p className="text-xs sm:text-sm text-gray-600 mb-4">
             Critical metrics for quick decision-making
           </p>
@@ -155,25 +128,16 @@ export default function PropertyPerformancePage() {
         </section>
 
         {/* 📈 SECTION 2: Revenue Trend - Financial Overview (Second Priority) */}
-        <section className="mb-8">
+        <section className="mb-6">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             {/* Card Header */}
             <div className="p-4 sm:p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-green-100 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-base sm:text-lg font-bold text-gray-900">
-                      Revenue vs Expense Trend
-                    </h2>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-                      Monthly financial performance overview
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-0.5">
+                Revenue vs Expense Trend
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-600">
+                Monthly financial performance overview
+              </p>
             </div>
 
             {/* Card Content */}
@@ -186,13 +150,10 @@ export default function PropertyPerformancePage() {
         </section>
 
         {/* 👥 SECTION 3: Tenant Insights */}
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-              Tenant Insights
-            </h2>
-          </div>
+        <section className="mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+            Tenant Insights
+          </h2>
           <p className="text-xs sm:text-sm text-gray-600 mb-4">
             Demographics and occupancy patterns
           </p>
@@ -204,13 +165,10 @@ export default function PropertyPerformancePage() {
         </section>
 
         {/* 🏢 SECTION 4: Property Insights */}
-        <section className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <PieChart className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-              Property Insights
-            </h2>
-          </div>
+        <section className="mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+            Property Insights
+          </h2>
           <p className="text-xs sm:text-sm text-gray-600 mb-4">
             Operational metrics and maintenance tracking
           </p>
@@ -223,4 +181,4 @@ export default function PropertyPerformancePage() {
       </div>
     </div>
   );
-}   
+}
