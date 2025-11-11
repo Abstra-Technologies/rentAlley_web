@@ -1,12 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-    MaterialReactTable,
-    type MRT_ColumnDef,
-} from "material-react-table";
 import Swal from "sweetalert2";
 import { IoMailOpen } from "react-icons/io5";
+import { UserCircle2, Home, Building2 } from "lucide-react";
 
 import LoadingScreen from "../../loadingScreen";
 import useAuthStore from "@/zustand/authStore";
@@ -18,6 +15,7 @@ type Tenant = {
     firstName: string;
     lastName: string;
     email: string;
+    profilePicture?: string;
     employment_type: string;
     occupation: string;
     units: { unit_id: number; unit_name: string }[];
@@ -123,58 +121,6 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
         router.push(`/pages/landlord/list_of_tenants/${tenant_id}`);
     };
 
-    const columns: MRT_ColumnDef<Tenant>[] = [
-        {
-            accessorKey: "firstName",
-            header: "Tenant Name",
-            Cell: ({ row }) => (
-                <span className="font-medium text-gray-800">
-          {row.original.firstName} {row.original.lastName}
-        </span>
-            ),
-        },
-        { accessorKey: "email", header: "Email" },
-        {
-            id: "property_names",
-            header: "Property",
-            Cell: ({ row }) =>
-                row.original.property_names?.length
-                    ? row.original.property_names.join(", ")
-                    : "—",
-        },
-        {
-            id: "units",
-            header: "Units Occupied",
-            Cell: ({ row }) =>
-                row.original.units?.length
-                    ? row.original.units.map((u) => u.unit_name).join(", ")
-                    : "—",
-        },
-
-        {
-            id: "actions",
-            header: "Actions",
-            Cell: ({ row }) => (
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => handleViewDetails(row.original.tenant_id)}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-                    >
-                        View Details
-                    </button>
-
-                    <button
-                        onClick={() => handleMessageTenant(row.original)}
-                        className="px-3 py-1 flex items-center gap-1 bg-emerald-600 text-white text-sm rounded hover:bg-emerald-700 transition"
-                    >
-                        <IoMailOpen className="text-white w-4 h-4" />
-                        Message
-                    </button>
-                </div>
-            ),
-        },
-    ];
-
     if (loading) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
@@ -185,28 +131,95 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
 
     if (error) return <p className="text-red-500">{error}</p>;
 
+    if (tenants.length === 0) {
+        return (
+            <div className="text-center py-16">
+                <UserCircle2 className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                <h2 className="text-lg font-semibold text-gray-700">
+                    No tenants found
+                </h2>
+                <p className="text-sm text-gray-500">
+                    You currently don’t have any active tenants.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full px-4 py-6 lg:px-6">
             <div className="max-w-6xl mx-auto">
-                <h1 className="gradient-header">My Tenants</h1>
+                <h1 className="gradient-header mb-6">My Tenants</h1>
 
-                <MaterialReactTable
-                    columns={columns}
-                    data={tenants}
-                    enableSorting
-                    enableColumnActions={false}
-                    enableDensityToggle={false}
-                    initialState={{
-                        pagination: { pageSize: 10, pageIndex: 0 },
-                    }}
-                    muiTableBodyRowProps={{
-                        sx: {
-                            "&:hover": {
-                                backgroundColor: "#f9fafb",
-                            },
-                        },
-                    }}
-                />
+                {/* Responsive Card Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {tenants.map((tenant) => {
+                        const tenantName = `${tenant.firstName} ${tenant.lastName}`;
+                        const propertyList = tenant.property_names?.join(", ") || "—";
+                        const unitList =
+                            tenant.units?.map((u) => u.unit_name).join(", ") || "—";
+
+                        return (
+                            <div
+                                key={tenant.tenant_id}
+                                className="bg-white rounded-2xl shadow-md hover:shadow-lg border border-gray-100 p-5 transition-all duration-200 flex flex-col justify-between"
+                            >
+                                {/* Profile Section */}
+                                <div className="flex items-center gap-4 mb-4">
+                                    {tenant.profilePicture ? (
+                                        <img
+                                            src={tenant.profilePicture}
+                                            alt={tenantName}
+                                            className="w-14 h-14 rounded-full object-cover border border-gray-200"
+                                        />
+                                    ) : (
+                                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-white font-bold text-lg shadow-inner">
+                                            {tenant.firstName?.[0]?.toUpperCase() || "?"}
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-gray-800 truncate">
+                                            {tenantName}
+                                        </h2>
+                                        <p className="text-sm text-gray-500 truncate">
+                                            {tenant.email}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Property & Units Info */}
+                                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Building2 className="w-4 h-4 text-blue-500" />
+                                        <span className="font-medium text-gray-700">
+                      {propertyList}
+                    </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Home className="w-4 h-4 text-emerald-500" />
+                                        <span>{unitList}</span>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex justify-between gap-2 mt-auto">
+                                    <button
+                                        onClick={() => handleViewDetails(tenant.tenant_id)}
+                                        className="flex-1 px-3 py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200"
+                                    >
+                                        View Details
+                                    </button>
+                                    <button
+                                        onClick={() => handleMessageTenant(tenant)}
+                                        className="flex-1 px-3 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 transition-all duration-200"
+                                    >
+                                        <IoMailOpen className="w-4 h-4" /> Message
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
