@@ -10,9 +10,11 @@ import {
     Users,
     AlertTriangle,
 } from "lucide-react";
+import useOtpHandler from "@/hooks/lease/useOtpHandler";
+import useAuthStore from "@/zustand/authStore";
 
 export default function GenerateLease({ property_id, agreement_id, leaseDetails }: any) {
-    const [step, setStep] = useState<1 | 2>(1);
+    const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
     const [config, setConfig] = useState<any>(null);
     const [form, setForm] = useState({
         rent_amount: "",
@@ -21,13 +23,27 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
         late_fee_amount: "",
     });
     const [rentChanged, setRentChanged] = useState(false);
-    const [otpSent, setOtpSent] = useState(false);
-    const [otpCode, setOtpCode] = useState("");
     const [leaseFileUrl, setLeaseFileUrl] = useState<string>("");
-    const [resending, setResending] = useState(false);
-    const [cooldown, setCooldown] = useState(0);
-    // 🔹 Load Property Configuration (defaults)
+    const { user, fetchSession } = useAuthStore();
 
+    const {
+        otpSent,
+        otpCode,
+        setOtpCode,
+        sendOtp,
+        verifyOtp,
+        resendOtp,
+        cooldown,
+        resending,
+    } = useOtpHandler({
+        agreement_id,
+        email: leaseDetails?.landlord_email,
+        role: user?.userType,
+    });
+
+
+
+    // 🔹 Load Property Configuration (defaults)
     useEffect(() => {
         const fetchConfig = async () => {
             try {
@@ -912,7 +928,9 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
 
                     {/* 📄 Lease Link */}
                     <div className="mb-5 bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-left">
-                        <p className="text-gray-600 mb-2">Your lease document has been generated and stored securely.</p>
+                        <p className="text-gray-600 mb-2">
+                            Your lease document has been generated and stored securely.
+                        </p>
                         <p className="break-all text-blue-600 font-medium">
                             <a
                                 href={leaseFileUrl}
@@ -932,7 +950,7 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                                 sent to <strong>{leaseDetails?.landlord_email}</strong>.
                             </p>
                             <button
-                                onClick={handleSendOtp}
+                                onClick={sendOtp}
                                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold rounded-lg shadow hover:from-blue-700 hover:to-emerald-700 transition"
                             >
                                 Authenticate Document
@@ -956,7 +974,7 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
 
                             <div className="flex flex-col sm:flex-row justify-center gap-3">
                                 <button
-                                    onClick={handleVerifyOtp}
+                                    onClick={() => verifyOtp(() => setStep(5))}
                                     disabled={otpCode.length !== 6}
                                     className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-white transition ${
                                         otpCode.length === 6
@@ -968,17 +986,22 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                                 </button>
 
                                 <button
-                                    onClick={handleResendOtp}
+                                    onClick={resendOtp}
+                                    disabled={cooldown > 0}
                                     className="text-sm text-blue-600 hover:underline mt-2 sm:mt-0"
                                 >
-                                    Resend OTP
+                                    {resending
+                                        ? "Resending..."
+                                        : cooldown > 0
+                                            ? `Resend OTP (${cooldown}s)`
+                                            : "Resend OTP"}
                                 </button>
                             </div>
                         </>
                     )}
                 </div>
             )}
-
+            
             {/* STEP 5 - Success Confirmation */}
             {step === 5 && (
                 <div className="text-center p-6 max-w-lg mx-auto">

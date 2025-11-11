@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
                JOIN Tenant t ON la.tenant_id = t.tenant_id
                JOIN User usr ON t.user_id = usr.user_id
       WHERE u.property_id = ?
-        AND la.status IN ('active', 'draft', 'pending', 'landlord_signed','tenant_signed')
+        AND la.status IN ('active', 'draft', 'pending', 'pending_signature')
       ORDER BY la.start_date DESC;
       `,
             [property_id]

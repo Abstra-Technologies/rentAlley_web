@@ -9,9 +9,13 @@ import {
     User2,
     AlertCircle,
     FileSignature,
+    Eye,
+    ShieldCheck
 } from "lucide-react";
+
 import { useState } from "react";
 import LeaseDetailsPanel from "@/components/landlord/activeLease/LeaseDetailsPanel";
+import {useRouter } from "next/navigation";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -21,11 +25,16 @@ export default function PropertyLeasesPage() {
         `/api/landlord/activeLease/getByProperty?property_id=${id}`,
         fetcher
     );
+    const router = useRouter();
 
     const [selectedLease, setSelectedLease] = useState(null);
 
     const handleLeaseAction = (lease) => {
         setSelectedLease(lease);
+    };
+
+    const handleAuthenticate = (lease) => {
+        router.push(`/pages/landlord/properties/${id}/activeLease/authenticate/${lease.lease_id}`);
     };
 
     if (isLoading) {
@@ -140,43 +149,72 @@ export default function PropertyLeasesPage() {
                                             {new Date(lease.end_date).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                lease.lease_status === "active"
-                                    ? "bg-green-100 text-green-800"
-                                    : lease.lease_status === "pending"
-                                        ? "bg-amber-100 text-amber-800"
-                                        : lease.lease_status === "draft"
-                                            ? "bg-blue-100 text-blue-800"
-                                            : "bg-gray-100 text-gray-800"
-                            }`}
-                        >
-                          {lease.lease_status.charAt(0).toUpperCase() +
-                              lease.lease_status.slice(1)}
-                        </span>
+                       <span
+                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize
+    ${
+                               lease.lease_status === "active"
+                                   ? "bg-green-100 text-green-800 border border-green-200"
+                                   : lease.lease_status === "pending_signature"
+                                       ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                       : lease.lease_status === "draft"
+                                           ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                           : lease.lease_status === "expired"
+                                               ? "bg-gray-200 text-gray-700 border border-gray-300"
+                                               : lease.lease_status === "cancelled"
+                                                   ? "bg-red-100 text-red-700 border border-red-200"
+                                                   : "bg-gray-100 text-gray-700 border border-gray-200"
+                           }`}
+                       >
+  {lease.lease_status === "pending_signature"
+      ? "Pending Signature"
+      : lease.lease_status.charAt(0).toUpperCase() +
+      lease.lease_status.slice(1)}
+</span>
+
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            {["draft", "active"].includes(lease.lease_status) ? (
+                                            {lease.lease_status === "draft" ? (
+                                                // 🟦 DRAFT → Setup button
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleLeaseAction(lease);
                                                     }}
-                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-                                                        lease.lease_status === "draft"
-                                                            ? "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
-                                                            : "bg-gray-600 hover:bg-gray-700 text-white"
-                                                    }`}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white transition-all shadow-sm"
                                                 >
                                                     <FileSignature className="w-4 h-4" />
-                                                    {lease.lease_status === "draft"
-                                                        ? "Setup"
-                                                        : "View Details"}
+                                                    Setup
+                                                </button>
+                                            ) : lease.lease_status === "pending_signature" ? (
+                                                // 🟡 PENDING SIGNATURE → Authenticate button
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAuthenticate(lease); // ⚙️ Create this handler for OTP/auth flow
+                                                    }}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-all shadow-sm"
+                                                >
+                                                    <ShieldCheck className="w-4 h-4" />
+                                                    Authenticate Document
+                                                </button>
+                                            ) : lease.lease_status === "active" ? (
+                                                // 🟢 ACTIVE → View Details
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleLeaseAction(lease);
+                                                    }}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gray-700 hover:bg-gray-800 text-white transition-all shadow-sm"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    View Details
                                                 </button>
                                             ) : (
+                                                // — For all other statuses
                                                 <span className="text-gray-400 text-xs">—</span>
                                             )}
                                         </td>
+
                                     </tr>
                                 ))}
                                 </tbody>
