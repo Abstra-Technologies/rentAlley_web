@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// AWS SDK v3 S3 client
+// AWS S3 client
 const s3Client = new S3Client({
     region: process.env.NEXT_AWS_REGION!,
     credentials: {
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
         await connection.beginTransaction();
 
-        // Update basic lease info
+        // 🧾 1. Update lease agreement details
         await connection.query(
             `
       UPDATE LeaseAgreement
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
             ]
         );
 
-        // Fetch encrypted landlord/tenant info
+        // 🧩 2. Fetch encrypted landlord and tenant info
         const [rows] = await connection.query(
             `
       SELECT 
@@ -106,9 +106,9 @@ export async function POST(req: NextRequest) {
           u2.occupation AS tenant_occupation,
           u2.civil_status AS tenant_civil_status
       FROM Landlord l
-          JOIN User u1 ON l.user_id = u1.user_id
-          JOIN Tenant t ON t.tenant_id = ?
-          JOIN User u2 ON t.user_id = u2.user_id
+      JOIN User u1 ON l.user_id = u1.user_id
+      JOIN Tenant t ON t.tenant_id = ?
+      JOIN User u2 ON t.user_id = u2.user_id
       WHERE l.landlord_id = ?
       LIMIT 1
       `,
@@ -117,10 +117,11 @@ export async function POST(req: NextRequest) {
 
         if (!rows.length) throw new Error("Landlord or tenant not found.");
 
-        // Decrypt all fields
         const decryptField = (field: string) => {
             try {
-                return field ? decryptData(JSON.parse(field), process.env.ENCRYPTION_SECRET!) : "N/A";
+                return field
+                    ? decryptData(JSON.parse(field), process.env.ENCRYPTION_SECRET!)
+                    : "N/A";
             } catch {
                 return field || "N/A";
             }
@@ -144,12 +145,21 @@ export async function POST(req: NextRequest) {
             tenant_civil_status: decryptField(data.tenant_civil_status),
         };
 
-        const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-        const rentText = rent_amount ? `₱${Number(rent_amount).toLocaleString()}` : "N/A";
-        const lateFeeText = `₱${Number(late_fee_amount || 0).toLocaleString()}`;
-        const securityDepositText = security_deposit ? `₱${Number(security_deposit).toLocaleString()}` : "none";
+        // 🧾 3. Generate lease HTML (clean, sentence-style)
+        const today = new Date().toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+        });
 
-        // Generate lease HTML (sentence form)
+        const rentText = rent_amount
+            ? `₱${Number(rent_amount).toLocaleString()}`
+            : "N/A";
+        const lateFeeText = `₱${Number(late_fee_amount || 0).toLocaleString()}`;
+        const securityDepositText = security_deposit
+            ? `₱${Number(security_deposit).toLocaleString()}`
+            : "none";
+
         const leaseHTML = `
       <html>
         <head>
@@ -166,77 +176,49 @@ export async function POST(req: NextRequest) {
         </head>
         <body>
           <h1>${lease_type === "commercial" ? "Commercial lease agreement" : "Residential lease agreement"}</h1>
-
           <p>This lease agreement is executed on ${today} between the landlord and the tenant under the following terms and conditions.</p>
 
-          <h2>1. Landlord details</h2>
-          <p>
-            ${info.landlord_firstName} ${info.landlord_lastName}<br/>
-            Address: ${info.landlord_address}<br/>
-            Citizenship: ${info.landlord_citizenship}<br/>
-            Occupation: ${info.landlord_occupation}<br/>
-            Civil status: ${info.landlord_civil_status}<br/>
-            Email: ${info.landlord_email}
-          </p>
+          <h2>Landlord details</h2>
+          <p>${info.landlord_firstName} ${info.landlord_lastName}<br/>
+          Address: ${info.landlord_address}<br/>Email: ${info.landlord_email}</p>
 
-          <h2>2. Tenant details</h2>
-          <p>
-            ${info.tenant_firstName} ${info.tenant_lastName}<br/>
-            Address: ${info.tenant_address}<br/>
-            Citizenship: ${info.tenant_citizenship}<br/>
-            Occupation: ${info.tenant_occupation}<br/>
-            Civil status: ${info.tenant_civil_status}<br/>
-            Email: ${info.tenant_email}
-          </p>
+          <h2>Tenant details</h2>
+          <p>${info.tenant_firstName} ${info.tenant_lastName}<br/>
+          Address: ${info.tenant_address}<br/>Email: ${info.tenant_email}</p>
 
-          <h2>3. Property</h2>
+          <h2>Property</h2>
           <p>The leased property is located at ${property_name}, unit ${unit_name}.</p>
 
-          <h2>4. Lease term</h2>
-          <p>The lease starts on ${start_date} and ends on ${end_date}, unless earlier terminated under this agreement.</p>
+          <h2>Lease term</h2>
+          <p>The lease starts on ${start_date} and ends on ${end_date}.</p>
 
-          <h2>5. Rent</h2>
+          <h2>Rent</h2>
           <p>The tenant agrees to pay a monthly rent of ${rentText}, due every ${billing_due_day} of each month.</p>
 
-          <h2>6. Security deposit</h2>
+          <h2>Security deposit</h2>
           <p>A security deposit of ${securityDepositText} shall be held by the landlord and refunded upon lease termination, subject to lawful deductions.</p>
 
-          <h2>7. Additional terms</h2>
-          <p><strong>Grace period.</strong> The tenant has ${grace_period_days || "not specified"} days after the due date to pay rent without penalty.</p>
-          <p><strong>Late fee.</strong> A late fee of ${lateFeeText} shall apply for each month that rent remains unpaid after the grace period.</p>
-          <p><strong>Allowed occupants.</strong> ${allowed_occupants || "The number of allowed occupants is not specified."}</p>
-          <p><strong>Termination clause.</strong> ${termination_clause || "Either party may terminate this lease with proper written notice."}</p>
-          <p><strong>Entry and notice requirement.</strong> ${entry_notice || "The landlord must provide at least 24 hours’ notice before entering the property."}</p>
-          <p><strong>Utilities.</strong> ${utilities || "The tenant shall be responsible for utilities unless otherwise stated."}</p>
-          <p><strong>Pet policy.</strong> ${pet_policy || "Pets are not allowed without landlord approval."}</p>
-          <p><strong>Smoking policy.</strong> ${smoking_policy || "Smoking is prohibited within the premises."}</p>
-          <p><strong>Furnishing.</strong> ${furnishing_policy || "The property is provided as described and must be returned in good condition."}</p>
-          <p><strong>Maintenance responsibility.</strong> ${maintenance_responsibility || "The tenant handles minor repairs while the landlord maintains major systems."}</p>
+          <h2>Additional terms</h2>
+          <p><strong>Grace period:</strong> ${grace_period_days || "Not specified"} days.</p>
+          <p><strong>Late fee:</strong> ${lateFeeText} applies if rent is late.</p>
 
-          <p>Both parties have read, understood, and agreed to the terms of this lease agreement, affixing their signatures below.</p>
+          <p>Both parties have read, understood, and agreed to the terms of this lease agreement.</p>
 
           <div class="signature-block">
-            <div class="signature">
-              <div class="signature-line"></div>
-              <p>${info.landlord_firstName} ${info.landlord_lastName}<br/>Landlord signature</p>
-            </div>
-            <div class="signature">
-              <div class="signature-line"></div>
-              <p>${info.tenant_firstName} ${info.tenant_lastName}<br/>Tenant signature</p>
-            </div>
+            <div class="signature"><div class="signature-line"></div><p>${info.landlord_firstName} ${info.landlord_lastName}<br/>Landlord signature</p></div>
+            <div class="signature"><div class="signature-line"></div><p>${info.tenant_firstName} ${info.tenant_lastName}<br/>Tenant signature</p></div>
           </div>
         </body>
       </html>
     `;
 
-        // Generate PDF
+        // 🖨️ 4. Generate PDF and upload to S3
         const browser = await puppeteer.launch({ headless: "new" });
         const page = await browser.newPage();
         await page.setContent(leaseHTML, { waitUntil: "networkidle0" });
         const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
         await browser.close();
 
-        // Upload PDF to S3
         const fileKey = `leases/${agreement_id}_${uuidv4()}.pdf`;
         const bucketName = process.env.NEXT_S3_BUCKET_NAME!;
         await s3Client.send(
@@ -249,26 +231,42 @@ export async function POST(req: NextRequest) {
         );
 
         const fileUrl = `https://${bucketName}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${fileKey}`;
-
-        // Encrypt URL before saving
         const encryptedUrl = JSON.stringify(encryptData(fileUrl, process.env.ENCRYPTION_SECRET!));
 
+        // 🧾 5. Update lease record
         await connection.query(
-            "UPDATE LeaseAgreement SET agreement_url = ? WHERE agreement_id = ?",
+            `UPDATE LeaseAgreement SET agreement_url = ?, status = 'pending_signature' WHERE agreement_id = ?`,
             [encryptedUrl, agreement_id]
+        );
+
+        // 🧩 6. Create LeaseSignature entries for both parties
+        await connection.query(
+            `
+      INSERT INTO LeaseSignature (agreement_id, email, role, status)
+      VALUES
+        (?, ?, 'landlord', 'pending'),
+        (?, ?, 'tenant', 'pending')
+      ON DUPLICATE KEY UPDATE
+        email = VALUES(email),
+        status = 'pending';
+      `,
+            [agreement_id, info.landlord_email, agreement_id, info.tenant_email]
         );
 
         await connection.commit();
 
         return NextResponse.json({
             success: true,
-            message: "Lease generated successfully",
+            message: "Lease generated successfully and marked pending signature.",
             s3_url: fileUrl,
         });
     } catch (error: any) {
         await connection.rollback();
         console.error("❌ Lease generation error:", error);
-        return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(
+            { error: error.message || "Internal Server Error" },
+            { status: 500 }
+        );
     } finally {
         connection.release();
     }

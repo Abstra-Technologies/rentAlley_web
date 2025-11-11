@@ -109,6 +109,7 @@ export async function GET(req: NextRequest) {
         const tenant_last = safeDecrypt(row.tenant_lastName_encrypted);
         const landlord_first = safeDecrypt(row.landlord_firstName_encrypted);
         const landlord_last = safeDecrypt(row.landlord_lastName_encrypted);
+        const lease_url = safeDecrypt(row.agreement_url);
 
         const response = {
             agreement_id: row.agreement_id,
@@ -154,7 +155,7 @@ export async function GET(req: NextRequest) {
             grace_period_days: row.grace_period_days,
             late_penalty_amount: row.late_penalty_amount,
 
-            agreement_url: row.agreement_url,
+            agreement_url: lease_url,
         };
 
         return NextResponse.json(response, { status: 200 });
