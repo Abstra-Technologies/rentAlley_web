@@ -34,7 +34,13 @@ export default function MaintenanceCard({
     return (
         <div
             onClick={() => handleViewDetails(request)}
-            className="w-full bg-white border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
+            className="
+        w-full bg-white border-b border-gray-100
+        hover:bg-gradient-to-r hover:from-blue-50 hover:to-emerald-50
+        hover:shadow-md hover:border-blue-200
+        transition-all duration-200
+        cursor-pointer group
+      "
         >
             {/* Row layout */}
             <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 sm:gap-4 p-3 sm:items-center text-sm">
@@ -42,7 +48,10 @@ export default function MaintenanceCard({
                 <div className="flex items-start sm:items-center gap-3 col-span-2">
                     {/* Thumbnail */}
                     <div
-                        className="relative w-10 h-10 rounded-md overflow-hidden border border-gray-200 flex-shrink-0"
+                        className="
+              relative w-10 h-10 rounded-md overflow-hidden border border-gray-200
+              flex-shrink-0 group-hover:border-blue-300 transition-all duration-200
+            "
                         onClick={(e) => {
                             e.stopPropagation(); // prevent triggering modal
                             if (request.photo_urls?.length)
@@ -53,7 +62,7 @@ export default function MaintenanceCard({
                             <img
                                 src={request.photo_urls[0]}
                                 alt="Maintenance preview"
-                                className="w-full h-full object-cover hover:scale-105 transition-transform"
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
                             />
                         ) : (
                             <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
@@ -63,7 +72,7 @@ export default function MaintenanceCard({
                     </div>
 
                     <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-gray-800 truncate">
+            <span className="font-semibold text-gray-800 truncate group-hover:text-blue-700 transition-colors">
               {request.subject || "Maintenance Task"}
             </span>
                         <span className="text-xs text-gray-500 truncate">
@@ -131,12 +140,12 @@ export default function MaintenanceCard({
                                 e.stopPropagation();
                                 setSelectedImage(photo);
                             }}
-                            className="w-16 h-16 rounded-md overflow-hidden border border-gray-200"
+                            className="w-16 h-16 rounded-md overflow-hidden border border-gray-200 hover:border-blue-300 transition-all duration-200"
                         >
                             <img
                                 src={photo}
                                 alt={`Photo ${idx + 1}`}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
                             />
                         </button>
                     ))}

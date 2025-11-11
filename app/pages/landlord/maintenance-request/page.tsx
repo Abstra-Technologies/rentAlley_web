@@ -175,7 +175,7 @@ const MaintenanceRequestPage = () => {
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                             <div className="flex-1">
                                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                                    Maintenance Requests
+                                   Work Orders
                                 </h1>
                                 <p className="text-gray-600 mt-1 text-sm sm:text-base">
                                     Manage and track all maintenance requests freely
