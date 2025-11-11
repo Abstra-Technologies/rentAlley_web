@@ -17,7 +17,8 @@ import {
   Megaphone,
   Menu,
   X,
-  User,
+  Users,
+
   Bell,
   Settings,
 } from "lucide-react";
@@ -50,6 +51,11 @@ export default function LandlordLayout({
       href: "/pages/landlord/property-listing",
       icon: Building,
     },
+      {
+          label: "My Tenants",
+          href: "/pages/landlord/list_of_tenants",
+          icon: Users,
+      },
     {
       label: "Announcements",
       href: "/pages/landlord/announcement",
