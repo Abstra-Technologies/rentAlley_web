@@ -5,54 +5,68 @@ import axios from "axios";
 import { useState } from "react";
 import Swal from "sweetalert2";
 import PropertyConfiguration from "@/components/landlord/properties/propertyConfigSettings";
+import { Settings } from "lucide-react";
 
 export default function PropertyConfigurationPage() {
-    const { id } = useParams();
-    const property_id = id;
-    const [isUpdating, setIsUpdating] = useState(false);
+  const { id } = useParams();
+  const property_id = id;
+  const [isUpdating, setIsUpdating] = useState(false);
 
-    const handleUpdate = async () => {
-        try {
-            setIsUpdating(true);
-            const response = await axios.get("/api/propertyListing/getPropDetailsById", {
-                params: { property_id },
-            });
-
-            Swal.fire({
-                icon: "success",
-                title: "Updated!",
-                text: "Utility settings updated and rates reloaded.",
-                timer: 1500,
-                showConfirmButton: false,
-            });
-        } catch (error) {
-            console.error("Failed to reload property details after update:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Failed!",
-                text: "Could not refresh property details after update.",
-            });
-        } finally {
-            setIsUpdating(false);
+  const handleUpdate = async () => {
+    try {
+      setIsUpdating(true);
+      const response = await axios.get(
+        "/api/propertyListing/getPropDetailsById",
+        {
+          params: { property_id },
         }
-    };
+      );
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 p-6">
-            <div className="max-w-4xl mx-auto bg-white border border-gray-100 shadow-md rounded-2xl p-6">
-                <h1 className="text-2xl font-bold text-gray-800 mb-6">
-                    Property Configuration
-                </h1>
-                <p className="text-sm text-gray-600 mb-4">
-                    Manage your billing rules, reminders, and late fee settings for this property.
-                </p>
+      Swal.fire({
+        icon: "success",
+        title: "Updated!",
+        text: "Utility settings updated and rates reloaded.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error("Failed to reload property details after update:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Failed!",
+        text: "Could not refresh property details after update.",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
-                {/* Your existing component */}
-                <PropertyConfiguration
-                    propertyId={property_id}
-                    onUpdate={handleUpdate}
-                />
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+      <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+        {/* Header */}
+        <div className="mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
+              <Settings className="w-5 h-5 text-white" />
             </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                Property Configuration
+              </h1>
+              <p className="text-xs md:text-sm text-gray-600 mt-0.5">
+                Manage billing rules, reminders, and late fee settings
+              </p>
+            </div>
+          </div>
         </div>
-    );
+
+        {/* Configuration Component */}
+        <PropertyConfiguration
+          propertyId={property_id}
+          onUpdate={handleUpdate}
+        />
+      </div>
+    </div>
+  );
 }
