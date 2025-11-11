@@ -71,13 +71,14 @@ const MaintenanceRequestPage = () => {
     const updateStatus = async (request_id, newStatus, additionalData = {}) => {
         try {
             await axios.put("/api/maintenance/updateStatus", {
-                request_id,
-                status: newStatus,
-                ...additionalData,
-                user_id: user?.user_id,
-                landlord_id: landlordId,
+                request_id,              // the request you're updating
+                status: newStatus,       // new status (approved, rejected, etc.)
+                ...additionalData,       // optional data (reason, remarks, date, etc.)
+                user_id: user?.user_id,  // who updated it
+                landlord_id: landlordId, // who owns the property
             });
 
+            // Update the local React state instantly (optimistic UI)
             setAllRequests((prev) =>
                 prev.map((req) =>
                     req.request_id === request_id
@@ -175,7 +176,7 @@ const MaintenanceRequestPage = () => {
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                             <div className="flex-1">
                                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                                   Work Orders
+                                   Maintenance Requests
                                 </h1>
                                 <p className="text-gray-600 mt-1 text-sm sm:text-base">
                                     Manage and track all maintenance requests freely

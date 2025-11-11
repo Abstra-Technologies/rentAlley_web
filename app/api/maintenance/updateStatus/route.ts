@@ -7,11 +7,7 @@ import { io } from "socket.io-client";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
-webpush.setVapidDetails(
-    "mailto:support@upkyp.com",
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-);
+webpush.setVapidDetails("mailto:support@upkyp.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 export const runtime = "nodejs";
 
@@ -48,7 +44,9 @@ export async function PUT(req: NextRequest) {
     const conn = await db.getConnection();
     try {
         const body = await req.json();
-        const { request_id, status, schedule_date, completion_date } = body;
+        console.log("📦 Incoming update payload:", body);
+
+        const { request_id, status, schedule_date, completion_date, rejection_reason } = body;
 
         if (!request_id || !status) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -56,63 +54,75 @@ export async function PUT(req: NextRequest) {
 
         await conn.beginTransaction();
 
-        // 1️⃣ Get existing maintenance record
-        const [oldRows]: any = await conn.query(
+        // 1️⃣ Fetch existing maintenance request
+        const [existingRows]: any = await conn.query(
             `SELECT * FROM MaintenanceRequest WHERE request_id = ?`,
             [request_id]
         );
-        if (!oldRows.length) {
+        if (!existingRows.length) {
             await conn.rollback();
             return NextResponse.json({ error: "Maintenance request not found." }, { status: 404 });
         }
+        const oldData = existingRows[0];
 
-        // 2️⃣ Update status
-        let updateQuery = `UPDATE MaintenanceRequest SET status = ?, updated_at = NOW()`;
-        const params: any[] = [status];
+        // 2️⃣ Build update query dynamically
+        const updateFields = ["status = ?", "updated_at = NOW()"];
+        const updateParams: any[] = [status];
+
         if (schedule_date) {
-            updateQuery += `, schedule_date = ?`;
-            params.push(schedule_date);
+            updateFields.push("schedule_date = ?");
+            updateParams.push(schedule_date);
         }
-        if (completion_date) {
-            updateQuery += `, completion_date = ?`;
-            params.push(completion_date);
-        }
-        updateQuery += ` WHERE request_id = ?`;
-        params.push(request_id);
 
-        await conn.query(updateQuery, params);
+        if (completion_date) {
+            updateFields.push("completion_date = ?");
+            updateParams.push(completion_date);
+        }
+
+        if (rejection_reason) {
+            updateFields.push("rejection_reason = ?");
+            updateParams.push(rejection_reason);
+        }
+
+        updateParams.push(request_id);
+        const updateQuery = `UPDATE MaintenanceRequest SET ${updateFields.join(", ")} WHERE request_id = ?`;
+        await conn.query(updateQuery, updateParams);
 
         // 3️⃣ Get tenant info
-        const [rel]: any = await conn.query(
+        const [tenantInfo]: any = await conn.query(
             `SELECT mr.tenant_id, t.user_id AS tenant_user_id, mr.subject
-             FROM MaintenanceRequest mr
-                      JOIN Tenant t ON mr.tenant_id = t.tenant_id
-             WHERE mr.request_id = ?`,
+       FROM MaintenanceRequest mr
+       JOIN Tenant t ON mr.tenant_id = t.tenant_id
+       WHERE mr.request_id = ?`,
             [request_id]
         );
-
-        if (!rel.length) {
+        if (!tenantInfo.length) {
             await conn.rollback();
             return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
         }
 
-        const { tenant_id, tenant_user_id, subject } = rel[0];
-        const notifTitle = "Maintenance Request Update";
-        const notifBody = `Your maintenance request "${subject}" has been updated to "${status}".`;
+        const { tenant_id, tenant_user_id, subject } = tenantInfo[0];
+
+        // 4️⃣ Notification setup
+        let notifTitle = "Maintenance Request Update";
+        let notifBody = `Your maintenance request "${subject}" is now "${status}".`;
+
+        if (status.toLowerCase() === "rejected" && rejection_reason) {
+            notifBody = `Your maintenance request "${subject}" was rejected. Reason: ${rejection_reason}`;
+        }
+
         const notifUrl = `/pages/tenant/maintenance/view/${request_id}`;
 
-        // 4️⃣ Save Notification
+        // Save notification
         await conn.query(
             `INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
        VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
             [tenant_user_id, notifTitle, notifBody, notifUrl]
         );
 
-        // 5️⃣ Push Notification
+        // 5️⃣ Send Push Notification
         const [subs]: any = await conn.query(
-            `SELECT endpoint, p256dh, auth
-       FROM user_push_subscriptions
-       WHERE user_id = ?`,
+            `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
             [tenant_user_id]
         );
 
@@ -120,28 +130,21 @@ export async function PUT(req: NextRequest) {
             const payload = JSON.stringify({ title: notifTitle, body: notifBody, url: notifUrl });
 
             for (const sub of subs) {
-                const subscription = {
-                    endpoint: sub.endpoint,
-                    keys: { p256dh: sub.p256dh, auth: sub.auth },
-                };
-
+                const subscription = { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } };
                 try {
                     await webpush.sendNotification(subscription, payload);
-                    console.log("✅ Push sent to tenant:", sub.endpoint);
+                    console.log("✅ Push sent:", sub.endpoint);
                 } catch (err: any) {
                     console.error("❌ Push failed:", err.message);
-                    // Clean up invalid subscriptions
                     if (err.statusCode === 410 || err.statusCode === 404) {
-                        await conn.query(`DELETE FROM user_push_subscriptions WHERE endpoint = ?`, [
-                            sub.endpoint,
-                        ]);
+                        await conn.query(`DELETE FROM user_push_subscriptions WHERE endpoint = ?`, [sub.endpoint]);
                         console.log("🗑️ Removed invalid subscription:", sub.endpoint);
                     }
                 }
             }
         }
 
-        // 6️⃣ Emit Socket message
+        // 6️⃣ Send Socket Message
         const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", {
             autoConnect: true,
             transports: ["websocket"],
@@ -157,25 +160,28 @@ export async function PUT(req: NextRequest) {
         });
         setTimeout(() => socket.disconnect(), 400);
 
-        // 7️⃣ Log Activity (tenant + landlord)
-        const [newRows]: any = await conn.query(
+        // 7️⃣ Log Activity
+        const [updatedRows]: any = await conn.query(
             `SELECT * FROM MaintenanceRequest WHERE request_id = ?`,
             [request_id]
         );
+        const newData = updatedRows[0];
 
-        const newData = newRows[0];
-        const oldData = oldRows[0];
+        const actionLabel = `Maintenance Request Updated to ${status}`;
+        const desc = rejection_reason
+            ? `Maintenance request "${subject}" was rejected. Reason: ${rejection_reason}`
+            : `Maintenance request "${subject}" updated to "${status}".`;
 
         // Tenant Log
         await conn.query(
             `INSERT INTO ActivityLog
-             (user_id, action, description, target_table, target_id, old_value, new_value,
-              endpoint, http_method, status_code, ip_address, user_agent, device_type, session_id, timestamp)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+       (user_id, action, description, target_table, target_id, old_value, new_value,
+        endpoint, http_method, status_code, ip_address, user_agent, device_type, session_id, timestamp)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
             [
                 tenant_user_id,
-                "Maintenance Request Updated",
-                `Maintenance request "${subject}" updated to "${status}" by landlord.`,
+                actionLabel,
+                desc,
                 "MaintenanceRequest",
                 String(request_id),
                 JSON.stringify(oldData),
@@ -192,14 +198,14 @@ export async function PUT(req: NextRequest) {
 
         // Landlord Log
         await conn.query(
-            `INSERT INTO ActivityLog 
+            `INSERT INTO ActivityLog
        (user_id, action, description, target_table, target_id, old_value, new_value,
         endpoint, http_method, status_code, ip_address, user_agent, device_type, session_id, timestamp)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
             [
                 landlordUserId,
-                "Updated Tenant Maintenance Status",
-                `Landlord updated maintenance request "${subject}" to "${status}".`,
+                actionLabel,
+                desc,
                 "MaintenanceRequest",
                 String(request_id),
                 JSON.stringify(oldData),
@@ -218,11 +224,11 @@ export async function PUT(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message:
-                "Maintenance request updated, tenant notified (Socket + Push), and activity logs recorded.",
+            message: `Request "${request_id}" successfully updated to "${status}".`,
+            rejection_reason: rejection_reason || null,
         });
     } catch (error: any) {
-        console.error("Maintenance update error:", error);
+        console.error("❌ Maintenance update error:", error);
         await conn.rollback();
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     } finally {

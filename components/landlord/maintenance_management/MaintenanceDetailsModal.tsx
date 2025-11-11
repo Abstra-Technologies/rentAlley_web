@@ -14,7 +14,6 @@ import {
     Layers,
     Barcode,
     Building2,
-    Info,
 } from "lucide-react";
 import { getStatusConfig, getPriorityConfig } from "./getStatusConfig";
 
@@ -34,7 +33,7 @@ export default function MaintenanceDetailsModal({
     isLocked: boolean;
 }) {
     const status = getStatusConfig(selectedRequest.status);
-    const priority = getPriorityConfig(selectedRequest.priority);
+    const priority = getPriorityConfig(selectedRequest.priority_level); // ✅ ensure correct prop
     const StatusIcon = status.icon;
 
     return (
@@ -66,7 +65,7 @@ export default function MaintenanceDetailsModal({
                   {status.label}
               </span>
 
-                            {selectedRequest.priority && (
+                            {selectedRequest.priority_level && (
                                 <span
                                     className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold ${priority.bg} ${priority.text} border ${priority.border}`}
                                 >
@@ -104,13 +103,25 @@ export default function MaintenanceDetailsModal({
                             {/* Subject & Description */}
                             <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4 sm:p-5">
                                 <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-3">
-                                    {selectedRequest.subject}
+                                    Problem / Issue: {selectedRequest.subject}
                                 </h3>
                                 <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
                                     <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                                        {selectedRequest.description}
+                                        Descrption: {selectedRequest.description}
                                     </p>
                                 </div>
+
+                                {/* ✅ Priority Level Display */}
+                                {selectedRequest.priority_level && (
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-sm text-gray-600">Priority:</span>
+                                        <span
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${priority.bg} ${priority.text} border ${priority.border}`}
+                                        >
+                      ⚡ {priority.label}
+                    </span>
+                                    </div>
+                                )}
 
                                 {/* Dates Grid */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -121,14 +132,13 @@ export default function MaintenanceDetailsModal({
                                         <div>
                                             <p className="text-xs text-gray-600">Submitted</p>
                                             <p className="text-sm font-semibold text-gray-900">
-                                                {new Date(selectedRequest.created_at).toLocaleDateString(
-                                                    "en-US",
-                                                    {
-                                                        year: "numeric",
-                                                        month: "short",
-                                                        day: "numeric",
-                                                    }
-                                                )}
+                                                {new Date(
+                                                    selectedRequest.created_at
+                                                ).toLocaleDateString("en-US", {
+                                                    year: "numeric",
+                                                    month: "short",
+                                                    day: "numeric",
+                                                })}
                                             </p>
                                         </div>
                                     </div>
@@ -211,6 +221,68 @@ export default function MaintenanceDetailsModal({
                                         </div>
                                     </div>
                                 )}
+
+                            {/* ✅ Actions below photos */}
+                            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-5 sm:p-6">
+                                <h3 className="font-bold text-gray-900 mb-5 text-lg">Actions</h3>
+
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                    {/* ✅ PENDING → Approve / Reject */}
+                                    {selectedRequest.status.toLowerCase() === "pending" && (
+                                        <>
+                                            <button
+                                                onClick={() => updateStatus(selectedRequest.request_id, "approved")}
+                                                disabled={isLocked}
+                                                className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                ✅ Approve
+                                            </button>
+
+                                            <button
+                                                onClick={() => updateStatus(selectedRequest.request_id, "rejected")}
+                                                disabled={isLocked}
+                                                className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                ❌ Reject
+                                            </button>
+                                        </>
+                                    )}
+
+
+                                    {/* ✅ APPROVED → Start Work */}
+                                    {selectedRequest.status.toLowerCase() === "approved" && (
+                                        <button
+                                            onClick={onStart}
+                                            disabled={isLocked}
+                                            className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            🚀 Start Work
+                                        </button>
+                                    )}
+
+                                    {/* ✅ IN-PROGRESS → Mark Completed */}
+                                    {selectedRequest.status.toLowerCase() === "in-progress" && (
+                                        <button
+                                            onClick={onComplete}
+                                            disabled={isLocked}
+                                            className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-xl hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            🏁 Mark as Completed
+                                        </button>
+                                    )}
+
+                                    {/* ✅ COMPLETED or REJECTED → Only Close */}
+                                    {(selectedRequest.status.toLowerCase() === "completed" ||
+                                        selectedRequest.status.toLowerCase() === "rejected") && (
+                                        <button
+                                            onClick={onClose}
+                                            className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl hover:shadow-md transition-all duration-200"
+                                        >
+                                            ✖️ Close
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Sidebar - 1/3 width */}
@@ -222,75 +294,15 @@ export default function MaintenanceDetailsModal({
                                         <Package className="w-4 h-4 text-emerald-600" />
                                         Linked Asset
                                     </h3>
-
                                     <div className="space-y-3 text-sm">
-                                        <div>
-                                            <p className="text-xs text-gray-600 mb-1">Asset Name</p>
-                                            <p className="font-semibold text-gray-900">
-                                                {selectedRequest.asset.asset_name}
-                                            </p>
-                                        </div>
-
-                                        {selectedRequest.asset.category && (
-                                            <p className="text-gray-700">
-                                                <Layers className="w-3.5 h-3.5 inline mr-1 text-blue-600" />
-                                                {selectedRequest.asset.category}
-                                            </p>
-                                        )}
-
+                                        <p className="font-semibold text-gray-900">
+                                            {selectedRequest.asset.asset_name}
+                                        </p>
                                         {selectedRequest.asset.model && (
                                             <p className="text-gray-700">
                                                 <Cpu className="w-3.5 h-3.5 inline mr-1 text-purple-600" />
                                                 {selectedRequest.asset.model}
                                             </p>
-                                        )}
-
-                                        {selectedRequest.asset.manufacturer && (
-                                            <p className="text-gray-700">
-                                                <Building2 className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
-                                                {selectedRequest.asset.manufacturer}
-                                            </p>
-                                        )}
-
-                                        {selectedRequest.asset.serial_number && (
-                                            <p className="text-gray-700">
-                                                <Barcode className="w-3.5 h-3.5 inline mr-1 text-gray-700" />
-                                                SN: {selectedRequest.asset.serial_number}
-                                            </p>
-                                        )}
-
-                                        {selectedRequest.asset.condition && (
-                                            <p className="text-xs text-gray-600 mt-1">
-                                                Condition:{" "}
-                                                <span className="font-medium text-gray-900">
-                          {selectedRequest.asset.condition}
-                        </span>
-                                            </p>
-                                        )}
-
-                                        {selectedRequest.asset.status && (
-                                            <p className="text-xs text-gray-600">
-                                                Status:{" "}
-                                                <span className="font-medium text-gray-900">
-                          {selectedRequest.asset.status}
-                        </span>
-                                            </p>
-                                        )}
-
-                                        {/* Asset Image */}
-                                        {selectedRequest.asset.image_urls?.length > 0 && (
-                                            <div className="mt-3 grid grid-cols-2 gap-2">
-                                                {selectedRequest.asset.image_urls.map(
-                                                    (img: string, idx: number) => (
-                                                        <img
-                                                            key={idx}
-                                                            src={img}
-                                                            alt={`Asset ${idx + 1}`}
-                                                            className="rounded-md border border-gray-200 h-20 w-full object-cover hover:scale-105 transition-transform"
-                                                        />
-                                                    )
-                                                )}
-                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -302,20 +314,12 @@ export default function MaintenanceDetailsModal({
                                     <Home className="w-4 h-4 text-blue-600" />
                                     Property Details
                                 </h3>
-                                <div className="space-y-3">
-                                    <div>
-                                        <p className="text-xs text-gray-600 mb-1">Property</p>
-                                        <p className="text-sm font-semibold text-gray-900">
-                                            {selectedRequest.property_name}
-                                        </p>
-                                    </div>
-                                    <div className="pt-3 border-t border-gray-200">
-                                        <p className="text-xs text-gray-600 mb-1">Unit</p>
-                                        <p className="text-sm font-semibold text-gray-900">
-                                            {selectedRequest.unit_name}
-                                        </p>
-                                    </div>
-                                </div>
+                                <p className="text-sm font-semibold text-gray-900">
+                                    {selectedRequest.property_name}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                    Unit: {selectedRequest.unit_name}
+                                </p>
                             </div>
 
                             {/* Tenant Info */}
@@ -324,63 +328,13 @@ export default function MaintenanceDetailsModal({
                                     <User className="w-4 h-4 text-blue-600" />
                                     Tenant Information
                                 </h3>
-                                <div className="flex items-start gap-3">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg font-bold text-blue-600">
-                      {selectedRequest.tenant_first_name?.charAt(0)}
-                        {selectedRequest.tenant_last_name?.charAt(0)}
-                    </span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900 truncate">
-                                            {selectedRequest.tenant_first_name}{" "}
-                                            {selectedRequest.tenant_last_name}
-                                        </p>
-                                        {selectedRequest.tenant_email && (
-                                            <p className="text-xs text-gray-600 mt-1 truncate">
-                                                {selectedRequest.tenant_email}
-                                            </p>
-                                        )}
-                                        {selectedRequest.tenant_phone && (
-                                            <p className="text-xs text-gray-600 truncate">
-                                                {selectedRequest.tenant_phone}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4">
-                                <h3 className="font-bold text-gray-900 mb-4">Actions</h3>
-                                <div className="space-y-2">
-                                    {selectedRequest.status.toLowerCase() === "pending" && (
-                                        <button
-                                            onClick={onStart}
-                                            disabled={isLocked}
-                                            className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Start Work
-                                        </button>
-                                    )}
-
-                                    {selectedRequest.status.toLowerCase() === "in-progress" && (
-                                        <button
-                                            onClick={onComplete}
-                                            disabled={isLocked}
-                                            className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Mark as Completed
-                                        </button>
-                                    )}
-
-                                    <button
-                                        onClick={onClose}
-                                        className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium text-sm"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
+                                <p className="text-sm font-semibold text-gray-900">
+                                    {selectedRequest.tenant_first_name}{" "}
+                                    {selectedRequest.tenant_last_name}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                    {selectedRequest.tenant_email}
+                                </p>
                             </div>
                         </div>
                     </div>
