@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
             let decryptedPhotos: string[] = [];
             let decryptedFirstName = req.tenant_first_name;
             let decryptedLastName = req.tenant_last_name;
+            let decyptedEmail = req.tenant_email;
 
             // Decrypt photo URLs
             if (req.photo_urls && req.photo_urls !== "[]") {
@@ -100,6 +101,10 @@ export async function GET(req: NextRequest) {
                 );
                 decryptedLastName = decryptData(
                     JSON.parse(req.tenant_last_name),
+                    SECRET_KEY
+                );
+                decyptedEmail = decryptData(
+                    JSON.parse(req.tenant_email),
                     SECRET_KEY
                 );
             } catch (error) {
@@ -136,6 +141,7 @@ export async function GET(req: NextRequest) {
                 ...req,
                 tenant_first_name: decryptedFirstName,
                 tenant_last_name: decryptedLastName,
+                tenant_email: decyptedEmail,
                 photo_urls: decryptedPhotos,
                 priority_level: req.priority_level || "Medium",
                 asset, // 🧩 embedded linked asset object
