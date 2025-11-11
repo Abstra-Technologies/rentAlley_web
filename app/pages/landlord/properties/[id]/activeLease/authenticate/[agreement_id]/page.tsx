@@ -23,7 +23,7 @@ export default function AuthenticateLeasePage() {
         const fetchLeaseDetails = async () => {
             try {
                 const res = await axios.get(`/api/landlord/activeLease/getByAgreementId`, {
-                    params: { agreement_id: agreement_id },
+                    params: { agreement_id },
                 });
                 setLeaseDetails(res.data);
             } catch (error: any) {
@@ -46,13 +46,20 @@ export default function AuthenticateLeasePage() {
         resendOtp,
         cooldown,
         resending,
+        alreadySigned,
+        checkSignatureStatus,
     } = useOtpHandler({
         agreement_id,
         email: leaseDetails?.landlord_email,
         role: user?.userType,
     });
 
-    // ✅ After successful verification
+    useEffect(() => {
+        if (leaseDetails?.agreement_id) {
+            checkSignatureStatus();
+        }
+    }, [leaseDetails]);
+
     const handleSuccess = () => {
         Swal.fire({
             title: "Lease Verified!",
@@ -76,7 +83,9 @@ export default function AuthenticateLeasePage() {
     if (!leaseDetails) {
         return (
             <div className="flex flex-col items-center justify-center h-[70vh]">
-                <p className="text-gray-600 text-center">No lease data found for this agreement.</p>
+                <p className="text-gray-600 text-center">
+                    No lease data found for this agreement.
+                </p>
             </div>
         );
     }
@@ -130,69 +139,98 @@ export default function AuthenticateLeasePage() {
                     </div>
                 )}
 
-                {/* OTP VERIFICATION SECTION */}
-                {!otpSent ? (
-                    <>
-                        <p className="text-sm text-gray-700 mb-5">
-                            To verify and digitally sign this lease, please authenticate using the one-time password (OTP)
-                            sent to your email: <strong>{leaseDetails.landlord_email}</strong>.
+                {/* ✅ If user already signed, show info only */}
+                {alreadySigned ? (
+                    <div className="text-center bg-green-50 border border-green-200 rounded-lg p-6">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-3" />
+                        <h2 className="text-lg font-semibold text-emerald-700">
+                            Lease Already Signed
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                            You have already verified and signed this lease.
                         </p>
-                        <button
-                            onClick={sendOtp}
-                            className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold rounded-lg shadow hover:from-blue-700 hover:to-emerald-700 transition"
+                        <a
+                            href={leaseDetails.agreement_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block mt-4 px-6 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-medium hover:from-blue-700 hover:to-emerald-700 transition"
                         >
-                            Send OTP
-                        </button>
-                    </>
+                            View Signed Lease Document
+                        </a>
+                    </div>
                 ) : (
                     <>
-                        <p className="text-sm text-gray-700 mb-4">
-                            A 6-digit code was sent to <strong>{leaseDetails.landlord_email}</strong>.
-                            Enter it below to confirm your digital signature.
-                        </p>
+                        {/* OTP SECTION */}
+                        {!otpSent ? (
+                            <>
+                                <p className="text-sm text-gray-700 mb-5">
+                                    To verify and digitally sign this lease, please authenticate using
+                                    the one-time password (OTP) sent to your email:{" "}
+                                    <strong>{leaseDetails.landlord_email}</strong>.
+                                </p>
+                                <button
+                                    onClick={sendOtp}
+                                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold rounded-lg shadow hover:from-blue-700 hover:to-emerald-700 transition"
+                                >
+                                    Send OTP
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-sm text-gray-700 mb-4">
+                                    A 6-digit code was sent to{" "}
+                                    <strong>{leaseDetails.landlord_email}</strong>. Enter it below to
+                                    confirm your digital signature.
+                                </p>
 
-                        <input
-                            type="text"
-                            maxLength={6}
-                            value={otpCode}
-                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                            className="w-48 mx-auto text-center text-2xl tracking-widest border rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="••••••"
-                        />
+                                <input
+                                    type="text"
+                                    maxLength={6}
+                                    value={otpCode}
+                                    onChange={(e) =>
+                                        setOtpCode(e.target.value.replace(/\D/g, ""))
+                                    }
+                                    className="w-48 mx-auto text-center text-2xl tracking-widest border rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="••••••"
+                                />
 
-                        <div className="flex flex-col sm:flex-row justify-center gap-3">
-                            <button
-                                onClick={() => verifyOtp(handleSuccess)}
-                                disabled={otpCode.length !== 6}
-                                className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-white transition ${
-                                    otpCode.length === 6
-                                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
-                                        : "bg-gray-300 cursor-not-allowed"
-                                }`}
-                            >
-                                Verify & Sign
-                            </button>
+                                <div className="flex flex-col sm:flex-row justify-center gap-3">
+                                    <button
+                                        onClick={() => verifyOtp(handleSuccess)}
+                                        disabled={otpCode.length !== 6}
+                                        className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-white transition ${
+                                            otpCode.length === 6
+                                                ? "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700"
+                                                : "bg-gray-300 cursor-not-allowed"
+                                        }`}
+                                    >
+                                        Verify & Sign
+                                    </button>
 
-                            <button
-                                onClick={resendOtp}
-                                disabled={cooldown > 0}
-                                className="text-sm text-blue-600 hover:underline mt-2 sm:mt-0"
-                            >
-                                {resending
-                                    ? "Resending..."
-                                    : cooldown > 0
-                                        ? `Resend OTP (${cooldown}s)`
-                                        : "Resend OTP"}
-                            </button>
-                        </div>
+                                    <button
+                                        onClick={resendOtp}
+                                        disabled={cooldown > 0}
+                                        className="text-sm text-blue-600 hover:underline mt-2 sm:mt-0"
+                                    >
+                                        {resending
+                                            ? "Resending..."
+                                            : cooldown > 0
+                                                ? `Resend OTP (${cooldown}s)`
+                                                : "Resend OTP"}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </>
                 )}
 
-                {/* SUCCESS INDICATOR */}
-                <div className="mt-8 text-center text-gray-600 text-xs">
-                    <CheckCircle2 className="inline-block w-4 h-4 text-emerald-600 mr-1" />
-                    Your OTP verification digitally signs the lease under your registered email.
-                </div>
+                {/* FOOTNOTE */}
+                {!alreadySigned && (
+                    <div className="mt-8 text-center text-gray-600 text-xs">
+                        <CheckCircle2 className="inline-block w-4 h-4 text-emerald-600 mr-1" />
+                        Your OTP verification digitally signs the lease under your registered email.
+                    </div>
+                )}
             </div>
         </div>
     );
