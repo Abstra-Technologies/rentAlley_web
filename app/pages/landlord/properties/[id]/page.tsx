@@ -61,7 +61,7 @@ const ViewPropertyDetailedPage = () => {
 
   const handleEditUnit = (unitId: number) => {
     router.push(
-      `/pages/landlord/property-listing/view-unit/${property_id}/edit-unit/${unitId}`
+      `/pages/landlord/properties/${property_id}/units/edit/${unitId}`
     );
   };
 
