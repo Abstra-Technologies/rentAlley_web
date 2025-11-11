@@ -130,7 +130,7 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
             };
 
             const res = await axios.post(`/api/landlord/activeLease/generateLease`, payload);
-            const unencryptedUrl = res.data?.unencrypted_url;
+            const unencryptedUrl = res.data?.s3_url;
 
             if (res.data?.success && unencryptedUrl) {
                 setLeaseFileUrl(unencryptedUrl);
