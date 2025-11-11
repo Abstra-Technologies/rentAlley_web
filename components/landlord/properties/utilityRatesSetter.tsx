@@ -13,6 +13,8 @@ interface PropertyRatesModalProps {
   hasBillingForMonth: boolean;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSaveOrUpdateBilling: (e: React.FormEvent) => void;
+    onBillingUpdated?: (updatedData: any) => void;
+
 }
 
 export default function PropertyRatesModal({
@@ -24,6 +26,7 @@ export default function PropertyRatesModal({
   hasBillingForMonth,
   handleInputChange,
   handleSaveOrUpdateBilling,
+                                               onBillingUpdated
 }: PropertyRatesModalProps) {
   const [showInfo, setShowInfo] = useState(false);
   const [propertyRate, setPropertyRate] = useState({
@@ -324,12 +327,27 @@ export default function PropertyRatesModal({
               >
                 Cancel
               </button>
-              <button
-                onClick={handleSaveOrUpdateBilling}
-                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg font-semibold text-sm"
-              >
-                {hasBillingForMonth ? "Update Rates" : "Save Rates"}
-              </button>
+                <button
+                    onClick={(e) => {
+                        handleSaveOrUpdateBilling(e);
+                        const updatedData = {
+                            billing_period: billingForm.billingPeriod,
+                            electricity: {
+                                consumption: parseFloat(billingForm.electricityConsumption) || 0,
+                                total: parseFloat(billingForm.electricityTotal) || 0,
+                            },
+                            water: {
+                                consumption: parseFloat(billingForm.waterConsumption) || 0,
+                                total: parseFloat(billingForm.waterTotal) || 0,
+                            },
+                        };
+                        onBillingUpdated?.(updatedData);
+                    }}
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg font-semibold text-sm"
+                >
+                    {hasBillingForMonth ? "Update Rates" : "Save Rates"}
+                </button>
+
             </div>
           </div>
         </div>

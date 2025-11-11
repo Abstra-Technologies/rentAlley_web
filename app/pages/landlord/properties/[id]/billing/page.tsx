@@ -103,48 +103,41 @@ export default function PropertyBillingPage() {
     setBillingForm({ ...billingForm, [name]: value });
   };
 
-  const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const url = "/api/landlord/billing/savePropertyConcessionaireRates";
-      const payload = {
-        property_id,
-        billingPeriod: billingForm.billingPeriod,
-        electricityConsumption:
-          parseFloat(billingForm.electricityConsumption) || 0,
-        electricityTotal: parseFloat(billingForm.electricityTotal) || 0,
-        waterConsumption: parseFloat(billingForm.waterConsumption) || 0,
-        waterTotal: parseFloat(billingForm.waterTotal) || 0,
-      };
+    const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const url = "/api/landlord/billing/savePropertyConcessionaireRates";
+            const payload = {
+                property_id,
+                billingPeriod: billingForm.billingPeriod,
+                electricityConsumption: parseFloat(billingForm.electricityConsumption) || 0,
+                electricityTotal: parseFloat(billingForm.electricityTotal) || 0,
+                waterConsumption: parseFloat(billingForm.waterConsumption) || 0,
+                waterTotal: parseFloat(billingForm.waterTotal) || 0,
+            };
 
-      const { data } = await axios.post(url, payload);
-      Swal.fire(
-        "Success",
-        data.message || "Billing saved successfully.",
-        "success"
-      );
+            const { data } = await axios.post(url, payload);
+            const updatedBillingData = {
+                billing_period: payload.billingPeriod,
+                electricity: {
+                    consumption: payload.electricityConsumption,
+                    total: payload.electricityTotal,
+                },
+                water: {
+                    consumption: payload.waterConsumption,
+                    total: payload.waterTotal,
+                },
+            };
 
-      const updatedBillingData = {
-        billing_period: payload.billingPeriod,
-        electricity: {
-          consumption: payload.electricityConsumption,
-          total: payload.electricityTotal,
-        },
-        water: {
-          consumption: payload.waterConsumption,
-          total: payload.waterTotal,
-        },
-      };
-
-      setBillingData(updatedBillingData);
-      setHasBillingForMonth(true);
-      setIsModalOpen(true);
-      mutate(`/api/landlord/billing/current?property_id=${property_id}`);
-    } catch (error) {
-      console.error("Billing save error:", error);
-      Swal.fire("Error", "Failed to save billing. Please try again.", "error");
-    }
-  };
+            // 🔥 Instantly update local state
+            setBillingData(updatedBillingData);
+            setHasBillingForMonth(true);
+            Swal.fire("Success", data.message || "Billing saved successfully.", "success");
+        } catch (error) {
+            console.error("Billing save error:", error);
+            Swal.fire("Error", "Failed to save billing. Please try again.", "error");
+        }
+    };
 
   const handleDownloadSummary = () => {
     window.open(
@@ -288,19 +281,23 @@ export default function PropertyBillingPage() {
         </div>
 
         {/* Property Rates Modal */}
-        <PropertyRatesModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          billingData={billingData}
-          billingForm={billingForm}
-          propertyDetails={propertyDetails}
-          hasBillingForMonth={hasBillingForMonth}
-          handleInputChange={handleInputChange}
-          handleSaveOrUpdateBilling={handleSaveOrUpdateBilling}
-          onBillingUpdated={(updatedData) => setBillingData(updatedData)}
-        />
+          <PropertyRatesModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              billingData={billingData}
+              billingForm={billingForm}
+              propertyDetails={propertyDetails}
+              hasBillingForMonth={hasBillingForMonth}
+              handleInputChange={handleInputChange}
+              handleSaveOrUpdateBilling={handleSaveOrUpdateBilling}
+              onBillingUpdated={(updatedData) => {
+                  setBillingData(updatedData);
+                  setHasBillingForMonth(true);
+              }}
+          />
 
-        {/* Mobile Cards View */}
+
+          {/* Mobile Cards View */}
         <div className="block md:hidden space-y-3 mb-6">
           {loadingBills ? (
             <div className="animate-pulse space-y-3">
