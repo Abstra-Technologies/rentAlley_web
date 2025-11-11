@@ -20,7 +20,6 @@ import {
   CalendarX,
   Info,
 } from "lucide-react";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
 import axios from "axios";
 import useAuthStore from "@/zustand/authStore";
 import LoadingScreen from "@/components/loadingScreen";
@@ -259,14 +258,14 @@ const BookingAppointment = () => {
 
   const VisitCard = ({ visit, compact = false }) => (
     <div
-      className={`bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 ${
+      className={`bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all ${
         compact ? "p-3" : "p-4"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
               <User className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
@@ -337,13 +336,13 @@ const BookingAppointment = () => {
         <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
           <button
             onClick={() => approveVisit(visit.visit_id)}
-            className="flex-1 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-medium rounded hover:from-emerald-600 hover:to-emerald-700 transition-all"
+            className="flex-1 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded hover:bg-emerald-700 transition-colors"
           >
             Approve
           </button>
           <button
             onClick={() => handleDisapprove(visit.visit_id)}
-            className="flex-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition-all"
+            className="flex-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition-colors"
           >
             Decline
           </button>
@@ -367,7 +366,7 @@ const BookingAppointment = () => {
     }
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <button
             onClick={() => setCurrentMonth(currentMonth.subtract(1, "month"))}
@@ -466,7 +465,7 @@ const BookingAppointment = () => {
                     }
                     ${
                       isSelected && !isFullyBooked
-                        ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-emerald-400"
+                        ? "bg-blue-50 border-blue-400"
                         : ""
                     }
                   `}
@@ -532,7 +531,7 @@ const BookingAppointment = () => {
   };
 
   const ListView = () => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="p-4 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
@@ -591,16 +590,16 @@ const BookingAppointment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
-      <div className="max-w-7xl mx-auto p-4 lg:p-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
-             Calendar
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
+              Booking Calendar
             </h1>
-            <p className="text-gray-600">
-              Manage property visits requests
+            <p className="text-gray-600 text-sm sm:text-base">
+              Manage property visit requests
             </p>
           </div>
 
@@ -616,7 +615,7 @@ const BookingAppointment = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 border border-gray-200">
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-5 h-5 text-amber-500" />
               <span className="text-2xl font-bold text-gray-900">
@@ -626,7 +625,7 @@ const BookingAppointment = () => {
             <p className="text-sm text-gray-600">Pending Approval</p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 border border-gray-200">
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-500" />
               <span className="text-2xl font-bold text-gray-900">
@@ -636,7 +635,7 @@ const BookingAppointment = () => {
             <p className="text-sm text-gray-600">Approved</p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 border border-gray-200">
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <AlertCircle className="w-5 h-5 text-orange-500" />
               <span className="text-2xl font-bold text-gray-900">
@@ -646,7 +645,7 @@ const BookingAppointment = () => {
             <p className="text-sm text-gray-600">Declined</p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 border border-gray-200">
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <CalendarDays className="w-5 h-5 text-blue-500" />
               <span className="text-2xl font-bold text-gray-900">
@@ -658,12 +657,12 @@ const BookingAppointment = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 bg-white rounded-xl p-1 border border-gray-200">
+        <div className="flex gap-2 mb-6 bg-white rounded-lg p-1 border border-gray-200">
           <button
             onClick={() => setActiveTab("calendar")}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === "calendar"
-                ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
+                ? "bg-blue-600 text-white"
                 : "text-gray-600 hover:bg-gray-100"
             }`}
           >
@@ -671,9 +670,9 @@ const BookingAppointment = () => {
           </button>
           <button
             onClick={() => setActiveTab("list")}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === "list"
-                ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white"
+                ? "bg-blue-600 text-white"
                 : "text-gray-600 hover:bg-gray-100"
             }`}
           >
@@ -688,7 +687,7 @@ const BookingAppointment = () => {
 
             {/* Selected Date Details (Calendar View Only) */}
             {activeTab === "calendar" && (
-              <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-4 border-b border-gray-200">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -750,12 +749,14 @@ const BookingAppointment = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Available Dates */}
-            <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl shadow-sm border border-emerald-200">
-              <div className="p-4 border-b border-emerald-200/50">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <CalendarDays className="w-5 h-5 text-emerald-600" />
-                  Available Dates
-                  <span className="ml-auto text-xs bg-white px-2 py-1 rounded-full text-emerald-600">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="font-semibold text-gray-900 flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <CalendarDays className="w-5 h-5 text-emerald-600" />
+                    Available Dates
+                  </span>
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-600">
                     Next 30 days
                   </span>
                 </h3>
@@ -776,7 +777,7 @@ const BookingAppointment = () => {
                             setSelectedDate(date);
                             setActiveTab("calendar");
                           }}
-                          className="p-2 rounded-lg bg-white hover:bg-emerald-50 transition-colors cursor-pointer border border-gray-200"
+                          className="p-2 rounded-lg bg-gray-50 hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200"
                         >
                           <div className="flex items-center justify-between">
                             <div>
@@ -805,7 +806,7 @@ const BookingAppointment = () => {
             </div>
 
             {/* Pending Requests */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-amber-500" />
@@ -831,7 +832,7 @@ const BookingAppointment = () => {
             </div>
 
             {/* Upcoming Visits */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                   <UserCheck className="w-5 h-5 text-emerald-500" />
@@ -854,7 +855,7 @@ const BookingAppointment = () => {
             </div>
 
             {/* Important Dates */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-4 border-b border-gray-200">
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                   <Info className="w-5 h-5 text-blue-500" />
@@ -893,7 +894,7 @@ const BookingAppointment = () => {
       {/* Cancellation Modal */}
       {showCancellationModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
@@ -935,7 +936,7 @@ const BookingAppointment = () => {
       {/* Disapproval Modal */}
       {showDisapprovalModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
@@ -973,7 +974,7 @@ const BookingAppointment = () => {
                 </button>
                 <button
                   onClick={submitDisapproval}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!disapprovalReason.trim()}
                 >
                   Submit
@@ -987,7 +988,7 @@ const BookingAppointment = () => {
       {/* Booking Limit Settings Modal */}
       {showLimitSettings && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -1061,7 +1062,7 @@ const BookingAppointment = () => {
                 </button>
                 <button
                   onClick={() => setShowLimitSettings(false)}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-lg hover:from-blue-600 hover:to-emerald-600 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
                   Save Changes
                 </button>
