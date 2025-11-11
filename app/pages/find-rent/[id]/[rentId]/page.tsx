@@ -18,7 +18,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
     const unit = await res.json();
 
-    const ogImageUrl = `${baseUrl}/api/og?` +
+    const ogImageUrl = `${baseUrl}` +
         `unit=${encodeURIComponent(`Unit ${unit.unit_name}`)}&` +
         `property=${encodeURIComponent(unit.property_name)}&` +
         `rent=${encodeURIComponent(`₱${Number(unit.rent_amount).toLocaleString()}`)}&` +
@@ -61,7 +61,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
       openGraph: {
         title: 'Unit Details - Upkyp',
         description: 'View unit details and rent this property',
-        images: [`${baseUrl}/api/og`],
+        images: [`${baseUrl}`],
       },
     };
   }
