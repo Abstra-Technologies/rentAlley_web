@@ -99,12 +99,9 @@ const Navbar = () => {
       ];
     }
 
+    // Landlords don't use the navbar anymore - they use the sidebar
     if (user?.userType === "landlord") {
-      return [
-        { href: "/pages/landlord/inbox", label: "Inbox" },
-        { href: "/pages/landlord/dashboard", label: "Dashboard" },
-        { href: "/pages/landlord/chat", label: "Chat" },
-      ];
+      return [];
     }
 
     return [];
@@ -146,23 +143,20 @@ const Navbar = () => {
       ];
     }
 
+    // Landlords don't use the mobile navbar anymore - they use the sidebar
     if (user?.userType === "landlord") {
-      return [
-        {
-          href: "/pages/landlord/dashboard",
-          label: "Dashboard",
-          icon: LayoutDashboard,
-        },
-        { href: "/pages/landlord/inbox", label: "Inbox", icon: Inbox },
-        { href: "/pages/landlord/chat", label: "Chat", icon: MessageSquare },
-        { href: "/pages/commons/profile", label: "Profile", icon: User },
-      ];
+      return [];
     }
 
     return [];
   };
 
   const mobileNavTabs = getMobileNavTabs();
+
+  // Don't render navbar for landlords
+  if (user?.userType === "landlord") {
+    return null;
+  }
 
   return (
     <>
@@ -172,16 +166,10 @@ const Navbar = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link
-              href={
-                user?.userType === "tenant"
-                  ? "/pages/tenant/feeds"
-                  : user?.userType === "landlord"
-                  ? "/pages/landlord/dashboard"
-                  : "/"
-              }
+              href={user?.userType === "tenant" ? "/pages/tenant/feeds" : "/"}
               className="flex text-3xl items-center space-x-2 transition-opacity hover:opacity-90 text-white font-bold"
             >
-            Upkyp
+              UpKyp
             </Link>
 
             <div className="flex items-center space-x-1 ml-auto">
@@ -322,8 +310,6 @@ const Navbar = () => {
                               href={
                                 user?.userType === "tenant"
                                   ? "/pages/tenant/my-unit"
-                                  : user?.userType === "landlord"
-                                  ? "/pages/landlord/dashboard"
                                   : "/system_admin/dashboard"
                               }
                               className="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
@@ -399,13 +385,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-full px-4">
           {/* Logo */}
           <Link
-            href={
-              user?.userType === "tenant"
-                ? "/pages/tenant/feeds"
-                : user?.userType === "landlord"
-                ? "/pages/landlord/dashboard"
-                : "/"
-            }
+            href={user?.userType === "tenant" ? "/pages/tenant/feeds" : "/"}
             className="flex items-center"
           >
             <Image
