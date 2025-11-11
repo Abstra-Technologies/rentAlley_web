@@ -2,66 +2,62 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
-import { BackButton } from "@/components/navigation/backButton";
 import PDCManagementPerProperty from "@/components/landlord/pdc/PDCManagementPerProperty";
-import { FileText, Upload  } from "lucide-react";
+import { FileText, Upload } from "lucide-react";
 import UploadPDCModal from "@/components/landlord/pdc/UploadPDCModalPerProperty";
 import { useState } from "react";
+
 export default function PDCPerPropertyPage() {
-    const { id } = useParams();
-    const propertyId = id as string;
-    const [openUpload, setOpenUpload] = useState(false);
+  const { id } = useParams();
+  const propertyId = id as string;
+  const [openUpload, setOpenUpload] = useState(false);
 
-    console.log('pdc property:', propertyId);
+  console.log("pdc property:", propertyId);
 
-    return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 sm:p-6">
-
-                {/* Header */}
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-lg p-5 sm:p-6 mb-6 mt-4">
-                    {/* 🔹 Header Row */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        {/* Left — Icon + Title */}
-                        <div className="flex items-start sm:items-center gap-3">
-                            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg shadow-sm flex-shrink-0">
-                                <FileText className="h-5 w-5 text-white" />
-                            </div>
-
-                            <div>
-                                <h1 className="text-lg sm:text-2xl font-bold text-gray-800 leading-snug">
-                                    Post-Dated Checks Management
-                                </h1>
-                                <p className="text-sm text-gray-500 mt-0.5">
-                                    Review and manage all PDCs under this property.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Right — Upload Button */}
-                        <div className="flex sm:justify-end">
-                            <button
-                                onClick={() => setOpenUpload(true)}
-                                className="flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-medium px-4 py-2 rounded-lg shadow-sm hover:from-blue-700 hover:to-emerald-700 transition-all"
-                            >
-                                <Upload className="w-4 h-4" />
-                                <span>Upload PDCs</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* 🔹 Modal */}
-                    <UploadPDCModal
-                        isOpen={openUpload}
-                        onClose={() => setOpenUpload(false)}
-                        propertyId={propertyId}
-                        onSuccess={() => fetchPDCs()} // refresh list after upload
-                    />
-                </div>
-
-
-                {/* Main Content */}
-                <PDCManagementPerProperty propertyId={propertyId} />
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+      <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+        {/* Header */}
+        <div className="mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                  Post-Dated Checks Management
+                </h1>
+                <p className="text-xs md:text-sm text-gray-600 mt-0.5">
+                  Review and manage all PDCs under this property
+                </p>
+              </div>
             </div>
-    );
+
+            <button
+              onClick={() => setOpenUpload(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
+            >
+              <Upload className="w-4 h-4" />
+              Upload PDCs
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <PDCManagementPerProperty propertyId={Number(propertyId)} />
+
+        {/* Modal */}
+        <UploadPDCModal
+          isOpen={openUpload}
+          onClose={() => setOpenUpload(false)}
+          propertyId={propertyId}
+          onSuccess={() => {
+            // The component will auto-refresh via useEffect
+            setOpenUpload(false);
+          }}
+        />
+      </div>
+    </div>
+  );
 }
