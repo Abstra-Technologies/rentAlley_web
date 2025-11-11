@@ -9,6 +9,12 @@ import {
     Tag,
     User,
     Wrench,
+    Package,
+    Cpu,
+    Layers,
+    Barcode,
+    Building2,
+    Info,
 } from "lucide-react";
 import { getStatusConfig, getPriorityConfig } from "./getStatusConfig";
 
@@ -209,6 +215,87 @@ export default function MaintenanceDetailsModal({
 
                         {/* Sidebar - 1/3 width */}
                         <div className="space-y-6">
+                            {/* Linked Asset */}
+                            {selectedRequest.asset && (
+                                <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4">
+                                    <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <Package className="w-4 h-4 text-emerald-600" />
+                                        Linked Asset
+                                    </h3>
+
+                                    <div className="space-y-3 text-sm">
+                                        <div>
+                                            <p className="text-xs text-gray-600 mb-1">Asset Name</p>
+                                            <p className="font-semibold text-gray-900">
+                                                {selectedRequest.asset.asset_name}
+                                            </p>
+                                        </div>
+
+                                        {selectedRequest.asset.category && (
+                                            <p className="text-gray-700">
+                                                <Layers className="w-3.5 h-3.5 inline mr-1 text-blue-600" />
+                                                {selectedRequest.asset.category}
+                                            </p>
+                                        )}
+
+                                        {selectedRequest.asset.model && (
+                                            <p className="text-gray-700">
+                                                <Cpu className="w-3.5 h-3.5 inline mr-1 text-purple-600" />
+                                                {selectedRequest.asset.model}
+                                            </p>
+                                        )}
+
+                                        {selectedRequest.asset.manufacturer && (
+                                            <p className="text-gray-700">
+                                                <Building2 className="w-3.5 h-3.5 inline mr-1 text-emerald-600" />
+                                                {selectedRequest.asset.manufacturer}
+                                            </p>
+                                        )}
+
+                                        {selectedRequest.asset.serial_number && (
+                                            <p className="text-gray-700">
+                                                <Barcode className="w-3.5 h-3.5 inline mr-1 text-gray-700" />
+                                                SN: {selectedRequest.asset.serial_number}
+                                            </p>
+                                        )}
+
+                                        {selectedRequest.asset.condition && (
+                                            <p className="text-xs text-gray-600 mt-1">
+                                                Condition:{" "}
+                                                <span className="font-medium text-gray-900">
+                          {selectedRequest.asset.condition}
+                        </span>
+                                            </p>
+                                        )}
+
+                                        {selectedRequest.asset.status && (
+                                            <p className="text-xs text-gray-600">
+                                                Status:{" "}
+                                                <span className="font-medium text-gray-900">
+                          {selectedRequest.asset.status}
+                        </span>
+                                            </p>
+                                        )}
+
+                                        {/* Asset Image */}
+                                        {selectedRequest.asset.image_urls?.length > 0 && (
+                                            <div className="mt-3 grid grid-cols-2 gap-2">
+                                                {selectedRequest.asset.image_urls.map(
+                                                    (img: string, idx: number) => (
+                                                        <img
+                                                            key={idx}
+                                                            src={img}
+                                                            alt={`Asset ${idx + 1}`}
+                                                            className="rounded-md border border-gray-200 h-20 w-full object-cover hover:scale-105 transition-transform"
+                                                        />
+                                                    )
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Property Info */}
                             <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4">
                                 <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -268,16 +355,6 @@ export default function MaintenanceDetailsModal({
                                 <h3 className="font-bold text-gray-900 mb-4">Actions</h3>
                                 <div className="space-y-2">
                                     {selectedRequest.status.toLowerCase() === "pending" && (
-                                        <button
-                                            onClick={onStart}
-                                            disabled={isLocked}
-                                            className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Start Work
-                                        </button>
-                                    )}
-
-                                    {selectedRequest.status.toLowerCase() === "scheduled" && (
                                         <button
                                             onClick={onStart}
                                             disabled={isLocked}

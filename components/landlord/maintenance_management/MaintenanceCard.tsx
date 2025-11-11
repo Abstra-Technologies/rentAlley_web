@@ -4,7 +4,6 @@ import {
     Calendar,
     Clock,
     CheckCircle,
-    EyeIcon,
     Image as ImageIcon,
 } from "lucide-react";
 import { getStatusConfig, getPriorityConfig } from "./getStatusConfig";
@@ -13,18 +12,10 @@ export default function MaintenanceCard({
                                             request,
                                             setSelectedImage,
                                             handleViewDetails,
-                                            onApprove,
-                                            onSchedule,
-                                            onStartWork,
-                                            onComplete,
                                         }: {
     request: any;
     setSelectedImage: (url: string) => void;
     handleViewDetails: (req: any) => void;
-    onApprove?: (req: any) => void;
-    onSchedule?: (req: any) => void;
-    onStartWork?: (req: any) => void;
-    onComplete?: (req: any) => void;
 }) {
     const statusConfig = getStatusConfig(request.status);
     const priorityConfig = getPriorityConfig(request.priority_level);
@@ -40,65 +31,23 @@ export default function MaintenanceCard({
         })} • ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     };
 
-    // One action button per status
-    const getActionButton = () => {
-        const btn =
-            "px-3 py-1.5 rounded-md text-xs font-medium text-white transition-colors w-full sm:w-auto";
-        switch (request.status) {
-            case "Pending":
-                return (
-                    <button
-                        onClick={() => onApprove && onApprove(request)}
-                        className={`${btn} bg-emerald-600 hover:bg-emerald-700`}
-                    >
-                        Approve
-                    </button>
-                );
-            case "Approved":
-                return (
-                    <button
-                        onClick={() => onSchedule && onSchedule(request)}
-                        className={`${btn} bg-blue-600 hover:bg-blue-700`}
-                    >
-                        Set Schedule
-                    </button>
-                );
-            case "Scheduled":
-                return (
-                    <button
-                        onClick={() => onStartWork && onStartWork(request)}
-                        className={`${btn} bg-amber-500 hover:bg-amber-600`}
-                    >
-                        Start Work
-                    </button>
-                );
-            case "In-Progress":
-                return (
-                    <button
-                        onClick={() => onComplete && onComplete(request)}
-                        className={`${btn} bg-green-600 hover:bg-green-700`}
-                    >
-                        Complete
-                    </button>
-                );
-            default:
-                return null;
-        }
-    };
-
     return (
-        <div className="w-full bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors">
+        <div
+            onClick={() => handleViewDetails(request)}
+            className="w-full bg-white border-b border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
+        >
             {/* Row layout */}
             <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 sm:gap-4 p-3 sm:items-center text-sm">
                 {/* Thumbnail + Task Info */}
                 <div className="flex items-start sm:items-center gap-3 col-span-2">
-                    {/* Thumbnail instead of icon */}
+                    {/* Thumbnail */}
                     <div
-                        className="relative w-10 h-10 rounded-md overflow-hidden border border-gray-200 cursor-pointer flex-shrink-0"
-                        onClick={() =>
-                            request.photo_urls?.length &&
-                            setSelectedImage(request.photo_urls[0])
-                        }
+                        className="relative w-10 h-10 rounded-md overflow-hidden border border-gray-200 flex-shrink-0"
+                        onClick={(e) => {
+                            e.stopPropagation(); // prevent triggering modal
+                            if (request.photo_urls?.length)
+                                setSelectedImage(request.photo_urls[0]);
+                        }}
                     >
                         {request.photo_urls?.length ? (
                             <img
@@ -170,18 +119,6 @@ export default function MaintenanceCard({
               {statusConfig.label}
           </span>
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-start sm:justify-end gap-2">
-                    {getActionButton()}
-                    <button
-                        onClick={() => handleViewDetails(request)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md"
-                    >
-                        <EyeIcon className="w-3.5 h-3.5" />
-                        Details
-                    </button>
-                </div>
             </div>
 
             {/* Mobile Thumbnail Preview */}
@@ -190,7 +127,10 @@ export default function MaintenanceCard({
                     {request.photo_urls.slice(0, 3).map((photo: string, idx: number) => (
                         <button
                             key={idx}
-                            onClick={() => setSelectedImage(photo)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedImage(photo);
+                            }}
                             className="w-16 h-16 rounded-md overflow-hidden border border-gray-200"
                         >
                             <img
