@@ -4,7 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import Swal from "sweetalert2";
 import Image from "next/image";
-import { Edit2, Upload, X, Loader2, ArrowLeft } from "lucide-react";
+import { Edit2, Upload, X, Loader2 } from "lucide-react";
 import furnishingTypes from "@/constant/furnishingTypes";
 import unitTypes from "@/constant/unitTypes";
 import AmenitiesSelector from "@/components/landlord/properties/unitAmenities";
@@ -23,8 +23,6 @@ const EditUnit = () => {
         unitSize: "",
         rentAmt: "",
         furnish: "",
-        secDeposit: "",
-        advancedPayment: "",
         status: "unoccupied",
         amenities: [],
         unitType: "",
@@ -36,7 +34,6 @@ const EditUnit = () => {
 
         async function fetchData() {
             try {
-                // Fetch unit details
                 const { data } = await axios.get(
                     `/api/unitListing/getUnitListings?unit_id=${unitId}`
                 );
@@ -49,33 +46,23 @@ const EditUnit = () => {
                         unitName: unitData.unit_name || "",
                         unitSize: unitData.unit_size || "",
                         rentAmt: unitData.rent_amount || "",
-                        secDeposit: unitData.sec_deposit || "",
-                        advancedPayment: unitData.advanced_payment || "",
                         furnish: furnishingTypes.some((p) => p.value === unitData.furnish)
                             ? unitData.furnish
                             : "",
                         amenities: unitData.amenities
-                            ? unitData.amenities.split(",").map((amenity) => amenity.trim())
+                            ? unitData.amenities.split(",").map((a) => a.trim())
                             : [],
                         unitType: unitData.unit_type || "",
                     });
 
-                    // Fetch property name
                     if (unitData.property_id) {
-                        try {
-                            const propRes = await axios.get(
-                                `/api/propertyListing/getPropDetailsById?property_id=${unitData.property_id}`
-                            );
-                            setPropertyName(propRes.data.property.property_name);
-                        } catch (err) {
-                            console.error("Error fetching property name:", err);
-                        }
+                        const propRes = await axios.get(
+                            `/api/propertyListing/getPropDetailsById?property_id=${unitData.property_id}`
+                        );
+                        setPropertyName(propRes.data.property.property_name);
                     }
-                } else {
-                    console.warn("No unit found for the given unit ID.");
                 }
 
-                // Fetch unit photos
                 const { data: photoData } = await axios.get(
                     `/api/unitListing/getUnitPhotos?unit_id=${unitId}`
                 );
@@ -100,28 +87,22 @@ const EditUnit = () => {
         const currentAmenities = Array.isArray(formData.amenities)
             ? formData.amenities
             : [];
-        const amenityIndex = currentAmenities.indexOf(amenity);
-
-        let newAmenities;
-        if (amenityIndex > -1) {
-            newAmenities = [
-                ...currentAmenities.slice(0, amenityIndex),
-                ...currentAmenities.slice(amenityIndex + 1),
-            ];
-        } else {
-            newAmenities = [...currentAmenities, amenity];
-        }
-
-        setFormData((prev) => ({ ...prev, amenities: newAmenities }));
+        const exists = currentAmenities.includes(amenity);
+        setFormData((prev) => ({
+            ...prev,
+            amenities: exists
+                ? currentAmenities.filter((a) => a !== amenity)
+                : [...currentAmenities, amenity],
+        }));
     };
 
     const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
-        setNewPhotos(files);
+        setNewPhotos(Array.from(e.target.files));
     };
 
     const handleUpdateUnit = async (e) => {
         e.preventDefault();
+
         const viewUnitURL = `/pages/landlord/properties/${unit.property_id}`;
 
         const result = await Swal.fire({
@@ -137,37 +118,57 @@ const EditUnit = () => {
         if (!result.isConfirmed) return;
 
         setLoading(true);
-        try {
-            // Update unit details
-            await axios.put(
-                `/api/unitListing/updateUnitListing?id=${unitId}`,
-                formData
-            );
 
-            // If new photos were selected, upload them
-            if (newPhotos.length > 0) {
-                const photoFormData = new FormData();
-                photoFormData.append("unit_id", unitId);
+        try {
+            // ✅ Prepare FormData exactly as backend expects
+            const formDataToSend = new FormData();
+            formDataToSend.append("unitName", formData.unitName || "");
+            formDataToSend.append("unitSize", formData.unitSize || "");
+            formDataToSend.append("rentAmt", formData.rentAmt || "");
+            formDataToSend.append("furnish", formData.furnish || "");
+            formDataToSend.append("unitType", formData.unitType || "");
+            formDataToSend.append("status", formData.status || "unoccupied");
+            formDataToSend.append("amenities", (formData.amenities || []).join(","));
+
+            // ✅ Append only if new photos exist
+            if (newPhotos && newPhotos.length > 0) {
                 newPhotos.forEach((file) => {
-                    photoFormData.append("files", file);
+                    if (file instanceof File) formDataToSend.append("files", file);
                 });
-                await axios.post(`/api/unitListing/addUnit/UnitPhotos`, photoFormData);
             }
 
-            Swal.fire({
+            // ✅ Log to verify what’s being sent (for debugging only)
+            // for (const [key, val] of formDataToSend.entries()) console.log(key, val);
+
+            // ✅ Send request with correct route and query param
+            await axios.put(
+                `/api/unitListing/updateUnitListing?id=${unitId}`,
+                formDataToSend,
+                {
+                    headers: { "Content-Type": "multipart/form-data" },
+                }
+            );
+
+            await Swal.fire({
                 title: "Updated!",
-                text: "Unit updated successfully.",
+                text: "Unit and photos updated successfully.",
                 icon: "success",
                 confirmButtonColor: "#10b981",
-            }).then(() => {
-                router.replace(viewUnitURL);
-                router.refresh();
             });
+
+            router.replace(viewUnitURL);
+            router.refresh();
         } catch (error) {
-            console.error("Error updating unit:", error);
+            console.error("❌ Error updating unit:", error);
+
+            const errorMsg =
+                error.response?.data?.error ||
+                error.message ||
+                "Failed to update unit. Please try again.";
+
             Swal.fire({
                 title: "Error",
-                text: "Failed to update unit",
+                text: errorMsg,
                 icon: "error",
                 confirmButtonColor: "#ef4444",
             });
@@ -190,7 +191,7 @@ const EditUnit = () => {
         if (!result.isConfirmed) return;
 
         try {
-            await axios.delete(`/api/unitListing/unitPhoto?id=${photoId}`);
+            await axios.delete(`/api/unitListing/deleteUnitPhoto?id=${photoId}`);
             setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
             Swal.fire({
                 title: "Deleted!",
@@ -210,9 +211,7 @@ const EditUnit = () => {
     };
 
     const handleCancel = () => {
-        router.push(
-            `/pages/landlord/properties/${unit.property_id}`
-        );
+        router.push(`/pages/landlord/properties/${unit.property_id}`);
     };
 
     if (!unit) {
@@ -229,9 +228,7 @@ const EditUnit = () => {
     return (
         <>
             <DisableNavigation />
-
             <div className="min-h-screen bg-gray-50">
-                {/* Proper spacing for navbar */}
                 <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
                     {/* Header */}
                     <div className="mb-6">
@@ -249,10 +246,10 @@ const EditUnit = () => {
                         </div>
                     </div>
 
-                    {/* Form Container */}
+                    {/* Form */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                         <form onSubmit={handleUpdateUnit} className="p-4 md:p-6 space-y-6">
-                            {/* Basic Information Section */}
+                            {/* Basic Information */}
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
                                     <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -274,7 +271,7 @@ const EditUnit = () => {
                                             name="unitName"
                                             value={formData.unitName}
                                             onChange={handleChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                                         />
                                     </div>
 
@@ -289,35 +286,33 @@ const EditUnit = () => {
                                                 name="unitSize"
                                                 value={formData.unitSize}
                                                 onChange={handleChange}
-                                                className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
+                                                className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                                             />
-                                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
-                        sqm
-                      </span>
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                                                sqm
+                                            </span>
                                         </div>
                                     </div>
 
                                     {/* Unit Type */}
-                                    {unitTypes && (
-                                        <div className="space-y-2">
-                                            <label className="block text-sm font-medium text-gray-700">
-                                                Unit Type
-                                            </label>
-                                            <select
-                                                name="unitType"
-                                                value={formData.unitType || ""}
-                                                onChange={handleChange}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
-                                            >
-                                                <option value="">Select unit type</option>
-                                                {unitTypes.map((option) => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Unit Type
+                                        </label>
+                                        <select
+                                            name="unitType"
+                                            value={formData.unitType || ""}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                        >
+                                            <option value="">Select unit type</option>
+                                            {unitTypes.map((option) => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
 
                                     {/* Rent Amount */}
                                     <div className="space-y-2">
@@ -325,60 +320,22 @@ const EditUnit = () => {
                                             Monthly Rent <span className="text-red-500">*</span>
                                         </label>
                                         <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
-                        ₱
-                      </span>
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                                                ₱
+                                            </span>
                                             <input
                                                 type="number"
                                                 name="rentAmt"
                                                 value={formData.rentAmt}
                                                 onChange={handleChange}
-                                                className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Security Deposit */}
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Security Deposit
-                                        </label>
-                                        <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
-                        ₱
-                      </span>
-                                            <input
-                                                type="number"
-                                                name="secDeposit"
-                                                value={formData.secDeposit}
-                                                onChange={handleChange}
-                                                className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Advanced Payment */}
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Advanced Payment
-                                        </label>
-                                        <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-sm">
-                        ₱
-                      </span>
-                                            <input
-                                                type="number"
-                                                name="advancedPayment"
-                                                value={formData.advancedPayment}
-                                                onChange={handleChange}
-                                                className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
+                                                className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                                             />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Features Section */}
+                            {/* Features */}
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
                                     <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -398,11 +355,9 @@ const EditUnit = () => {
                                         name="furnish"
                                         value={formData.furnish}
                                         onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors text-sm"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
                                     >
-                                        <option value="" disabled>
-                                            Select furnishing type
-                                        </option>
+                                        <option value="">Select furnishing type</option>
                                         {furnishingTypes.map((option) => (
                                             <option key={option.value} value={option.value}>
                                                 {option.label}
@@ -425,7 +380,7 @@ const EditUnit = () => {
                                 </div>
                             </div>
 
-                            {/* Photos Section */}
+                            {/* Photos */}
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
                                     <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -436,7 +391,7 @@ const EditUnit = () => {
                                     </h2>
                                 </div>
 
-                                {/* Current Photos */}
+                                {/* Existing Photos */}
                                 {photos.length > 0 && (
                                     <div className="space-y-3">
                                         <h3 className="text-sm font-medium text-gray-700">
@@ -457,7 +412,7 @@ const EditUnit = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleDeletePhoto(photo.id)}
-                                                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full transition-colors opacity-0 group-hover:opacity-100 shadow-lg"
+                                                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 shadow-md"
                                                     >
                                                         <X className="w-3 h-3" />
                                                     </button>
@@ -467,19 +422,17 @@ const EditUnit = () => {
                                     </div>
                                 )}
 
-                                {/* Upload New Photos */}
+                                {/* Upload Photos */}
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-gray-700">
                                         Add New Photos
                                     </label>
-                                    <div className="relative">
-                                        <input
-                                            type="file"
-                                            multiple
-                                            onChange={handleFileChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                        />
-                                    </div>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={handleFileChange}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    />
                                     {newPhotos.length > 0 && (
                                         <p className="text-xs text-gray-500">
                                             {newPhotos.length} new photo(s) selected
@@ -488,13 +441,13 @@ const EditUnit = () => {
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
+                            {/* Buttons */}
                             <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
                                 <button
                                     type="button"
                                     onClick={handleCancel}
                                     disabled={loading}
-                                    className="px-5 py-2 text-gray-700 hover:bg-gray-50 border border-gray-300 rounded-lg font-medium transition-colors text-sm disabled:opacity-50"
+                                    className="px-5 py-2 text-gray-700 hover:bg-gray-50 border border-gray-300 rounded-lg font-medium text-sm disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>
@@ -502,7 +455,7 @@ const EditUnit = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-5 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-400 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg text-sm disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="px-5 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2"
                                 >
                                     {loading ? (
                                         <>
