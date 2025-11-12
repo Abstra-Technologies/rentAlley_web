@@ -2,16 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-    Mail,
-    UserPlus,
-    Home,
-    Building2,
-    Send,
-    Calendar,
-    FileText,
-    Banknote,
-} from "lucide-react";
+import { Mail, UserPlus, Building2, Send, Calendar, Home } from "lucide-react";
 import Swal from "sweetalert2";
 import useAuthStore from "@/zustand/authStore";
 import axios from "axios";
@@ -29,14 +20,11 @@ export default function InviteTenantPage() {
     const [tenantEmail, setTenantEmail] = useState("");
     const [leaseStart, setLeaseStart] = useState("");
     const [leaseEnd, setLeaseEnd] = useState("");
-    const [securityDeposit, setSecurityDeposit] = useState("");
-    const [advancePayment, setAdvancePayment] = useState("");
-    const [leaseFile, setLeaseFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(true);
 
     const landlordId = user?.landlord_id;
 
-    // 🧩 Fetch landlord properties
+    // 🧩 Fetch Properties
     useEffect(() => {
         const fetchProperties = async () => {
             if (!landlordId) {
@@ -44,9 +32,7 @@ export default function InviteTenantPage() {
                 return;
             }
             try {
-                const response = await axios.get(
-                    `/api/landlord/properties/getProperties?landlord_id=${landlordId}`
-                );
+                const response = await axios.get(`/api/landlord/${landlordId}/properties`);
                 setProperties(response.data.data || []);
             } catch (error) {
                 console.error("Error fetching properties:", error);
@@ -57,26 +43,25 @@ export default function InviteTenantPage() {
         fetchProperties();
     }, [landlordId, fetchSession]);
 
-    // 🏠 Fetch units for selected property
+    // 🧩 Fetch Units when property changes
     useEffect(() => {
         const fetchUnits = async () => {
-            if (!selectedProperty) return;
+            if (!selectedProperty) {
+                setUnits([]);
+                setSelectedUnit("");
+                return;
+            }
             try {
-                const res = await axios.get(
-                    `/api/unitListing/getUnitListings?property_id=${selectedProperty}`
-                );
+                // adjust endpoint as needed — this matches earlier examples
+                const res = await axios.get(`/api/unitListing/getUnitListings?property_id=${selectedProperty}`);
                 setUnits(res.data || []);
             } catch (error) {
                 console.error("Error fetching units:", error);
+                setUnits([]);
             }
         };
         fetchUnits();
     }, [selectedProperty]);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        setLeaseFile(file || null);
-    };
 
     const handleSendInvite = async () => {
         if (!tenantEmail || !selectedProperty || !selectedUnit || !leaseStart || !leaseEnd) {
@@ -89,16 +74,12 @@ export default function InviteTenantPage() {
             return;
         }
 
-        const formData = new FormData();
-        formData.append("landlord_id", landlordId);
-        formData.append("property_id", selectedProperty);
-        formData.append("unit_id", selectedUnit);
-        formData.append("email", tenantEmail);
-        formData.append("lease_start", leaseStart);
-        formData.append("lease_end", leaseEnd);
-        if (securityDeposit) formData.append("security_deposit", securityDeposit);
-        if (advancePayment) formData.append("advance_payment", advancePayment);
-        if (leaseFile) formData.append("lease_file", leaseFile);
+        // Find selected property + unit names
+        const property = properties.find((p) => p.property_id === selectedProperty);
+        const unit = units.find((u) => u.unit_id === selectedUnit);
+
+        const propertyName = property?.property_name || "Unknown Property";
+        const unitName = unit?.unit_name || unit?.unit_name || "Unknown Unit";
 
         try {
             Swal.fire({
@@ -108,11 +89,21 @@ export default function InviteTenantPage() {
                 didOpen: () => Swal.showLoading(),
             });
 
-            const res = await axios.post("/api/landlord/inviteTenant", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
+            const payload = {
+                email: tenantEmail,
+                unitId: selectedUnit,
+                propertyName,
+                unitName,
+                startDate: leaseStart,
+                endDate: leaseEnd,
+            };
+
+            const res = await axios.post("/api/invite", payload, {
+                headers: { "Content-Type": "application/json" },
             });
 
             Swal.close();
+
             if (res.data.success) {
                 Swal.fire({
                     icon: "success",
@@ -120,14 +111,14 @@ export default function InviteTenantPage() {
                     text: `An invite has been sent to ${tenantEmail}.`,
                     confirmButtonColor: "#10b981",
                 });
+
+                // Reset form
                 setTenantEmail("");
                 setSelectedProperty("");
                 setSelectedUnit("");
                 setLeaseStart("");
                 setLeaseEnd("");
-                setSecurityDeposit("");
-                setAdvancePayment("");
-                setLeaseFile(null);
+                setUnits([]);
             } else {
                 throw new Error(res.data.message || "Failed to send invite.");
             }
@@ -149,192 +140,144 @@ export default function InviteTenantPage() {
         );
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 relative">
-                <BackButton label="Back to Tenants" />
-
-                {/* Header */}
-                <div className="text-center mb-8 mt-4">
-                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mb-4">
-                        <UserPlus className="w-8 h-8 text-blue-600" />
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+            <div className="flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 lg:p-10 relative">
+                    <div className="mb-6">
+                        <BackButton label="Back to Tenants" />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900">Invite a Tenant</h1>
-                    <p className="text-gray-600 mt-2 text-sm">
-                        Send an invitation link to your tenant with lease details.
-                    </p>
-                </div>
 
-                {/* Form */}
-                <div className="space-y-5">
-                    {/* Tenant Email */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Tenant Email <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                            <input
-                                type="email"
-                                value={tenantEmail}
-                                onChange={(e) => setTenantEmail(e.target.value)}
-                                placeholder="tenant@example.com"
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
-                            />
+                    {/* Header */}
+                    <div className="text-center mb-10 mt-2">
+                        <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mb-4">
+                            <UserPlus className="w-10 h-10 text-blue-600" />
                         </div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                            Invite a Tenant
+                        </h1>
+                        <p className="text-gray-600 mt-2 text-sm sm:text-base">
+                            Send an invitation link to your tenant with lease details.
+                        </p>
                     </div>
 
-                    {/* Property Select */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Select Property <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <Building2 className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                            <select
-                                value={selectedProperty}
-                                onChange={(e) => {
-                                    setSelectedProperty(e.target.value);
-                                    setSelectedUnit("");
-                                }}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm appearance-none"
+                    {/* Form */}
+                    <div className="space-y-8">
+                        {/* Tenant Email */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tenant Email <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="email"
+                                    value={tenantEmail}
+                                    onChange={(e) => setTenantEmail(e.target.value)}
+                                    placeholder="tenant@example.com"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm sm:text-base"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Property */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Select Property <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <Building2 className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                <select
+                                    value={selectedProperty}
+                                    onChange={(e) => {
+                                        setSelectedProperty(e.target.value);
+                                        setSelectedUnit("");
+                                    }}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm sm:text-base appearance-none"
+                                >
+                                    <option value="">Choose a property...</option>
+                                    {properties.length > 0 ? (
+                                        properties.map((p) => (
+                                            <option key={p.property_id} value={p.property_id}>
+                                                {p.property_name}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No properties found</option>
+                                    )}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Unit */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Select Unit <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <Home className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                <select
+                                    value={selectedUnit}
+                                    onChange={(e) => setSelectedUnit(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm sm:text-base appearance-none"
+                                    disabled={!selectedProperty || units.length === 0}
+                                >
+                                    <option value="">Choose a unit...</option>
+                                    {units.length > 0 ? (
+                                        units.map((u: any) => (
+                                            <option key={u.unit_id} value={u.unit_id}>
+                                                {u.unit_name} — {u.status}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No units available</option>
+                                    )}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Lease Dates */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Lease Start Date <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type="date"
+                                        value={leaseStart}
+                                        onChange={(e) => setLeaseStart(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm sm:text-base"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Lease End Date <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type="date"
+                                        value={leaseEnd}
+                                        onChange={(e) => setLeaseEnd(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm sm:text-base"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Submit */}
+                        <div className="pt-6 flex justify-end">
+                            <button
+                                onClick={handleSendInvite}
+                                className="flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-semibold text-white text-sm sm:text-base bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all"
                             >
-                                <option value="">Choose a property...</option>
-                                {properties.length > 0 ? (
-                                    properties.map((p) => (
-                                        <option key={p.property_id} value={p.property_id}>
-                                            {p.property_name}
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option disabled>No properties found</option>
-                                )}
-                            </select>
+                                <Send className="w-5 h-5" />
+                                Send Invitation
+                            </button>
                         </div>
-                    </div>
-
-                    {/* Unit Select */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Select Unit <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <Home className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                            <select
-                                value={selectedUnit}
-                                onChange={(e) => setSelectedUnit(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm appearance-none"
-                                disabled={!selectedProperty}
-                            >
-                                <option value="">Choose a unit...</option>
-                                {units.length > 0 ? (
-                                    units.map((u) => (
-                                        <option key={u.unit_id} value={u.unit_id}>
-                                            {u.unit_name}
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option disabled>No units available</option>
-                                )}
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Lease Dates */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Lease Start Date <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="date"
-                                    value={leaseStart}
-                                    onChange={(e) => setLeaseStart(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Lease End Date <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="date"
-                                    value={leaseEnd}
-                                    onChange={(e) => setLeaseEnd(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Security & Advance (optional) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Security Deposit (optional)
-                            </label>
-                            <div className="relative">
-                                <Banknote className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={securityDeposit}
-                                    onChange={(e) => setSecurityDeposit(e.target.value)}
-                                    placeholder="₱0.00"
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Advance Payment (optional)
-                            </label>
-                            <div className="relative">
-                                <Banknote className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={advancePayment}
-                                    onChange={(e) => setAdvancePayment(e.target.value)}
-                                    placeholder="₱0.00"
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Upload Lease (optional) */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Upload Lease Agreement (optional)
-                        </label>
-                        <div className="relative">
-                            <FileText className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                            <input
-                                type="file"
-                                accept=".pdf,.doc,.docx,image/*"
-                                onChange={handleFileChange}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Submit Button */}
-                    <div className="pt-4">
-                        <button
-                            onClick={handleSendInvite}
-                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all"
-                        >
-                            <Send className="w-4 h-4" />
-                            Send Invitation
-                        </button>
                     </div>
                 </div>
             </div>
