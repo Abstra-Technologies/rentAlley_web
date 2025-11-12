@@ -18,6 +18,11 @@ export default function SideNavAdmin({ admin }) {
       icon: Users2,
       label: "Add Co-admin",
     },
+      {
+          href: "/pages/system_admin/cms",
+          icon: Users2,
+          label: "Content Management",
+      },
     {
       href: "/pages/system_admin/ip_restrict",
       icon: EthernetPort ,
