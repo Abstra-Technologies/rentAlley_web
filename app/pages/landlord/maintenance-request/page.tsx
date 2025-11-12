@@ -6,6 +6,7 @@ import {
     Clock,
     CheckCircle,
     Wrench,
+    ThumbsUp,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
@@ -60,7 +61,7 @@ const MaintenanceRequestPage = () => {
         fetchRequests();
     }, [landlordId]);
 
-    // 🧩 Filter requests per active tab (no limits)
+    // 🧩 Filter requests per active tab
     useEffect(() => {
         const filtered = allRequests.filter(
             (req) => req.status.toLowerCase() === activeTab
@@ -68,17 +69,17 @@ const MaintenanceRequestPage = () => {
         setVisibleRequests(filtered);
     }, [allRequests, activeTab]);
 
+    // 🔄 Update status
     const updateStatus = async (request_id, newStatus, additionalData = {}) => {
         try {
             await axios.put("/api/maintenance/updateStatus", {
-                request_id,              // the request you're updating
-                status: newStatus,       // new status (approved, rejected, etc.)
-                ...additionalData,       // optional data (reason, remarks, date, etc.)
-                user_id: user?.user_id,  // who updated it
-                landlord_id: landlordId, // who owns the property
+                request_id,
+                status: newStatus,
+                ...additionalData,
+                user_id: user?.user_id,
+                landlord_id: landlordId,
             });
 
-            // Update the local React state instantly (optimistic UI)
             setAllRequests((prev) =>
                 prev.map((req) =>
                     req.request_id === request_id
@@ -91,6 +92,10 @@ const MaintenanceRequestPage = () => {
         }
     };
 
+    const handleApprove = (id) => {
+        updateStatus(id, "approved");
+    };
+
     const handleStartClick = (id) => {
         setCurrentRequestId(id);
         setShowCalendar(true);
@@ -98,7 +103,7 @@ const MaintenanceRequestPage = () => {
 
     const handleScheduleConfirm = () => {
         if (!currentRequestId) return;
-        updateStatus(currentRequestId, "in-progress", {
+        updateStatus(currentRequestId, "scheduled", {
             schedule_date: selectedDate.toISOString().split("T")[0],
         });
         setShowCalendar(false);
@@ -110,9 +115,22 @@ const MaintenanceRequestPage = () => {
         setShowModal(true);
     };
 
+    // ⚙️ Action Buttons per tab
     const getActionButton = (request) => {
         switch (activeTab) {
             case "pending":
+                return (
+                    <div className="flex gap-2 flex-wrap">
+                        <button
+                            onClick={() => handleApprove(request.request_id)}
+                            className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
+                        >
+                            Approve
+                        </button>
+                    </div>
+                );
+
+            case "approved":
                 return (
                     <button
                         onClick={() => handleStartClick(request.request_id)}
@@ -121,6 +139,7 @@ const MaintenanceRequestPage = () => {
                         Assign & Schedule
                     </button>
                 );
+
             case "scheduled":
                 return (
                     <button
@@ -130,6 +149,7 @@ const MaintenanceRequestPage = () => {
                         Start Work
                     </button>
                 );
+
             case "in-progress":
                 return (
                     <button
@@ -143,14 +163,17 @@ const MaintenanceRequestPage = () => {
                         Complete
                     </button>
                 );
+
             default:
                 return null;
         }
     };
 
+    // ⚙️ Tab configuration
     const getTabConfig = (tab) => {
         const configs = {
             pending: { icon: Clock, color: "text-amber-600", count: 0 },
+            approved: { icon: ThumbsUp, color: "text-green-600", count: 0 },
             scheduled: { icon: Calendar, color: "text-blue-600", count: 0 },
             "in-progress": { icon: Wrench, color: "text-purple-600", count: 0 },
             completed: { icon: CheckCircle, color: "text-emerald-600", count: 0 },
@@ -170,100 +193,90 @@ const MaintenanceRequestPage = () => {
             <SearchParamsWrapper setActiveTab={setActiveTab} />
             <div className="min-h-screen bg-gray-50">
                 <div className="px-4 pt-20 pb-24 sm:px-6 lg:px-8 md:pt-8 md:pb-8 max-w-8xl mx-auto">
-
-                    {/* --- HEADER --- */}
+                    {/* HEADER */}
                     <div className="mb-6 md:mb-8">
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                             <div className="flex-1">
                                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                                   Maintenance Requests
+                                    Maintenance Requests
                                 </h1>
                                 <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                                    Manage and track all maintenance requests freely
+                                    Manage and track all maintenance requests
                                 </p>
                             </div>
                         </div>
 
-                        {/* --- Stats Section --- */}
+                        {/* STATUS COUNTS */}
                         <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 text-sm">
-                            {["pending", "scheduled", "in-progress", "completed"].map(
-                                (tab) => {
-                                    const config = getTabConfig(tab);
-                                    return (
+                            {["pending", "approved", "scheduled", "in-progress", "completed"].map((tab) => {
+                                const config = getTabConfig(tab);
+                                return (
+                                    <div key={tab} className="flex items-center gap-2 text-gray-600">
                                         <div
-                                            key={tab}
-                                            className="flex items-center gap-2 text-gray-600"
-                                        >
-                                            <div
-                                                className={`w-2 h-2 rounded-full ${
-                                                    tab === "pending"
-                                                        ? "bg-amber-500"
+                                            className={`w-2 h-2 rounded-full ${
+                                                tab === "pending"
+                                                    ? "bg-amber-500"
+                                                    : tab === "approved"
+                                                        ? "bg-green-500"
                                                         : tab === "scheduled"
                                                             ? "bg-blue-500"
                                                             : tab === "in-progress"
                                                                 ? "bg-purple-500"
                                                                 : "bg-emerald-500"
-                                                }`}
-                                            ></div>
-                                            <span>
-                                                <span className="font-semibold text-gray-900">
-                                                    {config.count}
-                                                </span>{" "}
-                                                {tab.replace("-", " ")}
-                                            </span>
-                                        </div>
-                                    );
-                                }
-                            )}
+                                            }`}
+                                        ></div>
+                                        <span>
+                      <span className="font-semibold text-gray-900">{config.count}</span>{" "}
+                                            {tab.replace("-", " ")}
+                    </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* --- TABS SECTION --- */}
+                    {/* TABS */}
                     <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                         <div className="overflow-x-auto">
                             <div className="flex min-w-max">
-                                {["pending", "scheduled", "in-progress", "completed"].map(
-                                    (tab) => {
-                                        const config = getTabConfig(tab);
-                                        const IconComponent = config.icon;
-                                        return (
-                                            <button
-                                                key={tab}
-                                                onClick={() => setActiveTab(tab)}
-                                                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 sm:px-6 font-medium text-xs sm:text-sm whitespace-nowrap transition-all ${
-                                                    activeTab === tab
-                                                        ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-b-2 border-blue-500 text-blue-700"
-                                                        : "text-gray-600 hover:bg-gray-50"
+                                {["pending", "approved", "scheduled", "in-progress", "completed"].map((tab) => {
+                                    const config = getTabConfig(tab);
+                                    const IconComponent = config.icon;
+                                    return (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setActiveTab(tab)}
+                                            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 sm:px-6 font-medium text-xs sm:text-sm whitespace-nowrap transition-all ${
+                                                activeTab === tab
+                                                    ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-b-2 border-blue-500 text-blue-700"
+                                                    : "text-gray-600 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            <IconComponent
+                                                className={`w-4 h-4 ${
+                                                    activeTab === tab ? config.color : ""
                                                 }`}
-                                            >
-                                                <IconComponent
-                                                    className={`w-4 h-4 ${
-                                                        activeTab === tab ? config.color : ""
+                                            />
+                                            <span className="capitalize">{tab.replace("-", " ")}</span>
+                                            {config.count > 0 && (
+                                                <span
+                                                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                                        activeTab === tab
+                                                            ? "bg-blue-600 text-white"
+                                                            : "bg-gray-200 text-gray-700"
                                                     }`}
-                                                />
-                                                <span className="capitalize">
-                                                    {tab.replace("-", " ")}
-                                                </span>
-                                                {config.count > 0 && (
-                                                    <span
-                                                        className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                                            activeTab === tab
-                                                                ? "bg-blue-600 text-white"
-                                                                : "bg-gray-200 text-gray-700"
-                                                        }`}
-                                                    >
-                                                        {config.count}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        );
-                                    }
-                                )}
+                                                >
+                          {config.count}
+                        </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
 
-                    {/* --- MAIN CONTENT --- */}
+                    {/* MAIN CONTENT */}
                     {loading ? (
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                             <div className="w-12 h-12 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
@@ -298,7 +311,7 @@ const MaintenanceRequestPage = () => {
                     )}
                 </div>
 
-                {/* --- Calendar Modal --- */}
+                {/* Calendar Modal */}
                 {showCalendar && (
                     <MaintenanceCalendarModal
                         selectedDate={selectedDate}
@@ -308,7 +321,7 @@ const MaintenanceRequestPage = () => {
                     />
                 )}
 
-                {/* --- Details Modal --- */}
+                {/* Details Modal */}
                 {showModal && selectedRequest && (
                     <MaintenanceDetailsModal
                         selectedRequest={selectedRequest}
@@ -327,7 +340,7 @@ const MaintenanceRequestPage = () => {
                     />
                 )}
 
-                {/* --- Image Lightbox --- */}
+                {/* Image Lightbox */}
                 {selectedImage && (
                     <div
                         className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"

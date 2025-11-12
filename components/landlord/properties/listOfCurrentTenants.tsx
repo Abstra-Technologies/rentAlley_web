@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { IoMailOpen } from "react-icons/io5";
-import { UserCircle2, Building2, Search, Home, User } from "lucide-react";
+import { UserCircle2, Building2, Search, Home, User, UserPlus } from "lucide-react";
 import Pagination from "@/components/Commons/Pagination";
 import LoadingScreen from "../../loadingScreen";
 import useAuthStore from "@/zustand/authStore";
@@ -120,6 +120,11 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
         router.push(`/pages/landlord/list_of_tenants/${tenant_id}`);
     };
 
+    // 🔹 Redirect to Invite Tenant Page
+    const handleInviteTenant = () => {
+        router.push("/pages/landlord/invite-tenant");
+    };
+
     // 🔍 Filter tenants
     const filteredTenants = useMemo(() => {
         return tenants.filter((tenant) => {
@@ -144,9 +149,7 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
         );
 
     if (error)
-        return (
-            <div className="text-center py-12 text-red-500 font-medium">{error}</div>
-        );
+        return <div className="text-center py-12 text-red-500 font-medium">{error}</div>;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -159,24 +162,34 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">My Tenants</h1>
-                            <p className="text-gray-600 text-sm">
-                                Manage and view your active tenants
-                            </p>
+                            <p className="text-gray-600 text-sm">Manage and view your active tenants</p>
                         </div>
                     </div>
 
-                    {/* Search Bar */}
-                    <div className="relative max-w-xs w-full">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-5 w-5 text-gray-400" />
+                    {/* Right Controls */}
+                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto sm:items-center">
+                        {/* Search Bar */}
+                        <div className="relative max-w-xs w-full sm:w-64">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search tenants..."
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition text-sm"
+                            />
                         </div>
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search tenants by name, email, or property..."
-                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition text-sm"
-                        />
+
+                        {/* ✅ Invite Tenant Button */}
+                        <button
+                            onClick={handleInviteTenant}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:from-blue-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                        >
+                            <UserPlus className="w-4 h-4" />
+                            Invite Tenant
+                        </button>
                     </div>
                 </div>
             </div>
@@ -188,8 +201,7 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
                         {currentTenants.map((tenant) => {
                             const tenantName = `${tenant.firstName} ${tenant.lastName}`;
                             const propertyList = tenant.property_names?.join(", ") || "—";
-                            const unitList =
-                                tenant.units?.map((u) => u.unit_name).join(", ") || "—";
+                            const unitList = tenant.units?.map((u) => u.unit_name).join(", ") || "—";
 
                             return (
                                 <div
@@ -211,12 +223,8 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
                                         )}
 
                                         <div>
-                                            <h2 className="text-lg font-semibold text-gray-800 truncate">
-                                                {tenantName}
-                                            </h2>
-                                            <p className="text-sm text-gray-500 truncate">
-                                                {tenant.email}
-                                            </p>
+                                            <h2 className="text-lg font-semibold text-gray-800 truncate">{tenantName}</h2>
+                                            <p className="text-sm text-gray-500 truncate">{tenant.email}</p>
                                         </div>
                                     </div>
 
@@ -224,9 +232,7 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
                                     <div className="space-y-2 text-sm text-gray-600 mb-4">
                                         <div className="flex items-center gap-2">
                                             <Building2 className="w-4 h-4 text-blue-500" />
-                                            <span className="font-medium text-gray-700">
-                        {propertyList}
-                      </span>
+                                            <span className="font-medium text-gray-700">{propertyList}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Home className="w-4 h-4 text-emerald-500" />

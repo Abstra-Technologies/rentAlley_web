@@ -65,9 +65,25 @@ export async function PUT(req: NextRequest) {
         }
         const oldData = existingRows[0];
 
-        // 2️⃣ Build update query dynamically
+        // 2️⃣ Determine next state logic
+        let nextStatus = status;
+
+        // ✅ If landlord approves but no schedule yet → mark as "Approved"
+        if (status.toLowerCase() === "approved" && !schedule_date) {
+            nextStatus = "Approved";
+        }
+
+        // ✅ Only allow "Scheduled" when a schedule_date is explicitly provided
+        if (status.toLowerCase() === "scheduled" && !schedule_date) {
+            return NextResponse.json(
+                { error: "Cannot mark as 'Scheduled' without a schedule date." },
+                { status: 400 }
+            );
+        }
+
+        // 3️⃣ Build update query dynamically
         const updateFields = ["status = ?", "updated_at = NOW()"];
-        const updateParams: any[] = [status];
+        const updateParams: any[] = [nextStatus];
 
         if (schedule_date) {
             updateFields.push("schedule_date = ?");
@@ -88,7 +104,7 @@ export async function PUT(req: NextRequest) {
         const updateQuery = `UPDATE MaintenanceRequest SET ${updateFields.join(", ")} WHERE request_id = ?`;
         await conn.query(updateQuery, updateParams);
 
-        // 3️⃣ Get tenant info
+        // 4️⃣ Get tenant info
         const [tenantInfo]: any = await conn.query(
             `SELECT mr.tenant_id, t.user_id AS tenant_user_id, mr.subject
        FROM MaintenanceRequest mr
@@ -103,24 +119,27 @@ export async function PUT(req: NextRequest) {
 
         const { tenant_id, tenant_user_id, subject } = tenantInfo[0];
 
-        // 4️⃣ Notification setup
+        // 5️⃣ Notification setup
         let notifTitle = "Maintenance Request Update";
-        let notifBody = `Your maintenance request "${subject}" is now "${status}".`;
+        let notifBody = `Your maintenance request "${subject}" is now "${nextStatus}".`;
 
-        if (status.toLowerCase() === "rejected" && rejection_reason) {
+        if (nextStatus.toLowerCase() === "approved") {
+            notifBody = `Your maintenance request "${subject}" has been approved by your landlord.`;
+        }
+
+        if (nextStatus.toLowerCase() === "rejected" && rejection_reason) {
             notifBody = `Your maintenance request "${subject}" was rejected. Reason: ${rejection_reason}`;
         }
 
         const notifUrl = `/pages/tenant/maintenance/view/${request_id}`;
 
-        // Save notification
         await conn.query(
             `INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
        VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
             [tenant_user_id, notifTitle, notifBody, notifUrl]
         );
 
-        // 5️⃣ Send Push Notification
+        // 6️⃣ Send Push Notification
         const [subs]: any = await conn.query(
             `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
             [tenant_user_id]
@@ -144,7 +163,7 @@ export async function PUT(req: NextRequest) {
             }
         }
 
-        // 6️⃣ Send Socket Message
+        // 7️⃣ Send Socket Message
         const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000", {
             autoConnect: true,
             transports: ["websocket"],
@@ -160,17 +179,17 @@ export async function PUT(req: NextRequest) {
         });
         setTimeout(() => socket.disconnect(), 400);
 
-        // 7️⃣ Log Activity
+        // 8️⃣ Log Activity
         const [updatedRows]: any = await conn.query(
             `SELECT * FROM MaintenanceRequest WHERE request_id = ?`,
             [request_id]
         );
         const newData = updatedRows[0];
 
-        const actionLabel = `Maintenance Request Updated to ${status}`;
+        const actionLabel = `Maintenance Request Updated to ${nextStatus}`;
         const desc = rejection_reason
             ? `Maintenance request "${subject}" was rejected. Reason: ${rejection_reason}`
-            : `Maintenance request "${subject}" updated to "${status}".`;
+            : `Maintenance request "${subject}" updated to "${nextStatus}".`;
 
         // Tenant Log
         await conn.query(
@@ -224,7 +243,7 @@ export async function PUT(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Request "${request_id}" successfully updated to "${status}".`,
+            message: `Request "${request_id}" successfully updated to "${nextStatus}".`,
             rejection_reason: rejection_reason || null,
         });
     } catch (error: any) {
