@@ -32,6 +32,8 @@
     "@cometchat/calls-sdk-javascript": "^4.1.0",
     "@cometchat/chat-sdk-javascript": "^4.0.14",
     "@cometchat/chat-uikit-react": "^6.1.2",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@dropbox/sign": "^1.10.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",

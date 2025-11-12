@@ -5,7 +5,19 @@ import { useRouter, useParams } from "next/navigation";
 import { mutate } from "swr";
 import axios from "axios";
 import Swal from "sweetalert2";
-import Fuse from "fuse.js"; // ✅ Fast fuzzy search
+import Fuse from "fuse.js";
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    verticalListSortingStrategy,
+    arrayMove,
+} from "@dnd-kit/sortable";
 import { Home, Plus, Sparkles, Search } from "lucide-react";
 import useAuthStore from "@/zustand/authStore";
 import UnitsTab from "@/components/landlord/properties/UnitsTab";
@@ -33,10 +45,16 @@ const ViewPropertyDetailedPage = () => {
 
     // ✅ Search state
     const [searchQuery, setSearchQuery] = useState("");
+    // ✅ Draggable units state
+    const [draggableUnits, setDraggableUnits] = useState<any[]>([]);
 
     useEffect(() => {
         if (!user) fetchSession();
     }, [user]);
+
+    useEffect(() => {
+        if (units) setDraggableUnits(units);
+    }, [units]);
 
     const handlePageChange = (event: any, value: number) => {
         setPage(value);
@@ -102,22 +120,40 @@ const ViewPropertyDetailedPage = () => {
         }
     };
 
-    // ✅ Fuse.js setup (memoized for performance)
+    // ✅ Fuse.js setup
     const fuse = useMemo(() => {
         return new Fuse(units || [], {
             keys: ["unit_name", "unit_style", "furnish", "amenities", "status"],
-            threshold: 0.3, // Fuzzy sensitivity (lower = stricter match)
+            threshold: 0.3,
         });
     }, [units]);
 
-    // ✅ Filter units based on search
+    // ✅ Filter units
     const filteredUnits = useMemo(() => {
-        if (!searchQuery.trim()) return units || [];
+        if (!searchQuery.trim()) return draggableUnits || [];
         return fuse.search(searchQuery).map((result) => result.item);
-    }, [searchQuery, fuse, units]);
+    }, [searchQuery, fuse, draggableUnits]);
 
     // ✅ Pagination
     const currentUnits = filteredUnits?.slice(startIndex, startIndex + itemsPerPage) || [];
+
+    // ✅ DnD sensors
+    const sensors = useSensors(useSensor(PointerSensor));
+
+    // ✅ DnD Handler
+    const handleDragEnd = (event: any) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = draggableUnits.findIndex((u) => u.unit_id === active.id);
+        const newIndex = draggableUnits.findIndex((u) => u.unit_id === over.id);
+
+        const reordered = arrayMove(draggableUnits, oldIndex, newIndex);
+        setDraggableUnits(reordered);
+
+        // Optionally persist to backend
+        // axios.post('/api/unitListing/updateOrder', { property_id, newOrder: reordered.map(u => u.unit_id) });
+    };
 
     if (error) {
         return (
@@ -141,7 +177,7 @@ const ViewPropertyDetailedPage = () => {
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">Unit Overview</h1>
                                 <p className="text-sm text-gray-600 mt-1">
-                                    Manage and review all units under this property
+                                    Manage, search, and reorder all units under this property
                                 </p>
                             </div>
                         </div>
@@ -186,26 +222,33 @@ const ViewPropertyDetailedPage = () => {
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
-                                setPage(1); // reset to first page on new search
+                                setPage(1);
                             }}
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
                         />
                     </div>
                 </div>
 
-                {/* Units List */}
+                {/* ✅ Draggable Units List */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <UnitsTab
-                        units={currentUnits}
-                        isLoading={isLoading}
-                        unitBillingStatus={unitBillingStatus}
-                        billingMode={billingMode}
-                        propertyId={property_id}
-                        propertyDetails={propertyDetails}
-                        handleEditUnit={handleEditUnit}
-                        handleDeleteUnit={handleDeleteUnit}
-                        handleAddUnitClick={handleAddUnitClick}
-                    />
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext
+                            items={currentUnits.map((unit) => unit.unit_id)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <UnitsTab
+                                units={currentUnits}
+                                isLoading={isLoading}
+                                unitBillingStatus={unitBillingStatus}
+                                billingMode={billingMode}
+                                propertyId={property_id}
+                                propertyDetails={propertyDetails}
+                                handleEditUnit={handleEditUnit}
+                                handleDeleteUnit={handleDeleteUnit}
+                                handleAddUnitClick={handleAddUnitClick}
+                            />
+                        </SortableContext>
+                    </DndContext>
 
                     {filteredUnits && filteredUnits.length > itemsPerPage && (
                         <div className="flex justify-center p-4 bg-white border-t border-gray-200">
