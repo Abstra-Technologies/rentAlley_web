@@ -26,6 +26,7 @@ const UpcomingVisitsWidget = dynamic(
     { ssr: false }
 );
 import MobileLandlordAnalytics from "@/components/landlord/mobile_layour/MobileLandlordAnalytics";
+import axios from "axios";
 
 const LandlordMainDashboard = () => {
     const { user, fetchSession, loading } = useAuthStore();
@@ -37,6 +38,7 @@ const LandlordMainDashboard = () => {
     const [showAlert, setShowAlert] = useState(false);
     const prevPointsRef = useRef<number | null>(null);
     const [greeting, setGreeting] = useState("");
+    const [headerImage, setHeaderImage] = useState<string | null>(null);
 
     // Greeting logic
     function getGreeting() {
@@ -67,31 +69,86 @@ const LandlordMainDashboard = () => {
         }
     }, [user?.points, loading]);
 
+    useEffect(() => {
+        const fetchHeader = async () => {
+            try {
+                const folder = `upkyp/headers/landlord`;
+                const res = await axios.get(`/api/systemadmin/cms/imagesList?folder=${folder}`);
+                const imgs = res.data.resources;
+
+                if (imgs && imgs.length > 0) {
+                    setHeaderImage(imgs[0].secure_url);
+                } else {
+                    setHeaderImage(null);
+                }
+            } catch (err) {
+                console.error("Failed to fetch landlord header:", err);
+                setHeaderImage(null);
+            }
+        };
+        fetchHeader();
+    }, []);
+    const displayName =
+        user?.firstName || user?.companyName || user?.email || "Landlord";
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 p-10">
             {showAlert && <PointsEarnedAlert points={user?.points} />}
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
-                <div className="text-left">
-                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent">
-                        {greeting},{" "}
-                        {user?.firstName
-                            ? user.firstName
-                            : user?.companyName
-                                ? user.companyName
-                                : user?.email}
-                    </h2>
-                    <p className="text-sm sm:text-base text-gray-600 mt-1">
-          <span className="hidden sm:inline">
-            Simplifying property management, empowering landlords.
-          </span>
-                        <span className="sm:hidden">Welcome to your dashboard</span>
-                    </p>
-                </div>
-                <div className="mt-2 sm:mt-0">
-                    <SendTenantInviteModal landlord_id={user?.landlord_id} />
-                </div>
+            <div className="relative w-full rounded-2xl overflow-hidden shadow-md mb-6">
+                {/* Background image (if exists) */}
+                {headerImage ? (
+                    <div
+                        className="relative h-48 sm:h-56 lg:h-64 bg-center bg-cover transition-all duration-500"
+                        style={{ backgroundImage: `url(${headerImage})` }}
+                    >
+                        {/* Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+
+                        {/* Content */}
+                        <div className="absolute inset-0 flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 sm:px-10 lg:px-16 py-6 sm:py-8 text-white z-10">
+                            <div className="text-left">
+                                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight drop-shadow-md">
+                                    {greeting}, {displayName}
+                                </h2>
+                                <p className="text-sm sm:text-base text-gray-200 mt-1">
+                <span className="hidden sm:inline">
+                  Simplifying property management, empowering landlords.
+                </span>
+                                    <span className="sm:hidden">Welcome to your dashboard</span>
+                                </p>
+                            </div>
+
+                            <div className="mt-4 sm:mt-0">
+                                <SendTenantInviteModal landlord_id={user?.landlord_id} />
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    // Fallback gradient if no image exists
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-blue-800 to-emerald-600 text-white shadow-md">
+                        <div className="text-left">
+                            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+                                {greeting},{" "}
+                                {user?.firstName
+                                    ? user.firstName
+                                    : user?.companyName
+                                        ? user.companyName
+                                        : user?.email}
+                            </h2>
+                            <p className="text-sm sm:text-base text-gray-100 mt-1">
+              <span className="hidden sm:inline">
+                Simplifying property management, empowering landlords.
+              </span>
+                                <span className="sm:hidden">Welcome to your dashboard</span>
+                            </p>
+                        </div>
+                        <div className="mt-2 sm:mt-0">
+                            <SendTenantInviteModal landlord_id={user?.landlord_id} />
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Profile Status */}
