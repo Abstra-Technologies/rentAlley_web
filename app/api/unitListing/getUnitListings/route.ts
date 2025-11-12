@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
           u.rent_amount,
           u.furnish,
           u.amenities,
+          u.publish,
           u.status AS unit_status, 
           DATE_FORMAT(u.updated_at, '%Y-%m-%d %H:%i:%s') AS last_updated,
           la.agreement_id AS lease_agreement_id,
@@ -92,6 +93,7 @@ export async function GET(req: NextRequest) {
                 unit_style: row.unit_style,
                 rent_amount: row.rent_amount,
                 furnish: row.furnish,
+                publish: row.publish,
                 amenities: row.amenities,
                 status: row.unit_status, // ✅ direct from DB
                 last_updated: row.last_updated,
