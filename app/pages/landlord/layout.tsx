@@ -126,11 +126,11 @@ export default function LandlordLayout({
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-40 lg:w-72 lg:bg-white lg:border-r lg:border-gray-200">
+      {/* Desktop Sidebar with enhanced shadow */}
+      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-40 lg:w-72 lg:bg-white lg:shadow-xl">
         <div className="flex flex-col flex-1 min-h-0">
           {/* Sidebar Header with Logo and Notifications */}
-          <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-emerald-600">
+          <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm">
             <div className="flex items-center justify-between">
               <Link
                 href="/pages/landlord/dashboard"
@@ -139,7 +139,20 @@ export default function LandlordLayout({
                 <h1 className="text-2xl font-bold text-white">UpKyp</h1>
               </Link>
               <div className="flex items-center gap-2">
-                <NotificationSection user={user} admin={null} />
+                {/* Notification wrapper with proper positioning */}
+                <div className="relative">
+                  <NotificationSection user={user} admin={null} />
+                  <style jsx global>{`
+                    /* Fix notification dropdown positioning */
+                    .notification-dropdown {
+                      position: absolute !important;
+                      right: 0 !important;
+                      left: auto !important;
+                      top: 100% !important;
+                      margin-top: 0.5rem !important;
+                    }
+                  `}</style>
+                </div>
               </div>
             </div>
             <p className="text-xs text-white/80 mt-1">Landlord Portal</p>
@@ -147,13 +160,13 @@ export default function LandlordLayout({
 
           {/* User Profile Section with Dropdown */}
           {user && (
-            <div className="px-4 py-4 border-b border-gray-100">
+            <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() =>
                     setIsProfileDropdownOpen(!isProfileDropdownOpen)
                   }
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-all duration-200 hover:shadow-md"
                 >
                   <Image
                     src={
@@ -163,7 +176,7 @@ export default function LandlordLayout({
                     alt="Profile"
                     width={40}
                     height={40}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
                   />
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-semibold text-gray-900 truncate">
@@ -174,7 +187,7 @@ export default function LandlordLayout({
                     <p className="text-xs text-gray-500">Landlord Account</p>
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-500 transition-transform ${
+                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
                       isProfileDropdownOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -182,7 +195,7 @@ export default function LandlordLayout({
 
                 {/* Profile Dropdown Menu */}
                 {isProfileDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
                     {/* User Email */}
                     <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
                       <div className="text-xs text-gray-500">Signed in as</div>
@@ -193,7 +206,7 @@ export default function LandlordLayout({
 
                     {/* Points Section */}
                     {user?.points !== undefined && (
-                      <div className="px-4 py-3 bg-amber-50 border-b border-gray-100">
+                      <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-100">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <Star className="w-4 h-4 text-amber-500" />
@@ -260,15 +273,19 @@ export default function LandlordLayout({
                     key={href}
                     href={href}
                     className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg
+                      relative flex items-center gap-3 px-3 py-2.5 rounded-lg
                       font-medium transition-all duration-200 group
                       ${
                         isActive
-                          ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md"
-                          : "text-gray-700 hover:bg-gray-100"
+                          ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg"
+                          : "text-gray-700 hover:bg-gray-100 hover:shadow-md"
                       }
                     `}
                   >
+                    {/* Active indicator bar */}
+                    {isActive && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/40 rounded-r-full" />
+                    )}
                     <Icon
                       className={`w-5 h-5 ${
                         !isActive && "group-hover:text-blue-600"
@@ -276,7 +293,7 @@ export default function LandlordLayout({
                     />
                     <span className="text-sm">{label}</span>
                     {isActive && (
-                      <div className="ml-auto h-2 w-2 rounded-full bg-white/80"></div>
+                      <div className="ml-auto h-2 w-2 rounded-full bg-white/80 animate-pulse"></div>
                     )}
                   </Link>
                 );
@@ -303,7 +320,9 @@ export default function LandlordLayout({
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
-            <NotificationSection user={user} admin={null} />
+            <div className="relative">
+              <NotificationSection user={user} admin={null} />
+            </div>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -318,14 +337,14 @@ export default function LandlordLayout({
       {isSidebarOpen && (
         <>
           <div
-            className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
             onClick={() => setIsSidebarOpen(false)}
           />
 
           {/* Mobile Sidebar */}
           <aside className="lg:hidden fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 flex flex-col">
             {/* Mobile Sidebar Header */}
-            <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-emerald-600 flex items-center justify-between">
+            <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-emerald-600 flex items-center justify-between shadow-sm">
               <h2 className="text-lg font-bold text-white">Menu</h2>
               <button
                 onClick={() => setIsSidebarOpen(false)}
@@ -337,10 +356,10 @@ export default function LandlordLayout({
 
             {/* Mobile Profile Section */}
             {user && !isMobileProfileOpen && (
-              <div className="px-4 py-3 border-b border-gray-100">
+              <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                 <button
                   onClick={() => setIsMobileProfileOpen(true)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white hover:shadow-md transition-all duration-200"
                 >
                   <Image
                     src={
@@ -350,7 +369,7 @@ export default function LandlordLayout({
                     alt="Profile"
                     width={36}
                     height={36}
-                    className="w-9 h-9 rounded-full object-cover border-2 border-gray-200"
+                    className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm"
                   />
                   <div className="flex-1 text-left">
                     <p className="text-sm font-semibold text-gray-900">
@@ -390,7 +409,7 @@ export default function LandlordLayout({
                       alt="Profile"
                       width={48}
                       height={48}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
                     />
                     <div>
                       <p className="text-sm font-semibold text-gray-900">
@@ -405,7 +424,7 @@ export default function LandlordLayout({
 
                 {/* Points */}
                 {user?.points !== undefined && (
-                  <div className="px-4 py-3 bg-amber-50 border-y border-gray-100">
+                  <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-y border-gray-100">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Star className="w-4 h-4 text-amber-500" />
@@ -467,19 +486,22 @@ export default function LandlordLayout({
                           href={href}
                           onClick={() => setIsSidebarOpen(false)}
                           className={`
-                            flex items-center gap-3 px-3 py-2.5 rounded-lg
+                            relative flex items-center gap-3 px-3 py-2.5 rounded-lg
                             font-medium transition-all duration-200
                             ${
                               isActive
-                                ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md"
-                                : "text-gray-700 hover:bg-gray-100"
+                                ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg"
+                                : "text-gray-700 hover:bg-gray-100 hover:shadow-md"
                             }
                           `}
                         >
+                          {isActive && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/40 rounded-r-full" />
+                          )}
                           <Icon className="w-5 h-5" />
                           <span className="text-sm">{label}</span>
                           {isActive && (
-                            <div className="ml-auto h-2 w-2 rounded-full bg-white/80"></div>
+                            <div className="ml-auto h-2 w-2 rounded-full bg-white/80 animate-pulse"></div>
                           )}
                         </Link>
                       );
@@ -498,7 +520,7 @@ export default function LandlordLayout({
                 <div className="p-4 border-t border-gray-100">
                   <button
                     onClick={handleLogout}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 font-medium transition-all duration-200"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700 rounded-lg hover:from-red-50 hover:to-red-100 hover:text-red-600 font-medium transition-all duration-200 shadow-md hover:shadow-lg"
                   >
                     <LogOut className="w-5 h-5" />
                     <span>Logout</span>
@@ -510,8 +532,10 @@ export default function LandlordLayout({
         </>
       )}
 
-      {/* Main Content */}
-      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0">{children}</main>
+      {/* Main Content with better spacing */}
+      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
+        {children}
+      </main>
     </div>
   );
 }
