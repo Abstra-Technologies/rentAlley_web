@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import useAuthStore from "@/zustand/authStore";
 import {
   Home,
@@ -18,11 +18,7 @@ import {
   Menu,
   X,
   Users,
-  Bell,
   Settings,
-  ChevronDown,
-  User,
-  Star,
   ChevronLeft,
   Inbox,
 } from "lucide-react";
@@ -39,9 +35,7 @@ export default function LandlordLayout({
   const pathname = usePathname();
   const { user, fetchSession, signOut } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
-  const dropdownRef = useRef(null);
 
   useEffect(() => {
     if (!user) fetchSession();
@@ -49,16 +43,6 @@ export default function LandlordLayout({
       router.replace("/pages/auth/login");
     }
   }, [user]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsProfileDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -116,7 +100,6 @@ export default function LandlordLayout({
   const handleLogout = async () => {
     await signOut();
     router.push("/pages/auth/login");
-    setIsProfileDropdownOpen(false);
   };
 
   if (isInsideProperty) {
@@ -158,106 +141,34 @@ export default function LandlordLayout({
             <p className="text-xs text-white/80 mt-1">Landlord Portal</p>
           </div>
 
-          {/* User Profile Section with Dropdown */}
+          {/* User Profile Section with Settings Icon */}
           {user && (
             <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() =>
-                    setIsProfileDropdownOpen(!isProfileDropdownOpen)
+              <div className="flex items-center gap-3 p-2">
+                <Image
+                  src={
+                    user.profilePicture ||
+                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
                   }
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white transition-all duration-200 hover:shadow-md"
+                  alt="Profile"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {user.firstName && user.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.companyName || user.email}
+                  </p>
+                  <p className="text-xs text-gray-500">Landlord Account</p>
+                </div>
+                <Link
+                  href="/pages/commons/profile"
+                  className="p-2 hover:bg-white rounded-lg transition-all duration-200 hover:shadow-md group"
                 >
-                  <Image
-                    src={
-                      user.profilePicture ||
-                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                    }
-                    alt="Profile"
-                    width={40}
-                    height={40}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-                  />
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {user.firstName && user.lastName
-                        ? `${user.firstName} ${user.lastName}`
-                        : user.companyName || user.email}
-                    </p>
-                    <p className="text-xs text-gray-500">Landlord Account</p>
-                  </div>
-                  <ChevronDown
-                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
-                      isProfileDropdownOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {/* Profile Dropdown Menu */}
-                {isProfileDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-                    {/* User Email */}
-                    <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
-                      <div className="text-xs text-gray-500">Signed in as</div>
-                      <div className="text-sm font-medium text-gray-900 truncate mt-1">
-                        {user.email}
-                      </div>
-                    </div>
-
-                    {/* Points Section */}
-                    {user?.points !== undefined && (
-                      <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-100">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Star className="w-4 h-4 text-amber-500" />
-                            <span className="text-sm font-medium text-gray-700">
-                              Reward Points
-                            </span>
-                          </div>
-                          <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                            {user.points}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Menu Items */}
-                    <div className="py-2">
-                      <Link
-                        href="/pages/commons/profile"
-                        className="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <User className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
-                        <span className="text-sm font-medium text-gray-700">
-                          View Profile
-                        </span>
-                      </Link>
-
-                      <Link
-                        href="/pages/commons/profile"
-                        className="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <Settings className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
-                        <span className="text-sm font-medium text-gray-700">
-                          Account Settings
-                        </span>
-                      </Link>
-                    </div>
-
-                    {/* Logout */}
-                    <div className="border-t border-gray-100">
-                      <button
-                        onClick={handleLogout}
-                        className="w-full px-4 py-2.5 flex items-center gap-3 text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span className="text-sm font-medium">Logout</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  <Settings className="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
+                </Link>
               </div>
             </div>
           )}
@@ -379,7 +290,7 @@ export default function LandlordLayout({
                     </p>
                     <p className="text-xs text-gray-500">Landlord Account</p>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                  <Settings className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
             )}
@@ -422,36 +333,8 @@ export default function LandlordLayout({
                   </div>
                 </div>
 
-                {/* Points */}
-                {user?.points !== undefined && (
-                  <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-y border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Star className="w-4 h-4 text-amber-500" />
-                        <span className="text-sm font-medium text-gray-700">
-                          Reward Points
-                        </span>
-                      </div>
-                      <span className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                        {user.points}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
                 {/* Profile Actions */}
                 <div className="py-2">
-                  <Link
-                    href="/pages/commons/profile"
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <User className="w-5 h-5 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">
-                      View Profile
-                    </span>
-                  </Link>
-
                   <Link
                     href="/pages/commons/profile"
                     onClick={() => setIsSidebarOpen(false)}
