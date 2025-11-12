@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { CiBellOn } from "react-icons/ci";
+import { Bell } from "lucide-react";
 
 /* =====================================================
    🔹 Custom Hook: useNotifications
@@ -158,7 +158,9 @@ const NotificationItem = ({ notification, onMarkRead, onDelete }) => {
   return (
     <div
       className={`relative group hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
-        !notification.is_read ? "bg-blue-50/50" : ""
+        !notification.is_read
+          ? "bg-gradient-to-r from-blue-50 to-emerald-50"
+          : ""
       }`}
       onClick={handleClick}
     >
@@ -166,8 +168,10 @@ const NotificationItem = ({ notification, onMarkRead, onDelete }) => {
         {/* Unread indicator */}
         <div className="pt-1">
           <div
-            className={`w-2 h-2 rounded-full transition-colors ${
-              notification.is_read ? "bg-gray-300" : "bg-blue-500"
+            className={`w-2 h-2 rounded-full transition-all duration-200 ${
+              notification.is_read
+                ? "bg-gray-300"
+                : "bg-gradient-to-r from-blue-600 to-emerald-600 animate-pulse"
             }`}
           />
         </div>
@@ -239,13 +243,15 @@ const NotificationDropdown = ({
   );
 
   return (
-    <div className="absolute right-0 top-12 w-96 bg-white text-black rounded-xl shadow-xl border border-gray-200 z-50 flex flex-col overflow-hidden">
+    <div className="notification-dropdown absolute right-0 top-full mt-2 w-96 bg-white text-black rounded-xl shadow-2xl border border-gray-200 z-[100] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-gray-900">Notifications</h3>
+          <h3 className="font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+            Notifications
+          </h3>
           {unreadCount > 0 && (
-            <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
               {unreadCount}
             </span>
           )}
@@ -253,7 +259,7 @@ const NotificationDropdown = ({
         <div className="flex items-center gap-1">
           <button
             onClick={onRefresh}
-            className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-white rounded-lg transition-colors shadow-sm hover:shadow-md"
             title="Refresh"
             disabled={loading}
           >
@@ -276,7 +282,7 @@ const NotificationDropdown = ({
           {unreadCount > 0 && (
             <button
               onClick={onMarkAllAsRead}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 px-2 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+              className="text-xs font-medium bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-emerald-700 px-2 py-1.5 rounded-lg hover:bg-blue-50 transition-all"
             >
               Mark all read
             </button>
@@ -297,7 +303,7 @@ const NotificationDropdown = ({
               onClick={() => setFilter(key)}
               className={`flex-1 py-2.5 text-sm font-medium transition-all ${
                 filter === key
-                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/50"
+                  ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-sm"
                   : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
               }`}
             >
@@ -330,13 +336,13 @@ const NotificationDropdown = ({
           </div>
         ) : loading ? (
           <div className="p-8 text-center">
-            <div className="inline-block w-8 h-8 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <div className="inline-block w-8 h-8 border-3 border-gray-200 border-t-transparent rounded-full animate-spin mb-3 border-t-blue-600"></div>
             <p className="text-sm text-gray-500">Loading notifications...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-              <CiBellOn className="w-6 h-6 text-gray-400" />
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-blue-100 to-emerald-100 mb-3">
+              <Bell className="w-6 h-6 text-blue-600" />
             </div>
             <p className="text-sm text-gray-500 font-medium">
               No {filter !== "all" && filter} notifications
@@ -359,10 +365,10 @@ const NotificationDropdown = ({
 
       {/* Footer */}
       {notifications.length > 0 && (
-        <div className="border-t border-gray-200 p-3 text-center bg-gray-50">
+        <div className="border-t border-gray-200 p-3 text-center bg-gradient-to-r from-gray-50 to-gray-50">
           <Link
             href={`/pages/${user?.userType}/inbox`}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            className="text-sm font-medium bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-emerald-700 transition-colors"
           >
             View all notifications →
           </Link>
@@ -387,13 +393,15 @@ const MobileNotificationDropdown = ({
   onClose,
   user,
 }) => (
-  <div className="md:hidden fixed top-16 left-0 right-0 bg-white shadow-xl z-40 border-b border-gray-200 flex flex-col max-h-[80vh]">
+  <div className="md:hidden fixed top-14 left-0 right-0 bg-white shadow-2xl z-[100] border-b border-gray-200 flex flex-col max-h-[80vh]">
     {/* Header */}
-    <div className="flex justify-between items-center border-b border-gray-200 px-4 py-3 bg-gray-50">
+    <div className="flex justify-between items-center border-b border-gray-200 px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50">
       <div className="flex items-center gap-2">
-        <h3 className="font-semibold text-gray-900">Notifications</h3>
+        <h3 className="font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+          Notifications
+        </h3>
         {unreadCount > 0 && (
-          <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+          <span className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
             {unreadCount}
           </span>
         )}
@@ -401,7 +409,7 @@ const MobileNotificationDropdown = ({
       <div className="flex items-center gap-1">
         <button
           onClick={onRefresh}
-          className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+          className="p-2 hover:bg-white rounded-lg transition-colors shadow-sm hover:shadow-md"
           disabled={loading}
         >
           <svg
@@ -421,14 +429,14 @@ const MobileNotificationDropdown = ({
         {unreadCount > 0 && (
           <button
             onClick={onMarkAllAsRead}
-            className="text-xs font-medium text-blue-600 px-2 py-1.5 rounded-lg hover:bg-blue-50"
+            className="text-xs font-medium bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent px-2 py-1.5 rounded-lg hover:bg-blue-50"
           >
             Mark all
           </button>
         )}
         <button
           onClick={onClose}
-          className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+          className="p-2 hover:bg-white rounded-lg transition-colors shadow-sm hover:shadow-md"
         >
           <svg
             className="w-5 h-5 text-gray-600"
@@ -475,8 +483,8 @@ const MobileNotificationDropdown = ({
         </div>
       ) : notifications.length === 0 ? (
         <div className="p-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-            <CiBellOn className="w-6 h-6 text-gray-400" />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-blue-100 to-emerald-100 mb-3">
+            <Bell className="w-6 h-6 text-blue-600" />
           </div>
           <p className="text-sm text-gray-500 font-medium">No notifications</p>
           <p className="text-xs text-gray-400 mt-1">You're all caught up!</p>
@@ -497,11 +505,11 @@ const MobileNotificationDropdown = ({
 
     {/* Footer */}
     {notifications.length > 0 && (
-      <div className="border-t border-gray-200 p-3 text-center bg-gray-50">
+      <div className="border-t border-gray-200 p-3 text-center bg-gradient-to-r from-gray-50 to-gray-50">
         <Link
           href={`/pages/${user?.userType}/inbox`}
           onClick={onClose}
-          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          className="text-sm font-medium bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-emerald-700"
         >
           View all notifications →
         </Link>
@@ -546,12 +554,12 @@ const NotificationSection = ({ user, admin }) => {
       <div className="hidden md:block relative" ref={ref}>
         <button
           onClick={() => setNotifOpen((p) => !p)}
-          className="relative p-2 hover:bg-white/10 rounded-lg group transition-all border border-white/20 hover:border-white/40"
+          className="relative p-2 hover:bg-white/10 rounded-lg group transition-all duration-200 border border-white/20 hover:border-white/40"
           aria-label="Notifications"
         >
-          <CiBellOn className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+          <Bell className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 animate-pulse shadow-lg">
+            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-emerald-500 to-blue-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 animate-pulse shadow-lg">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -575,12 +583,12 @@ const NotificationSection = ({ user, admin }) => {
       <div className="md:hidden relative">
         <button
           onClick={() => setNotifOpen((p) => !p)}
-          className="relative p-2 hover:bg-white/10 rounded-lg border border-white/20 hover:border-white/40 transition-all"
+          className="relative p-2 hover:bg-white/10 rounded-lg border border-white/20 hover:border-white/40 transition-all duration-200"
           aria-label="Notifications"
         >
-          <CiBellOn className="w-6 h-6 text-white" />
+          <Bell className="w-5 h-5 text-white" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow-lg">
+            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-emerald-500 to-blue-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow-lg">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
