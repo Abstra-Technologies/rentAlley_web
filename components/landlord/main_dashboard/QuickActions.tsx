@@ -30,7 +30,7 @@ export default function QuickActions({
        {
       id: "Widthdraw",
       label: "Widthraw",
-      icon: Megaphone,
+      icon: Wallet,
       onClick: onWithdraw,
     },
   ];

@@ -9,7 +9,7 @@ import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
 import SearchLeaseBar from "@/components/landlord/activeLease/SearchLeaseBar";
 import LandlordSubscriptionStatus from "@/components/landlord/profile/LandlordSubscriptionStatus";
 import LandlordCreditsSummary from "@/components/landlord/widgets/LandlordCreditsSummary";
-import LandlordPropertyMarquee from "@/components/landlord/properties/LandlordPropertyQuickView";
+import LandlordPropertyMarquee from "@/components/landlord/main_dashboard/LandlordPropertyQuickView";
 import PaymentSummaryCard from "../analytics/PaymentSummaryCard";
 import TenantActivity from "../widgets/TenantActivity";
 import ProspectiveTenantsWidget from "../widgets/leads";
@@ -183,59 +183,19 @@ const LandlordMainDashboard = () => {
             <div className="hidden sm:block overflow-x-hidden">
                 
                 {/* Analytics Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-  {/* Payment Summary Wrapper */}
+  {/* Payment Summary */}
   <div className="lg:col-span-2">
-    <div
-      onClick={() =>
-        router.push(`/pages/landlord/analytics/detailed/paymentLogs`)
-      }
-      className="relative group cursor-pointer h-full"
-    >
-      {/* Hover card */}
-      <div
-        className="
-          rounded-2xl overflow-hidden h-full
-          transition-all duration-300 
-          group-hover:-translate-y-1 
-          group-hover:shadow-xl
-          bg-white
-        "
-      >
-        <PaymentSummaryCard landlord_id={user?.landlord_id} />
-      </div>
-
-      {/* CTA on Hover */}
-      <div
-        className="
-          absolute inset-0 flex items-center justify-center
-          pointer-events-none 
-          opacity-0 group-hover:opacity-100 
-          transition-opacity duration-300
-        "
-      >
-        <span className="
-          bg-white/90 
-          text-gray-800 text-xs sm:text-sm 
-          font-medium 
-          px-4 py-1.5 
-          rounded-full 
-          shadow-md 
-          backdrop-blur-md
-        ">
-          View Payment History →
-        </span>
-      </div>
-    </div>
+    <PaymentSummaryCard landlord_id={user?.landlord_id} />
   </div>
 
-  {/* Task Widget Wrapper */}
-  <div className="h-full">
+  {/* Task Widget */}
+  <div>
     <TaskWidget landlordId={user?.landlord_id} />
   </div>
-</div>
 
+</div>
 
 
 

@@ -15,7 +15,7 @@ import UpcomingVisitsWidget from "@/components/landlord/properties/propertyVisit
 import SearchLeaseBar from "@/components/landlord/activeLease/SearchLeaseBar";
 import LandlordSubscriptionStatus from "@/components/landlord/profile/LandlordSubscriptionStatus";
 import LandlordCreditsSummary from "@/components/landlord/widgets/LandlordCreditsSummary";
-import LandlordPropertyMarquee from "@/components/landlord/properties/LandlordPropertyQuickView";
+import LandlordPropertyMarquee from "@/components/landlord/main_dashboard/LandlordPropertyQuickView";
 
 const RevenuePerformanceChart = dynamic(
     () => import("@/components/landlord/analytics/revenuePerformance"),
