@@ -27,6 +27,7 @@ const UpcomingVisitsWidget = dynamic(
 import MobileLandlordAnalytics from "@/components/landlord/mobile_layour/MobileLandlordAnalytics";
 import axios from "axios";
 import HeaderContent from "./headerContent";
+import QuickActions from "./QuickActions";
 
 const LandlordMainDashboard = () => {
     const { user, fetchSession, loading } = useAuthStore();
@@ -94,61 +95,68 @@ const LandlordMainDashboard = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 p-10">
             {showAlert && <PointsEarnedAlert points={user?.points} />}
-{/* Compact Header */}
-<div className="w-full mb-3">
-  <div className="max-w-8xl mx-auto px-3 sm:px-4 lg:px-5">
-    <div className="relative w-full rounded-lg overflow-hidden shadow-sm border border-gray-200">
-      {headerImage ? (
-        <div
-          className="
-            relative 
-            h-24 sm:h-28 lg:h-32   /* VERY compact height */
-            bg-center bg-cover
-          "
-          style={{ backgroundImage: `url(${headerImage})` }}
-        >
-          {/* Light overlay */}
-          <div className="absolute inset-0 bg-black/35" />
 
-          <HeaderContent
-            greeting={greeting}
-            displayName={displayName}
-            landlordId={user?.landlord_id}
-          />
-        </div>
-      ) : (
-        <div
-          className="
-            flex flex-col sm:flex-row sm:items-center sm:justify-between 
-            gap-2 
-            p-3 sm:p-4             /* slim padding */
-            rounded-lg 
-            bg-gradient-to-r from-blue-700 to-emerald-600 
-            text-white
-          "
-        >
-          <HeaderContent
-            greeting={greeting}
-            displayName={
-              user?.firstName ?? user?.companyName ?? user?.email
-            }
-            landlordId={user?.landlord_id}
-          />
-        </div>
-      )}
-    </div>
-  </div>
-</div>
+            {/* Compact Header */}
+                <div className="w-full mb-3">
+                <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-5">
+                    <div className="relative w-full rounded-lg overflow-hidden shadow-sm border border-gray-200">
+                    {headerImage ? (
+                        <div
+                        className="
+                            relative 
+                            h-24 sm:h-28 lg:h-32   /* VERY compact height */
+                            bg-center bg-cover
+                        "
+                        style={{ backgroundImage: `url(${headerImage})` }}
+                        >
+                        {/* Light overlay */}
+                        <div className="absolute inset-0 bg-black/35" />
 
-
+                        <HeaderContent
+                            greeting={greeting}
+                            displayName={displayName}
+                            landlordId={user?.landlord_id}
+                        />
+                        </div>
+                    ) : (
+                        <div
+                        className="
+                            flex flex-col sm:flex-row sm:items-center sm:justify-between 
+                            gap-2 
+                            p-3 sm:p-4             /* slim padding */
+                            rounded-lg 
+                            bg-gradient-to-r from-blue-700 to-emerald-600 
+                            text-white
+                        "
+                        >
+                        <HeaderContent
+                            greeting={greeting}
+                            displayName={
+                            user?.firstName ?? user?.companyName ?? user?.email
+                            }
+                            landlordId={user?.landlord_id}
+                        />
+                        </div>
+                    )}
+                    </div>
+                </div>
+                </div>
 
             {/* Profile Status */}
             <div className="mb-4">
                 <LandlordProfileStatus landlord_id={user?.landlord_id} />
-            </div>``
+            </div>
+
+            <div className="mb-2">
+                <QuickActions
+                onAddProperty={() => router.push("/pages/landlord/property-listing/create-property")}
+                onInviteTenant={() => router.push("/pages/landlord/invite-tenant")}
+                onAnnouncement={() => router.push("/pages/landlord/announcement/create-announcement")}
+                />
+            </div>
 
             {/* 🔍 Search + Subscription + Credits (Desktop only) */}
-            <div className="hidden sm:grid sm:grid-cols-3 sm:gap-6 sm:items-start mb-6">
+            {/* <div className="hidden sm:grid sm:grid-cols-3 sm:gap-6 sm:items-start mb-6">
                 <div className="w-full sm:col-span-1 flex flex-col justify-center text-center">
                     <div className="relative w-full max-w-md mx-auto">
                         <SearchLeaseBar />
@@ -160,7 +168,7 @@ const LandlordMainDashboard = () => {
                 <div className="w-full">
                     <LandlordCreditsSummary landlordId={user?.landlord_id} />
                 </div>
-            </div>
+            </div> */}
 
             {/* 🖥️ Desktop Analytics */}
             <div className="hidden sm:block overflow-x-hidden">

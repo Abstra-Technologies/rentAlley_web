@@ -41,11 +41,6 @@ export default function HeaderContent({
           <span className="sm:hidden">Welcome to your dashboard</span>
         </p>
       </div>
-
-      {/* Invite button */}
-      <div className="mt-3 sm:mt-0">
-        <SendTenantInviteModal landlord_id={landlordId} />
-      </div>
     </div>
   );
 }
