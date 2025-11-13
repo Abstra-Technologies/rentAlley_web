@@ -6,7 +6,7 @@ const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
 
 export async function GET(req: NextRequest) {
     const property_id = req.nextUrl.searchParams.get("property_id");
-
+console.log('property id', property_id);
     if (!property_id) {
         return NextResponse.json({ error: "Missing property_id" }, { status: 400 });
     }
@@ -40,16 +40,18 @@ export async function GET(req: NextRequest) {
           usr.email AS enc_email,
           usr.phoneNumber AS enc_phoneNumber
       FROM LeaseAgreement la
-               JOIN Unit u ON la.unit_id = u.unit_id
-               JOIN Property p ON u.property_id = p.property_id
-               JOIN Tenant t ON la.tenant_id = t.tenant_id
-               JOIN User usr ON t.user_id = usr.user_id
+              LEFT JOIN Unit u ON la.unit_id = u.unit_id
+            LEFT JOIN Property p ON u.property_id = p.property_id
+            LEFT JOIN Tenant t ON la.tenant_id = t.tenant_id
+            LEFT JOIN User usr ON t.user_id = usr.user_id
       WHERE u.property_id = ?
         AND la.status IN ('active', 'draft', 'pending', 'pending_signature')
       ORDER BY la.start_date DESC;
       `,
             [property_id]
         );
+
+        console.log('rows', rows);
 
         const leases = rows.map((lease: any) => {
             const safeDecrypt = (value: any) => {
@@ -109,6 +111,8 @@ export async function GET(req: NextRequest) {
                     property_province: leases[0].property_province,
                 }
                 : null;
+
+                console.log('prperty info', propertyInfo);
 
         return NextResponse.json({ property: propertyInfo, leases }, { status: 200 });
     } catch (err) {
