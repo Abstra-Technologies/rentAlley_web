@@ -11,6 +11,7 @@ import { MAINTENANCE_STATUS } from "@/constant/maintenanceStatus";
 import MaintenanceCalendarModal from "@/components/landlord/maintenance_management/MaintenanceCalendarModal";
 import MaintenanceDetailsModal from "@/components/landlord/maintenance_management/MaintenanceDetailsModal";
 import MaintenanceExpenseModal from "@/components/landlord/maintenance_management/MaintenanceExpenseModal";
+import NewWorkOrderModal from "@/components/landlord/maintenance_management/NewWorkOrderModal";
 
 export default function MaintenanceRequestPage() {
     const { user } = useAuthStore();
@@ -34,6 +35,9 @@ export default function MaintenanceRequestPage() {
     const [filterStatus, setFilterStatus] = useState("");
     const [filterPriority, setFilterPriority] = useState("");
     const [filterNext7, setFilterNext7] = useState(false);
+
+    const [showNewModal, setShowNewModal] = useState(false);
+
 
     // FETCH MAINTENANCE REQUESTS
     useEffect(() => {
@@ -207,9 +211,12 @@ export default function MaintenanceRequestPage() {
                             />
                         </div>
 
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                            + New Work Order
-                        </button>
+                        <button
+    onClick={() => setShowNewModal(true)}
+    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+>
+    + New Work Order
+</button>
                     </div>
                 </div>
 
@@ -444,6 +451,17 @@ export default function MaintenanceRequestPage() {
                     }}
                 />
             )}
+
+            {showNewModal && (
+    <NewWorkOrderModal
+        landlordId={landlordId}
+        onClose={() => setShowNewModal(false)}
+        onCreated={(newOrder) => {
+            setRequests(prev => [newOrder, ...prev]); // add to top
+            setShowNewModal(false);
+        }}
+    />
+)}
         </>
     );
 }
