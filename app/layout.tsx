@@ -39,10 +39,20 @@ export default function RootLayout({
         <Head>
             <link rel="manifest" href="/manifest.json"/>
             <meta name="theme-color" content="#ffffff"/>
-            <meta
-                name="viewport"
-                content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-            />
+            <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (window.matchMedia('(display-mode: standalone)').matches || 
+                  navigator.standalone) {
+                document.querySelector('meta[name="viewport"]').setAttribute(
+                  'content',
+                  'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes'
+                );
+              }
+            `,
+          }}
+        />
+           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
             <link rel="apple-touch-icon" href="/Hestia-logo-b.svg"/>
         </Head>
         <body>
