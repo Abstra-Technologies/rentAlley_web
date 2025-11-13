@@ -3,160 +3,152 @@ import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell } from "recharts";
 
 export default function PaymentSummaryCard({
-                                               landlord_id,
-                                           }: {
-    landlord_id: number | undefined;
+  landlord_id,
+}: {
+  landlord_id: number | undefined;
 }) {
-    const [pending, setPending] = useState(0);
-    const [overdue, setOverdue] = useState(0);
-    const [collected, setCollected] = useState(0);
-    const [total, setTotal] = useState(0);
-    const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState(0);
+  const [overdue, setOverdue] = useState(0);
+  const [collected, setCollected] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!landlord_id) return;
+  useEffect(() => {
+    if (!landlord_id) return;
 
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const res = await fetch(
-                    `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
-                );
-                const data = await res.json();
-
-                const pendingAmount = Number(data.total_pending || 0);
-                const overdueAmount = Number(data.total_overdue || 0);
-                const collectedAmount = Number(data.total_collected || 0);
-                const totalAmount =
-                    pendingAmount + overdueAmount + collectedAmount;
-
-                setPending(pendingAmount);
-                setOverdue(overdueAmount);
-                setCollected(collectedAmount);
-                setTotal(totalAmount);
-            } catch (err) {
-                console.error("Error fetching data:", err);
-                // ✅ Ensure zero state still renders chart
-                setPending(0);
-                setOverdue(0);
-                setCollected(0);
-                setTotal(0);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [landlord_id]);
-
-    if (loading) {
-        return (
-            <div className="p-4 text-gray-500 text-xs bg-white rounded-lg shadow-sm border border-gray-200">
-                Loading payment summary...
-            </div>
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
         );
-    }
+        const data = await res.json();
 
-    // ✅ Always render chart (even if all 0)
-    const data =
-        pending === 0 && overdue === 0 && collected === 0
-            ? [
-                { name: "No Data", value: 1 }, // placeholder slice
-            ]
-            : [
-                { name: "Collected", value: collected },
-                { name: "Pending", value: pending },
-                { name: "Overdue", value: overdue },
-            ];
+        const pendingAmount = Number(data.total_pending || 0);
+        const overdueAmount = Number(data.total_overdue || 0);
+        const collectedAmount = Number(data.total_collected || 0);
+        const totalAmount =
+          pendingAmount + overdueAmount + collectedAmount;
 
-    const COLORS =
-        pending === 0 && overdue === 0 && collected === 0
-            ? ["#e5e7eb"] // light gray when no data
-            : ["#22c55e", "#3b82f6", "#fb923c"];
+        setPending(pendingAmount);
+        setOverdue(overdueAmount);
+        setCollected(collectedAmount);
+        setTotal(totalAmount);
+      } catch (err) {
+        console.error("Error:", err);
+        setPending(0);
+        setOverdue(0);
+        setCollected(0);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchData();
+  }, [landlord_id]);
+
+  const data =
+    pending === 0 && overdue === 0 && collected === 0
+      ? [{ name: "No Data", value: 1 }]
+      : [
+          { name: "Collected", value: collected },
+          { name: "Pending", value: pending },
+          { name: "Overdue", value: overdue },
+        ];
+
+  const COLORS =
+    pending === 0 && overdue === 0 && collected === 0
+      ? ["#d1d5db"]
+      : ["#10b981", "#3b82f6", "#f97316"];
+
+  if (loading) {
     return (
-        <div>
-            {/* Mobile Design (compact stacked cards) */}
-            <div className="grid grid-cols-3 gap-2 sm:hidden">
-                <div className="rounded-lg bg-gradient-to-br from-sky-800/80 to-sky-600/80 p-2 text-center shadow">
-                    <p className="text-sm font-bold text-sky-200">
-                        ₱{pending.toLocaleString()}
-                    </p>
-                    <p className="text-[10px] text-gray-100">Upcoming</p>
-                </div>
-
-                <div className="rounded-lg bg-gradient-to-br from-orange-800/80 to-orange-600/80 p-2 text-center shadow">
-                    <p className="text-sm font-bold text-orange-200">
-                        ₱{overdue.toLocaleString()}
-                    </p>
-                    <p className="text-[10px] text-gray-100">Overdue</p>
-                </div>
-
-                <div className="rounded-lg bg-gradient-to-br from-emerald-800/80 to-emerald-600/80 p-2 text-center shadow">
-                    <p className="text-sm font-bold text-emerald-200">
-                        ₱{collected.toLocaleString()}
-                    </p>
-                    <p className="text-[10px] text-gray-100">Collected</p>
-                </div>
-            </div>
-
-            {/* Tablet/Desktop Design (compact with chart) */}
-            <div
-                className="hidden sm:flex rounded-xl border border-white/10
-          bg-gradient-to-br from-blue-950/90 via-teal-900/80 to-emerald-900/80
-          backdrop-blur-xl shadow-lg p-6 md:p-10 flex-col md:flex-row
-          items-center justify-between gap-6 min-h-[280px]"
-            >
-                {/* Upcoming + Overdue */}
-                <div className="text-center flex-1">
-                    <p className="text-lg md:text-xl font-bold text-sky-300">
-                        ₱{pending.toLocaleString()}
-                    </p>
-                    <p className="text-xs md:text-sm text-gray-200">Upcoming</p>
-
-                    <p className="text-xl md:text-2xl font-bold text-orange-400 mt-2 md:mt-4">
-                        ₱{overdue.toLocaleString()}
-                    </p>
-                    <p className="text-xs md:text-sm text-gray-200">Overdue</p>
-                </div>
-
-                {/* Chart */}
-                <div className="flex flex-col items-center justify-center flex-1">
-                    <PieChart
-                        width={120}
-                        height={120}
-                        className="md:w-[150px] md:h-[150px]"
-                    >
-                        <Pie
-                            data={data}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={35}
-                            outerRadius={55}
-                            dataKey="value"
-                            isAnimationActive={false} // ✅ keeps static circle for no data
-                        >
-                            {data.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                            ))}
-                        </Pie>
-                    </PieChart>
-                    <p className="text-xs md:text-sm font-medium text-gray-100 mt-1">
-                        {new Date().toLocaleString("en-US", { month: "long" })}
-                    </p>
-                    <p className="text-xs md:text-sm text-gray-300">
-                        ₱{total.toLocaleString()} Total
-                    </p>
-                </div>
-
-                {/* Collected */}
-                <div className="text-center flex-1">
-                    <p className="text-lg md:text-xl font-bold text-emerald-300">
-                        ₱{collected.toLocaleString()}
-                    </p>
-                    <p className="text-xs md:text-sm text-gray-200">Collected</p>
-                </div>
-            </div>
-        </div>
+      <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm text-center text-gray-500">
+        Loading…
+      </div>
     );
+  }
+
+  return (
+    <div
+      className="
+        rounded-2xl border border-gray-200 shadow
+        bg-white/30 backdrop-blur-xl
+        p-5 md:p-7 
+        flex flex-col md:flex-row
+        items-center justify-between
+        gap-8
+      "
+    >
+      {/* Left Numbers Section */}
+      <div className="flex flex-col gap-4 w-full md:w-1/3">
+        <div>
+          <p className="text-sm text-gray-600">Upcoming</p>
+          <p className="text-xl font-bold text-blue-600">
+            ₱{pending.toLocaleString()}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-600">Overdue</p>
+          <p className="text-xl font-bold text-orange-600">
+            ₱{overdue.toLocaleString()}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-600">Collected</p>
+          <p className="text-xl font-bold text-emerald-600">
+            ₱{collected.toLocaleString()}
+          </p>
+        </div>
+      </div>
+
+      {/* Donut Chart */}
+      <div className="flex flex-col items-center md:w-1/3">
+        <PieChart width={150} height={150}>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={45}
+            outerRadius={65}
+            dataKey="value"
+            strokeWidth={2}
+            isAnimationActive={false}
+          >
+            {data.map((entry, idx) => (
+              <Cell key={idx} fill={COLORS[idx]} />
+            ))}
+          </Pie>
+        </PieChart>
+
+        <p className="text-xs text-gray-600 mt-1">
+          {new Date().toLocaleString("en-US", { month: "long" })}
+        </p>
+        <p className="text-sm text-gray-800 font-semibold">
+          ₱{total.toLocaleString()} total
+        </p>
+      </div>
+
+      {/* Legend */}
+      <div className="grid grid-cols-1 gap-3 text-sm md:w-1/3">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+          <span className="text-gray-700">Collected</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+          <span className="text-gray-700">Upcoming</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+          <span className="text-gray-700">Overdue</span>
+        </div>
+      </div>
+    </div>
+  );
 }

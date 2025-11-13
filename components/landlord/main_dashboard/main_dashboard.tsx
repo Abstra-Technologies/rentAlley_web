@@ -28,6 +28,7 @@ import MobileLandlordAnalytics from "@/components/landlord/mobile_layour/MobileL
 import axios from "axios";
 import HeaderContent from "./headerContent";
 import QuickActions from "./QuickActions";
+import Clock from "./Clock";
 
 const LandlordMainDashboard = () => {
     const { user, fetchSession, loading } = useAuthStore();
@@ -96,51 +97,58 @@ const LandlordMainDashboard = () => {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 p-10">
             {showAlert && <PointsEarnedAlert points={user?.points} />}
 
-            {/* Compact Header */}
-                <div className="w-full mb-3">
-                <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-5">
-                    <div className="relative w-full rounded-lg overflow-hidden shadow-sm border border-gray-200">
-                    {headerImage ? (
-                        <div
-                        className="
-                            relative 
-                            h-24 sm:h-28 lg:h-32   /* VERY compact height */
-                            bg-center bg-cover
-                        "
-                        style={{ backgroundImage: `url(${headerImage})` }}
-                        >
-                        {/* Light overlay */}
-                        <div className="absolute inset-0 bg-black/35" />
+               {/* Compact Header */}
+<div className="w-full mb-3">
+  <div className="max-w-9xl mx-auto px-3 sm:px-4 lg:px-5">
+    <div className="relative w-full rounded-lg overflow-hidden shadow-sm border border-gray-200">
 
-                        <HeaderContent
-                            greeting={greeting}
-                            displayName={displayName}
-                            landlordId={user?.landlord_id}
-                        />
-                        </div>
-                    ) : (
-                        <div
-                        className="
-                            flex flex-col sm:flex-row sm:items-center sm:justify-between 
-                            gap-2 
-                            p-3 sm:p-4             /* slim padding */
-                            rounded-lg 
-                            bg-gradient-to-r from-blue-700 to-emerald-600 
-                            text-white
-                        "
-                        >
-                        <HeaderContent
-                            greeting={greeting}
-                            displayName={
-                            user?.firstName ?? user?.companyName ?? user?.email
-                            }
-                            landlordId={user?.landlord_id}
-                        />
-                        </div>
-                    )}
-                    </div>
-                </div>
-                </div>
+      {headerImage ? (
+        <div
+          className="
+            relative 
+            h-24 sm:h-28 lg:h-32
+            bg-center bg-cover
+            flex items-center
+          "
+          style={{ backgroundImage: `url(${headerImage})` }}
+        >
+          {/* Light overlay */}
+          <div className="absolute inset-0 bg-black/35" />
+
+          <div className="relative z-10 w-full flex justify-between items-center px-4 sm:px-6">
+            {/* Left: Greeting */}
+            <HeaderContent
+              greeting={greeting}
+              displayName={displayName}
+              landlordId={user?.landlord_id}
+            />
+          </div>
+        </div>
+      ) : (
+        <div
+          className="
+            flex flex-row 
+            items-center justify-between
+            p-3 sm:p-4
+            rounded-lg 
+            bg-gradient-to-r from-blue-700 to-emerald-600 
+            text-white
+          "
+        >
+          {/* Left: Greeting */}
+          <HeaderContent
+            greeting={greeting}
+            displayName={
+              user?.firstName ?? user?.companyName ?? user?.email
+            }
+            landlordId={user?.landlord_id}
+          />
+        </div>
+      )}
+
+    </div>
+  </div>
+</div>
 
             {/* Profile Status */}
             <div className="mb-4">
@@ -152,6 +160,7 @@ const LandlordMainDashboard = () => {
                 onAddProperty={() => router.push("/pages/landlord/property-listing/create-property")}
                 onInviteTenant={() => router.push("/pages/landlord/invite-tenant")}
                 onAnnouncement={() => router.push("/pages/landlord/announcement/create-announcement")}
+                onWithdraw={() => router.push("/pages/landlord/announcement/create-announcement")}
                 />
             </div>
 
@@ -170,32 +179,66 @@ const LandlordMainDashboard = () => {
                 </div>
             </div> */}
 
-            {/* 🖥️ Desktop Analytics */}
+            {/* 🖥️ Desktop Widgets */}
             <div className="hidden sm:block overflow-x-hidden">
+                
                 {/* Analytics Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <div
-                        onClick={() =>
-                            router.push(`/pages/landlord/analytics/detailed/paymentLogs`)
-                        }
-                        className="lg:col-span-2 relative group cursor-pointer transition-all duration-300"
-                    >
-                        <div className="transform group-hover:-translate-y-1 group-hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden">
-                            <PaymentSummaryCard landlord_id={user?.landlord_id} />
-                        </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-600/0 via-emerald-500/0 to-emerald-600/0 group-hover:from-blue-600/10 group-hover:via-emerald-500/10 group-hover:to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none" />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <span className="bg-white/80 text-gray-800 text-sm font-medium px-4 py-1.5 rounded-full shadow-md backdrop-blur-md">
-              View Payment History →
-            </span>
-                        </div>
-                    </div>
+  {/* Payment Summary Wrapper */}
+  <div className="lg:col-span-2">
+    <div
+      onClick={() =>
+        router.push(`/pages/landlord/analytics/detailed/paymentLogs`)
+      }
+      className="relative group cursor-pointer h-full"
+    >
+      {/* Hover card */}
+      <div
+        className="
+          rounded-2xl overflow-hidden h-full
+          transition-all duration-300 
+          group-hover:-translate-y-1 
+          group-hover:shadow-xl
+          bg-white
+        "
+      >
+        <PaymentSummaryCard landlord_id={user?.landlord_id} />
+      </div>
 
-                    <TaskWidget landlordId={user?.landlord_id} />
-                </div>
+      {/* CTA on Hover */}
+      <div
+        className="
+          absolute inset-0 flex items-center justify-center
+          pointer-events-none 
+          opacity-0 group-hover:opacity-100 
+          transition-opacity duration-300
+        "
+      >
+        <span className="
+          bg-white/90 
+          text-gray-800 text-xs sm:text-sm 
+          font-medium 
+          px-4 py-1.5 
+          rounded-full 
+          shadow-md 
+          backdrop-blur-md
+        ">
+          View Payment History →
+        </span>
+      </div>
+    </div>
+  </div>
 
-                {/* 🏠 Property Marquee Section — FIXED HEIGHT, NO STRETCH */}
+  {/* Task Widget Wrapper */}
+  <div className="h-full">
+    <TaskWidget landlordId={user?.landlord_id} />
+  </div>
+</div>
+
+
+
+
                 {/* 🏠 Property Marquee Section — FIXED, NO STRETCH */}
                 <div className="mb-6">
                     <div className="relative rounded-2xl bg-white shadow-md border border-gray-100 overflow-hidden h-[220px] sm:h-[260px]">
