@@ -58,6 +58,7 @@ export default function PropertyBillingPage() {
       }
     }
 
+    //  getting the utility rates if submetered
     async function fetchBillingData() {
       try {
         const response = await axios.get(
@@ -90,6 +91,7 @@ export default function PropertyBillingPage() {
     fetchBillingData();
   }, [property_id]);
 
+  // getting active units with lease only.active or draft.
   const { data: billsData, isLoading: loadingBills } = useSWR(
     property_id
       ? `/api/landlord/billing/current?property_id=${property_id}`

@@ -17,8 +17,6 @@ export async function GET(req: NextRequest) {
       [landlordId]
     ) as [RowDataPacket[], FieldPacket[]];
 
-    console.log("Fetched properties:", properties);
-
     if (!properties.length) {
       return NextResponse.json({ error: "No properties found" }, { status: 404 });
     }
@@ -29,14 +27,10 @@ export async function GET(req: NextRequest) {
       [propertyIds]
     )  as [RowDataPacket[], FieldPacket[]];
 
-    console.log("Fetched units:", units);
-
     const propertiesWithUnits = properties.map((property: any) => ({
       ...property,
       units: units.filter((unit: any) => unit.property_id === property.property_id),
     }));
-
-    console.log("Final API Response:", propertiesWithUnits);
 
     return NextResponse.json(propertiesWithUnits, { status: 200 });
 

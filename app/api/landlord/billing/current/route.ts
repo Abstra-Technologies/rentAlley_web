@@ -38,11 +38,11 @@ export async function GET(req: NextRequest) {
                     usr.lastName  AS enc_lastName
 
                 FROM LeaseAgreement la
-                         JOIN Unit u
+                         LEFT JOIN Unit u
                               ON la.unit_id = u.unit_id
-                         JOIN Tenant t
+                         LEFT JOIN Tenant t
                               ON la.tenant_id = t.tenant_id
-                         JOIN User usr
+                         LEFT JOIN User usr
                               ON t.user_id = usr.user_id
                          LEFT JOIN Billing b
                                    ON b.unit_id = u.unit_id
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
                                        AND YEAR(b.billing_period) = YEAR(CURDATE())
 
                 WHERE u.property_id = ?
-                  AND la.status = 'active'
+                  AND la.status in ('active','draft')
                 ORDER BY u.unit_name ASC;
             `,
             [property_id]

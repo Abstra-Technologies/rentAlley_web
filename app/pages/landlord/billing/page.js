@@ -25,11 +25,11 @@ const PropertyListPage = () => {
           setProperties(response.data);
         } else {
           console.error("Invalid API response:", response.data);
-          setProperties([]); // Fallback to empty array
+          setProperties([]); 
         }
       } catch (error) {
         console.error("Error fetching properties:", error);
-        setProperties([]); // Fallback to empty array in case of an error
+        setProperties([]);
       } finally {
         setLoading(false);
       }
