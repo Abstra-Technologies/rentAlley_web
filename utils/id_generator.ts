@@ -42,7 +42,7 @@ export function generateBillId(): string {
 }
 
 export function generateMaintenanceId(): string {
-    return "UPKYPBILL" + randomAlphaNumeric(4);
+    return "UPKYPWO" + randomAlphaNumeric(4);
 }
 
 export function generatAssetsId(): string {
