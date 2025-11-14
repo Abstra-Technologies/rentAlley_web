@@ -85,16 +85,22 @@ export default function TenantPortalLayout({
       priority: 3,
     },
   ].map(({ slug, priority, icon, label }) => {
-    let href = `/pages/tenant/${slug}`;
+  let href = "";
 
-    if (slug === "rentalPortal")
-      href = `/pages/tenant/rentalPortal/${agreement_id}/${slug}/`;
-    else if (slug !== "exitPortal")
-      href = `/pages/tenant/${slug}?agreement_id=${agreement_id}`;
-    else href = "/pages/tenant/my-unit";
+  if (slug === "rentalPortal") {
+    href = `/pages/tenant/rentalPortal/${agreement_id}`;
+  }
+  // EXIT
+  else if (slug === "exitPortal") {
+    href = "/pages/tenant/my-unit";
+  }
+  else {
+    href = `/pages/tenant/rentalPortal/${agreement_id}/${slug}?agreement_id=${agreement_id}`;
+  }
 
-    return { href, priority, icon, label };
-  });
+  return { href, priority, icon, label };
+});
+
 
   const getIsActive = (href: string) => {
     const base = href.split("?")[0];
