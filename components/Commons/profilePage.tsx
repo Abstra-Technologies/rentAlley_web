@@ -13,6 +13,14 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
+  Mail,
+  Phone,
+  MapPin,
+  User,
+  Calendar,
+  Briefcase,
+  Globe,
+  Heart,
 } from "lucide-react";
 import axios from "axios";
 import { logEvent } from "@/utils/gtag";
@@ -67,6 +75,7 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState<boolean>(false);
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus>(null);
+  const [subscriptionPlan, setSubscriptionPlan] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -113,6 +122,21 @@ export default function ProfilePage() {
         .catch((err) => {
           console.error("Failed to fetch landlord verification status:", err);
           setVerificationStatus("not verified");
+        });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && user?.userType === "landlord" && user.user_id) {
+      axios
+        .get(`/api/landlord/subscription/${user.user_id}`)
+        .then((response) => {
+          if (response.data.plan_name) {
+            setSubscriptionPlan(response.data.plan_name);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch subscription plan:", err);
         });
     }
   }, [user]);
@@ -198,76 +222,57 @@ export default function ProfilePage() {
     switch (verificationStatus) {
       case "approved":
         return (
-          <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle2 className="w-4 h-4 mr-1.5" />
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3" />
             Verified
           </div>
         );
       case "pending":
         return (
-          <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock className="w-4 h-4 mr-1.5" />
-            Verification Pending
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+            <Clock className="w-3 h-3" />
+            Pending
           </div>
         );
       case "not verified":
         return (
-          <div className="space-y-3">
-            <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-red-50 text-red-700 border border-red-200">
-              <AlertCircle className="w-4 h-4 mr-1.5" />
-              Unverified Account
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-sm font-medium text-blue-900 mb-1">
-                    Get Verified Today
-                  </h4>
-                  <p className="text-sm text-blue-700 mb-3">
-                    Verified landlords get more visibility and build trust with
-                    potential tenants.
-                  </p>
-                  <button
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
-                    onClick={() => router.push("/pages/landlord/verification")}
-                  >
-                    Apply for Verification
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+            <AlertCircle className="w-3 h-3" />
+            Not Verified
           </div>
         );
       default:
-        return (
-          <div className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-50 text-gray-700 border border-gray-200">
-            <AlertCircle className="w-4 h-4 mr-1.5" />
-            Status Unknown
-          </div>
-        );
+        return null;
     }
   };
 
-  <LoadingContent name="profile" />
+  if (loading) {
+    return <LoadingContent name="profile" />;
+  }
 
   return (
-    <div className="flex-1 bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold bg-gradient-to-r from-blue-800 to-emerald-600 bg-clip-text text-transparent mb-2">
-            Profile Settings
-          </h1>
-          <p className="text-gray-600">
-            Manage your account information and preferences
+    <div className="min-h-screen bg-gray-50">
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
+          <p className="text-sm text-gray-600">
+            Manage your account information
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Header with Profile Picture */}
-          <div className="relative bg-gradient-to-r from-blue-600 to-emerald-600 px-8 py-12">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end space-y-6 sm:space-y-0 sm:space-x-6">
-              <div className="relative group">
+        {/* Profile Header Card */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+          {/* Subtle Banner */}
+          <div className="relative h-20 sm:h-24 bg-gradient-to-r from-blue-600/10 to-emerald-600/10">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/30"></div>
+          </div>
+
+          {/* Profile Info */}
+          <div className="relative px-4 sm:px-6 pb-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12">
+              {/* Profile Picture */}
+              <div className="relative group flex-shrink-0">
                 <label className="cursor-pointer block">
                   <div className="relative">
                     <img
@@ -276,15 +281,10 @@ export default function ProfilePage() {
                         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
                       }
                       alt="Profile"
-                      className="w-28 h-28 rounded-2xl object-cover border-4 border-white shadow-lg"
+                      className="w-24 h-24 rounded-xl object-cover border-4 border-white shadow-lg"
                     />
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 rounded-2xl transition-all duration-300 flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
-                        <Camera className="w-6 h-6 text-white mx-auto mb-1" />
-                        <span className="text-white text-xs font-medium">
-                          Change Photo
-                        </span>
-                      </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-2">
+                      <Camera className="w-5 h-5 text-white" />
                     </div>
                   </div>
                   <input
@@ -296,151 +296,241 @@ export default function ProfilePage() {
                 </label>
               </div>
 
-              <div className="text-center sm:text-left flex-1">
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  {user?.firstName} {user?.lastName}
-                </h2>
-                <p className="text-blue-100 mb-4 capitalize">
-                  {user?.userType} Account
-                </p>
+              {/* User Info */}
+              <div className="flex-1 text-center sm:text-left w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {user?.firstName} {user?.lastName}
+                  </h2>
+                  {user?.userType === "landlord" && getVerificationBadge()}
+                </div>
+                <div className="flex flex-wrap justify-center sm:justify-start gap-3 text-sm text-gray-600">
+                  <span className="flex items-center gap-1">
+                    <User className="w-4 h-4" />
+                    {user?.userType}
+                  </span>
+                  {profileData?.email && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="w-4 h-4" />
+                      <span className="truncate max-w-[200px]">
+                        {profileData.email}
+                      </span>
+                    </span>
+                  )}
+                  {profileData?.phoneNumber && (
+                    <span className="flex items-center gap-1">
+                      <Phone className="w-4 h-4" />
+                      {profileData.phoneNumber}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                {user?.userType === "landlord" && (
-                  <div className="flex justify-center sm:justify-start">
-                    {getVerificationBadge()}
+              {/* Edit Button - Desktop */}
+              <div className="hidden sm:block">
+                {editing ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEditing(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdateProfile}
+                      className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg hover:shadow-md transition-shadow flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save
+                    </button>
                   </div>
+                ) : (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg hover:shadow-md transition-shadow flex items-center gap-2"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Edit
+                  </button>
                 )}
               </div>
             </div>
+
+            {/* Mobile Edit Button */}
+            <div className="sm:hidden mt-4">
+              {editing ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateProfile}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit Profile
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Content Sections */}
-          <div className="p-8 space-y-10">
-            {/* General Information */}
-            <section>
-              <h3 className="text-lg font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">
-                General Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* First Name */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    First Name
-                  </label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                      placeholder="Enter your first name"
-                    />
-                  ) : (
-                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                      {profileData?.firstName}
-                    </div>
-                  )}
-                </div>
-
-                {/* Last Name */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Last Name
-                  </label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                      placeholder="Enter your last name"
-                    />
-                  ) : (
-                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                      {profileData?.lastName}
-                    </div>
-                  )}
-                </div>
-
-                {/* Civil Status */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Civil Status
-                  </label>
-                  {editing ? (
-                    <select
-                      name="civil_status"
-                      value={formData.civil_status}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+          {/* Verification Alert */}
+          {user?.userType === "landlord" &&
+            verificationStatus === "not verified" && (
+              <div className="mx-4 sm:mx-6 mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-1">
+                      Verify Your Account
+                    </h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Get verified to build trust.
+                    </p>
+                    <button
+                      onClick={() =>
+                        router.push("/pages/landlord/verification")
+                      }
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg hover:shadow-md transition-shadow"
                     >
-                      <option value="">Select civil status</option>
-                      <option value="single">Single</option>
-                      <option value="married">Married</option>
-                      <option value="widowed">Widowed</option>
-                      <option value="divorced">Divorced</option>
-                      <option value="separated">Separated</option>
-                      <option value="other">Other</option>
-                    </select>
-                  ) : (
-                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium capitalize">
-                      {profileData?.civil_status || "Not Provided"}
-                    </div>
-                  )}
+                      Start Verification
+                    </button>
+                  </div>
                 </div>
+              </div>
+            )}
+        </div>
 
-                {/* Birth Date */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Birth Date
-                  </label>
-                  {editing ? (
-                    <input
-                      type="date"
-                      name="birthDate"
-                      value={formData.birthDate || ""}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                    />
-                  ) : (
-                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                      {profileData?.birthDate || "Not provided"}
-                    </div>
-                  )}
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-20 sm:pb-6">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-3">
+            {/* Personal Information - Compact */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1">
+                  <User className="w-4 h-4 text-blue-600" />
+                  Personal Information
+                </h3>
+              </div>
+              <div className="p-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* First Name */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-600 uppercase">
+                      First Name
+                    </label>
+                    {editing ? (
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <div className="px-2 py-1.5 bg-gray-50 rounded text-sm text-gray-900">
+                        {profileData?.firstName || "Not provided"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Last Name */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-600 uppercase">
+                      Last Name
+                    </label>
+                    {editing ? (
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <div className="px-2 py-1.5 bg-gray-50 rounded text-sm text-gray-900">
+                        {profileData?.lastName || "Not provided"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Birth Date */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-600 uppercase flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Birth Date
+                    </label>
+                    {editing ? (
+                      <input
+                        type="date"
+                        name="birthDate"
+                        value={formData.birthDate || ""}
+                        onChange={handleChange}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <div className="px-2 py-1.5 bg-gray-50 rounded text-sm text-gray-900">
+                        {profileData?.birthDate || "Not provided"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Civil Status */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-600 uppercase flex items-center gap-1">
+                      <Heart className="w-3 h-3" />
+                      Civil Status
+                    </label>
+                    {editing ? (
+                      <select
+                        name="civil_status"
+                        value={formData.civil_status}
+                        onChange={handleChange}
+                        className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">Select</option>
+                        <option value="single">Single</option>
+                        <option value="married">Married</option>
+                        <option value="widowed">Widowed</option>
+                        <option value="divorced">Divorced</option>
+                        <option value="separated">Separated</option>
+                        <option value="other">Other</option>
+                      </select>
+                    ) : (
+                      <div className="px-2 py-1.5 bg-gray-50 rounded text-sm text-gray-900 capitalize">
+                        {profileData?.civil_status || "Not provided"}
+                      </div>
+                    )}
+                  </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Citizenship */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Citizenship
-                  </label>
-                  {editing ? (
-                    <select
-                      name="citizenship"
-                      value={formData.citizenship}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                    >
-                      <option value="">Select citizenship</option>
-                      {CITIZENSHIPS.map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
-                      {CITIZENSHIPS.find(
-                        (c) => c.value === profileData?.citizenship
-                      )?.label || "Not provided"}
-                    </div>
-                  )}
-                </div>
-
+            {/* Professional Details - Compact */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1">
+                  <Briefcase className="w-4 h-4 text-emerald-600" />
+                  Professional Details
+                </h3>
+              </div>
+              <div className="p-3 space-y-2">
                 {/* Occupation */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase">
                     Occupation
                   </label>
                   {editing ? (
@@ -448,9 +538,9 @@ export default function ProfilePage() {
                       name="occupation"
                       value={formData.occupation}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                     >
-                      <option value="">Select occupation</option>
+                      <option value="">Select</option>
                       {occupations.map((o) => (
                         <option key={o.value} value={o.value}>
                           {o.label}
@@ -458,7 +548,7 @@ export default function ProfilePage() {
                       ))}
                     </select>
                   ) : (
-                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                    <div className="px-2 py-1.5 bg-gray-50 rounded text-sm text-gray-900">
                       {occupations.find(
                         (o) => o.value === profileData?.occupation
                       )?.label || "Not provided"}
@@ -466,9 +556,39 @@ export default function ProfilePage() {
                   )}
                 </div>
 
+                {/* Citizenship */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase flex items-center gap-1">
+                    <Globe className="w-3 h-3" />
+                    Citizenship
+                  </label>
+                  {editing ? (
+                    <select
+                      name="citizenship"
+                      value={formData.citizenship}
+                      onChange={handleChange}
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="">Select</option>
+                      {CITIZENSHIPS.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="px-2 py-1.5 bg-gray-50 rounded text-sm text-gray-900">
+                      {CITIZENSHIPS.find(
+                        (c) => c.value === profileData?.citizenship
+                      )?.label || "Not provided"}
+                    </div>
+                  )}
+                </div>
+
                 {/* Address */}
-                <div className="space-y-2 md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
                     Address
                   </label>
                   {editing ? (
@@ -477,41 +597,45 @@ export default function ProfilePage() {
                       value={formData.address}
                       onChange={handleChange}
                       rows={2}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                      placeholder="Enter your full address"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 resize-none"
                     />
                   ) : (
-                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                    <div className="px-2 py-1.5 bg-gray-50 rounded text-sm text-gray-900">
                       {profileData?.address || "Not provided"}
                     </div>
                   )}
                 </div>
               </div>
-            </section>
+            </div>
+          </div>
 
-            {/* Contact Information */}
-            <section>
-              <h3 className="text-lg font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">
-                Contact Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Right Column */}
+          <div className="space-y-3">
+            {/* Contact - Compact */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-3 py-2 border-b border-gray-100 bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1">
+                  <Mail className="w-4 h-4 text-blue-600" />
+                  Contact
+                </h3>
+              </div>
+              <div className="p-3 space-y-2">
                 {/* Email */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Email Address
-                    <span className="text-xs text-gray-500 font-normal ml-2">
-                      (Read-only)
-                    </span>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase">
+                    Email
                   </label>
-                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium">
-                    {profileData?.email}
+                  <div className="px-2 py-1.5 bg-gray-50 rounded text-xs text-gray-600 flex items-center gap-1">
+                    <Mail className="w-3 h-3 text-gray-400" />
+                    <span className="truncate">{profileData?.email}</span>
                   </div>
+                  <p className="text-[10px] text-gray-500">Cannot be changed</p>
                 </div>
 
                 {/* Phone */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Phone Number
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-600 uppercase">
+                    Phone
                   </label>
                   {editing ? (
                     <input
@@ -519,76 +643,68 @@ export default function ProfilePage() {
                       name="phoneNumber"
                       value={formData.phoneNumber}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                      placeholder="Enter your phone number"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                     />
                   ) : (
-                    <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium">
+                    <div className="px-2 py-1.5 bg-gray-50 rounded text-sm text-gray-900 flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-gray-400" />
                       {profileData?.phoneNumber || "Not provided"}
                     </div>
                   )}
                 </div>
               </div>
-            </section>
+            </div>
 
-            {/* Account Settings */}
-            <section>
-              <h3 className="text-lg font-semibold text-gray-800 mb-6 pb-3 border-b border-gray-200">
-                Account Settings
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2 md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700">
-                    Account Type
-                    <span className="text-xs text-gray-500 font-normal ml-2">
-                      (Read-only)
-                    </span>
-                  </label>
-                  <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 font-medium capitalize">
-                    {user?.userType}
+            {/* Account Type - Compact */}
+            <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg shadow-sm border border-blue-100 overflow-hidden">
+              <div className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold text-gray-900">
+                      {user?.userType === "landlord"
+                        ? "Subscription"
+                        : "Account Type"}
+                    </h3>
                   </div>
                 </div>
+                <div className="px-2 py-1.5 bg-white rounded shadow-sm">
+                  <p className="text-sm font-bold text-gray-900 capitalize">
+                    {user?.userType === "landlord" && subscriptionPlan
+                      ? subscriptionPlan
+                      : user?.userType}
+                  </p>
+                </div>
+                {user?.userType === "landlord" && (
+                  <button
+                    onClick={() =>
+                      router.push("/pages/landlord/subsciption_plan")
+                    }
+                    className="mt-2 w-full px-2 py-1 text-xs font-medium text-blue-700 bg-white hover:bg-blue-50 border border-blue-200 rounded transition-colors"
+                  >
+                    View Details
+                  </button>
+                )}
               </div>
-            </section>
-          </div>
+            </div>
 
-          {/* Footer Actions */}
-          <div className="bg-gray-50 px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-            <DeleteAccountButton user_id={user_id} userType={userType} />
-
-            {editing ? (
-              <button
-                onClick={() => {
-                  logEvent(
-                    "Profile Update",
-                    "User Interaction",
-                    "Clicked Save Changes",
-                    1
-                  );
-                  handleUpdateProfile();
-                }}
-                className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  logEvent(
-                    "Profile Edit",
-                    "User Interaction",
-                    "Clicked Edit Profile",
-                    1
-                  );
-                  setEditing(true);
-                }}
-                className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg hover:from-blue-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                Edit Profile
-              </button>
-            )}
+            {/* Danger Zone - Compact */}
+            <div className="bg-white rounded-lg shadow-sm border border-red-200 overflow-hidden">
+              <div className="px-3 py-2 border-b border-red-100 bg-red-50">
+                <h3 className="text-sm font-semibold text-red-900 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4 text-red-600" />
+                  Danger Zone
+                </h3>
+              </div>
+              <div className="p-3">
+                <p className="text-xs text-gray-600 mb-2">
+                  Deleting your account is permanent.
+                </p>
+                <DeleteAccountButton user_id={user_id} userType={userType} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
