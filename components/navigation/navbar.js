@@ -83,9 +83,12 @@ const Navbar = () => {
     if (!user) {
       return [
         { href: "/pages/about-us", label: "About Us" },
+        { href: "/pages/public/how-it-works", label: "How It Works" },
         { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/public/download", label: "Download App" },
-        { href: "/pages/partner", label: "Partner" },
+                { href: "/pages/find-rent", label: "Pricing" },
+
+        // { href: "/pages/partner", label: "Partner" },
         { href: "/pages/contact-us", label: "Contact Us" },
       ];
     }
@@ -169,7 +172,7 @@ const Navbar = () => {
               href={user?.userType === "tenant" ? "/pages/tenant/feeds" : "/"}
               className="flex text-3xl items-center space-x-2 transition-opacity hover:opacity-90 text-white font-bold"
             >
-              UpKyp
+              Upkyp
             </Link>
 
             <div className="flex items-center space-x-1 ml-auto">

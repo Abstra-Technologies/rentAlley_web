@@ -129,21 +129,22 @@ export default function SplashScreen() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-32 pb-20 sm:pb-32">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/30">
-              <Shield className="w-4 h-4 text-white" />
-              <span className="text-sm font-medium text-white">
-                Verified Rentals • Real Homes, Real Connections
-              </span>
-            </div>
+          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/30">
+  <Shield className="w-4 h-4 text-white" />
+  <span className="text-sm font-medium text-white">
+    Verified Listings • Smart Property Management
+  </span>
+</div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-              Find Your Perfect Home in the Philippines
-            </h1>
+<h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+  Manage and Discover Rental Properties in One Platform
+</h1>
 
-            <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-              Discover verified rental properties with transparent pricing and
-              instant booking.
-            </p>
+<p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto">
+  Explore trusted listings and streamline property operations—from tenant
+  management to billing—all in a single, easy-to-use system.
+</p>
+
 
             <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-8">
               <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2">
