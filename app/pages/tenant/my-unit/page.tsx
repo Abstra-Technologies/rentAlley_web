@@ -77,6 +77,7 @@ export default function MyUnit() {
   const [isRefetching, setIsRefetching] = useState(false);
   const itemsPerPage = 10;
   const [loadingRenewal, setLoadingRenewal] = useState(false);
+  const { units, loading, error, refetch } = useUnits(user?.tenant_id);
 
   // Authentication check
   useEffect(() => {
@@ -85,7 +86,10 @@ export default function MyUnit() {
     }
   }, [user, admin, fetchSession]);
 
-  const { units, loading, error, refetch } = useUnits(user?.tenant_id);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
 
   const { filteredUnits, paginatedUnits, totalPages } = useMemo(() => {
     const filtered = units.filter((unit) => {
@@ -104,10 +108,6 @@ export default function MyUnit() {
 
     return { filteredUnits: filtered, paginatedUnits: paginated, totalPages };
   }, [units, searchQuery, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   // Handlers
   const handlePageChange = useCallback((page: number) => {

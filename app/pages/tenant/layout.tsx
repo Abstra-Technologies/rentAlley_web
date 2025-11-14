@@ -33,15 +33,9 @@ export default function TenantLayout({ children }) {
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [undecidedApplications, setUndecidedApplications] = useState(0);
 
-  /* -------------------------------------------------------------------------- */
-  /*                         🚀 CRITICAL OVERRIDE LOGIC                         */
-  /* -------------------------------------------------------------------------- */
   // If inside rentalPortal → completely disable this outer layout
   const isInsideRentalPortal = pathname.includes("/pages/tenant/rentalPortal/");
-  if (isInsideRentalPortal) {
-    return <main className="flex-1 min-h-screen">{children}</main>;
-  }
-  /* -------------------------------------------------------------------------- */
+
 
   useEffect(() => {
     if (!user) fetchSession();
@@ -72,6 +66,12 @@ export default function TenantLayout({ children }) {
     setIsMobileProfileOpen(false);
   }, [pathname]);
 
+
+
+  if (isInsideRentalPortal) {
+    return <main className="flex-1 min-h-screen">{children}</main>;
+  }
+  
   /* -------------------------------------------------------------------------- */
   /*                               NAV ITEMS                                    */
   /* -------------------------------------------------------------------------- */
