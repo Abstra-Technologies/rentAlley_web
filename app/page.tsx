@@ -17,6 +17,7 @@ import Footer from "../components/navigation/footer";
 import LoadingScreen from "@/components/loadingScreen";
 import UnitCard from "../components/find-rent/UnitCard";
 import HeroText from "@/components/ui/hero";
+import AnimatedFeatures from "@/components/ui/Process";
 
 interface Unit {
   unit_id: string;
@@ -122,11 +123,11 @@ export default function SplashScreen() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Header */}
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-hidden select-none">
 
   {/* Background Image */}
   <div
-    className="absolute inset-0 bg-cover bg-center"
+    className="absolute inset-0 bg-cover bg-center select-none"
     style={{
       backgroundImage:
         "url('https://res.cloudinary.com/dptmeluy0/image/upload/v1763083980/dd3b4bfd-cc30-46c5-8320-b2aaf85dd4bd_pe97mw.jpg')",
@@ -205,41 +206,8 @@ export default function SplashScreen() {
 </div>
 
 
-      <section className="py-16 sm:py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-            {[
-              {
-                icon: <Shield className="w-8 h-8" />,
-                title: "Verified Properties",
-                description:
-                  "Every listing is verified for authenticity and accuracy",
-              },
-              {
-                icon: <Home className="w-8 h-8" />,
-                title: "Instant Booking",
-                description:
-                  "Book your ideal home in minutes with our streamlined process",
-              },
-              {
-                icon: <CheckCircle className="w-8 h-8" />,
-                title: "Transparent Pricing",
-                description:
-                  "No hidden fees. See complete pricing details upfront",
-              },
-            ].map((feature, index) => (
-              <div key={index} className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-600 text-white rounded-2xl mb-4 shadow-lg">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section>
+       <AnimatedFeatures/> 
       </section>
 
       <section className="py-16 sm:py-20 bg-white">
