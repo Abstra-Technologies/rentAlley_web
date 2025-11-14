@@ -21,6 +21,7 @@ import {
   Settings,
   ChevronLeft,
   Inbox,
+  AlertCircle,
 } from "lucide-react";
 import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
 import NotificationSection from "@/components/notification/notifCenter";
@@ -36,6 +37,7 @@ export default function LandlordLayout({
   const { user, fetchSession, signOut } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     if (!user) fetchSession();
@@ -100,6 +102,11 @@ export default function LandlordLayout({
   const handleLogout = async () => {
     await signOut();
     router.push("/pages/auth/login");
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    handleLogout();
   };
 
   if (isInsideProperty) {
@@ -218,6 +225,17 @@ export default function LandlordLayout({
               </div>
             )}
           </nav>
+
+          {/* Logout Button at Bottom of Desktop Sidebar */}
+          <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-gray-700 bg-white hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-sm">Logout</span>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -347,7 +365,10 @@ export default function LandlordLayout({
                   </Link>
 
                   <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                      setIsSidebarOpen(false);
+                      setShowLogoutConfirm(true);
+                    }}
                     className="w-full px-4 py-3 flex items-center gap-3 text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-5 h-5" />
@@ -402,7 +423,10 @@ export default function LandlordLayout({
                 {/* Bottom Logout for quick access */}
                 <div className="p-4 border-t border-gray-100">
                   <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                      setIsSidebarOpen(false);
+                      setShowLogoutConfirm(true);
+                    }}
                     className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700 rounded-lg hover:from-red-50 hover:to-red-100 hover:text-red-600 font-medium transition-all duration-200 shadow-md hover:shadow-lg"
                   >
                     <LogOut className="w-5 h-5" />
@@ -413,6 +437,47 @@ export default function LandlordLayout({
             )}
           </aside>
         </>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              {/* Icon */}
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
+
+              {/* Title */}
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                Confirm Logout
+              </h3>
+
+              {/* Message */}
+              <p className="text-sm text-gray-600 text-center mb-6">
+                Are you sure you want to logout? You'll need to sign in again to
+                access your account.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Main Content with better spacing */}
