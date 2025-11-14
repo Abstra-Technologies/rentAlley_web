@@ -6,7 +6,7 @@ import TenantLayout from "../../../../components/navigation/sidebar-tenant";
 import useAuthStore from "../../../../zustand/authStore";
 import { useEffect, useState } from "react";
 import LoadingScreen from "../../../../components/loadingScreen";
-import Announcements from "../../../../components/annoucemen/announcement";
+import Announcements from "../../../../components/annoucements/announcement";
 import LeaseAgreementWidget from "../../../../components/tenant/analytics-insights/LeaseAgreementWidget";
 import TenantBillingTable from "../../../../components/tenant/TenantBillingTable";
 import TenantPendingPaymentWidget from "../../../../components/tenant/PendingPaymentWidget";
