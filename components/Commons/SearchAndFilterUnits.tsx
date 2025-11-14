@@ -24,41 +24,7 @@ export default function SearchAndFilterUnits({
 
   return (
     <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-200/80 overflow-hidden">
-      {/* Header Bar */}
-      <div className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 px-6 py-4 border-b border-gray-200/80">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg flex items-center justify-center">
-              <MagnifyingGlassIcon className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">
-                Search Properties
-              </h3>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Find units by name, property, or location
-              </p>
-            </div>
-          </div>
-
-          {/* Results Counter */}
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Showing
-            </span>
-            <div className="bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
-              <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent tabular-nums">
-                {filteredCount}
-              </span>
-              <span className="text-gray-400 text-sm mx-1">/</span>
-              <span className="text-gray-600 text-sm font-semibold tabular-nums">
-                {totalUnits}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    
       {/* Search Input Section */}
       <div className="p-6">
         <div className="relative group">

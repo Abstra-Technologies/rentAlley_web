@@ -298,9 +298,7 @@ export default function MyUnit() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <TenantOutsidePortalNav />
-
-      <div className="page-content-wrapper">
+      <div className="w-full">
         {/* Top Navigation Bar */}
         <div className="page-header">
           <div className="page-header-container">
@@ -340,6 +338,7 @@ export default function MyUnit() {
         </div>
 
         <div className="page-main-content">
+          
           {/* Analytics Section */}
           {/*<div className="mb-8">*/}
           {/*  <div className="section-header">*/}
@@ -364,11 +363,7 @@ export default function MyUnit() {
 
           {/* Properties Section */}
           <div>
-            <div className="section-header">
-              <div className="section-header-accent"></div>
-              <h2 className="section-header-title">My Properties</h2>
-            </div>
-
+           
             {error && <ErrorBoundary error={error} onRetry={refetch} />}
 
             {!error && (

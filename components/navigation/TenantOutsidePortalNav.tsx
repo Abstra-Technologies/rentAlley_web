@@ -1,3 +1,4 @@
+'use client'
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { MdOutlineRssFeed, MdClose } from "react-icons/md";

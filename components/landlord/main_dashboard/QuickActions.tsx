@@ -1,12 +1,13 @@
 "use client";
 
-import { Home, UserPlus, Megaphone, Wallet  } from "lucide-react";
+import { Home, UserPlus, Megaphone, Wallet, List   } from "lucide-react";
 
 export default function QuickActions({
   onAddProperty,
   onInviteTenant,
   onAnnouncement,
-  onWithdraw
+  onWithdraw,
+  onWorkOrder
 }) {
   const actions = [
     {
@@ -27,7 +28,13 @@ export default function QuickActions({
       icon: Megaphone,
       onClick: onAnnouncement,
     },
-       {
+     {
+      id: "work_order",
+      label: "Work Order",
+      icon: List ,
+      onClick: onWorkOrder,
+    },
+    {
       id: "Widthdraw",
       label: "Widthraw",
       icon: Wallet,
