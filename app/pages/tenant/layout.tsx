@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-
 import useAuthStore from "@/zustand/authStore";
 
 // Icons
@@ -36,7 +35,6 @@ export default function TenantLayout({ children }) {
 
   const [undecidedApplications, setUndecidedApplications] = useState(0);
 
-  // Ensure authentication + tenant protection
   useEffect(() => {
     if (!user) fetchSession();
     else if (user.userType !== "tenant") router.replace("/pages/auth/login");
@@ -198,7 +196,6 @@ export default function TenantLayout({ children }) {
         </nav>
       </aside>
 
-      {/* 🌟 MOBILE SLIDE-IN SIDEBAR (LANDLORD STYLE) */}
       {isSidebarOpen && (
         <>
           <div

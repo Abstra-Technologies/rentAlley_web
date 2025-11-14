@@ -134,14 +134,14 @@ const Navbar = () => {
 
     if (user?.userType === "tenant") {
       return [
-        { href: "/pages/tenant/feeds", label: "Explore", icon: Home },
-        { href: "/pages/find-rent", label: "Browse", icon: Search },
+        { href: "/pages/tenant/feeds", label: "Home", icon: Home },
+        { href: "/pages/find-rent", label: "Find", icon: Search },
         { href: "/pages/tenant/chat", label: "Chat", icon: MessageSquare },
-        {
-          href: "/pages/tenant/visit-history",
-          label: "Bookings",
-          icon: Calendar,
-        },
+        // {
+        //   href: "/pages/tenant/visit-history",
+        //   label: "Bookings",
+        //   icon: Calendar,
+        // },
         { href: "/pages/commons/profile", label: "Profile", icon: User },
       ];
     }
