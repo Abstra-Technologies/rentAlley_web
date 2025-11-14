@@ -3,7 +3,6 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import useAuthStore from "@/zustand/authStore";
-import TenantLayout from "@/components/navigation/sidebar-tenant";
 import TenantBilling from "@/components/tenant/billing/currentBilling";
 import PreviousBilling from "@/components/tenant/billing/prevBillingList";
 import LoadingScreen from "@/components/loadingScreen";
@@ -31,7 +30,6 @@ function BillingContent() {
   }
 
   return (
-    <TenantLayout agreement_id={agreementId}>
       <div className="space-y-8 -m-4 md:-m-8">
         {/* Current Billing Section */}
         <TenantBilling agreement_id={agreementId} user_id={user.user_id} />
@@ -58,7 +56,6 @@ function BillingContent() {
           <PreviousBilling agreement_id={agreementId} user_id={user.user_id} />
         </div>
       </div>
-    </TenantLayout>
   );
 }
 
