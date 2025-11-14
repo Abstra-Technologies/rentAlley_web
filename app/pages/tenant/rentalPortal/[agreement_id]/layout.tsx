@@ -88,7 +88,7 @@ export default function TenantPortalLayout({
     let href = `/pages/tenant/${slug}`;
 
     if (slug === "rentalPortal")
-      href = `/pages/tenant/${slug}/${agreement_id}`;
+      href = `/pages/tenant/rentalPortal/${agreement_id}/${slug}/`;
     else if (slug !== "exitPortal")
       href = `/pages/tenant/${slug}?agreement_id=${agreement_id}`;
     else href = "/pages/tenant/my-unit";

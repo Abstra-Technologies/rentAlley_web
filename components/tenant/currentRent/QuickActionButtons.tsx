@@ -14,7 +14,7 @@ export default function QuickActionButtons({ agreement_id }: QuickActionButtonsP
     {
       label: "Billing",
       icon: CreditCard,
-      href: `/pages/tenant/billing?agreement_id=${agreement_id}`,
+      href: `/pages/tenant/rentalPortal/${agreement_id}/billing?agreement_id=${agreement_id}`,
     },
     {
       label: "Payments",
