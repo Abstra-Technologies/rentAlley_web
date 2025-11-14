@@ -1,4 +1,4 @@
-package com.hestia360.app;
+package com.upkyp;
 
 import com.getcapacitor.BridgeActivity;
 

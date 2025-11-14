@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.hestia360.app"
+    namespace "com.upkyp"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.hestia360.app"
+        applicationId "com.upkyp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -21,12 +21,6 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-    }
-    plugins {
-        id("com.android.application")
-        // Add the Google services Gradle plugin
-        id("com.google.gms.google-services")
-        
     }
 }
 
