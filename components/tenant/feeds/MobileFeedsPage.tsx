@@ -27,7 +27,7 @@ export default function MobileFeedsPage({ user }) {
 
   {/* My Units */}
   <button
-    onClick={() => router.push("/pages/tenant/my-units")}
+    onClick={() => router.push("/pages/tenant/my-unit")}
     className="
       flex flex-col items-center justify-center
       w-14 h-14 rounded-full

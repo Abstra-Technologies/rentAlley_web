@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import TenantLayout from "@/components/navigation/sidebar-tenant";
-import Announcements from "@/components/annoucemen/announcementList";
+import Announcements from "@/components/annoucements/announcementList";
 import { useSearchParams } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
 

@@ -1,6 +1,6 @@
 "use client";
+
 import { useRouter, useParams } from "next/navigation";
-import TenantLayout from "@/components/navigation/sidebar-tenant";
 import useAuthStore from "@/zustand/authStore";
 import { useEffect, useState } from "react";
 import LeaseDurationTracker from "@/components/tenant/analytics-insights/LeaseAgreementWidget";
@@ -10,12 +10,11 @@ import AnnouncementWidget from "@/components/tenant/analytics-insights/announcem
 import MoveInChecklist from "@/components/tenant/currentRent/MoveInChecklist";
 import axios from "axios";
 import {
-  HomeIcon,
+  ChevronRightIcon,
   ChartBarIcon,
   DocumentTextIcon,
-  CheckCircleIcon,
-  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
+import QuickActionButtons from "@/components/tenant/currentRent/QuickActionButtons";
 
 export default function RentPortalPage() {
   const { user, fetchSession } = useAuthStore();
@@ -27,97 +26,112 @@ export default function RentPortalPage() {
   } | null>(null);
   const agreementId = params?.agreement_id;
   const [showMoveInChecklist, setShowMoveInChecklist] = useState(false);
+  const [loadingUnitInfo, setLoadingUnitInfo] = useState(false);
+
+  /* ===================== FETCH LOGIC ===================== */
 
   useEffect(() => {
+    if (!agreementId) return;
+
+    let mounted = true;
     const fetchUnitName = async () => {
+      setLoadingUnitInfo(true);
       try {
         const response = await axios.get(
           `/api/tenant/activeRent/unitInfo?agreement_id=${agreementId}`
         );
-        setUnitInfo(response.data);
+        if (mounted) setUnitInfo(response.data || null);
       } catch (error) {
         console.error("Failed to fetch unit name:", error);
+      } finally {
+        if (mounted) setLoadingUnitInfo(false);
       }
     };
-    if (agreementId) fetchUnitName();
+    fetchUnitName();
+    return () => {
+      mounted = false;
+    };
   }, [agreementId]);
 
   useEffect(() => {
+    if (!agreementId) return;
+
+    let mounted = true;
     const fetchMoveInStatus = async () => {
-      if (!agreementId) return;
       try {
         const response = await axios.get(
           `/api/tenant/activeRent/moveInChecklistStatus?agreement_id=${agreementId}`
         );
-        setShowMoveInChecklist(response.data.showButton || false);
+        if (mounted) setShowMoveInChecklist(response.data.showButton || false);
       } catch (error) {
         console.error("Failed to fetch move-in checklist status:", error);
       }
     };
-    if (agreementId) fetchMoveInStatus();
+    fetchMoveInStatus();
+    return () => {
+      mounted = false;
+    };
   }, [agreementId]);
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-lg border border-gray-200 w-full max-w-md">
-          <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 flex items-center justify-center mb-4">
-            <svg
-              className="w-10 h-10 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Access Restricted
-          </h2>
-          <p className="text-gray-600 mb-6">
-            You need to be logged in to access your rental portal.
-          </p>
-          <button
-            onClick={() => router.push("/login")}
-            className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-md hover:shadow-lg"
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!user) fetchSession();
+  }, [user, fetchSession]);
 
   return (
-    <TenantLayout agreement_id={agreementId}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 -m-4 md:-m-8">
-        {/* Top Header Bar - Sticky */}
-        <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
+    <div className="pt-14">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 -mx-3 sm:-mx-8">
+
+        {/* ===================== HEADER ===================== */}
+        <div className="top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+          <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-              <span className="text-gray-500">Portal</span>
-              <ChevronRightIcon className="w-4 h-4 text-gray-400" />
-              <span className="font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                {unitInfo?.property_name || "Dashboard"}
+            <nav
+              className="
+                flex items-center gap-1.5 sm:gap-2
+                text-xs sm:text-sm text-gray-600
+                mb-2 sm:mb-3
+                overflow-x-auto whitespace-nowrap scrollbar-hide
+              "
+            >
+              <span className="text-gray-500 shrink-0">Portal</span>
+              <ChevronRightIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 shrink-0" />
+              <span
+                className="
+                  font-semibold bg-gradient-to-r from-blue-600 to-emerald-600
+                  bg-clip-text text-transparent
+                  truncate max-w-[60%] sm:max-w-none
+                "
+              >
+                {loadingUnitInfo
+                  ? "Loading..."
+                  : unitInfo?.property_name || "Dashboard"}
               </span>
             </nav>
 
-            {/* Title Section */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+            {/* Title */}
+            <div className="flex items-start justify-between gap-2 sm:gap-3">
+              <div className="min-w-0">
+                <h1
+                  className="
+                    text-xl sm:text-2xl md:text-3xl font-bold 
+                    text-gray-900 
+                    leading-tight mb-0.5 sm:mb-1 
+                    break-words
+                  "
+                >
                   {unitInfo?.property_name && unitInfo?.unit_name ? (
                     <>
                       <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
                         {unitInfo.property_name}
                       </span>
-                      <span className="text-gray-600 text-xl sm:text-2xl ml-2">
+
+                      <span
+                        className="
+                          text-gray-600 ml-1.5 sm:ml-2 
+                          text-sm sm:text-lg md:text-xl
+                        "
+                      >
                         {unitInfo.unit_name.toLowerCase().startsWith("unit")
                           ? unitInfo.unit_name
                           : `Unit ${unitInfo.unit_name}`}
@@ -127,106 +141,105 @@ export default function RentPortalPage() {
                     "Unit Portal"
                   )}
                 </h1>
-                <p className="text-sm text-gray-600">
-                  Manage your tenancy and payments
+
+                <p className="text-[11px] sm:text-sm text-gray-600 truncate">
+                  Manage your tenancy, documents and payments from one place.
                 </p>
-              </div>
-
-              {/* Status Badge */}
-              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-50 to-blue-50 border-2 border-emerald-200 rounded-full">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="font-bold text-emerald-700 text-sm">
-                  Active Lease
-                </span>
-              </div>
+              </div>             
             </div>
-
-            {/* Mobile Status Badge */}
-            <div className="sm:hidden mt-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-blue-50 border-2 border-emerald-200 rounded-full">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="font-bold text-emerald-700 text-xs">
-                  Active Lease
-                </span>
-              </div>
-            </div>
+    
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-          {/* Move-in Checklist Section */}
+        {/* ===================== MAIN CONTENT ===================== */}
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-8">
+
+          {/* Move-in Checklist */}
           {showMoveInChecklist && (
-            <section className="animate-fade-in">
+            <section className="w-full animate-fade-in">
               <MoveInChecklist agreement_id={agreementId} />
             </section>
           )}
 
-          {/* Overview Section */}
-          <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg">
-                <ChartBarIcon className="w-5 h-5 text-white" />
+          <QuickActionButtons agreement_id={agreementId} />
+
+
+          {/* ===================== TENANCY OVERVIEW ===================== */}
+          <section className="mt-4 sm:mt-8">
+
+            {/* Section Header */}
+            <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-4">
+              <div className="p-1 sm:p-1.5 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-md">
+                <ChartBarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
+
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 leading-snug">
                   Tenancy Overview
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-[11px] sm:text-xs text-gray-600 leading-tight">
                   Your lease and payment summary
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-
+            {/* Cards Grid */}
+            <div
+              className="
+                grid 
+                grid-cols-1 
+                sm:grid-cols-2 
+                lg:grid-cols-3 
+                gap-3 sm:gap-4 lg:gap-6
+              "
+            >
               {/* Payment Due */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md hover:border-emerald-200 transition-all duration-300">
-                <div className="p-6">
+              <div className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 lg:p-6">
                   <PaymentDueWidget agreement_id={agreementId} />
                 </div>
               </div>
 
-              {/* Overdue Payment */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md hover:border-red-200 transition-all duration-300">
-                <div className="p-6">
-                    <LeaseDurationTracker agreement_id={agreementId} />
+              {/* Lease Duration */}
+              <div className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 lg:p-6">
+                  <LeaseDurationTracker agreement_id={agreementId} />
                 </div>
               </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md hover:border-red-200 transition-all duration-300">
-                    <div className="p-6">
-                        <PendingDocumentsWidget agreement_id={agreementId} />
-                    </div>
+              {/* Pending Documents */}
+              <div className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 lg:p-6">
+                  <PendingDocumentsWidget agreement_id={agreementId} />
                 </div>
-
+              </div>
             </div>
           </section>
 
-          {/* Announcements Section */}
-          <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-lg">
-                <DocumentTextIcon className="w-5 h-5 text-white" />
+          {/* ===================== PROPERTY UPDATES ===================== */}
+          <section className="mt-4 sm:mt-8">
+            <div className="flex items-center gap-2 mb-3 sm:mb-6">
+              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-lg">
+                <DocumentTextIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-base sm:text-xl font-bold text-gray-900">
                   Property Updates
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-[11px] sm:text-sm text-gray-600">
                   Latest announcements and notices
                 </p>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-200 transition-all duration-300">
-              <div className="p-6">
+            <div className="bg-white rounded-2xl border shadow-sm">
+              <div className="p-4 sm:p-6">
                 <AnnouncementWidget agreement_id={agreementId} />
               </div>
             </div>
           </section>
         </div>
       </div>
-    </TenantLayout>
+    </div>
   );
 }

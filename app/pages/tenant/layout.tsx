@@ -13,10 +13,9 @@ import {
   ChevronLeft,
   LogOut,
   ChevronRight,
+  MessageCircle,
 } from "lucide-react";
-import {
-  MdOutlineRssFeed,
-} from "react-icons/md";
+import { MdOutlineRssFeed } from "react-icons/md";
 import { RiCommunityFill } from "react-icons/ri";
 import { FaFile } from "react-icons/fa";
 import { ClockIcon } from "@heroicons/react/24/outline";
@@ -32,8 +31,17 @@ export default function TenantLayout({ children }) {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
-
   const [undecidedApplications, setUndecidedApplications] = useState(0);
+
+  /* -------------------------------------------------------------------------- */
+  /*                         🚀 CRITICAL OVERRIDE LOGIC                         */
+  /* -------------------------------------------------------------------------- */
+  // If inside rentalPortal → completely disable this outer layout
+  const isInsideRentalPortal = pathname.includes("/pages/tenant/rentalPortal/");
+  if (isInsideRentalPortal) {
+    return <main className="flex-1 min-h-screen">{children}</main>;
+  }
+  /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
     if (!user) fetchSession();
@@ -64,13 +72,24 @@ export default function TenantLayout({ children }) {
     setIsMobileProfileOpen(false);
   }, [pathname]);
 
-  /** ========= TENANT NAVIGATION ITEMS ========= **/
+  /* -------------------------------------------------------------------------- */
+  /*                               NAV ITEMS                                    */
+  /* -------------------------------------------------------------------------- */
+
   const navItems = [
     {
       name: "Feeds",
       href: "/pages/tenant/feeds",
       path: "/pages/tenant/feeds",
       icon: MdOutlineRssFeed,
+      badge: null,
+      priority: 1,
+    },
+    {
+      name: "Chats",
+      href: "/pages/tenant/chat",
+      path: "/pages/tenant/chat",
+      icon: MessageCircle,
       badge: null,
       priority: 1,
     },
@@ -100,7 +119,7 @@ export default function TenantLayout({ children }) {
     },
   ];
 
-  const isActive = (p) => pathname === p;
+  const isActive = (path) => pathname === path;
 
   const navigateWithLoader = (label, href) => {
     Swal.fire({
@@ -121,14 +140,15 @@ export default function TenantLayout({ children }) {
     router.push("/pages/auth/login");
   };
 
+  /* -------------------------------------------------------------------------- */
+  /*                                 RENDER                                     */
+  /* -------------------------------------------------------------------------- */
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/30">
-   
-      {/* 🌟 DESKTOP SIDEBAR (tenant themed but landlord structured) */}
-<aside className="hidden lg:flex lg:flex-col lg:fixed top-14 bottom-0 lg:z-40 lg:w-72 bg-white shadow-xl">
 
-
-        {/* NAVIGATION (your tenant UI preserved) */}
+      {/* ===================== DESKTOP SIDEBAR ===================== */}
+      <aside className="hidden lg:flex lg:flex-col lg:fixed top-14 bottom-0 lg:z-40 lg:w-72 bg-white shadow-xl">
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           <ul className="space-y-1">
             {navItems.map((item, idx) => {
@@ -139,8 +159,7 @@ export default function TenantLayout({ children }) {
                 <li key={idx} className="relative group">
                   <button
                     onClick={() => navigateWithLoader(item.name, item.href)}
-                    className={`
-                      flex w-full items-center px-3 py-2.5 rounded-lg text-sm transition-all
+                    className={`flex w-full items-center px-3 py-2.5 rounded-lg text-sm transition-all
                       ${
                         active
                           ? "bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-medium shadow-sm"
@@ -148,7 +167,7 @@ export default function TenantLayout({ children }) {
                       }
                     `}
                   >
-                    {/* Left bar marker */}
+                    {/* Active marker */}
                     <span
                       className={`absolute left-0 h-full w-0.5 rounded-r bg-gradient-to-b from-indigo-600 to-purple-600 
                         ${
@@ -156,24 +175,20 @@ export default function TenantLayout({ children }) {
                         } transition-opacity`}
                     />
 
-                    {/* ICON */}
                     <Icon
                       className={`w-4 h-4 mr-3 ${
                         active ? "text-indigo-700" : "text-gray-500"
                       }`}
                     />
 
-                    {/* LABEL */}
                     <span className="flex-1 text-left">{item.name}</span>
 
-                    {/* BADGE */}
                     {item.badge && (
                       <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2">
                         {item.badge}
                       </span>
                     )}
 
-                    {/* Dot indicator */}
                     {active && (
                       <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600" />
                     )}
@@ -195,6 +210,8 @@ export default function TenantLayout({ children }) {
           </div>
         </nav>
       </aside>
+
+      {/* ===================== MOBILE SIDEBAR ===================== */}
 
       {isSidebarOpen && (
         <>
@@ -246,11 +263,9 @@ export default function TenantLayout({ children }) {
               </div>
             )}
 
-            {/* PROFILE PANEL */}
+            {/* MOBILE PROFILE PANEL */}
             {isMobileProfileOpen ? (
               <div className="flex-1 overflow-y-auto">
-
-                {/* Back */}
                 <button
                   onClick={() => setIsMobileProfileOpen(false)}
                   className="flex items-center gap-2 w-full px-4 py-3 border-b hover:bg-gray-50"
@@ -259,7 +274,6 @@ export default function TenantLayout({ children }) {
                   <span className="text-sm text-gray-700">Back to Menu</span>
                 </button>
 
-                {/* Profile Info */}
                 <div className="px-4 py-4 bg-gradient-to-r from-indigo-50 to-purple-50">
                   <div className="flex items-center gap-3">
                     <Image
@@ -280,7 +294,6 @@ export default function TenantLayout({ children }) {
                   </div>
                 </div>
 
-                {/* Profile Actions */}
                 <Link
                   href="/pages/commons/profile"
                   onClick={() => setIsSidebarOpen(false)}
@@ -301,7 +314,7 @@ export default function TenantLayout({ children }) {
                 </button>
               </div>
             ) : (
-              /* SIDEBAR NAV (based on your tenant UI) */
+              /* MOBILE NAVIGATION */
               <div className="flex-1 overflow-y-auto">
                 <nav className="px-3 py-4 space-y-2">
                   {navItems.map((item, idx) => {
@@ -312,8 +325,7 @@ export default function TenantLayout({ children }) {
                       <button
                         key={idx}
                         onClick={() => navigateWithLoader(item.name, item.href)}
-                        className={`
-                          flex items-center w-full px-3 py-2.5 rounded-lg transition
+                        className={`flex items-center w-full px-3 py-2.5 rounded-lg transition
                           ${
                             active
                               ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
@@ -340,7 +352,6 @@ export default function TenantLayout({ children }) {
                   })}
                 </nav>
 
-                {/* Bottom Logout */}
                 <div className="p-4 border-t border-gray-100">
                   <button
                     onClick={logoutNow}
@@ -356,7 +367,7 @@ export default function TenantLayout({ children }) {
         </>
       )}
 
-      {/* MAIN CONTENT (same as landlord) */}
+      {/* ===================== MAIN CONTENT ===================== */}
       <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/20">
         {children}
       </main>
