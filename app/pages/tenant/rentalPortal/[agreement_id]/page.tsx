@@ -143,7 +143,7 @@ export default function RentPortalPage() {
                 </h1>
 
                 <p className="text-[11px] sm:text-sm text-gray-600 truncate">
-                  Manage your tenancy, documents and payments from one place.
+                   Manage your tenancy, documents and payments from one place.
                 </p>
               </div>             
             </div>
