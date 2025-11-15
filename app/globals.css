@@ -503,24 +503,17 @@ body {
 }
 
 
-/* Notification Positioning */
-.notification-wrapper .notification-dropdown {
-  position: absolute !important;
-  right: 0 !important;
-  left: auto !important;
-  top: 100% !important;
-  margin-top: 0.5rem !important;
-  transform: translateX(0) !important;
-}
-
-/* Ensure notification stays within viewport on mobile */
+/* Notifications */
 @media (max-width: 768px) {
-  .notification-wrapper .notification-dropdown {
-    right: -10px !important;
-    width: min(24rem, calc(100vw - 2rem)) !important;
+  .notification-mobile-overlay {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999;
   }
 }
-
 
 /* ================================================
    GLOBAL RESPONSIVENESS UTILITIES FOR UPKYP
