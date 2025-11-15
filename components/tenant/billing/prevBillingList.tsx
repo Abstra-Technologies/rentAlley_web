@@ -227,8 +227,6 @@ export default function PreviousBilling({ agreement_id, user_id }) {
             {/* Status Bar */}
             <div className="bg-gradient-to-r from-emerald-50 to-blue-50 px-6 py-3 border-t border-gray-200">
               <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="font-semibold text-emerald-700">Paid</span>
                 <span className="text-gray-400">•</span>
                 <span className="text-gray-600">
                   Statement available for download
