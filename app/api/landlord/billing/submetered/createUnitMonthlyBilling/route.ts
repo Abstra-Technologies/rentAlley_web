@@ -128,7 +128,7 @@ async function upsertBilling(req: NextRequest) {
         FROM LeaseAgreement la
         JOIN Tenant t ON la.tenant_id = t.tenant_id
         WHERE la.unit_id = ?
-          AND la.status IN ('active','tenant_signed','landlord_signed','completed')
+          AND la.status IN ('active')
         ORDER BY la.created_at DESC
         LIMIT 1
       `,
@@ -145,7 +145,7 @@ async function upsertBilling(req: NextRequest) {
     const tenant_user_id = leaseRows[0].tenant_user_id;
 
     /* -----------------------------------------------------
-       4️⃣ UPSERT BILLING (USING billingDate)
+        UPSERT BILLING (USING billingDate)
     ----------------------------------------------------- */
     const [existing]: any = await connection.query(
       `
@@ -210,7 +210,7 @@ async function upsertBilling(req: NextRequest) {
     }
 
     /* -----------------------------------------------------
-        5️⃣ UPSERT WATER READING (LATEST CYCLE)
+        UPSERT WATER READING (LATEST CYCLE)
     ----------------------------------------------------- */
     if (waterPrevReading !== "" && waterCurrentReading !== "") {
       const [w]: any = await connection.query(
@@ -330,7 +330,7 @@ async function upsertBilling(req: NextRequest) {
     }
 
     /* -----------------------------------------------------
-        8️⃣ PUSH NOTIFICATION TO TENANT
+       PUSH NOTIFICATION TO TENANT
     ----------------------------------------------------- */
 
     const notifTitle = "Statement of Account Ready";
