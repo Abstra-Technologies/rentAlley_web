@@ -14,13 +14,14 @@ import SideNavProfile from "../../navigation/sidebar-profile";
 import useAuthStore from "@/zustand/authStore";
 import ChangePasswordModal from "../setttings/changePassword";
 import TwoFactorToggle from "../setttings/TwoFactorToggle";
+import { Shield, Lock } from "lucide-react";
 
 export default function SecurityPage() {
   const { user, loading, error } = useAuthStore();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    currentPassword: "",  
+    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -80,7 +81,6 @@ export default function SecurityPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-
     if (formData.newPassword.length < 8) {
       await Swal.fire({
         icon: "warning",
@@ -107,7 +107,7 @@ export default function SecurityPage() {
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword,
         }),
-        credentials: "include"
+        credentials: "include",
       });
 
       if (res.ok) {
@@ -116,18 +116,16 @@ export default function SecurityPage() {
           title: "Password Updated!",
           text: "Your password has been changed successfully.",
         });
-        
-    
-        setFormData(prev => ({
+
+        setFormData((prev) => ({
           ...prev,
           currentPassword: "",
           newPassword: "",
-          confirmPassword: ""
+          confirmPassword: "",
         }));
         setTimeout(() => {
           window.location.reload();
         }, 1000);
-
       } else {
         const data = await res.json();
         Swal.fire({
@@ -146,19 +144,84 @@ export default function SecurityPage() {
     }
   };
 
-  if (loading) return <p>Loading security settings...</p>;
-  if (!user) return <p>User not found. Please log in.</p>;
-  if (error) return <p>Error: {error}</p>;
-
-  return (
-      <div className="flex-1 p-8">
-        <h1 className="text-3xl font-semibold text-blue-600 mb-8">
-          Security & Privacy
-        </h1>
-        <div className="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md">
-          <ChangePasswordModal userId={user?.user_id} />
-          <TwoFactorToggle user_id={user?.user_id} />
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-3"></div>
+          <p className="text-sm text-gray-600">Loading security settings...</p>
         </div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-600">User not found. Please log in.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Security & Privacy
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Manage your account security settings
+          </p>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-6 pb-6">
+          {/* Password Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-blue-600" />
+                <h2 className="text-base font-semibold text-gray-900">
+                  Password
+                </h2>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <ChangePasswordModal userId={user?.user_id} />
+            </div>
+          </div>
+
+          {/* Two-Factor Authentication Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-emerald-600" />
+                <h2 className="text-base font-semibold text-gray-900">
+                  Two-Factor Authentication
+                </h2>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <TwoFactorToggle user_id={user?.user_id} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

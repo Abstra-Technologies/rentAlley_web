@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
+import { Mail, Shield, Lock, CheckCircle, Zap, Clock } from "lucide-react";
 
 interface TwoFactorToggleProps {
   user_id: string;
@@ -131,21 +132,29 @@ const TwoFactorToggle = ({
     }
   };
 
-  if (loading)
-    return <p className="text-sm text-gray-500">Loading 2FA status...</p>;
+  if (loading) {
+    return (
+      <div className="text-center py-4">
+        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+        <p className="mt-2 text-sm text-gray-500">Loading 2FA status...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="mt-6">
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-lg font-semibold">
-          Email Two-Factor Authentication
-        </h2>
-        {is2FAEnabled && (
-          <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            Active
-          </span>
-        )}
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-semibold text-gray-900">
+            Email Two-Factor Authentication
+          </h3>
+          {is2FAEnabled && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+              Active
+            </span>
+          )}
+        </div>
       </div>
 
       <p className="text-sm text-gray-600 mb-4">
@@ -157,83 +166,55 @@ const TwoFactorToggle = ({
         <div className="space-y-4">
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <div className="text-blue-500 mt-1">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
+              <Mail className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-medium text-blue-900 mb-2">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">
                   📧 Email-Based Verification
-                </h3>
-                <p className="text-sm text-blue-700 mb-2">
+                </h4>
+                <p className="text-sm text-blue-700 mb-3">
                   When you enable 2FA, you'll receive 6-digit verification codes
                   via email during login.
                 </p>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• 🔒 Extra security for your account</li>
-                  <li>• 📱 No app installation required</li>
-                  <li>• ⚡ Codes delivered instantly to your email</li>
-                  <li>• ⏰ Each code expires after a few minutes</li>
-                </ul>
+                <div className="space-y-1.5">
+                  <div className="flex items-start gap-2 text-sm text-blue-700">
+                    <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>Extra security for your account</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm text-blue-700">
+                    <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>No app installation required</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm text-blue-700">
+                    <Zap className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>Codes delivered instantly to your email</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm text-blue-700">
+                    <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>Each code expires after a few minutes</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <button
             onClick={handleToggle2FA}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center gap-2"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white text-sm font-medium rounded-lg hover:shadow-md transition-shadow"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
+            <Shield className="w-4 h-4" />
             Enable Email 2FA
           </button>
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
             <div className="flex items-start gap-3">
-              <div className="text-green-500 mt-1">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
+              <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-medium text-green-800 mb-2">
+                <h4 className="text-sm font-semibold text-emerald-900 mb-2">
                   ✅ Email 2FA is Active
-                </h3>
-                <p className="text-sm text-green-700">
+                </h4>
+                <p className="text-sm text-emerald-700">
                   Your account is protected with email-based two-factor
                   authentication. During login, verification codes will be sent
                   to your registered email address.
@@ -243,8 +224,8 @@ const TwoFactorToggle = ({
           </div>
 
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <span className="text-amber-500">💡</span>
+            <div className="flex items-start gap-2">
+              <span className="text-lg">💡</span>
               <p className="text-sm text-amber-700">
                 <strong>How it works:</strong> When logging in, check your email
                 for the 6-digit verification code and enter it to complete
@@ -255,7 +236,7 @@ const TwoFactorToggle = ({
 
           <button
             onClick={handleToggle2FA}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
           >
             Disable Email 2FA
           </button>

@@ -236,14 +236,35 @@ const NotificationDropdown = ({
   onDelete,
   onRefresh,
   user,
+  buttonRef,
 }) => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (buttonRef.current && dropdownRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const dropdownWidth = 384; // w-96 = 24rem = 384px
+
+      // Position dropdown to the right of the button
+      setPosition({
+        top: buttonRect.bottom + 8, // 8px gap (mt-2)
+        left: buttonRect.left,
+      });
+    }
+  }, [buttonRef]);
+
   const [filter, setFilter] = useState("all");
   const filtered = notifications.filter((n) =>
     filter === "all" ? true : filter === "unread" ? !n.is_read : n.is_read
   );
 
   return (
-    <div className="notification-dropdown absolute right-0 top-full mt-2 w-96 bg-white text-black rounded-xl shadow-2xl border border-gray-200 z-[100] flex flex-col overflow-hidden">
+    <div
+      ref={dropdownRef}
+      className="fixed w-96 bg-white text-black rounded-xl shadow-2xl border border-gray-200 z-[9999] flex flex-col overflow-hidden"
+      style={{ top: `${position.top}px`, left: `${position.left}px` }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50">
         <div className="flex items-center gap-2">
@@ -534,12 +555,13 @@ const NotificationSection = ({ user, admin }) => {
   } = useNotifications(user, admin);
 
   const [notifOpen, setNotifOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click (desktop only)
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node))
         setNotifOpen(false);
     };
     if (notifOpen) {
@@ -551,8 +573,9 @@ const NotificationSection = ({ user, admin }) => {
   return (
     <>
       {/* Desktop */}
-      <div className="hidden md:block relative" ref={ref}>
+      <div className="hidden md:block" ref={wrapperRef}>
         <button
+          ref={buttonRef}
           onClick={() => setNotifOpen((p) => !p)}
           className="relative p-2 hover:bg-white/10 rounded-lg group transition-all duration-200 border border-white/20 hover:border-white/40"
           aria-label="Notifications"
@@ -575,6 +598,7 @@ const NotificationSection = ({ user, admin }) => {
             onDelete={deleteNotification}
             onRefresh={() => fetchNotifications(true)}
             user={user}
+            buttonRef={buttonRef}
           />
         )}
       </div>
