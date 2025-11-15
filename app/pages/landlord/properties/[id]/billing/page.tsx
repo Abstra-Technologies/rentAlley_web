@@ -23,6 +23,8 @@ import {
   Edit,
 } from "lucide-react";
 import PropertyRatesModal from "@/components/landlord/properties/utilityRatesSetter";
+import PropertyUnitMeterList from "@/components/landlord/unitBilling/PropertyUnitMeterList";
+import UnitMeterReadingsModal from "@/components/landlord/unitBilling/UnitMeterReadingsModal";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -30,6 +32,7 @@ export default function PropertyBillingPage() {
   const { id } = useParams();
   const property_id = id as string;
   const router = useRouter();
+  const [openMeterList, setOpenMeterList] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [propertyDetails, setPropertyDetails] = useState<any>(null);
@@ -105,41 +108,56 @@ export default function PropertyBillingPage() {
     setBillingForm({ ...billingForm, [name]: value });
   };
 
-    const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const url = "/api/landlord/billing/savePropertyConcessionaireRates";
-            const payload = {
-                property_id,
-                billingPeriod: billingForm.billingPeriod,
-                electricityConsumption: parseFloat(billingForm.electricityConsumption) || 0,
-                electricityTotal: parseFloat(billingForm.electricityTotal) || 0,
-                waterConsumption: parseFloat(billingForm.waterConsumption) || 0,
-                waterTotal: parseFloat(billingForm.waterTotal) || 0,
-            };
+const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-            const { data } = await axios.post(url, payload);
-            const updatedBillingData = {
-                billing_period: payload.billingPeriod,
-                electricity: {
-                    consumption: payload.electricityConsumption,
-                    total: payload.electricityTotal,
-                },
-                water: {
-                    consumption: payload.waterConsumption,
-                    total: payload.waterTotal,
-                },
-            };
+    try {
+        const url = "/api/landlord/billing/savePropertyConcessionaireRates";
 
-            // 🔥 Instantly update local state
-            setBillingData(updatedBillingData);
-            setHasBillingForMonth(true);
-            Swal.fire("Success", data.message || "Billing saved successfully.", "success");
-        } catch (error) {
-            console.error("Billing save error:", error);
-            Swal.fire("Error", "Failed to save billing. Please try again.", "error");
-        }
-    };
+        const payload = {
+            property_id,
+            period_start: billingForm.periodStart,
+            period_end: billingForm.periodEnd,
+            electricityConsumption: parseFloat(billingForm.electricityConsumption) || 0,
+            electricityTotal: parseFloat(billingForm.electricityTotal) || 0,
+            waterConsumption: parseFloat(billingForm.waterConsumption) || 0,
+            waterTotal: parseFloat(billingForm.waterTotal) || 0,
+        };
+
+        const { data } = await axios.post(url, payload);
+
+        const updatedBillingData = {
+            period_start: payload.period_start,
+            period_end: payload.period_end,
+            electricity: {
+                consumption: payload.electricityConsumption,
+                total: payload.electricityTotal,
+            },
+            water: {
+                consumption: payload.waterConsumption,
+                total: payload.waterTotal,
+            },
+        };
+
+        setBillingData(updatedBillingData);
+        setHasBillingForMonth(true);
+
+        Swal.fire(
+            "Success",
+            data.message || "Billing saved successfully.",
+            "success"
+        );
+
+    } catch (error) {
+        console.error("Billing save error:", error);
+        Swal.fire(
+            "Error",
+            "Failed to save billing. Please try again.",
+            "error"
+        );
+    }
+};
+
 
   const handleDownloadSummary = () => {
     window.open(
@@ -212,6 +230,15 @@ export default function PropertyBillingPage() {
                 </button>
               )}
             </div>
+
+
+        <button
+        onClick={() => setOpenMeterList(true)}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        View All Meter Readings
+      </button>
+
           </div>
 
           {/* Rate Status Indicator */}
@@ -297,6 +324,12 @@ export default function PropertyBillingPage() {
                   setHasBillingForMonth(true);
               }}
           />
+
+           <UnitMeterReadingsModal
+        isOpen={openMeterList}
+        onClose={() => setOpenMeterList(false)}
+        property_id={property_id}
+      />
 
 
           {/* Mobile Cards View */}

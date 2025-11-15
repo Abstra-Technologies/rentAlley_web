@@ -1,72 +1,84 @@
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
 
-/**
- * POST - Insert new concessionaire billing, or update if record already exists.
- */
+
 export async function POST(req: NextRequest) {
     try {
         const {
             property_id,
-            billingPeriod,
+            period_start,
+            period_end,
             electricityTotal,
             electricityConsumption,
             waterTotal,
             waterConsumption,
         } = await req.json();
 
-        if (!property_id || !billingPeriod) {
+        if (!property_id || !period_start || !period_end) {
             return NextResponse.json(
-                { error: "Property ID and Billing Period are required" },
+                { error: "Property ID, Period Start and Period End are required" },
                 { status: 400 }
             );
         }
 
-        // ✅ Check if record already exists for this property and month
+        // Check if record exists for same property + exact reading period
         const [existing]: any = await db.query(
-            `SELECT bill_id FROM ConcessionaireBilling WHERE property_id = ? AND billing_period = ? LIMIT 1`,
-            [property_id, billingPeriod]
+            `
+            SELECT bill_id 
+            FROM ConcessionaireBilling 
+            WHERE property_id = ? 
+              AND period_start = ? 
+              AND period_end = ?
+            LIMIT 1
+            `,
+            [property_id, period_start, period_end]
         );
 
         if (existing.length > 0) {
-            // 🔁 Record exists — perform UPDATE
-            const [updateResult]: any = await db.execute(
+            // UPDATE existing
+            await db.execute(
                 `
-        UPDATE ConcessionaireBilling
-        SET 
-          electricity_total = ?,
-          electricity_consumption = ?,
-          water_total = ?,
-          water_consumption = ?,
-          updated_at = NOW()
-        WHERE property_id = ? AND billing_period = ?
-        `,
+                UPDATE ConcessionaireBilling
+                SET 
+                  electricity_total = ?,
+                  electricity_consumption = ?,
+                  water_total = ?,
+                  water_consumption = ?,
+                  updated_at = NOW()
+                WHERE property_id = ? 
+                  AND period_start = ?
+                  AND period_end = ?
+                `,
                 [
                     parseFloat(electricityTotal) || 0,
                     parseFloat(electricityConsumption) || 0,
                     parseFloat(waterTotal) || 0,
                     parseFloat(waterConsumption) || 0,
                     property_id,
-                    billingPeriod,
+                    period_start,
+                    period_end,
                 ]
             );
 
             return NextResponse.json(
-                { message: "Existing billing record updated successfully" },
+                { message: "Billing record updated successfully" },
                 { status: 200 }
             );
         }
 
-        // 🆕 Record does not exist — perform INSERT
+        // INSERT new record
         await db.execute(
             `
-      INSERT INTO ConcessionaireBilling
-      (property_id, billing_period, electricity_total, electricity_consumption, water_total, water_consumption, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, NOW())
-      `,
+            INSERT INTO ConcessionaireBilling
+            (property_id, period_start, period_end, 
+             electricity_total, electricity_consumption,
+             water_total, water_consumption, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            `,
             [
                 property_id,
-                billingPeriod,
+                period_start,
+                period_end,
                 parseFloat(electricityTotal) || 0,
                 parseFloat(electricityConsumption) || 0,
                 parseFloat(waterTotal) || 0,
@@ -75,7 +87,7 @@ export async function POST(req: NextRequest) {
         );
 
         return NextResponse.json(
-            { message: "New billing record created successfully" },
+            { message: "Billing record created successfully" },
             { status: 201 }
         );
     } catch (error) {
@@ -87,9 +99,9 @@ export async function POST(req: NextRequest) {
     }
 }
 
-/**
- * GET - Retrieve the latest concessionaire billing record for a property
- */
+
+
+
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -102,24 +114,24 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // ✅ Fetch the latest billing record for this property
         const [billings]: any = await db.execute(
             `
-      SELECT 
-        bill_id,
-        property_id,
-        billing_period,
-        electricity_total,
-        electricity_consumption,
-        water_total,
-        water_consumption,
-        created_at,
-        updated_at
-      FROM ConcessionaireBilling
-      WHERE property_id = ?
-      ORDER BY created_at DESC
-      LIMIT 1
-      `,
+            SELECT 
+              bill_id,
+              property_id,
+              period_start,
+              period_end,
+              electricity_total,
+              electricity_consumption,
+              water_total,
+              water_consumption,
+              created_at,
+              updated_at
+            FROM ConcessionaireBilling
+            WHERE property_id = ?
+            ORDER BY created_at DESC
+            LIMIT 1
+            `,
             [property_id]
         );
 
@@ -139,3 +151,5 @@ export async function GET(req: NextRequest) {
         );
     }
 }
+
+

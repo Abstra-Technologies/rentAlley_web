@@ -1,8 +1,8 @@
-
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
-//  @method: GET
-//  get property utility rates.
+
+// @method: GET
+// Get property concessionaire utility rates for latest reading period
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -16,27 +16,33 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const [rows] = await db.query(
+        const [rows]: any = await db.query(
             `
-                SELECT billing_period, electricity_total, electricity_consumption,
-                       water_total, water_consumption
-                FROM ConcessionaireBilling
-                WHERE property_id = ?
-                  AND DATE_FORMAT(billing_period, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
-                LIMIT 1
+            SELECT 
+                bill_id,
+                period_start,
+                period_end,
+                electricity_total,
+                electricity_consumption,
+                water_total,
+                water_consumption
+            FROM ConcessionaireBilling
+            WHERE property_id = ?
+            ORDER BY period_start DESC
+            LIMIT 1
             `,
             [property_id]
         );
 
-        if (!rows || (rows as any[]).length === 0) {
+        if (!rows || rows.length === 0) {
             return NextResponse.json({ billingData: null });
         }
 
-        const row: any = (rows as any[])[0];
+        const row = rows[0];
 
-        // Normalize response for frontend
         const billingData = {
-            billing_period: row.billing_period,
+            period_start: row.period_start,
+            period_end: row.period_end,
             electricity: row.electricity_total
                 ? {
                     total: row.electricity_total,
