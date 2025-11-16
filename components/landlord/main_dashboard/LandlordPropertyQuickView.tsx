@@ -38,15 +38,17 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
 
     const propertyLimit = subscription?.listingLimits?.maxProperties || 5;
     const limitedProperties = properties.slice(0, propertyLimit);
-    const enableMarquee = limitedProperties.length >= 4;
+    const enableMarquee = limitedProperties.length >= 5; // ONLY marquee if >=5
 
     return (
         <div className="relative w-full overflow-hidden rounded-xl border border-gray-100 shadow-sm bg-gradient-to-r from-white via-gray-50 to-white">
-            {/* Scroll wrapper with safe height */}
-            <div className="overflow-x-hidden overflow-y-hidden py-4 max-h-[220px] sm:max-h-[250px]">
+            {/* Wrapper */}
+            <div className="overflow-x-hidden py-4 max-h-[220px] sm:max-h-[250px]">
                 <div
                     className={`flex gap-4 sm:gap-6 ${
-                        enableMarquee ? "animate-marquee" : "justify-start flex-wrap"
+                        enableMarquee
+                            ? "animate-marquee"
+                            : "justify-center flex-wrap" // Center if <5
                     } hover:[animation-play-state:paused]`}
                 >
                     {[...limitedProperties, ...(enableMarquee ? limitedProperties : [])].map(
@@ -56,14 +58,14 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
                                 onClick={() =>
                                     router.push(`/pages/landlord/properties/${property.property_id}`)
                                 }
-                                className="relative min-w-[220px] sm:min-w-[260px] bg-white border border-gray-100 rounded-xl shadow-md hover:shadow-lg cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] group/property"
+                                className="relative min-w-[200px] sm:min-w-[260px] bg-white border border-gray-100 rounded-xl shadow-md hover:shadow-lg cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] group/property"
                             >
                                 {/* Image */}
                                 <div className="relative w-full h-28 sm:h-32 bg-gray-100">
                                     {property.photos?.length > 0 && property.photos[0]?.photo_url ? (
                                         <Image
                                             src={property.photos[0].photo_url}
-                                            alt={property.property_name || "Property Image"}
+                                            alt={property.property_name}
                                             fill
                                             className="object-cover transition-transform duration-500 group-hover/property:scale-110"
                                         />
@@ -74,12 +76,13 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
                                     )}
 
                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/property:opacity-100 transition-all duration-300">
-                    <span className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-lg">
-                      View Property
-                    </span>
+                                        <span className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-lg">
+                                            View Property
+                                        </span>
                                     </div>
                                 </div>
 
+                                {/* Text */}
                                 <div className="p-2.5">
                                     <h3 className="text-sm font-semibold text-gray-800 truncate">
                                         {property.property_name}
@@ -104,9 +107,13 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
                 </div>
             </div>
 
-            {/* Edge fades */}
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-gray-50 via-white/80 to-transparent z-10" />
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-gray-50 via-white/80 to-transparent z-10" />
+            {/* Edge fades only if marquee mode */}
+            {enableMarquee && (
+                <>
+                    <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-gray-50 via-white/80 to-transparent z-10" />
+                    <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-gray-50 via-white/80 to-transparent z-10" />
+                </>
+            )}
 
             <style jsx>{`
         @keyframes scroll {
@@ -122,9 +129,6 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
           will-change: transform;
           width: max-content;
           display: inline-flex;
-        }
-        .group:hover .animate-marquee {
-          animation-play-state: paused;
         }
         @media (max-width: 768px) {
           .animate-marquee {

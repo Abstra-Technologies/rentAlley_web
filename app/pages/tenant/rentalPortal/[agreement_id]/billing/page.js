@@ -17,8 +17,6 @@ function BillingContent() {
     const init = async () => {
       if (!user) {
         await fetchSession();
-      } else {
-        console.log("[DEBUG] User already available:", user);
       }
       setLoading(false);
     };

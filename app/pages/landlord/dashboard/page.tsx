@@ -13,9 +13,12 @@ export default function LandlordDashboard() {
         if (!user) fetchSession();
     }, [user, fetchSession]);
 
-    return (
-            <div className="w-full min-h-screen overflow-x-hidden bg-gray-50">
-                <LandlordMainDashboard />
-            </div>
-    );
+   return (
+  <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-gray-50">
+    <div className="w-full max-w-[100vw] overflow-x-hidden">
+      <LandlordMainDashboard />
+    </div>
+  </div>
+);
+
 }
