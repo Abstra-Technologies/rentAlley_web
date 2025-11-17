@@ -59,15 +59,7 @@ export default function MobileLandlordAnalytics({ user }) {
                 {/* Overview */}
                 {activeTab === "overview" && (
                     <>
-                        {/* Search & Summaries */}
-                        <div className="flex flex-col gap-4 mb-3">
-                            <SearchLeaseBar />
-                            <div className="grid grid-cols-2 gap-3">
-                                <LandlordSubscriptionStatus landlordId={user?.landlord_id} />
-                                <LandlordCreditsSummary landlordId={user?.landlord_id} />
-                            </div>
-                        </div>
-
+                    
                         <div className="mt-3">
                             <LandlordPropertyMarquee landlordId={user?.landlord_id} />
                         </div>

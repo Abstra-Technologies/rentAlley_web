@@ -1,13 +1,13 @@
 "use client";
 
-import { Home, UserPlus, Megaphone, Wallet, List   } from "lucide-react";
+import { Home, UserPlus, Megaphone, Wallet, List } from "lucide-react";
 
 export default function QuickActions({
   onAddProperty,
   onInviteTenant,
   onAnnouncement,
   onWithdraw,
-  onWorkOrder
+  onWorkOrder,
 }) {
   const actions = [
     {
@@ -28,46 +28,64 @@ export default function QuickActions({
       icon: Megaphone,
       onClick: onAnnouncement,
     },
-     {
+    {
       id: "work_order",
       label: "Work Order",
-      icon: List ,
+      icon: List,
       onClick: onWorkOrder,
     },
     {
-      id: "Widthdraw",
-      label: "Widthraw",
+      id: "withdraw",
+      label: "Withdraw",
       icon: Wallet,
       onClick: onWithdraw,
     },
   ];
 
   return (
-    <div className="w-full flex items-center justify-center gap-10 py-4">
+    <div
+      className="
+        w-full 
+        flex flex-wrap 
+        items-center justify-center 
+        gap-4 sm:gap-6 lg:gap-8 
+        py-3 px-2
+      "
+    >
       {actions.map(({ id, label, icon: Icon, onClick }) => (
         <button
           key={id}
           onClick={onClick}
-          className="flex flex-col items-center text-gray-700"
+          className="
+            flex flex-col items-center 
+            text-gray-700 
+            w-16 sm:w-auto
+          "
         >
           {/* Circle */}
           <div
             className="
-              w-16 h-16 sm:w-18 sm:h-18
-              rounded-full flex items-center justify-center
-              bg-white
-              border border-gray-300 
+              w-12 h-12       /* mobile */
+              sm:w-14 sm:h-14 /* tablet */
+              md:w-16 md:h-16 /* desktop */
+              rounded-full 
+              flex items-center justify-center
+              bg-white border border-gray-300 
               shadow-sm
-              hover:shadow-md 
-              hover:scale-105
+              hover:shadow-md hover:scale-105
               transition-all duration-200
             "
           >
-            <Icon className="w-6 h-6 text-gray-700" />
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
           </div>
 
           {/* Label */}
-          <span className="text-sm mt-2 font-medium">
+          <span
+            className="
+              text-[10px] sm:text-xs md:text-sm 
+              mt-1.5 font-medium text-center
+            "
+          >
             {label}
           </span>
         </button>
