@@ -63,7 +63,6 @@ export default function FinancialsPage() {
 
   return (
       <div className="min-h-screen p-5 bg-gray-50">
-        <BackButton label="Return to Financials" />
 
         <h1 className="text-2xl font-bold text-gray-800 mt-4">Financial Dashboard</h1>
         <p className="text-gray-500 text-sm">
