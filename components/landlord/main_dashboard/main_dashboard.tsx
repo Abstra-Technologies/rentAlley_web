@@ -19,6 +19,7 @@ import LeaseWidget from "../analytics/leaseCountWidget";
 import UpcomingVisitsWidget from "../properties/propertyVisit";
 import PaymentSummaryCard from "../analytics/PaymentSummaryCard";
 import MobileLandlordAnalytics from "@/components/landlord/mobile_layour/MobileLandlordAnalytics";
+import PendingMaintenanceDonut from "../analytics/PendingMaintenanceDonut";
 
 // Dynamic Imports
 const RevenuePerformanceChart = dynamic(
@@ -164,7 +165,9 @@ const LandlordMainDashboard = () => {
 
           {/* Tasks */}
           <div className="w-full">
-            <TaskWidget landlordId={user?.landlord_id} />
+            {/* <TaskWidget landlordId={user?.landlord_id} /> */}
+            <PendingMaintenanceDonut landlordId={user?.landlord_id} />
+
           </div>
         </div>
 

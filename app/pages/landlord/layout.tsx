@@ -20,6 +20,7 @@ import {
   Users,
   Settings,
   ChevronLeft,
+  HandCoins,
   Inbox,
   AlertCircle,
 } from "lucide-react";
@@ -86,6 +87,11 @@ export default function LandlordLayout({
       label: "Maintenance",
       href: "/pages/landlord/maintenance-request",
       icon: Construction,
+    },
+      {
+      label: "Financials",
+      href: "/pages/landlord/financials",
+      icon: HandCoins ,
     },
     {
       label: "Tax Compliance",

@@ -35,8 +35,8 @@ export default function QuickActions({
       onClick: onWorkOrder,
     },
     {
-      id: "withdraw",
-      label: "Withdraw",
+      id: "income",
+      label: "Income",
       icon: Wallet,
       onClick: onWithdraw,
     },
