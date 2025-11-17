@@ -2,52 +2,55 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    
-    const landlordId = searchParams.get("landlord_id");
-    const propertyId = searchParams.get("property_id");
+    try {
+        const { searchParams } = new URL(req.url);
+        const landlordId = searchParams.get("landlord_id");
 
-    let propertyIds: number[] = [];
+        if (!landlordId) {
+            return NextResponse.json(
+                { error: "Missing landlord_id" },
+                { status: 400 }
+            );
+        }
 
-    if (landlordId) {
-      const [props]: any = await db.query(
-        `SELECT property_id FROM Property WHERE landlord_id = ?`,
-        [landlordId]
-      );
-
-      propertyIds = props.map((p: any) => p.property_id);
-
-      if (propertyIds.length === 0) {
-        return NextResponse.json([]);
-      }
-
-    } else if (propertyId) {
-      propertyIds = [propertyId];
-    } else {
-      return NextResponse.json(
-        { error: "Missing landlord_id or property_id." },
-        { status: 400 }
-      );
-    }
-
-    // Fetch ONLY statuses
-    const [rows]: any = await db.query(
-      `
-      SELECT status
-      FROM MaintenanceRequest
-      WHERE property_id IN (?)
+        // Fetch all statuses for maint requests under this landlord
+        const [rows]: any = await db.query(
+            `
+      SELECT mr.status
+      FROM rentalley_db.MaintenanceRequest mr
+      JOIN rentalley_db.Unit u 
+          ON mr.unit_id = u.unit_id
+      JOIN rentalley_db.Property p
+          ON u.property_id = p.property_id
+      WHERE p.landlord_id = ?
       `,
-      [propertyIds]
-    );
+            [landlordId]
+        );
 
-    return NextResponse.json(rows);
+        // Initialize all known statuses with 0
+        const statusCounts: Record<string, number> = {
+            "Pending": 0,
+            "Approved": 0,
+            "Scheduled": 0,
+            "In-Progress": 0,
+            "Completed": 0
+        };
 
-  } catch (error) {
-    console.error("Maintenance Status Error:", error);
-    return NextResponse.json(
-      { error: "Failed to load maintenance statuses." },
-      { status: 500 }
-    );
-  }
+        // Count occurrences
+        rows.forEach((row: any) => {
+            const status = row.status;
+            if (statusCounts[status] !== undefined) {
+                statusCounts[status]++;
+            }
+        });
+
+        return NextResponse.json(statusCounts);
+
+    } catch (error) {
+        console.error("Maintenance Status Error:", error);
+        return NextResponse.json(
+            { error: "Failed to load maintenance statuses." },
+            { status: 500 }
+        );
+    }
 }

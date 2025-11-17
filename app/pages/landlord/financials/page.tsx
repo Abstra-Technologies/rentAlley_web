@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
 import useSWR from "swr";
 import axios from "axios";
 import { formatCurrency } from "@/utils/formatter/formatters";
@@ -15,7 +14,6 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { BackButton } from "@/components/navigation/backButton";
 
 ChartJS.register(
   CategoryScale,

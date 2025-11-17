@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-// Stores & Components
 import useAuthStore from "@/zustand/authStore";
 import PointsEarnedAlert from "@/components/Commons/alertPoints";
 import LandlordProfileStatus from "../profile/LandlordProfileStatus";
