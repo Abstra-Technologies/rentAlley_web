@@ -151,7 +151,7 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-2">
-                            <Link href={`/pages/tenant/maintenance/add?agreement_id=${agreement_id}`}>
+                            <Link href={`/pages/tenant/rentalPortal/${agreement_id}/maintenance/add`}>
                                 <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold shadow-sm hover:shadow-md transition-all">
                                     <PlusIcon className="w-4 h-4" />
                                     Create Request
