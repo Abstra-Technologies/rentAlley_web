@@ -3,8 +3,7 @@
 import { Suspense } from "react";
 import useAuthStore from "@/zustand/authStore";
 import MyApplications from "@/components/tenant/myApplication/MyApplications";
-import { useEffect, useState } from "react";
-import TenantOutsidePortalNav from "@/components/navigation/TenantOutsidePortalNav";
+import { useEffect } from "react";
 
 function TenantMyApplicationsContent() {
   const { fetchSession, user, admin } = useAuthStore();
@@ -14,25 +13,21 @@ function TenantMyApplicationsContent() {
     if (!user && !admin) {
       fetchSession();
     }
-  }, [user]);
+  }, [user, admin, fetchSession]);
 
   if (!tenantId) return <p>No tenant information available.</p>;
 
-  return <MyApplications tenantId={tenantId} />;
+  return (
+    <div className="px-4 sm:px-6 lg:px-8 py-6">
+      <MyApplications tenantId={tenantId} />
+    </div>
+  );
 }
 
 export default function TenantMyApplicationsPage() {
-    return (
-        <Suspense fallback={<div>Loading My Applications...</div>}>
-            <div className="flex min-h-screen w-full bg-gray-50">
-                {/* Sidebar Navigation */}
-                <TenantOutsidePortalNav />
-
-                {/* Main Content Wrapper */}
-                <div className="flex-1 w-full overflow-x-hidden">
-                    <TenantMyApplicationsContent />
-                </div>
-            </div>
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={<div>Loading My Applications...</div>}>
+      <TenantMyApplicationsContent />
+    </Suspense>
+  );
 }
