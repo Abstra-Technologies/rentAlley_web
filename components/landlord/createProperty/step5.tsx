@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import usePropertyStore from "../../zustand/property/usePropertyStore";
-import DropzoneUploader from "../dropzone-uploader";
-import Camera from "../lib/camera";
+import usePropertyStore from "@/zustand/property/usePropertyStore";
+import DropzoneUploader from "./dropzone-uploader";
+import Camera from "@/components/lib/camera";
 import Swal from "sweetalert2";
 
 export function StepFive() {

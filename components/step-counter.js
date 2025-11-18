@@ -1,11 +1,9 @@
 import React from "react";
 
 const steps = [
-  { id: 1, label: "Location", shortLabel: "Location" },
-  { id: 2, label: "Amenities", shortLabel: "Amenities" },
-  { id: 3, label: "Details & Photos", shortLabel: "Details" },
-  { id: 4, label: "Payment", shortLabel: "Payment" },
-  { id: 5, label: "Documents", shortLabel: "Documents" },
+  { id: 1, label: "Property Details", shortLabel: "Details" },
+  { id: 2, label: "Property Documents", shortLabel: "documents" },
+
 ];
 
 const StepCounter = ({ currentStep }) => {

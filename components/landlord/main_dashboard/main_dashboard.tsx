@@ -11,7 +11,6 @@ import LandlordProfileStatus from "../profile/LandlordProfileStatus";
 import QuickActions from "./QuickActions";
 import HeaderContent from "./headerContent";
 import LandlordPropertyMarquee from "@/components/landlord/main_dashboard/LandlordPropertyQuickView";
-import TaskWidget from "../widgets/taskToDo";
 import TenantActivity from "../widgets/TenantActivity";
 import ProspectiveTenantsWidget from "../widgets/leads";
 import LeaseWidget from "../analytics/leaseCountWidget";

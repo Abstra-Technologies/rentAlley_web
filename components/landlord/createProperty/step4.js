@@ -1,6 +1,6 @@
-import usePropertyStore from "../../zustand/property/usePropertyStore";
-import { PAYMENT_FREQUENCIES } from "../../constant/paymentFrequency";
-import { PAYMENT_METHODS } from "../../constant/paymentMethods";
+import usePropertyStore from "@/zustand/property/usePropertyStore";
+import { PAYMENT_FREQUENCIES } from "@/constant/paymentFrequency";
+import { PAYMENT_METHODS } from "@/constant/paymentMethods";
 
 export function StepFour() {
   const { property, setProperty } = usePropertyStore();

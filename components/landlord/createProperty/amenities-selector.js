@@ -1,5 +1,5 @@
-import { AMENITIES_LIST } from "../constant/amenities";
-
+import { AMENITIES_LIST } from "@/constant/amenities";
+// Property Level
 const AmenitiesSelector = ({ selectedAmenities, onAmenityChange }) => {
   return (
     <div>

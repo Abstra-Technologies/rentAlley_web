@@ -1,5 +1,5 @@
-import AmenitiesSelector from "../amenities-selector";
-import usePropertyStore from "../../zustand/property/usePropertyStore";
+import AmenitiesSelector from "./amenities-selector";
+import usePropertyStore from "@/zustand/property/usePropertyStore";
 
 export function StepTwo() {
   const { property, setProperty } = usePropertyStore();

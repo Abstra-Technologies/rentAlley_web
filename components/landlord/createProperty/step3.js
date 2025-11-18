@@ -1,11 +1,11 @@
-import usePropertyStore from "../../zustand/property/usePropertyStore";
+import usePropertyStore from "@/zustand/property/usePropertyStore";
 import { FaImage } from "react-icons/fa";
 import { useDropzone } from "react-dropzone";
-import { UTILITY_BILLING_TYPES } from "../../constant/utilityBillingType";
-import { PAYMENT_FREQUENCIES } from "../../constant/paymentFrequency";
+import { UTILITY_BILLING_TYPES } from "@/constant/utilityBillingType";
+import { PAYMENT_FREQUENCIES } from "@/constant/paymentFrequency";
 import { FaInfoCircle } from "react-icons/fa";
 import { useState } from "react";
-import { PROPERTY_PREFERENCES } from "../../constant/propertyPreferences";
+import { PROPERTY_PREFERENCES } from "@/constant/propertyPreferences";
 
 export function StepThree() {
   const { property, photos, setProperty, setPhotos } = usePropertyStore();

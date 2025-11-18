@@ -20,28 +20,29 @@ function sanitizeFilename(filename: string): string {
 
 async function uploadToS3(file: any, folder: string) {
     if (!file || typeof file.arrayBuffer !== "function") {
-        throw new Error("Invalid file object received in uploadToS3");
+        throw new Error("Invalid file received");
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const sanitizedFilename = sanitizeFilename(file.name ?? "upload");
-    const fileName = `${folder}/${Date.now()}_${sanitizedFilename}`;
+    const key = `${folder}/${Date.now()}_${sanitizedFilename}`;
 
     await s3Client.send(
         new PutObjectCommand({
             Bucket: process.env.NEXT_S3_BUCKET_NAME!,
-            Key: fileName,
+            Key: key,
             Body: buffer,
             ContentType: file.type ?? "application/octet-stream",
         })
     );
 
-    const s3Url = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${fileName}`;
-    return encryptData(s3Url, encryptionSecret);
+    const url = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${key}`;
+    return encryptData(url, encryptionSecret);
 }
 
 export async function POST(req: NextRequest) {
     const formData = await req.formData();
+
     const landlord_id = formData.get("landlord_id")?.toString();
     const propertyRaw = formData.get("property")?.toString();
 
@@ -53,7 +54,9 @@ export async function POST(req: NextRequest) {
     }
 
     const property = JSON.parse(propertyRaw);
+
     const photos = formData.getAll("photos") as File[];
+
     const docType = formData.get("docType")?.toString();
     const submittedDoc = formData.get("submittedDoc") as File | null;
     const govID = formData.get("govID") as File | null;
@@ -65,65 +68,69 @@ export async function POST(req: NextRequest) {
     try {
         await connection.beginTransaction();
 
-        /** ✅ Generate unique property_id (check for duplicates) */
-        let propertyId: string;
-        let isUnique = false;
+        let propertyId: string = "";
+        let unique = false;
 
-        while (!isUnique) {
-            const tempId = generatePropertyId();
+        while (!unique) {
+            const idCandidate = generatePropertyId();
             const [rows]: any = await connection.execute(
-                `SELECT COUNT(*) as count FROM Property WHERE property_id = ?`,
-                [tempId]
+                `SELECT COUNT(*) AS count FROM Property WHERE property_id = ?`,
+                [idCandidate]
             );
             if (rows[0].count === 0) {
-                propertyId = tempId;
-                isUnique = true;
+                propertyId = idCandidate;
+                unique = true;
             }
         }
 
-        /** ✅ Insert new property record (removed lateFee, assocDues, paymentFrequency) */
+        /** 🔥 Insert into Property table — matching EXACT schema */
         await connection.execute(
             `
-                INSERT INTO Property (
-                    property_id, landlord_id, property_name, property_type, amenities, street,
-                    brgy_district, city, zip_code, province,
-                    water_billing_type, electricity_billing_type,
-                    description, floor_area, min_stay,
-                    flexipay_enabled, property_preferences, accepted_payment_methods,
-                    latitude, longitude, rent_increase_percent,
-                    security_deposit_months, advance_payment_months,
-                    created_at, updated_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-            `,
+            INSERT INTO Property (
+                property_id, landlord_id, property_name, property_type, amenities,
+                street, brgy_district, city, zip_code, province,
+                water_billing_type, electricity_billing_type,
+                description, floor_area, late_fee, assoc_dues,
+                status, flexipay_enabled, property_preferences,
+                accepted_payment_methods, latitude, longitude,
+                rent_increase_percent, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        `,
             [
-                propertyId!,
+                propertyId,
                 landlord_id,
                 property.propertyName,
                 property.propertyType,
                 property.amenities?.join(",") || null,
+
                 property.street || null,
                 property.brgyDistrict || null,
                 property.city || null,
                 property.zipCode || null,
                 property.province || null,
+
                 property.waterBillingType || null,
                 property.electricityBillingType || null,
+
                 property.propDesc || null,
-                property.floorArea,
-                property.minStay || null,
-                property.flexiPayEnabled ? 1 : 0,
+                property.floorArea || null,
+
+                property.lateFee || null,
+                property.assocDues || null,
+
+                property.flexipayEnabled ? 1 : 0,
                 JSON.stringify(property.propertyPreferences || []),
+
                 JSON.stringify(property.paymentMethodsAccepted || []),
-                property.lat || null,
-                property.lng || null,
-                property.rentIncreasePercent || 0.0,
-                property.securityDepositMonths || 0,
-                property.advancePaymentMonths || 0,
+
+                property.latitude || null,
+                property.longitude || null,
+
+                property.rentIncreasePercent || 0.0
             ]
         );
 
-        /** ✅ Upload property photos (if provided) */
         for (const file of photos) {
             const url = await uploadToS3(file, "property-photo");
             await connection.execute(
@@ -133,52 +140,56 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /** ✅ Upload verification documents */
+        /** 🔥 Verification Docs */
         if (!docType || !submittedDoc || !govID || !indoor || !outdoor) {
-            throw new Error("Missing verification files");
+            throw new Error("Missing verification documents");
         }
 
-        const submittedDocUrl = await uploadToS3(submittedDoc, "property-doc");
-        const govIdUrl = await uploadToS3(govID, "property-doc");
-        const indoorUrl = await uploadToS3(indoor, "property-photo/indoor");
-        const outdoorUrl = await uploadToS3(outdoor, "property-photo/outdoor");
+        const submittedDocUrl = await uploadToS3(submittedDoc, "property-docs");
+        const govIdUrl = await uploadToS3(govID, "property-docs");
+        const indoorUrl = await uploadToS3(indoor, "property-photos-indoor");
+        const outdoorUrl = await uploadToS3(outdoor, "property-photos-outdoor");
 
         await connection.execute(
             `
-                INSERT INTO PropertyVerification
-                (property_id, doc_type, submitted_doc, gov_id, indoor_photo, outdoor_photo,
-                 status, created_at, updated_at, verified, attempts)
-                VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)
-                ON DUPLICATE KEY UPDATE
-                                     doc_type = VALUES(doc_type),
-                                     submitted_doc = VALUES(submitted_doc),
-                                     gov_id = VALUES(gov_id),
-                                     indoor_photo = VALUES(indoor_photo),
-                                     outdoor_photo = VALUES(outdoor_photo),
-                                     status = 'Pending',
-                                     updated_at = NOW(),
-                                     attempts = attempts + 1
-            `,
-            [propertyId, docType, submittedDocUrl, govIdUrl, indoorUrl, outdoorUrl]
+            INSERT INTO PropertyVerification (
+                property_id, doc_type, submitted_doc, gov_id,
+                outdoor_photo, indoor_photo, status,
+                created_at, updated_at, verified, attempts
+            )
+            VALUES (?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW(), 0, 1)
+            ON DUPLICATE KEY UPDATE
+                doc_type = VALUES(doc_type),
+                submitted_doc = VALUES(submitted_doc),
+                gov_id = VALUES(gov_id),
+                outdoor_photo = VALUES(outdoor_photo),
+                indoor_photo = VALUES(indoor_photo),
+                status = 'Pending',
+                updated_at = NOW(),
+                attempts = attempts + 1
+        `,
+            [
+                propertyId,
+                docType,
+                submittedDocUrl,
+                govIdUrl,
+                outdoorUrl,
+                indoorUrl,
+            ]
         );
 
-        /** ✅ Commit all changes (atomic operation) */
         await connection.commit();
 
         return NextResponse.json(
-            { message: "Property created successfully", propertyID: propertyId },
+            { message: "Property created successfully", propertyId },
             { status: 201 }
         );
     } catch (err: any) {
         await connection.rollback();
-
-        console.error("Transaction failed:", err);
+        console.error(err);
 
         return NextResponse.json(
-            {
-                error: "Failed to create property listing",
-                details: err?.message || "Unknown error",
-            },
+            { error: "Failed to create property", details: err?.message },
             { status: 500 }
         );
     } finally {

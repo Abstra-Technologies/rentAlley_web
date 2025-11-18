@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import usePropertyStore from "../../zustand/property/usePropertyStore";
-import { PROPERTY_TYPES } from "../../constant/propertyTypes";
+import usePropertyStore from "@/zustand/property/usePropertyStore";
+import { PROPERTY_TYPES } from "@/constant/propertyTypes";
 import dynamic from "next/dynamic";
-const PropertyMap = dynamic(() => import("../propertyMap"), { ssr: false });
+const PropertyMap = dynamic(() => import("./propertyMap"), { ssr: false });
 
 export const StepOne = () => {
   const { property, setProperty } = usePropertyStore();

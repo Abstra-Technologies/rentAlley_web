@@ -126,6 +126,7 @@
     "react": "^19.1.0",
     "react-apexcharts": "^1.7.0",
     "react-calendar": "^5.1.0",
+    "react-camera-pro": "^1.4.0",
     "react-chartjs-2": "^5.3.1",
     "react-circular-progressbar": "^2.2.0",
     "react-dom": "^19.1.0",
