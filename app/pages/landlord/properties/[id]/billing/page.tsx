@@ -1,12 +1,5 @@
 "use client";
 
-/**
- * @page         PropertyBillingPage
- * @route        app/pages/landlord/properties/[id]/billing
- * @desc         Redesigned mobile-first billing dashboard for property-level billing.
- * @usedBy       Landlord → Property → Billing Module
- */
-
 import { useParams, useRouter } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
@@ -200,6 +193,8 @@ const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
               </div>
             </div>
 
+
+
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               {propertyDetails?.water_billing_type === "submetered" ||
@@ -232,16 +227,73 @@ const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
             </div>
 
 
-        <button
-        onClick={() => setOpenMeterList(true)}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-      >
-        View All Meter Readings
-      </button>
+      {/*  <button*/}
+      {/*  onClick={() => setOpenMeterList(true)}*/}
+      {/*  className="px-4 py-2 bg-blue-600 text-white rounded-lg"*/}
+      {/*>*/}
+      {/*  View All Meter Readings*/}
+      {/*</button>*/}
 
           </div>
 
-          {/* Rate Status Indicator */}
+            {/* COUNTER SCORE CARD */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 mt-4">
+
+                {/* Total Units */}
+                <div className="p-4 bg-white rounded-xl shadow border border-gray-200">
+                    <p className="text-xs text-gray-500">Total Units</p>
+                    <p className="text-xl font-bold text-gray-900">{bills?.length || 0}</p>
+                </div>
+
+                {/* With Bills */}
+                <div className="p-4 bg-white rounded-xl shadow border border-gray-200">
+                    <p className="text-xs text-gray-500">Units With Bills</p>
+                    <p className="text-xl font-bold text-blue-700">
+                        {bills.filter((b:any)=>b.billing_status !== "no_bill").length}
+                    </p>
+                </div>
+
+                {/* Without Bills */}
+                <div className="p-4 bg-white rounded-xl shadow border border-gray-200">
+                    <p className="text-xs text-gray-500">Units Without Bills</p>
+                    <p className="text-xl font-bold text-red-600">
+                        {bills.filter((b:any)=>b.billing_status === "no_bill").length}
+                    </p>
+                </div>
+
+                {/* Paid */}
+                <div className="p-4 bg-white rounded-xl shadow border border-gray-200">
+                    <p className="text-xs text-gray-500">Paid</p>
+                    <p className="text-xl font-bold text-emerald-600">
+                        {bills.filter((b:any)=>b.billing_status?.toLowerCase() === "paid").length}
+                    </p>
+                </div>
+
+                {/* Total Amount Due */}
+                <div className="p-4 bg-white rounded-xl shadow border border-gray-200">
+                    <p className="text-xs text-gray-500">Total Amount Due</p>
+                    <p className="text-lg font-bold text-gray-900">
+                        ₱{bills.reduce((sum:number,b:any)=>sum + Number(b.total_amount_due || 0),0)
+                        .toLocaleString("en-PH",{minimumFractionDigits:2})}
+                    </p>
+                </div>
+
+                {/* Billing Completion */}
+                <div className="p-4 bg-white rounded-xl shadow border border-gray-200">
+                    <p className="text-xs text-gray-500">Billing Completion</p>
+                    <p className="text-xl font-bold text-purple-600">
+                        {bills.length === 0
+                            ? "0%"
+                            : Math.round(
+                            (bills.filter((b:any)=>b.billing_status !== "no_bill").length / bills.length) * 100
+                        ) + "%"}
+                    </p>
+                </div>
+
+            </div>
+
+
+            {/* Rate Status Indicator */}
           {propertyDetails && (
             <div
               className={`rounded-lg border-l-4 p-4 ${

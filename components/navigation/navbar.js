@@ -87,16 +87,17 @@ const Navbar = () => {
         { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/public/download", label: "Download App" },
                 { href: "/pages/find-rent", label: "Pricing" },
-
         // { href: "/pages/partner", label: "Partner" },
         { href: "/pages/contact-us", label: "Contact Us" },
       ];
     }
 
-    if (user?.userType === "tenant") {
+    else if (user?.userType === "tenant") {
       return [
         { href: "/pages/find-rent", label: "Find Rent" },
-        { href: "/pages/tenant/visit-history", label: "My Bookings" },
+          { href: "/pages/tenant/my-unit", label: "My Units" },
+
+          { href: "/pages/tenant/visit-history", label: "My Bookings" },
       ];
     }
 
