@@ -19,17 +19,17 @@ export default function QuickActionButtons({ agreement_id }: QuickActionButtonsP
     {
       label: "Payments",
       icon: ReceiptText,
-      href: `/pages/tenant/paymentHistory/currentLeasePayment?agreement_id=${agreement_id}`,
+      href: `/pages/tenant/rentalPortal/${agreement_id}/paymentHistory?agreement_id=${agreement_id}`,
     },
     {
       label: "Updates",
       icon: Bell,
-      href: `/pages/tenant/announcement?agreement_id=${agreement_id}`,
+      href: `/pages/tenant/rentalPortal/${agreement_id}/announcement?agreement_id=${agreement_id}`,
     },
     {
       label: "Maintenance",
       icon: Wrench,
-      href: `/pages/tenant/maintenance?agreement_id=${agreement_id}`,
+      href: `/pages/tenant/rentalPortal/${agreement_id}/maintenance?agreement_id=${agreement_id}`,
     },
   ];
 
