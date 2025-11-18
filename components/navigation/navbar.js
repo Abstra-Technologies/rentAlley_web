@@ -95,10 +95,8 @@ const Navbar = () => {
 
     if (user?.userType === "tenant") {
       return [
-        { href: "/pages/tenant/my-unit", label: "My Unit" },
         { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/tenant/visit-history", label: "My Bookings" },
-        { href: "/pages/tenant/chat", label: "Chat" },
       ];
     }
 
@@ -132,11 +130,13 @@ const Navbar = () => {
       return [];
     }
 
+    // mobile
     if (user?.userType === "tenant") {
       return [
         { href: "/pages/tenant/feeds", label: "Home", icon: Home },
         { href: "/pages/find-rent", label: "Find", icon: Search },
         { href: "/pages/tenant/chat", label: "Chat", icon: MessageSquare },
+
         // {
         //   href: "/pages/tenant/visit-history",
         //   label: "Bookings",
