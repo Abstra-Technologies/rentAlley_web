@@ -52,7 +52,9 @@ export default function LandlordLayout({
     setIsMobileProfileOpen(false);
   }, [pathname]);
 
-  const isInsideProperty = pathname.includes("/pages/landlord/properties/");
+    const isInsideProperty =
+        pathname.includes("/pages/landlord/properties/") &&
+        !pathname.includes("/pages/commons/profile");
 
   const navLinks = [
     { label: "Dashboard", href: "/pages/landlord/dashboard", icon: Home },
