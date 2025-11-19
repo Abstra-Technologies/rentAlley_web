@@ -24,7 +24,6 @@ export default function SubscriptionPlans() {
             setDataLoading(true);
 
             try {
-                //  Testing/Validating a user if they can avail free trial.
                 const trialResponse = await fetch("/api/landlord/subscription/freeTrialTest", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -100,9 +99,9 @@ export default function SubscriptionPlans() {
         setProcessing(true);
 
         try {
-            /* ===========================
+            /* =====================================================
                🟩 1. FREE PLAN
-            =========================== */
+            ===================================================== */
             if (selectedPlan.id === 1) {
                 const response = await fetch("/api/landlord/subscription/freeTrialTest", {
                     method: "POST",
@@ -133,9 +132,9 @@ export default function SubscriptionPlans() {
                 return;
             }
 
-            /* ===========================
+            /* =====================================================
                🟨 2. PAID PLAN WITH FREE TRIAL
-            =========================== */
+            ===================================================== */
             if (!trialUsed && selectedPlan.trialDays > 0) {
                 const response = await fetch("/api/landlord/subscription/freeTrialTest", {
                     method: "POST",
@@ -165,24 +164,20 @@ export default function SubscriptionPlans() {
                 return;
             }
 
-            /* ===========================
-               💳 3. PAID PLAN (NO TRIAL)
-            =========================== */
-            let amountToCharge: number | null = null;
+            /* =====================================================
+               💳 3. PAID PLAN (NO TRIAL) → GO TO REVIEW PAGE
+            ===================================================== */
+            let amountToCharge = null;
 
             if (!currentSubscription && trialUsed) {
-                // No active plan + already used trial → full charge
                 amountToCharge = selectedPlan.price ?? 0;
             } else if (currentSubscription) {
-                // Active plan → prorated cost
                 const prorate = proratedAmount ?? calculateProrate(selectedPlan);
                 amountToCharge = prorate ?? selectedPlan.price ?? 0;
             } else {
-                // Fallback: new plan with no trial or subscription
                 amountToCharge = selectedPlan.price ?? 0;
             }
 
-            // Validate final amount
             if (!amountToCharge || isNaN(amountToCharge) || amountToCharge <= 0) {
                 Swal.fire({
                     icon: "warning",
@@ -193,34 +188,14 @@ export default function SubscriptionPlans() {
                 return;
             }
 
-            /* ===========================
-               🔹 4. INITIATE MAYA CHECKOUT
-            =========================== */
-            const payload = {
-                amount: parseFloat(amountToCharge.toFixed(2)),
-                description: selectedPlan.name,
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                landlord_id: user.landlord_id,
-                plan_name: selectedPlan.name,
-                redirectUrl: {
-                    success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/subscriptionSuccess`,
-                    failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/subscriptionFailed`,
-                    cancel: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/subscriptionCancelled`,
-                },
-            };
+            // NEW: Redirect to review page instead of payment
+            router.push(
+                `/pages/landlord/subsciption_plan/payment/review?planId=${selectedPlan.id}&planName=${encodeURIComponent(
+                    selectedPlan.name
+                )}&amount=${amountToCharge}&prorated=${proratedAmount ?? 0}`
+            );
 
-            console.log("🟢 Sending checkout payload:", payload);
-
-            const response = await axios.post("/api/payment/checkout-payment", payload);
-
-            if (response.data?.checkoutUrl) {
-                window.location.href = response.data.checkoutUrl;
-            } else {
-                throw new Error("Checkout URL not received from server.");
-            }
-        } catch (error: any) {
+        } catch (error) {
             console.error("🚨 Error during plan activation:", error);
             Swal.fire({
                 icon: "error",

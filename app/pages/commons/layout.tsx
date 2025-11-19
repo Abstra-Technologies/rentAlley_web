@@ -17,35 +17,52 @@ import {
     X,
     ChevronLeft,
     ChevronRight,
-    Settings,
     AlertCircle,
 } from "lucide-react";
 
 import useAuthStore from "@/zustand/authStore";
-import { logEvent } from "@/utils/gtag";
 
-export default function SideNavProfile({ children }: { children: React.ReactNode }) {
+/* ---------------------------------------------
+   CENTRALIZED NAVIGATION LIST
+--------------------------------------------- */
+const profileNavLinks = [
+    {
+        href: "/pages/commons/profile",
+        label: "Profile",
+        icon: UserIcon,
+        roles: ["tenant", "landlord", "admin"],
+    },
+    {
+        href: "/pages/commons/profile/security",
+        label: "Security & Privacy",
+        icon: ShieldCheckIcon,
+        roles: ["tenant", "landlord", "admin"],
+    },
+    {
+        href: "/pages/commons/landlord/payoutDetails",
+        label: "Payout Account",
+        icon: CreditCardIcon,
+        roles: ["landlord"],
+    },
+    {
+        href: "/pages/landlord/subsciption_plan",
+        label: "View Subscription",
+        icon: CreditCardIcon,
+        roles: ["landlord"],
+    },
+];
+
+export default function SideNavProfile({
+                                           children,
+                                       }: {
+    children: React.ReactNode;
+}) {
     const { user, signOut, signOutAdmin } = useAuthStore();
     const pathname = usePathname();
     const router = useRouter();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-    const menuItems = [
-        { href: `/pages/commons/profile`, icon: UserIcon, label: "Profile" },
-        { href: `/pages/commons/profile/security`, icon: ShieldCheckIcon, label: "Security & Privacy" },
-        ...(user?.userType === "landlord"
-            ? [
-                {
-                    href: "/pages/landlord/subsciption_plan",
-                    icon: CreditCardIcon,
-                    label: "View Subscription",
-                },
-            ]
-            : []),
-    ];
 
     const handleLogout = () => {
         if (!user) return;
@@ -63,9 +80,15 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
     const mainPageLabel =
         user?.userType === "landlord" ? "Back to Dashboard" : "Back to Feeds";
 
+    /* ---------------------------------------------
+         FILTER NAV LINKS BASED ON ROLE
+    --------------------------------------------- */
+    const filteredLinks = profileNavLinks.filter((link) =>
+        link.roles.includes(user?.userType || "guest")
+    );
+
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
-
             {/*---------------------------------------------*/}
             {/* DESKTOP SIDEBAR */}
             {/*---------------------------------------------*/}
@@ -75,24 +98,26 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                 }`}
             >
                 <div className="flex flex-col h-full">
-                    {/* Header */}
+                    {/* HEADER */}
                     <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm">
                         <h1 className="text-lg font-bold text-white">Account Settings</h1>
-                        <p className="text-xs text-white/80 mt-1">Manage your profile</p>
+                        <p className="text-xs text-white/80 mt-1">
+                            Manage your personal information
+                        </p>
                     </div>
 
                     {/* Back Button */}
                     <div className="px-4 pt-4 pb-2">
                         <button
                             onClick={() => router.push(mainPageUrl)}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 hover:from-blue-100 hover:to-emerald-100 rounded-lg"
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 rounded-lg hover:from-blue-100 hover:to-emerald-100"
                         >
                             <ChevronLeft className="w-5 h-5 text-blue-600" />
                             {mainPageLabel}
                         </button>
                     </div>
 
-                    {/* Profile Section */}
+                    {/* PROFILE HEADER */}
                     {user && (
                         <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
                             <div className="flex items-center gap-3 p-2">
@@ -106,7 +131,6 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                                     height={40}
                                     className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
                                 />
-
                                 <div className="flex-1">
                                     <p className="text-sm font-semibold text-gray-900 truncate">
                                         {user.firstName
@@ -125,9 +149,9 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                         </div>
                     )}
 
-                    {/* Menu */}
+                    {/* NAVIGATION LIST */}
                     <nav className="flex-1 px-3 py-4 overflow-y-auto">
-                        {menuItems.map((item) => {
+                        {filteredLinks.map((item) => {
                             const Icon = item.icon;
                             const isActive = pathname === item.href;
 
@@ -144,10 +168,8 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                                     {isActive && (
                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/40 rounded-r-full" />
                                     )}
-
                                     <Icon className="w-5 h-5" />
                                     <span className="text-sm">{item.label}</span>
-
                                     {isActive && (
                                         <div className="ml-auto w-2 h-2 rounded-full bg-white animate-pulse" />
                                     )}
@@ -155,7 +177,7 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                             );
                         })}
 
-                        {/* Logout */}
+                        {/* LOGOUT */}
                         <button
                             onClick={() => setShowLogoutConfirm(true)}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 hover:shadow-md w-full"
@@ -196,7 +218,7 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                             </button>
                         </div>
 
-                        {/* Profile */}
+                        {/* Mobile Profile */}
                         {user && (
                             <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
                                 <div className="flex items-center gap-3">
@@ -216,17 +238,15 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                                                 ? `${user.firstName} ${user.lastName}`
                                                 : user.companyName || user.email}
                                         </p>
-                                        <p className="text-xs text-gray-600">
-                                            {user.userType}
-                                        </p>
+                                        <p className="text-xs text-gray-600">{user.userType}</p>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Navigation */}
+                        {/* Mobile Nav */}
                         <nav className="flex-1 overflow-y-auto p-4 space-y-3">
-                            {menuItems.map((item) => {
+                            {filteredLinks.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = pathname === item.href;
 
@@ -237,7 +257,7 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                                         onClick={() => setIsSidebarOpen(false)}
                                         className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition ${
                                             isActive
-                                                ? "bg-gradient-to-br from-blue-50 to-emerald90 border-blue-200"
+                                                ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200 shadow-md"
                                                 : "bg-white border-gray-100 hover:border-gray-200"
                                         }`}
                                     >
@@ -246,7 +266,7 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
                                         </div>
 
                                         <span className="font-medium text-sm">{item.label}</span>
-                                        <ChevronRight />
+                                        <ChevronRight className="w-5 h-5 text-gray-400" />
                                     </Link>
                                 );
                             })}
@@ -272,26 +292,25 @@ export default function SideNavProfile({ children }: { children: React.ReactNode
             {/*---------------------------------------------*/}
             {showLogoutConfirm && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
                         <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <AlertCircle className="w-6 h-6 text-red-600" />
                         </div>
-
-                        <h3 className="text-lg font-semibold text-center text-gray-900 mb-2">
+                        <h3 className="text-lg font-semibold text-center">
                             Confirm Logout
                         </h3>
-
-                        <p className="text-sm text-gray-600 text-center mb-6">
+                        <p className="text-sm text-gray-500 text-center mt-1 mb-6">
                             Are you sure you want to sign out?
                         </p>
 
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowLogoutConfirm(false)}
-                                className="flex-1 py-2.5 border rounded-lg text-gray-700 border-gray-300"
+                                className="flex-1 py-2.5 border rounded-lg border-gray-300 text-gray-700"
                             >
                                 Cancel
                             </button>
+
                             <button
                                 onClick={handleLogout}
                                 className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700"
