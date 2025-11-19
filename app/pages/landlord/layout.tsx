@@ -223,13 +223,6 @@ export default function LandlordLayout({
                 );
               })}
             </div>
-
-            {/* Tenant Invite Button */}
-            {user?.landlord_id && (
-              <div className="mt-6 px-1">
-                <SendTenantInviteModal landlord_id={user.landlord_id} />
-              </div>
-            )}
           </nav>
 
           {/* Logout Button at Bottom of Desktop Sidebar */}
