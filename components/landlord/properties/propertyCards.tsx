@@ -155,13 +155,7 @@ const PropertyCard = ({
             <Eye className="w-4 h-4" />
             <span className="hidden lg:inline">View</span>
           </button>
-          <button
-            onClick={(e) => handleEdit(property.property_id, e)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
-          >
-            <Edit2 className="w-4 h-4" />
-            <span className="hidden lg:inline">Edit</span>
-          </button>
+
           <button
             onClick={(e) => handleDelete(property.property_id, e)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"

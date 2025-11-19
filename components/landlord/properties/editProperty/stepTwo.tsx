@@ -1,5 +1,5 @@
-import AmenitiesSelector from "../../../amenities-selector";
-import useEditPropertyStore from "../../../../zustand/property/useEditPropertyStore";
+import AmenitiesSelector from "@/components/landlord/createProperty/amenities-selector";
+import useEditPropertyStore from "@/zustand/property/useEditPropertyStore";
 
 export function StepTwoEdit() {
     // @ts-ignore

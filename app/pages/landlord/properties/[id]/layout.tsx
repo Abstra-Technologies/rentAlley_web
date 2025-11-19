@@ -26,6 +26,7 @@ import {
   Settings,
   LogOut,
   Users,
+    CopyMinus
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -54,6 +55,12 @@ export default function PropertyLayout({
   const province = property?.province || "";
 
   const menu = [
+      {
+          id: "edit",
+          label: "Edit Property Details",
+          href: `/pages/landlord/properties/${id}/editPropertyDetails?${id}`,
+          icon: CopyMinus ,
+      },
     {
       id: "units",
       label: "Units",

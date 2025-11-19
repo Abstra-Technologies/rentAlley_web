@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "@/lib/db";
-import { encryptData, decryptData } from "@/crypto/encrypt";
+import { encryptData } from "@/crypto/encrypt";
 import { jwtVerify } from "jose";
 import { cookies as getCookies } from "next/headers";
 
-// Initialize AWS S3 Client
+// AWS S3 Client
 const s3Client = new S3Client({
     region: process.env.NEXT_AWS_REGION!,
     credentials: {
@@ -16,14 +16,14 @@ const s3Client = new S3Client({
 
 const encryptionSecret = process.env.ENCRYPTION_SECRET!;
 
-// Utility — sanitize filenames
+// Sanitize filenames
 function sanitizeFilename(filename: string): string {
     return filename.replace(/[^a-zA-Z0-9.]/g, "_").replace(/\s+/g, "_");
 }
 
-// ===========================
-// ✅ PUT — Update Property + Photos
-// ===========================
+// =====================================
+//  PUT — Update Property + Upload Photos
+// =====================================
 export async function PUT(req: NextRequest) {
     const cookies = getCookies();
     const property_id = req.nextUrl.searchParams.get("property_id");
@@ -34,130 +34,133 @@ export async function PUT(req: NextRequest) {
     }
 
     const connection = await db.getConnection();
+
     try {
         await connection.beginTransaction();
 
-        // ========================
-        // 1️⃣ Extract property data
-        // ========================
-        const bodyRaw = formData.get("data")?.toString() || "{}";
-        const body = JSON.parse(bodyRaw);
+        // ========================================================
+        // 1️⃣ Parse Property Data
+        // ========================================================
+        const raw = formData.get("data")?.toString() || "{}";
+        const body = JSON.parse(raw);
 
-        // Normalize fields
-        const propertyName = body.propertyName ?? body.property_name ?? null;
-        const propertyType = body.propertyType ?? body.property_type ?? null;
-        const street = body.street ?? null;
-        const brgyDistrict = body.brgyDistrict ?? body.brgy_district ?? null;
-        const city = body.city ?? null;
-        const zipCode = body.zipCode ?? body.zip_code ?? null;
-        const province = body.province ?? null;
+        const fields = {
+            property_name: body.propertyName,
+            property_type: body.propertyType,
+            amenities: Array.isArray(body.amenities)
+                ? body.amenities.join(",")
+                : body.amenities || null,
+            street: body.street ?? null,
+            brgy_district: body.brgyDistrict ?? null,
+            city: body.city ?? null,
+            zip_code: body.zipCode ?? null,
+            province: body.province ?? null,
+            water_billing_type: body.water_billing_type ?? body.waterBillingType ?? null,
+            electricity_billing_type:
+                body.electricity_billing_type ?? body.electricityBillingType ?? null,
+            description: body.description ?? null,
+            floor_area: body.floorArea ?? null,
+            late_fee: body.late_fee ?? null,
+            assoc_dues: body.assoc_dues ?? null,
+            flexipay_enabled: body.flexipay_enabled ?? body.flexiPayEnabled ?? 0,
+            property_preferences: body.propertyPreferences
+                ? JSON.stringify(body.propertyPreferences)
+                : null,
+            accepted_payment_methods: body.paymentMethodsAccepted
+                ? JSON.stringify(body.paymentMethodsAccepted)
+                : null,
+            latitude: body.lat ?? body.latitude ?? null,
+            longitude: body.lng ?? body.longitude ?? null,
+            rent_increase_percent: body.rent_increase_percent ?? 0,
+        };
 
-        const waterBillingType = body.waterBillingType ?? body.water_billing_type ?? null;
-        const electricityBillingType = body.electricityBillingType ?? body.electricity_billing_type ?? null;
-
-        const propDesc = body.propDesc ?? body.description ?? null;
-        const floorArea = body.floorArea ?? body.floor_area ?? null;
-        const minStay = body.minStay ?? body.min_stay ?? null;
-        const flexiPayEnabled = body.flexiPayEnabled ?? body.flexipay_enabled ?? false;
-        const amenities = body.amenities ?? null;
-        const paymentMethodsAccepted = body.paymentMethodsAccepted ?? body.accepted_payment_methods ?? null;
-        const propertyPreferences = body.propertyPreferences ?? body.property_preferences ?? null;
-        const latitude = body.lat ?? body.latitude ?? null;
-        const longitude = body.lng ?? body.longitude ?? null;
-
-        // Normalize arrays / JSON
-        const amenitiesString = Array.isArray(amenities)
-            ? amenities.join(",")
-            : typeof amenities === "string"
-                ? amenities
-                : null;
-
-        const propertyPreferencesJson = propertyPreferences
-            ? Array.isArray(propertyPreferences)
-                ? JSON.stringify(propertyPreferences)
-                : typeof propertyPreferences === "string"
-                    ? propertyPreferences
-                    : JSON.stringify([propertyPreferences])
-            : null;
-
-        const paymentMethodsJson = paymentMethodsAccepted
-            ? Array.isArray(paymentMethodsAccepted)
-                ? JSON.stringify(paymentMethodsAccepted)
-                : typeof paymentMethodsAccepted === "string"
-                    ? paymentMethodsAccepted
-                    : JSON.stringify([paymentMethodsAccepted])
-            : null;
-
-        // ========================
-        // 2️⃣ Update property
-        // ========================
-        const [existingRows] = await connection.execute(
-            `SELECT property_id FROM Property WHERE property_id = ? LIMIT 1`,
+        // ========================================================
+        // 2️⃣ Ensure property exists
+        // ========================================================
+        const [rows] = await connection.query(
+            "SELECT property_id FROM Property WHERE property_id = ? LIMIT 1",
             [property_id]
         );
 
         // @ts-ignore
-        if (!existingRows.length) {
+        if (rows.length === 0) {
             return NextResponse.json({ error: "Property not found" }, { status: 404 });
         }
 
-        await connection.execute(
-            `UPDATE Property SET
-        property_name = ?, property_type = ?, amenities = ?, street = ?, brgy_district = ?, city = ?, zip_code = ?, province = ?,
-        water_billing_type = ?, electricity_billing_type = ?, description = ?, floor_area = ?, min_stay = ?,
-        flexipay_enabled = ?, property_preferences = ?, accepted_payment_methods = ?, latitude = ?, longitude = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE property_id = ?`,
+        // ========================================================
+        // 3️⃣ Update Property
+        // ========================================================
+        await connection.query(
+            `
+      UPDATE Property SET
+        property_name=?, property_type=?, amenities=?, street=?, brgy_district=?, city=?, zip_code=?, province=?,
+        water_billing_type=?, electricity_billing_type=?, description=?, floor_area=?, late_fee=?, assoc_dues=?,
+        flexipay_enabled=?, property_preferences=?, accepted_payment_methods=?, latitude=?, longitude=?,
+        rent_increase_percent=?, updated_at=CURRENT_TIMESTAMP
+      WHERE property_id=?
+      `,
             [
-                propertyName,
-                propertyType,
-                amenitiesString,
-                street,
-                brgyDistrict,
-                city,
-                zipCode,
-                province,
-                waterBillingType,
-                electricityBillingType,
-                propDesc,
-                floorArea,
-                minStay,
-                flexiPayEnabled,
-                propertyPreferencesJson,
-                paymentMethodsJson,
-                latitude,
-                longitude,
+                fields.property_name,
+                fields.property_type,
+                fields.amenities,
+                fields.street,
+                fields.brgy_district,
+                fields.city,
+                fields.zip_code,
+                fields.province,
+                fields.water_billing_type,
+                fields.electricity_billing_type,
+                fields.description,
+                fields.floor_area,
+                fields.late_fee,
+                fields.assoc_dues,
+                fields.flexipay_enabled,
+                fields.property_preferences,
+                fields.accepted_payment_methods,
+                fields.latitude,
+                fields.longitude,
+                fields.rent_increase_percent,
                 property_id,
             ]
         );
 
-        // ========================
-        // 3️⃣ Handle photo uploads
-        // ========================
+        // ========================================================
+        // 4️⃣ Save New Photos to S3
+        // ========================================================
         const files = formData.getAll("files");
+
         if (files.length > 0) {
-            const uploadedFilesData = await Promise.all(
+            const uploaded = await Promise.all(
                 files.map(async (file: any) => {
                     if (typeof file === "string") return null;
+
                     const buffer = Buffer.from(await file.arrayBuffer());
-                    const sanitizedFilename = sanitizeFilename(file.name);
-                    const fileName = `propertyPhoto/${Date.now()}_${sanitizedFilename}`;
-                    const photoUrl = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${fileName}`;
-                    const encryptedUrl = JSON.stringify(encryptData(photoUrl, encryptionSecret));
+                    const cleanName = sanitizeFilename(file.name);
+                    const fileName = `propertyPhoto/${Date.now()}_${cleanName}`;
 
-                    const uploadParams = {
-                        Bucket: process.env.NEXT_S3_BUCKET_NAME!,
-                        Key: fileName,
-                        Body: buffer,
-                        ContentType: file.type,
-                    };
+                    const uploadedUrl = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${
+                        process.env.NEXT_AWS_REGION
+                    }.amazonaws.com/${fileName}`;
 
-                    await s3Client.send(new PutObjectCommand(uploadParams));
+                    const encryptedUrl = JSON.stringify(
+                        encryptData(uploadedUrl, encryptionSecret)
+                    );
+
+                    await s3Client.send(
+                        new PutObjectCommand({
+                            Bucket: process.env.NEXT_S3_BUCKET_NAME!,
+                            Key: fileName,
+                            Body: buffer,
+                            ContentType: file.type,
+                        })
+                    );
 
                     return [property_id, encryptedUrl, new Date(), new Date()];
                 })
             );
 
-            const values = uploadedFilesData.filter(Boolean);
+            const values = uploaded.filter(Boolean);
+
             if (values.length > 0) {
                 await connection.query(
                     `INSERT INTO PropertyPhoto (property_id, photo_url, created_at, updated_at) VALUES ?`,
@@ -166,27 +169,38 @@ export async function PUT(req: NextRequest) {
             }
         }
 
-        // ========================
-        // 4️⃣ Log activity
-        // ========================
+        // ========================================================
+        // 5️⃣ Log Activity
+        // ========================================================
         const token = cookies.get("token")?.value;
+
         if (token) {
-            const secretKey = new TextEncoder().encode(process.env.JWT_SECRET);
-            const { payload } = await jwtVerify(token, secretKey);
-            const loggedUser = payload.user_id;
+            const decoded = await jwtVerify(
+                token,
+                new TextEncoder().encode(process.env.JWT_SECRET)
+            );
+
+            const userId = decoded.payload.user_id;
 
             await connection.query(
                 "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())",
-                [loggedUser, `Updated Property ${propertyName}`]
+                [userId, `Edited Property: ${fields.property_name}`]
             );
         }
 
         await connection.commit();
-        return NextResponse.json({ success: true, message: "Property updated successfully." });
+
+        return NextResponse.json({
+            success: true,
+            message: "Property updated successfully.",
+        });
     } catch (err: any) {
         await connection.rollback();
-        console.error("❌ Property Update Error:", err);
-        return NextResponse.json({ error: err.message || "Failed to update property" }, { status: 500 });
+        console.error("❌ UPDATE PROPERTY ERROR:", err);
+        return NextResponse.json(
+            { error: err.message || "Failed to update property." },
+            { status: 500 }
+        );
     } finally {
         connection.release();
     }
