@@ -4,19 +4,17 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import { IoMailOpen } from "react-icons/io5";
-import { MdRefresh } from "react-icons/md";
-import { SparklesIcon } from "@heroicons/react/24/outline";
+import {
+  HomeIcon,
+  EnvelopeIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 
 import useAuthStore from "@/zustand/authStore";
 import { useChatStore } from "@/zustand/chatStore";
 
 // Components
-import TenantOutsidePortalNav from "@/components/navigation/TenantOutsidePortalNav";
 import LoadingScreen from "@/components/loadingScreen";
-import LeaseCounter from "@/components/tenant/analytics-insights/LeaseCounter";
-import BillingCounter from "@/components/tenant/analytics-insights/BillingCounter";
-import ApplicationsCounter from "@/components/tenant/analytics-insights/applicationsCounter";
 import UnitCard from "@/components/tenant/currentRent/unitCard/activeRentCards";
 import SearchAndFilter from "@/components/Commons/SearchAndFilterUnits";
 import Pagination from "@/components/Commons/Pagination";
@@ -26,7 +24,6 @@ import RenewalRequestForm from "@/components/tenant/currentRent/RenewalRequestFo
 
 // Types & utils
 import { Unit } from "@/types/units";
-import { formatCurrency } from "@/utils/formatter/formatters";
 import { decryptData } from "@/crypto/encrypt";
 
 // Hook to fetch units
@@ -71,11 +68,10 @@ export default function MyUnit() {
   const { user, admin, fetchSession } = useAuthStore();
   const router = useRouter();
   const [showRenewalForm, setShowRenewalForm] = useState<string | null>(null);
-  const [loadingPayment, setLoadingPayment] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefetching, setIsRefetching] = useState(false);
-  const itemsPerPage = 10;
+  const itemsPerPage = 9; // Changed to 9 for better grid layout (3x3)
   const [loadingRenewal, setLoadingRenewal] = useState(false);
   const { units, loading, error, refetch } = useUnits(user?.tenant_id);
 
@@ -89,7 +85,6 @@ export default function MyUnit() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
-
 
   const { filteredUnits, paginatedUnits, totalPages } = useMemo(() => {
     const filtered = units.filter((unit) => {
@@ -142,7 +137,6 @@ export default function MyUnit() {
         icon: "error",
         title: "Unable to Contact",
         text: "Landlord information is not available.",
-        customClass: { popup: "rounded-xl" },
       });
       return;
     }
@@ -163,7 +157,6 @@ export default function MyUnit() {
       icon: "info",
       timer: 1500,
       showConfirmButton: false,
-      customClass: { popup: "rounded-xl" },
       didClose: () => router.push("/pages/tenant/chat"),
     });
   }, [units, user, router]);
@@ -182,7 +175,6 @@ export default function MyUnit() {
           icon: "error",
           title: "Authentication Error",
           text: "User not authenticated.",
-          customClass: { popup: "rounded-xl" },
         });
         return;
       }
@@ -204,7 +196,6 @@ export default function MyUnit() {
             icon: "success",
             title: "Success!",
             text: "Your renewal request has been submitted!",
-            customClass: { popup: "rounded-xl" },
           });
           setShowRenewalForm(null);
           refetch();
@@ -216,7 +207,6 @@ export default function MyUnit() {
           text: `Failed to submit renewal request: ${
             error.response?.data?.message || error.message
           }`,
-          customClass: { popup: "rounded-xl" },
         });
       } finally {
         setLoadingRenewal(false);
@@ -297,159 +287,151 @@ export default function MyUnit() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className="w-full">
-        {/* Top Navigation Bar */}
-        <div className="page-header">
-          <div className="page-header-container">
-            <div className="page-header-inner">
-              <div className="page-header-title-section">
-                <div className="page-header-icon">
-                  <SparklesIcon />
-                </div>
-                <div>
-                  <h1 className="page-header-title">Unit Dashboard</h1>
-                  <p className="page-header-subtitle">Manage your rentals</p>
-                </div>
+    <div className="px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
+      {/* Header */}
+      <header className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-md">
+            <HomeIcon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              My Units
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600">
+              Manage your active rentals
+            </p>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefetching}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-200 hover:border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold text-sm transition-all disabled:opacity-50"
+          >
+            <ArrowPathIcon
+              className={`w-4 h-4 ${isRefetching ? "animate-spin" : ""}`}
+            />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          <button
+            onClick={handleViewInvitations}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-semibold text-sm hover:shadow-md transition-all"
+          >
+            <EnvelopeIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">Invitations</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Error State */}
+      {error && <ErrorBoundary error={error} onRetry={refetch} />}
+
+      {/* Main Content */}
+      {!error && (
+        <>
+          {/* Analytics Section */}
+          {/* <div className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-5">
+                <LeaseCounter tenantId={user?.tenant_id} />
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleRefresh}
-                  disabled={isRefetching}
-                  className="btn-secondary disabled:opacity-50"
-                  title="Refresh data"
-                >
-                  <MdRefresh
-                    className={`text-lg ${isRefetching ? "animate-spin" : ""}`}
-                  />
-                  <span className="hidden sm:inline">Refresh</span>
-                </button>
-                <button
-                  onClick={handleViewInvitations}
-                  className="btn-gradient"
-                >
-                  <IoMailOpen className="text-lg" />
-                  <span className="hidden sm:inline">Invitations</span>
-                </button>
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-5">
+                <ApplicationsCounter tenantId={user?.tenant_id} />
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-5">
+                <BillingCounter tenantId={user?.tenant_id} />
               </div>
             </div>
+          </div> */}
+
+          {/* Search & Filter */}
+          <div className="mb-6">
+            <SearchAndFilter
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              totalUnits={units.length}
+              filteredCount={filteredUnits.length}
+            />
           </div>
-        </div>
 
-        <div className="page-main-content">
-          
-          {/* Analytics Section */}
-          {/*<div className="mb-8">*/}
-          {/*  <div className="section-header">*/}
-          {/*    <div className="section-header-accent"></div>*/}
-          {/*    <h2 className="section-header-title">Analytics Overview</h2>*/}
-          {/*  </div>*/}
+          {/* Empty State */}
+          {filteredUnits.length === 0 ? (
+            <EmptyState
+              searchQuery={searchQuery}
+              onClearSearch={() => setSearchQuery("")}
+            />
+          ) : (
+            <>
+              {/* Results Summary */}
+              {units.length > 0 && (
+                <div className="flex items-center justify-between mb-5 bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-semibold text-gray-700">
+                      {filteredUnits.length}{" "}
+                      {filteredUnits.length === 1 ? "property" : "properties"}
+                    </p>
+                    <div className="w-px h-4 bg-gray-300"></div>
+                    <p className="text-xs text-gray-500">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-          {/*  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">*/}
-          {/*    <div className="card card-padding">*/}
-          {/*      <LeaseCounter tenantId={user?.tenant_id} />*/}
-          {/*    </div>*/}
+              {/* Units Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 mb-6">
+                {paginatedUnits.map((unit) => (
+                  <UnitCard
+                    key={unit.unit_id}
+                    unit={unit}
+                    onContactLandlord={handleContactLandlord}
+                    onAccessPortal={handleAccessPortal}
+                    onEndContract={handleEndLease}
+                    onRenewLease={(unitId, agreementId, renewalData) =>
+                      setShowRenewalForm(unitId)
+                    }
+                  />
+                ))}
+              </div>
 
-          {/*    <div className="card card-padding">*/}
-          {/*      <ApplicationsCounter tenantId={user?.tenant_id} />*/}
-          {/*    </div>*/}
-
-          {/*    <div className="card card-padding">*/}
-          {/*      <BillingCounter tenantId={user?.tenant_id} />*/}
-          {/*    </div>*/}
-          {/*  </div>*/}
-          {/*</div>*/}
-
-          {/* Properties Section */}
-          <div>
-           
-            {error && <ErrorBoundary error={error} onRetry={refetch} />}
-
-            {!error && (
-              <>
-                <div className="mb-6">
-                  <SearchAndFilter
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    totalUnits={units.length}
-                    filteredCount={filteredUnits.length}
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mb-20 sm:mb-4">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    totalItems={filteredUnits.length}
+                    itemsPerPage={itemsPerPage}
                   />
                 </div>
+              )}
+            </>
+          )}
 
-                {filteredUnits.length === 0 ? (
-                  <EmptyState
-                    searchQuery={searchQuery}
-                    onClearSearch={() => setSearchQuery("")}
-                  />
-                ) : (
-                  <>
-                    {/* Results Summary */}
-                    <div className="flex items-center justify-between mb-5 bg-white rounded-xl p-4 border border-gray-200/80 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <p className="text-sm font-semibold text-gray-700">
-                          {filteredUnits.length}{" "}
-                          {filteredUnits.length === 1
-                            ? "property"
-                            : "properties"}
-                        </p>
-                        <div className="w-px h-4 bg-gray-300"></div>
-                        <p className="text-xs text-gray-500">
-                          Page {currentPage} of {totalPages}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Units Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                      {paginatedUnits.map((unit) => (
-                        <UnitCard
-                          key={unit.unit_id}
-                          unit={unit}
-                          onContactLandlord={handleContactLandlord}
-                          onAccessPortal={handleAccessPortal}
-                          onEndContract={handleEndLease}
-                          onRenewLease={(unitId, agreementId, renewalData) =>
-                            setShowRenewalForm(unitId)
-                          }
-                        />
-                      ))}
-                    </div>
-
-                    {totalPages > 1 && (
-                      <div className="mt-6">
-                        <Pagination
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          onPageChange={handlePageChange}
-                          totalItems={filteredUnits.length}
-                          itemsPerPage={itemsPerPage}
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {showRenewalForm && (
-                  <RenewalRequestForm
-                    unit={units.find((u) => u.unit_id === showRenewalForm)!}
-                    onSubmit={(renewalData) =>
-                      handleRenewLease(
-                        showRenewalForm,
-                        units.find((u) => u.unit_id === showRenewalForm)!
-                          .agreement_id,
-                        renewalData
-                      )
-                    }
-                    onClose={() => setShowRenewalForm(null)}
-                    loading={loadingRenewal}
-                  />
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+          {/* Renewal Form Modal */}
+          {showRenewalForm && (
+            <RenewalRequestForm
+              unit={units.find((u) => u.unit_id === showRenewalForm)!}
+              onSubmit={(renewalData) =>
+                handleRenewLease(
+                  showRenewalForm,
+                  units.find((u) => u.unit_id === showRenewalForm)!
+                    .agreement_id,
+                  renewalData
+                )
+              }
+              onClose={() => setShowRenewalForm(null)}
+              loading={loadingRenewal}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
