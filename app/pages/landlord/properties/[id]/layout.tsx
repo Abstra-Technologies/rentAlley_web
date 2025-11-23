@@ -26,7 +26,8 @@ import {
   Settings,
   LogOut,
   Users,
-    CopyMinus
+    CopyMinus,
+    HandCoins
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -103,6 +104,12 @@ export default function PropertyLayout({
       href: `/pages/landlord/properties/${id}/documents`,
       icon: FileText,
     },
+      {
+          id: "finance",
+          label: "Financials",
+          href: `/pages/landlord/properties/${id}/financials`,
+          icon: HandCoins,
+      },
     {
       id: "Reports",
       label: "Reports",
