@@ -11,7 +11,10 @@ export async function POST(req: NextRequest) {
   const { email, password, captchaToken, rememberMe } = body;
 
   if (!email || !password || !captchaToken) {
-    return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Email and password are required" },
+      { status: 400 }
+    );
   }
 
   const captchaSecret = process.env.RECAPTCHA_SECRET_KEY!;
@@ -32,16 +35,46 @@ export async function POST(req: NextRequest) {
     const captchaData = await captchaRes.json();
     if (!captchaData.success) {
       return NextResponse.json(
-          { error: "CAPTCHA verification failed. Please try again." },
-          { status: 403 }
+        { error: "CAPTCHA verification failed. Please try again." },
+        { status: 403 }
       );
     }
 
-    // ✅ Lookup user
-    const emailHash = nodeCrypto.createHash("sha256").update(email).digest("hex");
-    const [users]: any[] = await db.query("SELECT * FROM User WHERE emailHashed = ?", [emailHash]);
+    // ✅ Lookup user with retry logic for ECONNRESET
+    const emailHash = nodeCrypto
+      .createHash("sha256")
+      .update(email)
+      .digest("hex");
+
+    let users: any[] = [];
+    let retries = 3;
+
+    while (retries > 0) {
+      try {
+        const [result]: any[] = await db.query(
+          "SELECT * FROM User WHERE emailHashed = ?",
+          [emailHash]
+        );
+        users = result;
+        break; // Success, exit retry loop
+      } catch (dbError: any) {
+        retries--;
+        if (dbError.code === "ECONNRESET" && retries > 0) {
+          console.log(
+            `Database connection reset, retrying... (${retries} attempts left)`
+          );
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1s before retry
+          continue;
+        }
+        throw dbError; // Throw if not ECONNRESET or no retries left
+      }
+    }
+
     if (!users || users.length === 0) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
     const user = users[0];
@@ -49,34 +82,38 @@ export async function POST(req: NextRequest) {
     // ✅ Account checks
     if (user.google_id) {
       return NextResponse.json(
-          {
-            error: "Your account is linked with Google Sign-In. Please log in using Google.",
-          },
-          { status: 403 }
+        {
+          error:
+            "Your account is linked with Google Sign-In. Please log in using Google.",
+        },
+        { status: 403 }
       );
     }
 
     if (user.status === "deactivated") {
       return NextResponse.json(
-          {
-            error:
-                "Your account is deactivated since you requested deletion. Please contact support if this was a mistake.",
-          },
-          { status: 403 }
+        {
+          error:
+            "Your account is deactivated since you requested deletion. Please contact support if this was a mistake.",
+        },
+        { status: 403 }
       );
     }
 
     if (user.status === "suspended") {
       return NextResponse.json(
-          { error: "Your account is suspended. Please contact support." },
-          { status: 403 }
+        { error: "Your account is suspended. Please contact support." },
+        { status: 403 }
       );
     }
 
     // ✅ Password check
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
     // ✅ Display name handling
@@ -86,16 +123,22 @@ export async function POST(req: NextRequest) {
       displayName = user.companyName;
     } else if (user.firstName && user.lastName) {
       try {
-        const firstName = await decryptData(JSON.parse(user.firstName), process.env.ENCRYPTION_SECRET!);
-        const lastName = await decryptData(JSON.parse(user.lastName), process.env.ENCRYPTION_SECRET!);
+        const firstName = await decryptData(
+          JSON.parse(user.firstName),
+          process.env.ENCRYPTION_SECRET!
+        );
+        const lastName = await decryptData(
+          JSON.parse(user.lastName),
+          process.env.ENCRYPTION_SECRET!
+        );
         displayName = `${firstName} ${lastName}`;
       } catch {
-        displayName = null; // in case decrypt fails for new schema
+        displayName = null;
       }
     }
 
     if (!displayName) {
-      displayName = email; // fallback
+      displayName = email;
     }
 
     // ✅ JWT expiration time based on rememberMe
@@ -108,11 +151,11 @@ export async function POST(req: NextRequest) {
       userType: user.userType,
       displayName,
     })
-        .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime(jwtExpiry)
-        .setIssuedAt()
-        .setSubject(user.user_id)
-        .sign(secret);
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime(jwtExpiry)
+      .setIssuedAt()
+      .setSubject(user.user_id)
+      .sign(secret);
 
     let redirectUrl = "/pages/auth/login";
     switch (user.userType) {
@@ -128,18 +171,18 @@ export async function POST(req: NextRequest) {
     }
 
     const response = NextResponse.json(
-        {
-          message: "Login successful",
-          token,
-          user: {
-            userID: user.user_id,
-            displayName,
-            email,
-            userType: user.userType,
-          },
-          redirectUrl,
+      {
+        message: "Login successful",
+        token,
+        user: {
+          userID: user.user_id,
+          displayName,
+          email,
+          userType: user.userType,
         },
-        { status: 200 }
+        redirectUrl,
+      },
+      { status: 200 }
     );
 
     const isProd = process.env.NODE_ENV === "production";
@@ -157,39 +200,55 @@ export async function POST(req: NextRequest) {
 
       await db.query("SET time_zone = '+08:00'");
       await db.query(
-          `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
+        `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
            VALUES (?, '2fa', ?, NOW(), DATE_ADD(NOW(), INTERVAL 10 MINUTE))
            ON DUPLICATE KEY UPDATE token = VALUES(token), created_at = NOW(), expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE)`,
-          [user.user_id, otp]
+        [user.user_id, otp]
       );
 
       await sendOtpEmail(email, otp.toString());
-      response.cookies.set("pending_2fa", "true", { httpOnly: true, path: "/" });
+      response.cookies.set("pending_2fa", "true", {
+        httpOnly: true,
+        path: "/",
+      });
 
       return NextResponse.json(
-          {
-            message: "OTP sent. Please verify to continue.",
-            requires_otp: true,
-            user_id: user.user_id,
-            userType: user.userType,
-          },
-          { status: 200 }
+        {
+          message: "OTP sent. Please verify to continue.",
+          requires_otp: true,
+          user_id: user.user_id,
+          userType: user.userType,
+        },
+        { status: 200 }
       );
     }
 
     // ✅ Activity log
     const action = "User logged in";
     const timestamp = new Date().toISOString();
-    await db.query("INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)", [
-      user.user_id,
-      action,
-      timestamp,
-    ]);
+    await db.query(
+      "INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, ?)",
+      [user.user_id, action, timestamp]
+    );
 
     return response;
   } catch (error: any) {
     console.error("Error during signin:", error);
-    return NextResponse.json({ error: `Internal server error: ${error}` }, { status: 500 });
+
+    if (
+      error.code === "ECONNRESET" ||
+      error.code === "PROTOCOL_CONNECTION_LOST"
+    ) {
+      return NextResponse.json(
+        { error: "Database connection issue. Please try again in a moment." },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Internal server error. Please try again." },
+      { status: 500 }
+    );
   }
 }
 
