@@ -26,8 +26,8 @@ import {
   Settings,
   LogOut,
   Users,
-    CopyMinus,
-    HandCoins
+  CopyMinus,
+  HandCoins,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -56,12 +56,12 @@ export default function PropertyLayout({
   const province = property?.province || "";
 
   const menu = [
-      {
-          id: "edit",
-          label: "Edit Property Details",
-          href: `/pages/landlord/properties/${id}/editPropertyDetails?${id}`,
-          icon: CopyMinus ,
-      },
+    {
+      id: "edit",
+      label: "Edit Property Details",
+      href: `/pages/landlord/properties/${id}/editPropertyDetails?${id}`,
+      icon: CopyMinus,
+    },
     {
       id: "units",
       label: "Units",
@@ -104,12 +104,12 @@ export default function PropertyLayout({
       href: `/pages/landlord/properties/${id}/documents`,
       icon: FileText,
     },
-      {
-          id: "finance",
-          label: "Financials",
-          href: `/pages/landlord/properties/${id}/financials`,
-          icon: HandCoins,
-      },
+    {
+      id: "finance",
+      label: "Financials",
+      href: `/pages/landlord/properties/${id}/financials`,
+      icon: HandCoins,
+    },
     {
       id: "Reports",
       label: "Reports",
@@ -232,7 +232,9 @@ export default function PropertyLayout({
             <div className="space-y-1">
               {menu.map(({ id: menuId, label, href, icon: Icon }) => {
                 const isActive =
-                  pathname === href || pathname.startsWith(href + "/");
+                  menuId === "units"
+                    ? pathname === href
+                    : pathname === href || pathname.startsWith(href + "/");
                 return (
                   <Link
                     key={menuId}
@@ -455,7 +457,10 @@ export default function PropertyLayout({
                   <div className="space-y-1">
                     {menu.map(({ id: menuId, label, href, icon: Icon }) => {
                       const isActive =
-                        pathname === href || pathname.startsWith(href + "/");
+                        menuId === "units"
+                          ? pathname === href 
+                          : pathname === href ||
+                            pathname.startsWith(href + "/");
                       return (
                         <Link
                           key={menuId}
