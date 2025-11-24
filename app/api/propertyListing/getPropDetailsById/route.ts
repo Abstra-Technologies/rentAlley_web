@@ -27,8 +27,8 @@ export async function GET(req: NextRequest) {
         water_billing_type,
         electricity_billing_type,
         assoc_dues,
-        late_fee,
-        min_stay
+        late_fee
+        
       FROM Property
       WHERE property_id = ?
       `,
