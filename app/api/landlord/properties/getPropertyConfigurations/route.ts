@@ -33,8 +33,7 @@ export async function GET(req: NextRequest) {
         p.water_billing_type,
         p.electricity_billing_type,
         p.late_fee,
-        p.security_deposit_months,
-        p.advance_payment_months,
+      
         c.config_id,
         c.billingReminderDay,
         c.billingDueDay,
@@ -70,9 +69,6 @@ export async function GET(req: NextRequest) {
             property_type: property.property_type,
             city: property.city,
             province: property.province,
-
-            security_deposit_months: property.security_deposit_months,
-            advance_payment_months: property.advance_payment_months,
 
             billingReminderDay: property.billingReminderDay,
             billingDueDay: property.billingDueDay,
