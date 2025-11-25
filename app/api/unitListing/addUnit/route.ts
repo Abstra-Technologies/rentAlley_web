@@ -30,6 +30,9 @@ export async function POST(req: Request) {
     const status = (formData.get("status") as string) || "unoccupied";
     const unitType = formData.get("unitType") as string;
 
+    // Extract 360 photo directly
+    const photo360 = formData.get("photo360") as File | null;
+
     if (!property_id || !unitName || !rentAmt) {
         return NextResponse.json(
             { error: "Missing required fields" },
@@ -39,7 +42,9 @@ export async function POST(req: Request) {
 
     const files: File[] = [];
     for (const entry of formData.entries()) {
-        if (entry[1] instanceof File) files.push(entry[1]);
+        if (entry[0] === "photos" && entry[1] instanceof File) {
+            files.push(entry[1]);
+        }
     }
 
     let connection;
@@ -47,7 +52,7 @@ export async function POST(req: Request) {
         connection = await db.getConnection();
         await connection.beginTransaction();
 
-        // ✅ Step 0: Generate unique unit_id
+        // Step 0: Generate unique unit_id
         let unit_id = generateUnitId();
         let isUnique = false;
 
@@ -59,17 +64,17 @@ export async function POST(req: Request) {
             if (rows.length === 0) {
                 isUnique = true;
             } else {
-                unit_id = generateUnitId(); // regenerate if duplicate
+                unit_id = generateUnitId();
             }
         }
 
         // Step 1: Insert Unit
-        const [unitResult]: any = await connection.execute(
+        await connection.execute(
             `INSERT INTO Unit
-       (unit_id, property_id, unit_name, unit_size, rent_amount, furnish, amenities, status, unit_style)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (unit_id, property_id, unit_name, unit_size, rent_amount, furnish, amenities, status, unit_style)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                unit_id, // ✅ use generated ID
+                unit_id,
                 property_id,
                 unitName,
                 unitSize || null,
@@ -81,7 +86,7 @@ export async function POST(req: Request) {
             ]
         );
 
-        // Step 2: Handle Photos (if any)
+        // Step 2: Upload normal photos
         if (files.length > 0) {
             const uploadedFilesData = await Promise.all(
                 files.map(async (file) => {
@@ -109,9 +114,38 @@ export async function POST(req: Request) {
             );
 
             await connection.query(
-                `INSERT INTO UnitPhoto (unit_id, photo_url, created_at, updated_at)
-                 VALUES ?`,
+                `INSERT INTO UnitPhoto (unit_id, photo_url, created_at, updated_at) VALUES ?`,
                 [uploadedFilesData]
+            );
+        }
+
+        // Step 3: Save 360° photo (if exists)
+        if (photo360) {
+            const arrayBuffer = await photo360.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const sanitizedFilename = sanitizeFilename(photo360.name);
+            const fileName = `unit360/${Date.now()}_${sanitizedFilename}`;
+
+            const photoUrl360 = `https://${process.env.NEXT_S3_BUCKET_NAME}.s3.${process.env.NEXT_AWS_REGION}.amazonaws.com/${fileName}`;
+
+            const encryptedUrl360 = JSON.stringify(
+                encryptData(photoUrl360, encryptionSecret)
+            );
+
+            await s3Client.send(
+                new PutObjectCommand({
+                    Bucket: process.env.NEXT_S3_BUCKET_NAME!,
+                    Key: fileName,
+                    Body: buffer,
+                    ContentType: photo360.type,
+                })
+            );
+
+            // Insert into Unit360 table
+            await connection.execute(
+                `INSERT INTO Unit360 (unit_id, photo360_url, created_at, updated_at)
+                 VALUES (?, ?, NOW(), NOW())`,
+                [unit_id, encryptedUrl360]
             );
         }
 
@@ -119,14 +153,14 @@ export async function POST(req: Request) {
 
         return NextResponse.json(
             {
-                message: "Unit and photos uploaded successfully",
+                message: "Unit, photos, and 360° image uploaded successfully",
                 unitId: unit_id,
             },
             { status: 201 }
         );
     } catch (error: any) {
         if (connection) await connection.rollback();
-        console.error("Error creating unit with photos:", error);
+        console.error("Error creating unit:", error);
         return NextResponse.json(
             { error: "Failed to create unit: " + error.message },
             { status: 500 }

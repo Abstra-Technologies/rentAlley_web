@@ -5,8 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { SUBSCRIPTION_PLANS } from "@/constant/subscription/subscriptionPlans";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
+import { Suspense } from "react";
 
-export default function SubscriptionReview() {
+function SubscriptionReview() {
     const router = useRouter();
     const params = useSearchParams();
 
@@ -251,5 +252,14 @@ export default function SubscriptionReview() {
             {/* Helpful: an uploaded screenshot (for reference in the editor) */}
             {/* image path: /mnt/data/26908012-bbb7-4214-b67c-1175a1d6a5ad.png */}
         </div>
+    );
+}
+
+
+export default function Page() {
+    return (
+        <Suspense fallback={<div>Loading subscription…</div>}>
+            <SubscriptionReview />
+        </Suspense>
     );
 }
