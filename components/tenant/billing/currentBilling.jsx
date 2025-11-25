@@ -16,6 +16,11 @@ import {
   ReceiptPercentIcon,
   CreditCardIcon,
   DocumentArrowDownIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CalendarIcon,
+  BanknotesIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 
 /* ========================================================================== */
@@ -141,9 +146,16 @@ export default function TenantBilling({ agreement_id, user_id }) {
 
   if (!billingData.length)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <ReceiptPercentIcon className="w-14 h-14 text-gray-400" />
-        <p>No billing available.</p>
+      <div className="text-center py-16">
+        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+          <ReceiptPercentIcon className="w-10 h-10 text-gray-400" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          No Billing Available
+        </h3>
+        <p className="text-gray-600">
+          Your billing information will appear here once available.
+        </p>
       </div>
     );
 
@@ -152,72 +164,126 @@ export default function TenantBilling({ agreement_id, user_id }) {
   /* ========================================================================== */
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <header>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Billing Statement
-          </h1>
-          <p className="text-sm text-gray-600">
-            Review your detailed monthly billing
-          </p>
-        </header>
+    <div className="space-y-4 md:space-y-3">
+      {billingData.map((bill) => {
+        const { lateFee, daysLate } = computeLate(bill);
 
-        {billingData.map((bill) => {
-          const { lateFee, daysLate } = computeLate(bill);
+        const baseRent = toNumber(bill.breakdown?.base_rent);
+        const waterAmt = toNumber(bill.total_water_amount);
+        const elecAmt = toNumber(bill.total_electricity_amount);
 
-          const baseRent = toNumber(bill.breakdown?.base_rent);
-          const waterAmt = toNumber(bill.total_water_amount);
-          const elecAmt = toNumber(bill.total_electricity_amount);
+        const advancePayment = bill.breakdown?.is_advance_payment_paid
+          ? toNumber(bill.breakdown.advance_payment_required)
+          : 0;
 
-          const advancePayment = bill.breakdown?.is_advance_payment_paid
-            ? toNumber(bill.breakdown.advance_payment_required)
-            : 0;
+        const additionalCharges = (bill.billingAdditionalCharges || []).reduce(
+          (sum, c) =>
+            c.charge_category === "discount"
+              ? sum - toNumber(c.amount)
+              : sum + toNumber(c.amount),
+          0
+        );
 
-          const additionalCharges = (bill.billingAdditionalCharges || []).reduce(
-            (sum, c) =>
-              c.charge_category === "discount"
-                ? sum - toNumber(c.amount)
-                : sum + toNumber(c.amount),
+        const clearedPdcTotal =
+          bill.postDatedChecks?.reduce(
+            (sum, p) =>
+              p.status === "cleared" ? sum + toNumber(p.amount) : sum,
             0
-          );
+          ) || 0;
 
-          const clearedPdcTotal =
-            bill.postDatedChecks?.reduce(
-              (sum, p) => (p.status === "cleared" ? sum + toNumber(p.amount) : sum),
-              0
-            ) || 0;
+        const rentSubtotal =
+          baseRent +
+          additionalCharges -
+          advancePayment +
+          lateFee -
+          clearedPdcTotal;
 
-          const rentSubtotal =
-            baseRent +
-            additionalCharges -
-            advancePayment +
-            lateFee -
-            clearedPdcTotal;
+        const utilitySubtotal = waterAmt + elecAmt;
 
-          const utilitySubtotal = waterAmt + elecAmt;
+        const totalDue = rentSubtotal + utilitySubtotal;
 
-          const totalDue = rentSubtotal + utilitySubtotal;
+        /* ---------------------------- UI BLOCK ---------------------------- */
 
-          /* ---------------------------- UI BLOCK ---------------------------- */
+        return (
+          <div
+            key={bill.billing_id}
+            className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all duration-300 overflow-hidden"
+          >
+            {/* Header Section */}
+            <div className="p-4 md:p-5 border-b-2 border-gray-100">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                {/* Billing ID */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="p-1.5 bg-blue-100 rounded-lg">
+                      <ReceiptPercentIcon className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                      Billing ID
+                    </p>
+                  </div>
+                  <p className="text-sm font-bold text-gray-900">
+                    #{bill.billing_id || "N/A"}
+                  </p>
+                </div>
 
-          return (
-            <div key={bill.billing_id} className="bg-white border rounded-xl p-6 space-y-6 shadow-sm">
-              
-              {/* BILLING INFO HEADER */}
-              <div className="border-b pb-3">
-                <p className="text-sm text-gray-600">Billing ID: <span className="font-medium text-gray-900">{bill.billing_id}</span></p>
-                <p className="text-sm text-gray-600">Due Date: <span className="font-medium text-gray-900">{formatDate(bill.propertyConfig?.billingDueDay)}</span></p>
-                <p className="text-sm text-gray-600">Payment Status: <span className="font-medium text-gray-900 capitalize">{bill.status}</span></p>
+                {/* Due Date */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="p-1.5 bg-emerald-100 rounded-lg">
+                      <CalendarIcon className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                      Due Date
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {bill.propertyConfig?.billingDueDay
+                      ? formatDate(bill.propertyConfig.billingDueDay)
+                      : "N/A"}
+                  </p>
+                </div>
+
+                {/* Payment Status */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="p-1.5 bg-amber-100 rounded-lg">
+                      <ClockIcon className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                      Payment Status
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold ${
+                      bill.status === "paid"
+                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                        : "bg-amber-100 text-amber-700 border border-amber-200"
+                    }`}
+                  >
+                    {(bill.status || "pending").toUpperCase()}
+                  </span>
+                </div>
               </div>
+            </div>
 
-              {/* TOTAL */}
-              <div className="flex justify-between items-center">
-                <p className="font-semibold text-gray-700">Total Amount Due</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalDue)}</p>
+            {/* Total Amount Due */}
+            <div className="p-4 md:p-5 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BanknotesIcon className="w-6 h-6 text-blue-600" />
+                  <p className="text-base sm:text-lg font-bold text-gray-700">
+                    Total Amount Due
+                  </p>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                  {formatCurrency(totalDue)}
+                </p>
               </div>
+            </div>
 
-              {/* RENT BILLING ACCORDION */}
+            {/* Rent Billing Accordion */}
+            <div className="p-4 md:p-5">
               <Accordion
                 title="Rent Billing"
                 open={bill.showRent}
@@ -259,73 +325,100 @@ export default function TenantBilling({ agreement_id, user_id }) {
                   />
                 )}
 
-                <Row strong label="Rent Subtotal" value={formatCurrency(rentSubtotal)} />
-              </Accordion>
-
-              {/* PDC UNDER RENT */}
-              {!!bill.postDatedChecks?.length && (
-                <PostDatedCheckSection pdcs={bill.postDatedChecks} />
-              )}
-
-              {/* UTILITY BILLING ACCORDION */}
-              <Accordion
-                title="Utility Billing"
-                open={bill.showUtility}
-                amount={utilitySubtotal}
-                onToggle={() => {
-                  bill.showUtility = !bill.showUtility;
-                  setBillingData([...billingData]);
-                }}
-              >
-                <Row label="Water Bill" value={formatCurrency(waterAmt)} />
-                <Row label="Electricity Bill" value={formatCurrency(elecAmt)} />
-
                 <Row
                   strong
-                  label="Utility Subtotal"
-                  value={formatCurrency(utilitySubtotal)}
-                />
-
-                {/* METER READINGS INSIDE UTILITY ACCORDION */}
-                <MeterReadingList
-                  meterReadings={meterReadings}
-                  billingData={billingData}
+                  label="Rent Subtotal"
+                  value={formatCurrency(rentSubtotal)}
                 />
               </Accordion>
 
-              {/* PAYMENT BUTTONS */}
-              {bill.status !== "paid" && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => handleMayaPayment(totalDue, bill.billing_id)}
-                    className="w-full py-3 border rounded-lg font-medium hover:bg-gray-50"
-                  >
-                    <CreditCardIcon className="w-5 h-5 inline mr-2" /> Pay with Maya
-                  </button>
-
-                  <button
-                    onClick={() => handleUploadProof(bill.billing_id, totalDue)}
-                    className="w-full py-3 border rounded-lg font-medium hover:bg-gray-50"
-                  >
-                    <DocumentArrowDownIcon className="w-5 h-5 inline mr-2" />
-                    Upload Proof of Payment
-                  </button>
+              {/* PDC Section */}
+              {!!bill.postDatedChecks?.length && (
+                <div className="mt-4">
+                  <PostDatedCheckSection pdcs={bill.postDatedChecks} />
                 </div>
               )}
 
-              {!bill.isDefaultBilling && (
-                <button
-                  onClick={() => window.open(`/api/tenant/billing/${bill.billing_id}`)}
-                  className="w-full py-3 border rounded-lg font-medium hover:bg-gray-50"
+              {/* Utility Billing Accordion */}
+              <div className="mt-4">
+                <Accordion
+                  title="Utility Billing"
+                  open={bill.showUtility}
+                  amount={utilitySubtotal}
+                  onToggle={() => {
+                    bill.showUtility = !bill.showUtility;
+                    setBillingData([...billingData]);
+                  }}
                 >
-                  Download Billing PDF
-                </button>
-              )}
-              
+                  <Row label="Water Bill" value={formatCurrency(waterAmt)} />
+                  <Row
+                    label="Electricity Bill"
+                    value={formatCurrency(elecAmt)}
+                  />
+
+                  <Row
+                    strong
+                    label="Utility Subtotal"
+                    value={formatCurrency(utilitySubtotal)}
+                  />
+
+                  {/* Meter Readings */}
+                  <MeterReadingList
+                    meterReadings={meterReadings}
+                    billingData={billingData}
+                  />
+                </Accordion>
+              </div>
             </div>
-          );
-        })}
-      </div>
+
+            {/* Payment Buttons */}
+            {bill.status !== "paid" && (
+              <div className="p-4 md:p-5 border-t border-gray-200 space-y-3">
+                <button
+                  onClick={() => handleMayaPayment(totalDue, bill.billing_id)}
+                  disabled={loadingPayment}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loadingPayment ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CreditCardIcon className="w-5 h-5" />
+                      <span>Pay with Maya</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => handleUploadProof(bill.billing_id, totalDue)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-gray-700 rounded-xl font-bold transition-all shadow-sm"
+                >
+                  <DocumentArrowDownIcon className="w-5 h-5" />
+                  <span>Upload Proof of Payment</span>
+                </button>
+              </div>
+            )}
+
+            {/* Download PDF Button */}
+            {!bill.isDefaultBilling && (
+              <div className="p-4 md:p-5 pt-0">
+                <button
+                  onClick={() =>
+                    window.open(`/api/tenant/billing/${bill.billing_id}`)
+                  }
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 text-gray-700 rounded-xl font-bold transition-all shadow-sm"
+                >
+                  <DocumentArrowDownIcon className="w-5 h-5" />
+                  <span>Download Billing PDF</span>
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -336,28 +429,48 @@ export default function TenantBilling({ agreement_id, user_id }) {
 
 function Accordion({ title, open, amount, onToggle, children }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <button
         onClick={onToggle}
-        className="w-full flex justify-between items-center py-2 font-semibold text-gray-900"
+        className="w-full flex items-center justify-between py-3 px-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all font-bold text-gray-900 border-2 border-gray-200"
       >
-        <span>{title}</span>
-        <span className="font-bold">{formatCurrency(amount)}</span>
-        <span className="ml-2 text-gray-500">{open ? "−" : "+"}</span>
+        <span className="text-sm sm:text-base">{title}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-base sm:text-lg font-bold">
+            {formatCurrency(amount)}
+          </span>
+          {open ? (
+            <ChevronUpIcon className="w-5 h-5 text-gray-500" />
+          ) : (
+            <ChevronDownIcon className="w-5 h-5 text-gray-500" />
+          )}
+        </div>
       </button>
 
-      {open && <div className="border rounded-lg divide-y">{children}</div>}
+      {open && (
+        <div className="border-2 border-gray-200 rounded-xl divide-y divide-gray-100">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
 function Row({ label, value, strong }) {
   return (
-    <div className="flex justify-between p-3 text-sm">
-      <span className={strong ? "font-semibold" : "text-gray-700"}>
+    <div className="flex justify-between items-center p-3 sm:p-4">
+      <span
+        className={`text-sm ${
+          strong ? "font-bold text-gray-900" : "text-gray-700"
+        }`}
+      >
         {label}
       </span>
-      <span className={strong ? "font-bold text-gray-900" : "text-gray-900"}>
+      <span
+        className={`text-sm ${
+          strong ? "font-bold text-gray-900" : "font-semibold text-gray-900"
+        }`}
+      >
         {value}
       </span>
     </div>
@@ -366,18 +479,35 @@ function Row({ label, value, strong }) {
 
 function PostDatedCheckSection({ pdcs }) {
   return (
-    <div className="space-y-2 mt-3">
-      <p className="font-semibold text-gray-900">Post-Dated Checks</p>
-      {pdcs.map((pdc, i) => (
-        <div key={i} className="border-b pb-2 text-sm">
-          <p className="font-medium">{pdc.bank_name}</p>
-          <p className="text-gray-600">Check No: {pdc.check_number}</p>
-          <p className="text-gray-500">
-            Due {formatDate(pdc.due_date)} • {formatCurrency(pdc.amount)}
-          </p>
-          <p className="text-gray-700 capitalize">Status: {pdc.status}</p>
-        </div>
-      ))}
+    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+      <p className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+        <CreditCardIcon className="w-5 h-5 text-blue-600" />
+        Post-Dated Checks
+      </p>
+      <div className="space-y-3">
+        {pdcs.map((pdc, i) => (
+          <div
+            key={i}
+            className="bg-white rounded-lg p-3 border border-blue-100"
+          >
+            <p className="font-semibold text-gray-900">{pdc.bank_name}</p>
+            <p className="text-sm text-gray-600 mt-1">
+              Check No: {pdc.check_number}
+            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-sm text-gray-500">
+                Due {formatDate(pdc.due_date)}
+              </p>
+              <p className="font-bold text-gray-900">
+                {formatCurrency(pdc.amount)}
+              </p>
+            </div>
+            <p className="text-xs text-gray-700 capitalize mt-1">
+              Status: {pdc.status}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -386,43 +516,60 @@ function MeterReadingList({ meterReadings, billingData }) {
   const now = new Date();
   const filtered = meterReadings.filter((r) => {
     const d = new Date(r.reading_date);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return (
+      d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    );
   });
 
   if (!filtered.length)
-    return <p className="text-sm text-gray-500 p-3">No meter readings this month.</p>;
+    return (
+      <div className="p-3 sm:p-4 bg-gray-50">
+        <p className="text-sm text-gray-500">No meter readings this month.</p>
+      </div>
+    );
 
   return (
-    <div className="space-y-2 p-2">
-      <p className="font-semibold text-gray-900">Meter Readings (Current Month)</p>
+    <div className="bg-gray-50 p-3 sm:p-4">
+      <p className="font-bold text-gray-900 mb-3">
+        Meter Readings (Current Month)
+      </p>
 
-      {filtered.map((reading, i) => {
-        const prev = Number(reading.previous_reading || 0);
-        const curr = Number(reading.current_reading || 0);
-        const usage = Math.max(curr - prev, 0);
+      <div className="space-y-3">
+        {filtered.map((reading, i) => {
+          const prev = Number(reading.previous_reading || 0);
+          const curr = Number(reading.current_reading || 0);
+          const usage = Math.max(curr - prev, 0);
 
-        const rate =
-          reading.utility_type === "water"
-            ? billingData[0]?.propertyBillingTypes?.water_rate || 0
-            : billingData[0]?.propertyBillingTypes?.electricity_rate || 0;
+          const rate =
+            reading.utility_type === "water"
+              ? billingData[0]?.propertyBillingTypes?.water_rate || 0
+              : billingData[0]?.propertyBillingTypes?.electricity_rate || 0;
 
-        const total = usage * rate;
+          const total = usage * rate;
 
-        return (
-          <div key={i} className="border-b pb-2 text-sm">
-            <div className="flex justify-between">
-              <span className="capitalize font-medium">{reading.utility_type}</span>
-              <span className="font-semibold">{formatCurrency(total)}</span>
+          return (
+            <div
+              key={i}
+              className="bg-white rounded-lg p-3 border border-gray-200"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="capitalize font-semibold text-gray-900">
+                  {reading.utility_type}
+                </span>
+                <span className="font-bold text-gray-900">
+                  {formatCurrency(total)}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">
+                Previous {prev} → Current {curr}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {usage} × ₱{rate}
+              </p>
             </div>
-            <p className="text-gray-600 mt-1">
-              Previous {prev} → Current {curr}
-            </p>
-            <p className="text-gray-500 text-xs">
-              {usage} × ₱{rate}
-            </p>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
