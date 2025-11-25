@@ -121,7 +121,7 @@ export default function Announcements({
 
   if (loading)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 p-4 md:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4 pt-20 pb-24 md:px-6 md:pt-6 md:pb-6 lg:px-8 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
           <p className="text-gray-600 font-medium">Loading announcements...</p>
@@ -131,7 +131,7 @@ export default function Announcements({
 
   if (error)
     return (
-      <div className="bg-gradient-to-br from-blue-50 via-white to-emerald-50 p-4 md:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4 pt-20 pb-24 md:px-6 md:pt-6 md:pb-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
             <div className="flex items-center gap-3">
@@ -151,29 +151,29 @@ export default function Announcements({
     );
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 via-white to-emerald-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+      <div className="h-full px-4 pt-20 pb-24 md:px-6 md:pt-6 md:pb-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl">
-                <MegaphoneIcon className="w-6 h-6 text-white" />
+        <div className="mb-6 md:mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex-shrink-0">
+                <MegaphoneIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                   Announcements
                 </h1>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Stay updated with the latest news
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-blue-200 rounded-xl shadow-sm">
-              <span className="text-2xl font-bold text-blue-600">
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border-2 border-blue-200 rounded-xl shadow-sm flex-shrink-0 self-start sm:self-auto">
+              <span className="text-xl sm:text-2xl font-bold text-blue-600">
                 {announcements.length}
               </span>
-              <span className="text-sm font-semibold text-gray-600">
+              <span className="text-xs sm:text-sm font-semibold text-gray-600">
                 {announcements.length === 1 ? "Post" : "Posts"}
               </span>
             </div>
@@ -196,50 +196,52 @@ export default function Announcements({
           </div>
         ) : (
           /* Announcements List */
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-3">
             {announcements.map((announcement, index) => (
               <article
                 key={announcement?.unique_id}
                 className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all duration-300 overflow-hidden group"
               >
                 {/* Announcement Header */}
-                <div className="p-6 pb-4">
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <div className="p-4 md:p-5 pb-3 md:pb-4">
+                  <div className="flex items-start justify-between gap-3 sm:gap-4 mb-3 md:mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors break-words">
                           {announcement?.title}
                         </h2>
                         {announcement.source === "system" && (
-                          <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-lg border border-purple-200">
+                          <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-lg border border-purple-200 flex-shrink-0">
                             SYSTEM
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600">
                         <div className="flex items-center gap-1.5">
-                          <CalendarIcon className="w-4 h-4 text-gray-400" />
+                          <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                           <span>{formatDate(announcement?.created_at)}</span>
                         </div>
                         <span className="text-gray-300">•</span>
                         <div className="flex items-center gap-1.5">
-                          <ClockIcon className="w-4 h-4 text-gray-400" />
+                          <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                           <span>{formatTime(announcement?.created_at)}</span>
                         </div>
                         {announcement.updated_at &&
                           announcement.updated_at !==
                             announcement.created_at && (
                             <>
-                              <span className="text-gray-300">•</span>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-gray-300 hidden sm:inline">
+                                •
+                              </span>
+                              <span className="text-xs text-gray-500 w-full sm:w-auto">
                                 Updated {formatDate(announcement.updated_at)}
                               </span>
                             </>
                           )}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className="inline-flex items-center px-3 py-1.5 bg-blue-50 border-2 border-blue-200 text-blue-700 text-xs font-bold rounded-lg">
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <span className="inline-flex items-center px-2 sm:px-3 py-1.5 bg-blue-50 border-2 border-blue-200 text-blue-700 text-xs font-bold rounded-lg whitespace-nowrap">
                         {getTimeAgo(announcement?.created_at)}
                       </span>
                       {announcement.photos &&
@@ -276,7 +278,7 @@ export default function Announcements({
                   (announcement.image_url.startsWith("http://") ||
                     announcement.image_url.startsWith("https://") ||
                     announcement.image_url.startsWith("/")) && (
-                    <div className="relative w-full h-64 sm:h-80 bg-gray-100">
+                    <div className="relative w-full h-48 sm:h-64 md:h-80 bg-gray-100">
                       <Image
                         src={announcement.image_url}
                         alt={announcement.title}
@@ -302,7 +304,7 @@ export default function Announcements({
                   )}
 
                 {/* Announcement Content - Truncated */}
-                <div className="p-6 pt-4">
+                <div className="p-4 md:p-5 pt-3 md:pt-4">
                   <div className="prose prose-sm sm:prose max-w-none">
                     <div
                       className="text-gray-700 leading-relaxed line-clamp-3"
@@ -314,10 +316,10 @@ export default function Announcements({
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 pb-6 flex items-center justify-between border-t border-gray-100 pt-4">
+                <div className="px-4 md:px-5 pb-4 md:pb-4 flex items-center justify-between border-t border-gray-100 pt-3 md:pt-4">
                   <button
                     onClick={() => openModal(announcement)}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-blue-600 hover:text-white bg-blue-50 hover:bg-gradient-to-r hover:from-blue-600 hover:to-emerald-600 border-2 border-blue-200 hover:border-blue-600 rounded-xl transition-all duration-200"
+                    className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-blue-600 hover:text-white bg-blue-50 hover:bg-gradient-to-r hover:from-blue-600 hover:to-emerald-600 border-2 border-blue-200 hover:border-blue-600 rounded-xl transition-all duration-200"
                   >
                     <span>Read Full Announcement</span>
                     <svg
@@ -355,26 +357,26 @@ export default function Announcements({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b-2 border-gray-200 p-6 flex items-center justify-between z-10">
-              <div className="flex-1 pr-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-2xl font-bold text-gray-900">
+            <div className="sticky top-0 bg-white border-b-2 border-gray-200 p-4 sm:p-6 flex items-center justify-between z-10">
+              <div className="flex-1 pr-4 min-w-0">
+                <div className="flex items-start flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
                     {selectedAnnouncement?.title}
                   </h3>
                   {selectedAnnouncement.source === "system" && (
-                    <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-lg border border-purple-200">
+                    <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-lg border border-purple-200 flex-shrink-0">
                       SYSTEM
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600">
                   <div className="flex items-center gap-1.5">
-                    <CalendarIcon className="w-4 h-4 text-gray-400" />
+                    <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                     <span>{formatDate(selectedAnnouncement?.created_at)}</span>
                   </div>
                   <span className="text-gray-300">•</span>
                   <div className="flex items-center gap-1.5">
-                    <ClockIcon className="w-4 h-4 text-gray-400" />
+                    <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                     <span>{formatTime(selectedAnnouncement?.created_at)}</span>
                   </div>
                 </div>
@@ -386,7 +388,7 @@ export default function Announcements({
                 }}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0"
               >
-                <XMarkIcon className="w-6 h-6 text-gray-600" />
+                <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
               </button>
             </div>
 
@@ -405,7 +407,7 @@ export default function Announcements({
                 selectedAnnouncement.photos[
                   currentPhotoIndex
                 ].photo_url.startsWith("/")) && (
-                <div className="relative w-full h-96 bg-gray-100">
+                <div className="relative w-full h-64 sm:h-96 bg-gray-100">
                   <Image
                     src={
                       selectedAnnouncement.photos[currentPhotoIndex].photo_url
@@ -429,25 +431,25 @@ export default function Announcements({
                     <>
                       <button
                         onClick={() => prevPhoto(selectedAnnouncement.photos)}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/70 hover:bg-black/90 text-white rounded-full backdrop-blur-sm transition-all"
+                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-black/70 hover:bg-black/90 text-white rounded-full backdrop-blur-sm transition-all"
                       >
-                        <ChevronLeftIcon className="w-6 h-6" />
+                        <ChevronLeftIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                       </button>
                       <button
                         onClick={() => nextPhoto(selectedAnnouncement.photos)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/70 hover:bg-black/90 text-white rounded-full backdrop-blur-sm transition-all"
+                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-black/70 hover:bg-black/90 text-white rounded-full backdrop-blur-sm transition-all"
                       >
-                        <ChevronRightIcon className="w-6 h-6" />
+                        <ChevronRightIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                       </button>
 
                       {/* Photo Counter */}
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/70 text-white text-sm font-bold rounded-full backdrop-blur-sm">
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-1.5 sm:py-2 bg-black/70 text-white text-xs sm:text-sm font-bold rounded-full backdrop-blur-sm">
                         {currentPhotoIndex + 1} /{" "}
                         {selectedAnnouncement.photos.length}
                       </div>
 
-                      {/* Photo Thumbnails */}
-                      <div className="absolute bottom-4 right-4 flex gap-2">
+                      {/* Photo Thumbnails - Hidden on very small screens */}
+                      <div className="hidden sm:flex absolute bottom-4 right-4 gap-2">
                         {selectedAnnouncement.photos
                           .filter(
                             (photo) =>
@@ -487,7 +489,7 @@ export default function Announcements({
               )}
 
             {/* Modal Content */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {selectedAnnouncement.updated_at &&
                 selectedAnnouncement.updated_at !==
                   selectedAnnouncement.created_at && (
@@ -502,7 +504,7 @@ export default function Announcements({
 
               <div className="prose prose-sm sm:prose max-w-none">
                 <div
-                  className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                  className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words"
                   dangerouslySetInnerHTML={{
                     __html: selectedAnnouncement?.message || "",
                   }}
@@ -511,13 +513,13 @@ export default function Announcements({
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t-2 border-gray-200 p-6">
+            <div className="border-t-2 border-gray-200 p-4 sm:p-6">
               <button
                 onClick={() => {
                   setSelectedAnnouncement(null);
                   setCurrentPhotoIndex(0);
                 }}
-                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                className="w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all text-sm sm:text-base"
               >
                 Close
               </button>
