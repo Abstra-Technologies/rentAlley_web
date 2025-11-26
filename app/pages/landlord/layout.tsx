@@ -86,7 +86,7 @@ export default function LandlordLayout({
     },
     { label: "Payments", href: "/pages/landlord/payments", icon: Wallet },
     {
-      label: "Maintenance",
+      label: "Requests",
       href: "/pages/landlord/maintenance-request",
       icon: Construction,
     },

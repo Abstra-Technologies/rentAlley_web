@@ -131,152 +131,101 @@ export const PaidDepositsWidget: React.FC<Props> = ({ landlord_id }) => {
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {tenants.map((tenant) => (
+    return (
         <div
-          key={tenant.user_id}
-          className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all"
+            className="
+      grid
+      gap-4
+
+      /* Mobile: 1 column card style */
+      grid-cols-1
+
+      /* Large: turn into a vertical list using full-width rows */
+      lg:grid-cols-1
+    "
         >
-          {/* Tenant Avatar & Info */}
-          <div className="flex items-start gap-3 mb-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-lg font-bold text-blue-600">
-                {tenant.firstName?.charAt(0)}
+            {tenants.map((tenant) => (
+                <div
+                    key={tenant.user_id}
+                    className="
+          bg-gradient-to-br from-gray-50 to-white
+          border border-gray-200
+          rounded-lg p-4
+          transition-all
+
+          /* MOBILE → stacked card */
+          flex flex-col gap-4
+
+          /* LARGE SCREEN → list row layout */
+          lg:flex-row lg:items-center lg:justify-between
+          lg:py-3
+        "
+                >
+                    {/* LEFT SIDE → Tenant Badge + Info */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center">
+            <span className="text-lg font-bold text-blue-600">
+              {tenant.firstName?.charAt(0)}
                 {tenant.lastName?.charAt(0)}
+            </span>
+                        </div>
+
+                        <div className="min-w-0">
+                            <h4 className="font-semibold text-gray-900 text-sm truncate">
+                                {tenant.firstName} {tenant.lastName}
+                            </h4>
+                            <p className="text-xs text-gray-600 truncate">{tenant.property_name}</p>
+                            <p className="text-xs text-gray-500 truncate">
+                                Unit: {tenant.unit_name}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* RIGHT SIDE → Payment Status */}
+                    <div
+                        className="
+            grid gap-2
+            w-full
+
+            /* Mobile cards: 1 column */
+            grid-cols-1
+
+            /* Large list style: 2 equal columns */
+            lg:grid-cols-2 lg:w-[320px]
+          "
+                    >
+                        {/* Security Deposit */}
+                        <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
+                            <span className="text-xs font-medium text-gray-700">Security Deposit</span>
+                            {tenant.secDepositPaid ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-semibold">
+                ✓ Paid
               </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-gray-900 text-sm truncate">
-                {tenant.firstName} {tenant.lastName}
-              </h4>
-              <p className="text-xs text-gray-600 mt-0.5 truncate">
-                {tenant.property_name}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                Unit: {tenant.unit_name}
-              </p>
-            </div>
-          </div>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-semibold">
+                ⏳ Pending
+              </span>
+                            )}
+                        </div>
 
-          {/* Payment Status Badges */}
-          <div className="space-y-2">
-            {/* Security Deposit */}
-            <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
-              <div className="flex items-center gap-2">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                  />
-                </svg>
-                <span className="text-xs font-medium text-gray-700">
-                  Security Deposit
-                </span>
-              </div>
-              {tenant.secDepositPaid ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-semibold">
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Paid
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-semibold">
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Pending
-                </span>
-              )}
-            </div>
-
-            {/* Advance Payment */}
-            <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
-              <div className="flex items-center gap-2">
-                <svg
-                  className="w-4 h-4 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span className="text-xs font-medium text-gray-700">
-                  Advance Payment
-                </span>
-              </div>
-              {tenant.advPaymentPaid ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-semibold">
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Paid
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-semibold">
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Pending
-                </span>
-              )}
-            </div>
-          </div>
+                        {/* Advance Payment */}
+                        <div className="flex items-center justify-between p-2 bg-white rounded-md border border-gray-200">
+                            <span className="text-xs font-medium text-gray-700">Advance Payment</span>
+                            {tenant.advPaymentPaid ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-semibold">
+                ✓ Paid
+              </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-semibold">
+                ⏳ Pending
+              </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ))}
         </div>
-      ))}
-    </div>
-  );
+    );
+
+
 };
