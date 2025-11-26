@@ -30,6 +30,7 @@ import {
   HandCoins,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Page_footer from "@/components/navigation/page_footer";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -507,9 +508,14 @@ export default function PropertyLayout({
       )}
 
       {/* Main Content with better spacing */}
-      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
-        <div className="p-4 lg:p-6">{children}</div>
-      </main>
+        <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
+            <div className="p-4 lg:p-6">
+                {children}
+
+                <Page_footer />
+            </div>
+        </main>
+
     </div>
   );
 }

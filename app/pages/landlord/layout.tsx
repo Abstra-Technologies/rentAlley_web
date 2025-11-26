@@ -479,7 +479,7 @@ export default function LandlordLayout({
 
       {/* Main Content with better spacing */}
         <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gray-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 {children}
             </div>
 
