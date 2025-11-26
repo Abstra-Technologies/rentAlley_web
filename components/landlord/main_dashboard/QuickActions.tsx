@@ -6,7 +6,7 @@ export default function QuickActions({
   onAddProperty,
   onInviteTenant,
   onAnnouncement,
-  onWithdraw,
+  onWorkOrder,
 }) {
   const actions = [
     {

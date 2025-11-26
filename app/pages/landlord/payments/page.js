@@ -40,7 +40,7 @@ export default function PaymentsPage() {
                 Property Payments
               </h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                View and oversee tenant payment records
+                View and oversee your tenant payment records
               </p>
             </div>
           </div>

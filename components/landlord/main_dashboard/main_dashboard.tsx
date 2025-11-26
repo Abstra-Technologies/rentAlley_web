@@ -144,7 +144,9 @@ const LandlordMainDashboard = () => {
           onAnnouncement={() =>
             router.push("/pages/landlord/announcement/create-announcement")
           }
-
+          onWorkOrder={() =>
+            router.push("/pages/landlord/announcement/create-announcement")
+          }
         />
       </div>
 
