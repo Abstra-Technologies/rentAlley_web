@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "131535207864",
+    "project_id": "upkyp-cdb1c",
+    "storage_bucket": "upkyp-cdb1c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:131535207864:android:06a9cf584d0ab9ec3a234d",
+        "android_client_info": {
+          "package_name": "com.abstra.upkyp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDj7jHgvBpS0QQVv1OGKyd8Y0I8_a-H13g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

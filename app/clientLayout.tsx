@@ -19,6 +19,39 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     const [sessionExpired, setSessionExpired] = useState(false);
     const [sessionChecked, setSessionChecked] = useState(false);
 
+
+    // ANDROID PUSH (CAPACITOR)
+    useEffect(() => {
+        const loadAndroidPush = async () => {
+            const isNativeAndroid = typeof window !== "undefined" &&
+                (window as any).Capacitor?.getPlatform?.() === "android";
+
+            if (!isNativeAndroid || !user_id) return;
+
+            const { initAndroidPush } = await import("@/utils/android/push-android");
+
+            const fcmToken = await initAndroidPush();
+
+            if (fcmToken) {
+                console.log("📨 Saving token:", fcmToken);
+
+                await fetch("/api/push/save-token", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        userId: user_id,
+                        token: fcmToken,
+                        platform: "android",
+                    }),
+                });
+            }
+        };
+
+        loadAndroidPush();
+    }, [user_id]);
+
+
+
     useEffect(() => {
         if ((user || admin) && !sessionChecked) {
             fetchSession()
