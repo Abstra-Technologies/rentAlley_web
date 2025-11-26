@@ -144,9 +144,7 @@ const LandlordMainDashboard = () => {
           onAnnouncement={() =>
             router.push("/pages/landlord/announcement/create-announcement")
           }
-          onWithdraw={() =>
-            router.push("/pages/landlord/announcement/create-announcement")
-          }
+
         />
       </div>
 

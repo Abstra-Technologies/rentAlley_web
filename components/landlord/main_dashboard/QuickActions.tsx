@@ -7,7 +7,6 @@ export default function QuickActions({
   onInviteTenant,
   onAnnouncement,
   onWithdraw,
-  onWorkOrder,
 }) {
   const actions = [
     {
@@ -34,12 +33,7 @@ export default function QuickActions({
       icon: List,
       onClick: onWorkOrder,
     },
-    {
-      id: "income",
-      label: "Income",
-      icon: Wallet,
-      onClick: onWithdraw,
-    },
+
   ];
 
   return (
