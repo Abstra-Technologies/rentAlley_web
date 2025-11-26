@@ -1,22 +1,22 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import {
-  FaTimes,
-  FaMapMarkerAlt,
-  FaBuilding,
-  FaExpandAlt,
-  FaCompress,
-  FaHome,
-  FaShieldAlt,
-  FaCheckCircle,
-  FaList,
-  FaMap,
-} from "react-icons/fa";
-import { BsImageAlt } from "react-icons/bs";
-import { HiLocationMarker, HiSparkles } from "react-icons/hi";
-import { MdVerifiedUser } from "react-icons/md";
+  X,
+  MapPin,
+  Building2,
+  Maximize2,
+  Minimize2,
+  Home,
+  Shield,
+  BadgeCheck,
+  List,
+  Map as MapIcon,
+  ChevronRight,
+  ImageIcon,
+  Sparkles,
+} from "lucide-react";
 
 import "leaflet/dist/leaflet.css";
 import type { Unit } from "../../types/types";
@@ -26,7 +26,7 @@ interface MapViewProps {
   onUnitClick: (unitId: string, propertyId: string) => void;
 }
 
-// Dynamic imports
+// Dynamic imports for Leaflet
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
   { ssr: false }
@@ -51,6 +51,7 @@ const formatCurrency = (amount: number): string => {
     style: "currency",
     currency: "PHP",
     minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 };
 
@@ -69,7 +70,7 @@ function MapBoundsUpdater({ units }: { units: Unit[] }) {
   try {
     const { useMap } = require("react-leaflet");
     map = useMap();
-  } catch (e) {
+  } catch {
     return null;
   }
 
@@ -92,7 +93,7 @@ function MapBoundsUpdater({ units }: { units: Unit[] }) {
         const bounds = L.latLngBounds(validCoords);
         if (bounds.isValid()) {
           map.fitBounds(bounds, {
-            padding: [80, 80],
+            padding: [60, 60],
             maxZoom: 16,
           });
         }
@@ -109,15 +110,15 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [customIcon, setCustomIcon] = useState<any>(null);
   const [isClient, setIsClient] = useState(false);
-  const [showLegend, setShowLegend] = useState(true);
-  const [isMobileView, setIsMobileView] = useState(false);
+  const [showStats, setShowStats] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [showListView, setShowListView] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
 
     const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -146,12 +147,11 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
     });
   }, [filteredUnits]);
 
-  // Group units by location to handle overlapping markers
+  // Group units by location for overlapping markers
   const groupedUnits = useMemo(() => {
     const groups = new Map<string, Unit[]>();
 
     unitsWithLocation.forEach((unit) => {
-      // Round coordinates to 5 decimal places to group nearby units
       const lat = Number(unit.latitude).toFixed(5);
       const lng = Number(unit.longitude).toFixed(5);
       const key = `${lat},${lng}`;
@@ -180,9 +180,10 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
         lngSum / unitsWithLocation.length,
       ];
     }
-    return [14.5995, 120.9842];
+    return [14.5995, 120.9842]; // Manila default
   }, [unitsWithLocation]);
 
+  // Create custom marker icon
   useEffect(() => {
     if (typeof window !== "undefined" && isClient) {
       import("leaflet").then((L) => {
@@ -200,28 +201,31 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
 
         const icon = leaflet.divIcon({
           html: `
-            <div class="map-marker-container">
-              <div class="map-marker-pulse"></div>
-              <svg width="36" height="45" viewBox="0 0 36 45" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <filter id="marker-shadow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.35"/>
-                  </filter>
-                  <linearGradient id="markerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#10B981;stop-opacity:1" />
-                  </linearGradient>
-                </defs>
-                <path d="M18 0C8.059 0 0 8.059 0 18c0 13.5 18 27 18 27s18-13.5 18-27c0-9.941-8.059-18-18-18z" fill="url(#markerGradient)" filter="url(#marker-shadow)"/>
-                <circle cx="18" cy="18" r="8" fill="white"/>
-                <circle cx="18" cy="18" r="5" fill="#10B981"/>
-              </svg>
+            <div class="upkyp-marker">
+              <div class="upkyp-marker-pulse"></div>
+              <div class="upkyp-marker-pin">
+                <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="pinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+                      <stop offset="100%" style="stop-color:#10B981;stop-opacity:1" />
+                    </linearGradient>
+                    <filter id="pinShadow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.25"/>
+                    </filter>
+                  </defs>
+                  <path d="M18 0C8.059 0 0 8.059 0 18c0 14 18 26 18 26s18-12 18-26C36 8.059 27.941 0 18 0z" 
+                        fill="url(#pinGradient)" filter="url(#pinShadow)"/>
+                  <circle cx="18" cy="16" r="7" fill="white"/>
+                  <circle cx="18" cy="16" r="4" fill="#10B981"/>
+                </svg>
+              </div>
             </div>
           `,
-          className: "custom-marker-icon",
-          iconSize: [36, 45],
-          iconAnchor: [18, 45],
-          popupAnchor: [0, -45],
+          className: "upkyp-marker-container",
+          iconSize: [36, 44],
+          iconAnchor: [18, 44],
+          popupAnchor: [0, -44],
         });
         setCustomIcon(icon);
       });
@@ -235,116 +239,148 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
     return uniqueProperties.size;
   }, [unitsWithLocation]);
 
+  const handleClosePanel = useCallback(() => {
+    setSelectedUnit(null);
+  }, []);
+
   if (!isClient) {
     return (
-      <div className="flex-1 relative min-h-[600px] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="flex-1 h-full bg-gray-50 flex items-center justify-center">
         <div className="text-center p-8">
-          <HiLocationMarker className="mx-auto text-emerald-500 text-4xl mb-4 animate-bounce" />
-          <p className="text-gray-700 font-semibold">Initializing Map...</p>
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full animate-pulse" />
+            <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-emerald-600 animate-bounce" />
+            </div>
+          </div>
+          <p className="text-gray-600 font-medium">Loading map...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 relative flex flex-col lg:flex-row h-[calc(100vh-180px)]">
+    <div className="flex-1 relative flex h-full">
+      {/* Global Styles */}
       <style jsx global>{`
-        .map-marker-container {
+        .upkyp-marker {
           position: relative;
-          animation: marker-float 3s ease-in-out infinite;
         }
 
-        .map-marker-pulse {
+        .upkyp-marker-pulse {
           position: absolute;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 55px;
-          height: 55px;
+          width: 50px;
+          height: 50px;
           border-radius: 50%;
           background: linear-gradient(
             135deg,
-            rgba(59, 130, 246, 0.3),
-            rgba(16, 185, 129, 0.3)
+            rgba(59, 130, 246, 0.2),
+            rgba(16, 185, 129, 0.2)
           );
-          animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955)
-            infinite;
+          animation: markerPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
-        @keyframes marker-float {
+        .upkyp-marker-pin {
+          position: relative;
+          animation: markerFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes markerPulse {
           0%,
           100% {
-            transform: translateY(0);
+            transform: translate(-50%, -50%) scale(0.5);
+            opacity: 0.8;
           }
           50% {
-            transform: translateY(-6px);
-          }
-        }
-
-        @keyframes pulse-ring {
-          0% {
-            transform: translate(-50%, -50%) scale(0.4);
-            opacity: 1;
-          }
-          80%,
-          100% {
-            transform: translate(-50%, -50%) scale(2.2);
+            transform: translate(-50%, -50%) scale(1.5);
             opacity: 0;
           }
         }
 
-        .custom-marker-icon:hover .map-marker-container {
-          animation: marker-bounce 0.5s ease-in-out;
-        }
-
-        @keyframes marker-bounce {
+        @keyframes markerFloat {
           0%,
           100% {
             transform: translateY(0);
           }
           50% {
-            transform: translateY(-10px);
+            transform: translateY(-4px);
+          }
+        }
+
+        .upkyp-marker-container:hover .upkyp-marker-pin {
+          animation: markerBounce 0.4s ease-out;
+        }
+
+        @keyframes markerBounce {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-8px);
           }
         }
 
         .leaflet-popup-content-wrapper {
-          border-radius: 12px;
+          border-radius: 16px;
           padding: 0;
+          box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2);
+          border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .leaflet-popup-content {
           margin: 0;
-          min-width: 200px;
+          min-width: 220px;
+        }
+
+        .leaflet-popup-tip {
+          display: none;
         }
       `}</style>
 
-      {/* List View Sidebar - Desktop */}
-      {showListView && !isMobileView && (
-        <div className="w-96 bg-white border-r border-gray-200 overflow-y-auto">
-          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50 sticky top-0 z-10">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <FaList className="text-emerald-600" />
-              <span>{unitsWithLocation.length} Properties</span>
-            </h3>
+      {/* Desktop List Sidebar */}
+      {showListView && !isMobile && (
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+          <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-emerald-50/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <List className="w-4 h-4 text-emerald-600" />
+                <span className="font-semibold text-gray-900 text-sm">
+                  {unitsWithLocation.length} Properties
+                </span>
+              </div>
+              <button
+                onClick={() => setShowListView(false)}
+                className="p-1.5 rounded-lg hover:bg-white/80 transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
           </div>
-          <div className="p-2 space-y-2">
+          <div className="flex-1 overflow-y-auto p-2 space-y-2">
             {unitsWithLocation.map((unit) => (
               <button
                 key={unit.unit_id}
                 onClick={() => setSelectedUnit(unit)}
-                className={`w-full p-3 rounded-xl text-left transition-all ${
-                  selectedUnit?.unit_id === unit.unit_id
-                    ? "bg-gradient-to-r from-blue-50 to-emerald-50 border-2 border-blue-200"
-                    : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
-                }`}
+                className={`
+                  w-full p-3 rounded-xl text-left transition-all duration-200
+                  ${
+                    selectedUnit?.unit_id === unit.unit_id
+                      ? "bg-gradient-to-r from-blue-50 to-emerald-50 border-2 border-emerald-200 shadow-sm"
+                      : "bg-gray-50 hover:bg-gray-100 border border-gray-100"
+                  }
+                `}
               >
                 <p className="font-semibold text-sm text-gray-900 line-clamp-1">
                   {unit.property_name}
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-gray-500 mt-0.5">
                   Unit {unit.unit_name}
                 </p>
-                <p className="text-sm font-bold text-emerald-600 mt-2">
+                <p className="text-sm font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent mt-2">
                   {formatCurrency(Number(unit.rent_amount))}/mo
                 </p>
               </button>
@@ -361,7 +397,6 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
             zoom={13}
             scrollWheelZoom={true}
             style={{ height: "100%", width: "100%", zIndex: 0 }}
-            className="z-0"
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -371,7 +406,6 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
 
             <MapBoundsUpdater units={unitsWithLocation} />
 
-            {/* Render markers - grouped by location */}
             {groupedUnits.map((group, groupIndex) => {
               const firstUnit = group[0];
               const hasMultiple = group.length > 1;
@@ -384,39 +418,38 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
                     Number(firstUnit.longitude),
                   ]}
                   icon={customIcon}
-                  // REMOVED: eventHandlers={{ click: () => setSelectedUnit(firstUnit) }}
-                  // This allows the Popup to show first by default.
                 >
-                  <Popup>
+                  <Popup maxWidth={280} closeButton={false}>
                     <div className="p-3">
                       {hasMultiple ? (
                         <>
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-3">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white font-bold text-sm">
                               {group.length}
                             </div>
-                            <p className="font-bold text-gray-900 text-sm">
-                              {group.length} Units Available
-                            </p>
+                            <div>
+                              <p className="font-bold text-gray-900 text-sm">
+                                {group.length} Units Available
+                              </p>
+                              <p className="text-xs text-gray-500 line-clamp-1">
+                                {firstUnit.property_name}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-xs text-gray-600 mb-3">
-                            at {firstUnit.property_name}
-                          </p>
-                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
                             {group.map((unit) => (
                               <button
                                 key={unit.unit_id}
-                                // ACTION: Sets the custom state here, triggering the fixed panel
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedUnit(unit);
                                 }}
-                                className="w-full p-2 text-left rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors"
+                                className="w-full p-2.5 text-left rounded-lg hover:bg-gray-50 border border-gray-100 transition-colors"
                               >
-                                <p className="font-semibold text-xs text-gray-900">
+                                <p className="font-medium text-xs text-gray-900">
                                   Unit {unit.unit_name}
                                 </p>
-                                <p className="text-xs text-emerald-600 font-bold mt-1">
+                                <p className="text-xs font-bold text-emerald-600 mt-0.5">
                                   {formatCurrency(Number(unit.rent_amount))}/mo
                                 </p>
                               </button>
@@ -425,22 +458,21 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
                         </>
                       ) : (
                         <>
-                          <p className="font-bold text-gray-900 text-sm mb-1">
+                          <p className="font-bold text-gray-900 text-sm line-clamp-1">
                             {firstUnit.property_name}
                           </p>
-                          <p className="text-xs text-gray-600 mb-2">
+                          <p className="text-xs text-gray-500 mt-0.5">
                             Unit {firstUnit.unit_name}
                           </p>
-                          <p className="text-sm font-bold text-emerald-600 mb-3">
+                          <p className="text-base font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent mt-2">
                             {formatCurrency(Number(firstUnit.rent_amount))}/mo
                           </p>
                           <button
-                            // ACTION: Sets the custom state here, triggering the fixed panel
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedUnit(firstUnit);
                             }}
-                            className="w-full py-2 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-lg text-xs font-semibold hover:shadow-lg transition-all"
+                            className="w-full mt-3 py-2 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-lg text-xs font-semibold hover:shadow-lg transition-all"
                           >
                             View Details
                           </button>
@@ -454,58 +486,58 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
           </MapContainer>
         )}
 
-        {/* Toggle List View Button - Desktop - FIXED Z-INDEX */}
-        {!isMobileView && (
+        {/* Desktop List Toggle Button */}
+        {!isMobile && (
           <button
             onClick={() => setShowListView(!showListView)}
-            className="absolute top-4 left-4 z-[35] bg-white/98 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all flex items-center gap-2 text-sm font-semibold text-gray-700"
+            className="absolute top-4 left-4 z-[35] flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all text-sm font-medium text-gray-700"
           >
             {showListView ? (
               <>
-                <FaMap className="text-emerald-600" />
+                <MapIcon className="w-4 h-4 text-emerald-600" />
                 Map Only
               </>
             ) : (
               <>
-                <FaList className="text-emerald-600" />
+                <List className="w-4 h-4 text-emerald-600" />
                 Show List
               </>
             )}
           </button>
         )}
 
-        {/* Map Stats - Compact & Fixed - FIXED Z-INDEX */}
-        {showLegend && (
+        {/* Stats Panel */}
+        {showStats && (
           <div
             className={`absolute ${
-              isMobileView ? "top-2 right-2" : "top-4 right-4"
-            } z-[35] max-w-[200px]`}
+              isMobile ? "top-2 right-2" : "top-4 right-4"
+            } z-[35]`}
           >
-            <div className="bg-white/98 backdrop-blur-md rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="p-3 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100 flex items-center justify-between">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden min-w-[160px]">
+              <div className="p-3 bg-gradient-to-r from-blue-50/80 to-emerald-50/80 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <HiLocationMarker className="text-emerald-600 text-lg" />
+                  <MapPin className="w-4 h-4 text-emerald-600" />
                   <span className="font-bold text-sm text-gray-900">Stats</span>
                 </div>
                 <button
-                  onClick={() => setShowLegend(false)}
-                  className="p-1 hover:bg-white/60 rounded transition-colors"
+                  onClick={() => setShowStats(false)}
+                  className="p-1 hover:bg-white/60 rounded-lg transition-colors"
                 >
-                  <FaCompress className="text-gray-600 text-xs" />
+                  <Minimize2 className="w-3.5 h-3.5 text-gray-500" />
                 </button>
               </div>
               <div className="p-3 space-y-2">
-                <div className="bg-gradient-to-br from-blue-500 to-emerald-600 rounded-lg p-3 text-white">
-                  <p className="text-xs font-semibold opacity-90 uppercase tracking-wide mb-1">
+                <div className="bg-gradient-to-br from-blue-500 to-emerald-600 rounded-xl p-3 text-white">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">
                     Available
                   </p>
                   <p className="text-2xl font-bold">
                     {unitsWithLocation.length}
                   </p>
-                  <p className="text-xs opacity-80">Units</p>
+                  <p className="text-xs opacity-70">Units</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
                     Properties
                   </p>
                   <p className="text-xl font-bold text-gray-900">
@@ -517,129 +549,132 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
           </div>
         )}
 
-        {!showLegend && (
+        {/* Collapsed Stats Button */}
+        {!showStats && (
           <button
-            onClick={() => setShowLegend(true)}
-            className="absolute top-4 right-4 z-[35] w-10 h-10 bg-white/98 backdrop-blur-md rounded-lg shadow-lg border border-gray-200 flex items-center justify-center hover:scale-110 transition-all"
+            onClick={() => setShowStats(true)}
+            className={`absolute ${
+              isMobile ? "top-2 right-2" : "top-4 right-4"
+            } z-[35] w-10 h-10 bg-white rounded-xl shadow-lg border border-gray-200 flex items-center justify-center hover:scale-105 transition-all`}
           >
-            <FaExpandAlt className="text-gray-600 text-sm" />
+            <Maximize2 className="w-4 h-4 text-gray-600" />
           </button>
         )}
 
         {/* Selected Unit Panel */}
         {selectedUnit && (
           <div
-            className={`fixed ${
-              isMobileView
+            className={`fixed z-[500] ${
+              isMobile
                 ? "inset-x-0 bottom-0"
-                : "bottom-6 left-1/2 transform -translate-x-1/2 w-11/12 sm:w-[480px]"
-            } bg-white/98 backdrop-blur-xl ${
-              isMobileView ? "rounded-t-3xl" : "rounded-3xl"
-            } shadow-2xl z-[500] border border-gray-200/50`}
+                : "bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md"
+            }`}
           >
-            {isMobileView && (
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="w-16 h-1.5 bg-gray-300 rounded-full"></div>
-              </div>
-            )}
-
-            <div className="p-5">
-              <button
-                onClick={() => setSelectedUnit(null)}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-all"
-              >
-                <FaTimes className="text-gray-400 hover:text-gray-700" />
-              </button>
-
-              <div className={`${isMobileView ? "space-y-4" : "flex gap-4"}`}>
-                <div
-                  className={`${
-                    isMobileView ? "w-full h-48" : "w-32 h-32"
-                  } rounded-xl overflow-hidden shadow-md bg-gray-100 relative flex-shrink-0`}
-                >
-                  {selectedUnit.photos?.[0] ? (
-                    <Image
-                      src={selectedUnit.photos[0]}
-                      alt={`Unit ${selectedUnit.unit_name}`}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <BsImageAlt className="text-gray-400 text-3xl" />
-                    </div>
-                  )}
-
-                  <div className="absolute top-2 right-2">
-                    <div className="backdrop-blur-md bg-gradient-to-br from-blue-600 to-emerald-600 p-1.5 rounded-full shadow-lg border-2 border-white/30">
-                      <MdVerifiedUser className="text-white text-sm" />
-                    </div>
-                  </div>
+            <div
+              className={`bg-white ${
+                isMobile ? "rounded-t-3xl" : "rounded-2xl mx-4"
+              } shadow-2xl border border-gray-200/50 overflow-hidden`}
+            >
+              {/* Mobile Drag Handle */}
+              {isMobile && (
+                <div className="flex justify-center pt-3 pb-1">
+                  <div className="w-10 h-1 bg-gray-300 rounded-full" />
                 </div>
+              )}
 
-                <div className="flex-1 min-w-0">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-xs font-bold rounded-full mb-3">
-                    <HiSparkles />
-                    Unit {selectedUnit.unit_name}
+              <div className="p-4 sm:p-5">
+                {/* Close Button */}
+                <button
+                  onClick={handleClosePanel}
+                  className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+
+                <div className={`${isMobile ? "space-y-4" : "flex gap-4"}`}>
+                  {/* Image */}
+                  <div
+                    className={`${
+                      isMobile ? "w-full h-36" : "w-28 h-28"
+                    } rounded-xl overflow-hidden bg-gray-100 relative flex-shrink-0`}
+                  >
+                    {selectedUnit.photos?.[0] ? (
+                      <Image
+                        src={selectedUnit.photos[0]}
+                        alt={`Unit ${selectedUnit.unit_name}`}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-gray-300" />
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2">
+                      <div className="p-1.5 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg">
+                        <BadgeCheck className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-bold text-gray-900 text-lg line-clamp-1">
-                      {selectedUnit.property_name}
-                    </h3>
-                    <FaCheckCircle className="text-blue-500 flex-shrink-0 text-sm" />
-                  </div>
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    {/* Unit Badge */}
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-xs font-bold rounded-full mb-2">
+                      <Sparkles className="w-3 h-3" />
+                      Unit {selectedUnit.unit_name}
+                    </div>
 
-                  <p className="text-xs text-gray-500 flex items-center gap-1.5 mb-3">
-                    <FaBuilding className="text-gray-400" />
-                    {selectedUnit.property_type.replace(/_/g, " ")}
-                  </p>
+                    {/* Property Name */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-gray-900 text-base line-clamp-1">
+                        {selectedUnit.property_name}
+                      </h3>
+                    </div>
 
-                  <div className="mb-3 px-3 py-2 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg border border-blue-100/50">
-                    <div className="flex items-center gap-2">
-                      <FaShieldAlt className="text-blue-600 text-xs" />
-                      <p className="text-xs text-gray-700 font-medium">
-                        <span className="font-bold text-blue-600">
-                          Verified Safe
-                        </span>{" "}
-                        · Background checked
+                    {/* Property Type */}
+                    <p className="text-xs text-gray-500 flex items-center gap-1.5 mb-3">
+                      <Building2 className="w-3.5 h-3.5" />
+                      {selectedUnit.property_type.replace(/_/g, " ")}
+                    </p>
+
+                    {/* Verified Badge */}
+                    <div className="mb-3 px-3 py-2 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg border border-blue-100/50">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-3.5 h-3.5 text-blue-600" />
+                        <p className="text-xs text-gray-700 font-medium">
+                          <span className="font-bold text-blue-600">
+                            Verified
+                          </span>{" "}
+                          · Background checked
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="bg-gray-50 rounded-xl p-3 mb-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-0.5">
+                        Monthly Rent
+                      </p>
+                      <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                        {formatCurrency(Number(selectedUnit.rent_amount))}
                       </p>
                     </div>
-                  </div>
 
-                  <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl p-3 mb-4 border border-blue-100">
-                    <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-1">
-                      Monthly Rent
-                    </p>
-                    <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 text-2xl">
-                      {formatCurrency(Number(selectedUnit.rent_amount))}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      onUnitClick(
-                        selectedUnit.unit_id,
-                        selectedUnit.property_id
-                      )
-                    }
-                    className="w-full py-3 bg-gradient-to-r from-blue-500 to-emerald-600 text-white rounded-xl text-sm font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                  >
-                    View Full Details
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    {/* CTA Button */}
+                    <button
+                      onClick={() =>
+                        onUnitClick(
+                          selectedUnit.unit_id,
+                          selectedUnit.property_id
+                        )
+                      }
+                      className="w-full py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 text-sm"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
+                      View Full Details
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -648,14 +683,16 @@ export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
 
         {/* Empty State */}
         {unitsWithLocation.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center z-[999] bg-white/95 backdrop-blur-sm">
-            <div className="text-center p-8 max-w-md">
-              <FaMapMarkerAlt className="mx-auto text-gray-300 text-5xl mb-4" />
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                No Map Locations
+          <div className="absolute inset-0 flex items-center justify-center z-[40] bg-white/95 backdrop-blur-sm">
+            <div className="text-center p-8 max-w-sm">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+                <MapPin className="w-8 h-8 text-gray-300" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                No map locations
               </h3>
-              <p className="text-gray-600 leading-relaxed">
-                No properties with valid locations match your filters.
+              <p className="text-gray-500 text-sm leading-relaxed">
+                No properties with valid locations match your current filters.
               </p>
             </div>
           </div>

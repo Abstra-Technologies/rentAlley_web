@@ -1,6 +1,16 @@
 "use client";
 import { FilterState } from "../../types/types";
-import { MapPin, DollarSign, Home, X, ChevronRight } from "lucide-react";
+import {
+  MapPin,
+  DollarSign,
+  Home,
+  ChevronRight,
+  ChevronLeft,
+  RotateCcw,
+  Check,
+  Sofa,
+  Maximize,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface MobileFiltersPanelProps {
@@ -9,14 +19,15 @@ interface MobileFiltersPanelProps {
   onClose?: () => void;
 }
 
+type ActiveStep = "main" | "price" | "location" | "propertyType" | "unitStyle";
+
 export default function MobileFiltersPanel({
   filters,
   setFilters,
   onClose,
 }: MobileFiltersPanelProps) {
-  const [activeStep, setActiveStep] = useState<
-    "main" | "price" | "location" | "propertyType" | "unitStyle"
-  >("main");
+  const [activeStep, setActiveStep] = useState<ActiveStep>("main");
+  const [localFilters, setLocalFilters] = useState<FilterState>(filters);
 
   const propertyTypes = [
     { label: "Apartment", value: "apartment", icon: "🏢" },
@@ -74,12 +85,17 @@ export default function MobileFiltersPanel({
     { label: "Above ₱20k", min: 20000, max: 0 },
   ];
 
+  // Sync local filters when parent filters change
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
+
   const handleQuickPrice = (min: number, max: number) => {
-    setFilters({ ...filters, minPrice: min, maxPrice: max });
+    setLocalFilters({ ...localFilters, minPrice: min, maxPrice: max });
   };
 
   const handleClearFilters = () => {
-    setFilters({
+    const clearedFilters = {
       searchQuery: filters.searchQuery || "",
       propertyType: "",
       furnishing: "",
@@ -88,182 +104,219 @@ export default function MobileFiltersPanel({
       minSize: 0,
       location: "",
       unitStyle: "",
-    });
+    };
+    setLocalFilters(clearedFilters);
+  };
+
+  const handleApply = () => {
+    setFilters(localFilters);
+    onClose?.();
   };
 
   const getFilterValue = (key: string) => {
-    const value = filters[key as keyof FilterState];
-    if (key === "location" && value) {
-      return locations.find((l) => l.value === value)?.label || "";
+    if (key === "location" && localFilters.location) {
+      return (
+        locations.find((l) => l.value === localFilters.location)?.label || ""
+      );
     }
-    if (key === "propertyType" && value) {
-      return propertyTypes.find((p) => p.value === value)?.label || "";
+    if (key === "propertyType" && localFilters.propertyType) {
+      return (
+        propertyTypes.find((p) => p.value === localFilters.propertyType)
+          ?.label || ""
+      );
     }
-    if (key === "unitStyle" && value) {
-      return unitStyles.find((u) => u.value === value)?.label || "";
+    if (key === "unitStyle" && localFilters.unitStyle) {
+      return (
+        unitStyles.find((u) => u.value === localFilters.unitStyle)?.label || ""
+      );
     }
     if (key === "price") {
-      if (filters.minPrice && filters.maxPrice) {
-        return `₱${filters.minPrice.toLocaleString()} - ₱${filters.maxPrice.toLocaleString()}`;
+      if (localFilters.minPrice && localFilters.maxPrice) {
+        return `₱${localFilters.minPrice.toLocaleString()} - ₱${localFilters.maxPrice.toLocaleString()}`;
       }
-      if (filters.minPrice) return `From ₱${filters.minPrice.toLocaleString()}`;
-      if (filters.maxPrice)
-        return `Up to ₱${filters.maxPrice.toLocaleString()}`;
+      if (localFilters.minPrice)
+        return `From ₱${localFilters.minPrice.toLocaleString()}`;
+      if (localFilters.maxPrice)
+        return `Up to ₱${localFilters.maxPrice.toLocaleString()}`;
       return "";
     }
-    return value;
+    return "";
   };
 
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
+  const activeFilterCount = Object.entries(localFilters).filter(
+    ([key, value]) => {
+      if (key === "searchQuery") return false;
+      if (typeof value === "number") return value > 0;
+      return value !== "";
+    }
+  ).length;
 
-  // Main filter menu
+  // Reusable selection button
+  const SelectionButton = ({
+    isSelected,
+    onClick,
+    children,
+    icon,
+    showCheck = true,
+  }: {
+    isSelected: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+    icon?: string;
+    showCheck?: boolean;
+  }) => (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={`
+        w-full p-4 text-left rounded-2xl transition-all duration-200 flex items-center gap-3
+        ${
+          isSelected
+            ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+        }
+      `}
+    >
+      {icon && <span className="text-2xl">{icon}</span>}
+      <span className="font-semibold flex-1">{children}</span>
+      {showCheck && isSelected && <Check className="w-5 h-5" />}
+    </button>
+  );
+
+  // Back button component
+  const BackButton = () => (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        setActiveStep("main");
+      }}
+      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold text-sm mb-4"
+    >
+      <ChevronLeft className="w-4 h-4" />
+      Back
+    </button>
+  );
+
+  // Main menu view
   const MainMenu = () => (
-    <div className="space-y-2 pb-20">
-      {/* Price Range */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStep("price");
-        }}
-        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 transition-all"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
-            <DollarSign className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-gray-900">Price Range</p>
-            <p className="text-xs text-gray-500">
-              {getFilterValue("price") || "Any price"}
-            </p>
-          </div>
-        </div>
-        <ChevronRight className="w-5 h-5 text-gray-400" />
-      </button>
-
-      {/* Location */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStep("location");
-        }}
-        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 transition-all"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
-            <MapPin className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-gray-900">Location</p>
-            <p className="text-xs text-gray-500">
-              {getFilterValue("location") || "All locations"}
-            </p>
-          </div>
-        </div>
-        <ChevronRight className="w-5 h-5 text-gray-400" />
-      </button>
-
-      {/* Property Type */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStep("propertyType");
-        }}
-        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 transition-all"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
-            <span className="text-xl">🏢</span>
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-gray-900">Property Type</p>
-            <p className="text-xs text-gray-500">
-              {getFilterValue("propertyType") || "All types"}
-            </p>
-          </div>
-        </div>
-        <ChevronRight className="w-5 h-5 text-gray-400" />
-      </button>
-
-      {/* Unit Style */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStep("unitStyle");
-        }}
-        className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 transition-all"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
-            <Home className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-gray-900">Unit Style</p>
-            <p className="text-xs text-gray-500">
-              {getFilterValue("unitStyle") || "All styles"}
-            </p>
-          </div>
-        </div>
-        <ChevronRight className="w-5 h-5 text-gray-400" />
-      </button>
-
-      {/* Quick Filters */}
-      <div className="pt-4">
-        <p className="text-xs font-semibold text-gray-600 mb-3 px-1">
-          Quick Filters
-        </p>
-        <div className="space-y-3">
-          {/* Furnishing */}
-          <div>
-            <label className="text-xs font-medium text-gray-700 mb-2 block px-1">
-              Furnishing
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {furnishingTypes.map((type) => (
-                <button
-                  key={type.value}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFilters({ ...filters, furnishing: type.value });
-                  }}
-                  className={`p-3 rounded-lg text-xs font-semibold transition-all ${
-                    filters.furnishing === type.value
-                      ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                      : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                  }`}
-                >
-                  {type.label}
-                </button>
-              ))}
+    <div className="space-y-3 pb-4">
+      {/* Filter Navigation Cards */}
+      {[
+        {
+          key: "price",
+          icon: DollarSign,
+          label: "Price Range",
+          value: getFilterValue("price") || "Any price",
+        },
+        {
+          key: "location",
+          icon: MapPin,
+          label: "Location",
+          value: getFilterValue("location") || "All locations",
+        },
+        {
+          key: "propertyType",
+          icon: null,
+          emoji: "🏢",
+          label: "Property Type",
+          value: getFilterValue("propertyType") || "All types",
+        },
+        {
+          key: "unitStyle",
+          icon: Home,
+          label: "Unit Style",
+          value: getFilterValue("unitStyle") || "All styles",
+        },
+      ].map((item) => (
+        <button
+          key={item.key}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setActiveStep(item.key as ActiveStep);
+          }}
+          className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 rounded-2xl border border-gray-200 transition-all active:scale-[0.98]"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-50 to-emerald-50 flex items-center justify-center">
+              {item.emoji ? (
+                <span className="text-xl">{item.emoji}</span>
+              ) : item.icon ? (
+                <item.icon className="w-5 h-5 text-emerald-600" />
+              ) : null}
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-bold text-gray-900">{item.label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{item.value}</p>
             </div>
           </div>
+          <ChevronRight className="w-5 h-5 text-gray-400" />
+        </button>
+      ))}
 
-          {/* Minimum Size */}
-          <div>
-            <label className="text-xs font-medium text-gray-700 mb-2 block px-1">
-              Minimum Size (sqm)
-            </label>
+      {/* Quick Filters Section */}
+      <div className="pt-4 mt-2 border-t border-gray-100">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">
+          Quick Filters
+        </p>
+
+        {/* Furnishing */}
+        <div className="mb-4">
+          <label className="text-sm font-semibold text-gray-700 mb-2 block px-1">
+            Furnishing
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {furnishingTypes.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLocalFilters({ ...localFilters, furnishing: type.value });
+                }}
+                className={`
+                  p-3 rounded-xl text-sm font-semibold transition-all
+                  ${
+                    localFilters.furnishing === type.value
+                      ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md"
+                      : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+                  }
+                `}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Minimum Size */}
+        <div>
+          <label className="text-sm font-semibold text-gray-700 mb-2 block px-1">
+            Minimum Size (sqm)
+          </label>
+          <div className="relative">
+            <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="number"
               placeholder="Enter minimum size"
-              value={filters.minSize || ""}
+              value={localFilters.minSize || ""}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => {
                 e.stopPropagation();
-                setFilters({ ...filters, minSize: Number(e.target.value) });
+                setLocalFilters({
+                  ...localFilters,
+                  minSize: Number(e.target.value),
+                });
               }}
-              className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
+              className="w-full pl-10 pr-12 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
             />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">
+              sqm
+            </span>
           </div>
         </div>
       </div>
@@ -272,78 +325,79 @@ export default function MobileFiltersPanel({
 
   // Price submenu
   const PriceMenu = () => (
-    <div className="space-y-4 pb-20">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStep("main");
-        }}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
-      >
-        <ChevronRight className="w-4 h-4 rotate-180" />
-        Back
-      </button>
+    <div className="space-y-3 pb-4">
+      <BackButton />
 
-      <div className="space-y-3">
-        <p className="text-sm font-semibold text-gray-900">
+      <div className="space-y-2">
+        <p className="text-base font-bold text-gray-900 mb-3">
           Select a price range
         </p>
         {priceRanges.map((range) => (
-          <button
+          <SelectionButton
             key={range.label}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleQuickPrice(range.min, range.max);
-            }}
-            className={`w-full p-4 text-left rounded-xl transition-all ${
-              filters.minPrice === range.min && filters.maxPrice === range.max
-                ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-            }`}
+            isSelected={
+              localFilters.minPrice === range.min &&
+              localFilters.maxPrice === range.max
+            }
+            onClick={() => handleQuickPrice(range.min, range.max)}
           >
-            <span className="font-semibold">{range.label}</span>
-          </button>
+            {range.label}
+          </SelectionButton>
         ))}
       </div>
 
-      <div className="pt-4 border-t border-gray-200">
-        <p className="text-sm font-semibold text-gray-900 mb-3">
+      <div className="pt-4 mt-2 border-t border-gray-100">
+        <p className="text-base font-bold text-gray-900 mb-3">
           Or enter custom range
         </p>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-600 mb-1 block">
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">
               Min Price
             </label>
-            <input
-              type="number"
-              placeholder="₱0"
-              value={filters.minPrice || ""}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                e.stopPropagation();
-                setFilters({ ...filters, minPrice: Number(e.target.value) });
-              }}
-              className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                ₱
+              </span>
+              <input
+                type="number"
+                placeholder="0"
+                value={localFilters.minPrice || ""}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setLocalFilters({
+                    ...localFilters,
+                    minPrice: Number(e.target.value),
+                  });
+                }}
+                className="w-full pl-8 pr-3 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
+              />
+            </div>
           </div>
           <div>
-            <label className="text-xs text-gray-600 mb-1 block">
+            <label className="text-xs font-medium text-gray-500 mb-1.5 block">
               Max Price
             </label>
-            <input
-              type="number"
-              placeholder="Any"
-              value={filters.maxPrice || ""}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                e.stopPropagation();
-                setFilters({ ...filters, maxPrice: Number(e.target.value) });
-              }}
-              className="w-full p-3 border-2 border-gray-200 rounded-lg text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                ₱
+              </span>
+              <input
+                type="number"
+                placeholder="Any"
+                value={localFilters.maxPrice || ""}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setLocalFilters({
+                    ...localFilters,
+                    maxPrice: Number(e.target.value),
+                  });
+                }}
+                className="w-full pl-8 pr-3 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -352,203 +406,120 @@ export default function MobileFiltersPanel({
 
   // Location submenu
   const LocationMenu = () => (
-    <div className="space-y-4 pb-20">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStep("main");
-        }}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+    <div className="space-y-3 pb-4">
+      <BackButton />
+
+      <p className="text-base font-bold text-gray-900 mb-3">Select location</p>
+
+      <SelectionButton
+        isSelected={!localFilters.location}
+        onClick={() => setLocalFilters({ ...localFilters, location: "" })}
       >
-        <ChevronRight className="w-4 h-4 rotate-180" />
-        Back
-      </button>
+        All Locations
+      </SelectionButton>
 
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-gray-900 mb-3">
-          Select location
-        </p>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setFilters({ ...filters, location: "" });
-          }}
-          className={`w-full p-4 text-left rounded-xl transition-all ${
-            !filters.location
-              ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-              : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-          }`}
-        >
-          <span className="font-semibold">All Locations</span>
-        </button>
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-4 mb-2 px-1">
+        Popular
+      </p>
+      {locations
+        .filter((loc) => loc.popular)
+        .map((loc) => (
+          <SelectionButton
+            key={loc.value}
+            isSelected={localFilters.location === loc.value}
+            onClick={() =>
+              setLocalFilters({ ...localFilters, location: loc.value })
+            }
+          >
+            {loc.label}
+          </SelectionButton>
+        ))}
 
-        <p className="text-xs font-semibold text-gray-600 mt-4 mb-2">
-          Popular Locations
-        </p>
-        {locations
-          .filter((loc) => loc.popular)
-          .map((loc) => (
-            <button
-              key={loc.value}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setFilters({ ...filters, location: loc.value });
-              }}
-              className={`w-full p-4 text-left rounded-xl transition-all ${
-                filters.location === loc.value
-                  ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-              }`}
-            >
-              <span className="font-semibold">{loc.label}</span>
-            </button>
-          ))}
-
-        <p className="text-xs font-semibold text-gray-600 mt-4 mb-2">
-          Other Locations
-        </p>
-        {locations
-          .filter((loc) => !loc.popular)
-          .map((loc) => (
-            <button
-              key={loc.value}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setFilters({ ...filters, location: loc.value });
-              }}
-              className={`w-full p-4 text-left rounded-xl transition-all ${
-                filters.location === loc.value
-                  ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-              }`}
-            >
-              <span className="font-semibold">{loc.label}</span>
-            </button>
-          ))}
-      </div>
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-4 mb-2 px-1">
+        Other Regions
+      </p>
+      {locations
+        .filter((loc) => !loc.popular)
+        .map((loc) => (
+          <SelectionButton
+            key={loc.value}
+            isSelected={localFilters.location === loc.value}
+            onClick={() =>
+              setLocalFilters({ ...localFilters, location: loc.value })
+            }
+          >
+            {loc.label}
+          </SelectionButton>
+        ))}
     </div>
   );
 
   // Property Type submenu
   const PropertyTypeMenu = () => (
-    <div className="space-y-4 pb-20">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStep("main");
-        }}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+    <div className="space-y-3 pb-4">
+      <BackButton />
+
+      <p className="text-base font-bold text-gray-900 mb-3">
+        Select property type
+      </p>
+
+      <SelectionButton
+        isSelected={!localFilters.propertyType}
+        onClick={() => setLocalFilters({ ...localFilters, propertyType: "" })}
       >
-        <ChevronRight className="w-4 h-4 rotate-180" />
-        Back
-      </button>
+        All Types
+      </SelectionButton>
 
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-gray-900 mb-3">
-          Select property type
-        </p>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setFilters({ ...filters, propertyType: "" });
-          }}
-          className={`w-full p-4 text-left rounded-xl transition-all ${
-            !filters.propertyType
-              ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-              : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-          }`}
+      {propertyTypes.map((type) => (
+        <SelectionButton
+          key={type.value}
+          isSelected={localFilters.propertyType === type.value}
+          onClick={() =>
+            setLocalFilters({ ...localFilters, propertyType: type.value })
+          }
+          icon={type.icon}
         >
-          <span className="font-semibold">All Types</span>
-        </button>
-
-        {propertyTypes.map((type) => (
-          <button
-            key={type.value}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setFilters({ ...filters, propertyType: type.value });
-            }}
-            className={`w-full p-4 text-left rounded-xl transition-all flex items-center gap-3 ${
-              filters.propertyType === type.value
-                ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-            }`}
-          >
-            <span className="text-2xl">{type.icon}</span>
-            <span className="font-semibold">{type.label}</span>
-          </button>
-        ))}
-      </div>
+          {type.label}
+        </SelectionButton>
+      ))}
     </div>
   );
 
   // Unit Style submenu
   const UnitStyleMenu = () => (
-    <div className="space-y-4 pb-20">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStep("main");
-        }}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+    <div className="space-y-3 pb-4">
+      <BackButton />
+
+      <p className="text-base font-bold text-gray-900 mb-3">
+        Select unit style
+      </p>
+
+      <SelectionButton
+        isSelected={!localFilters.unitStyle}
+        onClick={() => setLocalFilters({ ...localFilters, unitStyle: "" })}
       >
-        <ChevronRight className="w-4 h-4 rotate-180" />
-        Back
-      </button>
+        All Styles
+      </SelectionButton>
 
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-gray-900 mb-3">
-          Select unit style
-        </p>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setFilters({ ...filters, unitStyle: "" });
-          }}
-          className={`w-full p-4 text-left rounded-xl transition-all ${
-            !filters.unitStyle
-              ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-              : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-          }`}
+      {unitStyles.map((style) => (
+        <SelectionButton
+          key={style.value}
+          isSelected={localFilters.unitStyle === style.value}
+          onClick={() =>
+            setLocalFilters({ ...localFilters, unitStyle: style.value })
+          }
+          icon={style.icon}
         >
-          <span className="font-semibold">All Styles</span>
-        </button>
-
-        {unitStyles.map((style) => (
-          <button
-            key={style.value}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setFilters({ ...filters, unitStyle: style.value });
-            }}
-            className={`w-full p-4 text-left rounded-xl transition-all flex items-center gap-3 ${
-              filters.unitStyle === style.value
-                ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-lg"
-                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-            }`}
-          >
-            <span className="text-2xl">{style.icon}</span>
-            <span className="font-semibold">{style.label}</span>
-          </button>
-        ))}
-      </div>
+          {style.label}
+        </SelectionButton>
+      ))}
     </div>
   );
 
   return (
     <div className="h-full flex flex-col">
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-5 py-5">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 overscroll-contain">
         {activeStep === "main" && <MainMenu />}
         {activeStep === "price" && <PriceMenu />}
         {activeStep === "location" && <LocationMenu />}
@@ -557,27 +528,33 @@ export default function MobileFiltersPanel({
       </div>
 
       {/* Fixed Bottom Actions */}
-      <div className="border-t border-gray-200 bg-white p-4 space-y-2">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleClearFilters();
-          }}
-          className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all"
-        >
-          Clear All Filters
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose?.();
-          }}
-          className="w-full py-3 bg-gradient-to-r from-emerald-500 to-blue-500 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all active:scale-95"
-        >
-          Show Results
-        </button>
+      <div className="sticky bottom-0 border-t border-gray-100 bg-white p-4 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClearFilters();
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-3.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleApply();
+            }}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:shadow-xl transition-all active:scale-[0.98]"
+          >
+            <Check className="w-4 h-4" />
+            {activeFilterCount > 0
+              ? `Apply ${activeFilterCount} Filters`
+              : "Show Results"}
+          </button>
+        </div>
       </div>
     </div>
   );

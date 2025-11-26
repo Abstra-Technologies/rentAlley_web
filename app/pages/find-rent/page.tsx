@@ -33,7 +33,7 @@ function UnitSearchContent() {
 
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [itemsPerPage] = useState(12);
 
@@ -192,12 +192,30 @@ function UnitSearchContent() {
     return { totalPages, paginatedUnits };
   }, [filteredUnits, currentPage, itemsPerPage]);
 
+  // Count active filters (excluding search)
+  const activeFilterCount = useMemo(() => {
+    return Object.entries(filters).filter(([key, value]) => {
+      if (key === "searchQuery") return false;
+      if (typeof value === "number") return value > 0;
+      return value !== "";
+    }).length;
+  }, [filters]);
+
   if (loading) {
     return <LoadingScreen message="Finding perfect units for you..." />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+    <div className="min-h-screen flex flex-col bg-gray-50/80">
+      {/* Subtle background pattern */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-[0.015]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Search Header */}
       <MobileSearchHeader
         filters={filters}
         setFilters={handleFiltersChange}
@@ -206,37 +224,45 @@ function UnitSearchContent() {
         filteredUnits={filteredUnits}
         showMobileFilters={showMobileFilters}
         setShowMobileFilters={setShowMobileFilters}
+        activeFilterCount={activeFilterCount}
         MobileFiltersPanel={MobileFiltersPanel}
         ActiveFilters={ActiveFilters}
       />
 
-      <main className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-6">
-        {viewMode === "grid" && (
-          <GridView
-            filteredUnits={filteredUnits}
-            paginatedUnits={paginationData.paginatedUnits}
-            currentPage={currentPage}
-            totalPages={paginationData.totalPages}
-            totalItems={filteredUnits.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
-            onUnitClick={handleUnitClick}
-            onClearFilters={handleClearFilters}
-            filters={filters}
-            setFilters={handleFiltersChange}
-            DesktopFiltersPanel={DesktopFiltersPanel}
-          />
-        )}
-        {viewMode === "map" && (
-          <div className="flex-1">
-            <MapView
-              key="map-view-key"
-              filteredUnits={mapUnits}
+      {/* Main Content */}
+      <main className="flex-1 relative">
+        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+          {viewMode === "grid" && (
+            <GridView
+              filteredUnits={filteredUnits}
+              paginatedUnits={paginationData.paginatedUnits}
+              currentPage={currentPage}
+              totalPages={paginationData.totalPages}
+              totalItems={filteredUnits.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
               onUnitClick={handleUnitClick}
+              onClearFilters={handleClearFilters}
+              filters={filters}
+              setFilters={handleFiltersChange}
+              DesktopFiltersPanel={DesktopFiltersPanel}
             />
-          </div>
-        )}
+          )}
+
+          {viewMode === "map" && (
+            <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-160px)] -mx-4 sm:-mx-6 lg:-mx-8 md:mx-0 md:rounded-2xl md:overflow-hidden md:shadow-xl md:border md:border-gray-200/60">
+              <MapView
+                key="map-view-key"
+                filteredUnits={mapUnits}
+                onUnitClick={handleUnitClick}
+              />
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* Mobile bottom padding for fixed elements */}
+      <div className="h-20 md:hidden" />
     </div>
   );
 }

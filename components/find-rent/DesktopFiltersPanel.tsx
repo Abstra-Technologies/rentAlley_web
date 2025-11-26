@@ -7,9 +7,10 @@ import {
   Building2,
   Sofa,
   Maximize,
-  X,
   ChevronDown,
   ChevronUp,
+  RotateCcw,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -120,60 +121,102 @@ export default function DesktopFiltersPanel({
     children,
   }: {
     title: string;
-    icon: any;
+    icon: React.ElementType;
     isExpanded: boolean;
     onToggle: () => void;
     children: React.ReactNode;
   }) => (
-    <div className="border-b border-gray-200 last:border-b-0">
+    <div className="border-b border-gray-100 last:border-b-0">
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50/50 transition-colors rounded-lg"
+        className="w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50/50 transition-colors rounded-lg -mx-1"
       >
-        <div className="flex items-center gap-2.5">
-          <Icon className="w-4 h-4 text-emerald-600" />
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-50 to-emerald-50 flex items-center justify-center">
+            <Icon className="w-4 h-4 text-emerald-600" />
+          </div>
           <span className="text-sm font-semibold text-gray-900">{title}</span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-gray-500" />
+          <ChevronUp className="w-4 h-4 text-gray-400" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-500" />
+          <ChevronDown className="w-4 h-4 text-gray-400" />
         )}
       </button>
-      {isExpanded && <div className="pb-4 px-1">{children}</div>}
+      <div
+        className={`overflow-hidden transition-all duration-200 ${
+          isExpanded ? "max-h-[800px] opacity-100 pb-4" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-1">{children}</div>
+      </div>
     </div>
   );
 
+  const SelectableButton = ({
+    isSelected,
+    onClick,
+    children,
+    className = "",
+  }: {
+    isSelected: boolean;
+    onClick: () => void;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`
+        transition-all duration-200 font-medium text-sm
+        ${
+          isSelected
+            ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md shadow-emerald-600/20"
+            : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 hover:border-gray-300"
+        }
+        ${className}
+      `}
+    >
+      {children}
+    </button>
+  );
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden sticky top-[180px]">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-emerald-50 px-5 py-4 border-b border-gray-200">
+      <div className="bg-gradient-to-r from-blue-50/80 to-emerald-50/80 px-5 py-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-bold text-gray-900">Filters</h3>
-            {activeFilterCount > 0 && (
-              <p className="text-xs text-gray-600 mt-0.5">
-                {activeFilterCount}{" "}
-                {activeFilterCount === 1 ? "filter" : "filters"} applied
-              </p>
-            )}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/20">
+              <SlidersHorizontal className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Filters</h3>
+              {activeFilterCount > 0 && (
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {activeFilterCount}{" "}
+                  {activeFilterCount === 1 ? "filter" : "filters"} applied
+                </p>
+              )}
+            </div>
           </div>
           {activeFilterCount > 0 && (
             <button
               type="button"
               onClick={handleClearFilters}
-              className="text-xs text-blue-600 hover:text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-white/60 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
             >
-              Clear all
+              <RotateCcw className="w-3 h-3" />
+              Clear
             </button>
           )}
         </div>
       </div>
 
       {/* Scrollable Filters */}
-      <div className="max-h-[calc(100vh-280px)] overflow-y-auto px-5">
-        {/* Price Range Section */}
+      <div className="max-h-[calc(100vh-280px)] overflow-y-auto px-5 py-2">
+        {/* Price Range */}
         <FilterSection
           title="Price Range"
           icon={DollarSign}
@@ -183,115 +226,127 @@ export default function DesktopFiltersPanel({
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
               {priceRanges.map((range) => (
-                <button
+                <SelectableButton
                   key={range.label}
-                  type="button"
-                  onClick={() => handleQuickPrice(range.min, range.max)}
-                  className={`px-3 py-2.5 text-xs font-semibold rounded-lg transition-all ${
+                  isSelected={
                     filters.minPrice === range.min &&
                     filters.maxPrice === range.max
-                      ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                      : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
-                  }`}
+                  }
+                  onClick={() => handleQuickPrice(range.min, range.max)}
+                  className="px-3 py-2.5 rounded-xl text-xs"
                 >
                   {range.label}
-                </button>
+                </SelectableButton>
               ))}
             </div>
-            <div className="pt-2 border-t border-gray-100">
-              <p className="text-xs text-gray-600 mb-2 font-medium">
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-xs text-gray-500 mb-2 font-medium">
                 Custom Range
               </p>
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={filters.minPrice || ""}
-                  onChange={(e) =>
-                    setFilters({ ...filters, minPrice: Number(e.target.value) })
-                  }
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
-                />
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={filters.maxPrice || ""}
-                  onChange={(e) =>
-                    setFilters({ ...filters, maxPrice: Number(e.target.value) })
-                  }
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                    ₱
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minPrice || ""}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        minPrice: Number(e.target.value),
+                      })
+                    }
+                    className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
+                  />
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                    ₱
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxPrice || ""}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        maxPrice: Number(e.target.value),
+                      })
+                    }
+                    className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </FilterSection>
 
-        {/* Location Section */}
+        {/* Location */}
         <FilterSection
           title="Location"
           icon={MapPin}
           isExpanded={expandedSections.location}
           onToggle={() => toggleSection("location")}
         >
-          <div className="space-y-2">
-            <button
-              type="button"
+          <div className="space-y-1.5">
+            <SelectableButton
+              isSelected={!filters.location}
               onClick={() => setFilters({ ...filters, location: "" })}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                !filters.location
-                  ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                  : "text-gray-700 hover:bg-gray-50"
-              }`}
+              className="w-full text-left px-3 py-2.5 rounded-xl"
             >
               All Locations
-            </button>
+            </SelectableButton>
+
+            {/* Popular locations */}
             {locations
               .filter((loc) => loc.popular)
               .map((loc) => (
-                <button
+                <SelectableButton
                   key={loc.value}
-                  type="button"
+                  isSelected={filters.location === loc.value}
                   onClick={() =>
                     setFilters({ ...filters, location: loc.value })
                   }
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    filters.location === loc.value
-                      ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className="w-full text-left px-3 py-2.5 rounded-xl"
                 >
-                  {loc.label}
-                </button>
+                  <span className="flex items-center gap-2">
+                    {loc.label}
+                    <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-medium">
+                      Popular
+                    </span>
+                  </span>
+                </SelectableButton>
               ))}
-            <details className="group">
-              <summary className="px-3 py-2 text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer list-none">
+
+            {/* Other locations in details */}
+            <details className="group mt-2">
+              <summary className="px-3 py-2 text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer list-none flex items-center gap-1">
+                <ChevronDown className="w-3 h-3 group-open:rotate-180 transition-transform" />
                 Show more locations
               </summary>
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-y-1.5">
                 {locations
                   .filter((loc) => !loc.popular)
                   .map((loc) => (
-                    <button
+                    <SelectableButton
                       key={loc.value}
-                      type="button"
+                      isSelected={filters.location === loc.value}
                       onClick={() =>
                         setFilters({ ...filters, location: loc.value })
                       }
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        filters.location === loc.value
-                          ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
+                      className="w-full text-left px-3 py-2.5 rounded-xl"
                     >
                       {loc.label}
-                    </button>
+                    </SelectableButton>
                   ))}
               </div>
             </details>
           </div>
         </FilterSection>
 
-        {/* Property Type Section */}
+        {/* Property Type */}
         <FilterSection
           title="Property Type"
           icon={Building2}
@@ -299,38 +354,30 @@ export default function DesktopFiltersPanel({
           onToggle={() => toggleSection("propertyType")}
         >
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
+            <SelectableButton
+              isSelected={!filters.propertyType}
               onClick={() => setFilters({ ...filters, propertyType: "" })}
-              className={`p-3 rounded-lg text-xs font-semibold transition-all ${
-                !filters.propertyType
-                  ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                  : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
-              }`}
+              className="p-3 rounded-xl text-xs"
             >
               All Types
-            </button>
+            </SelectableButton>
             {propertyTypes.map((type) => (
-              <button
+              <SelectableButton
                 key={type.value}
-                type="button"
+                isSelected={filters.propertyType === type.value}
                 onClick={() =>
                   setFilters({ ...filters, propertyType: type.value })
                 }
-                className={`p-3 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1 ${
-                  filters.propertyType === type.value
-                    ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
-                }`}
+                className="p-3 rounded-xl text-xs flex flex-col items-center gap-1.5"
               >
-                <span className="text-base">{type.icon}</span>
+                <span className="text-lg">{type.icon}</span>
                 {type.label}
-              </button>
+              </SelectableButton>
             ))}
           </div>
         </FilterSection>
 
-        {/* Unit Style Section */}
+        {/* Unit Style */}
         <FilterSection
           title="Unit Style"
           icon={Home}
@@ -338,91 +385,80 @@ export default function DesktopFiltersPanel({
           onToggle={() => toggleSection("unitStyle")}
         >
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
+            <SelectableButton
+              isSelected={!filters.unitStyle}
               onClick={() => setFilters({ ...filters, unitStyle: "" })}
-              className={`p-3 rounded-lg text-xs font-semibold transition-all ${
-                !filters.unitStyle
-                  ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                  : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
-              }`}
+              className="p-3 rounded-xl text-xs"
             >
               All Styles
-            </button>
+            </SelectableButton>
             {unitStyles.map((style) => (
-              <button
+              <SelectableButton
                 key={style.value}
-                type="button"
+                isSelected={filters.unitStyle === style.value}
                 onClick={() =>
                   setFilters({ ...filters, unitStyle: style.value })
                 }
-                className={`p-3 rounded-lg text-xs font-semibold transition-all flex flex-col items-center gap-1 ${
-                  filters.unitStyle === style.value
-                    ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
-                }`}
+                className="p-3 rounded-xl text-xs flex flex-col items-center gap-1.5"
               >
-                <span className="text-base">{style.icon}</span>
+                <span className="text-lg">{style.icon}</span>
                 {style.label}
-              </button>
+              </SelectableButton>
             ))}
           </div>
         </FilterSection>
 
-        {/* Furnishing Section */}
+        {/* Furnishing */}
         <FilterSection
           title="Furnishing"
           icon={Sofa}
           isExpanded={expandedSections.furnishing}
           onToggle={() => toggleSection("furnishing")}
         >
-          <div className="space-y-2">
-            <button
-              type="button"
+          <div className="space-y-1.5">
+            <SelectableButton
+              isSelected={!filters.furnishing}
               onClick={() => setFilters({ ...filters, furnishing: "" })}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                !filters.furnishing
-                  ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                  : "text-gray-700 hover:bg-gray-50 border border-gray-200"
-              }`}
+              className="w-full text-left px-3 py-2.5 rounded-xl"
             >
               All
-            </button>
+            </SelectableButton>
             {furnishingTypes.map((type) => (
-              <button
+              <SelectableButton
                 key={type.value}
-                type="button"
+                isSelected={filters.furnishing === type.value}
                 onClick={() =>
                   setFilters({ ...filters, furnishing: type.value })
                 }
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  filters.furnishing === type.value
-                    ? "bg-gradient-to-r from-emerald-500 to-blue-500 text-white shadow-md"
-                    : "text-gray-700 hover:bg-gray-50 border border-gray-200"
-                }`}
+                className="w-full text-left px-3 py-2.5 rounded-xl"
               >
                 {type.label}
-              </button>
+              </SelectableButton>
             ))}
           </div>
         </FilterSection>
 
-        {/* Minimum Size Section */}
+        {/* Minimum Size */}
         <FilterSection
           title="Minimum Size"
           icon={Maximize}
           isExpanded={expandedSections.size}
           onToggle={() => toggleSection("size")}
         >
-          <input
-            type="number"
-            placeholder="Enter minimum size (sqm)"
-            value={filters.minSize || ""}
-            onChange={(e) =>
-              setFilters({ ...filters, minSize: Number(e.target.value) })
-            }
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
-          />
+          <div className="relative">
+            <input
+              type="number"
+              placeholder="Enter minimum size"
+              value={filters.minSize || ""}
+              onChange={(e) =>
+                setFilters({ ...filters, minSize: Number(e.target.value) })
+              }
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none pr-12"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">
+              sqm
+            </span>
+          </div>
         </FilterSection>
       </div>
     </div>
