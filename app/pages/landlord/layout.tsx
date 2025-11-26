@@ -478,13 +478,12 @@ export default function LandlordLayout({
       )}
 
       {/* Main Content with better spacing */}
-        <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gray-50">
-            <div className="max-w-10xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {children}
-            </div>
+        <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
+            {children}
 
             <Page_footer />
-        </main>
+      </main>
+
 
     </div>
   );
