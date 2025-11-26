@@ -90,11 +90,6 @@ export default function LandlordLayout({
       href: "/pages/landlord/maintenance-request",
       icon: Construction,
     },
-      {
-      label: "Financials",
-      href: "/pages/landlord/financials",
-      icon: HandCoins ,
-    },
     {
       label: "Tax Compliance",
       href: "/pages/landlord/taxManagement",

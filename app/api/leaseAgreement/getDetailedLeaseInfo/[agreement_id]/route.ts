@@ -7,9 +7,7 @@ const SECRET_KEY = process.env.ENCRYPTION_SECRET;
 /**
  * @method      GET
  * @route       app/api/leaseAgreement/getDetailedLeaseInfo/[agreement_id]
- * @desc        Fetch detailed lease info with rent fallback logic and decrypted URL.
- * @param       agreement_id
- * @usedIn      LeaseDetailsPage
+ * @desc        Fetch detailed lease info with SEC/ADV new tables included.
  */
 export async function GET(
     req: NextRequest,
@@ -31,26 +29,34 @@ export async function GET(
           la.end_date,
           la.status AS lease_status,
           la.agreement_url,
+
+          -- OLD fields (still used)
           la.security_deposit_amount,
           la.advance_payment_amount,
           la.is_security_deposit_paid,
           la.is_advance_payment_paid,
+
           la.grace_period_days AS lease_grace_period,
           la.late_penalty_amount AS lease_late_fee,
           la.billing_due_day AS lease_due_day,
           la.rent_amount AS lease_rent_amount,
+
           p.property_id,
           p.property_name,
+
           u.unit_name,
           u.rent_amount AS unit_default_rent_amount,
+
           t.tenant_id,
           usr.firstName AS enc_firstName,
           usr.lastName AS enc_lastName,
           usr.email AS enc_email,
           usr.phoneNumber as enc_phoneNumber,
+
           pc.billingDueDay AS config_due_day,
           pc.gracePeriodDays AS config_grace_period,
           pc.lateFeeAmount AS config_late_fee
+
       FROM LeaseAgreement la
           JOIN Unit u ON la.unit_id = u.unit_id
           JOIN Property p ON u.property_id = p.property_id
@@ -68,7 +74,52 @@ export async function GET(
 
         const lease: any = leaseRows[0];
 
-        // 💰 Rent fallback rule: if lease rent is 0 or null → use unit rent
+        // NEW: fetch detailed security deposit record
+        const [securityRows]: any = await db.execute(
+            `
+            SELECT 
+                deposit_id,
+                amount,
+                status,
+                received_at,
+                refunded_at,
+                proof_of_payment,
+                refund_reason,
+                notes,
+                created_at
+            FROM SecurityDeposit
+            WHERE lease_id = ?
+            ORDER BY created_at DESC
+            LIMIT 1;
+        `,
+            [agreement_id]
+        );
+
+        const securityDeposit = securityRows?.[0] || null;
+
+        // NEW: fetch detailed advance payment record
+        const [advanceRows]: any = await db.execute(
+            `
+            SELECT 
+                advance_id,
+                amount,
+                months_covered,
+                status,
+                received_at,
+                proof_of_payment,
+                notes,
+                created_at
+            FROM AdvancePayment
+            WHERE lease_id = ?
+            ORDER BY created_at DESC
+            LIMIT 1;
+        `,
+            [agreement_id]
+        );
+
+        const advancePayment = advanceRows?.[0] || null;
+
+        // 💰 Rent fallback rule
         const rent_amount =
             lease.lease_rent_amount && lease.lease_rent_amount > 0
                 ? lease.lease_rent_amount
@@ -144,13 +195,17 @@ export async function GET(
                 phoneNumber: tenantPhoneNumber,
                 property_id: lease.property_id,
 
-                // 💰 Financial terms
+                // 💰 Financial terms (existing)
                 rent_amount,
                 default_rent_amount: lease.unit_default_rent_amount,
                 security_deposit_amount: lease.security_deposit_amount,
                 advance_payment_amount: lease.advance_payment_amount,
                 is_security_deposit_paid: lease.is_security_deposit_paid,
                 is_advance_payment_paid: lease.is_advance_payment_paid,
+
+                // NEW: detailed SEC & ADV tables
+                security_deposit_details: securityDeposit,
+                advance_payment_details: advancePayment,
 
                 // ⚙️ Property configuration defaults
                 billing_due_day,
