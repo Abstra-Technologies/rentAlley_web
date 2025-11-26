@@ -279,7 +279,7 @@ export default function SetupLeasePage() {
                         )}
                     </div>
 
-                    {/* Footer Buttons */}
+                    {/* Page_footer Buttons */}
                     <div className="mt-6 flex justify-between">
                         <button
                             type="button"

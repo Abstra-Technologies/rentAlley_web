@@ -27,6 +27,7 @@ import {
 import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
 import NotificationSection from "@/components/notification/notifCenter";
 import Image from "next/image";
+import Page_footer from "@/components/navigation/page_footer";
 
 export default function LandlordLayout({
   children,
@@ -477,9 +478,14 @@ export default function LandlordLayout({
       )}
 
       {/* Main Content with better spacing */}
-      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
-        {children}
-      </main>
+        <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                {children}
+            </div>
+
+            <Page_footer />
+        </main>
+
     </div>
   );
 }

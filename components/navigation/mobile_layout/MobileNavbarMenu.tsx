@@ -193,7 +193,7 @@ export default function MobileNavbarMenu({
                             </button>
                         )}
 
-                        {/* Footer */}
+                        {/* Page_footer */}
                         <div className="mt-8 pt-6 border-t border-white/20">
                             <div className="text-center text-white/60 text-sm">
                                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">

@@ -377,7 +377,7 @@ export default function TenantLeasePayments({
                 ))}
               </div>
 
-              {/* Footer Note */}
+              {/* Page_footer Note */}
               <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl p-4">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">

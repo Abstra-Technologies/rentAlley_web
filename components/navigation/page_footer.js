@@ -7,7 +7,7 @@ import {
 } from "react-icons/fa";
 import Image from "next/image";
 
-const Footer = () => {
+const Page_footer = () => {
   return (
     <footer className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -227,4 +227,4 @@ const Footer = () => {
   );
 };
 
-export default Footer;
+export default Page_footer;

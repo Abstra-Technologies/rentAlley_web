@@ -7,7 +7,7 @@ import { z } from "zod";
 import useRoleStore from "../../../../zustand/store";
 import { useRouter, useSearchParams } from "next/navigation";
 import { logEvent } from "../../../../utils/gtag";
-import Footer from "../../../../components/navigation/footer";
+import Page_footer from "../../../../components/navigation/page_footer";
 import Image from "next/image";
 import Swal from "sweetalert2";
 
@@ -351,7 +351,7 @@ function Register() {
           </div>
         </div>
 
-        <Footer />
+        <Page_footer />
       </>
   );
 }

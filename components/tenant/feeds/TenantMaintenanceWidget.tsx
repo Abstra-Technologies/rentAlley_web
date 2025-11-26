@@ -264,7 +264,7 @@ export default function TenantMaintenanceWidget({
                   </div>
                 </div>
 
-                {/* Footer */}
+                {/* Page_footer */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                   <div className="flex items-center gap-3 text-xs">
                     <span className="text-gray-500">

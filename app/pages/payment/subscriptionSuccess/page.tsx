@@ -216,7 +216,7 @@ function PaymentReceiptPage() {
                         </div>
                     )}
 
-                    {/* Footer */}
+                    {/* Page_footer */}
                     <div className="text-center text-xs text-gray-500 border-t border-gray-200 pt-4">
                         <p>
                             Thank you for subscribing to <strong>UpKyp</strong>!

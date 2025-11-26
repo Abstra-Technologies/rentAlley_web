@@ -284,7 +284,7 @@ export default function SendTenantInviteModal({
                   </div>
                 </div>
 
-                {/* Footer Actions */}
+                {/* Page_footer Actions */}
                 <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 rounded-b-3xl sm:rounded-b-2xl">
                   <div className="flex gap-3">
                     <button

@@ -5,7 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { logEvent } from "../../../../utils/gtag";
 import { useRouter } from "next/navigation";
-import Footer from "../../../../components/navigation/footer";
+import Page_footer from "../../../../components/navigation/page_footer";
 import Image from "next/image";
 
 export default function ForgotPassword() {
@@ -268,7 +268,7 @@ export default function ForgotPassword() {
         </div>
       </div>
       
-      <Footer />
+      <Page_footer />
     </>
   );
   

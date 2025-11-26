@@ -161,7 +161,7 @@ export default function LandlordSubscriptionPlan() {
               </div>
             </div>
 
-            {/* Modal Footer */}
+            {/* Modal Page_footer */}
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
               <button
                 onClick={() => setShowModal(false)}

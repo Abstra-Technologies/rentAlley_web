@@ -494,7 +494,7 @@ export default function MaintenanceHistoryPage() {
                 </div>
               </div>
 
-              {/* Modal Footer */}
+              {/* Modal Page_footer */}
               <div className="border-t-2 border-gray-200 p-6">
                 <button
                   onClick={() => {

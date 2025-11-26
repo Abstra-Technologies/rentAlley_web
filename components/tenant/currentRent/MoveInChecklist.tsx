@@ -411,7 +411,7 @@ export default function MoveInChecklist({
                 </div>
               </div>
 
-              {/* Footer */}
+              {/* Page_footer */}
               <div className="border-t-2 border-gray-200 px-6 py-4 bg-gray-50">
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
                   <div className="text-sm">

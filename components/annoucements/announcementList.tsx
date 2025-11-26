@@ -315,7 +315,7 @@ export default function Announcements({
                   </div>
                 </div>
 
-                {/* Footer */}
+                {/* Page_footer */}
                 <div className="px-4 md:px-5 pb-4 md:pb-4 flex items-center justify-between border-t border-gray-100 pt-3 md:pt-4">
                   <button
                     onClick={() => openModal(announcement)}
@@ -512,7 +512,7 @@ export default function Announcements({
               </div>
             </div>
 
-            {/* Modal Footer */}
+            {/* Modal Page_footer */}
             <div className="border-t-2 border-gray-200 p-4 sm:p-6">
               <button
                 onClick={() => {

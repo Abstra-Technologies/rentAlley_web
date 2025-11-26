@@ -112,7 +112,7 @@ function PaymentFailedPageContent() {
                 </div>
             </div>
 
-            {/* Footer */}
+            {/* Page_footer */}
             <p className="mt-10 text-gray-500 text-xs text-center">
                 Need more help? Reach us anytime at{" "}
                 <a

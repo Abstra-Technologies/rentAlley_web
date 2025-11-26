@@ -7,7 +7,7 @@ import { z } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAuthStore from "../../../../zustand/authStore";
 import { logEvent } from "../../../../utils/gtag";
-import Footer from "../../../../components/navigation/footer";
+import Page_footer from "../../../../components/navigation/page_footer";
 import Image from "next/image";
 import ReCAPTCHA from "react-google-recaptcha";
 
@@ -396,7 +396,7 @@ function Login() {
               </span>
                 </button>
 
-                {/* Footer Links */}
+                {/* Page_footer Links */}
                 <div className="text-center text-xs text-gray-600 pt-2">
                   <p>
                     Don’t have an account?{" "}
@@ -420,7 +420,7 @@ function Login() {
             </div>
           </main>
 
-          <Footer />
+          <Page_footer />
         </div>
       </>
   );

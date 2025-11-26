@@ -1,7 +1,7 @@
 'use client'
 
 import { BuildingIcon, UsersIcon, LightbulbIcon, ArrowRightIcon } from "lucide-react";
-import Footer from "../../../components/navigation/footer";
+import Page_footer from "../../../components/navigation/page_footer";
 
 export default function About() {
   return (
@@ -116,7 +116,7 @@ export default function About() {
           </div>
         </div>
       </div>
-      <Footer/>
+      <Page_footer/>
     </div>
   );
 }

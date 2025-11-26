@@ -384,7 +384,7 @@ const NotificationDropdown = ({
         )}
       </div>
 
-      {/* Footer */}
+      {/* Page_footer */}
       {notifications.length > 0 && (
         <div className="border-t border-gray-200 p-3 text-center bg-gradient-to-r from-gray-50 to-gray-50">
           <Link
@@ -524,7 +524,7 @@ const MobileNotificationDropdown = ({
       )}
     </div>
 
-    {/* Footer */}
+    {/* Page_footer */}
     {notifications.length > 0 && (
       <div className="border-t border-gray-200 p-3 text-center bg-gradient-to-r from-gray-50 to-gray-50">
         <Link

@@ -5,6 +5,7 @@ import PaymentReviewWidget from "@/components/landlord/widgets/PaymentReviewWidg
 import { PaidDepositsWidget } from "@/components/landlord/widgets/secAdvanceWidgets";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import PaymentProcessAccordion from "../../../../components/landlord/PaymentProcessAccordion";
 
 export default function PaymentsPage() {
   const { user, admin, loading, fetchSession } = useAuthStore();
@@ -37,7 +38,7 @@ export default function PaymentsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Property Payments
+                 Payments
               </h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 View and oversee your tenant payment records
@@ -48,9 +49,18 @@ export default function PaymentsPage() {
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
           {/* Tenant Payments Ledger - 2/3 width on desktop */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div
+                  className="
+    bg-white rounded-lg shadow-sm border border-gray-200
+    transition-all duration-300
+    hover:shadow-lg hover:-translate-y-1
+    hover:h-[calc(100%+4px)]
+  "
+              >
+
               <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
@@ -81,8 +91,14 @@ export default function PaymentsPage() {
 
           {/* Payment Review Widget - 1/3 width on desktop */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-4 sm:p-6 border-b border-gray-200">
+              <div
+                  className="
+    bg-white rounded-lg shadow-sm border border-gray-200
+    transition-all duration-300
+    hover:shadow-lg hover:-translate-y-1
+    hover:scale-y-[1.02]
+  "
+              >              <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-gray-900">
                     Pending Reviews
@@ -97,6 +113,8 @@ export default function PaymentsPage() {
               </div>
             </div>
           </div>
+
+
         </div>
 
         {/* Security Deposits Section */}
@@ -115,6 +133,10 @@ export default function PaymentsPage() {
             <PaidDepositsWidget landlord_id={landlord_id} />
           </div>
         </div>
+
+          {/* Payment Process FAQ */}
+
+          <PaymentProcessAccordion />
       </div>
     </div>
   );

@@ -226,7 +226,7 @@ export default function PropertyRatesModal({
             )}
           </div>
 
-          {/* Footer */}
+          {/* Page_footer */}
           <div className="sticky bottom-0 bg-white p-4 border-t flex gap-3 justify-end">
             <button
               onClick={onClose}

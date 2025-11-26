@@ -268,7 +268,7 @@ export default function PropertyLayout({
             </div>
           </nav>
 
-          {/* Footer */}
+          {/* Page_footer */}
           <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500">

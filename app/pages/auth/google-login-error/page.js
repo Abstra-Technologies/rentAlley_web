@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import Footer from "../../../../components/navigation/footer";
+import Page_footer from "../../../../components/navigation/page_footer";
 import Image from "next/image";
 
 export default function GoogleLoginError() {
@@ -59,7 +59,7 @@ export default function GoogleLoginError() {
           </div>
         </div>
       </div>
-      <Footer />
+      <Page_footer />
     </>
   );
 }

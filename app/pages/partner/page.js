@@ -1,7 +1,7 @@
 'use client'
 
 import { Building, BarChart, Globe } from "lucide-react";
-import Footer from "../../../components/navigation/footer";
+import Page_footer from "../../../components/navigation/page_footer";
 
 export default function Partner() {
   return (
@@ -152,7 +152,7 @@ export default function Partner() {
           </div>
         </div>
       </div>
-      <Footer />
+      <Page_footer />
     </div>
   );
 }

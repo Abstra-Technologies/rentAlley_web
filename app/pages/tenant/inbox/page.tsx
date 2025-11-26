@@ -234,7 +234,7 @@ const AnnouncementModal = ({ announcement, onClose, onImageClick }) => {
           )}
         </div>
 
-        {/* Modal Footer */}
+        {/* Modal Page_footer */}
         <div className="p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
           <button
             onClick={onClose}

@@ -177,7 +177,7 @@ function BillingDetails() {
                 </button>
             </div>
 
-            {/* Footer */}
+            {/* Page_footer */}
             <div className="mt-6 text-xs text-gray-400 text-center border-t border-gray-200 pt-4">
                 Abstra Technologies. @ Hestia Rent360 This is a system-generated billing statement.
             </div>

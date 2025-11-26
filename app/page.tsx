@@ -13,7 +13,7 @@ import {
   Home,
   Shield,
 } from "lucide-react";
-import Footer from "../components/navigation/footer";
+import Page_footer from "../components/navigation/page_footer";
 import LoadingScreen from "@/components/loadingScreen";
 import UnitCard from "../components/find-rent/UnitCard";
 import HeroText from "@/components/ui/hero";
@@ -389,7 +389,7 @@ export default function SplashScreen() {
         </div>
       </section>
 
-      <Footer />
+      <Page_footer />
     </div>
   );
 }

@@ -71,7 +71,7 @@ export default function RegisterAs() {
             </button>
           </div>
 
-          {/* Footer */}
+          {/* Page_footer */}
           <p className="text-center text-sm text-white/80 mt-8">
             Already have an account?{" "}
             <button

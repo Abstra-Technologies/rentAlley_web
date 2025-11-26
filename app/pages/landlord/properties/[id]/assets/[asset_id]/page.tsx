@@ -313,7 +313,7 @@ export default function ViewAssetPage() {
                     </div>
                 )}
 
-                {/* Footer */}
+                {/* Page_footer */}
                 <div className="text-xs text-gray-500 border-t border-gray-200 pt-4 text-center sm:text-left">
                     <p>
                         Created at: {formatDate(asset.created_at)} | Last updated:{" "}
