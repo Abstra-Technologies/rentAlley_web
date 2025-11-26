@@ -190,35 +190,48 @@ export default function ProfilePage() {
     }
   };
 
-  const handleUpdateProfile = async () => {
-    logEvent("Profile Update", "User Interaction", "User Updated Profile", 1);
+    const handleUpdateProfile = async () => {
+        logEvent("Profile Update", "User Interaction", "User Updated Profile", 1);
 
-    try {
-      await axios.post("/api/commons/profile/user_profile/update", formData, {
-        headers: { "Content-Type": "application/json" },
-        withCredentials: true,
-      });
+        try {
+            const response = await axios.post(
+                "/api/commons/profile/user_profile/update",
+                formData,
+                {
+                    headers: { "Content-Type": "application/json" },
+                    withCredentials: true,
+                }
+            );
 
-      Swal.fire({
-        icon: "success",
-        title: "Profile Updated!",
-        text: "Your profile has been updated successfully.",
-      });
+            Swal.fire({
+                icon: "success",
+                title: "Profile Updated!",
+                text: "Your profile has been updated successfully.",
+            });
 
-      setProfileData((prev) => ({ ...prev, ...formData }));
-      setEditing(false);
-    } catch (error) {
-      console.error("Profile update failed:", error);
+            // Update local profileData (UI-level)
+            setProfileData((prev) => ({ ...prev, ...formData }));
 
-      Swal.fire({
-        icon: "error",
-        title: "Update Failed",
-        text: "Failed to update profile. Please try again.",
-      });
-    }
-  };
+            // 🔥 Update Zustand store so *entire app* reflects new data without reload
+            useAuthStore.getState().updateUser({
+                ...useAuthStore.getState().user,
+                ...formData,
+            });
 
-  const getVerificationBadge = () => {
+            setEditing(false);
+        } catch (error) {
+            console.error("Profile update failed:", error);
+
+            Swal.fire({
+                icon: "error",
+                title: "Update Failed",
+                text: "Failed to update profile. Please try again.",
+            });
+        }
+    };
+
+
+    const getVerificationBadge = () => {
     switch (verificationStatus) {
       case "approved":
         return (

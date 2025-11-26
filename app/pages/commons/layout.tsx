@@ -45,7 +45,7 @@ const profileNavLinks = [
         roles: ["landlord"],
     },
     {
-        href: "/pages/landlord/subsciption_plan",
+        href: "/pages/commons/landlord/subscription",
         label: "View Subscription",
         icon: CreditCardIcon,
         roles: ["landlord"],
