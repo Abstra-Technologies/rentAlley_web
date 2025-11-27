@@ -1,21 +1,75 @@
 {
-  "name": "UpKeep",
-  "short_name": "Upkeep",
+  "name": "Upkyp – Property Management & Rental Marketplace",
+  "short_name": "Upkyp",
+  "description": "Upkyp helps landlords and renters connect with ease. Browse properties, manage rentals, track billing, send notifications, and automate landlord workflows.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "orientation": "portrait",
+  "categories": [
+    "business",
+    "productivity",
+    "utilities",
+    "real_estate",
+    "management",
+    "rental",
+    "property_management"
+  ],
+  "lang": "en",
+  "dir": "ltr",
+
   "icons": [
     {
       "src": "/upkeep_blue.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/upkeep_blue.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+
+  "shortcuts": [
+    {
+      "name": "Find Rent",
+      "short_name": "Find Rent",
+      "url": "/pages/find-rent",
+      "description": "Browse available rental units and properties."
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/dashboard",
+      "description": "Quick access to your landlord dashboard."
+    },
+    {
+      "name": "Billing",
+      "short_name": "Billing",
+      "url": "/pages/landlord/billing",
+      "description": "Manage rental bills and payments."
+    }
+  ],
+
+  "screenshots": [
+    {
+      "src": "/screenshots/app-home.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Upkyp Home Screen"
+    },
+    {
+      "src": "/screenshots/app-dashboard.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Landlord Dashboard"
     }
   ]
 }
