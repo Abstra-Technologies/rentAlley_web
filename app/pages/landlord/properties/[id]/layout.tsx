@@ -512,7 +512,6 @@ export default function PropertyLayout({
             <div className="p-4 lg:p-6">
                 {children}
 
-                <Page_footer />
             </div>
         </main>
 
