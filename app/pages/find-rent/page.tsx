@@ -47,7 +47,21 @@ function UnitSearchContent() {
     [searchParams]
   );
 
-  const createParams = useCallback(
+    // ============================================================
+    // ⭐ SEO: Dynamic Metadata (Title, Description, Canonical, OG)
+    // ============================================================
+    const canonicalUrl = `https://rent-alley-web.vercel.app/pages/find-rent?${searchParams.toString()}`;
+
+    const pageTitle = filters.searchQuery
+        ? `Find Rent in ${filters.searchQuery} | Affordable Units for Rent`
+        : "Find Rent | Browse Apartments, Rooms, Warehouse, Office Space for Rent";
+
+    const pageDescription =
+        "Search rental units including apartments, condos, dorms, and rooms for rent in the Philippines. Filter by price, location, unit style, and more.";
+
+
+
+    const createParams = useCallback(
     (newFilters: FilterState, newPage: number) => {
       const params = new URLSearchParams();
 
@@ -205,7 +219,46 @@ function UnitSearchContent() {
     return <LoadingScreen message="Finding perfect units for you..." />;
   }
 
-  return (
+    // ============================================================
+    // ⭐ SEO: JSON-LD Schema for Search Results + Units
+    // ============================================================
+    const jsonLdListings = {
+        "@context": "https://schema.org",
+        "@type": "SearchResultsPage",
+        name: "Find Rent - Upkyp",
+        description: pageDescription,
+        itemListElement: filteredUnits.map((unit, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            url: `https://rent-alley-web.vercel.app/pages/find-rent/${unit.property_id}/${unit.unit_id}`,
+            item: {
+                "@type": "Apartment",
+                name: `${unit.unit_style} for rent in ${unit.city}`,
+                address: {
+                    "@type": "PostalAddress",
+                    addressLocality: unit.city,
+                    addressRegion: unit.province,
+                },
+                geo: unit.latitude
+                    ? {
+                        "@type": "GeoCoordinates",
+                        latitude: unit.latitude,
+                        longitude: unit.longitude,
+                    }
+                    : undefined,
+                offers: {
+                    "@type": "Offer",
+                    price: unit.rent_amount,
+                    priceCurrency: "PHP",
+                    availability:
+                        unit.status === "unoccupied" ? "InStock" : "OutOfStock",
+                },
+            },
+        })),
+    };
+
+
+    return (
     <div className="min-h-screen flex flex-col bg-gray-50/80">
       {/* Subtle background pattern */}
       <div
