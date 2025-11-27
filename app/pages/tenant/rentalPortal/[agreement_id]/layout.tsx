@@ -14,6 +14,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import axios from "axios";
+import Page_footer from "@/components/navigation/page_footer";
 
 interface PropertyInfo {
   property_name: string;
@@ -226,7 +227,12 @@ export default function TenantPortalLayout({
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 md:ml-64 overflow-y-auto">{children}</main>
+        <main className="flex-1 md:ml-64 overflow-y-auto">
+            {children}
+
+            <Page_footer />
+
+        </main>
       </div>
     </>
   );

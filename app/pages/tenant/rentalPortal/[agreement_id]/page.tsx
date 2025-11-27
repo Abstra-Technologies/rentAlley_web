@@ -94,7 +94,7 @@ export default function RentPortalPage() {
   const missingAgreement = !agreementId;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 mt-2">
       {/* If agreement_id missing → show placeholder, BUT DO NOT RETURN */}
       {missingAgreement && (
         <div className="min-h-screen flex items-center justify-center">
