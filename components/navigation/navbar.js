@@ -205,7 +205,7 @@ const Navbar = () => {
                     href="/pages/auth/selectRole"
                     className="px-4 py-2 text-sm font-medium text-blue-600 bg-white hover:bg-blue-50 rounded-lg transition-all duration-200 shadow-sm hover:shadow"
                   >
-                    Get Started
+                    Register an Account
                   </Link>
                 </div>
               ) : (
