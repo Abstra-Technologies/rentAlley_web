@@ -9,8 +9,6 @@ import LandlordLayout from "@/components/navigation/sidebar-landlord";
 export default function LandlordsTenantsListPage() {
   const { fetchSession, user, admin } = useAuthStore();
     return (
-        <div className="container mx-auto p-4">
             <TenantListLandlords landlord_id={user?.landlord_id} />
-        </div>
     );
 }
