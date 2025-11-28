@@ -591,30 +591,38 @@ const BookingAppointment = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
-              Booking Calendar
-            </h1>
-            <p className="text-gray-600 text-sm sm:text-base">
-              Manage property visit requests
-            </p>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 pt-20 pb-4 md:pt-6 md:pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
+              <Calendar className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Booking Calendar
+              </h1>
+              <p className="text-gray-600 text-sm">
+                Manage property visit requests
+              </p>
+            </div>
           </div>
 
           {/* Booking Limit Settings */}
           <button
             onClick={() => setShowLimitSettings(true)}
-            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center gap-2"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-white border-2 border-gray-300 text-gray-700 hover:border-gray-400 transition-all whitespace-nowrap"
           >
             <CalendarDays className="w-4 h-4" />
             <span>Daily Limit: {dailyBookingLimit}</span>
           </button>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="px-4 pb-24 md:pb-8 md:px-8 lg:px-12 xl:px-16 pt-5">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-5 h-5 text-amber-500" />
@@ -657,7 +665,7 @@ const BookingAppointment = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 bg-white rounded-lg p-1 border border-gray-200">
+        <div className="flex gap-2 mb-5 bg-white rounded-lg p-1 border border-gray-200">
           <button
             onClick={() => setActiveTab("calendar")}
             className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
