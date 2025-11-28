@@ -32,35 +32,47 @@ export default function PaymentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                 Payments
-              </h1>
-              <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                View and oversee your tenant payment records
-              </p>
-            </div>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 pt-20 pb-4 md:pt-6 md:pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
+            <svg
+              className="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+            <p className="text-gray-600 text-sm">
+              View and oversee your tenant payment records
+            </p>
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="px-4 pb-24 md:pb-8 md:px-8 lg:px-12 xl:px-16 pt-5">
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-
           {/* Tenant Payments Ledger - 2/3 width on desktop */}
           <div className="lg:col-span-2">
-              <div
-                  className="
+            <div
+              className="
     bg-white rounded-lg shadow-sm border border-gray-200
     transition-all duration-300
     hover:shadow-lg hover:-translate-y-1
     hover:h-[calc(100%+4px)]
   "
-              >
-
+            >
               <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
@@ -91,14 +103,16 @@ export default function PaymentsPage() {
 
           {/* Payment Review Widget - 1/3 width on desktop */}
           <div className="lg:col-span-1">
-              <div
-                  className="
+            <div
+              className="
     bg-white rounded-lg shadow-sm border border-gray-200
     transition-all duration-300
     hover:shadow-lg hover:-translate-y-1
     hover:scale-y-[1.02]
   "
-              >              <div className="p-4 sm:p-6 border-b border-gray-200">
+            >
+              {" "}
+              <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-gray-900">
                     Pending Reviews
@@ -113,8 +127,6 @@ export default function PaymentsPage() {
               </div>
             </div>
           </div>
-
-
         </div>
 
         {/* Security Deposits Section */}
@@ -134,9 +146,9 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-          {/* Payment Process FAQ */}
+        {/* Payment Process FAQ */}
 
-          <PaymentProcessAccordion />
+        <PaymentProcessAccordion />
       </div>
     </div>
   );
