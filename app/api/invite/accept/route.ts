@@ -14,9 +14,9 @@ webpush.setVapidDetails(
 
 export async function POST(req: Request) {
     const conn = await db.getConnection();
+
     try {
-        const body = await req.json();
-        const { inviteCode, userId } = body;
+        const { inviteCode, userId } = await req.json();
 
         if (!inviteCode || !userId) {
             return NextResponse.json(
@@ -32,8 +32,8 @@ export async function POST(req: Request) {
             `SELECT * FROM InviteCode WHERE code = ? AND status = 'PENDING'`,
             [inviteCode]
         );
-        const invite = inviteRows[0];
 
+        const invite = inviteRows[0];
         if (!invite) {
             await conn.rollback();
             return NextResponse.json(
@@ -50,65 +50,91 @@ export async function POST(req: Request) {
             );
         }
 
-        // 2️⃣ Get tenant_id using userId
+        // 2️⃣ Get tenant_id
         const [tenantRows]: any = await conn.query(
             `SELECT tenant_id FROM Tenant WHERE user_id = ?`,
             [userId]
         );
-        const tenant = tenantRows[0];
 
+        const tenant = tenantRows[0];
         if (!tenant) {
             await conn.rollback();
             return NextResponse.json(
-                { error: "Tenant account not found for this user." },
+                { error: "Tenant account not found." },
                 { status: 404 }
             );
         }
 
-        // 3️⃣ Get lease dates from InviteCode
+        // 3️⃣ Lease dates
         const leaseStart = invite.start_date ? new Date(invite.start_date) : null;
         const leaseEnd = invite.end_date ? new Date(invite.end_date) : null;
 
         if (!leaseStart || !leaseEnd) {
             await conn.rollback();
             return NextResponse.json(
-                { error: "Lease dates not found in invite." },
+                { error: "Lease dates missing in invite." },
                 { status: 400 }
             );
         }
 
-        // 4️⃣ Generate unique Lease ID
-        let leaseId = generateLeaseId();
-        let [exists]: any = await conn.query(
-            `SELECT 1 FROM LeaseAgreement WHERE agreement_id = ?`,
-            [leaseId]
+        // 4️⃣ Try to find existing draft lease (created during invite)
+        let leaseId: string;
+        const [draftRows]: any = await conn.query(
+            `SELECT agreement_id 
+             FROM LeaseAgreement 
+             WHERE unit_id = ? AND status = 'draft'
+             ORDER BY created_at DESC
+             LIMIT 1`,
+            [invite.unitId]
         );
 
-        // Regenerate until unique
-        while (exists.length > 0) {
+        if (draftRows.length > 0) {
+            // 5️⃣ Update existing draft lease → ACTIVE
+            leaseId = draftRows[0].agreement_id;
+
+            await conn.query(
+                `UPDATE LeaseAgreement
+                 SET tenant_id = ?, 
+                     start_date = ?, 
+                     end_date = ?, 
+                     status = 'active',
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE agreement_id = ?`,
+                [tenant.tenant_id, leaseStart, leaseEnd, leaseId]
+            );
+
+        } else {
+            // 6️⃣ No draft found → Generate BACKUP lease
             leaseId = generateLeaseId();
-            [exists] = await conn.query(
+
+            let [exists]: any = await conn.query(
                 `SELECT 1 FROM LeaseAgreement WHERE agreement_id = ?`,
                 [leaseId]
             );
+            while (exists.length > 0) {
+                leaseId = generateLeaseId();
+                [exists] = await conn.query(
+                    `SELECT 1 FROM LeaseAgreement WHERE agreement_id = ?`,
+                    [leaseId]
+                );
+            }
+
+            await conn.query(
+                `INSERT INTO LeaseAgreement (
+                    agreement_id, tenant_id, unit_id, start_date, end_date, status,
+                    is_security_deposit_paid, is_advance_payment_paid, created_at
+                ) VALUES (?, ?, ?, ?, ?, 'active', 1, 1, NOW())`,
+                [leaseId, tenant.tenant_id, invite.unitId, leaseStart, leaseEnd]
+            );
         }
 
-        // 5️⃣ Create lease record (mark as ACTIVE)
-        await conn.query(
-            `INSERT INTO LeaseAgreement (
-          agreement_id, tenant_id, unit_id, start_date, end_date, status,
-          is_security_deposit_paid, is_advance_payment_paid
-       ) VALUES (?, ?, ?, ?, ?, 'active', 1, 1)`,
-            [leaseId, tenant.tenant_id, invite.unitId, leaseStart, leaseEnd]
-        );
-
-        // 6️⃣ Update InviteCode → USED
+        // 7️⃣ Mark invite as USED
         await conn.query(
             `UPDATE InviteCode SET status = 'USED' WHERE code = ?`,
             [inviteCode]
         );
 
-        // 7️⃣ Mark Unit → OCCUPIED
+        // 8️⃣ Mark unit as OCCUPIED
         await conn.query(
             `UPDATE Unit
              SET status = 'occupied', updated_at = CURRENT_TIMESTAMP
@@ -116,12 +142,12 @@ export async function POST(req: Request) {
             [invite.unitId]
         );
 
-        // 8️⃣ Fetch landlord info
+        // 9️⃣ Notify landlord
         const [landlordRows]: any = await conn.query(
             `SELECT l.user_id, p.property_name, u.unit_name, u.unit_id, p.property_id
              FROM Unit u
-                      JOIN Property p ON u.property_id = p.property_id
-                      JOIN Landlord l ON p.landlord_id = l.landlord_id
+             JOIN Property p ON u.property_id = p.property_id
+             JOIN Landlord l ON p.landlord_id = l.landlord_id
              WHERE u.unit_id = ?`,
             [invite.unitId]
         );
@@ -130,71 +156,63 @@ export async function POST(req: Request) {
             const landlordUserId = landlordRows[0].user_id;
             const propertyName = landlordRows[0].property_name;
             const unitName = landlordRows[0].unit_name;
-            const unitId = landlordRows[0].unit_id;
             const propertyId = landlordRows[0].property_id;
+            const unitId = landlordRows[0].unit_id;
 
             const notifTitle = `Tenant Invite Accepted - ${propertyName} / ${unitName}`;
-            const notifBody = `Your tenant has accepted the invite. The lease is now active for ${propertyName} - ${unitName}.`;
+            const notifBody = `Your tenant has accepted the invite. The lease is now active.`;
             const notifUrl = `/pages/landlord/property-listing/view-unit/${propertyId}/unit-details/${unitId}`;
 
-            // 9️⃣ Save landlord notification
+            // DB Notification
             await conn.query(
                 `INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
                  VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
                 [landlordUserId, notifTitle, notifBody, notifUrl]
             );
 
-            // 🔟 Push notification
+            // Push notification
             const [subs]: any = await conn.query(
-                `SELECT endpoint, p256dh, auth
+                `SELECT endpoint, p256dh, auth 
                  FROM user_push_subscriptions
                  WHERE user_id = ?`,
                 [landlordUserId]
             );
 
-            if (subs.length > 0) {
-                const payload = JSON.stringify({
-                    title: notifTitle,
-                    body: notifBody,
-                    url: notifUrl,
-                });
-
-                for (const sub of subs) {
-                    const subscription = {
-                        endpoint: sub.endpoint,
-                        keys: {
-                            p256dh: sub.p256dh,
-                            auth: sub.auth,
+            for (const sub of subs) {
+                try {
+                    await webpush.sendNotification(
+                        {
+                            endpoint: sub.endpoint,
+                            keys: { p256dh: sub.p256dh, auth: sub.auth },
                         },
-                    };
-
-                    try {
-                        await webpush.sendNotification(subscription, payload);
-                        console.log("✅ Push sent to landlord:", sub.endpoint);
-                    } catch (err: any) {
-                        console.error("❌ Push failed:", err.message);
-                        if (err.statusCode === 410 || err.statusCode === 404) {
-                            await conn.query(
-                                `DELETE FROM user_push_subscriptions WHERE endpoint = ?`,
-                                [sub.endpoint]
-                            );
-                            console.log("🗑️ Removed invalid subscription:", sub.endpoint);
-                        }
+                        JSON.stringify({ title: notifTitle, body: notifBody, url: notifUrl })
+                    );
+                } catch (err: any) {
+                    if (err.statusCode === 410 || err.statusCode === 404) {
+                        await conn.query(
+                            `DELETE FROM user_push_subscriptions WHERE endpoint = ?`,
+                            [sub.endpoint]
+                        );
                     }
                 }
             }
         }
 
         await conn.commit();
+
         return NextResponse.json({
             success: true,
-            message: "Lease created, unit marked occupied, landlord notified.",
+            message: "Lease activated, unit marked occupied, landlord notified.",
             lease_id: leaseId,
         });
+
     } catch (error: any) {
         console.error("Invite accept error:", error);
         await conn.rollback();
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+        return NextResponse.json(
+            { error: "Internal server error" },
+            { status: 500 }
+        );
     } finally {
         conn.release();
     }

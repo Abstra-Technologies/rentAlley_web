@@ -36,14 +36,15 @@ export async function GET(req: NextRequest) {
 
         const invites = rows.map((row: any) => ({
             code: row.code,
-            property_name: row.property_name,
-            unit_name: row.unit_name,
+            propertyName: row.property_name,   // Correct key
+            unitName: row.unit_name,           // Correct key
             createdAt: row.createdAt,
             expiresAt: row.expiresAt,
             start_date: row.start_date,
             end_date: row.end_date,
             status: row.status,
         }));
+
 
         return NextResponse.json({ invites }, { status: 200 });
     } catch (error) {

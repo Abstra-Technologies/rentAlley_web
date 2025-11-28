@@ -27,7 +27,6 @@ export default function SendTenantInviteModal({
         const res = await fetch(`/api/landlord/${landlord_id}/properties`);
         const data = await res.json();
 
-        // ✅ Normalize field names (in case backend returns camelCase)
         const normalized =
             data.data?.map((p: any) => ({
               property_id: p.property_id ?? p.propertyId,

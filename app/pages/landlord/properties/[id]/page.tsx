@@ -25,6 +25,7 @@ import { Pagination } from "@mui/material";
 import { usePropertyData } from "@/hooks/usePropertyData";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import AIUnitGenerator from "@/components/landlord/ai/AIUnitGenerator";
+import InviteTenantModal from "@/components/landlord/properties/InviteTenantModalPerProperty";
 
 const ViewPropertyDetailedPage = () => {
     const { id } = useParams();
@@ -43,10 +44,10 @@ const ViewPropertyDetailedPage = () => {
 
     const { subscription, units, error, isLoading } = usePropertyData(property_id, landlord_id);
 
-    // ✅ Search state
     const [searchQuery, setSearchQuery] = useState("");
-    // ✅ Draggable units state
     const [draggableUnits, setDraggableUnits] = useState<any[]>([]);
+
+    const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
     useEffect(() => {
         if (!user) fetchSession();
@@ -120,7 +121,6 @@ const ViewPropertyDetailedPage = () => {
         }
     };
 
-    // ✅ Fuse.js setup
     const fuse = useMemo(() => {
         return new Fuse(units || [], {
             keys: ["unit_name", "unit_style", "furnish", "amenities", "status"],
@@ -210,6 +210,16 @@ const ViewPropertyDetailedPage = () => {
                                 <Sparkles className="h-5 w-5" />
                                 <span>Generate with AI</span>
                             </button>
+
+                            <button
+                                onClick={() => setInviteModalOpen(true)}
+                                className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r
+    from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg
+    shadow-md hover:from-purple-700 hover:to-pink-700 transition-all"
+                            >
+                                <Sparkles className="h-5 w-5" />
+                                <span>Invite Tenant</span>
+                            </button>
                         </div>
                     </div>
 
@@ -279,6 +289,14 @@ const ViewPropertyDetailedPage = () => {
                     </div>
                 </div>
             )}
+
+            {inviteModalOpen && (
+                <InviteTenantModal
+                    propertyId={property_id}
+                    onClose={() => setInviteModalOpen(false)}
+                />
+            )}
+
         </div>
     );
 };

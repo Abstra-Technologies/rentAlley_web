@@ -88,7 +88,7 @@ export default function PropertyLeasesPage() {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">
-                                Current Leases & Invites
+                                Current Leases
                             </h1>
                             <p className="text-sm text-gray-600 mt-1">
                                 {leases.length} records found
@@ -108,7 +108,7 @@ export default function PropertyLeasesPage() {
                                             Unit
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Tenant / Invitee
+                                            Tenant
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Start Date
