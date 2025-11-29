@@ -186,6 +186,13 @@ export default function AuthenticateLeasePage() {
                                 >
                                     Send OTP
                                 </button>
+
+                                <button
+                                    onClick={() => router.push(`/pages/landlord/properties/${id}/activeLease`)}
+                                    className="w-full mt-6 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                                >
+                                    Cancel
+                                </button>
                             </>
                         ) : (
                             <>
