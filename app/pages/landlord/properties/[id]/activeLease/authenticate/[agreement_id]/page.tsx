@@ -127,17 +127,29 @@ export default function AuthenticateLeasePage() {
                 {/* LEASE FILE LINK */}
                 {leaseDetails.agreement_url && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                        <p className="text-gray-600 mb-1">View generated lease document:</p>
-                        <a
-                            href={leaseDetails.agreement_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 text-sm font-medium hover:underline break-all"
-                        >
-                            {leaseDetails.agreement_url}
-                        </a>
+                        <p className="text-gray-600 mb-2">View generated lease document:</p>
+
+                        <div className="w-full mt-2">
+                            <iframe
+                                src={leaseDetails.agreement_url}
+                                className="w-full h-[600px] rounded-lg border border-gray-300 shadow"
+                            />
+                        </div>
+
+                        <p className="text-xs text-gray-500 mt-2">
+                            If the PDF does not load,{" "}
+                            <a
+                                href={leaseDetails.agreement_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 underline"
+                            >
+                                open it in a new tab
+                            </a>.
+                        </p>
                     </div>
                 )}
+
 
                 {/* ✅ If user already signed, show info only */}
                 {alreadySigned ? (
