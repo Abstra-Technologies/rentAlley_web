@@ -2,198 +2,206 @@
 
 import Image from "next/image";
 import {
-  CalendarIcon,
-  CurrencyDollarIcon,
-  MapPinIcon,
-  PhotoIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  HomeIcon,
-  ChatBubbleLeftRightIcon,
-  ArrowRightOnRectangleIcon,
+    CalendarIcon,
+    CurrencyDollarIcon,
+    MapPinIcon,
+    PhotoIcon,
+    ClockIcon,
+    HomeIcon,
+    ChatBubbleLeftRightIcon,
+    ArrowRightOnRectangleIcon,
+    ExclamationTriangleIcon,
+    CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { RefreshCw, XCircle } from "lucide-react";
+
 import { Unit } from "@/types/units";
 import { formatCurrency, formatDate } from "@/utils/formatter/formatters";
+import PendingDocumentsWidget from "../../analytics-insights/PendingDocumentsWidget";
 
 /* ----------------------- STATUS BADGE ----------------------- */
 const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
-  const hasPendingProof = unit.has_pending_proof;
-  const isLeaseExpired = new Date(unit.end_date) < new Date();
+    const isPendingSignature = unit.signature_status === "pending_signature" || unit.signature_status === "pending";
+    const isExpired = new Date(unit.end_date) < new Date();
 
-  const base =
-    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border-2";
+    const base =
+        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border-2";
 
-  if (hasPendingProof)
-    return (
-      <span className={`${base} bg-amber-50 text-amber-700 border-amber-200`}>
+    if (isPendingSignature)
+        return (
+            <span className={`${base} bg-amber-50 text-amber-700 border-amber-200`}>
         <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-        Pending
+        Pending Signature
       </span>
-    );
+        );
 
-  if (isLeaseExpired)
-    return (
-      <span className={`${base} bg-gray-50 text-gray-700 border-gray-200`}>
+    if (isExpired)
+        return (
+            <span className={`${base} bg-gray-50 text-gray-700 border-gray-200`}>
         <span className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
         Expired
       </span>
-    );
+        );
 
-  return (
-    <span
-      className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}
-    >
+    return (
+        <span className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}>
       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
       Active
     </span>
-  );
+    );
 };
 
 /* ----------------------- MAIN COMPONENT ----------------------- */
 export default function UnitCardDesktop({
-  unit,
-  onContactLandlord,
-  onAccessPortal,
-  onRenewLease,
-  onEndContract,
-}: {
-  unit: Unit;
-  onContactLandlord: () => void;
-  onAccessPortal: (agreementId: string) => void;
-  onRenewLease: (unitId: string, agreementId: string) => void;
-  onEndContract: (unitId: string, agreementId: string) => void;
+                                            unit,
+                                            onContactLandlord,
+                                            onAccessPortal,
+                                            onRenewLease,
+                                            onEndContract,
+                                        }: {
+    unit: Unit;
+    onContactLandlord: () => void;
+    onAccessPortal: (agreementId: string) => void;
+    onRenewLease: (unitId: string, agreementId: string) => void;
+    onEndContract: (unitId: string, agreementId: string) => void;
 }) {
-  const isLeaseExpired = new Date(unit.end_date) < new Date();
+    const isLeaseExpired = new Date(unit.end_date) < new Date();
+    const isPendingSignature =
+        unit.signature_status === "pending_signature" || unit.signature_status === "pending";
 
-  return (
-    <article className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group">
-      {/* Status Bar */}
-      <div
-        className={`h-1 ${
-          isLeaseExpired
-            ? "bg-gray-400"
-            : unit.has_pending_proof
-            ? "bg-amber-400"
-            : "bg-gradient-to-r from-emerald-500 to-blue-500"
-        }`}
-      />
+    return (
+        <article className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group">
 
-      {/* IMAGE */}
-      <div className="relative h-48 overflow-hidden bg-gray-100">
-        {unit.unit_photos?.[0] ? (
-          <Image
-            src={unit.unit_photos[0]}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
-            alt={`Unit ${unit.unit_name}`}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <PhotoIcon className="w-16 h-16 text-gray-300" />
-          </div>
-        )}
+            {/* Status Bar */}
+            <div
+                className={`h-1 ${
+                    isLeaseExpired
+                        ? "bg-gray-400"
+                        : isPendingSignature
+                            ? "bg-amber-400"
+                            : "bg-gradient-to-r from-emerald-500 to-blue-500"
+                }`}
+            />
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            {/* IMAGE */}
+            <div className="relative h-48 overflow-hidden bg-gray-100">
+                {unit.unit_photos?.[0] ? (
+                    <Image
+                        src={unit.unit_photos[0]}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        alt={`Unit ${unit.unit_name}`}
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <PhotoIcon className="w-16 h-16 text-gray-300" />
+                    </div>
+                )}
 
-        {/* Status Badge */}
-        <div className="absolute top-3 left-3">
-          <LeaseStatusBadge unit={unit} />
-        </div>
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-        {/* Rent Badge */}
-        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg">
-          <div className="flex items-center gap-1">
-            <CurrencyDollarIcon className="w-4 h-4 text-blue-600" />
-            <span className="font-bold text-blue-700 text-sm">
+                {/* Status Badge */}
+                <div className="absolute top-3 left-3">
+                    <LeaseStatusBadge unit={unit} />
+                </div>
+
+                {/* Rent Tag */}
+                <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg">
+                    <div className="flex items-center gap-1">
+                        <CurrencyDollarIcon className="w-4 h-4 text-blue-600" />
+                        <span className="font-bold text-blue-700 text-sm">
               {formatCurrency(unit.rent_amount)}
             </span>
-            <span className="text-xs text-gray-600">/mo</span>
-          </div>
-        </div>
+                        <span className="text-xs text-gray-600">/mo</span>
+                    </div>
+                </div>
 
-        {/* Next Billing (Bottom Overlay) */}
-        {unit.due_date && unit.due_day && !isLeaseExpired && (
-          <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm text-white px-4 py-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 font-medium">
+                {/* Next Billing */}
+                {unit.due_date && unit.due_day && !isLeaseExpired && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white px-4 py-2.5 text-xs backdrop-blur-sm">
+                        <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
                 <CalendarIcon className="w-4 h-4" />
                 Next Bill: {formatDate(unit.due_date)}
               </span>
-              <span className="text-white/80">Due: {unit.due_day}th</span>
+                            <span>Due: {unit.due_day}th</span>
+                        </div>
+                    </div>
+                )}
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* CONTENT */}
-      <div className="p-4">
-        {/* Header Info */}
-        <div className="mb-4">
-          <h2 className="font-bold text-lg text-gray-900 mb-1">
-            Unit {unit.unit_name}
-          </h2>
-          <p className="text-sm font-medium text-gray-700 mb-2">
-            {unit.property_name}
-          </p>
+            {/* CONTENT */}
+            <div className="p-4">
+                <h2 className="font-bold text-lg text-gray-900 mb-1">
+                    Unit {unit.unit_name}
+                </h2>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                    {unit.property_name}
+                </p>
 
-          {/* Location & Size */}
-          <div className="flex items-center gap-3 text-xs text-gray-600">
-            <span className="flex items-center gap-1">
-              <MapPinIcon className="w-3.5 h-3.5 text-blue-600" />
+                {/* Location */}
+                <div className="flex items-center gap-3 text-xs text-gray-600">
+          <span className="flex items-center gap-1">
+            <MapPinIcon className="w-3.5 h-3.5 text-blue-600" />
               {unit.city}, {unit.province}
-            </span>
-            <span className="text-gray-300">•</span>
-            <span className="flex items-center gap-1">
-              <HomeIcon className="w-3.5 h-3.5 text-emerald-600" />
-              {unit.unit_size} sqm
-            </span>
-          </div>
-        </div>
+          </span>
+                    <span className="text-gray-300">•</span>
+                    <span className="flex items-center gap-1">
+            <HomeIcon className="w-3.5 h-3.5 text-emerald-600" />
+                        {unit.unit_size} sqm
+          </span>
+                </div>
 
-        {/* Actions */}
-        <div className="space-y-2">
-          {/* Primary Action */}
-          <button
-            onClick={() => onAccessPortal(unit.agreement_id)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-semibold text-sm hover:shadow-md transition-all"
-          >
-            <ArrowRightOnRectangleIcon className="w-4 h-4" />
-            Access Portal
-          </button>
+                {/* BUTTONS LOGIC */}
+                <div className="space-y-2 mt-4">
 
-          {/* Secondary Action */}
-          <button
-            onClick={onContactLandlord}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm transition-all"
-          >
-            <ChatBubbleLeftRightIcon className="w-4 h-4" />
-            Message Landlord
-          </button>
+                    {isPendingSignature ? (
+                        <>
+                            <PendingDocumentsWidget agreement_id={unit.agreement_id} />
+                        </>
+                    ) : (
+                        <>
+                            {/* 💚 NORMAL — Access Portal */}
+                            <button
+                                onClick={() => onAccessPortal(unit.agreement_id)}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-semibold text-sm hover:shadow-md"
+                            >
+                                <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                                Access Portal
+                            </button>
 
-          {/* Expired Actions */}
-          {isLeaseExpired && (
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
-              <button
-                onClick={() => onRenewLease(unit.unit_id, unit.agreement_id)}
-                className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-xs transition-all"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Renew
-              </button>
-              <button
-                onClick={() => onEndContract(unit.unit_id, unit.agreement_id)}
-                className="flex items-center justify-center gap-1.5 py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-xs transition-all"
-              >
-                <XCircle className="w-3.5 h-3.5" />
-                End Lease
-              </button>
+                            {/* CONTACT */}
+                            <button
+                                onClick={onContactLandlord}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm"
+                            >
+                                <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                                Message Landlord
+                            </button>
+
+                            {/* EXPIRED — Renew / End */}
+                            {isLeaseExpired && (
+                                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
+                                    <button
+                                        onClick={() => onRenewLease(unit.unit_id, unit.agreement_id)}
+                                        className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5" /> Renew
+                                    </button>
+
+                                    <button
+                                        onClick={() => onEndContract(unit.unit_id, unit.agreement_id)}
+                                        className="flex items-center justify-center gap-1.5 py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs"
+                                    >
+                                        <XCircle className="w-3.5 h-3.5" /> End Lease
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
-          )}
-        </div>
-      </div>
-    </article>
-  );
+        </article>
+    );
 }

@@ -21,7 +21,6 @@ export default function RentPortalPage() {
   const { user, fetchSession } = useAuthStore();
   const params = useParams();
 
-  // Params may be undefined on first render → valid
   const agreementId = params?.agreement_id;
 
   const [unitInfo, setUnitInfo] = useState<{
@@ -57,9 +56,6 @@ export default function RentPortalPage() {
     };
   }, [agreementId]);
 
-  // ===========================
-  // Fetch Move-In Checklist
-  // ===========================
   useEffect(() => {
     let mounted = true;
     async function fetchChecklist() {
@@ -81,9 +77,6 @@ export default function RentPortalPage() {
     };
   }, [agreementId]);
 
-  // ===========================
-  // Ensure Auth
-  // ===========================
   useEffect(() => {
     if (!user) fetchSession();
   }, [user, fetchSession]);

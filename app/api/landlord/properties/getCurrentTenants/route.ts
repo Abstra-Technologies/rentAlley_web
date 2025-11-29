@@ -21,24 +21,26 @@ export async function GET(req: NextRequest) {
         u.firstName,
         u.lastName,
         u.email,
+        u.phoneNumber,
+        u.profilePicture,
         la.unit_id,
         un.unit_name,
         p.property_name,
         la.agreement_id,
         la.start_date,
         la.end_date,
-        la.status as lease_status,
+        la.status AS lease_status,
         la.agreement_url,
-        ls_tenant.status as tenant_signature_status,
-        ls_landlord.status as landlord_signature_status
+        ls_tenant.status AS tenant_signature_status,
+        ls_landlord.status AS landlord_signature_status
       FROM Tenant t
-        JOIN LeaseAgreement la ON t.tenant_id = la.tenant_id
-        JOIN Unit un ON la.unit_id = un.unit_id
-        JOIN Property p ON un.property_id = p.property_id
-        JOIN User u ON t.user_id = u.user_id
-        LEFT JOIN LeaseSignature ls_tenant 
+      JOIN LeaseAgreement la ON t.tenant_id = la.tenant_id
+      JOIN Unit un ON la.unit_id = un.unit_id
+      JOIN Property p ON un.property_id = p.property_id
+      JOIN User u ON t.user_id = u.user_id
+      LEFT JOIN LeaseSignature ls_tenant 
             ON la.agreement_id = ls_tenant.agreement_id AND ls_tenant.role = 'tenant'
-        LEFT JOIN LeaseSignature ls_landlord 
+      LEFT JOIN LeaseSignature ls_landlord 
             ON la.agreement_id = ls_landlord.agreement_id AND ls_landlord.role = 'landlord'
       WHERE la.status = 'active' AND p.landlord_id = ?
       ORDER BY la.start_date DESC
@@ -47,13 +49,22 @@ export async function GET(req: NextRequest) {
         const [rows] = await db.execute(query, [landlord_id]);
         const tenants = rows as any[];
 
-        // --- 🔹 Group by tenant_id
         const tenantMap = new Map();
 
         tenants.forEach((tenant) => {
             const email = decryptData(JSON.parse(tenant.email), SECRET_KEY);
             const firstName = decryptData(JSON.parse(tenant.firstName), SECRET_KEY);
             const lastName = decryptData(JSON.parse(tenant.lastName), SECRET_KEY);
+
+            // ✅ decrypt phone number
+            const phoneNumber = tenant.phoneNumber
+                ? decryptData(JSON.parse(tenant.phoneNumber), SECRET_KEY)
+                : null;
+
+            const profilePicture = tenant.profilePicture
+                ? decryptData(JSON.parse(tenant.profilePicture), SECRET_KEY)
+                : null;
+
             const agreementUrl = tenant.agreement_url
                 ? decryptData(JSON.parse(tenant.agreement_url), SECRET_KEY)
                 : null;
@@ -64,6 +75,8 @@ export async function GET(req: NextRequest) {
                     firstName,
                     lastName,
                     email,
+                    phoneNumber, // ← 📌 included here
+                    profilePicture,
                     employment_type: tenant.employment_type,
                     occupation: tenant.occupation,
                     units: [],
@@ -74,12 +87,13 @@ export async function GET(req: NextRequest) {
 
             const entry = tenantMap.get(tenant.tenant_id);
 
-            // Append unique units
             if (!entry.units.some((u) => u.unit_id === tenant.unit_id)) {
-                entry.units.push({ unit_id: tenant.unit_id, unit_name: tenant.unit_name });
+                entry.units.push({
+                    unit_id: tenant.unit_id,
+                    unit_name: tenant.unit_name,
+                });
             }
 
-            // Append agreements
             entry.agreements.push({
                 agreement_id: tenant.agreement_id,
                 start_date: tenant.start_date,

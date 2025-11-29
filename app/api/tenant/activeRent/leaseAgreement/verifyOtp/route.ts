@@ -82,27 +82,22 @@ export async function POST(req: NextRequest) {
         await db.query(
             `
       UPDATE LeaseAgreement la
-      SET la.status = (
-        SELECT 
-          CASE 
-            WHEN (
-              SELECT COUNT(*) 
-              FROM LeaseSignature 
-              WHERE agreement_id = la.agreement_id AND status = 'signed'
-            ) = 2
-            THEN 'active'
-            ELSE la.status
-          END
-      ),
-      la.signed_at = CASE 
-        WHEN (
-          SELECT COUNT(*) 
-          FROM LeaseSignature 
-          WHERE agreement_id = la.agreement_id AND status = 'signed'
-        ) = 2
-        THEN NOW()
-        ELSE la.signed_at
-      END
+      SET 
+        la.status = (
+          SELECT 
+            CASE 
+              WHEN (
+                SELECT COUNT(*) 
+                FROM LeaseSignature 
+                WHERE agreement_id = la.agreement_id AND status = 'signed'
+              ) = 2
+              THEN 'active'
+              ELSE la.status
+            END
+        ),
+        /* 🔥 FIX: Remove la.signed_at (column does not exist)
+           but DO NOT REMOVE THIS BLOCK — preserve your structure */
+        la.updated_at = la.updated_at
       WHERE la.agreement_id = ?;
       `,
             [agreement_id]

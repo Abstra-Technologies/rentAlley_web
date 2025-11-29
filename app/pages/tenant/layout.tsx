@@ -371,7 +371,6 @@ export default function TenantLayout({ children }) {
       {/* ===================== MAIN CONTENT ===================== */}
       <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/20">
         {children}
-          <Page_footer />
       </main>
 
     </div>

@@ -230,8 +230,6 @@ export default function TenantPortalLayout({
         <main className="flex-1 md:ml-64 overflow-y-auto">
             {children}
 
-            <Page_footer />
-
         </main>
       </div>
     </>

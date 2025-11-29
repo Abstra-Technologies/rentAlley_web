@@ -4,9 +4,6 @@ import { useEffect, useState } from "react";
 import UnitCardMobile from "./UnitCardMobile";
 import UnitCardDesktop from "./UnitCardDesktop";
 
-/* --------------------------------------------------
-   WRAPPER — auto select mobile or desktop layout
--------------------------------------------------- */
 export default function UnitCard(props: any) {
   const [isMobile, setIsMobile] = useState(false);
 

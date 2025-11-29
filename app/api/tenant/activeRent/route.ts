@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 🔹 Fetch all active and pending leases for the tenant
     const [leaseRecords]: any = await db.query(
         `
           SELECT
@@ -26,7 +25,7 @@ export async function GET(req: NextRequest) {
             unit_id, tenant_id, status
           FROM LeaseAgreement
           WHERE tenant_id = ?
-            AND status IN ('active', 'pending')
+            AND status IN ('active', 'pending', 'pending_signature')
           ORDER BY updated_at DESC
         `,
         [tenantId]
@@ -113,10 +112,6 @@ export async function GET(req: NextRequest) {
         due_date = due.toLocaleDateString("en-CA"); // YYYY-MM-DD
       }
 
-      console.log(`📦 Unit: ${unit.unit_name}`);
-      console.log(`→ Billing Day: ${due_day}, Due Date: ${due_date}`);
-
-      // 🔹 Fetch unit photos
       const [unitPhotos]: any = await db.query(
           `
             SELECT photo_url
@@ -150,6 +145,7 @@ export async function GET(req: NextRequest) {
         start_date: lease.start_date,
         end_date: lease.end_date,
         lease_status: lease.status,
+          signature_status: lease.status,
 
         // Payment info
         advance_payment_amount: lease.advance_payment_amount,

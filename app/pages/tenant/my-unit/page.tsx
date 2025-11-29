@@ -75,7 +75,6 @@ export default function MyUnit() {
   const [loadingRenewal, setLoadingRenewal] = useState(false);
   const { units, loading, error, refetch } = useUnits(user?.tenant_id);
 
-  // Authentication check
   useEffect(() => {
     if (!user && !admin) {
       fetchSession();
