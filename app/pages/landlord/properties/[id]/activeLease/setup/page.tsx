@@ -31,6 +31,33 @@ export default function SetupLeasePage() {
     const [selectedMode, setSelectedMode] = useState<"upload" | "generate" | null>(
         null
     );
+    const STORAGE_KEY = `lease_setup_${agreement_id}`;
+
+    useEffect(() => {
+        if (!agreement_id) return;
+
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+
+            if (parsed.step) setStep(parsed.step);
+            if (parsed.selectedMode) setSelectedMode(parsed.selectedMode);
+        }
+    }, [agreement_id]);
+
+
+    useEffect(() => {
+        if (!agreement_id) return;
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+                step,
+                selectedMode,
+            })
+        );
+    }, [step, selectedMode, agreement_id]);
+
 
     useEffect(() => {
         if (!agreement_id) return;

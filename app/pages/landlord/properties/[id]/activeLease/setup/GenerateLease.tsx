@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import useOtpHandler from "@/hooks/lease/useOtpHandler";
 import useAuthStore from "@/zustand/authStore";
+import { useRouter, useParams } from "next/navigation";
 
 export default function GenerateLease({ property_id, agreement_id, leaseDetails }: any) {
     const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -25,6 +26,8 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
     const [rentChanged, setRentChanged] = useState(false);
     const [leaseFileUrl, setLeaseFileUrl] = useState<string>("");
     const { user, fetchSession } = useAuthStore();
+    const STORAGE_KEY = `lease_step_${agreement_id}`;
+    const router = useRouter();
 
     const {
         otpSent,
@@ -41,9 +44,32 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
         role: user?.userType,
     });
 
+    useEffect(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+
+        if (saved) {
+            const savedStep = Number(saved);
+
+            // Only restore if between steps 1–4
+            if (savedStep >= 1 && savedStep <= 4) {
+                setStep(savedStep as 1 | 2 | 3 | 4);
+            }
+        }
+    }, [agreement_id]);
+
+    useEffect(() => {
+        if (step >= 1 && step <= 4) {
+            localStorage.setItem(STORAGE_KEY, String(step));
+        }
+
+        // If step 5 = completed → clear it automatically
+        if (step === 5) {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }, [step]);
 
 
-    // 🔹 Load Property Configuration (defaults)
+
     useEffect(() => {
         const fetchConfig = async () => {
             try {
@@ -100,7 +126,6 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
         }
 
         try {
-            // ✅ Ensure valid start_date and end_date
             const startDate =
                 form.start_date || leaseDetails?.start_date?.split("T")[0];
             const endDate = form.end_date || leaseDetails?.end_date?.split("T")[0];
@@ -146,7 +171,7 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
             };
 
             const res = await axios.post(`/api/landlord/activeLease/generateLease`, payload);
-            const unencryptedUrl = res.data?.s3_url;
+            const unencryptedUrl = res.data?.pdf_url;
 
             if (res.data?.success && unencryptedUrl) {
                 setLeaseFileUrl(unencryptedUrl);
@@ -485,7 +510,6 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                     </div>
                 </>
             )}
-
 
             {step === 2 && (
                 <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 max-w-3xl mx-auto">
@@ -931,16 +955,12 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                         <p className="text-gray-600 mb-2">
                             Your lease document has been generated and stored securely.
                         </p>
-                        <p className="break-all text-blue-600 font-medium">
-                            <a
-                                href={leaseFileUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:underline"
-                            >
-                                {leaseFileUrl}
-                            </a>
-                        </p>
+                        <div className="w-full mt-3">
+                            <iframe
+                                src={leaseFileUrl}
+                                className="w-full h-[600px] rounded-lg border border-gray-200 shadow"
+                            />
+                        </div>
                     </div>
 
                     {!otpSent ? (
@@ -955,6 +975,21 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                             >
                                 Authenticate Document
                             </button>
+
+                            {/* ➤ DO IT LATER BUTTON */}
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem(STORAGE_KEY);
+                                    setStep(1);
+                                    // OPTIONAL: redirect back to active lease page
+                                    router.push(`/pages/landlord/properties/${property_id}/activeLease`);
+                                }}
+                                className="mt-6 w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-gray-600 border border-gray-300 hover:bg-gray-100 transition"
+                            >
+                                Do It Later
+                            </button>
+
+
                         </>
                     ) : (
                         <>
@@ -996,6 +1031,8 @@ export default function GenerateLease({ property_id, agreement_id, leaseDetails 
                                             ? `Resend OTP (${cooldown}s)`
                                             : "Resend OTP"}
                                 </button>
+
+
                             </div>
                         </>
                     )}
