@@ -43,6 +43,7 @@ const RevenueExpenseTrendChart = dynamic(
 import ActiveListingsCard from "@/components/landlord/analytics/activeListings";
 import PendingListingsCard from "@/components/landlord/analytics/getPendingListings";
 import ScoreCard from "@/components/landlord/analytics/scoreCards";
+import LoadingScreen from "@/components/loadingScreen";
 
 export default function PropertyPerformancePage() {
   const { user, admin, fetchSession } = useAuthStore();
@@ -81,34 +82,39 @@ export default function PropertyPerformancePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-600 text-sm">Loading analytics...</p>
-        </div>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90">
+        <LoadingScreen message="Loading analytics..." />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-            Property Performance Analytics
-          </h1>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Monitor key metrics and track property performance at a glance
-          </p>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 pt-20 pb-4 md:pt-6 md:pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
+            <BarChart3 className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Property Performance Analytics
+            </h1>
+            <p className="text-gray-600 text-sm">
+              Monitor key metrics and track property performance at a glance
+            </p>
+          </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="px-4 pb-24 md:pb-8 md:px-8 lg:px-12 xl:px-16 pt-5">
         {/* 🎯 SECTION 1: KPI Cards - MOST IMPORTANT (Top Priority) */}
         <section className="mb-6">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">
             Key Performance Indicators
           </h2>
-          <p className="text-xs sm:text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Critical metrics for quick decision-making
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -151,10 +157,10 @@ export default function PropertyPerformancePage() {
 
         {/* 👥 SECTION 3: Tenant Insights */}
         <section className="mb-6">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">
             Tenant Insights
           </h2>
-          <p className="text-xs sm:text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Demographics and occupancy patterns
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -166,10 +172,10 @@ export default function PropertyPerformancePage() {
 
         {/* 🏢 SECTION 4: Property Insights */}
         <section className="mb-6">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">
             Property Insights
           </h2>
-          <p className="text-xs sm:text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Operational metrics and maintenance tracking
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
