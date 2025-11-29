@@ -15,7 +15,6 @@ import Pagination from "@/components/Commons/Pagination";
 import LoadingScreen from "../../loadingScreen";
 import useAuthStore from "@/zustand/authStore";
 import { useChatStore } from "@/zustand/chatStore";
-import { decryptData } from "@/crypto/encrypt";
 
 type Tenant = {
     tenant_id: number;
@@ -24,16 +23,8 @@ type Tenant = {
     email: string;
     phoneNumber?: string;
     profilePicture?: string;
-    employment_type: string;
-    occupation: string;
     units: { unit_id: number; unit_name: string }[];
     property_names: string[];
-    agreements: {
-        agreement_id: number;
-        start_date: string;
-        end_date: string;
-        lease_status: string;
-    }[];
 };
 
 export default function TenantList({ landlord_id }: { landlord_id: number }) {
@@ -47,7 +38,7 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
     const router = useRouter();
     const { user, admin, fetchSession } = useAuthStore();
 
-    // Load tenants
+    // FETCH TENANTS
     useEffect(() => {
         if (!landlord_id) return;
 
@@ -57,274 +48,240 @@ export default function TenantList({ landlord_id }: { landlord_id: number }) {
                 setTenants(Array.isArray(data) ? data : []);
                 setLoading(false);
             })
-            .catch((error) => {
-                console.error("Error fetching tenants:", error);
+            .catch(() => {
                 setError("Failed to load tenants.");
                 setLoading(false);
             });
     }, [landlord_id]);
 
-    // Ensure user session available
+    // ENSURE USER SESSION
     useEffect(() => {
         if (!user && !admin) fetchSession();
     }, [user, admin, fetchSession]);
 
-    // 🔹 Message Tenant
-    const handleMessageTenant = useCallback(
-        (tenant: Tenant) => {
-            try {
-                if (!tenant?.tenant_id || !user?.landlord_id) {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Unable to Message Tenant",
-                        text: "Tenant information is not available.",
-                        customClass: { popup: "rounded-xl" },
-                    });
-                    return;
-                }
-
-                const decryptedFirstName =
-                    tenant.firstName.startsWith("{") || tenant.firstName.startsWith("[")
-                        ? decryptData(
-                            JSON.parse(tenant.firstName),
-                            process.env.ENCRYPTION_SECRET
-                        )
-                        : tenant.firstName;
-
-                const decryptedLastName =
-                    tenant.lastName.startsWith("{") || tenant.lastName.startsWith("[")
-                        ? decryptData(
-                            JSON.parse(tenant.lastName),
-                            process.env.ENCRYPTION_SECRET
-                        )
-                        : tenant.lastName;
-
-                const tenantFullName = `${decryptedFirstName} ${decryptedLastName}`.trim();
-                const chatRoom = `chat_${[user.user_id, tenant.tenant_id]
-                    .sort()
-                    .join("_")}`;
-
-                const setChatData = useChatStore.getState().setPreselectedChat;
-                setChatData({
-                    chat_room: chatRoom,
-                    landlord_id: user.landlord_id,
-                    tenant_id: tenant.tenant_id,
-                    name: tenantFullName,
-                });
-
-                Swal.fire({
-                    title: "Opening Chat...",
-                    text: `Starting chat with ${tenantFullName}`,
-                    icon: "info",
-                    timer: 1500,
-                    showConfirmButton: false,
-                    customClass: { popup: "rounded-xl" },
-                    didClose: () => router.push("/pages/landlord/chat"),
-                });
-            } catch (err) {
-                console.error("Error preparing tenant chat:", err);
-                Swal.fire({
-                    icon: "error",
-                    title: "Chat Error",
-                    text: "Failed to initiate chat with tenant.",
-                });
-            }
-        },
-        [router, user]
-    );
-
-    // 🔹 View Tenant Details
-    const handleViewDetails = (tenant_id: number) => {
-        router.push(`/pages/landlord/list_of_tenants/${tenant_id}`);
-    };
-
-    // 🔹 Redirect to Invite Tenant Page
-    const handleInviteTenant = () => {
-        router.push("/pages/landlord/invite-tenant");
-    };
-
-    // 🔍 Filter tenants
+    // SEARCH FILTER
     const filteredTenants = useMemo(() => {
-        return tenants.filter((tenant) => {
-            const q = searchQuery.toLowerCase();
+        const q = searchQuery.toLowerCase();
+        return tenants.filter((t) => {
             return (
-                `${tenant.firstName} ${tenant.lastName}`.toLowerCase().includes(q) ||
-                tenant.email?.toLowerCase().includes(q) ||
-                tenant.phoneNumber?.toLowerCase()?.includes(q) ||
-                tenant.property_names?.join(", ").toLowerCase().includes(q)
+                `${t.firstName} ${t.lastName}`.toLowerCase().includes(q) ||
+                t.email.toLowerCase().includes(q) ||
+                t.phoneNumber?.toLowerCase().includes(q) ||
+                t.property_names.join(", ").toLowerCase().includes(q)
             );
         });
     }, [tenants, searchQuery]);
 
-    // Pagination
+    // PAGINATION
     const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
-    const startIndex = (page - 1) * itemsPerPage;
-    const currentTenants = filteredTenants.slice(startIndex, startIndex + itemsPerPage);
+    const currentTenants = filteredTenants.slice(
+        (page - 1) * itemsPerPage,
+        (page - 1) * itemsPerPage + itemsPerPage
+    );
 
-    if (loading)
-        return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/0 w-full">
-                <LoadingScreen message="Fetching your current tenants, please wait..." />
-            </div>
-        );
+    // ACTIONS
+    const handleMessageTenant = (tenant: Tenant) => {
+        const chatRoom = `chat_${[user.user_id, tenant.tenant_id].sort().join("_")}`;
+        useChatStore.getState().setPreselectedChat({
+            chat_room: chatRoom,
+            landlord_id: user.landlord_id,
+            tenant_id: tenant.tenant_id,
+            name: `${tenant.firstName} ${tenant.lastName}`,
+        });
+
+        router.push("/pages/landlord/chat");
+    };
+
+    const handleViewDetails = (id: number) =>
+        router.push(`/pages/landlord/list_of_tenants/${id}`);
+
+    const handleInviteTenant = () =>
+        router.push("/pages/landlord/invite-tenant");
+
+    if (loading) return <LoadingScreen message="Fetching tenants..." />;
 
     if (error)
-        return (
-            <div className="text-center py-12 text-red-500 font-medium">{error}</div>
-        );
+        return <div className="text-center text-red-500 py-10">{error}</div>;
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 pt-20 pb-4 md:pt-6 md:pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
-                            <User className="w-6 h-6 text-white" />
+
+            {/* HEADER */}
+            <div className="bg-white border-b px-4 pt-10 pb-3 md:px-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+
+                    {/* Title */}
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg flex items-center justify-center shadow">
+                            <User className="w-4 h-4 text-white" />
                         </div>
+
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">My Tenants</h1>
-                            <p className="text-gray-600 text-sm">
-                                Manage and view your active tenants
+                            <h1 className="text-lg font-bold text-gray-900 leading-tight">
+                                My Tenants
+                            </h1>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                                Manage your active tenants
                             </p>
                         </div>
                     </div>
 
-                    {/* Right Controls */}
-                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    {/* Search + Invite */}
+                    <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+
+                        {/* Search Box */}
                         <div className="relative w-full sm:w-64">
                             <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                             <input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search tenants..."
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 text-sm"
+                                className="
+                                w-full pl-9 pr-3 py-2
+                                bg-gray-100 border rounded-lg text-sm
+                                focus:bg-white focus:ring focus:ring-blue-200
+                            "
                             />
                         </div>
 
+                        {/* Invite */}
                         <button
                             onClick={handleInviteTenant}
-                            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg hover:shadow-xl transition"
+                            className="
+                            px-4 py-2
+                            text-[11px] font-semibold
+                            bg-gradient-to-r from-blue-600 to-emerald-600
+                            text-white rounded-lg shadow
+                            hover:shadow-md transition
+                        "
                         >
-                            <UserPlus className="w-4 h-4" />
-                            Invite Tenant
+                            <UserPlus className="inline w-4 h-4 mr-1" />
+                            Invite
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Tenant Grid */}
-            <div className="px-4 md:px-8 lg:px-12 xl:px-16 pt-5 pb-24 md:pb-10">
-                {currentTenants.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* TENANTS GRID */}
+            <div className="px-4 md:px-8 pt-4 pb-16">
+
+                {currentTenants.length ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
                         {currentTenants.map((tenant) => {
                             const tenantName = `${tenant.firstName} ${tenant.lastName}`;
-                            const propertyList = tenant.property_names?.join(", ") || "—";
-                            const unitList = tenant.units?.map((u) => u.unit_name).join(", ") || "—";
+                            const propertyList = tenant.property_names.join(", ") || "—";
+                            const unitList = tenant.units.map((u) => u.unit_name).join(", ") || "—";
 
                             return (
                                 <div
                                     key={tenant.tenant_id}
-                                    className="bg-white rounded-2xl shadow-md hover:shadow-xl border border-gray-100 p-5 transition-all duration-200 flex flex-col"
+                                    className="
+                                    bg-white border rounded-xl p-3.5
+                                    flex flex-col items-center
+                                    shadow-sm
+                                    transition-all
+                                    hover:shadow-lg hover:-translate-y-[2px]
+                                    hover:ring-1 hover:ring-blue-300/40
+                                    active:scale-[0.98]
+                                "
                                 >
-                                    {/* Profile Section */}
-                                    <div className="flex items-center gap-3 mb-4">
+                                    {/* PROFILE */}
+                                    <div className="flex flex-col items-center mb-2.5">
                                         {tenant.profilePicture ? (
                                             <img
                                                 src={tenant.profilePicture}
-                                                alt={tenantName}
-                                                className="w-12 h-12 rounded-xl object-cover border border-gray-200"
+                                                className="w-12 h-12 rounded-xl object-cover border"
                                             />
                                         ) : (
-                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 text-white flex items-center justify-center font-bold shadow-md">
-                                                {tenant.firstName?.[0]?.toUpperCase() || "?"}
+                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 text-white flex items-center justify-center text-base font-bold">
+                                                {tenant.firstName[0]}
                                             </div>
                                         )}
 
-                                        <div className="flex-1 min-w-0">
-                                            <h2 className="text-base font-bold text-gray-900 truncate">
-                                                {tenantName}
-                                            </h2>
+                                        <h2 className="mt-1 text-sm font-semibold text-center truncate w-full">
+                                            {tenantName}
+                                        </h2>
 
-                                            {/* Email */}
-                                            <p className="text-xs text-gray-500 truncate">
-                                                {tenant.email}
-                                            </p>
+                                        <p className="text-[11px] text-gray-500 truncate w-full text-center">
+                                            {tenant.email}
+                                        </p>
 
-                                            {/* Mobile Number (NEW) */}
-                                            <p className="text-xs text-gray-600 truncate">
-                                                {tenant.phoneNumber ? tenant.phoneNumber : "No mobile number"}
-                                            </p>
+                                        <p className="text-[11px] text-gray-500 truncate w-full text-center">
+                                            {tenant.phoneNumber || "No mobile"}
+                                        </p>
+                                    </div>
+
+                                    {/* PROPERTY */}
+                                    <div className="w-full space-y-1 text-[11px] mb-3">
+                                        <div className="flex gap-2 p-1.5 bg-blue-50 rounded-md">
+                                            <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                            <span className="truncate">{propertyList}</span>
+                                        </div>
+
+                                        <div className="flex gap-2 p-1.5 bg-emerald-50 rounded-md">
+                                            <Home className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                            <span className="truncate">{unitList}</span>
                                         </div>
                                     </div>
 
-                                    {/* Property + Units */}
-                                    <div className="space-y-2 text-xs mb-4 flex-1">
-                                        <div className="flex items-start gap-2 p-2 bg-blue-50 rounded-lg">
-                                            <Building2 className="w-4 h-4 text-blue-600 mt-0.5" />
-                                            <span className="font-medium text-gray-700">
-                        {propertyList}
-                      </span>
-                                        </div>
-
-                                        <div className="flex items-start gap-2 p-2 bg-emerald-50 rounded-lg">
-                                            <Home className="w-4 h-4 text-emerald-600 mt-0.5" />
-                                            <span className="text-gray-600">{unitList}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div className="flex gap-2 mt-auto">
+                                    {/* BUTTONS (Thicker but Shorter) */}
+                                    <div className="flex gap-2 w-full">
                                         <button
                                             onClick={() => handleViewDetails(tenant.tenant_id)}
-                                            className="flex-1 px-3 py-2.5 text-xs font-semibold rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow-md"
+                                            className="
+                                            flex-1 py-1.5
+                                            text-[11px] font-bold
+                                            bg-blue-600 text-white
+                                            rounded-md
+                                            hover:bg-blue-700 transition
+                                        "
                                         >
-                                            View Details
+                                            Profile
                                         </button>
 
                                         <button
                                             onClick={() => handleMessageTenant(tenant)}
-                                            className="flex-1 px-3 py-2.5 text-xs font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-md flex items-center justify-center gap-2"
+                                            className="
+                                            flex-1 py-1.5
+                                            text-[11px] font-bold
+                                            bg-emerald-600 text-white
+                                            rounded-md
+                                            hover:bg-emerald-700
+                                            flex items-center justify-center gap-1
+                                            transition
+                                        "
                                         >
-                                            <IoMailOpen className="w-4 h-4" />
-                                            Message
+                                            <IoMailOpen className="w-3 h-3" />
+                                            Chat
                                         </button>
                                     </div>
                                 </div>
                             );
                         })}
+
                     </div>
                 ) : (
-                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-12 text-center">
-                        <div className="max-w-md mx-auto">
-                            <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center">
-                                <UserCircle2 className="h-10 w-10 text-blue-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                {searchQuery ? "No matching tenants" : "No tenants found"}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                                {searchQuery
-                                    ? "Try adjusting your search."
-                                    : "You currently don't have any active tenants."}
-                            </p>
-                        </div>
-                    </div>
+                    <p className="text-center text-gray-500 py-8">
+                        No tenants found.
+                    </p>
                 )}
 
-                {/* Pagination */}
+                {/* PAGINATION */}
                 {filteredTenants.length > itemsPerPage && (
                     <div className="mt-6">
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}
                             onPageChange={setPage}
-                            totalItems={filteredTenants.length}
                             itemsPerPage={itemsPerPage}
+                            totalItems={filteredTenants.length}
                         />
                     </div>
                 )}
+
             </div>
         </div>
     );
+
 }
