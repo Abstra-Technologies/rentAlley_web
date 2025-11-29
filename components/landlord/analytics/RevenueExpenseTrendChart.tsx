@@ -21,17 +21,49 @@ export default function RevenueExpenseTrendChart({
     expenses: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!landlordId) return;
+    if (!landlordId) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
+    setError(false);
+
     fetch(
       `/api/analytics/landlord/revenue-expense-trend?landlord_id=${landlordId}`
     )
       .then((res) => res.json())
-      .then((data) => setTrend(data))
-      .catch((err) => console.error("Error fetching trend data:", err))
+      .then((data) => {
+        // ✅ Validate the data structure before setting state
+        if (data && typeof data === "object") {
+          setTrend({
+            months: Array.isArray(data.months) ? data.months : [],
+            revenue: Array.isArray(data.revenue) ? data.revenue : [],
+            expenses: Array.isArray(data.expenses) ? data.expenses : [],
+          });
+        } else {
+          // If data is invalid, set empty state
+          setTrend({
+            months: [],
+            revenue: [],
+            expenses: [],
+          });
+        }
+        setError(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching trend data:", err);
+        setError(true);
+        // Set empty state on error
+        setTrend({
+          months: [],
+          revenue: [],
+          expenses: [],
+        });
+      })
       .finally(() => setLoading(false));
   }, [landlordId]);
 
@@ -62,7 +94,7 @@ export default function RevenueExpenseTrendChart({
       width: 3,
     },
     xaxis: {
-      categories: trend.months,
+      categories: trend.months || [], // ✅ Fallback to empty array
       labels: {
         style: { colors: "#6B7280", fontSize: "12px", fontWeight: 500 },
       },
@@ -104,8 +136,8 @@ export default function RevenueExpenseTrendChart({
   };
 
   const series = [
-    { name: "Revenue", data: trend.revenue },
-    { name: "Expenses", data: trend.expenses },
+    { name: "Revenue", data: trend.revenue || [] }, // ✅ Fallback to empty array
+    { name: "Expenses", data: trend.expenses || [] }, // ✅ Fallback to empty array
   ];
 
   if (loading) {
@@ -117,7 +149,30 @@ export default function RevenueExpenseTrendChart({
     );
   }
 
-  if (trend.months.length === 0) {
+  // ✅ Error state
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[300px] sm:h-[400px] text-center">
+        <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <TrendingUp className="w-10 h-10 text-red-600" />
+        </div>
+        <h4 className="text-base font-semibold text-gray-900 mb-2">
+          Unable to Load Data
+        </h4>
+        <p className="text-sm text-gray-600 max-w-md">
+          There was an error loading the financial trend data. Please try
+          refreshing the page.
+        </p>
+      </div>
+    );
+  }
+
+  // ✅ Safe check for empty data
+  if (
+    !trend.months ||
+    !Array.isArray(trend.months) ||
+    trend.months.length === 0
+  ) {
     return (
       <div className="flex flex-col justify-center items-center h-[300px] sm:h-[400px] text-center">
         <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
