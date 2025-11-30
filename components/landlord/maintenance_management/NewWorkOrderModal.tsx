@@ -15,16 +15,34 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
     const [description, setDescription] = useState("");
     const [photos, setPhotos] = useState([]);
 
-    const [assetId, setAssetId] = useState(""); // 🔥 SCANNED ASSET
+    const [assetId, setAssetId] = useState(""); // 🔥 SCANNED ASSET ID
     const [assetDetails, setAssetDetails] = useState(null);
 
     const [loading, setLoading] = useState(false);
     const { user } = useAuthStore();
 
-    // QR Scanner
+    // QR SCANNER
     const [scannerOpen, setScannerOpen] = useState(false);
     const scannerRef = useRef(null);
     const qrDivId = "qr-reader-asset";
+
+    // Extract asset ID if scanned QR code is an S3 URL
+    const extractAssetId = (decoded) => {
+        try {
+            // If already ID → return as is
+            if (!decoded.includes("amazonaws.com") && !decoded.includes("-QR-")) {
+                return decoded;
+            }
+
+            const file = decoded.split("/").pop(); // "xxx-QR-ASSETID.png"
+            const noExt = file.replace(".png", "");
+            const parts = noExt.split("-QR-");
+
+            return parts[1] || decoded;
+        } catch {
+            return decoded;
+        }
+    };
 
     // Properties & Units
     const [properties, setProperties] = useState([]);
@@ -65,7 +83,6 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
         fetchUnits();
     }, [selectedProperty]);
 
-    // Categories / Priorities
     const categories = [
         "Plumbing",
         "Electrical",
@@ -76,7 +93,6 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
     ];
     const priorities = ["Low", "Medium", "High", "Urgent"];
 
-    // Upload Photos
     const handlePhotoUpload = (e) => {
         const files = Array.from(e.target.files);
         setPhotos([...photos, ...files]);
@@ -90,19 +106,19 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
             reader.readAsDataURL(file);
         });
 
-    // 🔥 Fetch Asset Details
+    // Fetch asset details
     const fetchAssetDetails = async (scannedId) => {
         try {
             const res = await axios.get(`/api/landlord/assets_management/${scannedId}`);
             setAssetDetails(res.data.asset);
+
             Swal.fire("Success", "Asset recognized via QR!", "success");
         } catch {
             Swal.fire("Not Found", "Asset not found in system.", "error");
         }
     };
 
-    // 🔥 QR Scanner Logic
-// 🔥 QR Scanner Logic
+    // QR Scanner Logic
     useEffect(() => {
         if (!scannerOpen) return;
 
@@ -115,14 +131,12 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                 return;
             }
 
-            // PRIORITY: Back camera FIRST
-            const backCam = devices.find(d =>
+            const backCam = devices.find((d) =>
                 d.label.toLowerCase().includes("back") ||
                 d.label.toLowerCase().includes("rear")
             );
 
-            // Fallback: choose the LAST device (usually back)
-            const cameraId = backCam?.id || devices[devices.length - 1].id;
+            const cameraId = backCam?.id || devices[devices.length - 1]?.id;
 
             scanner.start(
                 cameraId,
@@ -131,9 +145,10 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     scanner.stop();
                     setScannerOpen(false);
 
-                    const cleanId = decoded.trim();
-                    setAssetId(cleanId);
+                    let cleanId = decoded.trim();
+                    cleanId = extractAssetId(cleanId);
 
+                    setAssetId(cleanId);
                     await fetchAssetDetails(cleanId);
                 },
                 () => {}
@@ -167,7 +182,7 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                 landlord_id: landlordId,
                 property_id: selectedProperty,
                 unit_id: selectedUnit || null,
-                asset_id: assetId || null, // 🔥 SCANNED ASSET ID
+                asset_id: assetId || null,
                 photo_urls: imagesEncoded,
                 user_id: user?.user_id,
             };
@@ -186,23 +201,13 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
         }
     };
 
-    // ------------------------------------------
     // UI
-    // ------------------------------------------
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div
-                className="
-          bg-white w-full max-w-4xl max-h-[90vh]
-          overflow-y-auto scroll-smooth
-          p-6 rounded-2xl shadow-2xl relative animate-scaleIn
-        "
-            >
+            <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl shadow-2xl relative">
+
                 {/* Close */}
-                <button
-                    onClick={onClose}
-                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
-                >
+                <button onClick={onClose} className="absolute right-3 top-3 text-gray-500 hover:text-gray-700">
                     <X className="w-5 h-5" />
                 </button>
 
@@ -268,20 +273,20 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                             placeholder="Scan QR to auto-fill asset"
                             readOnly
                         />
+
                         <button
                             onClick={() => setScannerOpen(true)}
                             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2"
                         >
-                            <Scan className="w-4 h-4" /> Scan
+                            <Scan className="w-4 h-4" />
+                            Scan
                         </button>
                     </div>
 
                     {assetDetails && (
                         <div className="mt-3 p-3 bg-gray-50 border rounded-lg">
                             <p><strong>{assetDetails.asset_name}</strong></p>
-                            <p className="text-sm text-gray-600">
-                                Serial: {assetDetails.serial_number}
-                            </p>
+                            <p className="text-sm text-gray-600">Serial: {assetDetails.serial_number}</p>
                             <p className="text-sm">Status: {assetDetails.status}</p>
                         </div>
                     )}
@@ -292,7 +297,9 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[999] p-4">
                         <div className="bg-white rounded-xl p-4 w-full max-w-sm">
                             <h3 className="text-lg font-semibold mb-3">Scan Asset QR Code</h3>
+
                             <div id={qrDivId} className="w-full" />
+
                             <button
                                 onClick={() => setScannerOpen(false)}
                                 className="mt-4 w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
@@ -303,9 +310,8 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     </div>
                 )}
 
-                {/* CATEGORY + PRIORITY */}
+                {/* Category + Priority */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    {/* Category */}
                     <div>
                         <label className="text-sm font-medium">Category</label>
                         <select
@@ -319,7 +325,6 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                         </select>
                     </div>
 
-                    {/* Priority */}
                     <div>
                         <label className="text-sm font-medium">Priority</label>
                         <select
@@ -345,7 +350,7 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     />
                 </div>
 
-                {/* DESCRIPTION */}
+                {/* Description */}
                 <div className="mb-4">
                     <label className="text-sm font-medium">Description</label>
                     <textarea
@@ -357,7 +362,7 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     />
                 </div>
 
-                {/* PHOTOS */}
+                {/* Photos */}
                 <div className="mb-4">
                     <label className="text-sm font-medium">Photos</label>
                     <input
@@ -381,7 +386,7 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     )}
                 </div>
 
-                {/* BUTTONS */}
+                {/* Buttons */}
                 <div className="flex justify-end gap-3 mt-6">
                     <button
                         onClick={onClose}
@@ -395,9 +400,9 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                         onClick={handleSave}
                         disabled={loading}
                         className={`
-              px-6 py-2 rounded-lg text-white font-medium
-              ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}
-            `}
+                            px-6 py-2 rounded-lg text-white font-medium
+                            ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}
+                        `}
                     >
                         {loading ? "Saving..." : "Create Work Order"}
                     </button>
