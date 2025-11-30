@@ -54,7 +54,7 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
     useEffect(() => {
         const fetchProperties = async () => {
             try {
-                const res = await axios.get(`/api/landlord/${landlordId}/properties`);
+                const res = await axios.get(`/api/landlord/${user?.landlord_id}/properties`);
                 setProperties(res.data.data || []);
             } catch (err) {
                 console.error("Error fetching properties", err);
@@ -112,6 +112,8 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
             const res = await axios.get(`/api/landlord/assets_management/${scannedId}`);
             setAssetDetails(res.data.asset);
 
+            console.log('asset details scanned: ', scannedId);
+
             Swal.fire("Success", "Asset recognized via QR!", "success");
         } catch {
             Swal.fire("Not Found", "Asset not found in system.", "error");
@@ -142,7 +144,7 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                 cameraId,
                 { fps: 10, qrbox: 200 },
                 async (decoded) => {
-                    scanner.stop();
+                    await scanner.stop();
                     setScannerOpen(false);
 
                     let cleanId = decoded.trim();

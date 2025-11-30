@@ -61,7 +61,7 @@ export default function TenantPortalLayout({
     { slug: "rentalPortal", icon: HomeIcon, label: "Dashboard" },
     { slug: "billing", icon: CreditCardIcon, label: "Billing Statement" },
     {
-      slug: "paymentHistory/currentLeasePayment",
+      slug: "paymentHistory",
       icon: DocumentTextIcon,
       label: "Payment History",
     },
@@ -102,7 +102,7 @@ export default function TenantPortalLayout({
       {/* Logo/Brand */}
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-          UpKyp Portal
+          Upkyp Portal
         </h1>
         <p className="text-xs text-gray-500 mt-1">Tenant Dashboard</p>
       </div>
