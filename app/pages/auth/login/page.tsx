@@ -407,14 +407,14 @@ function Login() {
                       Create one
                     </Link>
                   </p>
-                  <p className="pt-1">
-                    <Link
-                        href="/pages/admin_login"
-                        className="text-teal-600 hover:text-teal-800 font-medium hover:underline"
-                    >
-                      System Admin Login
-                    </Link>
-                  </p>
+                  {/*<p className="pt-1">*/}
+                  {/*  <Link*/}
+                  {/*      href="/pages/admin_login"*/}
+                  {/*      className="text-teal-600 hover:text-teal-800 font-medium hover:underline"*/}
+                  {/*  >*/}
+                  {/*    System Admin Login*/}
+                  {/*  </Link>*/}
+                  {/*</p>*/}
                 </div>
               </form>
             </div>
