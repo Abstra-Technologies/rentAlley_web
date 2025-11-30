@@ -14,7 +14,6 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import axios from "axios";
-import Page_footer from "@/components/navigation/page_footer";
 
 interface PropertyInfo {
   property_name: string;
@@ -102,7 +101,7 @@ export default function TenantPortalLayout({
       {/* Logo/Brand */}
       <div className="p-6 border-b border-gray-200">
         <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-          UpKyp Portal
+          Upkyp Portal
         </h1>
         <p className="text-xs text-gray-500 mt-1">Tenant Dashboard</p>
       </div>
@@ -190,7 +189,8 @@ export default function TenantPortalLayout({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setMobileMenuOpen(true)}
-        className="md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white"
+        className="md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow"
+        aria-label="Open menu"
       >
         <Bars3Icon className="w-6 h-6" />
       </button>
@@ -198,22 +198,22 @@ export default function TenantPortalLayout({
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 z-50 bg-black/50"
+          className="md:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
           onClick={() => setMobileMenuOpen(false)}
         >
           <aside
-            className="fixed left-0 top-0 w-64 bg-white h-full shadow-xl flex flex-col"
+            className="fixed left-0 top-0 w-72 bg-white h-full shadow-xl flex flex-col pt-14"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
-            <div className="flex justify-end p-4 pt-20">
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <XMarkIcon className="w-6 h-6 text-gray-600" />
-              </button>
-            </div>
+            {/* Close button - Top Right Corner */}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Close menu"
+            >
+              <XMarkIcon className="w-6 h-6 text-gray-600" />
+            </button>
+
             <SidebarContent />
           </aside>
         </div>
@@ -227,10 +227,7 @@ export default function TenantPortalLayout({
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 md:ml-64 overflow-y-auto">
-            {children}
-
-        </main>
+        <main className="flex-1 md:ml-64 overflow-y-auto">{children}</main>
       </div>
     </>
   );
