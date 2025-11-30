@@ -32,7 +32,7 @@ function UnitSearchContent() {
   const pathname = usePathname();
 
   const [units, setUnits] = useState<Unit[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [itemsPerPage] = useState(12);
@@ -47,21 +47,19 @@ function UnitSearchContent() {
     [searchParams]
   );
 
-    // ============================================================
-    // ⭐ SEO: Dynamic Metadata (Title, Description, Canonical, OG)
-    // ============================================================
-    const canonicalUrl = `https://rent-alley-web.vercel.app/pages/find-rent?${searchParams.toString()}`;
+  // ============================================================
+  // ⭐ SEO: Dynamic Metadata (Title, Description, Canonical, OG)
+  // ============================================================
+  const canonicalUrl = `https://rent-alley-web.vercel.app/pages/find-rent?${searchParams.toString()}`;
 
-    const pageTitle = filters.searchQuery
-        ? `Find Rent in ${filters.searchQuery} | Affordable Units for Rent`
-        : "Find Rent | Browse Apartments, Rooms, Warehouse, Office Space for Rent";
+  const pageTitle = filters.searchQuery
+    ? `Find Rent in ${filters.searchQuery} | Affordable Units for Rent`
+    : "Find Rent | Browse Apartments, Rooms, Warehouse, Office Space for Rent";
 
-    const pageDescription =
-        "Search rental units including apartments, condos, dorms, and rooms for rent in the Philippines. Filter by price, location, unit style, and more.";
+  const pageDescription =
+    "Search rental units including apartments, condos, dorms, and rooms for rent in the Philippines. Filter by price, location, unit style, and more.";
 
-
-
-    const createParams = useCallback(
+  const createParams = useCallback(
     (newFilters: FilterState, newPage: number) => {
       const params = new URLSearchParams();
 
@@ -118,7 +116,6 @@ function UnitSearchContent() {
   useEffect(() => {
     async function fetchUnits() {
       try {
-        setLoading(true);
         const res = await fetch("/api/properties/findRent/units");
         if (!res.ok) throw new Error("Failed to fetch units");
 
@@ -133,7 +130,7 @@ function UnitSearchContent() {
         console.error("Error fetching units:", error);
         setUnits([]);
       } finally {
-        setLoading(false);
+        setIsInitialLoad(false);
       }
     }
 
@@ -206,7 +203,6 @@ function UnitSearchContent() {
     return { totalPages, paginatedUnits };
   }, [filteredUnits, currentPage, itemsPerPage]);
 
-  // Count active filters (excluding search)
   const activeFilterCount = useMemo(() => {
     return Object.entries(filters).filter(([key, value]) => {
       if (key === "searchQuery") return false;
@@ -215,50 +211,48 @@ function UnitSearchContent() {
     }).length;
   }, [filters]);
 
-  if (loading) {
+  if (isInitialLoad) {
     return <LoadingScreen message="Finding perfect units for you..." />;
   }
 
-    // ============================================================
-    // ⭐ SEO: JSON-LD Schema for Search Results + Units
-    // ============================================================
-    const jsonLdListings = {
-        "@context": "https://schema.org",
-        "@type": "SearchResultsPage",
-        name: "Find Rent - Upkyp",
-        description: pageDescription,
-        itemListElement: filteredUnits.map((unit, index) => ({
-            "@type": "ListItem",
-            position: index + 1,
-            url: `https://rent-alley-web.vercel.app/pages/find-rent/${unit.property_id}/${unit.unit_id}`,
-            item: {
-                "@type": "Apartment",
-                name: `${unit.unit_style} for rent in ${unit.city}`,
-                address: {
-                    "@type": "PostalAddress",
-                    addressLocality: unit.city,
-                    addressRegion: unit.province,
-                },
-                geo: unit.latitude
-                    ? {
-                        "@type": "GeoCoordinates",
-                        latitude: unit.latitude,
-                        longitude: unit.longitude,
-                    }
-                    : undefined,
-                offers: {
-                    "@type": "Offer",
-                    price: unit.rent_amount,
-                    priceCurrency: "PHP",
-                    availability:
-                        unit.status === "unoccupied" ? "InStock" : "OutOfStock",
-                },
-            },
-        })),
-    };
+  // ============================================================
+  // ⭐ SEO: JSON-LD Schema for Search Results + Units
+  // ============================================================
+  const jsonLdListings = {
+    "@context": "https://schema.org",
+    "@type": "SearchResultsPage",
+    name: "Find Rent - Upkyp",
+    description: pageDescription,
+    itemListElement: filteredUnits.map((unit, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: `https://rent-alley-web.vercel.app/pages/find-rent/${unit.property_id}/${unit.unit_id}`,
+      item: {
+        "@type": "Apartment",
+        name: `${unit.unit_style} for rent in ${unit.city}`,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: unit.city,
+          addressRegion: unit.province,
+        },
+        geo: unit.latitude
+          ? {
+              "@type": "GeoCoordinates",
+              latitude: unit.latitude,
+              longitude: unit.longitude,
+            }
+          : undefined,
+        offers: {
+          "@type": "Offer",
+          price: unit.rent_amount,
+          priceCurrency: "PHP",
+          availability: unit.status === "unoccupied" ? "InStock" : "OutOfStock",
+        },
+      },
+    })),
+  };
 
-
-    return (
+  return (
     <div className="min-h-screen flex flex-col bg-gray-50/80">
       {/* Subtle background pattern */}
       <div
