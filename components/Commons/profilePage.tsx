@@ -26,7 +26,7 @@ import axios from "axios";
 import { logEvent } from "@/utils/gtag";
 import DeleteAccountButton from "../authentication/deleteAccountButton";
 import useAuthStore from "@/zustand/authStore";
-import LoadingContent from "../ui/loadingContent";
+import LoadingScreen from "@/components/loadingScreen";
 
 interface ProfileData {
   firstName: string;
@@ -54,7 +54,7 @@ interface FormData {
 type VerificationStatus = "approved" | "pending" | "not verified" | null;
 
 export default function ProfilePage() {
-  const { user, loading } = useAuthStore();
+  const { user, loading, fetchSession } = useAuthStore();
   const router = useRouter();
   const user_id = user?.user_id;
   const userType = user?.userType;
@@ -76,6 +76,7 @@ export default function ProfilePage() {
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus>(null);
   const [subscriptionPlan, setSubscriptionPlan] = useState<string | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
@@ -86,6 +87,17 @@ export default function ProfilePage() {
     civil_status: "",
     address: "",
   });
+
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user) {
+        await fetchSession();
+      }
+      setIsInitialLoad(false);
+    }
+
+    loadProfile();
+  }, [user, fetchSession]);
 
   useEffect(() => {
     if (user) {
@@ -190,48 +202,47 @@ export default function ProfilePage() {
     }
   };
 
-    const handleUpdateProfile = async () => {
-        logEvent("Profile Update", "User Interaction", "User Updated Profile", 1);
+  const handleUpdateProfile = async () => {
+    logEvent("Profile Update", "User Interaction", "User Updated Profile", 1);
 
-        try {
-            const response = await axios.post(
-                "/api/commons/profile/user_profile/update",
-                formData,
-                {
-                    headers: { "Content-Type": "application/json" },
-                    withCredentials: true,
-                }
-            );
-
-            Swal.fire({
-                icon: "success",
-                title: "Profile Updated!",
-                text: "Your profile has been updated successfully.",
-            });
-
-            // Update local profileData (UI-level)
-            setProfileData((prev) => ({ ...prev, ...formData }));
-
-            // 🔥 Update Zustand store so *entire app* reflects new data without reload
-            useAuthStore.getState().updateUser({
-                ...useAuthStore.getState().user,
-                ...formData,
-            });
-
-            setEditing(false);
-        } catch (error) {
-            console.error("Profile update failed:", error);
-
-            Swal.fire({
-                icon: "error",
-                title: "Update Failed",
-                text: "Failed to update profile. Please try again.",
-            });
+    try {
+      const response = await axios.post(
+        "/api/commons/profile/user_profile/update",
+        formData,
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true,
         }
-    };
+      );
 
+      Swal.fire({
+        icon: "success",
+        title: "Profile Updated!",
+        text: "Your profile has been updated successfully.",
+      });
 
-    const getVerificationBadge = () => {
+      // Update local profileData (UI-level)
+      setProfileData((prev) => ({ ...prev, ...formData }));
+
+      // 🔥 Update Zustand store so *entire app* reflects new data without reload
+      useAuthStore.getState().updateUser({
+        ...useAuthStore.getState().user,
+        ...formData,
+      });
+
+      setEditing(false);
+    } catch (error) {
+      console.error("Profile update failed:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Update Failed",
+        text: "Failed to update profile. Please try again.",
+      });
+    }
+  };
+
+  const getVerificationBadge = () => {
     switch (verificationStatus) {
       case "approved":
         return (
@@ -259,8 +270,14 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
-    return <LoadingContent name="profile" />;
+  // Show loading screen during initial load OR Zustand loading
+  if (isInitialLoad || loading) {
+    return <LoadingScreen message="Loading your profile..." />;
+  }
+
+  // Show loading if no user after load complete
+  if (!user) {
+    return <LoadingScreen message="Redirecting to login..." />;
   }
 
   return (
