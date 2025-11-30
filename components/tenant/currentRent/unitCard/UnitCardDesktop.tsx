@@ -21,6 +21,7 @@ const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
     const isSignaturePending =
         unit.leaseSignature === "pending" ||
         unit.leaseSignature === "sent" ||
+        unit.leaseSignature === "pending_signature" ||
         unit.leaseSignature === "landlord_signed";
 
     const isExpired = new Date(unit.end_date) < new Date();
@@ -58,7 +59,7 @@ const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
     );
 };
 
-/* ----------------------- MAIN COMPONENT ----------------------- */
+/* ----------------------- MAIN CARD ----------------------- */
 export default function UnitCardDesktop({
                                             unit,
                                             onContactLandlord,
@@ -80,6 +81,7 @@ export default function UnitCardDesktop({
     const isSignaturePending =
         unit.leaseSignature === "pending" ||
         unit.leaseSignature === "sent" ||
+        unit.leaseSignature === "pending_signature" ||
         unit.leaseSignature === "landlord_signed";
 
     const isTenantSigned =
@@ -87,7 +89,7 @@ export default function UnitCardDesktop({
         unit.leaseSignature === "active" ||
         unit.leaseSignature === "completed";
 
-    /* ----------------------- INITIAL PAYABLES ----------------------- */
+    /* ----------------------- PAYABLE STATES ----------------------- */
     const requiresSecurityDeposit =
         Number(unit.security_deposit_amount) > 0 &&
         unit.security_deposit_status !== "paid";
@@ -101,6 +103,7 @@ export default function UnitCardDesktop({
 
     return (
         <article className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group">
+
             {/* Status Bar */}
             <div
                 className={`h-1 ${
@@ -181,18 +184,15 @@ export default function UnitCardDesktop({
           </span>
                 </div>
 
-                {/* BUTTONS LOGIC */}
+                {/* BUTTONS AREA */}
                 <div className="space-y-2 mt-4">
-                    {/* -----------------------------------------
-              SIGNATURE NOT COMPLETE → ONLY SHOW WIDGET
-          ------------------------------------------ */}
+
+                    {/* -------------- PENDING SIGNATURE VIEW ONLY -------------- */}
                     {isSignaturePending && (
                         <PendingDocumentsWidget agreement_id={unit.agreement_id} />
                     )}
 
-                    {/* -----------------------------------------
-              SIGNED → SHOW ALL ACTIONS
-          ------------------------------------------ */}
+                    {/* -------------- SIGNED → SHOW ACTIONS -------------- */}
                     {isTenantSigned && (
                         <>
                             {/* PAY INITIAL AMOUNT */}
@@ -213,7 +213,7 @@ export default function UnitCardDesktop({
                                 </button>
                             )}
 
-                            {/* Access Portal */}
+                            {/* ACCESS PORTAL */}
                             <button
                                 onClick={() => onAccessPortal(unit.agreement_id)}
                                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4
@@ -224,7 +224,7 @@ export default function UnitCardDesktop({
                                 Access Portal
                             </button>
 
-                            {/* Contact */}
+                            {/* CONTACT LANDLORD */}
                             <button
                                 onClick={onContactLandlord}
                                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4
@@ -235,7 +235,7 @@ export default function UnitCardDesktop({
                                 Message Landlord
                             </button>
 
-                            {/* EXPIRED — Renew / End */}
+                            {/* EXPIRED → Renew or End */}
                             {isLeaseExpired && (
                                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
                                     <button
