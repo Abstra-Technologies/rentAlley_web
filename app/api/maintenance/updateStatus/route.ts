@@ -54,26 +54,31 @@ export async function PUT(req: NextRequest) {
 
         await conn.beginTransaction();
 
-        // 1️⃣ Fetch existing maintenance request
+        // 1️⃣ Fetch existing request
         const [existingRows]: any = await conn.query(
             `SELECT * FROM MaintenanceRequest WHERE request_id = ?`,
             [request_id]
         );
+
         if (!existingRows.length) {
             await conn.rollback();
             return NextResponse.json({ error: "Maintenance request not found." }, { status: 404 });
         }
+
         const oldData = existingRows[0];
 
+        // 🟦 NEW: Detect if created by tenant or landlord
+        const hasTenant = !!oldData.tenant_id;
+
+        // ------------------------------
         // 2️⃣ Determine next state logic
+        // ------------------------------
         let nextStatus = status;
 
-        // ✅ If landlord approves but no schedule yet → mark as "Approved"
         if (status.toLowerCase() === "approved" && !schedule_date) {
             nextStatus = "Approved";
         }
 
-        // ✅ Only allow "Scheduled" when a schedule_date is explicitly provided
         if (status.toLowerCase() === "scheduled" && !schedule_date) {
             return NextResponse.json(
                 { error: "Cannot mark as 'Scheduled' without a schedule date." },
@@ -81,7 +86,7 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        // 3️⃣ Build update query dynamically
+        // 3️⃣ Update query
         const updateFields = ["status = ?", "updated_at = NOW()"];
         const updateParams: any[] = [nextStatus];
 
@@ -101,25 +106,61 @@ export async function PUT(req: NextRequest) {
         }
 
         updateParams.push(request_id);
-        const updateQuery = `UPDATE MaintenanceRequest SET ${updateFields.join(", ")} WHERE request_id = ?`;
-        await conn.query(updateQuery, updateParams);
+
+        await conn.query(
+            `UPDATE MaintenanceRequest SET ${updateFields.join(", ")} WHERE request_id = ?`,
+            updateParams
+        );
+
+        // 🟦 If landlord created the maintenance request → skip tenant section
+        if (!hasTenant) {
+            console.log("🟦 Maintenance created by landlord — skipping tenant notifications.");
+
+            // Minimal log for landlord
+            await conn.query(
+                `INSERT INTO ActivityLog
+                 (user_id, action, description, target_table, target_id, old_value, new_value,
+                  endpoint, http_method, status_code, ip_address, user_agent, device_type, session_id, timestamp)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+                [
+                    landlordUserId,
+                    `Maintenance Request Updated to ${nextStatus}`,
+                    `Maintenance created by landlord updated to ${nextStatus}.`,
+                    "MaintenanceRequest",
+                    String(request_id),
+                    JSON.stringify(oldData),
+                    JSON.stringify({ ...oldData, status: nextStatus }),
+                    endpoint,
+                    method,
+                    200,
+                    ip,
+                    userAgent,
+                    deviceType,
+                    sessionId,
+                ]
+            );
+
+            await conn.commit();
+            return NextResponse.json({
+                success: true,
+                message: `Landlord maintenance request updated to "${nextStatus}".`,
+            });
+        }
+
+        // 🟦 If tenant exists → continue normal flow
 
         // 4️⃣ Get tenant info
         const [tenantInfo]: any = await conn.query(
             `SELECT mr.tenant_id, t.user_id AS tenant_user_id, mr.subject
-       FROM MaintenanceRequest mr
-       JOIN Tenant t ON mr.tenant_id = t.tenant_id
-       WHERE mr.request_id = ?`,
+             FROM MaintenanceRequest mr
+             JOIN Tenant t ON mr.tenant_id = t.tenant_id
+             WHERE mr.request_id = ?`,
             [request_id]
         );
-        if (!tenantInfo.length) {
-            await conn.rollback();
-            return NextResponse.json({ error: "Tenant not found." }, { status: 404 });
-        }
 
         const { tenant_id, tenant_user_id, subject } = tenantInfo[0];
 
-        // 5️⃣ Notification setup
+        // 5️⃣ Notifications
         let notifTitle = "Maintenance Request Update";
         let notifBody = `Your maintenance request "${subject}" is now "${nextStatus}".`;
 
@@ -135,11 +176,11 @@ export async function PUT(req: NextRequest) {
 
         await conn.query(
             `INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
-       VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
+             VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)`,
             [tenant_user_id, notifTitle, notifBody, notifUrl]
         );
 
-        // 6️⃣ Send Push Notification
+        // 6️⃣ Push Notification
         const [subs]: any = await conn.query(
             `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
             [tenant_user_id]
@@ -149,15 +190,18 @@ export async function PUT(req: NextRequest) {
             const payload = JSON.stringify({ title: notifTitle, body: notifBody, url: notifUrl });
 
             for (const sub of subs) {
-                const subscription = { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } };
+                const subscription = {
+                    endpoint: sub.endpoint,
+                    keys: { p256dh: sub.p256dh, auth: sub.auth },
+                };
+
                 try {
                     await webpush.sendNotification(subscription, payload);
-                    console.log("✅ Push sent:", sub.endpoint);
                 } catch (err: any) {
-                    console.error("❌ Push failed:", err.message);
                     if (err.statusCode === 410 || err.statusCode === 404) {
-                        await conn.query(`DELETE FROM user_push_subscriptions WHERE endpoint = ?`, [sub.endpoint]);
-                        console.log("🗑️ Removed invalid subscription:", sub.endpoint);
+                        await conn.query(`DELETE FROM user_push_subscriptions WHERE endpoint = ?`, [
+                            sub.endpoint,
+                        ]);
                     }
                 }
             }
@@ -169,6 +213,7 @@ export async function PUT(req: NextRequest) {
             transports: ["websocket"],
         });
         const chat_room = `chat_${[tenant_user_id, landlordUserId].sort().join("_")}`;
+
         socket.emit("sendMessage", {
             sender_id: landlordUserId,
             sender_type: "landlord",
@@ -177,7 +222,8 @@ export async function PUT(req: NextRequest) {
             message: notifBody,
             chat_room,
         });
-        setTimeout(() => socket.disconnect(), 400);
+
+        setTimeout(() => socket.disconnect(), 300);
 
         // 8️⃣ Log Activity
         const [updatedRows]: any = await conn.query(
@@ -191,12 +237,12 @@ export async function PUT(req: NextRequest) {
             ? `Maintenance request "${subject}" was rejected. Reason: ${rejection_reason}`
             : `Maintenance request "${subject}" updated to "${nextStatus}".`;
 
-        // Tenant Log
+        // Tenant Activity Log
         await conn.query(
             `INSERT INTO ActivityLog
-       (user_id, action, description, target_table, target_id, old_value, new_value,
-        endpoint, http_method, status_code, ip_address, user_agent, device_type, session_id, timestamp)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+             (user_id, action, description, target_table, target_id, old_value, new_value,
+              endpoint, http_method, status_code, ip_address, user_agent, device_type, session_id, timestamp)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
             [
                 tenant_user_id,
                 actionLabel,
@@ -215,12 +261,12 @@ export async function PUT(req: NextRequest) {
             ]
         );
 
-        // Landlord Log
+        // Landlord log
         await conn.query(
             `INSERT INTO ActivityLog
-       (user_id, action, description, target_table, target_id, old_value, new_value,
-        endpoint, http_method, status_code, ip_address, user_agent, device_type, session_id, timestamp)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+             (user_id, action, description, target_table, target_id, old_value, new_value,
+              endpoint, http_method, status_code, ip_address, user_agent, device_type, session_id, timestamp)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
             [
                 landlordUserId,
                 actionLabel,
@@ -243,8 +289,7 @@ export async function PUT(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: `Request "${request_id}" successfully updated to "${nextStatus}".`,
-            rejection_reason: rejection_reason || null,
+            message: `Request "${request_id}" updated to "${nextStatus}".`,
         });
     } catch (error: any) {
         console.error("❌ Maintenance update error:", error);

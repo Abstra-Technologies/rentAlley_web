@@ -18,6 +18,7 @@ import UpcomingVisitsWidget from "../properties/propertyVisit";
 import PaymentSummaryCard from "../analytics/PaymentSummaryCard";
 import MobileLandlordAnalytics from "@/components/landlord/mobile_layour/MobileLandlordAnalytics";
 import PendingMaintenanceDonut from "../analytics/PendingMaintenanceDonut";
+import NewWorkOrderModal from "../maintenance_management/NewWorkOrderModal";
 
 // Dynamic Imports
 const RevenuePerformanceChart = dynamic(
@@ -33,6 +34,7 @@ const LandlordMainDashboard = () => {
   const prevPointsRef = useRef<number | null>(null);
   const [headerImage, setHeaderImage] = useState<string | null>(null);
   const [greeting, setGreeting] = useState("");
+    const [showNewModal, setShowNewModal] = useState(false);
 
   // Greeting
   function getGreeting() {
@@ -133,24 +135,25 @@ const LandlordMainDashboard = () => {
       </div>
 
       {/* QUICK ACTIONS */}
-      <div className="mb-4">
-        <QuickActions
-          onAddProperty={() =>
-            router.push("/pages/landlord/property-listing/create-property")
-          }
-          onInviteTenant={() =>
-            router.push("/pages/landlord/invite-tenant")
-          }
-          onAnnouncement={() =>
-            router.push("/pages/landlord/announcement/create-announcement")
-          }
-          onWorkOrder={() =>
-            router.push("/pages/landlord/announcement/create-announcement")
-          }
-        />
-      </div>
+        <div className="mb-4">
+            <QuickActions
+                onAddProperty={() =>
+                    router.push("/pages/landlord/property-listing/create-property")
+                }
+                onInviteTenant={() =>
+                    router.push("/pages/landlord/invite-tenant")
+                }
+                onAnnouncement={() =>
+                    router.push("/pages/landlord/announcement/create-announcement")
+                }
 
-      {/* DESKTOP LAYOUT */}
+                // 🔵 ONLY THIS ONE NOW OPENS THE MODAL
+                onWorkOrder={() => setShowNewModal(true)}
+            />
+        </div>
+
+
+        {/* DESKTOP LAYOUT */}
       <div className="hidden sm:block w-full overflow-x-hidden">
 
         {/* ANALYTICS TOP GRID  */}
@@ -206,6 +209,18 @@ const LandlordMainDashboard = () => {
       <div className="block sm:hidden">
         <MobileLandlordAnalytics user={user} />
       </div>
+
+        {showNewModal && (
+            <NewWorkOrderModal
+                landlordId={user?.landlord_id}
+                onClose={() => setShowNewModal(false)}
+                onCreated={(newOrder) => {
+                    setRequests((prev) => [newOrder, ...prev]);
+                    setShowNewModal(false);
+                }}
+            />
+        )}
+
     </div>
   );
 };

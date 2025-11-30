@@ -9,12 +9,9 @@ import {
     User,
     Wrench,
     Package,
-    Cpu,
-    Mail,
-    Phone,
-    ChevronRight,
 } from "lucide-react";
-import { getStatusConfig, getPriorityConfig } from "./getStatusConfig";
+
+import { getStatusConfig, getPriorityConfig } from "@/components/landlord/maintenance_management/getStatusConfig";
 
 export default function MaintenanceDetailsModal({
                                                     selectedRequest,
@@ -58,11 +55,7 @@ export default function MaintenanceDetailsModal({
                         onClick={onClose}
                         className="p-1.5 hover:bg-gray-200 rounded-lg"
                     >
-                        <svg
-                            className="w-5 h-5 text-gray-700"
-                            fill="none"
-                            stroke="currentColor"
-                        >
+                        <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                                   d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -71,15 +64,19 @@ export default function MaintenanceDetailsModal({
 
                 {/* STATUS BAR */}
                 <div className="p-4 border-b flex flex-wrap gap-2 items-center text-xs">
+                    {/* STATUS BADGE */}
                     <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold ${status.bg} ${status.text} border ${status.border}`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold 
+                        ${status.bg} ${status.text} border ${status.border}`}
                     >
                         <StatusIcon className="w-3.5 h-3.5" />
                         {status.label}
                     </span>
 
+                    {/* PRIORITY BADGE */}
                     <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold ${priority.bg} ${priority.text} border ${priority.border}`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold 
+                        ${priority.bg} ${priority.text} border ${priority.border}`}
                     >
                         ⚡ {priority.label}
                     </span>
@@ -134,9 +131,7 @@ export default function MaintenanceDetailsModal({
                     {/* PHOTOS */}
                     {selectedRequest.photo_urls?.length > 0 && (
                         <div className="bg-white border rounded-lg p-4 shadow-sm">
-                            <h3 className="font-semibold text-gray-900 mb-2">
-                                Photos
-                            </h3>
+                            <h3 className="font-semibold text-gray-900 mb-2">Photos</h3>
 
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                 {selectedRequest.photo_urls.map((photo, i) => (
@@ -154,7 +149,6 @@ export default function MaintenanceDetailsModal({
                     {/* PROPERTY / TENANT / ASSET */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-                        {/* PROPERTY */}
                         <CompactCard
                             title="Property"
                             icon={<Home className="w-4 h-4 text-blue-600" />}
@@ -166,7 +160,6 @@ export default function MaintenanceDetailsModal({
                             ]}
                         />
 
-                        {/* TENANT */}
                         <CompactCard
                             title="Tenant"
                             icon={<User className="w-4 h-4 text-blue-600" />}
@@ -180,7 +173,6 @@ export default function MaintenanceDetailsModal({
                             }
                         />
 
-                        {/* ASSET */}
                         <CompactCard
                             title="Asset"
                             icon={<Package className="w-4 h-4 text-emerald-600" />}
