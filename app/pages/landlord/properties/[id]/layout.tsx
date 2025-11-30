@@ -111,12 +111,12 @@ export default function PropertyLayout({
       href: `/pages/landlord/properties/${id}/financials`,
       icon: HandCoins,
     },
-    {
-      id: "Reports",
-      label: "Reports",
-      href: `/pages/landlord/properties/${id}/reports`,
-      icon: BarChart3,
-    },
+    // {
+    //   id: "Reports",
+    //   label: "Reports",
+    //   href: `/pages/landlord/properties/${id}/reports`,
+    //   icon: BarChart3,
+    // },
     {
       id: "utilities",
       label: "Utilities",
