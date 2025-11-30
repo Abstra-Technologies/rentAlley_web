@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
           unit_id, tenant_id, status
         FROM LeaseAgreement
         WHERE tenant_id = ?
-          AND status IN ('active', 'pending', 'sent', 'landlord_signed', 'tenant_signed')
+          AND status IN ('active', 'pending','pending_signature')
         ORDER BY updated_at DESC
       `,
             [tenantId]
