@@ -17,113 +17,132 @@ export async function GET(req: NextRequest) {
 
     try {
         const query = `
-      SELECT 
-        mr.request_id,
-        u.firstName AS tenant_first_name,
-        u.lastName AS tenant_last_name,
-        u.email AS tenant_email,
-        u.phoneNumber AS tenant_phone,
-        p.property_name,
-        un.unit_name,
-        mr.subject,
-        mr.description,
-        mr.category,
-        mr.priority_level,
-        mr.status,
-        mr.schedule_date,
-        mr.completion_date,
-        mr.created_at,
+            SELECT 
+                mr.request_id,
+                mr.subject,
+                mr.description,
+                mr.category,
+                mr.priority_level,
+                mr.status,
+                mr.schedule_date,
+                mr.completion_date,
+                mr.created_at,
 
-        -- 🧩 Asset details
-        a.asset_id,
-        a.asset_name,
-        a.category AS asset_category,
-        a.model AS asset_model,
-        a.manufacturer AS asset_manufacturer,
-        a.serial_number AS asset_serial_number,
-        a.condition AS asset_condition,
-        a.status AS asset_status,
-        a.image_urls AS asset_image_urls,
+                -- PROPERTY + UNIT
+                p.property_id,
+                p.property_name,
+                un.unit_id,
+                un.unit_name,
 
-        COALESCE(GROUP_CONCAT(mp.photo_url SEPARATOR '||'), '[]') AS photo_urls
-      FROM MaintenanceRequest mr
-      JOIN Tenant t ON mr.tenant_id = t.tenant_id
-      JOIN User u ON t.user_id = u.user_id
-      JOIN Unit un ON mr.unit_id = un.unit_id
-      JOIN Property p ON un.property_id = p.property_id
-      LEFT JOIN Asset a ON mr.asset_id = a.asset_id
-      LEFT JOIN MaintenancePhoto mp ON mr.request_id = mp.request_id
-      WHERE p.landlord_id = ?
-      GROUP BY 
-        mr.request_id,
-        tenant_first_name,
-        tenant_last_name,
-        tenant_email,
-        tenant_phone,
-        property_name,
-        unit_name,
-        subject,
-        description,
-        category,
-        priority_level,
-        status,
-        schedule_date,
-        completion_date,
-        created_at,
-        a.asset_id
-    `;
+                -- TENANT (NULL when landlord-created)
+                u.firstName AS tenant_first_name,
+                u.lastName AS tenant_last_name,
+                u.email AS tenant_email,
+                u.phoneNumber AS tenant_phone,
 
-        const [requests] = await db.query(query, [landlord_id]);
+                -- ASSET (NULL when not linked)
+                a.asset_id,
+                a.asset_name,
+                a.category AS asset_category,
+                a.model AS asset_model,
+                a.manufacturer AS asset_manufacturer,
+                a.serial_number AS asset_serial_number,
+                a.condition AS asset_condition,
+                a.status AS asset_status,
+                a.image_urls AS asset_image_urls,
 
-        const decryptedRequests = (requests as any[]).map((req) => {
+                COALESCE(GROUP_CONCAT(mp.photo_url SEPARATOR '||'), '') AS photo_urls
+
+            FROM MaintenanceRequest mr
+
+            -- Always available: property_id
+            JOIN Property p ON mr.property_id = p.property_id
+
+            -- Optional joins:
+            LEFT JOIN Unit un ON mr.unit_id = un.unit_id
+            LEFT JOIN Tenant t ON mr.tenant_id = t.tenant_id
+            LEFT JOIN User u ON t.user_id = u.user_id
+            LEFT JOIN Asset a ON mr.asset_id = a.asset_id
+            LEFT JOIN MaintenancePhoto mp ON mr.request_id = mp.request_id
+
+            WHERE p.landlord_id = ?
+
+            GROUP BY mr.request_id
+            ORDER BY mr.created_at DESC
+        `;
+
+        const [rows] = await db.query(query, [landlord_id]);
+
+        const formatted = rows.map((req: any) => {
+            // decrypt photos
             let decryptedPhotos: string[] = [];
-            let decryptedFirstName = req.tenant_first_name;
-            let decryptedLastName = req.tenant_last_name;
-            let decyptedEmail = req.tenant_email;
+            if (req.photo_urls) {
+                const urls = req.photo_urls.split("||").filter(Boolean);
+                decryptedPhotos = urls.map((enc) => {
+                    try {
+                        return decryptData(JSON.parse(enc), SECRET_KEY);
+                    } catch {
+                        return null;
+                    }
+                }).filter(Boolean);
+            }
 
-            // Decrypt photo URLs
-            if (req.photo_urls && req.photo_urls !== "[]") {
+            // decrypt tenant
+            let first = req.tenant_first_name;
+            let last = req.tenant_last_name;
+            let email = req.tenant_email;
+
+            if (req.tenant_first_name) {
                 try {
-                    const parsedPhotos = req.photo_urls.split("||");
-                    decryptedPhotos = parsedPhotos.map((photo) =>
-                        decryptData(JSON.parse(photo), SECRET_KEY)
-                    );
-                } catch (error) {
-                    console.error("Error decrypting photos:", error);
-                }
+                    first = decryptData(JSON.parse(req.tenant_first_name), SECRET_KEY);
+                    last = decryptData(JSON.parse(req.tenant_last_name), SECRET_KEY);
+                    email = decryptData(JSON.parse(req.tenant_email), SECRET_KEY);
+                } catch {}
             }
 
-            // Decrypt tenant names
-            try {
-                decryptedFirstName = decryptData(
-                    JSON.parse(req.tenant_first_name),
-                    SECRET_KEY
-                );
-                decryptedLastName = decryptData(
-                    JSON.parse(req.tenant_last_name),
-                    SECRET_KEY
-                );
-                decyptedEmail = decryptData(
-                    JSON.parse(req.tenant_email),
-                    SECRET_KEY
-                );
-            } catch (error) {
-                console.error("Error decrypting tenant details:", error);
-            }
-
-            // Parse asset image URLs
+            // asset images
             let assetImages: string[] = [];
             try {
                 if (req.asset_image_urls) {
                     assetImages = JSON.parse(req.asset_image_urls);
                 }
-            } catch (e) {
-                console.error("Error parsing asset image URLs:", e);
-            }
+            } catch {}
 
-            // Format asset object if present
-            const asset =
-                req.asset_id != null
+            return {
+                request_id: req.request_id,
+                subject: req.subject,
+                description: req.description,
+                category: req.category,
+                priority_level: req.priority_level,
+                status: req.status,
+                schedule_date: req.schedule_date,
+                completion_date: req.completion_date,
+                created_at: req.created_at,
+
+                // property + unit
+                property: {
+                    property_id: req.property_id,
+                    property_name: req.property_name,
+                },
+                unit: req.unit_id
+                    ? {
+                        unit_id: req.unit_id,
+                        unit_name: req.unit_name,
+                    }
+                    : null,
+
+                // tenant (may be null)
+                tenant: req.tenant_first_name
+                    ? {
+                        first_name: first,
+                        last_name: last,
+                        email,
+                        phone: req.tenant_phone,
+                    }
+                    : null,
+
+                // asset (may be null)
+                asset: req.asset_id
                     ? {
                         asset_id: req.asset_id,
                         asset_name: req.asset_name,
@@ -135,24 +154,18 @@ export async function GET(req: NextRequest) {
                         status: req.asset_status,
                         image_urls: assetImages,
                     }
-                    : null;
+                    : null,
 
-            return {
-                ...req,
-                tenant_first_name: decryptedFirstName,
-                tenant_last_name: decryptedLastName,
-                tenant_email: decyptedEmail,
                 photo_urls: decryptedPhotos,
-                priority_level: req.priority_level || "Medium",
-                asset, // 🧩 embedded linked asset object
             };
         });
 
-        return NextResponse.json({ success: true, data: decryptedRequests });
+        return NextResponse.json({ success: true, data: formatted });
+
     } catch (error) {
-        console.error("Error fetching maintenance requests:", error);
+        console.error(error);
         return NextResponse.json(
-            { message: "Internal server error" },
+            { error: "Internal server error" },
             { status: 500 }
         );
     }

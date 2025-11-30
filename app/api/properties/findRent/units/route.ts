@@ -99,15 +99,6 @@ export async function GET(req: NextRequest) {
 
     query += ` ORDER BY u.rent_amount ASC;`;
 
-    console.log("🔍 Executing query with filters:", {
-      searchQuery,
-      propertyType,
-      furnishing,
-      minPrice,
-      maxPrice,
-      minSize,
-    });
-
     const [result] = await db.execute(query, queryParams);
     const units = Array.isArray(result) ? result : [];
 

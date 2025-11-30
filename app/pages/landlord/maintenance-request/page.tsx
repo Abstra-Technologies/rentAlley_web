@@ -48,6 +48,8 @@ export default function MaintenanceRequestPage() {
                     `/api/maintenance/getAllMaintenance?landlord_id=${landlordId}`
                 );
                 if (res.data.success) setRequests(res.data.data);
+                console.log("REQUESTS:", res.data.data);
+
             } catch (err) {
                 console.error(err);
             } finally {
