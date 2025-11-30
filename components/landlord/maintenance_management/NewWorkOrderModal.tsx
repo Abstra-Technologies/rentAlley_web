@@ -102,6 +102,7 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
     };
 
     // 🔥 QR Scanner Logic
+// 🔥 QR Scanner Logic
     useEffect(() => {
         if (!scannerOpen) return;
 
@@ -109,7 +110,19 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
         scannerRef.current = scanner;
 
         Html5Qrcode.getCameras().then((devices) => {
-            const cameraId = devices[0]?.id;
+            if (!devices || devices.length === 0) {
+                Swal.fire("Error", "No camera found.", "error");
+                return;
+            }
+
+            // PRIORITY: Back camera FIRST
+            const backCam = devices.find(d =>
+                d.label.toLowerCase().includes("back") ||
+                d.label.toLowerCase().includes("rear")
+            );
+
+            // Fallback: choose the LAST device (usually back)
+            const cameraId = backCam?.id || devices[devices.length - 1].id;
 
             scanner.start(
                 cameraId,
