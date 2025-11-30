@@ -85,11 +85,7 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                                 Rent
                             </p>
                         </div>
-                        <div style={{ width: "120px" }}>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Tenant
-                            </p>
-                        </div>
+
                         <div style={{ width: "100px" }}>
                             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 Status
@@ -142,12 +138,6 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                                             </p>
                                         </div>
 
-                                        {/* Tenant */}
-                                        <div className="hidden md:flex items-center w-[120px]">
-                                            <p className="text-sm text-gray-700 truncate">
-                                                {unit.tenant_name || "—"}
-                                            </p>
-                                        </div>
 
                                         {/* Status */}
                                         <div className="hidden md:flex items-center w-[100px]">
