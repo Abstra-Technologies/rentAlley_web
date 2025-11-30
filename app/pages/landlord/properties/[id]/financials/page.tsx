@@ -4,8 +4,9 @@ import { useState } from "react";
 import useSWR from "swr";
 import axios from "axios";
 import { useParams } from "next/navigation";
-import { formatCurrency } from "@/utils/formatter/formatters";
 import { Line } from "react-chartjs-2";
+import { formatCurrency } from "@/utils/formatter/formatters";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import {
     Chart as ChartJS,
@@ -34,7 +35,11 @@ export default function FinancialsPage() {
 
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-    const { data, error, isLoading } = useSWR(
+    // chart visibility toggles
+    const [showNOIChart, setShowNOIChart] = useState(false);
+    const [showGrossChart, setShowGrossChart] = useState(false);
+
+    const { data } = useSWR(
         propertyId
             ? `/api/analytics/landlord/revenue-expense-trend?property_id=${propertyId}&year=${selectedYear}`
             : null,
@@ -47,9 +52,10 @@ export default function FinancialsPage() {
         labels: metrics.monthNames || [],
         datasets: [
             {
-                label: "Month NOI",
+                label: "NOI Trend",
                 data: metrics.noiTrend || [],
-                borderWidth: 3,
+                borderWidth: 2,
+                tension: 0.3,
             },
         ],
     };
@@ -58,130 +64,168 @@ export default function FinancialsPage() {
         labels: metrics.monthNames || [],
         datasets: [
             {
-                label: "Gross Rent",
+                label: "Gross Rent Trend",
                 data: metrics.grossRentTrend || [],
-                borderWidth: 3,
+                borderWidth: 2,
+                tension: 0.3,
             },
         ],
     };
 
     return (
-        <div className="min-h-screen p-5 bg-gray-50">
+        <div className="min-h-screen p-6 bg-gradient-to-br from-gray-50 to-blue-50/30">
 
-            <h1 className="text-2xl font-bold text-gray-800 mt-4">
-                Financial Dashboard
-            </h1>
-            <p className="text-gray-500 text-sm">
-                Showing financial analytics for property #{propertyId}
-            </p>
+            {/* HEADER */}
+            <div className="mb-6">
+                <h1 className="text-3xl font-black text-gray-800 tracking-tight">
+                    Financial Dashboard
+                </h1>
+                <p className="text-gray-500 mt-1">
+                    Financial insights for <span className="font-semibold">Property #{propertyId}</span>
+                </p>
+            </div>
 
-            {/* YEAR FILTER ONLY */}
-            <div className="flex gap-3 mt-5">
+            {/* YEAR FILTER */}
+            <div className="flex items-center gap-3 mb-6">
+                <label className="font-medium text-gray-700">Year:</label>
                 <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="px-4 py-2 border rounded-lg shadow-sm"
+                    className="px-4 py-2 border rounded-lg shadow-sm bg-white hover:border-gray-400"
                 >
                     <option>{new Date().getFullYear()}</option>
                     <option>{new Date().getFullYear() - 1}</option>
                 </select>
             </div>
 
-            {/* GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
+            {/* SECTION TITLE */}
+            <h2 className="text-xl font-bold text-gray-800 mt-4 mb-2">Net Operating Income (NOI)</h2>
 
-                <Card
-                    title="Net Operating Income (NOI)"
-                    subtitle="Month to Month"
-                    current={formatCurrency(metrics.noi?.mtm?.current)}
+            {/* NOI METRIC GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
+                <MetricCard
+                    label="Month to Month"
+                    value={formatCurrency(metrics.noi?.mtm?.current)}
                     last={formatCurrency(metrics.noi?.mtm?.last)}
                     variance={metrics.noi?.mtm?.variance}
                 />
 
-                <Card
-                    title="Net Operating Income (NOI)"
-                    subtitle="Year To Date"
-                    current={formatCurrency(metrics.noi?.ytd?.current)}
+                <MetricCard
+                    label="Year to Date"
+                    value={formatCurrency(metrics.noi?.ytd?.current)}
                     last={formatCurrency(metrics.noi?.ytd?.last)}
                     variance={metrics.noi?.ytd?.variance}
                 />
 
-                <Card
-                    title="Net Operating Income (NOI)"
-                    subtitle="Year Over Year"
-                    current={formatCurrency(metrics.noi?.yoy?.current)}
+                <MetricCard
+                    label="Year Over Year"
+                    value={formatCurrency(metrics.noi?.yoy?.current)}
                     last={formatCurrency(metrics.noi?.yoy?.last)}
                     variance={metrics.noi?.yoy?.variance}
                 />
-
             </div>
 
-            {/* NOI CHART */}
-            <div className="bg-white p-5 shadow-md rounded-xl mt-6">
-                <h2 className="font-semibold mb-3">Monthly NOI Trend</h2>
+            {/* NOI CHART - COLLAPSIBLE */}
+            <ChartSection
+                title="Monthly NOI Trend"
+                isOpen={showNOIChart}
+                onToggle={() => setShowNOIChart(!showNOIChart)}
+            >
                 <Line data={chartDataNOI} />
-            </div>
+            </ChartSection>
 
-            {/* GROSS RENT CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
+            {/* SECTION TITLE */}
+            <h2 className="text-xl font-bold text-gray-800 mt-10 mb-2">Gross Rent</h2>
 
-                <Card
-                    title="Gross Rent"
-                    subtitle="Month to Month"
-                    current={formatCurrency(metrics.grossRent?.mtm?.current)}
+            {/* GROSS RENT METRIC GRID */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
+                <MetricCard
+                    label="Month to Month"
+                    value={formatCurrency(metrics.grossRent?.mtm?.current)}
                     last={formatCurrency(metrics.grossRent?.mtm?.last)}
                     variance={metrics.grossRent?.mtm?.variance}
                 />
 
-                <Card
-                    title="Gross Rent"
-                    subtitle="Year To Date"
-                    current={formatCurrency(metrics.grossRent?.ytd?.current)}
+                <MetricCard
+                    label="Year to Date"
+                    value={formatCurrency(metrics.grossRent?.ytd?.current)}
                     last={formatCurrency(metrics.grossRent?.ytd?.last)}
                     variance={metrics.grossRent?.ytd?.variance}
                 />
 
-                <Card
-                    title="Gross Rent"
-                    subtitle="Year Over Year"
-                    current={formatCurrency(metrics.grossRent?.yoy?.current)}
+                <MetricCard
+                    label="Year Over Year"
+                    value={formatCurrency(metrics.grossRent?.yoy?.current)}
                     last={formatCurrency(metrics.grossRent?.yoy?.last)}
                     variance={metrics.grossRent?.yoy?.variance}
                 />
-
             </div>
 
-            {/* GROSS RENT CHART */}
-            <div className="bg-white p-5 shadow-md rounded-xl mt-6">
-                <h2 className="font-semibold mb-3">Gross Rent Trend</h2>
+            {/* GROSS RENT CHART - COLLAPSIBLE */}
+            <ChartSection
+                title="Gross Rent Trend"
+                isOpen={showGrossChart}
+                onToggle={() => setShowGrossChart(!showGrossChart)}
+            >
                 <Line data={chartGrossRent} />
-            </div>
+            </ChartSection>
         </div>
     );
 }
 
-/* ==============
-   REUSABLE CARD
-   ============== */
-function Card({ title, subtitle, current, last, variance }) {
-    const positive = variance >= 0;
+/* ======================================
+   METRIC CARD (unchanged, simple clean)
+====================================== */
+function MetricCard({ label, value, last, variance }) {
+    const isPositive = variance >= 0;
 
     return (
-        <div className="bg-white shadow-md rounded-xl p-5 border">
-            <h3 className="text-gray-800 font-bold">{subtitle}</h3>
+        <div className="bg-white p-5 rounded-xl shadow-md border hover:shadow-lg transition-all">
+            <p className="text-gray-600 text-sm font-medium">{label}</p>
 
-            <p className="mt-2 text-3xl font-bold text-black">{current}</p>
-
-            <p className="text-gray-500 text-sm -mt-1">Last: {last}</p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+            <p className="text-gray-500 text-sm">Last: {last}</p>
 
             <p
-                className={`mt-3 font-semibold ${
-                    positive ? "text-green-600" : "text-red-600"
+                className={`mt-3 text-sm font-semibold ${
+                    isPositive ? "text-green-600" : "text-red-600"
                 }`}
             >
-                {positive ? "+" : ""}
+                {isPositive ? "+" : ""}
                 {variance?.toFixed(2)}%
             </p>
+        </div>
+    );
+}
+
+/* ======================================
+   CHART SECTION WITH TOGGLE + ANIMATION
+====================================== */
+function ChartSection({ title, children, isOpen, onToggle }) {
+    return (
+        <div className="bg-white p-5 shadow-md rounded-xl border mt-6">
+
+            {/* Toggle Header */}
+            <button
+                onClick={onToggle}
+                className="w-full flex items-center justify-between text-left"
+            >
+                <h3 className="font-semibold text-gray-800">{title}</h3>
+                {isOpen ? (
+                    <ChevronUp className="w-5 h-5 text-gray-600" />
+                ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-600" />
+                )}
+            </button>
+
+            {/* Smooth Expand */}
+            <div
+                className={`overflow-hidden transition-all duration-500 ${
+                    isOpen ? "max-h-[500px] mt-4 opacity-100" : "max-h-0 opacity-0"
+                }`}
+            >
+                <div className="w-full">{children}</div>
+            </div>
         </div>
     );
 }
