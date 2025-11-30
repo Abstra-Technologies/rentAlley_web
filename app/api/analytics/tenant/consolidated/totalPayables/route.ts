@@ -20,8 +20,7 @@ export async function GET(req: NextRequest) {
                     la.unit_id,
                     la.security_deposit_amount,
                     la.advance_payment_amount,
-                    la.is_security_deposit_paid,
-                    la.is_advance_payment_paid,
+                
                     u.unit_name,
                     p.property_id,
                     p.property_name
