@@ -24,8 +24,6 @@ export async function GET(req: NextRequest) {
                 la.status AS lease_status,
                 la.security_deposit_amount,
                 la.advance_payment_amount,
-                la.is_security_deposit_paid,
-                la.is_advance_payment_paid,
                 la.agreement_url,
 
                 u.unit_id,

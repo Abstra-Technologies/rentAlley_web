@@ -6,12 +6,9 @@ import {
     CurrencyDollarIcon,
     MapPinIcon,
     PhotoIcon,
-    ClockIcon,
     HomeIcon,
     ChatBubbleLeftRightIcon,
     ArrowRightOnRectangleIcon,
-    ExclamationTriangleIcon,
-    CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { RefreshCw, XCircle } from "lucide-react";
 
@@ -21,15 +18,21 @@ import PendingDocumentsWidget from "../../analytics-insights/PendingDocumentsWid
 
 /* ----------------------- STATUS BADGE ----------------------- */
 const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
-    const isPendingSignature = unit.signature_status === "pending_signature" || unit.signature_status === "pending";
+    const isSignaturePending =
+        unit.leaseSignature === "pending" ||
+        unit.leaseSignature === "sent" ||
+        unit.leaseSignature === "landlord_signed";
+
     const isExpired = new Date(unit.end_date) < new Date();
 
     const base =
         "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border-2";
 
-    if (isPendingSignature)
+    if (isSignaturePending)
         return (
-            <span className={`${base} bg-amber-50 text-amber-700 border-amber-200`}>
+            <span
+                className={`${base} bg-amber-50 text-amber-700 border-amber-200`}
+            >
         <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
         Pending Signature
       </span>
@@ -37,14 +40,18 @@ const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
 
     if (isExpired)
         return (
-            <span className={`${base} bg-gray-50 text-gray-700 border-gray-200`}>
+            <span
+                className={`${base} bg-gray-50 text-gray-700 border-gray-200`}
+            >
         <span className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
         Expired
       </span>
         );
 
     return (
-        <span className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}>
+        <span
+            className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}
+        >
       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
       Active
     </span>
@@ -58,26 +65,48 @@ export default function UnitCardDesktop({
                                             onAccessPortal,
                                             onRenewLease,
                                             onEndContract,
+                                            onPayInitial,
                                         }: {
     unit: Unit;
     onContactLandlord: () => void;
     onAccessPortal: (agreementId: string) => void;
     onRenewLease: (unitId: string, agreementId: string) => void;
     onEndContract: (unitId: string, agreementId: string) => void;
+    onPayInitial: (agreementId: string) => void;
 }) {
     const isLeaseExpired = new Date(unit.end_date) < new Date();
-    const isPendingSignature =
-        unit.signature_status === "pending_signature" || unit.signature_status === "pending";
+
+    /* ----------------------- SIGNATURE STATES ----------------------- */
+    const isSignaturePending =
+        unit.leaseSignature === "pending" ||
+        unit.leaseSignature === "sent" ||
+        unit.leaseSignature === "landlord_signed";
+
+    const isTenantSigned =
+        unit.leaseSignature === "tenant_signed" ||
+        unit.leaseSignature === "active" ||
+        unit.leaseSignature === "completed";
+
+    /* ----------------------- INITIAL PAYABLES ----------------------- */
+    const requiresSecurityDeposit =
+        Number(unit.security_deposit_amount) > 0 &&
+        unit.security_deposit_status !== "paid";
+
+    const requiresAdvancePayment =
+        Number(unit.advance_payment_amount) > 0 &&
+        unit.advance_payment_status !== "paid";
+
+    const hasInitialPayables =
+        requiresSecurityDeposit || requiresAdvancePayment;
 
     return (
         <article className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group">
-
             {/* Status Bar */}
             <div
                 className={`h-1 ${
                     isLeaseExpired
                         ? "bg-gray-400"
-                        : isPendingSignature
+                        : isSignaturePending
                             ? "bg-amber-400"
                             : "bg-gradient-to-r from-emerald-500 to-blue-500"
                 }`}
@@ -98,7 +127,6 @@ export default function UnitCardDesktop({
                     </div>
                 )}
 
-                {/* Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
                 {/* Status Badge */}
@@ -155,26 +183,53 @@ export default function UnitCardDesktop({
 
                 {/* BUTTONS LOGIC */}
                 <div className="space-y-2 mt-4">
+                    {/* -----------------------------------------
+              SIGNATURE NOT COMPLETE → ONLY SHOW WIDGET
+          ------------------------------------------ */}
+                    {isSignaturePending && (
+                        <PendingDocumentsWidget agreement_id={unit.agreement_id} />
+                    )}
 
-                    {isPendingSignature ? (
+                    {/* -----------------------------------------
+              SIGNED → SHOW ALL ACTIONS
+          ------------------------------------------ */}
+                    {isTenantSigned && (
                         <>
-                            <PendingDocumentsWidget agreement_id={unit.agreement_id} />
-                        </>
-                    ) : (
-                        <>
-                            {/* 💚 NORMAL — Access Portal */}
+                            {/* PAY INITIAL AMOUNT */}
+                            {hasInitialPayables && (
+                                <button
+                                    onClick={() => onPayInitial(unit.agreement_id)}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4
+                  bg-gradient-to-r from-pink-600 to-red-600 text-white rounded-lg
+                  font-semibold text-sm hover:shadow-lg"
+                                >
+                                    <CurrencyDollarIcon className="w-4 h-4" />
+
+                                    {requiresSecurityDeposit && requiresAdvancePayment
+                                        ? "Pay Security Deposit + Advance"
+                                        : requiresSecurityDeposit
+                                            ? "Pay Security Deposit"
+                                            : "Pay Advance Payment"}
+                                </button>
+                            )}
+
+                            {/* Access Portal */}
                             <button
                                 onClick={() => onAccessPortal(unit.agreement_id)}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-semibold text-sm hover:shadow-md"
+                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4
+                bg-gradient-to-r from-blue-600 to-emerald-600 text-white
+                rounded-lg font-semibold text-sm hover:shadow-md"
                             >
                                 <ArrowRightOnRectangleIcon className="w-4 h-4" />
                                 Access Portal
                             </button>
 
-                            {/* CONTACT */}
+                            {/* Contact */}
                             <button
                                 onClick={onContactLandlord}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold text-sm"
+                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4
+                bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg
+                font-semibold text-sm"
                             >
                                 <ChatBubbleLeftRightIcon className="w-4 h-4" />
                                 Message Landlord
@@ -184,15 +239,22 @@ export default function UnitCardDesktop({
                             {isLeaseExpired && (
                                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
                                     <button
-                                        onClick={() => onRenewLease(unit.unit_id, unit.agreement_id)}
-                                        className="flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs"
+                                        onClick={() =>
+                                            onRenewLease(unit.unit_id, unit.agreement_id)
+                                        }
+                                        className="flex items-center justify-center gap-1.5 py-2 px-3
+                    bg-emerald-600 hover:bg-emerald-700 text-white
+                    rounded-lg text-xs"
                                     >
                                         <RefreshCw className="w-3.5 h-3.5" /> Renew
                                     </button>
 
                                     <button
-                                        onClick={() => onEndContract(unit.unit_id, unit.agreement_id)}
-                                        className="flex items-center justify-center gap-1.5 py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs"
+                                        onClick={() =>
+                                            onEndContract(unit.unit_id, unit.agreement_id)
+                                        }
+                                        className="flex items-center justify-center gap-1.5 py-2 px-3
+                    bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs"
                                     >
                                         <XCircle className="w-3.5 h-3.5" /> End Lease
                                     </button>

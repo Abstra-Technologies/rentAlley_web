@@ -277,6 +277,13 @@ export default function MyUnit() {
     [user?.tenant_id, refetch, router]
   );
 
+    const handlePayInitial = useCallback(
+        (agreementId: string) => {
+            router.push(`/pages/tenant/initialPayment/${agreementId}`);
+        },
+        [router]
+    );
+
   const handleViewInvitations = useCallback(() => {
     router.push("/pages/tenant/viewInvites");
   }, [router]);
@@ -385,16 +392,18 @@ export default function MyUnit() {
               {/* Units Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 mb-6">
                 {paginatedUnits.map((unit) => (
-                  <UnitCard
-                    key={unit.unit_id}
-                    unit={unit}
-                    onContactLandlord={handleContactLandlord}
-                    onAccessPortal={handleAccessPortal}
-                    onEndContract={handleEndLease}
-                    onRenewLease={(unitId, agreementId, renewalData) =>
-                      setShowRenewalForm(unitId)
-                    }
-                  />
+                    <UnitCard
+                        key={unit.unit_id}
+                        unit={unit}
+                        onContactLandlord={handleContactLandlord}
+                        onAccessPortal={handleAccessPortal}
+                        onEndContract={handleEndLease}
+                        onRenewLease={(unitId, agreementId, renewalData) =>
+                            setShowRenewalForm(unitId)
+                        }
+                        onPayInitial={handlePayInitial}  // ⭐ ADD THIS LINE
+                    />
+
                 ))}
               </div>
 
