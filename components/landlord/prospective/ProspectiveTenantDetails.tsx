@@ -20,7 +20,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import LoadingScreen from "@/components/loadingScreen";
 
 const ProspectiveTenantDetails = () => {
   const router = useRouter();
@@ -37,8 +36,8 @@ const ProspectiveTenantDetails = () => {
   const [propertyId, setPropertyId] = useState(null);
   const [aiScore, setAiScore] = useState(null);
 
-    const [isApproving, setIsApproving] = useState(false);
-    const [isDisapproving, setIsDisapproving] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isDisapproving, setIsDisapproving] = useState(false);
 
   useEffect(() => {
     if (unitId && tenantId) {
@@ -115,69 +114,128 @@ const ProspectiveTenantDetails = () => {
     }
   };
 
-  //  function to update if reject or acceot.
-    const updateTenantStatus = async (newStatus) => {
-        let disapprovalReason = null;
+  const updateTenantStatus = async (newStatus) => {
+    let disapprovalReason = null;
 
-        try {
-            if (newStatus === "approved") setIsApproving(true);
-            if (newStatus === "disapproved") setIsDisapproving(true);
+    try {
+      if (newStatus === "approved") setIsApproving(true);
+      if (newStatus === "disapproved") setIsDisapproving(true);
 
-            // 🟥 Handle disapproval message
-            if (newStatus === "disapproved") {
-                const { value } = await Swal.fire({
-                    title: "Disapprove Tenant",
-                    input: "textarea",
-                    inputLabel: "Provide a reason for disapproval",
-                    inputPlaceholder: "Type your reason here...",
-                    showCancelButton: true,
-                });
-                if (!value) {
-                    setIsDisapproving(false);
-                    return; // cancelled
-                }
-                disapprovalReason = value;
-            }
-
-            const payload = {
-                unitId,
-                tenant_id: tenant?.tenant_id,
-                status: newStatus,
-                message: disapprovalReason,
-            };
-
-            await axios.put("/api/landlord/prospective/updateApplicationStatus", payload);
-
-            setApplicationStatus(newStatus);
-
-            await Swal.fire({
-                icon: "success",
-                title: "Status Updated",
-                text: `Tenant application marked as ${newStatus}.`,
-                confirmButtonColor: "#3085d6",
-            });
-
-            if (newStatus === "approved") {
-                router.push(`/pages/landlord/properties/${propertyId}/activeLease`);
-            } else {
-                router.back();
-            }
-        } catch (error) {
-            console.error("Error updating tenant status:", error);
-            Swal.fire("Error!", "Failed to update tenant status.", "error");
-        } finally {
-            // Reset both flags
-            setIsApproving(false);
-            setIsDisapproving(false);
+      if (newStatus === "disapproved") {
+        const { value } = await Swal.fire({
+          title: "Disapprove Tenant",
+          input: "textarea",
+          inputLabel: "Provide a reason for disapproval",
+          inputPlaceholder: "Type your reason here...",
+          showCancelButton: true,
+        });
+        if (!value) {
+          setIsDisapproving(false);
+          return;
         }
-    };
+        disapprovalReason = value;
+      }
 
-  if (isLoading)
+      const payload = {
+        unitId,
+        tenant_id: tenant?.tenant_id,
+        status: newStatus,
+        message: disapprovalReason,
+      };
+
+      await axios.put(
+        "/api/landlord/prospective/updateApplicationStatus",
+        payload
+      );
+
+      setApplicationStatus(newStatus);
+
+      await Swal.fire({
+        icon: "success",
+        title: "Status Updated",
+        text: `Tenant application marked as ${newStatus}.`,
+        confirmButtonColor: "#3085d6",
+      });
+
+      if (newStatus === "approved") {
+        router.push(`/pages/landlord/properties/${propertyId}/activeLease`);
+      } else {
+        router.back();
+      }
+    } catch (error) {
+      console.error("Error updating tenant status:", error);
+      Swal.fire("Error!", "Failed to update tenant status.", "error");
+    } finally {
+      setIsApproving(false);
+      setIsDisapproving(false);
+    }
+  };
+
+  // Loading Skeleton
+  if (isLoading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <LoadingScreen message="Generating Tenant Screening Report..." />
+      <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+        <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+          {/* Header Skeleton */}
+          <div className="mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="flex-1">
+                <div className="h-6 bg-gray-200 rounded w-64 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Property Info Skeleton */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-5">
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="lg:col-span-2 space-y-5">
+              {/* AI Score Skeleton */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-5">
+                <div className="h-6 bg-gray-200 rounded w-48 mb-4 animate-pulse" />
+                <div className="space-y-4">
+                  <div className="h-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-20 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-20 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+
+              {/* Info Skeleton */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-5">
+                <div className="h-6 bg-gray-200 rounded w-48 mb-4 animate-pulse" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                      <div className="h-5 bg-gray-200 rounded w-full animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-5">
+                <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse" />
+                <div className="space-y-3">
+                  <div className="h-12 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-12 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
+  }
 
   // AI Scoring Values
   const rentalScore = aiScore?.rental_history_score || 0;
@@ -212,7 +270,6 @@ const ProspectiveTenantDetails = () => {
       <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
         {/* Header */}
         <div className="mb-5">
-
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <FileText className="w-5 h-5 text-white" />
@@ -455,42 +512,39 @@ const ProspectiveTenantDetails = () => {
                 Application Decision
               </h2>
 
-                {applicationStatus === "pending" && (
-                    <div className="space-y-3">
-                        {/* ✅ Approve Button */}
-                        <button
-                            onClick={() => updateTenantStatus("approved")}
-                            disabled={isApproving || isDisapproving}
-                            className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all shadow-sm 
+              {applicationStatus === "pending" && (
+                <div className="space-y-3">
+                  <button
+                    onClick={() => updateTenantStatus("approved")}
+                    disabled={isApproving || isDisapproving}
+                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all shadow-sm 
         ${
-                                isApproving
-                                    ? "bg-emerald-400 cursor-not-allowed text-white"
-                                    : "bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white"
-                            }`}
-                        >
-                            <CheckCircle className="w-4 h-4" />
-                            {isApproving ? "Approving..." : "Approve Tenant"}
-                        </button>
+          isApproving
+            ? "bg-emerald-400 cursor-not-allowed text-white"
+            : "bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white"
+        }`}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    {isApproving ? "Approving..." : "Approve Tenant"}
+                  </button>
 
-                        {/* ❌ Reject Button */}
-                        <button
-                            onClick={() => updateTenantStatus("disapproved")}
-                            disabled={isApproving || isDisapproving}
-                            className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all shadow-sm 
+                  <button
+                    onClick={() => updateTenantStatus("disapproved")}
+                    disabled={isApproving || isDisapproving}
+                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-sm transition-all shadow-sm 
         ${
-                                isDisapproving
-                                    ? "bg-red-400 cursor-not-allowed text-white"
-                                    : "bg-red-600 hover:bg-red-700 text-white"
-                            }`}
-                        >
-                            <XCircle className="w-4 h-4" />
-                            {isDisapproving ? "Rejecting..." : "Reject Application"}
-                        </button>
-                    </div>
-                )}
+          isDisapproving
+            ? "bg-red-400 cursor-not-allowed text-white"
+            : "bg-red-600 hover:bg-red-700 text-white"
+        }`}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    {isDisapproving ? "Rejecting..." : "Reject Application"}
+                  </button>
+                </div>
+              )}
 
-
-                {applicationStatus === "approved" && (
+              {applicationStatus === "approved" && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
