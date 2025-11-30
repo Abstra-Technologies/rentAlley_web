@@ -15,6 +15,7 @@ function TenantPaymentsContent() {
     const { agreement_id } = useParams();
 
 
+    // @ts-ignore
     return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 -m-4 md:-m-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

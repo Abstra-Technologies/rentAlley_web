@@ -15,30 +15,25 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
     const [description, setDescription] = useState("");
     const [photos, setPhotos] = useState([]);
 
-    const [assetId, setAssetId] = useState(""); // 🔥 SCANNED ASSET ID
+    const [assetId, setAssetId] = useState("");
     const [assetDetails, setAssetDetails] = useState(null);
 
     const [loading, setLoading] = useState(false);
     const { user } = useAuthStore();
 
-    // QR SCANNER
+    // QR Scanner
     const [scannerOpen, setScannerOpen] = useState(false);
     const scannerRef = useRef(null);
     const qrDivId = "qr-reader-asset";
 
-    // Extract asset ID if scanned QR code is an S3 URL
     const extractAssetId = (decoded) => {
         try {
-            // If already ID → return as is
             if (!decoded.includes("amazonaws.com") && !decoded.includes("-QR-")) {
                 return decoded;
             }
-
-            const file = decoded.split("/").pop(); // "xxx-QR-ASSETID.png"
-            const noExt = file.replace(".png", "");
-            const parts = noExt.split("-QR-");
-
-            return parts[1] || decoded;
+            const file = decoded.split("/").pop();
+            const clean = file.replace(".png", "");
+            return clean.split("-QR-")[1];
         } catch {
             return decoded;
         }
@@ -52,25 +47,25 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
 
     // Fetch Properties
     useEffect(() => {
+        if (!user?.landlord_id) return;
         const fetchProperties = async () => {
             try {
-                const res = await axios.get(`/api/landlord/${user?.landlord_id}/properties`);
+                const res = await axios.get(`/api/landlord/${user.landlord_id}/properties`);
                 setProperties(res.data.data || []);
             } catch (err) {
                 console.error("Error fetching properties", err);
             }
         };
         fetchProperties();
-    }, [landlordId]);
+    }, [user?.landlord_id]);
 
-    // Fetch Units
+    // Fetch Units on Property Select
     useEffect(() => {
         if (!selectedProperty) {
             setUnits([]);
             setSelectedUnit("");
             return;
         }
-
         const fetchUnits = async () => {
             try {
                 const res = await axios.get(`/api/properties/${selectedProperty}/units`);
@@ -79,20 +74,10 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                 console.error("Error fetching units", err);
             }
         };
-
         fetchUnits();
     }, [selectedProperty]);
 
-    const categories = [
-        "Plumbing",
-        "Electrical",
-        "Aircon",
-        "Furniture",
-        "Appliance",
-        "General",
-    ];
-    const priorities = ["Low", "Medium", "High", "Urgent"];
-
+    // Upload Photos
     const handlePhotoUpload = (e) => {
         const files = Array.from(e.target.files);
         setPhotos([...photos, ...files]);
@@ -106,17 +91,15 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
             reader.readAsDataURL(file);
         });
 
-    // Fetch asset details
-    const fetchAssetDetails = async (scannedId) => {
+    // Fetch Asset Details
+    const fetchAssetDetails = async (id) => {
         try {
-            const res = await axios.get(`/api/landlord/assets_management/${scannedId}`);
+            const res = await axios.get(`/api/landlord/assets_management/${id}`);
             setAssetDetails(res.data.asset);
-
-            console.log('asset details scanned: ', scannedId);
-
-            Swal.fire("Success", "Asset recognized via QR!", "success");
+            Swal.fire("Success", "Asset identified!", "success");
+            console.log("Scanned Asset:", id);
         } catch {
-            Swal.fire("Not Found", "Asset not found in system.", "error");
+            Swal.fire("Not Found", "Asset not found.", "error");
         }
     };
 
@@ -128,30 +111,25 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
         scannerRef.current = scanner;
 
         Html5Qrcode.getCameras().then((devices) => {
-            if (!devices || devices.length === 0) {
+            if (!devices?.length) {
                 Swal.fire("Error", "No camera found.", "error");
                 return;
             }
 
-            const backCam = devices.find((d) =>
-                d.label.toLowerCase().includes("back") ||
-                d.label.toLowerCase().includes("rear")
-            );
-
-            const cameraId = backCam?.id || devices[devices.length - 1]?.id;
+            const backCam =
+                devices.find((d) => d.label.toLowerCase().includes("back")) ||
+                devices[devices.length - 1];
 
             scanner.start(
-                cameraId,
+                backCam.id,
                 { fps: 10, qrbox: 200 },
                 async (decoded) => {
                     await scanner.stop();
                     setScannerOpen(false);
 
-                    let cleanId = decoded.trim();
-                    cleanId = extractAssetId(cleanId);
-
-                    setAssetId(cleanId);
-                    await fetchAssetDetails(cleanId);
+                    const clean = extractAssetId(decoded.trim());
+                    setAssetId(clean);
+                    fetchAssetDetails(clean);
                 },
                 () => {}
             );
@@ -165,15 +143,13 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
 
     // Save Work Order
     const handleSave = async () => {
-        if (!title.trim()) return Swal.fire("Missing Title", "Enter a title.", "warning");
+        if (!title.trim()) return Swal.fire("Missing Title", "Enter a work order title.", "warning");
         if (!selectedProperty) return Swal.fire("Property Required", "Select a property.", "warning");
 
         setLoading(true);
 
         try {
-            const imagesEncoded = await Promise.all(
-                photos.map((file) => fileToBase64(file))
-            );
+            const encodedPhotos = await Promise.all(photos.map((f) => fileToBase64(f)));
 
             const payload = {
                 subject: title,
@@ -185,30 +161,27 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                 property_id: selectedProperty,
                 unit_id: selectedUnit || null,
                 asset_id: assetId || null,
-                photo_urls: imagesEncoded,
+                photo_urls: encodedPhotos,
                 user_id: user?.user_id,
             };
 
-            const res = await axios.post(
-                "/api/maintenance/createMaintenance/workOrder",
-                payload
-            );
+            const res = await axios.post(`/api/maintenance/createMaintenance/workOrder`, payload);
 
             Swal.fire("Success", "Work order created!", "success");
             onCreated(res.data.data);
         } catch (err) {
+            console.error(err);
             Swal.fire("Error", "Failed to create work order.", "error");
         } finally {
             setLoading(false);
         }
     };
 
-    // UI
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl shadow-2xl relative">
+            <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl shadow-xl relative">
 
-                {/* Close */}
+                {/* Close Button */}
                 <button onClick={onClose} className="absolute right-3 top-3 text-gray-500 hover:text-gray-700">
                     <X className="w-5 h-5" />
                 </button>
@@ -226,9 +199,8 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     />
                 </div>
 
-                {/* PROPERTY + UNIT */}
+                {/* Property + Unit */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    {/* Property */}
                     <div>
                         <label className="text-sm font-medium">Property *</label>
                         <select
@@ -245,43 +217,52 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                         </select>
                     </div>
 
-                    {/* Unit */}
                     <div>
                         <label className="text-sm font-medium">Unit (optional)</label>
                         <select
                             value={selectedUnit}
                             onChange={(e) => setSelectedUnit(e.target.value)}
-                            disabled={units.length === 0}
+                            disabled={!units.length}
                             className="w-full px-3 py-2 border rounded-lg mt-1"
                         >
                             <option value="">No unit selected</option>
                             {units.map((u) => (
-                                <option key={u.unit_id} value={u.unit_id}>
-                                    {u.unit_name}
-                                </option>
+                                <option key={u.unit_id} value={u.unit_id}>{u.unit_name}</option>
                             ))}
                         </select>
                     </div>
                 </div>
 
-                {/* SCAN ASSET */}
+                {/* Scan or Enter Asset */}
                 <div className="mb-4">
-                    <label className="text-sm font-medium">Scan Asset (optional)</label>
+                    <label className="text-sm font-medium">Scan or Enter Asset ID (optional)</label>
 
                     <div className="flex gap-2 mt-1">
                         <input
                             className="flex-grow px-3 py-2 border rounded-lg"
                             value={assetId}
-                            placeholder="Scan QR to auto-fill asset"
-                            readOnly
+                            placeholder="Scan QR or type Asset ID"
+                            onChange={(e) => setAssetId(e.target.value)}
                         />
 
                         <button
                             onClick={() => setScannerOpen(true)}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                         >
                             <Scan className="w-4 h-4" />
                             Scan
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                if (!assetId.trim())
+                                    return Swal.fire("Enter Asset ID", "Please type an ID.", "warning");
+
+                                fetchAssetDetails(assetId.trim());
+                            }}
+                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+                        >
+                            Go
                         </button>
                     </div>
 
@@ -299,9 +280,7 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[999] p-4">
                         <div className="bg-white rounded-xl p-4 w-full max-w-sm">
                             <h3 className="text-lg font-semibold mb-3">Scan Asset QR Code</h3>
-
                             <div id={qrDivId} className="w-full" />
-
                             <button
                                 onClick={() => setScannerOpen(false)}
                                 className="mt-4 w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
@@ -317,11 +296,11 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     <div>
                         <label className="text-sm font-medium">Category</label>
                         <select
-                            className="w-full px-3 py-2 border rounded-lg mt-1"
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg mt-1"
                         >
-                            {categories.map((c) => (
+                            {["Plumbing", "Electrical", "Aircon", "Furniture", "Appliance", "General"].map((c) => (
                                 <option key={c}>{c}</option>
                             ))}
                         </select>
@@ -330,11 +309,11 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     <div>
                         <label className="text-sm font-medium">Priority</label>
                         <select
-                            className="w-full px-3 py-2 border rounded-lg mt-1"
                             value={priority}
                             onChange={(e) => setPriority(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg mt-1"
                         >
-                            {priorities.map((p) => (
+                            {["Low", "Medium", "High", "Urgent"].map((p) => (
                                 <option key={p}>{p}</option>
                             ))}
                         </select>
@@ -401,10 +380,9 @@ export default function NewWorkOrderModal({ landlordId, onClose, onCreated }) {
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className={`
-                            px-6 py-2 rounded-lg text-white font-medium
-                            ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}
-                        `}
+                        className={`px-6 py-2 rounded-lg text-white font-medium ${
+                            loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                        }`}
                     >
                         {loading ? "Saving..." : "Create Work Order"}
                     </button>
