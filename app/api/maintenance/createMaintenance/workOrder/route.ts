@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateMaintenanceId } from "@/utils/id_generator";
-import { uploadToS3 } from "@/lib/s3"; // ← your S3 helper
+import { uploadToS3 } from "@/lib/s3";
 
 export async function POST(req: Request) {
     try {
@@ -15,8 +15,10 @@ export async function POST(req: Request) {
             landlord_id,
             property_id,
             unit_id,
+            tenant_id,
+            asset_id,        // ⭐ NEW: include asset ID
             user_id,
-            photo_urls, // base64 array
+            photo_urls,
         } = body;
 
         if (!subject || !landlord_id || !property_id) {
@@ -26,54 +28,54 @@ export async function POST(req: Request) {
             );
         }
 
-        // ⭐ Generate custom Work Order ID (e.g., UPKYPWO-4FBD)
+        // Generate custom ID
         const request_id = generateMaintenanceId();
 
-        // ⭐ Insert Work Order
+        // ⭐ INSERT WORK ORDER (with asset_id)
         await db.query(
             `
             INSERT INTO MaintenanceRequest (
                 request_id,
+                tenant_id,
+                unit_id,
+                asset_id,
                 subject,
+                description,
+                status,
                 category,
                 priority_level,
-                description,
                 property_id,
-                unit_id,
-                status,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, NOW())
             `,
             [
                 request_id,
+                tenant_id || null,
+                unit_id || null,
+                asset_id || null,     // ⭐ INSERT asset_id
                 subject,
+                description,
                 category,
                 priority_level,
-                description,
-                property_id,
-                unit_id || null,
+                property_id
             ]
         );
 
-        // ⭐ Upload photos to S3 and save URLs to MaintenancePhoto
+        // ⭐ Handle photo uploads (unchanged)
         if (Array.isArray(photo_urls) && photo_urls.length > 0) {
             for (const base64 of photo_urls) {
                 if (!base64) continue;
 
-                // Extract MIME type + convert base64 → Buffer
                 const matches = base64.match(/^data:(.+);base64,(.+)$/);
-
                 if (!matches) continue;
 
                 const mimeType = matches[1];
                 const buffer = Buffer.from(matches[2], "base64");
 
-                // Build safe filename
                 const extension = mimeType.split("/")[1] || "jpg";
                 const fileName = `${request_id}.${Date.now()}.${extension}`;
 
-                // Upload to S3 folder "maintenance/{request_id}/"
                 const s3Url = await uploadToS3(
                     buffer,
                     fileName,
@@ -81,7 +83,6 @@ export async function POST(req: Request) {
                     `maintenancePhoto/${request_id}`
                 );
 
-                // Save to DB
                 await db.query(
                     `
                     INSERT INTO MaintenancePhoto (
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // ⭐ Log activity
+        // Activity log
         await db.query(
             `
             INSERT INTO ActivityLog (user_id, action, timestamp)
@@ -117,6 +118,8 @@ export async function POST(req: Request) {
                 landlord_id,
                 property_id,
                 unit_id,
+                tenant_id,
+                asset_id,
                 status: "pending",
                 photo_count: photo_urls?.length ?? 0,
             },

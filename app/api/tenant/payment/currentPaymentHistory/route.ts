@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const agreementId = searchParams.get("agreement_id");
 
+
     if (!agreementId || agreementId.trim() === "") {
         return NextResponse.json(
             { error: "Agreement ID is required" },
@@ -15,7 +16,6 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // 1️⃣ Fetch base lease
         const [leaseResult]: any = await db.query(
             `
                 SELECT agreement_id, tenant_id, unit_id, is_renewal_of, status
@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
         );
 
         const lease = leaseResult[0];
+
         if (!lease) {
             return NextResponse.json(
                 { error: "Lease not found" },
@@ -34,7 +35,6 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // 2️⃣ Gather related lease IDs (for renewals)
         const leaseIds: string[] = [lease.agreement_id];
 
         if (lease.is_renewal_of) {
