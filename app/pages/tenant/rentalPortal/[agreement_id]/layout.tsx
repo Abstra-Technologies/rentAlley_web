@@ -60,7 +60,7 @@ export default function TenantPortalLayout({
     { slug: "rentalPortal", icon: HomeIcon, label: "Dashboard" },
     { slug: "billing", icon: CreditCardIcon, label: "Billing Statement" },
     {
-      slug: "paymentHistory/currentLeasePayment",
+      slug: "paymentHistory",
       icon: DocumentTextIcon,
       label: "Payment History",
     },
