@@ -20,14 +20,13 @@ import {
   Users,
   Settings,
   ChevronLeft,
-  HandCoins,
   Inbox,
   AlertCircle,
 } from "lucide-react";
 import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
 import NotificationSection from "@/components/notification/notifCenter";
 import Image from "next/image";
-import Page_footer from "@/components/navigation/page_footer";
+import LoadingScreen from "@/components/loadingScreen";
 
 export default function LandlordLayout({
   children,
@@ -40,22 +39,33 @@ export default function LandlordLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   useEffect(() => {
-    if (!user) fetchSession();
-    else if (user.userType !== "landlord") {
+    async function checkAuth() {
+      if (!user) {
+        await fetchSession();
+      }
+      setIsAuthChecking(false);
+    }
+
+    checkAuth();
+  }, [user, fetchSession]);
+
+  useEffect(() => {
+    if (!isAuthChecking && user && user.userType !== "landlord") {
       router.replace("/pages/auth/login");
     }
-  }, [user]);
+  }, [user, isAuthChecking, router]);
 
   useEffect(() => {
     setIsSidebarOpen(false);
     setIsMobileProfileOpen(false);
   }, [pathname]);
 
-    const isInsideProperty =
-        pathname.includes("/pages/landlord/properties/") &&
-        !pathname.includes("/pages/commons/profile");
+  const isInsideProperty =
+    pathname.includes("/pages/landlord/properties/") &&
+    !pathname.includes("/pages/commons/profile");
 
   const navLinks = [
     { label: "Dashboard", href: "/pages/landlord/dashboard", icon: Home },
@@ -113,8 +123,17 @@ export default function LandlordLayout({
     handleLogout();
   };
 
+  // Show loading screen during auth check
+  if (isAuthChecking) {
+    return <LoadingScreen message="Verifying your session..." />;
+  }
+
+  // Show loading screen if user is not authenticated or wrong user type
+  if (!user || user.userType !== "landlord") {
+    return <LoadingScreen message="Redirecting to login..." />;
+  }
+
   if (isInsideProperty) {
-    // Return the property-specific sidebar layout
     return <main className="flex-1 min-h-screen">{children}</main>;
   }
 
@@ -133,11 +152,9 @@ export default function LandlordLayout({
                 <h1 className="text-2xl font-bold text-white">UpKyp</h1>
               </Link>
               <div className="flex items-center gap-2">
-                {/* Notification wrapper with proper positioning */}
                 <div className="relative">
                   <NotificationSection user={user} admin={null} />
                   <style jsx global>{`
-                    /* Fix notification dropdown positioning */
                     .notification-dropdown {
                       position: absolute !important;
                       right: 0 !important;
@@ -153,36 +170,34 @@ export default function LandlordLayout({
           </div>
 
           {/* User Profile Section with Settings Icon */}
-          {user && (
-            <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
-              <div className="flex items-center gap-3 p-2">
-                <Image
-                  src={
-                    user.profilePicture ||
-                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                  }
-                  alt="Profile"
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
-                    {user.firstName && user.lastName
-                      ? `${user.firstName} ${user.lastName}`
-                      : user.companyName || user.email}
-                  </p>
-                  <p className="text-xs text-gray-500">Landlord Account</p>
-                </div>
-                <Link
-                  href="/pages/commons/profile"
-                  className="p-2 hover:bg-white rounded-lg transition-all duration-200 hover:shadow-md group"
-                >
-                  <Settings className="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
-                </Link>
+          <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
+            <div className="flex items-center gap-3 p-2">
+              <Image
+                src={
+                  user.profilePicture ||
+                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                }
+                alt="Profile"
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {user.firstName && user.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user.companyName || user.email}
+                </p>
+                <p className="text-xs text-gray-500">Landlord Account</p>
               </div>
+              <Link
+                href="/pages/commons/profile"
+                className="p-2 hover:bg-white rounded-lg transition-all duration-200 hover:shadow-md group"
+              >
+                <Settings className="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
+              </Link>
             </div>
-          )}
+          </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
@@ -204,7 +219,6 @@ export default function LandlordLayout({
                       }
                     `}
                   >
-                    {/* Active indicator bar */}
                     {isActive && (
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/40 rounded-r-full" />
                     )}
@@ -239,12 +253,10 @@ export default function LandlordLayout({
       {/* Mobile Header Bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-emerald-600 shadow-lg z-50 h-14">
         <div className="flex justify-between items-center h-full px-4">
-          {/* Logo */}
           <Link href="/pages/landlord/dashboard" className="flex items-center">
             <h1 className="text-xl font-bold text-white">UpKyp</h1>
           </Link>
 
-          {/* Right Actions */}
           <div className="flex items-center gap-2">
             <div className="relative">
               <NotificationSection user={user} admin={null} />
@@ -281,7 +293,7 @@ export default function LandlordLayout({
             </div>
 
             {/* Mobile Profile Section */}
-            {user && !isMobileProfileOpen && (
+            {!isMobileProfileOpen && (
               <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                 <button
                   onClick={() => setIsMobileProfileOpen(true)}
@@ -313,7 +325,6 @@ export default function LandlordLayout({
             {/* Mobile Profile Menu */}
             {isMobileProfileOpen ? (
               <div className="flex-1 overflow-y-auto">
-                {/* Back Button */}
                 <button
                   onClick={() => setIsMobileProfileOpen(false)}
                   className="w-full px-4 py-3 flex items-center gap-2 hover:bg-gray-50 transition-colors border-b border-gray-100"
@@ -324,12 +335,11 @@ export default function LandlordLayout({
                   </span>
                 </button>
 
-                {/* Profile Info */}
                 <div className="px-4 py-4 bg-gradient-to-r from-blue-50 to-emerald-50">
                   <div className="flex items-center gap-3">
                     <Image
                       src={
-                        user?.profilePicture ||
+                        user.profilePicture ||
                         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
                       }
                       alt="Profile"
@@ -339,16 +349,15 @@ export default function LandlordLayout({
                     />
                     <div>
                       <p className="text-sm font-semibold text-gray-900">
-                        {user?.firstName && user?.lastName
+                        {user.firstName && user.lastName
                           ? `${user.firstName} ${user.lastName}`
-                          : user?.companyName || "User"}
+                          : user.companyName || "User"}
                       </p>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Profile Actions */}
                 <div className="py-2">
                   <Link
                     href="/pages/commons/profile"
@@ -374,7 +383,6 @@ export default function LandlordLayout({
                 </div>
               </div>
             ) : (
-              /* Mobile Navigation Menu */
               <div className="flex-1 overflow-y-auto">
                 <nav className="px-3 py-4">
                   <div className="space-y-1">
@@ -409,7 +417,6 @@ export default function LandlordLayout({
                     })}
                   </div>
 
-                  {/* Tenant Invite Button */}
                   {user?.landlord_id && (
                     <div className="mt-6 px-1">
                       <SendTenantInviteModal landlord_id={user.landlord_id} />
@@ -417,7 +424,6 @@ export default function LandlordLayout({
                   )}
                 </nav>
 
-                {/* Bottom Logout for quick access */}
                 <div className="p-4 border-t border-gray-100">
                   <button
                     onClick={() => {
@@ -441,23 +447,19 @@ export default function LandlordLayout({
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
             <div className="p-6">
-              {/* Icon */}
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
 
-              {/* Title */}
               <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
                 Confirm Logout
               </h3>
 
-              {/* Message */}
               <p className="text-sm text-gray-600 text-center mb-6">
                 Are you sure you want to logout? You'll need to sign in again to
                 access your account.
               </p>
 
-              {/* Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowLogoutConfirm(false)}
@@ -477,12 +479,10 @@ export default function LandlordLayout({
         </div>
       )}
 
-      {/* Main Content with better spacing */}
-        <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
-            {children}
-        </main>
-
-
+      {/* Main Content */}
+      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
+        {children}
+      </main>
     </div>
   );
 }
