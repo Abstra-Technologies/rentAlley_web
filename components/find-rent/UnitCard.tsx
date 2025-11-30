@@ -13,7 +13,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Link2,
-  Heart,
 } from "lucide-react";
 import { Unit } from "@/types/types";
 import { formatCurrency, formatLocation } from "./utils";
@@ -47,7 +46,6 @@ export default function UnitCard({ unit, onClick }: UnitCardProps) {
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
 
   const BASE_URL = "https://rent-alley-web.vercel.app";
   const images = unit.photos?.length > 0 ? unit.photos : [];
@@ -121,12 +119,6 @@ export default function UnitCard({ unit, onClick }: UnitCardProps) {
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsShareModalOpen(true);
-  };
-
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    showToast(isFavorite ? "Removed from favorites" : "Added to favorites");
   };
 
   const handlePrevImage = (e: React.MouseEvent) => {
@@ -215,23 +207,8 @@ export default function UnitCard({ unit, onClick }: UnitCardProps) {
             </div>
           )}
 
-          {/* Top Right Actions */}
-          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-2">
-            <button
-              onClick={handleFavoriteClick}
-              className={`p-2 backdrop-blur-sm rounded-full shadow-sm transition-all hover:scale-110 active:scale-95 ${
-                isFavorite
-                  ? "bg-red-500 text-white"
-                  : "bg-white/90 hover:bg-white text-gray-600 hover:text-red-500"
-              }`}
-              aria-label={
-                isFavorite ? "Remove from favorites" : "Add to favorites"
-              }
-            >
-              <Heart
-                className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`}
-              />
-            </button>
+          {/* Top Right - Share Button Only */}
+          <div className="absolute top-2.5 right-2.5 z-10">
             <button
               onClick={handleShareClick}
               className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all hover:scale-110 active:scale-95 shadow-sm"
