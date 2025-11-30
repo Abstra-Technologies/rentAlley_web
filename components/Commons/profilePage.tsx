@@ -693,7 +693,7 @@ export default function ProfilePage() {
                 {user?.userType === "landlord" && (
                   <button
                     onClick={() =>
-                      router.push("/pages/landlord/subsciption_plan")
+                      router.push("/pages/commons/landlord/subscription")
                     }
                     className="mt-2 w-full px-2 py-1 text-xs font-medium text-blue-700 bg-white hover:bg-blue-50 border border-blue-200 rounded transition-colors"
                   >
