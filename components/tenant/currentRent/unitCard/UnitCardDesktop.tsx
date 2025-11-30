@@ -16,45 +16,46 @@ import { Unit } from "@/types/units";
 import { formatCurrency, formatDate } from "@/utils/formatter/formatters";
 import PendingDocumentsWidget from "../../analytics-insights/PendingDocumentsWidget";
 
-/* ----------------------- STATUS BADGE ----------------------- */
+/* ----------------------- SIGNATURE BADGE ----------------------- */
 const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
-    const isSignaturePending =
-        unit.leaseSignature === "pending" ||
-        unit.leaseSignature === "sent" ||
-        unit.leaseSignature === "pending_signature" ||
-        unit.leaseSignature === "landlord_signed";
-
-    const isExpired = new Date(unit.end_date) < new Date();
+    const sig = unit.leaseSignature;
 
     const base =
         "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border-2";
 
-    if (isSignaturePending)
-        return (
-            <span
-                className={`${base} bg-amber-50 text-amber-700 border-amber-200`}
-            >
-        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-        Pending Signature
-      </span>
-        );
+    const badge = {
+        pending: {
+            text: "Awaiting Signatures",
+            color: "bg-amber-50 text-amber-700 border-amber-200",
+        },
+        sent: {
+            text: "Waiting for Tenant to Sign",
+            color: "bg-amber-50 text-amber-700 border-amber-200",
+        },
+        landlord_signed: {
+            text: "Waiting for Tenant Signature",
+            color: "bg-amber-50 text-amber-700 border-amber-200",
+        },
+        tenant_signed: {
+            text: "Waiting for Landlord Signature",
+            color: "bg-yellow-50 text-yellow-700 border-yellow-300",
+        },
+        active: {
+            text: "Active",
+            color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        },
+        completed: {
+            text: "Completed",
+            color: "bg-blue-50 text-blue-700 border-blue-200",
+        },
+    };
 
-    if (isExpired)
-        return (
-            <span
-                className={`${base} bg-gray-50 text-gray-700 border-gray-200`}
-            >
-        <span className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
-        Expired
-      </span>
-        );
+    const info = badge[sig] ?? badge.pending;
 
     return (
-        <span
-            className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}
-        >
-      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-      Active
+        <span className={`${base} ${info.color}`}>
+      <span className="w-1.5 h-1.5 bg-current rounded-full animate-pulse" />
+            {info.text}
     </span>
     );
 };
@@ -75,19 +76,19 @@ export default function UnitCardDesktop({
     onEndContract: (unitId: string, agreementId: string) => void;
     onPayInitial: (agreementId: string) => void;
 }) {
+    const sig = unit.leaseSignature;
+
     const isLeaseExpired = new Date(unit.end_date) < new Date();
 
     /* ----------------------- SIGNATURE STATES ----------------------- */
     const isSignaturePending =
-        unit.leaseSignature === "pending" ||
-        unit.leaseSignature === "sent" ||
-        unit.leaseSignature === "pending_signature" ||
-        unit.leaseSignature === "landlord_signed";
+        sig === "pending" ||
+        sig === "sent" ||
+        sig === "pending_signature" ||
+        sig === "landlord_signed" ||
+        sig === "tenant_signed"; // still waiting for landlord
 
-    const isTenantSigned =
-        unit.leaseSignature === "tenant_signed" ||
-        unit.leaseSignature === "active" ||
-        unit.leaseSignature === "completed";
+    const isFullySigned = sig === "active" || sig === "completed";
 
     /* ----------------------- PAYABLE STATES ----------------------- */
     const requiresSecurityDeposit =
@@ -109,7 +110,7 @@ export default function UnitCardDesktop({
                 className={`h-1 ${
                     isLeaseExpired
                         ? "bg-gray-400"
-                        : isSignaturePending
+                        : isSignaturePending && !isFullySigned
                             ? "bg-amber-400"
                             : "bg-gradient-to-r from-emerald-500 to-blue-500"
                 }`}
@@ -149,7 +150,7 @@ export default function UnitCardDesktop({
                 </div>
 
                 {/* Next Billing */}
-                {unit.due_date && unit.due_day && !isLeaseExpired && (
+                {unit.due_date && unit.due_day && !isLeaseExpired && isFullySigned && (
                     <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white px-4 py-2.5 text-xs backdrop-blur-sm">
                         <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5">
@@ -172,7 +173,7 @@ export default function UnitCardDesktop({
                 </p>
 
                 {/* Location */}
-                <div className="flex items-center gap-3 text-xs text-gray-600">
+                <div className="flex items-center gap-3 text-xs text-gray-600 mb-4">
           <span className="flex items-center gap-1">
             <MapPinIcon className="w-3.5 h-3.5 text-blue-600" />
               {unit.city}, {unit.province}
@@ -184,18 +185,18 @@ export default function UnitCardDesktop({
           </span>
                 </div>
 
-                {/* BUTTONS AREA */}
-                <div className="space-y-2 mt-4">
+                {/* BUTTONS */}
+                <div className="space-y-2">
 
-                    {/* -------------- PENDING SIGNATURE VIEW ONLY -------------- */}
-                    {isSignaturePending && (
+                    {/* ---------------- PENDING DOCUMENTS ONLY ---------------- */}
+                    {isSignaturePending && !isFullySigned && (
                         <PendingDocumentsWidget agreement_id={unit.agreement_id} />
                     )}
 
-                    {/* -------------- SIGNED → SHOW ACTIONS -------------- */}
-                    {isTenantSigned && (
+                    {/* ---------------- FULLY SIGNED → ACTIONS ---------------- */}
+                    {isFullySigned && (
                         <>
-                            {/* PAY INITIAL AMOUNT */}
+                            {/* PAY INITIAL */}
                             {hasInitialPayables && (
                                 <button
                                     onClick={() => onPayInitial(unit.agreement_id)}
@@ -204,7 +205,6 @@ export default function UnitCardDesktop({
                   font-semibold text-sm hover:shadow-lg"
                                 >
                                     <CurrencyDollarIcon className="w-4 h-4" />
-
                                     {requiresSecurityDeposit && requiresAdvancePayment
                                         ? "Pay Security Deposit + Advance"
                                         : requiresSecurityDeposit
@@ -217,8 +217,8 @@ export default function UnitCardDesktop({
                             <button
                                 onClick={() => onAccessPortal(unit.agreement_id)}
                                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4
-                bg-gradient-to-r from-blue-600 to-emerald-600 text-white
-                rounded-lg font-semibold text-sm hover:shadow-md"
+                bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg
+                font-semibold text-sm hover:shadow-md"
                             >
                                 <ArrowRightOnRectangleIcon className="w-4 h-4" />
                                 Access Portal
@@ -235,7 +235,7 @@ export default function UnitCardDesktop({
                                 Message Landlord
                             </button>
 
-                            {/* EXPIRED → Renew or End */}
+                            {/* EXPIRED LEASE ACTIONS */}
                             {isLeaseExpired && (
                                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
                                     <button
@@ -243,8 +243,7 @@ export default function UnitCardDesktop({
                                             onRenewLease(unit.unit_id, unit.agreement_id)
                                         }
                                         className="flex items-center justify-center gap-1.5 py-2 px-3
-                    bg-emerald-600 hover:bg-emerald-700 text-white
-                    rounded-lg text-xs"
+                    bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs"
                                     >
                                         <RefreshCw className="w-3.5 h-3.5" /> Renew
                                     </button>
