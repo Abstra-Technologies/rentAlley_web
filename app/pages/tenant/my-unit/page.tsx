@@ -277,19 +277,54 @@ export default function MyUnit() {
     [user?.tenant_id, refetch, router]
   );
 
-    const handlePayInitial = useCallback(
-        (agreementId: string) => {
-            router.push(`/pages/tenant/initialPayment/${agreementId}`);
-        },
-        [router]
-    );
+  const handlePayInitial = useCallback(
+    (agreementId: string) => {
+      router.push(`/pages/tenant/initialPayment/${agreementId}`);
+    },
+    [router]
+  );
 
   const handleViewInvitations = useCallback(() => {
     router.push("/pages/tenant/viewInvites");
   }, [router]);
 
   if (loading) {
-    return <LoadingScreen message="Just a moment, getting things ready..." />;
+    return (
+      <div className="px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gray-200 rounded-xl animate-pulse" />
+            <div>
+              <div className="h-6 bg-gray-200 rounded w-32 animate-pulse mb-2" />
+              <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+          </div>
+        </div>
+
+        <div className="h-12 bg-gray-200 rounded-lg animate-pulse mb-6" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-xl border border-gray-200 p-4"
+            >
+              <div className="h-48 bg-gray-200 rounded-lg animate-pulse mb-4" />
+              <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse mb-2" />
+              <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse mb-4" />
+              <div className="flex gap-2">
+                <div className="h-10 flex-1 bg-gray-200 rounded-lg animate-pulse" />
+                <div className="h-10 flex-1 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -392,18 +427,17 @@ export default function MyUnit() {
               {/* Units Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 mb-6">
                 {paginatedUnits.map((unit) => (
-                    <UnitCard
-                        key={unit.unit_id}
-                        unit={unit}
-                        onContactLandlord={handleContactLandlord}
-                        onAccessPortal={handleAccessPortal}
-                        onEndContract={handleEndLease}
-                        onRenewLease={(unitId, agreementId, renewalData) =>
-                            setShowRenewalForm(unitId)
-                        }
-                        onPayInitial={handlePayInitial}  // ⭐ ADD THIS LINE
-                    />
-
+                  <UnitCard
+                    key={unit.unit_id}
+                    unit={unit}
+                    onContactLandlord={handleContactLandlord}
+                    onAccessPortal={handleAccessPortal}
+                    onEndContract={handleEndLease}
+                    onRenewLease={(unitId, agreementId, renewalData) =>
+                      setShowRenewalForm(unitId)
+                    }
+                    onPayInitial={handlePayInitial} // ⭐ ADD THIS LINE
+                  />
                 ))}
               </div>
 
