@@ -1,8 +1,6 @@
 import { Metadata } from "next";
 import PropertyUnitDetailedPage from "./PropertyUnitDetailedPage";
 
-// facebook image not working yet.
-
 export async function generateMetadata({ params }): Promise<Metadata> {
   const { id, rentId } = params;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://rent-alley-web.vercel.app";
@@ -54,7 +52,6 @@ export async function generateMetadata({ params }): Promise<Metadata> {
     };
   } catch (error) {
     console.error('Metadata generation error:', error);
-    // ✅ Fallback metadata
     return {
       title: 'Unit Details - Upkyp',
       description: 'View unit details and rent this property',
@@ -68,5 +65,7 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 }
 
 export default function Page() {
-  return <PropertyUnitDetailedPage />;
+  return (
+      <PropertyUnitDetailedPage />
+  );
 }

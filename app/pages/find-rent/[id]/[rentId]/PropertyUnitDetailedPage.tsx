@@ -130,7 +130,8 @@ export default function PropertyUnitDetailedPage() {
           iconAnchor: [20, 52],
           popupAnchor: [0, -52],
         });
-        setCustomIcon(icon);
+        // @ts-ignore
+          setCustomIcon(icon);
       });
     }
   }, [isClient]);
@@ -183,27 +184,27 @@ export default function PropertyUnitDetailedPage() {
     return amenitiesString.split(",").map((item: string) => item.trim());
   };
 
-  const parsePaymentMethods = (methodsString: any) => {
-    if (!methodsString) return [];
-    if (typeof methodsString === "string") {
-      const cleaned = methodsString.replace(/[\[\]"']/g, "").trim();
-      if (cleaned === "") return [];
-      return cleaned
-        .split(/[\n,]+/)
-        .map((item: string) => item.trim())
-        .filter((item: string) => item.length > 0)
-        .map((item: string) => {
-          return item
-            .split("-")
-            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join("-")
-            .replace("G-cash", "GCash")
-            .replace("Maya", "Maya")
-            .replace("Pdc", "PDC");
-        });
-    }
-    return [];
-  };
+    const parsePaymentMethods = (methodsString: any) => {
+        if (!methodsString) return [];
+        if (typeof methodsString === "string") {
+            const cleaned = methodsString.replace(/[\[\]"']/g, "").trim();
+            if (cleaned === "") return [];
+            return cleaned
+                .split(/[\n,]+/)
+                .map((item: string) => item.trim())
+                .filter((item: string) => item.length > 0)
+                .map((item: string) => {
+                    return item
+                        .split("-")
+                        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join("-")
+                        .replace("G-cash", "GCash")
+                        .replace("Maya", "Maya")
+                        .replace("Pdc", "PDC");
+                });
+        }
+        return [];
+    };
 
   const getAmenityIcon = (amenity: string) => {
     const lower = amenity.toLowerCase();

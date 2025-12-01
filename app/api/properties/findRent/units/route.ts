@@ -146,10 +146,14 @@ export async function GET(req: NextRequest) {
                 latitude: parseFloat(String(unit.latitude).trim()),
                 longitude: parseFloat(String(unit.longitude).trim()),
                 landlord_id: unit.landlord_id,
-                landlord_firstName,
-                landlord_lastName,
+
+                // FIXED HERE
+                landlord_firstName: landlordFirstName,
+                landlord_lastName: landlordLastName,
+
                 photos: decryptedPhoto ? [decryptedPhoto] : [],
             };
+
         });
 
         await redis.set(cacheKey, JSON.stringify(decryptedUnits), { ex: 10 });

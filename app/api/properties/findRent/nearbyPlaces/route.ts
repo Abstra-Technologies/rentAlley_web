@@ -27,7 +27,6 @@ async function getNearbyPlaces(lat: number, lng: number) {
 
   for (const type of types) {
     const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&type=${type}&key=${GOOGLE_PLACES_KEY}`;
-    console.log("TESTING URL:", url);
     const res = await fetch(url);
     const data = await res.json();
 
