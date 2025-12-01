@@ -10,16 +10,20 @@ import {
   Menu,
   X,
   Settings,
-  ChevronLeft,
   LogOut,
-  ChevronRight,
-  MessageCircle,
   AlertCircle,
+  MapPin,
+  User,
 } from "lucide-react";
 import { MdOutlineRssFeed } from "react-icons/md";
 import { RiCommunityFill } from "react-icons/ri";
 import { FaFile } from "react-icons/fa";
-import { ClockIcon } from "@heroicons/react/24/outline";
+import {
+  ClockIcon,
+  ChatBubbleLeftRightIcon,
+  Bars3Icon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 import Image from "next/image";
 import LoadingScreen from "@/components/loadingScreen";
@@ -29,8 +33,7 @@ export default function TenantLayout({ children }) {
   const pathname = usePathname();
   const { user, fetchSession, signOut } = useAuthStore();
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [undecidedApplications, setUndecidedApplications] = useState(0);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -75,8 +78,7 @@ export default function TenantLayout({ children }) {
   }, [user?.tenant_id]);
 
   useEffect(() => {
-    setIsSidebarOpen(false);
-    setIsMobileProfileOpen(false);
+    setMobileMenuOpen(false);
   }, [pathname]);
 
   /* -------------------------------------------------------------------------- */
@@ -90,15 +92,13 @@ export default function TenantLayout({ children }) {
       path: "/pages/tenant/feeds",
       icon: MdOutlineRssFeed,
       badge: null,
-      priority: 1,
     },
     {
       name: "Chats",
       href: "/pages/tenant/chat",
       path: "/pages/tenant/chat",
-      icon: MessageCircle,
+      icon: ChatBubbleLeftRightIcon,
       badge: null,
-      priority: 1,
     },
     {
       name: "My Units",
@@ -106,7 +106,6 @@ export default function TenantLayout({ children }) {
       path: "/pages/tenant/my-unit",
       icon: RiCommunityFill,
       badge: null,
-      priority: 1,
     },
     {
       name: "My Applications",
@@ -114,7 +113,6 @@ export default function TenantLayout({ children }) {
       path: "/pages/tenant/myApplications",
       icon: FaFile,
       badge: undecidedApplications > 0 ? undecidedApplications : null,
-      priority: 2,
     },
     {
       name: "Unit History",
@@ -122,15 +120,17 @@ export default function TenantLayout({ children }) {
       path: "/pages/tenant/unitHistory",
       icon: ClockIcon,
       badge: null,
-      priority: 2,
+    },
+    {
+      name: "Visit History",
+      href: "/pages/tenant/visit-history",
+      path: "/pages/tenant/visit-history",
+      icon: MapPin,
+      badge: null,
     },
   ];
 
   const isActive = (path) => pathname === path;
-
-  const navigateWithLoader = (label, href) => {
-    router.push(href);
-  };
 
   const logoutNow = async () => {
     await signOut();
@@ -157,248 +157,156 @@ export default function TenantLayout({ children }) {
   }
 
   /* -------------------------------------------------------------------------- */
+  /*                            SIDEBAR CONTENT                                 */
+  /* -------------------------------------------------------------------------- */
+
+  const SidebarContent = () => (
+    <>
+      {/* Logo/Brand */}
+      <div className="p-6 border-b border-gray-200">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+          Upkyp
+        </h1>
+        <p className="text-xs text-gray-500 mt-1">Tenant Dashboard</p>
+      </div>
+
+      {/* User Profile Card */}
+      {user && (
+        <div className="p-4 border-b border-gray-200">
+          <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg p-4 border border-blue-100">
+            <div className="flex items-start gap-3">
+              <div className="relative w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden">
+                <Image
+                  src={
+                    user.profilePicture ||
+                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                  }
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
+                  alt="profile"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-bold text-gray-900 line-clamp-1 leading-tight">
+                  {user.firstName && user.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user.email}
+                </h2>
+                <p className="text-xs text-gray-600 mt-1">Tenant Account</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-4">
+        <ul className="space-y-1">
+          {navItems.map(({ href, name, icon: Icon, badge, path }) => {
+            const active = isActive(path);
+
+            return (
+              <li key={href}>
+                <button
+                  onClick={() => {
+                    router.push(href);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`
+                    flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium
+                    ${
+                      active
+                        ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700 shadow-sm"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }
+                  `}
+                >
+                  <Icon
+                    className={`w-5 h-5 mr-3 ${
+                      active ? "text-blue-600" : "text-gray-400"
+                    }`}
+                  />
+                  <span className="flex-1 text-left">{name}</span>
+
+                  {badge && (
+                    <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2 font-semibold">
+                      {badge}
+                    </span>
+                  )}
+
+                  {active && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Bottom Section - Settings & Logout */}
+      <div className="p-4 border-t border-gray-200 space-y-2">
+        <Link
+          href="/pages/commons/profile"
+          onClick={() => setMobileMenuOpen(false)}
+          className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          <Settings className="w-5 h-5 mr-3 text-gray-400" />
+          <span className="flex-1 text-left">Account Settings</span>
+        </Link>
+
+        <button
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setShowLogoutConfirm(true);
+          }}
+          className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 group"
+        >
+          <LogOut className="w-5 h-5 mr-3 text-gray-400 group-hover:text-red-600" />
+          <span className="flex-1 text-left">Logout</span>
+        </button>
+      </div>
+    </>
+  );
+
+  /* -------------------------------------------------------------------------- */
   /*                                 RENDER                                     */
   /* -------------------------------------------------------------------------- */
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/30">
-      {/* ===================== DESKTOP SIDEBAR ===================== */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed top-14 bottom-0 lg:z-40 lg:w-72 bg-white shadow-xl">
-        <nav className="flex-1 px-3 py-4 overflow-y-auto">
-          <ul className="space-y-1">
-            {navItems.map((item, idx) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setMobileMenuOpen(true)}
+        className="md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow"
+        aria-label="Open menu"
+      >
+        <Bars3Icon className="w-6 h-6" />
+      </button>
 
-              return (
-                <li key={idx} className="relative group">
-                  <button
-                    onClick={() => navigateWithLoader(item.name, item.href)}
-                    className={`flex w-full items-center px-3 py-2.5 rounded-lg text-sm transition-all
-                      ${
-                        active
-                          ? "bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 font-medium shadow-sm"
-                          : "hover:bg-gray-50 text-gray-700"
-                      }
-                    `}
-                  >
-                    {/* Active marker */}
-                    <span
-                      className={`absolute left-0 h-full w-0.5 rounded-r bg-gradient-to-b from-indigo-600 to-purple-600 
-                        ${
-                          active
-                            ? "opacity-100"
-                            : "opacity-0 group-hover:opacity-100"
-                        } transition-opacity`}
-                    />
-
-                    <Icon
-                      className={`w-4 h-4 mr-3 ${
-                        active ? "text-indigo-700" : "text-gray-500"
-                      }`}
-                    />
-
-                    <span className="flex-1 text-left">{item.name}</span>
-
-                    {item.badge && (
-                      <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2">
-                        {item.badge}
-                      </span>
-                    )}
-
-                    {active && (
-                      <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600" />
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-
-          {/* Logout Button */}
-          <div className="px-2 py-4 border-t border-gray-100 mt-4">
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <aside
+            className="fixed left-0 top-0 w-72 bg-white h-full shadow-xl flex flex-col pt-14"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button - Top Right Corner */}
             <button
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-gray-700 bg-white hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Close menu"
             >
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm">Logout</span>
+              <XMarkIcon className="w-6 h-6 text-gray-600" />
             </button>
-          </div>
 
-          {/* Help card */}
-          <div className="mx-2 mt-4">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-3 text-white">
-              <div className="text-xs font-medium mb-1">Need Help?</div>
-              <div className="text-xs opacity-90 mb-2">Contact support</div>
-              <button className="bg-white/20 text-white px-2 py-1 text-xs rounded hover:bg-white/30">
-                Get Support
-              </button>
-            </div>
-          </div>
-        </nav>
-      </aside>
-
-      {/* ===================== MOBILE SIDEBAR ===================== */}
-
-      {isSidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-
-          <aside className="lg:hidden fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 flex flex-col">
-            {/* Mobile Sidebar Header */}
-            <div className="px-4 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-sm flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white">Menu</h2>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-lg"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            {/* MOBILE PROFILE */}
-            {!isMobileProfileOpen && (
-              <div className="px-4 py-3 bg-gray-50/50 border-b">
-                <button
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white hover:shadow-md"
-                  onClick={() => setIsMobileProfileOpen(true)}
-                >
-                  <Image
-                    src={
-                      user.profilePicture ||
-                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                    }
-                    width={36}
-                    height={36}
-                    className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm"
-                    alt="profile"
-                  />
-                  <div className="flex-1 text-left">
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {user.firstName && user.lastName
-                        ? `${user.firstName} ${user.lastName}`
-                        : user.email}
-                    </p>
-                    <p className="text-xs text-gray-500">Tenant Account</p>
-                  </div>
-                  <Settings className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-            )}
-
-            {/* MOBILE PROFILE PANEL */}
-            {isMobileProfileOpen ? (
-              <div className="flex-1 overflow-y-auto">
-                <button
-                  onClick={() => setIsMobileProfileOpen(false)}
-                  className="flex items-center gap-2 w-full px-4 py-3 border-b hover:bg-gray-50"
-                >
-                  <ChevronLeft className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-700">Back to Menu</span>
-                </button>
-
-                <div className="px-4 py-4 bg-gradient-to-r from-indigo-50 to-purple-50">
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src={
-                        user?.profilePicture ||
-                        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                      }
-                      width={48}
-                      height={48}
-                      alt="profile"
-                      className="rounded-full border-2 border-white shadow-md object-cover"
-                    />
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">
-                        {user.firstName && user.lastName
-                          ? `${user.firstName} ${user.lastName}`
-                          : user.email}
-                      </p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <Link
-                  href="/pages/commons/profile"
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
-                >
-                  <Settings className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-700 font-medium">
-                    Account Settings
-                  </span>
-                </Link>
-
-                <button
-                  onClick={() => {
-                    setIsSidebarOpen(false);
-                    setShowLogoutConfirm(true);
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span className="font-medium text-sm">Logout</span>
-                </button>
-              </div>
-            ) : (
-              /* MOBILE NAVIGATION */
-              <div className="flex-1 overflow-y-auto">
-                <nav className="px-3 py-4 space-y-2">
-                  {navItems.map((item, idx) => {
-                    const Icon = item.icon;
-                    const active = isActive(item.path);
-
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => navigateWithLoader(item.name, item.href)}
-                        className={`flex items-center w-full px-3 py-2.5 rounded-lg transition
-                          ${
-                            active
-                              ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
-                              : "text-gray-700 hover:bg-gray-100"
-                          }
-                        `}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span className="text-sm ml-2 flex-1">{item.name}</span>
-
-                        {item.badge && (
-                          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">
-                            {item.badge}
-                          </span>
-                        )}
-
-                        {active && (
-                          <div className="h-2 w-2 bg-white/80 rounded-full ml-auto animate-pulse" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </nav>
-
-                <div className="p-4 border-t border-gray-100">
-                  <button
-                    onClick={() => {
-                      setIsSidebarOpen(false);
-                      setShowLogoutConfirm(true);
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 transition"
-                  >
-                    <LogOut className="w-5 h-5" />
-                    Logout
-                  </button>
-                </div>
-              </div>
-            )}
+            <SidebarContent />
           </aside>
-        </>
+        </div>
       )}
 
       {/* Logout Confirmation Modal */}
@@ -435,10 +343,16 @@ export default function TenantLayout({ children }) {
         </div>
       )}
 
-      {/* ===================== MAIN CONTENT ===================== */}
-      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/20">
-        {children}
-      </main>
-    </div>
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/30">
+        <aside className="hidden lg:flex lg:flex-col fixed left-0 top-14 w-72 bg-white border-r border-gray-200 h-[calc(100vh-3.5rem)] z-20">
+          <SidebarContent />
+        </aside>
+
+        {/* MAIN CONTENT */}
+        <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/20">
+          {children}
+        </main>
+      </div>
+    </>
   );
 }
