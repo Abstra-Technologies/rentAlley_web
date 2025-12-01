@@ -3,16 +3,64 @@
 import TenantPayables from "@/components/tenant/analytics-insights/consolidated-analytics/totalPayables";
 import AnnouncementFeeds from "@/components/tenant/feeds/announcement";
 import TenantMaintenanceWidget from "@/components/tenant/feeds/TenantMaintenanceWidget";
-import {
-  HomeIcon,
-  MagnifyingGlassIcon,
-  MegaphoneIcon,
-  WrenchScrewdriverIcon,
-} from "@heroicons/react/24/outline";
-import { useRouter } from "next/navigation";
+import { MegaphoneIcon } from "@heroicons/react/24/outline";
+import { ClockIcon } from "@heroicons/react/24/outline";
+import { useRouter, usePathname } from "next/navigation";
+import { MdOutlineRssFeed } from "react-icons/md";
+import { RiCommunityFill } from "react-icons/ri";
+import { FaFile } from "react-icons/fa";
+import { MessageCircle, MapPin } from "lucide-react";
 
-export default function MobileFeedsPage({ user }) {
+export default function MobileFeedsPage({ user, undecidedApplications = 0 }) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const navItems = [
+    {
+      name: "Feeds",
+      href: "/pages/tenant/feeds",
+      path: "/pages/tenant/feeds",
+      icon: MdOutlineRssFeed,
+      badge: null,
+    },
+    {
+      name: "Chats",
+      href: "/pages/tenant/chat",
+      path: "/pages/tenant/chat",
+      icon: MessageCircle,
+      badge: null,
+    },
+    {
+      name: "My Units",
+      href: "/pages/tenant/my-unit",
+      path: "/pages/tenant/my-unit",
+      icon: RiCommunityFill,
+      badge: null,
+    },
+    {
+      name: "Applications",
+      href: "/pages/tenant/myApplications",
+      path: "/pages/tenant/myApplications",
+      icon: FaFile,
+      badge: undecidedApplications > 0 ? undecidedApplications : null,
+    },
+    {
+      name: "Unit History",
+      href: "/pages/tenant/unitHistory",
+      path: "/pages/tenant/unitHistory",
+      icon: ClockIcon,
+      badge: null,
+    },
+    {
+      name: "Visits",
+      href: "/pages/tenant/visit-history",
+      path: "/pages/tenant/visit-history",
+      icon: MapPin,
+      badge: null,
+    },
+  ];
+
+  const isActive = (path) => pathname === path;
 
   return (
     <div className="block lg:hidden w-full px-4 py-4">
@@ -22,53 +70,52 @@ export default function MobileFeedsPage({ user }) {
           <TenantPayables tenant_id={user?.tenant_id} />
         </div>
 
-        {/* QUICK ACTIONS */}
-        <div className="flex items-center justify-between gap-2">
-          <button
-            onClick={() => router.push("/pages/tenant/my-unit")}
-            className="flex-1 flex flex-col items-center justify-center py-3 px-2 bg-white border border-gray-200 rounded-xl shadow-sm active:scale-95 transition-all hover:border-blue-300"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg flex items-center justify-center mb-1.5">
-              <HomeIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <span className="text-xs font-semibold text-gray-700">
-              My Units
-            </span>
-          </button>
+        {/* NAVIGATION */}
+        <div className="grid grid-cols-6 gap-1.5">
+          {navItems.map((item, idx) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
 
-          <button
-            onClick={() => router.push("/pages/find-rent")}
-            className="flex-1 flex flex-col items-center justify-center py-3 px-2 bg-white border border-gray-200 rounded-xl shadow-sm active:scale-95 transition-all hover:border-blue-300"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg flex items-center justify-center mb-1.5">
-              <MagnifyingGlassIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <span className="text-xs font-semibold text-gray-700">
-              Find Rent
-            </span>
-          </button>
+            return (
+              <button
+                key={idx}
+                onClick={() => router.push(item.href)}
+                className={`relative flex flex-col items-center justify-center py-2.5 rounded-xl shadow-sm active:scale-95 transition-all aspect-square ${
+                  active
+                    ? "bg-gradient-to-br from-blue-500 to-emerald-500 border-transparent"
+                    : "bg-white border border-gray-200 hover:border-blue-300"
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 ${
+                    active
+                      ? "bg-white/20"
+                      : "bg-gradient-to-br from-blue-50 to-emerald-50"
+                  }`}
+                >
+                  <Icon
+                    className={`w-4 h-4 ${
+                      active ? "text-white" : "text-blue-600"
+                    }`}
+                  />
+                </div>
+                <span
+                  className={`text-[9px] font-semibold leading-tight text-center ${
+                    active ? "text-white" : "text-gray-700"
+                  }`}
+                >
+                  {item.name}
+                </span>
 
-          <button
-            onClick={() => router.push("/pages/tenant/maintenance")}
-            className="flex-1 flex flex-col items-center justify-center py-3 px-2 bg-white border border-gray-200 rounded-xl shadow-sm active:scale-95 transition-all hover:border-blue-300"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg flex items-center justify-center mb-1.5">
-              <WrenchScrewdriverIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <span className="text-xs font-semibold text-gray-700">
-              Maintenance
-            </span>
-          </button>
-
-          <button
-            onClick={() => router.push("/pages/tenant/announcements")}
-            className="flex-1 flex flex-col items-center justify-center py-3 px-2 bg-white border border-gray-200 rounded-xl shadow-sm active:scale-95 transition-all hover:border-blue-300"
-          >
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg flex items-center justify-center mb-1.5">
-              <MegaphoneIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <span className="text-xs font-semibold text-gray-700">Updates</span>
-          </button>
+                {/* Badge */}
+                {item.badge && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full font-bold">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* ANNOUNCEMENTS */}
@@ -84,7 +131,7 @@ export default function MobileFeedsPage({ user }) {
               <p className="text-xs text-gray-600">Latest updates</p>
             </div>
           </div>
-          {/* Show 3 items max on mobile with "Show More" */}
+
           <AnnouncementFeeds
             tenant_id={user?.tenant_id}
             maxItems={3}
@@ -94,11 +141,9 @@ export default function MobileFeedsPage({ user }) {
 
         {/* MAINTENANCE */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
-          {/* Show 3 items max on mobile */}
           <TenantMaintenanceWidget tenant_id={user?.tenant_id} maxItems={3} />
         </div>
 
-        {/* Bottom Spacer for Mobile Nav */}
         <div className="h-20" />
       </div>
     </div>
