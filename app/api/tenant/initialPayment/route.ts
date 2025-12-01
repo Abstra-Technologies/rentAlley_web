@@ -73,10 +73,11 @@ export async function POST(req: NextRequest) {
                 contact: { email },
             },
             redirectUrl: {
-                success: `${redirectUrl.success}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=success&types=${encodedPaymentTypes}`,
-                failure: `${redirectUrl.failure}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=failed&types=${encodedPaymentTypes}`,
-                cancel: `${redirectUrl.cancel}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=cancelled&types=${encodedPaymentTypes}`,
+                success: `${redirectUrl.success}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=success&types=${encodedPaymentTypes}&totalAmount=${totalAmount}`,
+                failure: `${redirectUrl.failure}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=failed&types=${encodedPaymentTypes}&totalAmount=${totalAmount}`,
+                cancel: `${redirectUrl.cancel}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=cancelled&types=${encodedPaymentTypes}&totalAmount=${totalAmount}`,
             },
+
             requestReferenceNumber,
             items: mayaItems,
         };

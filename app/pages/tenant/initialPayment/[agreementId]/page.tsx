@@ -301,8 +301,17 @@ export default function InitialPaymentPage({
                     Your initial payments are complete.
                     <br />
                     You may now access your tenant portal anytime.
+
+                    {/* Back to My Units Button */}
+                    <button
+                        onClick={() => router.push("/pages/tenant/my-unit")}
+                        className="mt-4 w-full py-2.5 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700"
+                    >
+                        Back to My Units
+                    </button>
                 </div>
             )}
+
         </div>
     );
 }
