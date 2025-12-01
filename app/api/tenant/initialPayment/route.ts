@@ -15,23 +15,7 @@ export async function POST(req: NextRequest) {
             redirectUrl,
         } = await req.json();
 
-        console.log("Multi-Item Payment Request:", {
-            items,
-            firstName,
-            lastName,
-            email,
-            payment_method_id,
-            agreement_id,
-            redirectUrl,
-        });
-
-        if (
-            !agreement_id ||
-            !firstName ||
-            !lastName ||
-            !email ||
-            !payment_method_id
-        ) {
+        if (!agreement_id || !firstName || !lastName || !email) {
             return NextResponse.json(
                 { error: "Missing required fields." },
                 { status: 400 }
@@ -40,7 +24,7 @@ export async function POST(req: NextRequest) {
 
         if (!Array.isArray(items) || items.length === 0) {
             return NextResponse.json(
-                { error: "Invalid request: items array is missing or empty." },
+                { error: "Missing item details." },
                 { status: 400 }
             );
         }
@@ -50,21 +34,14 @@ export async function POST(req: NextRequest) {
         const paymentTypes: string[] = [];
 
         for (const item of items) {
-            if (
-                !item.type ||
-                !item.amount ||
-                isNaN(item.amount) ||
-                item.amount <= 0
-            ) {
+            const amountValue = Number(item.amount);
+            if (!item.type || !amountValue || amountValue <= 0) {
                 return NextResponse.json(
-                    {
-                        error: `Invalid item in 'items' array: ${JSON.stringify(item)}`,
-                    },
+                    { error: "Invalid item format." },
                     { status: 400 }
                 );
             }
 
-            const amountValue = parseFloat(item.amount);
             totalAmount += amountValue;
             paymentTypes.push(item.type);
 
@@ -78,17 +55,11 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        if (totalAmount <= 0) {
-            return NextResponse.json(
-                { error: "Total amount must be greater than zero." },
-                { status: 400 }
-            );
-        }
-
         const publicKey = process.env.MAYA_PUBLIC_KEY;
         const secretKey = process.env.MAYA_SECRET_KEY;
 
-        const requestReferenceNumber = `PAYMULTI-${Date.now()}-${agreement_id}`;
+        const requestReferenceNumber = `PAY-${agreement_id}-${Date.now()}`;
+
         const encodedPaymentTypes = encodeURIComponent(paymentTypes.join(","));
 
         const payload = {
@@ -96,29 +67,19 @@ export async function POST(req: NextRequest) {
                 value: parseFloat(totalAmount.toFixed(2)),
                 currency: "PHP",
             },
-            buyer: { firstName, lastName, contact: { email } },
+            buyer: {
+                firstName,
+                lastName,
+                contact: { email },
+            },
             redirectUrl: {
-                success: encodeURI(
-                    `${redirectUrl.success}?agreement_id=${agreement_id}&requestReferenceNumber=${requestReferenceNumber}&status=success&payment_types=${encodedPaymentTypes}&totalAmount=${totalAmount.toFixed(
-                        2
-                    )}`
-                ),
-                failure: encodeURI(
-                    `${redirectUrl.failure}?agreement_id=${agreement_id}&requestReferenceNumber=${requestReferenceNumber}&status=failed&payment_types=${encodedPaymentTypes}&totalAmount=${totalAmount.toFixed(
-                        2
-                    )}`
-                ),
-                cancel: encodeURI(
-                    `${redirectUrl.cancel}?agreement_id=${agreement_id}&requestReferenceNumber=${requestReferenceNumber}&status=cancelled&payment_types=${encodedPaymentTypes}&totalAmount=${totalAmount.toFixed(
-                        2
-                    )}`
-                ),
+                success: `${redirectUrl.success}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=success&types=${encodedPaymentTypes}`,
+                failure: `${redirectUrl.failure}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=failed&types=${encodedPaymentTypes}`,
+                cancel: `${redirectUrl.cancel}?agreement_id=${agreement_id}&ref=${requestReferenceNumber}&status=cancelled&types=${encodedPaymentTypes}`,
             },
             requestReferenceNumber,
             items: mayaItems,
         };
-
-        console.log("Sending Payload to Maya:", JSON.stringify(payload, null, 2));
 
         const response = await axios.post(
             "https://pg-sandbox.paymaya.com/checkout/v1/checkouts",
@@ -126,14 +87,10 @@ export async function POST(req: NextRequest) {
             {
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Basic ${Buffer.from(
-                        `${publicKey}:${secretKey}`
-                    ).toString("base64")}`,
+                    Authorization: `Basic ${Buffer.from(`${publicKey}:${secretKey}`).toString("base64")}`,
                 },
             }
         );
-
-        console.log("Maya Response:", response.data);
 
         return NextResponse.json({
             checkoutUrl: response.data.redirectUrl,
@@ -141,9 +98,10 @@ export async function POST(req: NextRequest) {
         });
     } catch (error: any) {
         console.error(
-            "Error during Maya payment processing:",
+            "PayMaya Error:",
             error.response?.data || error.message
         );
+
         return NextResponse.json(
             {
                 error: "Payment initiation failed.",
