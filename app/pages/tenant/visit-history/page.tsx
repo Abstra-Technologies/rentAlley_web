@@ -143,7 +143,6 @@ const PropertyVisits = () => {
     return configs[status as keyof typeof configs] || configs.pending;
   };
 
-  // Filter visits based on whether they're upcoming or past
   const upcomingVisits = visits.filter(
     (visit) =>
       (visit.status === "approved" || visit.status === "pending") &&
@@ -252,16 +251,46 @@ const PropertyVisits = () => {
 
       {/* Content */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="relative mx-auto mb-4 w-12 h-12">
-              <div className="absolute inset-0 animate-spin rounded-full border-4 border-gray-200"></div>
-              <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-blue-500"></div>
+        <div className="space-y-3 mb-20 sm:mb-6">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+            >
+              {/* Status Bar Skeleton */}
+              <div className="h-1 bg-gray-200 animate-pulse" />
+
+              <div className="p-4">
+                {/* Header Skeleton */}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse mb-2" />
+                      <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="h-7 w-24 bg-gray-200 rounded-full animate-pulse flex-shrink-0" />
+                </div>
+
+                {/* Visit Info Grid Skeleton */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {[1, 2].map((j) => (
+                    <div key={j} className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                      <div className="flex-1">
+                        <div className="h-3 bg-gray-200 rounded w-12 animate-pulse mb-1" />
+                        <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Additional Info Skeleton */}
+                <div className="h-10 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
             </div>
-            <p className="text-sm text-gray-600 font-medium">
-              Loading visits...
-            </p>
-          </div>
+          ))}
         </div>
       ) : visits.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
@@ -380,7 +409,7 @@ const PropertyVisits = () => {
                     </div>
                   </div>
 
-                  {/* Time Until (for upcoming approved visits) */}
+                  {/* Time Until */}
                   {visit.status === "approved" &&
                     selectedTab === "upcoming" &&
                     timeUntil !== "passed" && (
@@ -411,7 +440,7 @@ const PropertyVisits = () => {
                     </div>
                   )}
 
-                  {/* Landlord Contact (for approved visits) */}
+                  {/* Landlord Contact */}
                   {visit.status === "approved" &&
                     selectedTab === "upcoming" &&
                     (visit.landlord_phone || visit.landlord_email) && (
