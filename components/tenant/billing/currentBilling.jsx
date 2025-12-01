@@ -140,7 +140,50 @@ export default function TenantBilling({ agreement_id, user_id }) {
   };
 
   /* ---------------------------- STATES ---------------------------- */
-  if (loading) return <LoadingScreen message="Loading billing..." />;
+  if (loading) {
+    return (
+      <div className="space-y-4 md:space-y-3">
+        <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden">
+          <div className="p-4 md:p-5 border-b-2 border-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-7 h-7 bg-gray-200 rounded-lg animate-pulse" />
+                    <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
+                  </div>
+                  <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-4 md:p-5 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-gray-200 rounded animate-pulse" />
+                <div className="h-5 bg-gray-200 rounded w-40 animate-pulse" />
+              </div>
+              <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
+            </div>
+          </div>
+
+          <div className="p-4 md:p-5 space-y-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-14 bg-gray-200 rounded-xl animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          <div className="p-4 md:p-5 border-t border-gray-200 space-y-3">
+            <div className="h-12 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="h-12 bg-gray-200 rounded-xl animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (error)
     return <ErrorBoundary error={error} onRetry={() => location.reload()} />;
 

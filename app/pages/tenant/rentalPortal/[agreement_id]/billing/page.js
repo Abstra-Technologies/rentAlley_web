@@ -5,27 +5,92 @@ import { useEffect, useState, Suspense } from "react";
 import useAuthStore from "@/zustand/authStore";
 import TenantBilling from "@/components/tenant/billing/currentBilling";
 import PreviousBilling from "@/components/tenant/billing/prevBillingList";
-import LoadingScreen from "@/components/loadingScreen";
 import { ReceiptPercentIcon, ClockIcon } from "@heroicons/react/24/outline";
 
 function BillingContent() {
   const { user, fetchSession } = useAuthStore();
-  const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const searchParams = useSearchParams();
   const agreementId = searchParams.get("agreement_id");
 
   useEffect(() => {
-    const init = async () => {
+    async function init() {
       if (!user) {
         await fetchSession();
       }
-      setLoading(false);
-    };
+      setIsInitialLoad(false);
+    }
     init();
   }, [user, fetchSession]);
 
-  if (loading || !user) {
-    return <LoadingScreen message="Loading your billing information..." />;
+  if (isInitialLoad) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+        <div className="h-full px-4 pt-20 pb-24 md:px-6 md:pt-6 md:pb-6 lg:px-8">
+          {/* Header Skeleton */}
+          <div className="mb-6 md:mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gray-200 rounded-xl animate-pulse" />
+              <div className="flex-1">
+                <div className="h-6 bg-gray-200 rounded w-40 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-56 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Current Billing Skeleton */}
+          <div className="mb-8">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="h-48 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="relative mb-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t-2 border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4 h-6 bg-gray-200 rounded animate-pulse"></span>
+            </div>
+          </div>
+
+          {/* Previous Billing Header Skeleton */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="flex-1">
+                <div className="h-5 bg-gray-200 rounded w-32 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Previous Billing List Skeleton */}
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl border border-gray-200 p-4"
+              >
+                <div className="h-24 bg-gray-200 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <p className="text-gray-600 font-medium">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -97,7 +162,10 @@ export default function TenantBillingPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-emerald-50">
-          <LoadingScreen message="Loading billing data..." />
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <p className="text-gray-600 font-medium">Loading billing data...</p>
+          </div>
         </div>
       }
     >

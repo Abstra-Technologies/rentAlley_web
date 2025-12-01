@@ -106,8 +106,92 @@ export default function TenantLeasePayments({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90">
-        <LoadingScreen message="Fetching your payment history..." />
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b border-gray-200 pt-20 pb-4 md:pt-6 md:pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse" />
+              <div>
+                <div className="h-7 bg-gray-200 rounded w-48 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+              </div>
+            </div>
+            <div className="h-10 w-32 bg-gray-200 rounded-xl animate-pulse" />
+          </div>
+        </div>
+
+        <div className="px-4 pb-24 md:pb-8 md:px-8 lg:px-12 xl:px-16 pt-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-gray-200 rounded-lg animate-pulse" />
+                  <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                </div>
+                <div className="h-10 bg-gray-200 rounded w-16 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <th key={i} className="px-6 py-4">
+                        <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="bg-white">
+                      {[1, 2, 3, 4, 5, 6].map((j) => (
+                        <td key={j} className="px-6 py-4">
+                          <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="lg:hidden space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+              >
+                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="h-5 bg-gray-200 rounded w-32 animate-pulse" />
+                    <div className="h-7 w-24 bg-gray-200 rounded-lg animate-pulse" />
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="h-3 bg-gray-200 rounded w-20 animate-pulse mb-2" />
+                      <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
+                    </div>
+                    <div className="text-right">
+                      <div className="h-3 bg-gray-200 rounded w-20 animate-pulse mb-2 ml-auto" />
+                      <div className="h-6 bg-gray-200 rounded w-24 animate-pulse ml-auto" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

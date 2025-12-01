@@ -121,10 +121,58 @@ export default function Announcements({
 
   if (loading)
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4 pt-20 pb-24 md:px-6 md:pt-6 md:pb-6 lg:px-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <p className="text-gray-600 font-medium">Loading announcements...</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
+        <div className="h-full px-4 pt-20 pb-24 md:px-6 md:pt-6 md:pb-6 lg:px-8">
+          <div className="mb-6 md:mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="h-7 bg-gray-200 rounded w-48 animate-pulse mb-2" />
+                  <div className="h-4 bg-gray-200 rounded w-56 animate-pulse" />
+                </div>
+              </div>
+              <div className="w-24 h-12 bg-gray-200 rounded-xl animate-pulse" />
+            </div>
+          </div>
+
+          <div className="space-y-4 md:space-y-3">
+            {[1, 2, 3].map((i) => (
+              <article
+                key={i}
+                className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden"
+              >
+                <div className="p-4 md:p-5 pb-3 md:pb-4">
+                  <div className="flex items-start justify-between gap-3 sm:gap-4 mb-3 md:mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse mb-3" />
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="h-7 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative w-full h-48 sm:h-64 md:h-80 bg-gray-200 animate-pulse" />
+
+                <div className="p-4 md:p-5 pt-3 md:pt-4">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-4/6 animate-pulse" />
+                  </div>
+                </div>
+
+                <div className="px-4 md:px-5 pb-4 md:pb-4 flex items-center justify-between border-t border-gray-100 pt-3 md:pt-4">
+                  <div className="h-10 w-48 bg-gray-200 rounded-xl animate-pulse" />
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     );

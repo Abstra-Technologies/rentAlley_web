@@ -69,11 +69,35 @@ export default function PreviousBilling({ agreement_id, user_id }) {
 
   if (loading)
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-        <p className="text-gray-600 font-medium">
-          Loading previous billing records...
-        </p>
+      <div className="space-y-4 md:space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden"
+          >
+            <div className="p-4 md:p-5">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  {[1, 2, 3].map((j) => (
+                    <div key={j}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-7 h-7 bg-gray-200 rounded-lg animate-pulse" />
+                        <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
+                      </div>
+                      <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="h-11 w-full lg:w-48 bg-gray-200 rounded-xl animate-pulse" />
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 px-4 md:px-5 py-3 border-t border-gray-200">
+              <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+            </div>
+          </div>
+        ))}
       </div>
     );
 

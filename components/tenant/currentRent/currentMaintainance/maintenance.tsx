@@ -223,11 +223,39 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
 
         {/* Content */}
         {loading ? (
-          <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-8 md:p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-            <p className="text-sm sm:text-base text-gray-600 font-medium">
-              Loading your maintenance requests...
-            </p>
+          <div className="space-y-4 md:space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border-2 border-gray-200 p-4 md:p-4 lg:p-5"
+              >
+                <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
+                  <div className="relative w-full lg:w-64 h-48 flex-shrink-0 bg-gray-200 rounded-xl animate-pulse" />
+
+                  <div className="flex-1 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                      <div className="h-7 bg-gray-200 rounded w-3/4 animate-pulse" />
+                      <div className="h-9 w-28 bg-gray-200 rounded-xl animate-pulse flex-shrink-0" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded w-4/6 animate-pulse" />
+                    </div>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-3 border-t border-gray-100">
+                      {[1, 2, 3, 4].map((j) => (
+                        <div key={j}>
+                          <div className="h-3 bg-gray-200 rounded w-16 animate-pulse mb-2" />
+                          <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-8 md:p-8 text-center">
