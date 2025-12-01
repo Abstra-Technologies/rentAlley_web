@@ -14,16 +14,15 @@ import {
   LogOut,
   ChevronRight,
   MessageCircle,
+  AlertCircle,
 } from "lucide-react";
 import { MdOutlineRssFeed } from "react-icons/md";
 import { RiCommunityFill } from "react-icons/ri";
 import { FaFile } from "react-icons/fa";
 import { ClockIcon } from "@heroicons/react/24/outline";
 
-import Swal from "sweetalert2";
-import NotificationSection from "@/components/notification/notifCenter";
 import Image from "next/image";
-import Page_footer from "@/components/navigation/page_footer";
+import LoadingScreen from "@/components/loadingScreen";
 
 export default function TenantLayout({ children }) {
   const router = useRouter();
@@ -33,15 +32,28 @@ export default function TenantLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [undecidedApplications, setUndecidedApplications] = useState(0);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // If inside rentalPortal → completely disable this outer layout
   const isInsideRentalPortal = pathname.includes("/pages/tenant/rentalPortal/");
 
+  useEffect(() => {
+    async function checkAuth() {
+      if (!user) {
+        await fetchSession();
+      }
+      setIsAuthChecking(false);
+    }
+
+    checkAuth();
+  }, [user, fetchSession]);
 
   useEffect(() => {
-    if (!user) fetchSession();
-    else if (user.userType !== "tenant") router.replace("/pages/auth/login");
-  }, [user]);
+    if (!isAuthChecking && user && user.userType !== "tenant") {
+      router.replace("/pages/auth/login");
+    }
+  }, [user, isAuthChecking, router]);
 
   // Fetch pending applications count
   useEffect(() => {
@@ -67,12 +79,6 @@ export default function TenantLayout({ children }) {
     setIsMobileProfileOpen(false);
   }, [pathname]);
 
-
-
-  if (isInsideRentalPortal) {
-    return <main className="flex-1 min-h-screen">{children}</main>;
-  }
-  
   /* -------------------------------------------------------------------------- */
   /*                               NAV ITEMS                                    */
   /* -------------------------------------------------------------------------- */
@@ -123,17 +129,7 @@ export default function TenantLayout({ children }) {
   const isActive = (path) => pathname === path;
 
   const navigateWithLoader = (label, href) => {
-    Swal.fire({
-      title: "Loading...",
-      text: `Redirecting to ${label}`,
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
-
-    setTimeout(() => {
-      router.push(href);
-      Swal.close();
-    }, 500);
+    router.push(href);
   };
 
   const logoutNow = async () => {
@@ -141,13 +137,31 @@ export default function TenantLayout({ children }) {
     router.push("/pages/auth/login");
   };
 
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    logoutNow();
+  };
+
+  // Show loading screen during auth check
+  if (isAuthChecking) {
+    return <LoadingScreen message="Verifying your session..." />;
+  }
+
+  // Show loading screen if user is not authenticated or wrong user type
+  if (!user || user.userType !== "tenant") {
+    return <LoadingScreen message="Redirecting to login..." />;
+  }
+
+  if (isInsideRentalPortal) {
+    return <main className="flex-1 min-h-screen">{children}</main>;
+  }
+
   /* -------------------------------------------------------------------------- */
   /*                                 RENDER                                     */
   /* -------------------------------------------------------------------------- */
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/30">
-
       {/* ===================== DESKTOP SIDEBAR ===================== */}
       <aside className="hidden lg:flex lg:flex-col lg:fixed top-14 bottom-0 lg:z-40 lg:w-72 bg-white shadow-xl">
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
@@ -172,7 +186,9 @@ export default function TenantLayout({ children }) {
                     <span
                       className={`absolute left-0 h-full w-0.5 rounded-r bg-gradient-to-b from-indigo-600 to-purple-600 
                         ${
-                          active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                          active
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-100"
                         } transition-opacity`}
                     />
 
@@ -199,8 +215,19 @@ export default function TenantLayout({ children }) {
             })}
           </ul>
 
+          {/* Logout Button */}
+          <div className="px-2 py-4 border-t border-gray-100 mt-4">
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-gray-700 bg-white hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-sm">Logout</span>
+            </button>
+          </div>
+
           {/* Help card */}
-          <div className="mx-2 mt-6">
+          <div className="mx-2 mt-4">
             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-3 text-white">
               <div className="text-xs font-medium mb-1">Need Help?</div>
               <div className="text-xs opacity-90 mb-2">Contact support</div>
@@ -222,7 +249,6 @@ export default function TenantLayout({ children }) {
           />
 
           <aside className="lg:hidden fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 flex flex-col">
-
             {/* Mobile Sidebar Header */}
             <div className="px-4 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-sm flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">Menu</h2>
@@ -235,7 +261,7 @@ export default function TenantLayout({ children }) {
             </div>
 
             {/* MOBILE PROFILE */}
-            {user && !isMobileProfileOpen && (
+            {!isMobileProfileOpen && (
               <div className="px-4 py-3 bg-gray-50/50 border-b">
                 <button
                   className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white hover:shadow-md"
@@ -278,11 +304,14 @@ export default function TenantLayout({ children }) {
                 <div className="px-4 py-4 bg-gradient-to-r from-indigo-50 to-purple-50">
                   <div className="flex items-center gap-3">
                     <Image
-                      src={user?.profilePicture || "/default-user.png"}
+                      src={
+                        user?.profilePicture ||
+                        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                      }
                       width={48}
                       height={48}
                       alt="profile"
-                      className="rounded-full border-2 border-white shadow-md"
+                      className="rounded-full border-2 border-white shadow-md object-cover"
                     />
                     <div>
                       <p className="font-semibold text-gray-900 text-sm">
@@ -307,11 +336,14 @@ export default function TenantLayout({ children }) {
                 </Link>
 
                 <button
-                  onClick={logoutNow}
+                  onClick={() => {
+                    setIsSidebarOpen(false);
+                    setShowLogoutConfirm(true);
+                  }}
                   className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span className="font-medium">Logout</span>
+                  <span className="font-medium text-sm">Logout</span>
                 </button>
               </div>
             ) : (
@@ -335,9 +367,7 @@ export default function TenantLayout({ children }) {
                         `}
                       >
                         <Icon className="w-5 h-5" />
-                        <span className="text-sm ml-2 flex-1">
-                          {item.name}
-                        </span>
+                        <span className="text-sm ml-2 flex-1">{item.name}</span>
 
                         {item.badge && (
                           <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-2">
@@ -355,7 +385,10 @@ export default function TenantLayout({ children }) {
 
                 <div className="p-4 border-t border-gray-100">
                   <button
-                    onClick={logoutNow}
+                    onClick={() => {
+                      setIsSidebarOpen(false);
+                      setShowLogoutConfirm(true);
+                    }}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 transition"
                   >
                     <LogOut className="w-5 h-5" />
@@ -368,11 +401,44 @@ export default function TenantLayout({ children }) {
         </>
       )}
 
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-center text-gray-900 mb-2">
+              Confirm Logout
+            </h3>
+            <p className="text-sm text-gray-600 text-center mb-6">
+              Are you sure you want to sign out? You'll need to log in again to
+              access your account.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={confirmLogout}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ===================== MAIN CONTENT ===================== */}
       <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/20">
         {children}
       </main>
-
     </div>
   );
 }
