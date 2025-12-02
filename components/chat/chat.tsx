@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import data from "@emoji-mart/data";
+// @ts-ignore
 import Picker from "@emoji-mart/react";
 
 const socket: Socket = io(
