@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     try {
         // ========================================================
-        // 1️⃣ FETCH LEASE AGREEMENTS (draft, pending, active, etc.)
+        // 1️⃣ FETCH LEASE AGREEMENTS
         // ========================================================
         const [leaseRows]: any = await db.query(
             `
@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
                 la.agreement_id AS lease_id,
                 la.start_date,
                 la.end_date,
+                la.move_in_date,
                 la.status AS lease_status,
                 la.security_deposit_amount,
                 la.advance_payment_amount,
@@ -48,15 +49,57 @@ export async function GET(req: NextRequest) {
             LEFT JOIN User usr ON t.user_id = usr.user_id
 
             WHERE u.property_id = ?
-            AND la.status IN ('active', 'draft', 'pending', 'pending_signature')
+              AND la.status IN (
+                    'active','draft','pending','pending_signature',
+                    'tenant_signed','landlord_signed'
+              )
             ORDER BY la.start_date DESC;
             `,
             [property_id]
         );
 
-        // ============================
-        // 2️⃣ FETCH PENDING INVITES
-        // ============================
+        // ========================================================
+        // 2️⃣ FETCH SIGNATURES FOR THESE LEASES
+        // ========================================================
+        const agreementIds = leaseRows.map((l: any) => l.lease_id);
+
+        let landlordSigMap = new Map();
+        let tenantSigMap = new Map();
+
+        if (agreementIds.length > 0) {
+            const [sigRows]: any = await db.query(
+                `
+                SELECT agreement_id, role, signed_at, status, email
+                FROM LeaseSignature
+                WHERE agreement_id IN (?)
+                `,
+                [agreementIds]
+            );
+
+            sigRows.forEach((sig: any) => {
+                if (sig.role === "landlord") {
+                    landlordSigMap.set(sig.agreement_id, {
+                        signed: !!sig.signed_at,
+                        signed_at: sig.signed_at,
+                        email: sig.email,
+                        status: sig.status
+                    });
+                }
+
+                if (sig.role === "tenant") {
+                    tenantSigMap.set(sig.agreement_id, {
+                        signed: !!sig.signed_at,
+                        signed_at: sig.signed_at,
+                        email: sig.email,
+                        status: sig.status
+                    });
+                }
+            });
+        }
+
+        // ========================================================
+        // 3️⃣ FETCH PENDING INVITES
+        // ========================================================
         const [inviteRows]: any = await db.query(
             `
             SELECT  
@@ -79,22 +122,17 @@ export async function GET(req: NextRequest) {
             JOIN Unit u ON ic.unitId = u.unit_id
             JOIN Property p ON u.property_id = p.property_id
             WHERE u.property_id = ?
-            AND ic.status = 'PENDING';
+              AND ic.status = 'PENDING';
             `,
             [property_id]
         );
 
-        // ============================
-        // 3️⃣ CREATE INVITE MAP BY unit_id
-        //    Used to attach metadata to draft leases
-        // ============================
         const inviteMap = new Map();
         inviteRows.forEach((inv: any) => inviteMap.set(inv.unit_id, inv));
 
-        // ============================
-        // 4️⃣ MAP LEASE AGREEMENTS
-        //    Include invite metadata if draft originated from invite
-        // ============================
+        // ========================================================
+        // 4️⃣ MAP LEASES TO RESPONSE FORMAT
+        // ========================================================
         const leases = leaseRows.map((lease: any) => {
             const safeDecrypt = (value: any) => {
                 try {
@@ -116,13 +154,24 @@ export async function GET(req: NextRequest) {
                 } catch {}
             }
 
-            // Attach invite metadata (if exists)
             const invite = inviteMap.get(lease.unit_id);
+
+            const landlordSig = landlordSigMap.get(lease.lease_id) || { signed: false };
+            const tenantSig = tenantSigMap.get(lease.lease_id) || { signed: false };
 
             return {
                 type: "lease",
                 lease_id: lease.lease_id,
+
                 lease_status: lease.lease_status,
+                move_in_date: lease.move_in_date,
+
+                landlord_signed: landlordSig.signed,
+                landlord_signed_at: landlordSig.signed_at || null,
+
+                tenant_signed: tenantSig.signed,
+                tenant_signed_at: tenantSig.signed_at || null,
+
                 start_date: lease.start_date,
                 end_date: lease.end_date,
 
@@ -135,10 +184,6 @@ export async function GET(req: NextRequest) {
                 tenant_email: email,
                 tenant_phone: phone,
 
-                security_deposit_amount: lease.security_deposit_amount,
-                advance_payment_amount: lease.advance_payment_amount,
-                is_security_deposit_paid: lease.is_security_deposit_paid,
-                is_advance_payment_paid: lease.is_advance_payment_paid,
                 agreement_url: decryptedUrl || null,
 
                 property_id: lease.property_id,
@@ -146,7 +191,6 @@ export async function GET(req: NextRequest) {
                 property_city: lease.property_city,
                 property_province: lease.property_province,
 
-                // NEW FIELDS
                 source: invite ? "invite" : "application",
                 invite_id: invite?.invite_id || null,
                 invite_email: invite?.email || null,
@@ -155,29 +199,19 @@ export async function GET(req: NextRequest) {
             };
         });
 
-        // ============================================
-        // 5️⃣ FILTER OUT INVITES THAT HAVE A LEASE ALREADY
-        // ============================================
+        // ========================================================
+        // 5️⃣ MERGE INVITES WITHOUT LEASES
+        // ========================================================
         const leaseUnitIds = new Set(leases.map((l: any) => l.unit_id));
 
         const inviteMapped = inviteRows
             .filter((inv: any) => !leaseUnitIds.has(inv.unit_id))
             .map((invite: any) => ({
                 type: "invite",
-                source: "invite_only",
-
                 invite_id: invite.invite_id,
                 invite_email: invite.email,
                 created_at: invite.createdAt,
                 expires_at: invite.expiresAt,
-
-                lease_id: null,
-                tenant_id: null,
-                tenant_name: null,
-                tenant_phone: null,
-
-                start_date: null,
-                end_date: null,
 
                 unit_id: invite.unit_id,
                 unit_name: invite.unit_name,
@@ -189,22 +223,16 @@ export async function GET(req: NextRequest) {
                 property_province: invite.property_province
             }));
 
-        // ============================
-        // 6️⃣ COMBINE RESULTS
-        // ============================
         const allRecords = [...leases, ...inviteMapped];
 
-        // ============================
-        // 7️⃣ PROPERTY INFO
-        // ============================
         const propertyInfo =
             allRecords.length > 0
                 ? {
-                      property_id: allRecords[0].property_id,
-                      property_name: allRecords[0].property_name,
-                      property_city: allRecords[0].property_city,
-                      property_province: allRecords[0].property_province
-                  }
+                    property_id: allRecords[0].property_id,
+                    property_name: allRecords[0].property_name,
+                    property_city: allRecords[0].property_city,
+                    property_province: allRecords[0].property_province
+                }
                 : null;
 
         return NextResponse.json(
