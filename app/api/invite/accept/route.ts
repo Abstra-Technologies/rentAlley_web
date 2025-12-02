@@ -104,7 +104,6 @@ export async function POST(req: Request) {
             );
 
         } else {
-            // 6️⃣ No draft found → Generate BACKUP lease
             leaseId = generateLeaseId();
 
             let [exists]: any = await conn.query(
@@ -122,8 +121,8 @@ export async function POST(req: Request) {
             await conn.query(
                 `INSERT INTO LeaseAgreement (
                     agreement_id, tenant_id, unit_id, start_date, end_date, status,
-                    is_security_deposit_paid, is_advance_payment_paid, created_at
-                ) VALUES (?, ?, ?, ?, ?, 'active', 1, 1, NOW())`,
+                     created_at
+                ) VALUES (?, ?, ?, ?, ?, 'draft', NOW())`,
                 [leaseId, tenant.tenant_id, invite.unitId, leaseStart, leaseEnd]
             );
         }

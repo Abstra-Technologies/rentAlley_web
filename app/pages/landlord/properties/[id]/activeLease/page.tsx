@@ -17,6 +17,7 @@ import {
 
 import { useState } from "react";
 import LeaseDetailsPanel from "@/components/landlord/activeLease/LeaseDetailsPanel";
+import ChecklistSetupModal from "@/components/landlord/activeLease/ChecklistModal"; // ⬅ ADDED
 import { useRouter } from "next/navigation";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
@@ -31,12 +32,17 @@ export default function PropertyLeasesPage() {
 
     const [selectedLease, setSelectedLease] = useState(null);
 
+    // NEW STATE FOR SETUP MODAL
+    const [setupModalLease, setSetupModalLease] = useState(null);
+
     const handleLeaseAction = (lease) => {
         setSelectedLease(lease);
     };
 
     const handleAuthenticate = (lease) => {
-        router.push(`/pages/landlord/properties/${id}/activeLease/authenticate/${lease.lease_id}`);
+        router.push(
+            `/pages/landlord/properties/${id}/activeLease/authenticate/${lease.lease_id}`
+        );
     };
 
     // ========== Loading ==========
@@ -103,164 +109,142 @@ export default function PropertyLeasesPage() {
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Unit
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Tenant
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Start Date
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            End Date
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Action
-                                        </th>
-                                    </tr>
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                </tr>
                                 </thead>
 
                                 <tbody className="bg-white divide-y divide-gray-200">
-
-                                    {leases.map((lease) => (
-                                        <tr
-                                            key={lease.lease_id || `invite-${lease.invite_id}`}
-                                            onClick={() => lease.type === "lease" && setSelectedLease(lease)}
-                                            className={`transition-colors ${
-                                                lease.type === "lease"
-                                                    ? "hover:bg-gray-50 cursor-pointer"
-                                                    : "bg-amber-50/30"
-                                            }`}
-                                        >
-
-                                            {/* UNIT */}
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <Building2 className="h-4 w-4 text-blue-600" />
-                                                    <span className="text-sm font-medium text-gray-900">
+                                {leases.map((lease) => (
+                                    <tr
+                                        key={lease.lease_id || `invite-${lease.invite_id}`}
+                                        onClick={() =>
+                                            lease.type === "lease" &&
+                                            setSelectedLease(lease)
+                                        }
+                                        className={`transition-colors ${
+                                            lease.type === "lease"
+                                                ? "hover:bg-gray-50 cursor-pointer"
+                                                : "bg-amber-50/30"
+                                        }`}
+                                    >
+                                        {/* UNIT */}
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                <Building2 className="h-4 w-4 text-blue-600" />
+                                                <span className="text-sm font-medium text-gray-900">
                                                         {lease.unit_name}
                                                     </span>
-                                                </div>
-                                            </td>
+                                            </div>
+                                        </td>
 
-                                            {/* TENANT / INVITEE */}
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <User2 className="h-4 w-4 text-gray-400" />
-                                                    <span className="text-sm text-gray-900">
+                                        {/* TENANT */}
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                <User2 className="h-4 w-4 text-gray-400" />
+                                                <span className="text-sm text-gray-900">
                                                         {lease.type === "invite"
                                                             ? lease.invite_email
                                                             : lease.tenant_name || "—"}
                                                     </span>
-                                                </div>
-                                            </td>
+                                            </div>
+                                        </td>
 
-                                            {/* START DATE */}
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {lease.start_date
-                                                    ? new Date(lease.start_date).toLocaleDateString()
-                                                    : "—"}
-                                            </td>
+                                        {/* DATES */}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {lease.start_date
+                                                ? new Date(lease.start_date).toLocaleDateString()
+                                                : "—"}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {lease.end_date
+                                                ? new Date(lease.end_date).toLocaleDateString()
+                                                : "—"}
+                                        </td>
 
-                                            {/* END DATE */}
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {lease.end_date
-                                                    ? new Date(lease.end_date).toLocaleDateString()
-                                                    : "—"}
-                                            </td>
+                                        {/* STATUS */}
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {lease.type === "invite" ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                                        <Clock className="h-3 w-3" />
+                                                        Waiting for Tenant to Accept Invite
+                                                    </span>
+                                            ) : (
+                                                <span
+                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize
+                                                            ${
+                                                        lease.lease_status === "active"
+                                                            ? "bg-green-100 text-green-800 border border-green-200"
+                                                            : lease.lease_status ===
+                                                            "pending_signature"
+                                                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                                                : lease.lease_status === "draft"
+                                                                    ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                                                    : "bg-gray-100 text-gray-700 border border-gray-200"
+                                                    }
+                                                        `}
+                                                >
+                                                        {lease.lease_status
+                                                            ? lease.lease_status.charAt(0).toUpperCase() +
+                                                            lease.lease_status.slice(1)
+                                                            : "Draft"}
+                                                    </span>
+                                            )}
+                                        </td>
 
-                                           {/* STATUS */}
-<td className="px-6 py-4 whitespace-nowrap">
-
-    {/* Invite-only rows */}
-    {lease.type === "invite" ? (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-            <Clock className="h-3 w-3" />
-            Waiting for Tenant to Accept Invite
-        </span>
-    ) : (
-
-        // LEASE ROWS
-        <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize
-                ${lease.lease_status === "active"
-                    ? "bg-green-100 text-green-800 border border-green-200"
-                    : lease.lease_status === "pending_signature"
-                    ? "bg-amber-100 text-amber-800 border border-amber-200"
-                    : lease.lease_status === "draft" && lease.source === "invite"
-                    ? "bg-amber-100 text-amber-800 border border-amber-200"
-                    : lease.lease_status === "draft"
-                    ? "bg-blue-100 text-blue-800 border border-blue-200"
-                    : "bg-gray-100 text-gray-700 border border-gray-200"
-                }
-            `}
-        >
-            {/* Override text if draft-from-invite */}
-            {lease.lease_status === "draft" && lease.source === "invite"
-                ? "Waiting for Tenant to Accept Invite"
-                : lease.lease_status === "pending_signature"
-                ? "Pending Signature"
-                : lease.lease_status.charAt(0).toUpperCase() + lease.lease_status.slice(1)}
-        </span>
-    )}
-</td>
-
-
-                                            {/* ACTIONS */}
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-
-                                                {/* INVITE ROW ACTION */}
-                                                {lease.type === "invite" ? (
-                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-amber-500/80 text-white shadow-sm">
+                                        {/* ACTION BUTTONS */}
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            {lease.type === "invite" ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-amber-500/80 text-white shadow-sm">
                                                         <MailCheck className="w-4 h-4" />
                                                         Invite Sent
                                                     </span>
-                                                ) : lease.lease_status === "draft" ? (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleLeaseAction(lease);
-                                                        }}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white transition-all shadow-sm"
-                                                    >
-                                                        <FileSignature className="w-4 h-4" />
-                                                        Setup
-                                                    </button>
-                                                ) : lease.lease_status === "pending_signature" ? (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleAuthenticate(lease);
-                                                        }}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-all shadow-sm"
-                                                    >
-                                                        <ShieldCheck className="w-4 h-4" />
-                                                        Authenticate Document
-                                                    </button>
-                                                ) : lease.lease_status === "active" ? (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleLeaseAction(lease);
-                                                        }}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gray-700 hover:bg-gray-800 text-white transition-all shadow-sm"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                        View Details
-                                                    </button>
-                                                ) : (
-                                                    <span className="text-gray-400 text-xs">—</span>
-                                                )}
-                                            </td>
-
-                                        </tr>
-                                    ))}
-
+                                            ) : !lease.lease_status || lease.lease_status === "draft" ? (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSetupModalLease(lease); // ⬅ OPEN MODAL
+                                                    }}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm
+                                                        bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700
+                                                        text-white transition-all shadow-sm"
+                                                >
+                                                    <FileSignature className="w-4 h-4" />
+                                                    Setup
+                                                </button>
+                                            ) : lease.lease_status === "pending_signature" ? (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAuthenticate(lease);
+                                                    }}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-all shadow-sm"
+                                                >
+                                                    <ShieldCheck className="w-4 h-4" />
+                                                    Authenticate
+                                                </button>
+                                            ) : lease.lease_status === "active" ? (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedLease(lease);
+                                                    }}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gray-700 hover:bg-gray-800 text-white transition-all shadow-sm"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    View Details
+                                                </button>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs">—</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                                 </tbody>
                             </table>
                         </div>
@@ -279,7 +263,7 @@ export default function PropertyLeasesPage() {
                     )}
                 </div>
 
-                {/* Details Panel */}
+                {/* DETAILS PANEL */}
                 {selectedLease && selectedLease.type === "lease" && (
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
@@ -289,6 +273,22 @@ export default function PropertyLeasesPage() {
                             />
                         </div>
                     </div>
+                )}
+
+                {/* SETUP CHECKLIST MODAL */}
+                {setupModalLease && (
+                    <ChecklistSetupModal
+                        lease={setupModalLease}
+                        agreement_id={setupModalLease.lease_id}
+                        onClose={() => setSetupModalLease(null)}
+                        onContinue={(requirements) => {
+                            router.push(
+                                `/pages/landlord/properties/${id}/activeLease/initialSetup/${setupModalLease.lease_id}`
+                            );
+                            setSetupModalLease(null);
+                        }}
+                    />
+
                 )}
             </div>
         </div>
