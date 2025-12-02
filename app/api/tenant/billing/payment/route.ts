@@ -112,14 +112,13 @@ export async function POST(req: NextRequest) {
                 contact: { email: "tenant@example.com" },
             },
             redirectUrl: {
-                // ✅ Include tenant_id, billing_id, agreement_id, and requestReferenceNumber
                 success: `${redirectUrl.success}?amount=${encodeURIComponent(amount)}&requestReferenceNumber=${encodeURIComponent(reference)}&tenant_id=${encodeURIComponent(tenant_id)}&billing_id=${encodeURIComponent(billing_id)}&agreement_id=${encodeURIComponent(agreement_id)}`,
                 failure: `${redirectUrl.failure}?amount=${encodeURIComponent(amount)}&requestReferenceNumber=${encodeURIComponent(reference)}&tenant_id=${encodeURIComponent(tenant_id)}&billing_id=${encodeURIComponent(billing_id)}&agreement_id=${encodeURIComponent(agreement_id)}`,
                 cancel: `${redirectUrl.cancel}?amount=${encodeURIComponent(amount)}&requestReferenceNumber=${encodeURIComponent(reference)}&tenant_id=${encodeURIComponent(tenant_id)}&billing_id=${encodeURIComponent(billing_id)}&agreement_id=${encodeURIComponent(agreement_id)}`,
             },
             items: [
                 {
-                    name: `Billing for ${billing.property_name} - ${billing.unit_name}`,
+                    name: `Monthly Rent Billing for ${billing.property_name} - ${billing.unit_name}`,
                     quantity: 1,
                     totalAmount: { value: Number(amount), currency: "PHP" },
                 },

@@ -14,6 +14,7 @@ import BillingTotal from "./BillingTotal";
 import RentBreakdown from "./RentBreakdown";
 import UtilityBreakdown from "./UtilityBreakdown";
 import PDCSection from "./PDCSection";
+import PaymentSection from "./PaymentSection";
 
 export default function TenantBilling({ agreement_id, user_id }) {
     const {
@@ -49,6 +50,7 @@ export default function TenantBilling({ agreement_id, user_id }) {
                         className="bg-white border rounded-2xl shadow-sm"
                     >
                         <BillingHeader bill={bill} dueDate={dueDate} />
+
                         <BillingTotal totalDue={totals.totalDue} />
 
                         <RentBreakdown
@@ -68,6 +70,13 @@ export default function TenantBilling({ agreement_id, user_id }) {
                         {bill.postDatedChecks?.length > 0 && (
                             <PDCSection pdcs={bill.postDatedChecks} />
                         )}
+
+                        {/* ✅ Payment & Download Section (added here) */}
+                        <PaymentSection
+                            bill={bill}
+                            totalDue={totals.totalDue}
+                            agreement_id={agreement_id}
+                        />
                     </div>
                 );
             })}
