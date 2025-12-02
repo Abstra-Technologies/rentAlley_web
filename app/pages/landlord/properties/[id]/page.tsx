@@ -26,6 +26,7 @@ import { usePropertyData } from "@/hooks/usePropertyData";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import AIUnitGenerator from "@/components/landlord/ai/AIUnitGenerator";
 import InviteTenantModal from "@/components/landlord/properties/InviteTenantModalPerProperty";
+import BulkImportUnitModal from "@/components/landlord/properties/BulkImportUnitModal";
 
 const ViewPropertyDetailedPage = () => {
     const { id } = useParams();
@@ -48,6 +49,7 @@ const ViewPropertyDetailedPage = () => {
     const [draggableUnits, setDraggableUnits] = useState<any[]>([]);
 
     const [inviteModalOpen, setInviteModalOpen] = useState(false);
+    const [bulkImportModal, setBulkImportModal] = useState(false);
 
     useEffect(() => {
         if (!user) fetchSession();
@@ -56,6 +58,14 @@ const ViewPropertyDetailedPage = () => {
     useEffect(() => {
         if (units) setDraggableUnits(units);
     }, [units]);
+
+
+    const handleDownloadTemplate = () => {
+        const link = document.createElement("a");
+        link.href = "/templates/unit_bulk_import_template.xlsx"; // <-- you place template in /public/templates/
+        link.download = "Unit Bulk Import Template.xlsx";
+        link.click();
+    };
 
     const handlePageChange = (event: any, value: number) => {
         setPage(value);
@@ -184,6 +194,8 @@ const ViewPropertyDetailedPage = () => {
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+
+                            {/* Add Unit Button */}
                             <button
                                 onClick={handleAddUnitClick}
                                 className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm font-semibold rounded-lg shadow-md hover:from-blue-700 hover:to-emerald-700 transition-all"
@@ -192,6 +204,21 @@ const ViewPropertyDetailedPage = () => {
                                 <span>Add Unit</span>
                             </button>
 
+                            {/* Bulk Import Button (new!) */}
+                            {/* Bulk Import Button */}
+                            <button
+                                onClick={() => setBulkImportModal(true)}
+                                className="flex items-center justify-center gap-2 px-5 py-2
+               bg-gradient-to-r from-indigo-600 to-blue-600
+               text-white text-sm font-semibold rounded-lg shadow-md
+               hover:from-indigo-700 hover:to-blue-700 transition-all"
+                            >
+                                <Sparkles className="h-5 w-5" />
+                                <span>Bulk Import</span>
+                            </button>
+
+
+                            {/* AI Generator Button */}
                             <button
                                 onClick={() => {
                                     if (!subscription || subscription?.is_active !== 1) {
@@ -211,11 +238,10 @@ const ViewPropertyDetailedPage = () => {
                                 <span>Generate with AI</span>
                             </button>
 
+                            {/* Invite Tenant */}
                             <button
                                 onClick={() => setInviteModalOpen(true)}
-                                className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r
-    from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg
-    shadow-md hover:from-purple-700 hover:to-pink-700 transition-all"
+                                className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg shadow-md hover:from-purple-700 hover:to-pink-700 transition-all"
                             >
                                 <Sparkles className="h-5 w-5" />
                                 <span>Invite Tenant</span>
@@ -296,6 +322,16 @@ const ViewPropertyDetailedPage = () => {
                     onClose={() => setInviteModalOpen(false)}
                 />
             )}
+
+
+            {bulkImportModal && (
+                <BulkImportUnitModal
+                    isOpen={bulkImportModal}
+                    onClose={() => setBulkImportModal(false)}
+                    propertyId={property_id}
+                />
+            )}
+
 
         </div>
     );
