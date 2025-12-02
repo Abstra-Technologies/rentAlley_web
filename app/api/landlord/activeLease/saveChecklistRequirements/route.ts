@@ -16,20 +16,50 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        const [rows]: any = await db.query(
+        // 1️⃣ Fetch setup requirements
+        const [reqRows]: any = await db.query(
             `
-            SELECT *
-            FROM rentalley_db.LeaseSetupRequirements
+                SELECT *
+                FROM rentalley_db.LeaseSetupRequirements
+                WHERE agreement_id = ?
+                LIMIT 1
+            `,
+            [agreement_id]
+        );
+
+        const requirements = reqRows?.[0] || null;
+
+        // 2️⃣ Check if LeaseAgreement document is uploaded
+        const [agreementRows]: any = await db.query(
+            `
+            SELECT agreement_url
+            FROM rentalley_db.LeaseAgreement
             WHERE agreement_id = ?
             LIMIT 1
             `,
             [agreement_id]
         );
 
+        let document_uploaded = false;
+
+        if (agreementRows.length > 0) {
+            const url = agreementRows[0].agreement_url;
+
+            // If encrypted JSON string exists & not empty
+            if (url !== null && url !== "" && url !== "null") {
+                document_uploaded = true;
+            }
+        }
+
         return NextResponse.json(
-            { success: true, requirements: rows?.[0] || null },
+            {
+                success: true,
+                requirements,
+                document_uploaded, // 🔥 NEW FIELD
+            },
             { status: 200 }
         );
+
     } catch (error) {
         console.error("❌ Error fetching checklist:", error);
         return NextResponse.json(

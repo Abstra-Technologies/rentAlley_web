@@ -13,11 +13,12 @@ import {
 
 export default function LeaseSetupWizard() {
     const router = useRouter();
-    const { propertyId, agreement_id } = useParams();
-    const { id } = useParams();
+    const { id, agreement_id } = useParams();
+
     const property_id = id;
 
     const [requirements, setRequirements] = useState(null);
+    const [documentUploaded, setDocumentUploaded] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -28,17 +29,17 @@ export default function LeaseSetupWizard() {
                 );
 
                 setRequirements(reqRes.data.requirements || {});
+                setDocumentUploaded(reqRes.data.document_uploaded || false);
+
                 setLoading(false);
             } catch (err) {
                 console.error("❌ Failed to load:", err);
-                router.replace(
-                    `/pages/landlord/properties/${propertyId}/activeLease`
-                );
+                router.replace(`/pages/landlord/properties/${property_id}/activeLease`);
             }
         };
 
         load();
-    }, [agreement_id, propertyId, router]);
+    }, [agreement_id, property_id, router]);
 
     if (loading || !requirements) {
         return (
@@ -51,6 +52,7 @@ export default function LeaseSetupWizard() {
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
             <div className="w-full max-w-lg">
+
                 {/* HEADER */}
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
@@ -61,10 +63,10 @@ export default function LeaseSetupWizard() {
                     </p>
                 </div>
 
-                {/* STEPS WRAPPER */}
+                {/* STEPS */}
                 <div className="space-y-5">
 
-                    {/* STEP 1 */}
+                    {/* STEP 1 — Lease Agreement */}
                     {requirements.lease_agreement && (
                         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm transition hover:shadow-md">
                             <div className="flex items-center gap-3">
@@ -76,9 +78,15 @@ export default function LeaseSetupWizard() {
                                     <h2 className="font-semibold text-gray-900">
                                         Step 1: Lease Agreement
                                     </h2>
-                                    <p className="text-xs text-gray-500 mt-0.5">
-                                        Prepare and review the rental contract.
-                                    </p>
+                                    {!documentUploaded ? (
+                                        <p className="text-xs text-gray-500 mt-0.5">
+                                            Prepare and review the rental contract.
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-green-600 mt-0.5">
+                                            ✓ Document uploaded — you may continue.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -95,36 +103,54 @@ export default function LeaseSetupWizard() {
                                     transition-all
                                 "
                             >
-                                Start Lease Agreement
+                                {!documentUploaded
+                                    ? "Start Lease Agreement"
+                                    : "Continue Lease Agreement"}
                             </button>
                         </div>
                     )}
 
-                    {/* STEP 2 */}
+                    {/* STEP 2 — Move-in Checklist */}
                     {requirements.move_in_checklist && (
-                        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm opacity-60">
+                        <div
+                            className={`bg-white p-5 rounded-2xl border border-gray-200 shadow-sm transition 
+                                ${documentUploaded ? "opacity-100 hover:shadow-md cursor-pointer" : "opacity-60"}
+                            `}
+                            onClick={() => {
+                                if (documentUploaded) {
+                                    router.push(
+                                        `/pages/landlord/properties/${property_id}/activeLease/setup/movein?agreement_id=${agreement_id}`
+                                    );
+                                }
+                            }}
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-gray-100">
-                                    <ClipboardList className="w-5 h-5 text-gray-400" />
+                                    <ClipboardList className={`w-5 h-5 ${documentUploaded ? "text-blue-600" : "text-gray-400"}`} />
                                 </div>
 
                                 <div className="flex-1">
-                                    <h2 className="font-semibold text-gray-700">
+                                    <h2 className={`font-semibold ${documentUploaded ? "text-gray-900" : "text-gray-700"}`}>
                                         Step 2: Move-in Checklist
                                     </h2>
-                                    <p className="text-xs text-gray-500 mt-0.5">
-                                        Complete Step 1 to unlock.
-                                    </p>
+                                    {!documentUploaded ? (
+                                        <p className="text-xs text-gray-500 mt-0.5">
+                                            Complete Step 1 to unlock.
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-green-600 mt-0.5">
+                                            ✓ Ready to proceed
+                                        </p>
+                                    )}
                                 </div>
 
-                                <Lock className="w-4 h-4 text-gray-400" />
+                                {!documentUploaded && <Lock className="w-4 h-4 text-gray-400" />}
                             </div>
                         </div>
                     )}
 
-                    {/* STEP 3 */}
-                    {(requirements.security_deposit ||
-                        requirements.advance_payment) && (
+                    {/* STEP 3 — Initial Payments */}
+                    {(requirements.security_deposit || requirements.advance_payment) && (
                         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm opacity-60">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-gray-100">
@@ -145,7 +171,7 @@ export default function LeaseSetupWizard() {
                         </div>
                     )}
 
-                    {/* STEP 4 */}
+                    {/* STEP 4 — Review */}
                     <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm opacity-60">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-lg bg-gray-100">

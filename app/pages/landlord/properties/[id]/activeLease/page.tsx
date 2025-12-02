@@ -199,36 +199,15 @@ export default function PropertyLeasesPage() {
 
                                         {/* ACTION BUTTONS */}
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+
+                                            {/* INVITE ROW */}
                                             {lease.type === "invite" ? (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-amber-500/80 text-white shadow-sm">
-                                                        <MailCheck className="w-4 h-4" />
-                                                        Invite Sent
-                                                    </span>
-                                            ) : !lease.lease_status || lease.lease_status === "draft" ? (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSetupModalLease(lease); // ⬅ OPEN MODAL
-                                                    }}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm
-                                                        bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700
-                                                        text-white transition-all shadow-sm"
-                                                >
-                                                    <FileSignature className="w-4 h-4" />
-                                                    Setup
-                                                </button>
-                                            ) : lease.lease_status === "pending_signature" ? (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleAuthenticate(lease);
-                                                    }}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-all shadow-sm"
-                                                >
-                                                    <ShieldCheck className="w-4 h-4" />
-                                                    Authenticate
-                                                </button>
+            <MailCheck className="w-4 h-4" />
+            Invite Sent
+        </span>
                                             ) : lease.lease_status === "active" ? (
+                                                // 🟩 View Details (ACTIVE ONLY)
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -240,9 +219,44 @@ export default function PropertyLeasesPage() {
                                                     View Details
                                                 </button>
                                             ) : (
-                                                <span className="text-gray-400 text-xs">—</span>
+                                                // 🟦 SETUP BUTTON (SHOW UNTIL ACTIVE)
+                                                <div className="flex flex-col items-end gap-2">
+
+                                                    {/* Setup button always visible unless active */}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSetupModalLease(lease);
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm
+                            bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700
+                            text-white transition-all shadow-sm"
+                                                    >
+                                                        <FileSignature className="w-4 h-4" />
+                                                        Setup
+                                                    </button>
+
+                                                    {/* Authenticate button appears when pending_signature */}
+                                                    {lease.lease_status === "pending_signature" && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleAuthenticate(lease);
+                                                            }}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm
+                                bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600
+                                text-white transition-all shadow-sm"
+                                                        >
+                                                            <ShieldCheck className="w-4 h-4" />
+                                                            Authenticate
+                                                        </button>
+                                                    )}
+                                                </div>
                                             )}
+
                                         </td>
+
+
                                     </tr>
                                 ))}
                                 </tbody>
