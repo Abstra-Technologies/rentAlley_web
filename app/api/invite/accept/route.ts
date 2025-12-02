@@ -97,7 +97,7 @@ export async function POST(req: Request) {
                  SET tenant_id = ?, 
                      start_date = ?, 
                      end_date = ?, 
-                     status = 'active',
+                     status = 'draft',
                      updated_at = CURRENT_TIMESTAMP
                  WHERE agreement_id = ?`,
                 [tenant.tenant_id, leaseStart, leaseEnd, leaseId]

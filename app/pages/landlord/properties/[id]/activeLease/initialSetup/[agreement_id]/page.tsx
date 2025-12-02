@@ -14,6 +14,8 @@ import {
 export default function LeaseSetupWizard() {
     const router = useRouter();
     const { propertyId, agreement_id } = useParams();
+    const { id } = useParams();
+    const property_id = id;
 
     const [requirements, setRequirements] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export default function LeaseSetupWizard() {
                             <button
                                 onClick={() =>
                                     router.push(
-                                        `/pages/landlord/properties/${propertyId}/activeLease/setup?agreement_id=${agreement_id}`
+                                        `/pages/landlord/properties/${property_id}/activeLease/setup?agreement_id=${agreement_id}`
                                     )
                                 }
                                 className="
