@@ -14,9 +14,8 @@ import {
   CheckCheck,
   X,
 } from "lucide-react";
+import Picker from "emoji-mart";
 import data from "@emoji-mart/data";
-// @ts-ignore
-import Picker from "@emoji-mart/react";
 
 const socket: Socket = io(
   process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000",
