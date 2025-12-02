@@ -7,9 +7,7 @@ export async function GET(req: NextRequest) {
     const userId = searchParams.get("user_id");
 
     try {
-        /* -----------------------------------------------------
-           1️⃣ Resolve Tenant ID (if user_id provided)
-        ----------------------------------------------------- */
+
         let tenantId: number | null = null;
 
         if (userId) {
@@ -20,9 +18,7 @@ export async function GET(req: NextRequest) {
             tenantId = tenant[0]?.tenant_id || null;
         }
 
-        /* -----------------------------------------------------
-           2️⃣ Resolve latest lease agreement
-        ----------------------------------------------------- */
+
         if (!agreementId && tenantId) {
             const [agreements]: any = await db.query(
                 `
@@ -45,7 +41,7 @@ export async function GET(req: NextRequest) {
         }
 
         /* -----------------------------------------------------
-           3️⃣ Fetch Lease + Unit + Property
+          ⃣ Fetch Lease + Unit + Property
         ----------------------------------------------------- */
         const [leaseInfo]: any = await db.query(
             `
@@ -82,14 +78,14 @@ export async function GET(req: NextRequest) {
         } = leaseInfo[0];
 
         /* -----------------------------------------------------
-           4️⃣ Compute Base Rent
+           Compute Base Rent
         ----------------------------------------------------- */
         let baseRent = Number(lease_rent_amount || 0);
         if (!baseRent || baseRent <= 0)
             baseRent = Number(unit_rent_amount || 0);
 
         /* -----------------------------------------------------
-           5️⃣ Property Configuration
+          ⃣ Property Configuration
         ----------------------------------------------------- */
         const [cfg]: any = await db.query(
             `
@@ -104,7 +100,7 @@ export async function GET(req: NextRequest) {
         const propertyConfig = cfg[0] || null;
 
         /* -----------------------------------------------------
-           6️⃣ Fetch LATEST concessionaire billing cycle
+           Fetch LATEST concessionaire billing cycle
         ----------------------------------------------------- */
         const [conRows]: any = await db.query(
             `
@@ -131,7 +127,7 @@ export async function GET(req: NextRequest) {
         const cycle_end = concessionaire?.period_end || null;
 
         /* -----------------------------------------------------
-           7️⃣ Fetch Billing for current MONTH
+           Fetch Billing for current MONTH
         ----------------------------------------------------- */
         const [billingRows]: any = await db.query(
             `
@@ -148,7 +144,7 @@ export async function GET(req: NextRequest) {
         const billing = billingRows[0] || null;
 
         /* -----------------------------------------------------
-           8️⃣ Fetch Water Reading for latest concessionaire period
+           Fetch Water Reading for latest concessionaire period
         ----------------------------------------------------- */
         const [waterReading]: any = await db.query(
             `
@@ -162,7 +158,7 @@ export async function GET(req: NextRequest) {
         );
 
         /* -----------------------------------------------------
-           9️⃣ Fetch Electric Reading for latest concessionaire period
+           Fetch Electric Reading for latest concessionaire period
         ----------------------------------------------------- */
         const [electricReading]: any = await db.query(
             `
@@ -176,7 +172,7 @@ export async function GET(req: NextRequest) {
         );
 
         /* -----------------------------------------------------
-           🔟 Additional Billing Charges
+            Additional Billing Charges
         ----------------------------------------------------- */
         let billingAdditionalCharges: any[] = [];
         if (billing) {
@@ -188,7 +184,7 @@ export async function GET(req: NextRequest) {
         }
 
         /* -----------------------------------------------------
-           1️⃣1️⃣ Lease Additional Expenses
+           Lease Additional Expenses
         ----------------------------------------------------- */
         const [leaseExpenses]: any = await db.query(
             `
@@ -219,7 +215,7 @@ export async function GET(req: NextRequest) {
         );
 
         /* -----------------------------------------------------
-           1️⃣3️⃣ Build Final Response
+        Final Response
         ----------------------------------------------------- */
 
         const response = {

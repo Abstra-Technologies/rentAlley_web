@@ -14,6 +14,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import axios from "axios";
+import { LogOut } from 'lucide-react';
 
 interface PropertyInfo {
   property_name: string;
@@ -66,12 +67,18 @@ export default function TenantPortalLayout({
     },
     { slug: "announcement", icon: BellIcon, label: "Announcements" },
     { slug: "maintenance", icon: WrenchScrewdriverIcon, label: "Maintenance" },
+      { slug: "exit", icon: LogOut, label: "Exit Portal" },
+
   ].map(({ slug, icon, label }) => {
     let href = "";
 
     if (slug === "rentalPortal") {
       href = `/pages/tenant/rentalPortal/${agreement_id}`;
-    } else {
+    }
+    else if (slug === "exit") {
+        href = `/pages/tenant/my-unit`;
+    }
+    else {
       href = `/pages/tenant/rentalPortal/${agreement_id}/${slug}`;
     }
 
