@@ -227,57 +227,61 @@ function Register() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              {/* First Name */}
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  onFocus={() => setFocusedField("firstName")}
-                  onBlur={() => setFocusedField("")}
-                  className={`w-full px-4 py-3 border-2 rounded-xl text-sm transition-all ${
-                    focusedField === "firstName"
-                      ? "border-blue-500 ring-2 ring-blue-500/10"
-                      : "border-gray-200 hover:border-gray-300"
-                  } bg-white/80 placeholder:text-gray-400 focus:outline-none`}
-                  placeholder="Juan"
-                  disabled={isRegistering}
-                />
-              </div>
+                {/* First & Last Name - Side by Side */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* First Name */}
+                    <div>
+                        <label
+                            htmlFor="firstName"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                            First Name
+                        </label>
+                        <input
+                            type="text"
+                            id="firstName"
+                            value={formData.firstName}
+                            onChange={handleChange}
+                            onFocus={() => setFocusedField("firstName")}
+                            onBlur={() => setFocusedField("")}
+                            className={`w-full px-4 py-3 border-2 rounded-xl text-sm transition-all ${
+                                focusedField === "firstName"
+                                    ? "border-blue-500 ring-2 ring-blue-500/10"
+                                    : "border-gray-200 hover:border-gray-300"
+                            } bg-white/80 placeholder:text-gray-400 focus:outline-none`}
+                            placeholder="Juan"
+                            disabled={isRegistering}
+                        />
+                    </div>
 
-              {/* Last Name */}
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  onFocus={() => setFocusedField("lastName")}
-                  onBlur={() => setFocusedField("")}
-                  className={`w-full px-4 py-3 border-2 rounded-xl text-sm transition-all ${
-                    focusedField === "lastName"
-                      ? "border-blue-500 ring-2 ring-blue-500/10"
-                      : "border-gray-200 hover:border-gray-300"
-                  } bg-white/80 placeholder:text-gray-400 focus:outline-none`}
-                  placeholder="Dela Cruz"
-                  disabled={isRegistering}
-                />
-              </div>
+                    {/* Last Name */}
+                    <div>
+                        <label
+                            htmlFor="lastName"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                            Last Name
+                        </label>
+                        <input
+                            type="text"
+                            id="lastName"
+                            value={formData.lastName}
+                            onChange={handleChange}
+                            onFocus={() => setFocusedField("lastName")}
+                            onBlur={() => setFocusedField("")}
+                            className={`w-full px-4 py-3 border-2 rounded-xl text-sm transition-all ${
+                                focusedField === "lastName"
+                                    ? "border-blue-500 ring-2 ring-blue-500/10"
+                                    : "border-gray-200 hover:border-gray-300"
+                            } bg-white/80 placeholder:text-gray-400 focus:outline-none`}
+                            placeholder="Dela Cruz"
+                            disabled={isRegistering}
+                        />
+                    </div>
+                </div>
 
-              {/* Email */}
+
+                {/* Email */}
               <div>
                 <label
                   htmlFor="email"

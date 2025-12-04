@@ -111,51 +111,64 @@ export default function VerifyOTP() {
   };
 
 
-  return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <ToastContainer />
-      <div className="bg-white p-6 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold mb-4 text-center">
-          Verify Your Email
-        </h2>
-        <p className="text-gray-600 text-sm text-center mb-4">
-          Enter the 6-digit OTP sent to your email.
-        </p>
-        <input
-          type="text"
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
-          placeholder="Enter OTP"
-          className="w-full p-2 border rounded-md mb-2 text-center"
-          maxLength="6"
-          required
-        />
-        <button
-          onClick={handleVerify}
-          className="w-full p-2 bg-blue-600 text-white rounded-md"
-          disabled={loading}
-        >
-          {verifying ? "Verifying..." : "Verify OTP"}
-        </button>
+    return (
+        <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-blue-700 via-emerald-600 to-blue-900 px-4">
+            <ToastContainer />
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">Didn't receive the OTP?</p>
-          <p className="text-sm text-gray-600 mb-2">
-            Resend available in: {formatTime(timeLeft)}
-          </p>
-          <button
-            onClick={handleResendOTP}
-            className={`text-sm text-white p-2 rounded-md ${
-              loading || timeLeft > 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600"
-            }`}
-            disabled={loading || timeLeft > 0}
-          >
-            {resending ? "Resending..." : "Resend OTP"}
-          </button>
+            <div className="w-full max-w-sm bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/30">
+                <h2 className="text-2xl font-bold mb-2 text-center text-gray-800">
+                    Verify Your Email
+                </h2>
+
+                <p className="text-gray-600 text-sm text-center mb-6">
+                    Enter the 6-digit code sent to your email.
+                </p>
+
+                {/* OTP Input */}
+                <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="• • • • • •"
+                    className="w-full p-3 text-center tracking-[0.5em] text-lg border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl transition-all mb-4"
+                    maxLength="6"
+                    inputMode="numeric"
+                />
+
+                {/* Verify Button */}
+                <button
+                    onClick={handleVerify}
+                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all active:scale-[0.98]"
+                    disabled={verifying}
+                >
+                    {verifying ? "Verifying..." : "Verify OTP"}
+                </button>
+
+                {/* Timer + Resend */}
+                <div className="mt-6 text-center">
+                    <p className="text-sm text-gray-600">Didn’t receive the code?</p>
+
+                    <p className="text-sm text-gray-800 font-medium mt-1">
+                        Resend available in{" "}
+                        <span className="text-blue-600">{formatTime(timeLeft)}</span>
+                    </p>
+
+                    <button
+                        onClick={handleResendOTP}
+                        className={`w-full mt-3 py-2.5 rounded-xl text-sm font-medium transition-all
+            ${
+                            timeLeft > 0
+                                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                : "bg-gray-800 text-white hover:bg-black active:scale-[0.98]"
+                        }
+          `}
+                        disabled={timeLeft > 0}
+                    >
+                        {resending ? "Resending..." : "Resend OTP"}
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
+
 }
