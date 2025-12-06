@@ -165,7 +165,7 @@ export default function SubscriptionPlans() {
             }
 
             /* =====================================================
-               💳 3. PAID PLAN (NO TRIAL) → GO TO REVIEW PAGE
+               3. PAID PLAN (NO TRIAL) → GO TO REVIEW PAGE
             ===================================================== */
             let amountToCharge = null;
 

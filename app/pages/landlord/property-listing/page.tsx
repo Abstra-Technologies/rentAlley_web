@@ -386,7 +386,7 @@ const PropertyListingPage: React.FC = () => {
               </p>
               <button
                 onClick={() =>
-                  router.push("/pages/landlord/subscription_plan/pricing")
+                  router.push("/pages/landlord/subsciption_plan/pricing")
                 }
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-medium transition-all text-sm"
               >
