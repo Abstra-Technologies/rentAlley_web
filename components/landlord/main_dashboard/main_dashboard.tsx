@@ -175,7 +175,7 @@ const LandlordMainDashboard = () => {
         {/* PROPERTY MARQUEE */}
         <div className="mb-6 w-full">
           <div className="rounded-2xl bg-white shadow-md border border-gray-100 overflow-hidden py-4 w-full">
-            <LandlordPropertyMarquee landlordId={user?.landlord_id} />
+            {/*<LandlordPropertyMarquee landlordId={user?.landlord_id} />*/}
           </div>
         </div>
 
