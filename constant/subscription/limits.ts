@@ -1,3 +1,4 @@
+//  This contsnat file is iused for subscription limisrs per tier.
 
 export const listingLimits = {
     "Free Plan": {
@@ -10,7 +11,7 @@ export const listingLimits = {
         maxPDC: 0,
     },
     "Standard Plan": {
-        maxProperties: 5,
+        maxProperties: 10,
         maxUnits: 10,
         maxMaintenanceRequest: 10,
         maxReports: 5,

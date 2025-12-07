@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  useMap,
-  useMapEvents,
+    MapContainer,
+    TileLayer,
+    Marker,
+    useMap,
+    useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import { useEffect, useRef, useState } from "react";
@@ -15,163 +15,178 @@ import "leaflet-geosearch/dist/geosearch.css";
 
 // Custom Marker Icon
 const customIcon = L.icon({
-  iconUrl: "/marker.png", // Replace with your own icon
-  iconSize: [30, 30],
-  iconAnchor: [15, 45],
+    iconUrl: "/marker.png",
+    iconSize: [30, 30],
+    iconAnchor: [15, 45],
 });
 
 const defaultPosition = [14.5995, 120.9842]; // Manila
 
 const reverseGeocode = async (lat: number, lng: number) => {
-  try {
-    const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-    );
-    const data = await response.json();
-    return data.address;
-  } catch (error) {
-    console.error("Reverse geocoding failed:", error);
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+        );
+        const data = await response.json();
+        return data.address;
+    } catch (error) {
+        console.error("Reverse geocoding failed:", error);
+        return null;
+    }
+};
+
+// NEW: Recenter map on external coordinate updates
+const RecenterMap = ({ coords }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (coords) map.setView(coords);
+    }, [coords, map]);
     return null;
-  }
 };
 
 const SearchControl = ({ onSelect }) => {
-  const map = useMap();
-  const provider = new OpenStreetMapProvider();
-  const searchControlRef = useRef<any>(null);
+    const map = useMap();
+    const provider = new OpenStreetMapProvider();
+    const searchControlRef = useRef<any>(null);
 
-  useEffect(() => {
-    if (!map) return;
+    useEffect(() => {
+        if (!map) return;
 
-    const searchControl = new GeoSearchControl({
-      provider,
-      showMarker: false,
-      autoClose: true,
-      retainZoomLevel: false,
-      animateZoom: true,
-    });
+        const searchControl = new GeoSearchControl({
+            provider,
+            showMarker: false,
+            autoClose: true,
+            retainZoomLevel: false,
+            animateZoom: true,
+        });
 
-    searchControlRef.current = searchControl;
-    map.addControl(searchControl);
+        searchControlRef.current = searchControl;
+        map.addControl(searchControl);
 
-    map.on("geosearch/showlocation", async (result) => {
-      const { location } = result;
-      const address = await reverseGeocode(location.y, location.x);
-      onSelect?.({
-        lat: location.y,
-        lng: location.x,
-        address,
-      });
-    });
+        map.on("geosearch/showlocation", async (result) => {
+            const { location } = result;
+            const address = await reverseGeocode(location.y, location.x);
 
-    return () => {
-      map.removeControl(searchControl);
-    };
-  }, [map, provider, onSelect]);
+            onSelect?.({
+                lat: location.y,
+                lng: location.x,
+                address,
+            });
+        });
 
-  return null;
+        return () => map.removeControl(searchControl);
+    }, [map]);
+
+    return null;
 };
 
 const DraggableMarker = ({ coords, onMove }) => {
-  const [position, setPosition] = useState(coords || defaultPosition);
+    const [position, setPosition] = useState(coords || defaultPosition);
 
-  useEffect(() => {
-    if (coords && coords[0] !== position[0] && coords[1] !== position[1]) {
-      setPosition(coords);
-    }
-  }, [coords]);
+    useEffect(() => {
+        setPosition(coords);
+    }, [coords]);
 
-  useMapEvents({
-    click(e) {
-      const newCoords = [e.latlng.lat, e.latlng.lng];
-      setPosition(newCoords);
-      onMove(newCoords);
-    },
-  });
+    useMapEvents({
+        click(e) {
+            const newCoords = [e.latlng.lat, e.latlng.lng];
+            setPosition(newCoords);
+            onMove(newCoords);
+        },
+    });
 
-  return (
-      <Marker
-          position={position}
-          draggable
-          eventHandlers={{
-            dragend: async (e) => {
-              const latlng = e.target.getLatLng();
-              const newCoords = [latlng.lat, latlng.lng];
-              setPosition(newCoords);
-              onMove(newCoords);
-            },
-          }}
-          icon={customIcon}
-      />
-  );
+    return (
+        <Marker
+            position={position}
+            draggable
+            eventHandlers={{
+                dragend: async (e) => {
+                    const latlng = e.target.getLatLng();
+                    const newCoords = [latlng.lat, latlng.lng];
+                    setPosition(newCoords);
+                    onMove(newCoords);
+                },
+            }}
+            icon={customIcon}
+        />
+    );
 };
 
 export default function PropertyMap({ setFields, coordinates }) {
-  const [coords, setCoords] = useState(coordinates || defaultPosition);
+    const [coords, setCoords] = useState(coordinates || defaultPosition);
 
-  // Update internal coords if external coordinates prop changes
-  useEffect(() => {
-    if (
-        coordinates &&
-        (coordinates[0] !== coords[0] || coordinates[1] !== coords[1])
-    ) {
-      setCoords(coordinates);
-    }
-  }, [coordinates]);
+    // Sync on external address selection
+    useEffect(() => {
+        if (coordinates) setCoords(coordinates);
+    }, [coordinates]);
 
-  const handleLocationChange = async (newCoords: number[]) => {
-    setCoords(newCoords);
+    const handleLocationChange = async (newCoords: number[]) => {
+        const [lat, lng] = newCoords;
+        setCoords(newCoords);
 
-    const [lat, lng] = newCoords;
-    const address = await reverseGeocode(lat, lng);
+        const address = await reverseGeocode(lat, lng);
+        if (!setFields) return;
 
-    if (setFields && address) {
-      setFields({
-        lat,
-        lng,
-        address: address.road || "",
-        barangay: address.suburb || address.neighbourhood || "",
-        city: address.city || address.town || address.village || "",
-        province: address.state || "",
-        region: address.region || "",
-        postcode: address.postcode || "",
-      });
-    }
-  };
+        if (address) {
+            setFields({
+                latitude: lat,
+                longitude: lng,
+                street: address.road || address.pedestrian || "",
+                brgyDistrict: address.suburb || address.neighbourhood || "",
+                city: address.city || address.town || address.village || "",
+                province:
+                    address.state ||
+                    address.region ||
+                    address.province ||
+                    address.county ||
+                    "",
+                zipCode: address.postcode || "",
+            });
+        }
+    };
 
-  return (
-      <div className="h-[400px] w-full rounded-lg overflow-hidden border">
-        <MapContainer
-            center={coords}
-            zoom={13}
-            scrollWheelZoom
-            style={{ height: "100%", width: "100%" }}
-        >
-          <TileLayer
-              attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <SearchControl
-              onSelect={({ lat, lng, address }) => {
-                const newCoords = [lat, lng];
-                setCoords(newCoords);
+    return (
+        <div className="h-[250px] w-full rounded-lg overflow-hidden border">
+            <MapContainer
+                center={coords}
+                zoom={15}
+                scrollWheelZoom={true}
+                style={{ height: "100%", width: "100%" }}
+            >
+                <TileLayer
+                    attribution="© OpenStreetMap contributors"
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
 
-                if (setFields && address) {
-                  setFields({
-                    lat,
-                    lng,
-                    address: address.road || "",
-                    barangay: address.suburb || address.neighbourhood || "",
-                    city: address.city || address.town || address.village || "",
-                    province: address.state || "",
-                    region: address.region || "",
-                    postcode: address.postcode || "",
-                  });
-                }
-              }}
-          />
-          <DraggableMarker coords={coords} onMove={handleLocationChange} />
-        </MapContainer>
-      </div>
-  );
+                {/* 🔥 FOLLOW THE ADDRESS → RECENTER MAP */}
+                <RecenterMap coords={coords} />
+
+                <SearchControl
+                    onSelect={async ({ lat, lng, address }) => {
+                        const newCoords = [lat, lng];
+                        setCoords(newCoords);
+
+                        if (address && setFields) {
+                            setFields({
+                                latitude: lat,
+                                longitude: lng,
+                                street: address.road || address.pedestrian || "",
+                                brgyDistrict: address.suburb || address.neighbourhood || "",
+                                city: address.city || address.town || address.village || "",
+                                province:
+                                    address.state ||
+                                    address.region ||
+                                    address.province ||
+                                    address.county ||
+                                    "",
+                                zipCode: address.postcode || "",
+                            });
+                        }
+                    }}
+                />
+
+                <DraggableMarker coords={coords} onMove={handleLocationChange} />
+            </MapContainer>
+        </div>
+    );
 }

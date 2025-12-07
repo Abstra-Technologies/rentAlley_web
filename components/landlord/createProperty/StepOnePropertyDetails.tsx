@@ -12,653 +12,492 @@ import dynamic from "next/dynamic";
 const PropertyMap = dynamic(() => import("./propertyMap"), { ssr: false });
 
 export default function StepOneMerged() {
-  const { property, setProperty, photos, setPhotos } = usePropertyStore();
+    const { property, setProperty, photos, setPhotos } = usePropertyStore();
 
-  const [coords, setCoords] = useState<{
-    lat: number | null;
-    lng: number | null;
-  }>({
-    lat: (property as any)?.latitude ?? null,
-    lng: (property as any)?.longitude ?? null,
-  });
+    const [coords, setCoords] = useState({
+        lat: property?.latitude ?? 14.5995,
+        lng: property?.longitude ?? 120.9842,
+    });
 
-  const [addressQuery, setAddressQuery] = useState(
-    (property as any)?.street || ""
-  );
-  const [addressResults, setAddressResults] = useState<any[]>([]);
-  const [showMapModal, setShowMapModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+    const [addressQuery, setAddressQuery] = useState(property?.street || "");
+    const [addressResults, setAddressResults] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-  const resolveProvince = (address: any) =>
-    address?.state ||
-    address?.region ||
-    address?.province ||
-    address?.county ||
-    "";
+    const resolveProvince = (address) =>
+        address?.state ||
+        address?.region ||
+        address?.province ||
+        address?.county ||
+        "";
 
-  /* ---------------- Address Search ---------------- */
-  useEffect(() => {
-    const timeout = setTimeout(async () => {
-      if (addressQuery.length < 4) return setAddressResults([]);
+    /* -----------------------------------------
+       ADDRESS AUTOCOMPLETE SEARCH
+    ----------------------------------------- */
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            if (addressQuery.length < 4) return setAddressResults([]);
 
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            addressQuery
-          )}&addressdetails=1&countrycodes=ph`,
-          { headers: { "User-Agent": "UPKYP-App/1.0" } }
-        );
-        const data = await res.json();
-        setAddressResults(data);
-      } catch (err) {
-        console.error("Address search failed", err);
-      }
-    }, 500);
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+                        addressQuery
+                    )}&addressdetails=1&countrycodes=ph`
+                );
+                const data = await res.json();
+                setAddressResults(data);
+            } catch (err) {
+                console.error("Search failed:", err);
+            }
+        }, 500);
 
-    return () => clearTimeout(timeout);
-  }, [addressQuery]);
+        return () => clearTimeout(timeout);
+    }, [addressQuery]);
 
-  /* ---------------- Select Address ---------------- */
-  const handleAddressSelect = (place: any) => {
-    const { lat, lon, display_name, address } = place;
+    /* -----------------------------------------
+       SELECT ADDRESS FROM AUTOCOMPLETE
+    ----------------------------------------- */
+    const handleAddressSelect = (place) => {
+        const { lat, lon, display_name, address } = place;
 
-    const parsed = {
-      lat: parseFloat(lat),
-      lng: parseFloat(lon),
-      street: address?.road || address?.pedestrian || display_name,
-      brgyDistrict: address?.suburb || address?.neighbourhood || "",
-      city: address?.city || address?.town || address?.village || "",
-      province: resolveProvince(address),
-      zipCode: address?.postcode || "",
-      latitude: parseFloat(lat),
-      longitude: parseFloat(lon),
+        const parsed = {
+            street: address?.road || address?.pedestrian || display_name || "",
+            brgyDistrict: address?.suburb || address?.neighbourhood || "",
+            city: address?.city || address?.town || address?.village || "",
+            province: resolveProvince(address),
+            zipCode: address?.postcode || "",
+            latitude: Number(lat),
+            longitude: Number(lon),
+        };
+
+        // Update global Zustand store
+        setProperty({ ...property, ...parsed });
+
+        // Update UI
+        setAddressQuery(parsed.street);
+        setCoords({ lat: parsed.latitude, lng: parsed.longitude });
+
+        // Hide dropdown
+        setAddressResults([]);
     };
 
-    setCoords({ lat: parsed.lat, lng: parsed.lng });
-    setProperty({ ...property, ...parsed });
-    setAddressQuery(parsed.street);
-    setAddressResults([]);
-  };
+    /* -----------------------------------------
+       GENERIC FORM INPUT HANDLER
+    ----------------------------------------- */
+    const handleChange = (e) => {
+        setProperty({ ...property, [e.target.name]: e.target.value });
+    };
 
-  /* ---------------- Handle Inputs ---------------- */
-  const handleChange = (e: any) => {
-    const { name, value } = e.target;
-    setProperty({ ...property, [name]: value });
-  };
+    /* -----------------------------------------
+       PHOTO UPLOAD
+    ----------------------------------------- */
+    const onDrop = (acceptedFiles) => {
+        const newPhotos = acceptedFiles.map((file) => ({
+            file,
+            preview: URL.createObjectURL(file),
+        }));
+        setPhotos([...photos, ...newPhotos]);
+    };
 
-  /* ---------------- Get Current Location ---------------- */
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      console.error("Geolocation not supported by browser.");
-      alert("Geolocation is not supported by your browser.");
-      return;
-    }
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        accept: "image/*",
+        multiple: true,
+        onDrop,
+    });
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setCoords({ lat: latitude, lng: longitude });
+    const removeImage = (i) => {
+        setPhotos(photos.filter((_, idx) => idx !== i));
+    };
+
+    /* -----------------------------------------
+       AI DESCRIPTION
+    ----------------------------------------- */
+    const handleGenerateDescription = async () => {
+        setLoading(true);
+
+        const p = property;
+
+        const prompt = `
+    Create a compelling property description based on:
+    Name: ${p.propertyName}
+    Type: ${p.propertyType}
+    Amenities: ${p.amenities?.join(", ") || "None"}
+    Address: ${p.street}, ${p.brgyDistrict}, ${p.city}, ${p.zipCode}, ${p.province}
+    `;
 
         try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
-            { headers: { "User-Agent": "UPKYP-App/1.0" } }
-          );
-          const data = await res.json();
-          const address = data.address || {};
+            const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "deepseek/deepseek-r1:free",
+                    messages: [
+                        { role: "system", content: "You are a real estate assistant." },
+                        { role: "user", content: prompt },
+                    ],
+                }),
+            });
 
-          const parsed = {
-            street: address.road || data.display_name,
-            brgyDistrict: address.suburb || address.neighbourhood || "",
-            city: address.city || address.town || address.village || "",
-            province: resolveProvince(address),
-            zipCode: address.postcode || "",
-            latitude,
-            longitude,
-          };
+            const data = await res.json();
+            const text = data?.choices?.[0]?.message?.content?.trim();
 
-          setProperty({ ...property, ...parsed });
-          setAddressQuery(parsed.street);
-        } catch (e) {
-          console.error("Reverse geocode failed", e);
-          setProperty({ ...property, latitude, longitude });
+            if (text) setProperty({ ...property, propDesc: text });
+        } catch (err) {
+            console.error(err);
+            alert("Failed to generate description");
         }
-      },
-      (err) => {
-        console.error("Location error:", err);
-        alert(
-          "Unable to access your location. Please enable location permissions and try again."
-        );
-      }
-    );
-  };
 
-  /* ---------------- Dropzone ---------------- */
-  const onDrop = (acceptedFiles: File[]) => {
-    const newPhotos = acceptedFiles.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setPhotos([...photos, ...newPhotos]);
-  };
+        setLoading(false);
+    };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: "image/*",
-    multiple: true,
-  });
+    /* -----------------------------------------
+       MAP CALLBACK → updates form fields LIVE
+    ----------------------------------------- */
+    const mapSetFields = (data) => {
+        if (!data) return;
 
-  const removeImage = (i: number) => {
-    setPhotos(photos.filter((_, idx) => idx !== i));
-  };
+        const parsed = {
+            street: data.street || "",
+            brgyDistrict: data.brgyDistrict || "",
+            city: data.city || "",
+            province: data.province || "",
+            zipCode: data.zipCode || "",
+            latitude: data.latitude,
+            longitude: data.longitude,
+        };
 
-  /* ---------------- Map Pin Handler ---------------- */
-  const handleMapPinSelect = async (lat: number, lng: number) => {
-    setCoords({ lat, lng });
+        setProperty({ ...property, ...parsed });
 
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-        { headers: { "User-Agent": "UPKYP-App/1.0" } }
-      );
-      const data = await res.json();
-      const address = data.address || {};
+        if (parsed.street) setAddressQuery(parsed.street);
+        setCoords({ lat: parsed.latitude, lng: parsed.longitude });
+    };
 
-      const parsed = {
-        street: address.road || data.display_name,
-        brgyDistrict: address.suburb || address.neighbourhood || "",
-        city: address.city || address.town || address.village || "",
-        province: resolveProvince(address),
-        zipCode: address.postcode || "",
-        latitude: lat,
-        longitude: lng,
-      };
+    /* -----------------------------------------
+       TOGGLE PREFERENCES
+    ----------------------------------------- */
+    const togglePreference = (key) => {
+        const prefs = property.propertyPreferences || [];
+        setProperty({
+            ...property,
+            propertyPreferences: prefs.includes(key)
+                ? prefs.filter((v) => v !== key)
+                : [...prefs, key],
+        });
+    };
 
-      setProperty({ ...property, ...parsed });
-      setAddressQuery(parsed.street);
-    } catch (e) {
-      console.error("Pin reverse geocode failed:", e);
-      setProperty({ ...property, latitude: lat, longitude: lng });
-    }
+    /* -----------------------------------------
+       PAGE RENDER
+    ----------------------------------------- */
+    return (
+        <div className="bg-white shadow-xl rounded-xl p-6 sm:p-8 lg:p-10 space-y-12">
 
-    setShowMapModal(false);
-  };
-
-  /* ---------------- AI Description ---------------- */
-  const handleGenerateDescription = async () => {
-    setLoading(true);
-
-    const p = property as any;
-
-    const prompt = `
-Generate a compelling property description:
-- Name: ${p.propertyName}
-- Type: ${p.propertyType}
-- Amenities: ${p.amenities?.join(", ") || "None"}
-- Location: ${p.street}, ${p.brgyDistrict}, ${p.city}, ${p.zipCode}, ${
-      p.province
-    }
-        `;
-
-    try {
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "deepseek/deepseek-r1:free",
-          messages: [
-            { role: "system", content: "You are a real estate assistant." },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
-
-      const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content?.trim();
-      if (text) setProperty({ ...property, propDesc: text });
-    } catch (e) {
-      console.error(e);
-      alert("Failed to generate description");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ---------------- Toggle Preferences ---------------- */
-  const togglePreference = (key: string) => {
-    const prefs = (property as any).propertyPreferences || [];
-    setProperty({
-      ...property,
-      propertyPreferences: prefs.includes(key)
-        ? prefs.filter((v: any) => v !== key)
-        : [...prefs, key],
-    });
-  };
-
-  /* ---------------- Amenity Handler ---------------- */
-  const handleAmenityChange = (amenity: string) => {
-    const arr = (property as any).amenities || [];
-    setProperty({
-      ...property,
-      amenities: arr.includes(amenity)
-        ? arr.filter((a: string) => a !== amenity)
-        : [...arr, amenity],
-    });
-  };
-
-  return (
-    <div className="bg-white shadow-xl rounded-xl p-5 sm:p-8 lg:p-10 space-y-10 sm:space-y-12 text-[14px] sm:text-[15px]">
-      {/* TITLE */}
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          Property Details
-        </h2>
-        <p className="text-gray-600 mt-1 text-sm sm:text-base">
-          Fill in the details below to create a complete listing.
-        </p>
-      </div>
-
-      <form className="space-y-10 sm:space-y-12">
-        {/* ---------------- Property Type ---------------- */}
-        <div className="space-y-4" id="property-type-section">
-          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-            <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-              1
-            </span>
-            Property Type
-          </h2>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {PROPERTY_TYPES.map((type) => {
-              const active = (property as any).propertyType === type.value;
-              return (
-                <button
-                  type="button"
-                  key={type.value}
-                  onClick={() =>
-                    setProperty({ ...property, propertyType: type.value })
-                  }
-                  className={`flex flex-col items-center justify-center p-2.5 sm:p-3 text-xs sm:text-sm border rounded-lg transition-all ${
-                    active
-                      ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white border-blue-500"
-                      : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                  }`}
-                >
-                  <span className="text-xl sm:text-2xl mb-1">{type.icon}</span>
-                  {type.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ---------------- Property Name ---------------- */}
-        <div className="space-y-3" id="property-name-section">
-          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-            <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-              2
-            </span>
-            Property Details
-          </h2>
-
-          <label className="text-sm font-semibold">Property Name *</label>
-          <input
-            type="text"
-            name="propertyName"
-            value={(property as any).propertyName || ""}
-            onChange={handleChange}
-            className="w-full px-3 py-2.5 text-sm border rounded-lg"
-            placeholder="e.g., Sunshine Residences"
-          />
-        </div>
-
-        {/* ---------------- Location ---------------- */}
-        <div className="space-y-4" id="location-section">
-          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-            <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-              3
-            </span>
-            Property Location
-          </h2>
-
-          <div>
-            <label className="text-sm font-semibold block mb-1.5">
-              Street Address *
-            </label>
-            <input
-              type="text"
-              name="street"
-              value={addressQuery}
-              onChange={(e) => {
-                setAddressQuery(e.target.value);
-                setProperty({ ...property, street: e.target.value });
-              }}
-              className="w-full px-3 py-2.5 text-sm border rounded-lg"
-              placeholder="Start typing address..."
-            />
-
-            {addressResults.length > 0 && (
-              <ul className="absolute z-20 bg-white border rounded-xl shadow-xl max-h-60 overflow-auto w-full mt-1 text-sm">
-                {addressResults.map((res, i) => (
-                  <li
-                    key={i}
-                    onClick={() => handleAddressSelect(res)}
-                    className="p-3 hover:bg-blue-50 cursor-pointer"
-                  >
-                    {res.display_name}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="brgyDistrict"
-              value={(property as any).brgyDistrict || ""}
-              onChange={handleChange}
-              className="px-3 py-2.5 text-sm border rounded-lg"
-              placeholder="Barangay / District"
-            />
-            <input
-              type="text"
-              name="city"
-              value={(property as any).city || ""}
-              onChange={handleChange}
-              className="px-3 py-2.5 text-sm border rounded-lg"
-              placeholder="City / Municipality"
-            />
-            <input
-              type="number"
-              name="zipCode"
-              value={(property as any).zipCode || ""}
-              onChange={handleChange}
-              className="px-3 py-2.5 text-sm border rounded-lg"
-              placeholder="Zip Code"
-            />
-            <input
-              type="text"
-              name="province"
-              value={(property as any).province || ""}
-              readOnly
-              className="px-3 py-2.5 text-sm border rounded-lg bg-gray-100"
-              placeholder="Province (auto-filled)"
-            />
-          </div>
-
-          <div className="bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700">
-              Choose how to set location:
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={getCurrentLocation}
-                className="flex items-center justify-center bg-white border border-blue-200 text-blue-700 px-3 py-2.5 rounded-lg hover:bg-blue-50 text-sm"
-              >
-                Use Current Location
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowMapModal(true)}
-                className="flex items-center justify-center bg-white border border-gray-200 px-3 py-2.5 rounded-lg hover:bg-gray-50 text-sm"
-              >
-                Search Address
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowMapModal(true)}
-                className="flex items-center justify-center bg-white border border-emerald-200 text-emerald-700 px-3 py-2.5 rounded-lg hover:bg-emerald-50 text-sm"
-              >
-                Pin on Map
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ---------------- Map Modal ---------------- */}
-        {showMapModal && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-xl w-[90%] max-w-3xl p-4 relative">
-              <button
-                className="absolute top-2 right-2 bg-gray-200 px-2 py-1 rounded"
-                onClick={() => setShowMapModal(false)}
-              >
-                ✕
-              </button>
-
-              <h2 className="text-lg font-semibold mb-3">Select Location</h2>
-
-              <PropertyMap coords={coords} onSelect={handleMapPinSelect} />
-            </div>
-          </div>
-        )}
-
-        {/* ---------------- Amenities ---------------- */}
-        <div className="space-y-4" id="amenities-section">
-          <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-            <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-              4
-            </span>
-            Amenities
-          </h2>
-
-          <div className="bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl p-4 sm:p-6">
-            <AmenitiesSelector
-              selectedAmenities={(property as any).amenities || []}
-              onAmenityChange={handleAmenityChange}
-            />
-          </div>
-        </div>
-
-        {/* ---------------- Description / Others ---------------- */}
-        <div className="space-y-10 sm:space-y-12">
-          {/* Description */}
-          <div className="space-y-3" id="description-section">
-            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-              <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-                5
-              </span>
-              Property Description
-            </h2>
-
-            <textarea
-              name="propDesc"
-              value={(property as any).propDesc || ""}
-              onChange={handleChange}
-              className="w-full h-28 sm:h-32 px-3 py-2.5 text-sm border rounded-lg"
-              placeholder="Describe the property..."
-            />
-
-            <button
-              type="button"
-              onClick={handleGenerateDescription}
-              disabled={loading}
-              className="text-blue-600 underline text-sm sm:text-base"
-            >
-              {loading ? "Generating..." : "Generate with AI"}
-            </button>
-          </div>
-
-          {/* Floor Area */}
-          <div>
-            <label className="font-semibold text-sm">
-              Total Property Size (sqm)
-            </label>
-            <input
-              type="number"
-              name="floorArea"
-              value={(property as any).floorArea || ""}
-              onChange={handleChange}
-              className="w-full px-3 py-2.5 text-sm border rounded-lg"
-            />
-          </div>
-
-          {/* Preferences */}
-          <div className="space-y-4" id="preferences-section">
-            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-              <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-                6
-              </span>
-              Preferences & Rules
-            </h2>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {PROPERTY_PREFERENCES.map((pref) => {
-                const Icon = pref.icon;
-                const isSelected = (
-                  (property as any).propertyPreferences || []
-                ).includes(pref.key);
-                return (
-                  <button
-                    key={pref.key}
-                    onClick={() => togglePreference(pref.key)}
-                    className={`p-3 sm:p-4 text-xs sm:text-sm border rounded-lg flex flex-col items-center ${
-                      isSelected
-                        ? "bg-gradient-to-r from-blue-500 to-emerald-500 text-white border-blue-500"
-                        : "border-gray-300 text-gray-700"
-                    }`}
-                  >
-                    <Icon className="text-lg sm:text-xl mb-1" />
-                    {pref.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Billing */}
-          <div id="billing-section">
-            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2 mb-3">
-              <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-                7
-              </span>
-              Utility Billing
-            </h2>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label className="text-sm font-semibold">Water Billing</label>
-                <select
-                  name="waterBillingType"
-                  value={(property as any).waterBillingType || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 text-sm border rounded-lg"
-                >
-                  <option value="">Select</option>
-                  <option value="included">Included</option>
-                  <option value="provider">Direct to Provider</option>
-                  <option value="submetered">Submetered</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold">
-                  Electricity Billing
-                </label>
-                <select
-                  name="electricityBillingType"
-                  value={(property as any).electricityBillingType || ""}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 text-sm border rounded-lg"
-                >
-                  <option value="">Select</option>
-                  <option value="included">Included</option>
-                  <option value="provider">Direct to Provider</option>
-                  <option value="submetered">Submetered</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Photos */}
-          <div className="space-y-4" id="photos-section">
-            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-              <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-                8
-              </span>
-              Property Photos
-            </h2>
-
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed p-4 sm:p-6 rounded-xl cursor-pointer ${
-                isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
-              }`}
-            >
-              <input {...getInputProps()} />
-              <div className="text-center">
-                <FaImage className="text-3xl sm:text-4xl text-gray-400 mx-auto" />
-                <p className="mt-2 text-gray-700 text-sm">
-                  {isDragActive
-                    ? "Drop photos here..."
-                    : "Drag or click to upload"}
-                </p>
-              </div>
+            {/* TITLE */}
+            <div>
+                <h1 className="text-3xl font-bold">Property Details</h1>
+                <p className="text-gray-600 mt-1">Fill in the details below.</p>
             </div>
 
-            {photos.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {photos.map((file: any, i: number) => (
-                  <div key={i} className="relative group">
-                    <div className="aspect-square bg-gray-100 rounded-md overflow-hidden">
-                      <img
-                        src={file.preview}
-                        className="w-full h-full object-cover"
-                      />
+            <form className="space-y-12">
+
+                {/* ---------------- PROPERTY TYPE ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-4">1. Property Type</h2>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {PROPERTY_TYPES.map((type) => {
+                            const active = property.propertyType === type.value;
+                            return (
+                                <button
+                                    type="button"
+                                    key={type.value}
+                                    onClick={() => setProperty({ ...property, propertyType: type.value })}
+                                    className={`p-3 rounded-lg border ${
+                                        active
+                                            ? "bg-blue-600 text-white border-blue-600"
+                                            : "border-gray-300 hover:border-blue-400"
+                                    }`}
+                                >
+                                    <div className="text-xl">{type.icon}</div>
+                                    {type.label}
+                                </button>
+                            );
+                        })}
                     </div>
+                </div>
+
+                {/* ---------------- PROPERTY NAME ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">2. Property Name</h2>
+
+                    <input
+                        type="text"
+                        name="propertyName"
+                        value={property.propertyName || ""}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        placeholder="e.g., Sunshine Residences"
+                    />
+                </div>
+
+                {/* ---------------- PROPERTY LOCATION ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">3. Property Location</h2>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+                        {/* LEFT SIDE — FIELDS */}
+                        <div className="lg:col-span-2 space-y-4">
+
+                            <div className="relative">
+                                <label className="font-semibold text-sm">Street Address *</label>
+
+                                <input
+                                    type="text"
+                                    value={addressQuery}
+                                    onChange={(e) => {
+                                        setAddressQuery(e.target.value);
+                                        setProperty({ ...property, street: e.target.value });
+                                    }}
+                                    className="w-full px-3 py-2.5 border rounded-lg"
+                                />
+
+                                {addressResults.length > 0 && (
+                                    <ul className="absolute z-20 w-full bg-white border rounded-xl shadow-xl mt-1 max-h-60 overflow-auto">
+                                        {addressResults.map((res, i) => (
+                                            <li
+                                                key={i}
+                                                onClick={() => handleAddressSelect(res)}
+                                                className="p-3 cursor-pointer hover:bg-blue-50"
+                                            >
+                                                {res.display_name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
+                            {/* AUTO POPULATED FIELDS */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input
+                                    name="brgyDistrict"
+                                    value={property.brgyDistrict || ""}
+                                    onChange={handleChange}
+                                    placeholder="Barangay / District"
+                                    className="px-3 py-2.5 border rounded-lg"
+                                />
+
+                                <input
+                                    name="city"
+                                    value={property.city || ""}
+                                    onChange={handleChange}
+                                    placeholder="City / Municipality"
+                                    className="px-3 py-2.5 border rounded-lg"
+                                />
+
+                                <input
+                                    name="zipCode"
+                                    type="number"
+                                    value={property.zipCode || ""}
+                                    onChange={handleChange}
+                                    placeholder="Zip Code"
+                                    className="px-3 py-2.5 border rounded-lg"
+                                />
+
+                                <input
+                                    name="province"
+                                    value={property.province || ""}
+                                    readOnly
+                                    placeholder="Province"
+                                    className="px-3 py-2.5 border rounded-lg bg-gray-100"
+                                />
+                            </div>
+
+                        </div>
+
+                        {/* RIGHT SIDE — SMALL MAP */}
+                        <div className="w-full h-[250px] border rounded-xl overflow-hidden">
+                            <PropertyMap
+                                setFields={mapSetFields}
+                                coordinates={[coords.lat, coords.lng]}
+                            />
+                        </div>
+
+                    </div>
+                </div>
+
+                {/* ---------------- AMENITIES ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">4. Amenities</h2>
+                    <div className="p-4 bg-blue-50 rounded-xl">
+                        <AmenitiesSelector
+                            selectedAmenities={property.amenities || []}
+                            onAmenityChange={(a) => {
+                                const arr = property.amenities || [];
+                                setProperty({
+                                    ...property,
+                                    amenities: arr.includes(a)
+                                        ? arr.filter((x) => x !== a)
+                                        : [...arr, a],
+                                });
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* ---------------- DESCRIPTION ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">5. Property Description</h2>
+
+                    <textarea
+                        name="propDesc"
+                        value={property.propDesc || ""}
+                        onChange={handleChange}
+                        className="w-full h-32 border rounded-lg px-3 py-2"
+                    />
+
                     <button
-                      onClick={() => removeImage(i)}
-                      className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 text-xs"
+                        type="button"
+                        onClick={handleGenerateDescription}
+                        disabled={loading}
+                        className="mt-2 text-blue-600 underline"
                     >
-                      ✕
+                        {loading ? "Generating..." : "Generate with AI"}
                     </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
 
-          {/* Rent Increase */}
-          <div className="space-y-3" id="rent-increase-section">
-            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-              <span className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-[11px] sm:text-xs">
-                9
-              </span>
-              Rent Increase Policy
-            </h2>
+                {/* ---------------- FLOOR AREA ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">6. Total Property Size</h2>
 
-            <label className="text-sm font-semibold">
-              Annual Rent Increase (%)
-            </label>
+                    <input
+                        type="number"
+                        name="floorArea"
+                        value={property.floorArea || ""}
+                        onChange={handleChange}
+                        className="px-3 py-2 border rounded-lg w-full"
+                        placeholder="sqm"
+                    />
+                </div>
 
-            <div className="relative max-w-xs">
-              <input
-                type="number"
-                name="rentIncreasePercent"
-                value={(property as any).rentIncreasePercent || ""}
-                onChange={handleChange}
-                placeholder="5"
-                className="w-full px-3 py-2.5 text-sm border rounded-lg"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                %
-              </span>
-            </div>
+                {/* ---------------- PREFERENCES ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">7. Preferences & Rules</h2>
 
-            <p className="text-xs text-gray-600">
-              Applied annually during lease renewal.
-            </p>
-          </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {PROPERTY_PREFERENCES.map((pref) => {
+                            const Icon = pref.icon;
+                            const active = (property.propertyPreferences || []).includes(pref.key);
+
+                            return (
+                                <button
+                                    key={pref.key}
+                                    onClick={() => togglePreference(pref.key)}
+                                    className={`p-3 rounded-lg border flex flex-col items-center ${
+                                        active
+                                            ? "bg-blue-600 text-white border-blue-600"
+                                            : "border-gray-300"
+                                    }`}
+                                >
+                                    <Icon className="text-lg mb-1" />
+                                    {pref.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* ---------------- UTILITY BILLING ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">8. Utility Billing</h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <select
+                            name="waterBillingType"
+                            value={property.waterBillingType || ""}
+                            onChange={handleChange}
+                            className="border px-3 py-2 rounded-lg"
+                        >
+                            <option value="">Water Billing</option>
+                            <option value="included">Included</option>
+                            <option value="submetered">Submetered</option>
+                        </select>
+
+                        <select
+                            name="electricityBillingType"
+                            value={property.electricityBillingType || ""}
+                            onChange={handleChange}
+                            className="border px-3 py-2 rounded-lg"
+                        >
+                            <option value="">Electricity Billing</option>
+                            <option value="included">Included</option>
+                            <option value="submetered">Submetered</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* ---------------- PHOTOS ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">9. Property Photos</h2>
+
+                    <div
+                        {...getRootProps()}
+                        className={`border-2 border-dashed p-5 rounded-xl cursor-pointer ${
+                            isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+                        }`}
+                    >
+                        <input {...getInputProps()} />
+                        <FaImage className="text-4xl text-gray-400 mx-auto" />
+                        <p className="text-center mt-2 text-gray-600">
+                            {isDragActive ? "Drop photos here…" : "Click or drag images here"}
+                        </p>
+                    </div>
+
+                    {photos.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                            {photos.map((p, i) => (
+                                <div key={i} className="relative group">
+                                    <img
+                                        src={p.preview}
+                                        className="rounded-lg w-full h-32 object-cover"
+                                    />
+                                    <button
+                                        onClick={() => removeImage(i)}
+                                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full px-2 py-1 opacity-0 group-hover:opacity-100"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* ---------------- RENT INCREASE ---------------- */}
+                <div>
+                    <h2 className="text-lg font-semibold mb-3">10. Rent Increase Policy</h2>
+
+                    <div className="relative w-full max-w-xs">
+                        <input
+                            type="number"
+                            name="rentIncreasePercent"
+                            value={property.rentIncreasePercent || ""}
+                            onChange={handleChange}
+                            placeholder="5"
+                            className="w-full px-3 py-2 border rounded-lg"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
+              %
+            </span>
+                    </div>
+
+                    <p className="text-sm text-gray-500 mt-1">
+                        Applied annually during lease renewal.
+                    </p>
+                </div>
+
+            </form>
         </div>
-      </form>
-    </div>
-  );
+    );
 }
