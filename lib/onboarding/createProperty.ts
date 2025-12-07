@@ -104,7 +104,7 @@ export const verificationDocsSteps = [
     popover: {
       title: "Select Document Type",
       description:
-        "Choose the legal document you're submitting - Business Permit, Occupancy Permit, or Property Title.",
+        "Choose the legal document you're submitting - Business Permit, Mayor Permit, or Property Title.",
       side: "bottom",
       align: "start",
     },
