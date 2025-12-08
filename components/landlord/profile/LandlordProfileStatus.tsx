@@ -92,44 +92,44 @@ export default function LandlordProfileStatus({
             </div>
         );
 
-      case "incomplete":
-        return (
-            <div
-                className={`${baseCard} bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200`}
-            >
-              <div className="flex items-start space-x-2 sm:space-x-3">
-                <div className={`${iconBox} bg-gray-100`}>
-                  <AlertCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-gray-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`${titleText} text-gray-800`}>
-                    Complete Your Profile
-                  </p>
-                  <p className={`${descText}`}>
-                    Add missing info to unlock all features.
-                  </p>
+        case "incomplete":
+            return (
+                <div
+                    className={`${baseCard} bg-red-50 border-red-200 hover:bg-red-100 hover:shadow-md transition-all`}
+                >
+                    <div className="flex items-start space-x-2 sm:space-x-3">
+                        <div className={`${iconBox} bg-red-100`}>
+                            <AlertCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-red-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className={`${titleText} text-red-800`}>
+                                Complete Your Profile
+                            </p>
+                            <p className={`${descText}`}>
+                                Add missing info to unlock all features.
+                            </p>
 
-                  {/* Progress bar */}
-                  <div className="mt-2 sm:mt-3 w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
-                    <div
-                        className="bg-blue-600 h-1.5 sm:h-2 rounded-full transition-all"
-                        style={{ width: `${completion}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">
-                    {completion}% completed
-                  </p>
+                            {/* Progress bar */}
+                            <div className="mt-2 sm:mt-3 w-full bg-red-200 rounded-full h-1.5 sm:h-2">
+                                <div
+                                    className="bg-red-600 h-1.5 sm:h-2 rounded-full transition-all"
+                                    style={{ width: `${completion}%` }}
+                                ></div>
+                            </div>
+                            <p className="text-[10px] sm:text-xs text-red-600 mt-0.5">
+                                {completion}% completed
+                            </p>
 
-                  <button
-                      onClick={() => router.push("/pages/landlord/verification")}
-                      className={`${buttonText} text-blue-600 hover:text-blue-700`}
-                  >
-                    Complete Now →
-                  </button>
+                            <button
+                                onClick={() => router.push("/pages/landlord/verification")}
+                                className={`${buttonText} text-red-700 hover:text-red-800`}
+                            >
+                                Complete Now →
+                            </button>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            </div>
-        );
+            );
 
       case "verified":
         return (

@@ -146,7 +146,6 @@ const LandlordMainDashboard = () => {
 
                     {/* PROPERTY CARD */}
                     <div
-                        onClick={() => router.push(`/pages/landlord/properties`)}
                         className="
             relative bg-white rounded-xl shadow-sm p-4 cursor-pointer w-full overflow-hidden
             transition-all duration-300
