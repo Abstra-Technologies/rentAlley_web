@@ -144,66 +144,68 @@ export default function SplashScreen() {
   </div>
 
   {/* Content */}
-  <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-32 pb-20 sm:pb-32">
-    <div className="text-center max-w-4xl mx-auto">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-32 pb-20 sm:pb-32">
+            <div className="text-center max-w-4xl mx-auto">
 
-      <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/30">
-        <Shield className="w-4 h-4 text-white" />
-        <span className="text-sm font-medium text-white">
-          Verified Listings • Smart Property Management
-        </span>
-      </div>
+                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/30">
+                    <Shield className="w-4 h-4 text-white" />
+                    <span className="text-sm font-medium text-white">
+        Verified Listings • Smart Property Management
+      </span>
+                </div>
 
-      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight drop-shadow-md">
-        Manage and Discover Rental Properties in One Platform
-      </h1>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight drop-shadow-md">
+                    Manage and Discover Rental Properties in One Platform
+                </h1>
 
-      <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto drop-shadow">
-        Explore trusted listings and streamline property operations—from tenant
-        management to billing—all in a single, easy-to-use system.
-      </p>
+                <p className="text-base sm:text-lg lg:text-xl text-white/90 mb-10 max-w-2xl mx-auto drop-shadow">
+                    Explore trusted listings and streamline property operations—from tenant
+                    management to billing—all in a single, easy-to-use system.
+                </p>
 
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-8">
-        <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2">
-          <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
-            <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            <input
-              type="text"
-              placeholder="Enter city or location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full outline-none text-base text-gray-900 placeholder-gray-400 bg-transparent"
-            />
-          </div>
+                {/* Search Bar */}
+                <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-8">
+                    <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2">
+                        <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
+                            <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            <input
+                                type="text"
+                                placeholder="Enter city or location..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full outline-none text-base text-gray-900 placeholder-gray-400 bg-transparent"
+                            />
+                        </div>
 
-          <button
-            type="submit"
-            className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 whitespace-nowrap"
-          >
-            <Search className="w-5 h-5" />
-            Search Properties
-          </button>
+                        <button
+                            type="submit"
+                            className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 whitespace-nowrap"
+                        >
+                            <Search className="w-5 h-5" />
+                            Search Properties
+                        </button>
+                    </div>
+                </form>
+
+                {/* Popular Searches */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                    <span className="text-sm text-white/70">Popular:</span>
+                    {["Manila", "Quezon City", "Makati", "Taguig"].map((city) => (
+                        <button
+                            key={city}
+                            onClick={() => router.push(`/pages/find-rent?searchQuery=${city}`)}
+                            className="px-4 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/20 transition-all"
+                        >
+                            {city}
+                        </button>
+                    ))}
+                </div>
+
+            </div>
         </div>
-      </form>
 
-      {/* Popular Searches */}
-      <div className="flex flex-wrap gap-2 justify-center">
-        <span className="text-sm text-white/70">Popular:</span>
-        {["Manila", "Quezon City", "Makati", "Taguig"].map((city) => (
-          <button
-            key={city}
-            onClick={() => router.push(`/pages/find-rent?searchQuery=${city}`)}
-            className="px-4 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/20 transition-all"
-          >
-            {city}
-          </button>
-        ))}
-      </div>
 
     </div>
-  </div>
-</div>
 
 
       <section>
