@@ -144,7 +144,7 @@ export default function SplashScreen() {
   </div>
 
   {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-32 pb-20 sm:pb-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-20 sm:pb-32">
             <div className="text-center max-w-4xl mx-auto">
 
                 <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-white/30">
@@ -165,36 +165,36 @@ export default function SplashScreen() {
 
                 {/* Search Bar */}
                 <form onSubmit={handleSearch} className="max-w-3xl mx-auto mb-8">
-                    <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2">
-                        <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl">
-                            <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    <div className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2 lg:gap-1.5">
+                        <div className="flex-1 flex items-center gap-3 px-4 py-3 lg:px-3 lg:py-2 bg-gray-50 rounded-xl">
+                            <MapPin className="w-5 h-5 lg:w-4 lg:h-4 text-gray-400 flex-shrink-0" />
                             <input
                                 type="text"
                                 placeholder="Enter city or location..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full outline-none text-base text-gray-900 placeholder-gray-400 bg-transparent"
+                                className="w-full outline-none text-base lg:text-sm text-gray-900 placeholder-gray-400 bg-transparent"
                             />
                         </div>
 
                         <button
                             type="submit"
-                            className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 whitespace-nowrap"
+                            className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white px-8 py-4 lg:px-6 lg:py-3 rounded-xl font-semibold text-base lg:text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 whitespace-nowrap"
                         >
-                            <Search className="w-5 h-5" />
+                            <Search className="w-5 h-5 lg:w-4 lg:h-4" />
                             Search Properties
                         </button>
                     </div>
                 </form>
 
                 {/* Popular Searches */}
-                <div className="flex flex-wrap gap-2 justify-center">
-                    <span className="text-sm text-white/70">Popular:</span>
+                <div className="flex flex-wrap gap-2 justify-center lg:gap-1.5">
+                    <span className="text-sm lg:text-xs text-white/70">Popular:</span>
                     {["Manila", "Quezon City", "Makati", "Taguig"].map((city) => (
                         <button
                             key={city}
                             onClick={() => router.push(`/pages/find-rent?searchQuery=${city}`)}
-                            className="px-4 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white/20 transition-all"
+                            className="px-4 py-1.5 lg:px-3 lg:py-1 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-full text-sm lg:text-xs font-medium hover:bg-white/20 transition-all"
                         >
                             {city}
                         </button>
