@@ -1,204 +1,217 @@
-import { db } from "@/lib/db";
-import { encryptData } from "@/crypto/encrypt";
-import axios from "axios";
+import { NextRequest, NextResponse } from "next/server";
+import mysql from "mysql2/promise";
 import crypto from "crypto";
 import { SignJWT } from "jose";
 import nodemailer from "nodemailer";
-import { NextRequest, NextResponse } from "next/server";
+import { encryptData } from "@/crypto/encrypt";
+import { generateLandlordId, generateTenantId } from "@/utils/id_generator";
+
+const dbConfig = {
+    host: process.env.DB_HOST!,
+    user: process.env.DB_USER!,
+    password: process.env.DB_PASSWORD!,
+    database: process.env.DB_NAME!,
+};
 
 export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
 
-    const body = await req.json().catch(() => ({}));
-    const dob = body.dob;
-    const mobileNumber = body.mobileNumber;
-
     if (!code || !state) {
         return NextResponse.json({ error: "Code and state are required" }, { status: 400 });
     }
 
+    const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URI, JWT_SECRET, ENCRYPTION_SECRET } =
+        process.env;
+
+    const { userType } = JSON.parse(decodeURIComponent(state)) || {};
+    const role = userType?.trim().toLowerCase() || "tenant";
+
+    const db = await mysql.createConnection(dbConfig);
+    await db.execute("SET time_zone = '+08:00'");
+
     try {
-        const {
-            GOOGLE_CLIENT_ID,
-            GOOGLE_CLIENT_SECRET,
-            REDIRECT_URI,
-            JWT_SECRET,
-            ENCRYPTION_SECRET,
-        } = process.env;
-
-        const { userType } = JSON.parse(decodeURIComponent(state)) || {};
-        const finalUserType = userType ? userType.trim().toLowerCase() : "tenant";
-
-        const tokenResponse = await axios.post(
-            "https://oauth2.googleapis.com/token",
-            new URLSearchParams({
+        // -------------------- GOOGLE TOKEN & USER INFO --------------------
+        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
                 code,
                 client_id: GOOGLE_CLIENT_ID!,
                 client_secret: GOOGLE_CLIENT_SECRET!,
                 redirect_uri: REDIRECT_URI!,
                 grant_type: "authorization_code",
             }).toString(),
-            { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-        );
+        });
 
-        const { access_token } = tokenResponse.data;
+        const tokenData = await tokenRes.json();
+        const access_token = tokenData.access_token;
 
-        const userInfoResponse = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+        if (!access_token) throw new Error("Google OAuth failed to return access_token");
+
+        const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
             headers: { Authorization: `Bearer ${access_token}` },
         });
 
-        const user = userInfoResponse.data;
+        const userInfo = await userInfoRes.json();
+        const googleId = userInfo.sub;
+        const email = userInfo.email?.trim().toLowerCase();
+        const firstName = userInfo.given_name || "Unknown";
+        const lastName = userInfo.family_name || "Unknown";
+        const profilePicture = userInfo.picture || null;
 
-        const googleId = user.sub || null;
-        const firstName = user.given_name || "Unknown";
-        const lastName = user.family_name || "Unknown";
-        const email = user.email ? user.email.trim().toLowerCase() : null;
-        const phoneNumber = mobileNumber ? mobileNumber.trim() : null;
-        const birthDate = dob ? dob.trim() : null;
-        const profilePicture = user?.picture;
-
-        if (!googleId) {
-            throw new Error("Google OAuth failed: Missing google_id (sub).");
+        if (!googleId || !email) {
+            throw new Error("Google OAuth failed: missing googleId or email");
         }
 
-        const emailHash = email
-            ? crypto.createHash("sha256").update(email).digest("hex")
-            : null;
-        const emailEncrypted = email ? JSON.stringify(await encryptData(email, ENCRYPTION_SECRET!)) : null;
-        const fnameEncrypted = firstName ? JSON.stringify(await encryptData(firstName, ENCRYPTION_SECRET!)) : null;
-        const lnameEncrypted = lastName ? JSON.stringify(await encryptData(lastName, ENCRYPTION_SECRET!)) : null;
-        const phoneEncrypted = phoneNumber ? JSON.stringify(await encryptData(phoneNumber, ENCRYPTION_SECRET!)) : null;
-        const photoEncrypted = profilePicture ? JSON.stringify(await encryptData(profilePicture, ENCRYPTION_SECRET!)) : null;
-        const birthDateEncrypted = birthDate ? JSON.stringify(await encryptData(birthDate, ENCRYPTION_SECRET!)) : null;
+        const emailHash = crypto.createHash("sha256").update(email).digest("hex");
 
+        // -------------------- START TRANSACTION --------------------
+        await db.beginTransaction();
+
+        // Check if user already exists (idempotent)
         const [existingUsers]: any = await db.execute(
-            "SELECT * FROM User WHERE emailHashed = ? OR google_id = ?",
+            "SELECT user_id FROM User WHERE emailHashed = ? OR google_id = ? LIMIT 1",
             [emailHash, googleId]
         );
 
+        let user_id: string;
         if (existingUsers.length > 0) {
-            return NextResponse.redirect(
-                `${process.env.NEXT_PUBLIC_BASE_URL}/pages/auth/register?error=${encodeURIComponent(
-                    "User already registered with Google. Signin instead."
-                )}`
-            );
-        }
+            user_id = existingUsers[0].user_id;
+        } else {
+            // Encrypt sensitive info
+            const emailEncrypted = JSON.stringify(await encryptData(email, ENCRYPTION_SECRET!));
+            const firstEncrypted = JSON.stringify(await encryptData(firstName, ENCRYPTION_SECRET!));
+            const lastEncrypted = JSON.stringify(await encryptData(lastName, ENCRYPTION_SECRET!));
+            const photoEncrypted = profilePicture
+                ? JSON.stringify(await encryptData(profilePicture, ENCRYPTION_SECRET!))
+                : null;
 
-        let userId: string;
-        let dbUser: any;
+            // Create new user
+            const [uuidRow] = await db.execute<any[]>("SELECT UUID() AS uuid");
+            user_id = uuidRow[0].uuid;
 
-        if (existingUsers.length === 0) {
             await db.execute(
-                `INSERT INTO User (user_id, firstName, lastName, email, emailHashed, password, birthDate, phoneNumber, userType, createdAt, updatedAt, google_id, emailVerified, profilePicture, status)
-                 VALUES (uuid(), ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?, ?, ?)`,
+                `INSERT INTO User 
+                (user_id, firstName, lastName, email, emailHashed, google_id, userType, profilePicture, emailVerified, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', UTC_TIMESTAMP(), UTC_TIMESTAMP())`,
                 [
-                    fnameEncrypted || null,
-                    lnameEncrypted || null,
-                    emailEncrypted || null,
-                    emailHash || null,
-                    " ",
-                    birthDateEncrypted || null,
-                    phoneEncrypted || 0,
-                    finalUserType || "tenant",
-                    googleId || null,
-                    0,
+                    user_id,
+                    firstEncrypted,
+                    lastEncrypted,
+                    emailEncrypted,
+                    emailHash,
+                    googleId,
+                    role,
                     photoEncrypted,
-                    "active",
+                    0,
                 ]
             );
 
-            const [user] = await db.execute(`SELECT user_id FROM User WHERE emailHashed = ?`, [
-                emailHash,
-            ]);
-            // @ts-ignore
-            if (!user || user.length === 0) {
-                throw new Error("Failed to retrieve userID after User creation");
+            // Role-specific table
+            if (role === "tenant") {
+                const tenant_id = await generateUniqueTenantId(db);
+                await db.execute(`INSERT INTO Tenant (tenant_id, user_id) VALUES (?, ?)`, [
+                    tenant_id,
+                    user_id,
+                ]);
+            } else if (role === "landlord") {
+                const landlord_id = await generateUniqueLandlordId(db);
+                await db.execute(`INSERT INTO Landlord (landlord_id, user_id) VALUES (?, ?)`, [
+                    landlord_id,
+                    user_id,
+                ]);
             }
 
-            // @ts-ignore
-            userId = user[0].user_id;
-
-            if (finalUserType === "tenant") {
-                await db.execute(`INSERT INTO Tenant (user_id) VALUES (?)`, [userId]);
-            } else if (finalUserType === "landlord") {
-                await db.execute(`INSERT INTO Landlord (user_id) VALUES (?)`, [userId]);
-            }
-
+            // Log activity
             await db.execute(
-                `INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, NOW())`,
-                [userId, "User registered"]
+                `INSERT INTO ActivityLog (user_id, action, timestamp) VALUES (?, ?, UTC_TIMESTAMP())`,
+                [user_id, "User registered via Google"]
             );
-
-            dbUser = {
-                user_id: userId,
-                username: `${firstName} ${lastName}`,
-                // @ts-ignore
-                email: user.email,
-                userType: finalUserType,
-            };
         }
 
+        // Generate OTP
         const otp = crypto.randomInt(100000, 999999).toString();
-        await db.query(
-            `INSERT INTO UserToken (user_id, token_type, token, expires_at)
-             VALUES (?, 'email_verification', ?, NOW() + INTERVAL 10 MINUTE)`,
-            // @ts-ignore
-            [userId, otp]
+        await db.execute(
+            `INSERT INTO UserToken (user_id, token_type, token, created_at, expires_at)
+             VALUES (?, 'email_verification', ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL 10 MINUTE))
+             ON DUPLICATE KEY UPDATE token = VALUES(token), created_at = UTC_TIMESTAMP(), expires_at = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 10 MINUTE)`,
+            [user_id, otp]
         );
-        await sendOtpEmail(user.email, otp);
 
-        const secret = new TextEncoder().encode(JWT_SECRET);
-        const token = await new SignJWT({
-            user_id: dbUser.user_id,
-            username: dbUser.username,
-            userType: dbUser.userType,
-        })
+        await sendOtpEmail(email, otp);
+
+        // Generate JWT
+        const jwtSecret = new TextEncoder().encode(JWT_SECRET!);
+        const token = await new SignJWT({ user_id, email, role })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("2h")
             .setIssuedAt()
-            // @ts-ignore
-            .setSubject(userId.toString())
-            .sign(secret);
+            .setSubject(user_id)
+            .sign(jwtSecret);
 
-        const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/pages/auth/verify-email`);
+        await db.commit();
+
+        const response = NextResponse.redirect(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/pages/auth/verify-email`
+        );
         response.cookies.set("token", token, {
             httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
             path: "/",
-            secure: process.env.NODE_ENV === "production",
         });
 
         return response;
     } catch (error: any) {
-        console.error("Error during Google OAuth:", error.response?.data || error.message);
-        return NextResponse.json({ error: "Failed to authenticate" }, { status: 500 });
+        await db.rollback();
+        console.error("Google OAuth Signup Error:", error.message || error);
+        return NextResponse.json({ error: "Failed to register/login with Google" }, { status: 500 });
+    } finally {
+        await db.end();
     }
 }
 
-async function sendOtpEmail(toEmail: string, otp: string) {
-    try {
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-            tls: {
-                rejectUnauthorized: false,
-            },
-        });
+// ---------------- HELPERS ----------------
 
-        await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: toEmail,
-            subject: "Email Verification OTP",
-            text: `Your OTP for email verification is: ${otp}. This OTP is valid for 10 minutes.`,
-        });
-
-        console.log(`OTP sent to ${toEmail}`);
-    } catch (error) {
-        console.error("Failed to send OTP email:", error);
+async function generateUniqueTenantId(db: mysql.Connection): Promise<string> {
+    let tenant_id, exists = true;
+    while (exists) {
+        tenant_id = generateTenantId();
+        const [rows] = await db.execute<any[]>(
+            "SELECT tenant_id FROM Tenant WHERE tenant_id = ? LIMIT 1",
+            [tenant_id]
+        );
+        exists = rows.length > 0;
     }
+    return tenant_id;
+}
+
+async function generateUniqueLandlordId(db: mysql.Connection): Promise<string> {
+    let landlord_id, exists = true;
+    while (exists) {
+        landlord_id = generateLandlordId();
+        const [rows] = await db.execute<any[]>(
+            "SELECT landlord_id FROM Landlord WHERE landlord_id = ? LIMIT 1",
+            [landlord_id]
+        );
+        exists = rows.length > 0;
+    }
+    return landlord_id;
+}
+
+async function sendOtpEmail(toEmail: string, otp: string) {
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+        tls: { rejectUnauthorized: false },
+    });
+
+    await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: toEmail,
+        subject: "Upkyp Registration OTP",
+        text: `Your OTP is: ${otp}. It will expire in 10 minutes.`,
+    });
 }
