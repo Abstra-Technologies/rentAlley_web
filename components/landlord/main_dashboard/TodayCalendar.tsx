@@ -9,7 +9,7 @@ export default function TodayCalendar({ landlordId }) {
 
     const { data, isLoading } = useSWR(
         landlordId
-            ? `/api/landlord/dashboard/today-events?landlord_id=${landlordId}`
+            ? `/api/landlord/propertyVisits/today-events?landlord_id=${landlordId}`
             : null,
         fetcher
     );
