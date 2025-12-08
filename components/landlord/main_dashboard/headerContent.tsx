@@ -25,22 +25,25 @@ export default function HeaderContent({
         justify-between
         w-full h-full
         px-3 sm:px-5 lg:px-6
-        py-4
-        text-white
+
+        /* LESS VERTICAL SPACE */
+        py-2 sm:py-3
+
+        text-gray-900
       "
         >
             {/* LEFT: Greeting */}
-            <div className="text-left space-y-1 w-full sm:w-auto">
+            <div className="text-left space-y-0.5 w-full sm:w-auto">
                 <h2
                     className="
-            font-semibold tracking-tight drop-shadow-sm
-            text-[1.3rem] sm:text-3xl lg:text-4xl
+            font-semibold tracking-tight
+            text-lg sm:text-3xl lg:text-4xl
           "
                 >
                     {greeting}, {displayName}
                 </h2>
 
-                <p className="text-[11px] sm:text-sm text-gray-200 leading-snug">
+                <p className="text-xs sm:text-sm text-gray-600 leading-tight">
           <span className="hidden sm:inline">
             Simplifying property management, empowering landlords.
           </span>
@@ -51,21 +54,24 @@ export default function HeaderContent({
             {/* RIGHT: Clock + Date */}
             <div
                 className="
-          flex flex-col sm:flex-row
-          items-end sm:items-center
-          gap-1 sm:gap-4
-          mt-3 sm:mt-0
+          flex flex-row sm:flex-row
+          items-center sm:items-center
+
+          /* REDUCE GAP */
+          gap-2 sm:gap-4
+
+          mt-2 sm:mt-0
           w-full sm:w-auto
-          text-right
+          text-right sm:text-right
         "
             >
-                {/* Clock (Bigger Fonts) */}
-                <div className="text-lg sm:text-xl lg:text-2xl font-semibold">
+                {/* Clock */}
+                <div className="text-lg sm:text-2xl lg:text-3xl font-semibold leading-tight">
                     <Clock />
                 </div>
 
-                {/* Date (Bigger Fonts) */}
-                <div className="text-sm sm:text-base lg:text-lg font-medium text-gray-200">
+                {/* Date */}
+                <div className="text-xs sm:text-base lg:text-lg font-medium text-gray-700 leading-tight">
                     {formattedDate}
                 </div>
             </div>

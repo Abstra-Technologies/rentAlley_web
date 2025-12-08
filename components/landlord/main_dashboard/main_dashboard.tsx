@@ -95,39 +95,12 @@ const LandlordMainDashboard = () => {
       {showAlert && <PointsEarnedAlert points={user?.points} />}
 
       {/* HEADER */}
-      <div className="w-full mb-4">
-        <div className="w-full mx-auto">
-          <div className="relative w-full rounded-xl overflow-hidden shadow-md border border-gray-200">
 
-            {/* With Header Image */}
-            {headerImage ? (
-              <div
-                className="relative h-28 sm:h-32 lg:h-36 bg-cover bg-center flex items-center"
-                style={{ backgroundImage: `url(${headerImage})` }}
-              >
-                <div className="absolute inset-0 bg-black/40" />
-                <div className="relative z-10 w-full px-4 sm:px-6">
-                  <HeaderContent
-                    greeting={greeting}
-                    displayName={displayName}
-                    landlordId={user?.landlord_id}
-                  />
-                </div>
-              </div>
-            ) : (
-              // Fallback Gradient
-              <div className="p-4 bg-gradient-to-r from-blue-700 to-emerald-600 text-white">
-                <HeaderContent
-                  greeting={greeting}
-                  displayName={displayName}
-                  landlordId={user?.landlord_id}
-                />
-              </div>
-            )}
-
-          </div>
-        </div>
-      </div>
+                        <HeaderContent
+                            greeting={greeting}
+                            displayName={displayName}
+                            landlordId={user?.landlord_id}
+                        />
 
       {/* PROFILE STATUS */}
       <div className="mb-4">
