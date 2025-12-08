@@ -157,7 +157,7 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
             {/* Overlay for "View All Properties" */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
         <span
-            onClick={() => router.push(`/pages/landlord/properties`)}
+            onClick={() => router.push(`/pages/landlord/property-listing`)}
             className="pointer-events-auto bg-white/90 shadow px-3 py-1 rounded-full text-xs font-medium cursor-pointer"
         >
           View All Properties →

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 
 import useAuthStore from "@/zustand/authStore";
+
+// Components
 import PointsEarnedAlert from "@/components/Commons/alertPoints";
 import LandlordProfileStatus from "../profile/LandlordProfileStatus";
 import QuickActions from "./QuickActions";
@@ -22,13 +24,12 @@ import NewWorkOrderModal from "../maintenance_management/NewWorkOrderModal";
 import TodayCalendar from "@/components/landlord/main_dashboard/TodayCalendar";
 import PaymentList from "../tenantPayments";
 
-// Dynamic Import
 const RevenuePerformanceChart = dynamic(
     () => import("../analytics/revenuePerformance"),
     { ssr: false }
 );
 
-const LandlordMainDashboard = () => {
+export default function LandlordMainDashboard() {
     const router = useRouter();
     const { user, fetchSession, loading } = useAuthStore();
 
@@ -38,48 +39,37 @@ const LandlordMainDashboard = () => {
     const [greeting, setGreeting] = useState("");
     const [showNewModal, setShowNewModal] = useState(false);
 
-    // Greeting
-    function getGreeting() {
-        const hour = new Date().getHours();
-        if (hour < 12) return "Good Morning";
-        if (hour < 18) return "Good Afternoon";
-        return "Good Evening";
-    }
-
+    // Greeting logic
     useEffect(() => {
-        setGreeting(getGreeting());
+        const hour = new Date().getHours();
+        setGreeting(
+            hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening"
+        );
     }, []);
 
+    // Fetch user session
     useEffect(() => {
         if (!user) fetchSession();
-    }, [user, fetchSession]);
+    }, [user]);
 
-    // Points Earned Alert
+    // Points earned logic
     useEffect(() => {
         if (!loading && user?.points != null) {
-            const prevPoints = prevPointsRef.current;
-            if (prevPoints !== null && user.points > prevPoints) {
+            const prev = prevPointsRef.current;
+            if (prev !== null && user.points > prev) {
                 setShowAlert(true);
-                const timer = setTimeout(() => setShowAlert(false), 4000);
-                return () => clearTimeout(timer);
+                setTimeout(() => setShowAlert(false), 4000);
             }
             prevPointsRef.current = user.points;
         }
-    }, [user?.points, loading]);
+    }, [user?.points]);
 
-    // Fetch Header Image
+    // CMS Header image
     useEffect(() => {
-        const fetchHeader = async () => {
-            try {
-                const folder = `upkyp/headers/landlord`;
-                const res = await axios.get(`/api/systemadmin/cms/imagesList?folder=${folder}`);
-                const imgs = res.data.resources;
-                setHeaderImage(imgs?.[0]?.secure_url || null);
-            } catch {
-                setHeaderImage(null);
-            }
-        };
-        fetchHeader();
+        axios
+            .get(`/api/systemadmin/cms/imagesList?folder=upkyp/headers/landlord`)
+            .then((res) => setHeaderImage(res.data.resources?.[0]?.secure_url || null))
+            .catch(() => setHeaderImage(null));
     }, []);
 
     const displayName =
@@ -88,14 +78,14 @@ const LandlordMainDashboard = () => {
     return (
         <div
             className="
-        min-h-screen
-        bg-gradient-to-br from-blue-50 via-white to-emerald-50
-        px-4 py-4 sm:px-6 lg:px-10
-        overflow-x-hidden
-      "
+            min-h-screen
+            bg-gradient-to-br from-blue-50 via-white to-emerald-50
+            px-3 py-3 sm:px-4 lg:px-6 xl:px-8
+            overflow-x-hidden
+        "
         >
             {/* POINTS ALERT */}
-            {/*{showAlert && <PointsEarnedAlert points={user?.points} />}*/}
+            {/* {showAlert && <PointsEarnedAlert points={user?.points} />} */}
 
             {/* HEADER */}
             <HeaderContent
@@ -105,7 +95,7 @@ const LandlordMainDashboard = () => {
             />
 
             {/* PROFILE STATUS */}
-            <div className="mb-4">
+            <div className="mb-3 lg:mb-4">
                 <LandlordProfileStatus landlord_id={user?.landlord_id} />
             </div>
 
@@ -124,71 +114,65 @@ const LandlordMainDashboard = () => {
                 />
             </div>
 
-
-
             {/* ===== DESKTOP SECTION ===== */}
-            <div className="hidden sm:block w-full overflow-x-hidden">
+            <div className="hidden sm:block w-full overflow-x-hidden space-y-4 lg:space-y-5">
+
                 {/* TOP ANALYTICS GRID */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full mb-6">
-                    {/* Payment Summary */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5 w-full">
+
                     <div className="lg:col-span-2 w-full">
                         <PaymentSummaryCard landlord_id={user?.landlord_id} />
                     </div>
 
-                    {/* Maintenance Donut */}
                     <div className="w-full">
                         <TodayCalendar landlordId={user?.landlord_id} />
                     </div>
                 </div>
 
                 {/* PROPERTY + TENANT ACTIVITY GRID */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5 w-full">
 
-                    {/* PROPERTY CARD */}
+                    {/* PROPERTIES QUICK VIEW */}
                     <div
                         className="
-            relative bg-white rounded-xl shadow-sm p-4 cursor-pointer w-full overflow-hidden
-            transition-all duration-300
-            hover:shadow-lg hover:-translate-y-1 hover:bg-gray-50
-        "
+                        relative bg-white rounded-lg shadow-sm p-3 lg:p-4 cursor-pointer w-full
+                        transition hover:shadow-md hover:-translate-y-1 hover:bg-gray-50
+                    "
+                        onClick={() => router.push(`/pages/landlord/properties`)}
                     >
                         <LandlordPropertyMarquee landlordId={user?.landlord_id} />
-
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition pointer-events-none">
-            <span className="bg-white/90 shadow px-3 py-1 rounded-full text-xs font-medium">
-                View Properties →
-            </span>
-                        </div>
                     </div>
 
                     {/* MAINTENANCE DONUT */}
                     <div
                         className="
-            w-full bg-white rounded-xl shadow-sm p-4 cursor-pointer
-            transition-all duration-300
-            hover:shadow-lg hover:-translate-y-1 hover:bg-gray-50
-        "
+                        bg-white rounded-lg shadow-sm p-3 lg:p-4 cursor-pointer
+                        transition hover:shadow-md hover:-translate-y-1 hover:bg-gray-50
+                    "
                         onClick={() => router.push(`/pages/landlord/tenant-activity`)}
                     >
                         <PendingMaintenanceDonut landlordId={user?.landlord_id} />
                     </div>
 
-                    {/* PAYMENT LIST WITH HEADER */}
+                    {/* RECENT PAYMENTS */}
                     <div
                         className="
-            w-full bg-white rounded-xl shadow-sm p-4 cursor-pointer
-            transition-all duration-300
-            hover:shadow-lg hover:-translate-y-1 hover:bg-gray-50
-        "
+                        bg-white rounded-lg shadow-sm p-3 lg:p-4 cursor-pointer
+                        transition hover:shadow-md hover:-translate-y-1 hover:bg-gray-50
+                    "
                         onClick={() => router.push(`/pages/landlord/payment-history`)}
                     >
-                        {/* 🔵 Header added here */}
-                        <h2 className="text-sm font-semibold text-gray-700 mb-3">
+                        <h2 className="text-xs lg:text-sm font-semibold text-gray-700 mb-2">
                             Recent Payments
                         </h2>
 
                         <PaymentList landlord_id={user?.landlord_id} />
                     </div>
+                </div>
+
+                {/* REVENUE PERFORMANCE */}
+                <div className="bg-white rounded-lg shadow-sm p-3 lg:p-4">
+                    <RevenuePerformanceChart landlord_id={user?.landlord_id} />
                 </div>
             </div>
 
@@ -202,14 +186,9 @@ const LandlordMainDashboard = () => {
                 <NewWorkOrderModal
                     landlordId={user?.landlord_id}
                     onClose={() => setShowNewModal(false)}
-                    onCreated={(newOrder) => {
-                        setRequests((prev) => [newOrder, ...prev]);
-                        setShowNewModal(false);
-                    }}
+                    onCreated={(order) => setShowNewModal(false)}
                 />
             )}
         </div>
     );
-};
-
-export default LandlordMainDashboard;
+}

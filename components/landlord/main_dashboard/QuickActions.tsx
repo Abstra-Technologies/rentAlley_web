@@ -7,49 +7,22 @@ export default function QuickActions({
                                          onInviteTenant,
                                          onAnnouncement,
                                          onWorkOrder,
-                                         onIncome,     // 🆕 NEW CALLBACK
+                                         onIncome,
                                      }) {
     const actions = [
-        {
-            id: "addProperty",
-            label: "Add Property",
-            icon: Home,
-            onClick: onAddProperty,
-        },
-        {
-            id: "inviteTenant",
-            label: "Invite Tenant",
-            icon: UserPlus,
-            onClick: onInviteTenant,
-        },
-        {
-            id: "announcement",
-            label: "Announcement",
-            icon: Megaphone,
-            onClick: onAnnouncement,
-        },
-        {
-            id: "work_order",
-            label: "Work Order",
-            icon: List,
-            onClick: onWorkOrder,
-        },
-        {
-            id: "income",
-            label: "Income",       // 🆕 NEW LABEL
-            icon: Wallet,          // 🆕 MONEY/INCOME ICON
-            onClick: onIncome,     // 🆕 TRIGGER USER CALLBACK
-        },
+        { id: "addProperty", label: "Add Property", icon: Home, onClick: onAddProperty },
+        { id: "inviteTenant", label: "Invite Tenant", icon: UserPlus, onClick: onInviteTenant },
+        { id: "announcement", label: "Announcement", icon: Megaphone, onClick: onAnnouncement },
+        { id: "workOrder", label: "Work Order", icon: List, onClick: onWorkOrder },
+        { id: "income", label: "Income", icon: Wallet, onClick: onIncome },
     ];
 
     return (
         <div
             className="
-                w-full
-                flex flex-wrap
-                items-center justify-center
-                gap-4 sm:gap-6 lg:gap-8
-                py-3 px-2
+                w-full flex flex-wrap justify-center items-center
+                gap-3 sm:gap-4
+                py-2
             "
         >
             {actions.map(({ id, label, icon: Icon, onClick }) => (
@@ -59,13 +32,13 @@ export default function QuickActions({
                     className="
                         flex flex-col items-center
                         text-gray-700
-                        w-16 sm:w-auto
+                        w-14 sm:w-16
                     "
                 >
-                    {/* Circle */}
+                    {/* Icon Circle */}
                     <div
                         className="
-                            w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16
+                            w-10 h-10 sm:w-12 sm:h-12
                             rounded-full
                             flex items-center justify-center
                             bg-white border border-gray-300
@@ -74,14 +47,14 @@ export default function QuickActions({
                             transition-all duration-200
                         "
                     >
-                        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                     </div>
 
                     {/* Label */}
                     <span
                         className="
-                            text-[10px] sm:text-xs md:text-sm
-                            mt-1.5 font-medium text-center
+                            mt-1 text-[9px] sm:text-[10px] md:text-xs
+                            font-medium text-center leading-tight
                         "
                     >
                         {label}
