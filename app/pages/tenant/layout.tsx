@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import useAuthStore from "@/zustand/authStore";
 
 // Icons
@@ -37,6 +37,12 @@ export default function TenantLayout({ children }) {
   const [undecidedApplications, setUndecidedApplications] = useState(0);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Draggable button state
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const buttonRef = useRef(null);
 
   // If inside rentalPortal → completely disable this outer layout
   const isInsideRentalPortal = pathname.includes("/pages/tenant/rentalPortal/");
@@ -81,9 +87,80 @@ export default function TenantLayout({ children }) {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  /* -------------------------------------------------------------------------- */
-  /*                               NAV ITEMS                                    */
-  /* -------------------------------------------------------------------------- */
+  // Initialize button position from localStorage or default
+  useEffect(() => {
+    const savedPosition = localStorage.getItem("burgerMenuPosition");
+    if (savedPosition) {
+      setPosition(JSON.parse(savedPosition));
+    } else {
+      // Default position: bottom-right
+      setPosition({ x: window.innerWidth - 80, y: window.innerHeight - 160 });
+    }
+  }, []);
+
+  // Handle touch/mouse start
+  const handleDragStart = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+
+    const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
+
+    setDragStart({
+      x: clientX - position.x,
+      y: clientY - position.y,
+    });
+  };
+
+  // Handle touch/mouse move
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+
+    const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
+
+    const newX = clientX - dragStart.x;
+    const newY = clientY - dragStart.y;
+
+    // Constrain to viewport
+    const buttonSize = 56; // 14 * 4 (w-14 h-14)
+    const maxX = window.innerWidth - buttonSize;
+    const maxY = window.innerHeight - buttonSize;
+
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY)),
+    });
+  };
+
+  // Handle touch/mouse end
+  const handleDragEnd = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      // Save position to localStorage
+      localStorage.setItem("burgerMenuPosition", JSON.stringify(position));
+    }
+  };
+
+  // Add event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      const handleMove = (e) => handleDragMove(e);
+      const handleEnd = () => handleDragEnd();
+
+      window.addEventListener("mousemove", handleMove);
+      window.addEventListener("mouseup", handleEnd);
+      window.addEventListener("touchmove", handleMove);
+      window.addEventListener("touchend", handleEnd);
+
+      return () => {
+        window.removeEventListener("mousemove", handleMove);
+        window.removeEventListener("mouseup", handleEnd);
+        window.removeEventListener("touchmove", handleMove);
+        window.removeEventListener("touchend", handleEnd);
+      };
+    }
+  }, [isDragging, dragStart, position]);
 
   const navItems = [
     {
@@ -155,10 +232,6 @@ export default function TenantLayout({ children }) {
   if (isInsideRentalPortal) {
     return <main className="flex-1 min-h-screen">{children}</main>;
   }
-
-  /* -------------------------------------------------------------------------- */
-  /*                            SIDEBAR CONTENT                                 */
-  /* -------------------------------------------------------------------------- */
 
   const SidebarContent = () => (
     <>
@@ -270,19 +343,36 @@ export default function TenantLayout({ children }) {
     </>
   );
 
-  /* -------------------------------------------------------------------------- */
-  /*                                 RENDER                                     */
-  /* -------------------------------------------------------------------------- */
-
   return (
     <>
-      {/* Mobile Menu Button */}
+      {/* Draggable Mobile Menu Button */}
       <button
-        onClick={() => setMobileMenuOpen(true)}
-        className="md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow"
+        ref={buttonRef}
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
+        onClick={(e) => {
+          // Only open menu if not dragging
+          if (!isDragging) {
+            setMobileMenuOpen(true);
+          }
+        }}
+        className="md:hidden fixed z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow touch-none"
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          cursor: isDragging ? "grabbing" : "grab",
+          transition: isDragging ? "none" : "box-shadow 0.2s",
+        }}
         aria-label="Open menu"
       >
-        <Bars3Icon className="w-6 h-6" />
+        <Bars3Icon className="w-6 h-6 pointer-events-none" />
+
+        {/* Drag indicator dots */}
+        {!isDragging && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-sm flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+          </div>
+        )}
       </button>
 
       {/* Mobile Sidebar Overlay */}
