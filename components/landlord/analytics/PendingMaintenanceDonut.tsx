@@ -11,11 +11,19 @@ export default function MaintenanceStatusDonut({
     landlordId: string;
 }) {
     const router = useRouter();
+
     const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
     const { data, isLoading } = useSWR(
         landlordId
             ? `/api/analytics/landlord/getMaintenanceStatuses?landlord_id=${landlordId}`
+            : null,
+        fetcher
+    );
+
+    const { data: todayWorkOrders } = useSWR(
+        landlordId
+            ? `/api/analytics/landlord/getTodayMaintenance?landlord_id=${landlordId}`
             : null,
         fetcher
     );
@@ -68,58 +76,27 @@ export default function MaintenanceStatusDonut({
 
     return (
         <div
-            onClick={() => router.push("/pages/landlord/maintenance-request")}
             className="
-        relative group cursor-pointer
-        rounded-2xl border border-gray-200 shadow
-        bg-white/40 backdrop-blur-xl
-        p-6 flex flex-col items-center gap-4
-        transition-all duration-300
-        hover:-translate-y-1 hover:shadow-xl
-      "
-        >
-            {/* HOVER GRADIENT */}
-            <div
-                className="
-          absolute inset-0 rounded-2xl
-          bg-gradient-to-r from-blue-500/0 via-emerald-400/0 to-green-500/0
-          group-hover:from-blue-500/10 group-hover:via-emerald-400/10 group-hover:to-green-500/10
-          opacity-0 group-hover:opacity-100 transition-all duration-300
-          pointer-events-none
+            relative rounded-2xl border border-gray-200 shadow-sm
+            bg-white/40 backdrop-blur-xl
+            p-6 flex flex-col gap-4
+            transition-all duration-300
+            h-[420px]
         "
-            />
-
-            {/* HOVER CTA BUTTON */}
-            <div
-                className="
-          absolute top-3 right-4 z-20
-          opacity-0 group-hover:opacity-100
-          transition-opacity duration-300
-          pointer-events-none
-        "
-            >
-        <span
-            className="
-            bg-white/90 text-gray-800
-            text-xs sm:text-sm font-medium
-            px-3 py-1 rounded-full shadow-md
-            backdrop-blur-md
-          "
         >
-          View Maintenance Requests →
-        </span>
-            </div>
+            {/* Removed hover gradient */}
+            {/* Removed hover CTA */}
+            {/* Removed onClick */}
 
             {/* TITLE */}
-            <h2 className="text-sm font-semibold text-gray-700">
+            <h2 className="text-sm font-semibold text-gray-700 text-center">
                 Maintenance Status Overview
             </h2>
 
-            <p className="text-xs text-gray-500">{total} total requests</p>
+            <p className="text-xs text-gray-500 text-center">{total} total requests</p>
 
             {/* DONUT + LEGEND */}
-            <div className="flex items-center gap-4">
-                {/* DONUT CHART */}
+            <div className="flex justify-center gap-4 items-center">
                 <div className="w-40 h-40 z-10">
                     <ResponsiveContainer>
                         <PieChart>
@@ -146,10 +123,10 @@ export default function MaintenanceStatusDonut({
                             const rawKey = ORDERED_STATUSES[idx];
                             return (
                                 <div key={idx} className="flex items-center gap-2">
-                  <span
-                      className="w-3 h-3 rounded-sm"
-                      style={{ backgroundColor: STATUS_COLORS[rawKey] }}
-                  ></span>
+                                <span
+                                    className="w-3 h-3 rounded-sm"
+                                    style={{ backgroundColor: STATUS_COLORS[rawKey] }}
+                                />
                                     {item.name} ({item.value})
                                 </div>
                             );
@@ -161,6 +138,37 @@ export default function MaintenanceStatusDonut({
                     )}
                 </div>
             </div>
+
+            {/* TODAY'S WORK LIST */}
+            <div className="mt-4 z-10 overflow-auto">
+                <h3 className="text-sm font-semibold text-gray-800 mb-2">
+                    Today’s Scheduled Work
+                </h3>
+
+                {!todayWorkOrders || todayWorkOrders.length === 0 ? (
+                    <p className="text-xs text-gray-500">No work scheduled today.</p>
+                ) : (
+                    <div className="space-y-2">
+                        {todayWorkOrders.map((work: any, idx: number) => (
+                            <div
+                                key={idx}
+                                className="
+                                p-2 bg-white border border-gray-200 rounded-lg text-xs
+                            "
+                            >
+                                <p className="font-medium text-gray-700">
+                                    {idx + 1}. {work.subject}
+                                </p>
+                                <p className="text-gray-500">
+                                    {work.unit_name} — {work.schedule_time}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
+
+
 }
