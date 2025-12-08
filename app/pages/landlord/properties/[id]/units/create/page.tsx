@@ -15,11 +15,14 @@ import {
   DollarSign,
   Camera,
   Eye,
+  HelpCircle,
 } from "lucide-react";
 import furnishingTypes from "@/constant/furnishingTypes";
 import unitTypes from "@/constant/unitTypes";
 import AmenitiesSelector from "@/components/landlord/properties/unitAmenities";
 import DisableNavigation from "@/components/navigation/DisableNavigation";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { createUnitSteps } from "@/lib/onboarding/createUnit";
 
 // Zod validation schema
 const unitSchema = z.object({
@@ -54,6 +57,13 @@ export default function UnitListingForm() {
   const [is360Enabled, setIs360Enabled] = useState(false);
   const [photo360, setPhoto360] = useState<File | null>(null);
   const [preview360, setPreview360] = useState("");
+
+  // Initialize onboarding
+  const { startTour } = useOnboarding({
+    tourId: "create-unit",
+    steps: createUnitSteps,
+    autoStart: true, // Auto-start on first visit
+  });
 
   useEffect(() => {
     const fetchPropertyName = async () => {
@@ -202,21 +212,32 @@ export default function UnitListingForm() {
         <div className="px-4 pt-20 pb-24 md:px-8 lg:px-12 xl:px-16">
           {/* Header */}
           <div className="mb-6">
-            <div className="flex items-start gap-4 mb-2">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Plus className="h-7 w-7 text-white" />
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <Plus className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                    Create New Unit
+                  </h1>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Adding unit to{" "}
+                    <span className="font-semibold text-gray-900">
+                      {propertyName}
+                    </span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  Create New Unit
-                </h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  Adding unit to{" "}
-                  <span className="font-semibold text-gray-900">
-                    {propertyName}
-                  </span>
-                </p>
-              </div>
+
+              {/* Help Button - Restart Tour */}
+              <button
+                onClick={startTour}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-200"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Show Guide</span>
+              </button>
             </div>
           </div>
 
@@ -224,7 +245,7 @@ export default function UnitListingForm() {
           <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
             <form onSubmit={handleSubmit} className="divide-y divide-gray-100">
               {/* Basic Information */}
-              <div className="p-5 md:p-6 space-y-5">
+              <div className="p-5 md:p-6 space-y-5" id="basic-info-section">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
                     1
@@ -236,7 +257,7 @@ export default function UnitListingForm() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {/* UNIT NAME */}
-                  <div className="space-y-2">
+                  <div className="space-y-2" id="unit-name-input">
                     <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                       <Home className="w-4 h-4 text-blue-600" />
                       Unit Name *
@@ -335,7 +356,10 @@ export default function UnitListingForm() {
               </div>
 
               {/* Unit Features */}
-              <div className="p-5 md:p-6 space-y-5 bg-gray-50/50">
+              <div
+                className="p-5 md:p-6 space-y-5 bg-gray-50/50"
+                id="unit-features-section"
+              >
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
                     2
@@ -388,7 +412,7 @@ export default function UnitListingForm() {
               </div>
 
               {/* Photos */}
-              <div className="p-5 md:p-6 space-y-5">
+              <div className="p-5 md:p-6 space-y-5" id="unit-photos-section">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
                     3
@@ -461,7 +485,10 @@ export default function UnitListingForm() {
               </div>
 
               {/* 360° Virtual View */}
-              <div className="p-5 md:p-6 space-y-5 bg-gradient-to-br from-blue-50/30 to-emerald-50/30">
+              <div
+                className="p-5 md:p-6 space-y-5 bg-gradient-to-br from-blue-50/30 to-emerald-50/30"
+                id="virtual-view-section"
+              >
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
                     4
