@@ -8,8 +8,11 @@ import {
   Calculator,
   Zap,
   Droplet,
+  HelpCircle,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/utils/formatter/formatters";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { propertyRatesModalSteps } from "@/lib/onboarding/propertyBilling";
 
 interface PropertyRatesModalProps {
   isOpen: boolean;
@@ -40,9 +43,19 @@ export default function PropertyRatesModal({
     waterRate: 0,
   });
 
+  // Initialize onboarding for the modal
+  const { startTour } = useOnboarding({
+    tourId: "property-rates-modal",
+    steps: propertyRatesModalSteps,
+    autoStart: false, // Don't auto-start for modals, only on manual trigger
+  });
+
   /* Auto compute rate */
   useEffect(() => {
-    if (billingForm.electricityTotal && billingForm.electricityConsumption > 0) {
+    if (
+      billingForm.electricityTotal &&
+      billingForm.electricityConsumption > 0
+    ) {
       setPropertyRate((prev) => ({
         ...prev,
         electricityRate:
@@ -72,7 +85,6 @@ export default function PropertyRatesModal({
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200">
-
           {/* Header */}
           <div className="sticky top-0 bg-white p-5 border-b border-gray-200 rounded-t-lg">
             <div className="flex items-start justify-between gap-4">
@@ -98,20 +110,30 @@ export default function PropertyRatesModal({
                 </div>
               </div>
 
-              <button
-                onClick={onClose}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Help Button */}
+                <button
+                  onClick={startTour}
+                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
+                  title="Show guide"
+                >
+                  <HelpCircle className="h-5 w-5" />
+                </button>
+
+                <button
+                  onClick={onClose}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Content */}
           <div className="p-5 space-y-6">
-
             {/* Reading Period */}
-            <div>
+            <div id="reading-period-section">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Reading Period
               </label>
@@ -143,7 +165,10 @@ export default function PropertyRatesModal({
 
             {/* Electricity */}
             {propertyDetails?.electricity_billing_type === "submetered" && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div
+                className="p-4 bg-amber-50 border border-amber-200 rounded-lg"
+                id="electricity-rates-section"
+              >
                 <div className="flex items-center gap-2 mb-4">
                   <Zap className="h-5 w-5 text-amber-600" />
                   <h3 className="text-base font-bold">Electricity</h3>
@@ -151,7 +176,9 @@ export default function PropertyRatesModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Consumption (kWh)</label>
+                    <label className="text-sm font-medium">
+                      Consumption (kWh)
+                    </label>
                     <input
                       type="number"
                       name="electricityConsumption"
@@ -185,7 +212,10 @@ export default function PropertyRatesModal({
 
             {/* Water */}
             {propertyDetails?.water_billing_type === "submetered" && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div
+                className="p-4 bg-blue-50 border border-blue-200 rounded-lg"
+                id="water-rates-section"
+              >
                 <div className="flex items-center gap-2 mb-4">
                   <Droplet className="h-5 w-5 text-blue-600" />
                   <h3 className="text-base font-bold">Water</h3>
@@ -193,7 +223,9 @@ export default function PropertyRatesModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Consumption (cu.m)</label>
+                    <label className="text-sm font-medium">
+                      Consumption (cu.m)
+                    </label>
                     <input
                       type="number"
                       name="waterConsumption"
@@ -226,7 +258,7 @@ export default function PropertyRatesModal({
             )}
           </div>
 
-          {/* Page_footer */}
+          {/* Footer */}
           <div className="sticky bottom-0 bg-white p-4 border-t flex gap-3 justify-end">
             <button
               onClick={onClose}
@@ -242,7 +274,8 @@ export default function PropertyRatesModal({
                   period_start: billingForm.periodStart,
                   period_end: billingForm.periodEnd,
                   electricity: {
-                    consumption: parseFloat(billingForm.electricityConsumption) || 0,
+                    consumption:
+                      parseFloat(billingForm.electricityConsumption) || 0,
                     total: parseFloat(billingForm.electricityTotal) || 0,
                   },
                   water: {
