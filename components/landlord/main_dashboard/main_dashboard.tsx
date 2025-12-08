@@ -172,36 +172,42 @@ const LandlordMainDashboard = () => {
           </div>
         </div>
 
-        {/* PROPERTY MARQUEE */}
-        <div className="mb-6 w-full">
-          <div className="rounded-2xl bg-white shadow-md border border-gray-100 overflow-hidden py-4 w-full">
-            {/*<LandlordPropertyMarquee landlordId={user?.landlord_id} />*/}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full mb-6">
+
+              {/* 🏠 PROPERTY CARD */}
+              <div
+                  onClick={() => router.push(`/pages/landlord/properties`)}
+                  className="
+      relative bg-white rounded-xl shadow-sm p-4 cursor-pointer w-full overflow-hidden
+      transition-all duration-300
+      hover:shadow-lg hover:-translate-y-1 hover:bg-gray-50
+    "
+              >
+                  {/*<RevenuePerformanceChart landlordId={user?.landlord_id} />*/}
+                  <LandlordPropertyMarquee landlordId={user?.landlord_id} />
+
+                  {/* Hover Ghost Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition pointer-events-none">
+      <span className="bg-white/90 shadow px-3 py-1 rounded-full text-xs font-medium">
+        View Properties →
+      </span>
+                  </div>
+              </div>
+
+              {/* 👥 TENANT ACTIVITY CARD */}
+              <div
+                  className="
+      w-full bg-white rounded-xl shadow-sm p-4 cursor-pointer
+      transition-all duration-300
+      hover:shadow-lg hover:-translate-y-1 hover:bg-gray-50
+    "
+                  onClick={() => router.push(`/pages/landlord/tenant-activity`)}
+              >
+                  <TenantActivity landlord_id={user?.landlord_id} />
+              </div>
+
           </div>
-        </div>
-
-        {/* REVENUE CHART + TENANT ACTIVITY */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full mb-6">
-
-          <div
-            onClick={() => router.push(`/pages/landlord/analytics/detailed/revenue`)}
-            className="relative bg-white rounded-xl shadow-sm p-4 cursor-pointer hover:bg-gray-50 transition w-full overflow-hidden lg:col-span-2"
-          >
-            <RevenuePerformanceChart landlordId={user?.landlord_id} />
-
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition pointer-events-none">
-              <span className="bg-white/90 shadow px-3 py-1 rounded-full text-xs font-medium">
-                View Revenue →
-              </span>
-            </div>
-          </div>
-
-          <div className="w-full">
-            <TenantActivity landlord_id={user?.landlord_id} />
-          </div>
-        </div>
-
-        {/* BOTTOM GRID */}
-
 
       </div>
 
