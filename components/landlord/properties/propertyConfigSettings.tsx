@@ -12,6 +12,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { UTILITY_BILLING_TYPES } from "@/constant/utilityBillingType";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { propertyConfigSteps } from "@/lib/onboarding/propertyConfig";
 
 interface PropertyConfigurationProps {
   propertyId: string;
@@ -34,6 +36,13 @@ export default function PropertyConfiguration({
     gracePeriodDays: 3,
     water_billing_type: "included",
     electricity_billing_type: "included",
+  });
+
+  // Initialize onboarding
+  const { startTour } = useOnboarding({
+    tourId: "property-configuration",
+    steps: propertyConfigSteps,
+    autoStart: true,
   });
 
   useEffect(() => {
@@ -124,6 +133,18 @@ export default function PropertyConfiguration({
     }
   };
 
+  // Expose startTour to parent component
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).startPropertyConfigTour = startTour;
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        delete (window as any).startPropertyConfigTour;
+      }
+    };
+  }, [startTour]);
+
   if (loading)
     return (
       <div className="flex items-center justify-center py-12">
@@ -134,7 +155,10 @@ export default function PropertyConfiguration({
   return (
     <form onSubmit={handleSave} className="space-y-5">
       {/* Notifications Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div
+        id="notifications-section"
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         <div className="bg-gradient-to-r from-blue-50 to-emerald-50 px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
@@ -153,7 +177,7 @@ export default function PropertyConfiguration({
 
         <div className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div id="reminder-day">
               <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
                 Reminder Day of Month
               </label>
@@ -178,7 +202,7 @@ export default function PropertyConfiguration({
               </select>
             </div>
 
-            <div>
+            <div id="due-day">
               <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
                 Billing Due Date (Day of Month)
               </label>
@@ -215,7 +239,7 @@ export default function PropertyConfiguration({
               </p>
             </div>
 
-            <div className="md:col-span-2">
+            <div id="notification-channels" className="md:col-span-2">
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
                 Notification Channels
               </label>
@@ -251,7 +275,10 @@ export default function PropertyConfiguration({
       </div>
 
       {/* Utility Billing Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div
+        id="utility-billing-section"
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         <div className="bg-gradient-to-r from-cyan-50 to-blue-50 px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-600 to-blue-600 rounded-lg flex items-center justify-center">
@@ -270,7 +297,7 @@ export default function PropertyConfiguration({
 
         <div className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div id="water-billing-type">
               <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
                 Water Billing Type
               </label>
@@ -288,7 +315,7 @@ export default function PropertyConfiguration({
               </select>
             </div>
 
-            <div>
+            <div id="electricity-billing-type">
               <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
                 Electricity Billing Type
               </label>
@@ -320,7 +347,10 @@ export default function PropertyConfiguration({
       </div>
 
       {/* Late Payment Section */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div
+        id="late-payment-section"
+        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
         <div className="bg-gradient-to-r from-red-50 to-rose-50 px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-rose-600 rounded-lg flex items-center justify-center">
@@ -339,7 +369,7 @@ export default function PropertyConfiguration({
 
         <div className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div id="penalty-type">
               <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
                 Penalty Type
               </label>
@@ -354,7 +384,7 @@ export default function PropertyConfiguration({
               </select>
             </div>
 
-            <div>
+            <div id="penalty-amount">
               <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
                 {configForm.lateFeeType === "fixed"
                   ? "Penalty Amount (₱ per day)"
@@ -371,7 +401,7 @@ export default function PropertyConfiguration({
               />
             </div>
 
-            <div>
+            <div id="grace-period">
               <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
                 Grace Period (Days)
               </label>
@@ -396,7 +426,7 @@ export default function PropertyConfiguration({
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end pt-2">
+      <div id="save-button" className="flex justify-end pt-2">
         <button
           type="submit"
           disabled={submitting}
