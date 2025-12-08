@@ -1,539 +1,146 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import LoadingScreen from "../../../../../components/loadingScreen";
-import Swal from "sweetalert2";
-import useAuthStore from "@/zustand/authStore";
+import { useState } from "react";
+import useSubscriptionData from "@/hooks/landlord/useSubscriptionData";
+import { useProrate } from "@/hooks/landlord/useProrate";
+import PlanCard from "@/components/subscription_pricing/PlanCard";
+import CurrentSubscriptionBanner from "@/components/subscription_pricing/CurrentSubscriptionBanner";
+import TrialBanner from "@/components/subscription_pricing/TrialBanner";
+import ProrateNotice from "@/components/subscription_pricing/ProrateNotice";
+import AddOnServices from "@/components/subscription_pricing/AddOnServices";
+import FAQ from "@/components/subscription_pricing/FAQ";
 import { SUBSCRIPTION_PLANS } from "@/constant/subscription/subscriptionPlans";
-import axios from "axios";
+import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
+import { formatCurrency } from "@/utils/formatter/formatters";
 
 export default function SubscriptionPlans() {
-    const { user, loading, fetchSession } = useAuthStore();
     const router = useRouter();
-    const [processing, setProcessing] = useState(false);
-    const [selectedPlan, setSelectedPlan] = useState(null);
-    const [trialUsed, setTrialUsed] = useState(null);
-    const [currentSubscription, setCurrentSubscription] = useState(null);
-    const [proratedAmount, setProratedAmount] = useState(null);
-    const [dataLoading, setDataLoading] = useState(true);
+    const { trialUsed, currentSubscription, loading } = useSubscriptionData();
+    const prorate = useProrate(currentSubscription);
 
-    useEffect(() => {
-        async function fetchData() {
-            if (!user) return;
-            setDataLoading(true);
+    const [selectedPlan, setSelectedPlan] = useState<any>(null);
+    const [proratedAmount, setProratedAmount] = useState<number>(0);
 
-            try {
-                const trialResponse = await fetch("/api/landlord/subscription/freeTrialTest", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ landlord_id: user.landlord_id }),
-                });
-                const trialData = await trialResponse.json();
-                setTrialUsed(trialData.is_trial_used);
-                // Fetch Current ubscription
-                const subscriptionResponse = await fetch(
-                    `/api/landlord/subscription/active/${user.landlord_id}`
-                );
+    // Add-on state
+    const [selectedAddOns, setSelectedAddOns] = useState<any[]>([]);
 
-                if (!subscriptionResponse.ok) return;
+    if (loading) return <div>Loading...</div>;
 
-                const subscriptionData = await subscriptionResponse.json();
-                setCurrentSubscription(subscriptionData);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                setCurrentSubscription(null);
-            } finally {
-                setDataLoading(false);
-            }
-        }
-
-        if (user) fetchData();
-    }, [user]);
-
-    const calculateProrate = (newPlan) => {
-        if (!currentSubscription) return newPlan.price || 0;
-
-        const currentPlan = SUBSCRIPTION_PLANS.find(
-            (p) => p.name === currentSubscription.plan_name
-        );
-        if (!currentPlan || currentPlan.id === newPlan.id) return 0;
-
-        const totalDays = 30;
-        const remainingDays = Math.max(
-            0,
-            (new Date(currentSubscription.end_date).getTime() - Date.now()) /
-            (1000 * 60 * 60 * 24)
-        );
-
-        const dailyRateCurrent = (currentPlan.price || 0) / totalDays;
-        const dailyRateNew = (newPlan.price || 0) / totalDays;
-
-        const unusedAmount = dailyRateCurrent * remainingDays;
-        const newCharge = newPlan.price - unusedAmount;
-
-        // Always return a valid number
-        if (isNaN(newCharge) || newCharge < 0) return 0;
-        return newCharge;
-    };
-
-    const handleSelectPlan = (plan) => {
-        if (currentSubscription?.plan_name === plan.name) return;
+    const handleSelectPlan = (plan: any) => {
         setSelectedPlan(plan);
-
-        const proratedCost = calculateProrate(plan);
-        const finalAmount = isNaN(proratedCost) ? 0 : parseFloat(proratedCost.toFixed(2));
-        setProratedAmount(finalAmount);
+        setProratedAmount(prorate(plan));
+        setSelectedAddOns([]); // Reset add-ons when switching plans
     };
 
-    const handleProceed = async () => {
+    const handleProceed = () => {
         if (!selectedPlan) {
-            Swal.fire({
-                icon: "warning",
-                title: "Plan Required",
-                text: "Please select a plan to proceed.",
-            });
+            Swal.fire("Plan Required", "Select a plan to continue.", "warning");
             return;
         }
 
-        setProcessing(true);
+        const addOnTotal = selectedAddOns.reduce((sum, a) => sum + a.price, 0);
+        const finalAmount = proratedAmount + addOnTotal;
 
-        try {
-            /* =====================================================
-               🟩 1. FREE PLAN
-            ===================================================== */
-            if (selectedPlan.id === 1) {
-                const response = await fetch("/api/landlord/subscription/freeTrialTest", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        landlord_id: user.landlord_id,
-                        plan_name: selectedPlan.name,
-                        is_free_plan: true,
-                    }),
-                });
-
-                if (response.status === 201) {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Free Plan Activated",
-                        text: "Your Free Plan is now active!",
-                        confirmButtonColor: "#10B981",
-                    }).then(() => {
-                        router.push("/pages/landlord/dashboard");
-                    });
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Activation Failed",
-                        text: "Could not activate Free Plan. Please try again later.",
-                    });
-                }
-                return;
-            }
-
-            /* =====================================================
-               🟨 2. PAID PLAN WITH FREE TRIAL
-            ===================================================== */
-            if (!trialUsed && selectedPlan.trialDays > 0) {
-                const response = await fetch("/api/landlord/subscription/freeTrialTest", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        landlord_id: user.landlord_id,
-                        plan_name: selectedPlan.name,
-                    }),
-                });
-
-                if (response.status === 201) {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Trial Activated!",
-                        text: `${selectedPlan.trialDays}-day free trial has been activated successfully!`,
-                        confirmButtonColor: "#10B981",
-                    }).then(() => {
-                        router.push("/pages/landlord/dashboard");
-                    });
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Trial Activation Failed",
-                        text: "Unable to activate trial. Please try again later.",
-                    });
-                }
-                return;
-            }
-
-            /* =====================================================
-               3. PAID PLAN (NO TRIAL) → GO TO REVIEW PAGE
-            ===================================================== */
-            let amountToCharge = null;
-
-            if (!currentSubscription && trialUsed) {
-                amountToCharge = selectedPlan.price ?? 0;
-            } else if (currentSubscription) {
-                const prorate = proratedAmount ?? calculateProrate(selectedPlan);
-                amountToCharge = prorate ?? selectedPlan.price ?? 0;
-            } else {
-                amountToCharge = selectedPlan.price ?? 0;
-            }
-
-            if (!amountToCharge || isNaN(amountToCharge) || amountToCharge <= 0) {
-                Swal.fire({
-                    icon: "warning",
-                    title: "Invalid Amount",
-                    text: "The selected plan has no valid price. Please refresh or contact support.",
-                });
-                setProcessing(false);
-                return;
-            }
-
-            // NEW: Redirect to review page instead of payment
-            router.push(
-                `/pages/landlord/subsciption_plan/payment/review?planId=${selectedPlan.id}&planName=${encodeURIComponent(
-                    selectedPlan.name
-                )}&amount=${amountToCharge}&prorated=${proratedAmount ?? 0}`
-            );
-
-        } catch (error) {
-            console.error("🚨 Error during plan activation:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Payment Failed",
-                text:
-                    error.response?.data?.error ||
-                    "Something went wrong while processing your request.",
-            });
-        } finally {
-            setProcessing(false);
-        }
+        router.push(
+            `/pages/landlord/subsciption_plan/payment/review?planId=${selectedPlan.id}` +
+            `&planName=${encodeURIComponent(selectedPlan.name)}` +
+            `&amount=${finalAmount}` +
+            `&prorated=${proratedAmount}` +
+            `&addons=${encodeURIComponent(JSON.stringify(selectedAddOns))}`
+        );
     };
 
-    if (dataLoading) return <LoadingScreen />;
-    if (!user) return;
+    const addOnTotal = selectedAddOns.reduce((s, a) => s + a.price, 0);
+    const finalTotal = proratedAmount + addOnTotal;
 
     return (
-        <div className="bg-gradient-to-b from-blue-50 to-white min-h-screen py-12">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
-                        Choose Your Perfect Plan
-                    </h1>
-                    <p className="max-w-2xl mx-auto text-xl text-gray-500">
-                        Select the subscription that best fits your property management
-                        needs
-                    </p>
-                </div>
+        <div className="max-w-6xl mx-auto py-12">
 
-                {!currentSubscription && (
-                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6">
-                        <p className="font-medium">
-                            You don’t have an active subscription.
-                        </p>
-                        <p className="text-sm">
-                            Please select a plan to continue using our services.
-                        </p>
-                    </div>
-                )}
+            {/* PAGE TITLE */}
+            <h1 className="text-center text-4xl font-bold mb-6">
+                Choose Your Perfect Plan
+            </h1>
 
-                {/* Subscription Status */}
-                {currentSubscription && (
-                    <div className="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-blue-500">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h2 className="text-lg font-medium text-gray-900">
-                                    Your Current Subscription
-                                </h2>
-                                <p className="mt-1 text-sm text-gray-600">
-                                    You are currently on the{" "}
-                                    <span className="font-semibold">
-                    {currentSubscription?.plan_name}
-                  </span>{" "}
+            <CurrentSubscriptionBanner currentSubscription={currentSubscription} />
+            <TrialBanner trialUsed={trialUsed} />
 
-                                </p>
-                            </div>
-                            <div className="mt-4 md:mt-0">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  <svg
-                      className="mr-1.5 h-2 w-2 text-green-600"
-                      fill="currentColor"
-                      viewBox="0 0 8 8"
-                  >
-                    <circle cx="4" cy="4" r="3" />
-                  </svg>
-                  Active
-                </span>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Trial Status */}
-                {!trialUsed && (
-                    <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-md p-6 mb-8 text-white">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <svg
-                                    className="h-8 w-8 text-white"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            </div>
-                            <div className="ml-4">
-                                <h3 className="text-lg font-medium">Free Trial Available!</h3>
-                                <p className="mt-1">
-                                    You're eligible for a free trial of our premium features.
-                                    Select a plan to start.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Plans Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                    {SUBSCRIPTION_PLANS.map((plan) => {
-                        const isCurrentPlan = currentSubscription?.plan_name === plan.name;
-                        const isSelectedPlan = selectedPlan?.id === plan.id;
-
-                        return (
-                            <div
-                                key={plan.id}
-                                onClick={() => !isCurrentPlan && handleSelectPlan(plan)}
-                                className={`
-                                relative bg-white rounded-2xl overflow-hidden transition-all duration-300
-                                ${
-                                    isCurrentPlan
-                                        ? "opacity-60 cursor-not-allowed ring-2 ring-gray-300"
-                                        : "cursor-pointer hover:shadow-xl transform hover:-translate-y-1"
-                                } 
-                                ${
-                                    isSelectedPlan
-                                        ? "ring-2 ring-blue-500 shadow-lg"
-                                        : "shadow-md"
-                                }
-                            `}
-                            >
-                                {plan.popular && (
-                                    <div className="absolute top-0 right-0 bg-blue-500 text-white px-4 py-1 rounded-bl-lg font-medium text-sm">
-                                        Popular
-                                    </div>
-                                )}
-
-                                <div className="p-8 border-b">
-                                    <h3 className="text-xl font-bold text-gray-900">
-                                        {plan.name}
-                                    </h3>
-                                    <div className="mt-4 flex items-baseline text-gray-900">
-                    <span className="text-4xl font-extrabold tracking-tight">
-                      ₱{plan.price}
-                    </span>
-                                        <span className="ml-1 text-xl font-semibold">/month</span>
-                                    </div>
-                                    {plan.trialDays > 0 && !trialUsed && (
-                                        <p className="mt-4 text-sm text-blue-600 font-medium flex items-center">
-                                            <svg
-                                                className="w-4 h-4 mr-1"
-                                                fill="currentColor"
-                                                viewBox="0 0 20 20"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M5 2a1 1 0 011 1v1h8V3a1 1 0 112 0v1h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h1V3a1 1 0 011-1zm11 14V6H4v10h12z"
-                                                    clipRule="evenodd"
-                                                ></path>
-                                            </svg>
-                                            {plan.trialDays}-day free trial
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="px-8 pt-6 pb-8">
-                                    <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-                                        What's included
-                                    </h4>
-                                    <ul className="mt-4 space-y-4">
-                                        {plan.features.map((feature, index) => (
-                                            <li key={index} className="flex items-start">
-                                                <div className="flex-shrink-0">
-                                                    <svg
-                                                        className="h-5 w-5 text-green-500"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        viewBox="0 0 20 20"
-                                                        fill="currentColor"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </div>
-                                                <p className="ml-3 text-sm text-gray-700">{feature}</p>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-
-                                <div className="px-6 py-4 bg-gray-50 text-center">
-                                    {isCurrentPlan ? (
-                                        <span className="inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white w-full">
-                      Current Plan
-                    </span>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            className={`w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm
-                                            ${
-                                                isSelectedPlan
-                                                    ? "bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                                    : "text-blue-700 bg-blue-100 hover:bg-blue-200"
-                                            }
-                                        `}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleSelectPlan(plan);
-                                            }}
-                                        >
-                                            {isSelectedPlan ? "Selected" : "Select"}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {/* Prorate Notice */}
-                {selectedPlan && currentSubscription && (
-                    <div className="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-green-500">
-                        <div className="flex items-start">
-                            <div className="flex-shrink-0">
-                                <svg
-                                    className="h-6 w-6 text-green-500"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                </svg>
-                            </div>
-                            <div className="ml-4">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Prorated Billing
-                                </h3>
-                                <p className="mt-1 text-gray-600">
-                                    We'll adjust your bill to account for your current
-                                    subscription. Your new total will be{" "}
-                                    <span className="font-semibold text-green-600">
-                    ₱{proratedAmount?.toFixed(2)}
-                  </span>{" "}
-                                    after applying the discount for unused days.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Action Button */}
-                <div className="text-center">
-                    <button
-                        className={`
-                        px-8 py-3 rounded-md text-base font-medium shadow-md transition-all duration-300
-                        ${
-                            !selectedPlan
-                                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105"
-                        }
-                    `}
-                        disabled={!selectedPlan || processing}
-                        onClick={handleProceed}
-                    >
-                        {processing ? (
-                            <div className="flex items-center">
-                                <svg
-                                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                    ></circle>
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    ></path>
-                                </svg>
-                                Processing...
-                            </div>
-                        ) : selectedPlan?.id === 1 ? (
-                            "Start Free Plan"
-                        ) : !trialUsed && selectedPlan?.trialDays > 0 ? (
-                            `Start ${selectedPlan?.trialDays}-Day Free Trial`
-                        ) : (
-                            "Proceed to Payment"
-                        )}
-                    </button>
-                </div>
-
-                {/* FAQ Section */}
-                <div className="mt-16">
-                    <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
-                        Frequently Asked Questions
-                    </h2>
-                    <div className="bg-white rounded-lg shadow-md overflow-hidden divide-y divide-gray-200">
-                        <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900">
-                                Can I change my plan later?
-                            </h3>
-                            <p className="mt-2 text-gray-600">
-                                Yes, you can upgrade or downgrade your plan at any time. When
-                                upgrading, we'll prorate your current subscription.
-                            </p>
-                        </div>
-                        <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900">
-                                Is there a long-term contract?
-                            </h3>
-                            <p className="mt-2 text-gray-600">
-                                No, all plans are billed monthly and you can cancel anytime.
-                            </p>
-                        </div>
-                        <div className="p-6">
-                            <h3 className="text-lg font-medium text-gray-900">
-                                What payment methods do you accept?
-                            </h3>
-                            <p className="mt-2 text-gray-600">
-                                We only accept payments through Maya.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            {/* ======================== PLANS ======================== */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {SUBSCRIPTION_PLANS.map((plan) => (
+                    <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        isCurrent={currentSubscription?.plan_name === plan.name}
+                        isSelected={selectedPlan?.id === plan.id}
+                        trialAvailable={!trialUsed}
+                        onSelect={handleSelectPlan}
+                    />
+                ))}
             </div>
+
+            {/* Prorated amount notice */}
+            {selectedPlan && currentSubscription && (
+                <ProrateNotice proratedAmount={proratedAmount} />
+            )}
+
+            {/* ======================== ADD-ONS ALWAYS VISIBLE ======================== */}
+            <AddOnServices
+                selectedAddOns={selectedAddOns}
+                onChange={setSelectedAddOns}
+                hasSelectedPlan={!!selectedPlan}
+            />
+
+            {/* ======================== SUBTOTAL CARD ======================== */}
+            <div className="mt-10 bg-white shadow-md rounded-xl p-6 border border-gray-200 max-w-lg mx-auto">
+                <h2 className="text-2xl font-bold mb-4">Summary</h2>
+
+                <div className="space-y-3 text-gray-700">
+
+                    {/* BASE PLAN */}
+                    <div className="flex justify-between">
+                        <span>Base Plan:</span>
+                        <span className="font-semibold">
+                            {selectedPlan ? formatCurrency(proratedAmount || selectedPlan.price) : "—"}
+                        </span>
+                    </div>
+
+                    {/* ADD-ON TOTAL */}
+                    <div className="flex justify-between">
+                        <span>Add-Ons:</span>
+                        <span className="font-semibold">
+                            {formatCurrency(addOnTotal)}
+                        </span>
+                    </div>
+
+                    <hr className="my-3" />
+
+                    {/* GRAND TOTAL */}
+                    <div className="flex justify-between text-lg font-bold">
+                        <span>Total:</span>
+                        <span>{formatCurrency(finalTotal)}</span>
+                    </div>
+                </div>
+
+                {/* WARNING IF NO PLAN SELECTED */}
+                {!selectedPlan && (
+                    <p className="mt-4 text-red-500 text-sm font-medium">
+                        Select a plan first to activate checkout.
+                    </p>
+                )}
+
+                {/* PROCEED BUTTON */}
+                <button
+                    onClick={handleProceed}
+                    disabled={!selectedPlan}
+                    className={`w-full mt-6 px-6 py-3 rounded-lg text-white font-semibold transition
+                    ${selectedPlan ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
+                >
+                    Proceed to Checkout
+                </button>
+            </div>
+
+            <FAQ />
         </div>
     );
 }

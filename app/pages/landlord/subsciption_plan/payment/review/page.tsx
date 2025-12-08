@@ -4,52 +4,71 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { SUBSCRIPTION_PLANS } from "@/constant/subscription/subscriptionPlans";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
-import { Suspense } from "react";
-import useAuthStore from "@/zustand/authStore"; // ensure this path is correct
+import { Suspense, useState } from "react";
+import useAuthStore from "@/zustand/authStore";
+import { formatCurrency } from "@/utils/formatter/formatters";
+import { ADD_ON_SERVICES } from "@/constant/subscription/addOns"; // <-- your add-ons constant file
 
 function SubscriptionReview() {
     const router = useRouter();
     const params = useSearchParams();
-    const { user } = useAuthStore(); // get logged-in user
+    const { user } = useAuthStore();
 
-    // Extract params
+    // Extract base values from URL
     const planId = params.get("planId");
-    const planName = params.get("planName");
-    const amountToCharge = Number(params.get("amount") || 0);
+    const proratedAmount = Number(params.get("prorated") || 0);
 
-    // Find selected plan
+    // Load selected addons if passed
+    let initialAddOns: any[] = [];
+    try {
+        initialAddOns = JSON.parse(params.get("addons") || "[]");
+    } catch {
+        initialAddOns = [];
+    }
+
     const selectedPlan = SUBSCRIPTION_PLANS.find(
         (p) => String(p.id) === String(planId)
     );
 
-    // Guard invalid requests
-    if (!planId || !selectedPlan || amountToCharge <= 0) {
+    if (!selectedPlan) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <p className="text-gray-600 mb-4">Invalid subscription request.</p>
-                    <button
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                        onClick={() => router.push("/pages/landlord/subscription")}
-                    >
-                        Go Back
-                    </button>
-                </div>
+                <p className="text-gray-600">Invalid subscription request.</p>
             </div>
         );
     }
 
-    /** PAY WITH MAYA — UPDATED STRUCTURE */
+    // LOCAL STATE FOR ADD-ONS (user can toggle them)
+    const [selectedAddOns, setSelectedAddOns] = useState(initialAddOns);
+
+    const toggleAddOn = (addon: any) => {
+        const exists = selectedAddOns.some((a) => a.id === addon.id);
+        if (exists) {
+            setSelectedAddOns(selectedAddOns.filter((a) => a.id !== addon.id));
+        } else {
+            setSelectedAddOns([...selectedAddOns, addon]);
+        }
+    };
+
+    // ---- PRICE COMPUTATIONS ----
+    const basePrice = selectedPlan.price;
+    const proratedDiscount = basePrice - proratedAmount;
+    const addOnTotal = selectedAddOns.reduce((sum, a) => sum + a.price, 0);
+
+    const finalTotal = proratedAmount + addOnTotal;
+
+    // ---- PAYMENT ----
     const goToPayment = async () => {
         try {
             const response = await axios.post("/api/payment/checkout-payment", {
-                amount: amountToCharge,
+                amount: finalTotal,
                 description: selectedPlan.name,
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 landlord_id: user.landlord_id,
                 plan_name: selectedPlan.name,
+                addons: selectedAddOns,
                 redirectUrl: {
                     success: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/subscriptionSuccess`,
                     failure: `${process.env.NEXT_PUBLIC_BASE_URL}/pages/payment/failure`,
@@ -62,16 +81,16 @@ function SubscriptionReview() {
             } else {
                 alert("Payment Error: No checkout URL received.");
             }
-        } catch (err) {
+        } catch {
             alert("Unable to start Maya payment.");
         }
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
-            <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+        <div className="min-h-screen bg-gray-50 py-10 px-4">
+            <div className="max-w-5xl mx-auto">
 
-                {/* BACK BUTTON */}
+                {/* Back Button */}
                 <button
                     className="flex items-center text-gray-600 hover:text-gray-800 mb-6"
                     onClick={() => router.back()}
@@ -79,51 +98,136 @@ function SubscriptionReview() {
                     <ArrowLeft className="w-5 h-5 mr-2" /> Back
                 </button>
 
-                {/* TITLE */}
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-4 text-center">
-                    Review Your Subscription
-                </h1>
+                <h1 className="text-3xl font-bold mb-8">Subscription Checkout</h1>
 
-                <p className="text-gray-600 text-center mb-8">
-                    Confirm your plan and continue to payment.
-                </p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                {/* REVIEW BOX */}
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-3">
-                        {selectedPlan.name}
-                    </h2>
+                    {/* LEFT SIDE — PLAN + ADD-ONS (SELECTABLE) */}
+                    <div className="lg:col-span-2 space-y-6">
 
-                    <div className="space-y-3 text-gray-700">
-                        <p className="flex justify-between">
-                            <span>Base Price:</span>
-                            <span className="font-semibold">₱{selectedPlan.price}</span>
-                        </p>
+                        {/* PLAN DETAILS */}
+                        <div className="bg-white rounded-xl shadow border p-6">
+                            <h2 className="text-xl font-bold mb-4">{selectedPlan.name}</h2>
 
-                        <hr className="my-3" />
+                            <div className="space-y-3 text-gray-700">
 
-                        <p className="flex justify-between text-lg font-bold text-gray-900">
-                            <span>Total Amount Due:</span>
-                            <span>₱{amountToCharge}</span>
-                        </p>
+                                <div className="flex justify-between">
+                                    <span>Base Price</span>
+                                    <span className="font-semibold">{formatCurrency(basePrice)}</span>
+                                </div>
+
+                                {proratedDiscount > 0 && (
+                                    <div className="flex justify-between text-green-600">
+                                        <span>Prorated Discount</span>
+                                        <span>- {formatCurrency(proratedDiscount)}</span>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between font-bold text-gray-900 pt-2">
+                                    <span>Plan Subtotal</span>
+                                    <span>{formatCurrency(proratedAmount)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ADD-ONS SELECTABLE */}
+                        <div className="bg-white rounded-xl shadow border p-6">
+                            <h2 className="text-xl font-bold mb-4">Add-ons</h2>
+
+                            <div className="space-y-4">
+
+                                {ADD_ON_SERVICES.map((addon) => {
+                                    const selected = selectedAddOns.some((a) => a.id === addon.id);
+
+                                    return (
+                                        <div
+                                            key={addon.id}
+                                            className={`
+                                                flex justify-between border rounded-lg p-4 cursor-pointer
+                                                ${selected ? "bg-blue-50 border-blue-300" : "bg-gray-50"}
+                                            `}
+                                            onClick={() => toggleAddOn(addon)}
+                                        >
+                                            <div>
+                                                <p className="font-medium">{addon.name}</p>
+                                                <p className="text-gray-500 text-sm">{addon.description}</p>
+                                            </div>
+
+                                            <div className="text-right">
+                                                <p className="font-semibold">{formatCurrency(addon.price)}</p>
+
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selected}
+                                                    onChange={() => toggleAddOn(addon)}
+                                                    className="h-5 w-5 accent-blue-600 mt-2"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                <div className="flex justify-between font-semibold border-t pt-3">
+                                    <span>Add-ons Subtotal</span>
+                                    <span>{formatCurrency(addOnTotal)}</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
+
+                    {/* RIGHT SIDE — ORDER SUMMARY */}
+                    <div className="bg-white shadow rounded-xl border p-6 h-fit">
+                        <h3 className="text-lg font-bold mb-4">Order Summary</h3>
+
+                        <div className="space-y-4 text-gray-700">
+
+                            {/* Base Plan */}
+                            <div className="flex justify-between">
+                                <span>Base Plan Price</span>
+                                <span>{formatCurrency(basePrice)}</span>
+                            </div>
+
+                            {/* Prorated deduction */}
+                            {proratedDiscount > 0 && (
+                                <div className="flex justify-between text-green-600">
+                                    <span>Prorated Discount</span>
+                                    <span>- {formatCurrency(proratedDiscount)}</span>
+                                </div>
+                            )}
+
+                            {/* Plan Subtotal */}
+                            <div className="flex justify-between font-medium">
+                                <span>Plan Subtotal</span>
+                                <span>{formatCurrency(proratedAmount)}</span>
+                            </div>
+
+                            {/* Add-ons */}
+                            <div className="flex justify-between">
+                                <span>Add-ons</span>
+                                <span>{formatCurrency(addOnTotal)}</span>
+                            </div>
+
+                            <hr />
+
+                            {/* GRAND TOTAL */}
+                            <div className="flex justify-between text-xl font-bold">
+                                <span>Total</span>
+                                <span>{formatCurrency(finalTotal)}</span>
+                            </div>
+                        </div>
+
+                        {/* CHECKOUT BUTTON */}
+                        <button
+                            onClick={goToPayment}
+                            className="w-full mt-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 transition"
+                        >
+                            Continue to Payment
+                        </button>
+                    </div>
+
                 </div>
-
-                {/* PAY WITH MAYA */}
-                <button
-                    onClick={goToPayment}
-                    className="
-                        w-full h-[48px] flex items-center justify-center gap-2
-                        rounded-lg text-white font-semibold
-                        bg-gradient-to-r from-green-600 to-green-700
-                        hover:from-green-700 hover:to-green-800
-                        transition-all shadow-md hover:shadow-lg
-                    "
-                >
-                    <img src="/maya-logo.svg" alt="Maya" className="h-6" />
-                    Pay with Maya
-                </button>
-
             </div>
         </div>
     );
@@ -131,7 +235,7 @@ function SubscriptionReview() {
 
 export default function Page() {
     return (
-        <Suspense fallback={<div>Loading subscription…</div>}>
+        <Suspense fallback={<div>Loading…</div>}>
             <SubscriptionReview />
         </Suspense>
     );
