@@ -114,7 +114,7 @@ export default function LandlordLayout({
     },
       {
           label: "Help & Support",
-          href: "/pages/commons/support",
+          href: "/pages/public/help",
           icon: Handshake ,
       },
   ];
