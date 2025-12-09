@@ -15,68 +15,84 @@ export default function QuickActions({
       label: "Add Property",
       icon: Home,
       onClick: onAddProperty,
-      gradient: "from-blue-500 to-blue-600",
+      gradientFrom: "#3b82f6",
+      gradientTo: "#2563eb",
     },
     {
       id: "inviteTenant",
       label: "Invite Tenant",
       icon: UserPlus,
       onClick: onInviteTenant,
-      gradient: "from-emerald-500 to-emerald-600",
+      gradientFrom: "#10b981",
+      gradientTo: "#059669",
     },
     {
       id: "announcement",
       label: "Announcement",
       icon: Megaphone,
       onClick: onAnnouncement,
-      gradient: "from-purple-500 to-purple-600",
+      gradientFrom: "#a855f7",
+      gradientTo: "#9333ea",
     },
     {
       id: "workOrder",
       label: "Work Order",
       icon: List,
       onClick: onWorkOrder,
-      gradient: "from-orange-500 to-orange-600",
+      gradientFrom: "#f97316",
+      gradientTo: "#ea580c",
     },
     {
       id: "income",
       label: "Income",
       icon: Wallet,
       onClick: onIncome,
-      gradient: "from-blue-600 to-emerald-600",
+      gradientFrom: "#2563eb",
+      gradientTo: "#10b981",
     },
   ];
 
   return (
     <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 md:gap-4">
-      {actions.map(({ id, label, icon: Icon, onClick, gradient }) => (
-        <button
-          key={id}
-          onClick={onClick}
-          className="group flex flex-col items-center w-16 md:w-20"
-        >
-          {/* Icon Circle */}
-          <div
-            className={`
-                            w-12 h-12 md:w-14 md:h-14
-                            rounded-full
-                            flex items-center justify-center
-                            bg-white border border-gray-200
-                            shadow-sm
-                            transition-all duration-200
-                            group-hover:shadow-lg group-hover:scale-110 group-hover:border-transparent
-                            group-hover:bg-gradient-to-br group-hover:${gradient}
-                        `}
+      {actions.map(
+        ({ id, label, icon: Icon, onClick, gradientFrom, gradientTo }) => (
+          <button
+            key={id}
+            onClick={onClick}
+            className="group flex flex-col items-center w-16 md:w-20"
           >
-            <Icon className="w-5 h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-white transition-colors" />
-          </div>
+            {/* Icon Circle */}
+            <div
+              className="
+              w-12 h-12 md:w-14 md:h-14
+              rounded-full
+              flex items-center justify-center
+              bg-white border border-gray-200
+              shadow-sm
+              transition-all duration-200
+              group-hover:shadow-lg group-hover:scale-110 group-hover:border-transparent
+              relative overflow-hidden
+            "
+            >
+              {/* Gradient Overlay - appears on hover */}
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                style={{
+                  background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})`,
+                }}
+              />
 
-          {/* Label */}
-          <span className="mt-1.5 text-[10px] md:text-xs font-medium text-gray-700 text-center leading-tight">
-            {label}
-          </span>
-        </button>
-      ))}
+              {/* Icon */}
+              <Icon className="w-5 h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-white transition-colors duration-200 relative z-10" />
+            </div>
+
+            {/* Label */}
+            <span className="mt-1.5 text-[10px] md:text-xs font-medium text-gray-700 text-center leading-tight">
+              {label}
+            </span>
+          </button>
+        )
+      )}
     </div>
   );
 }
