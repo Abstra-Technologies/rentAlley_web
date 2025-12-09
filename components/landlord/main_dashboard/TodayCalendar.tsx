@@ -2,133 +2,126 @@
 
 import useSWR from "swr";
 import axios from "axios";
-import { CalendarIcon } from "@heroicons/react/24/solid";
+import { Calendar, Clock } from "lucide-react";
 
 export default function TodayCalendar({ landlordId }) {
-    const fetcher = (url: string) => axios.get(url).then(res => res.data);
+  const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
-    const { data, isLoading } = useSWR(
-        landlordId
-            ? `/api/landlord/propertyVisits/today-events?landlord_id=${landlordId}`
-            : null,
-        fetcher
-    );
+  const { data, isLoading } = useSWR(
+    landlordId
+      ? `/api/landlord/propertyVisits/today-events?landlord_id=${landlordId}`
+      : null,
+    fetcher
+  );
 
-    const today = new Date();
+  const today = new Date();
 
-    const monthYear = today.toLocaleString("en-US", {
-        month: "long",
-        year: "numeric",
-    });
+  const monthYear = today.toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
 
-    const dayNumber = today.toLocaleString("en-US", {
-        day: "2-digit",
-    });
+  const dayNumber = today.toLocaleString("en-US", {
+    day: "2-digit",
+  });
 
-    const weekday = today.toLocaleString("en-US", {
-        weekday: "long",
-    });
+  const weekday = today.toLocaleString("en-US", {
+    weekday: "long",
+  });
 
-    const visits = data?.propertyVisits || [];
-    const maintenance = data?.maintenanceRequests || [];
+  const visits = data?.propertyVisits || [];
+  const maintenance = data?.maintenanceRequests || [];
 
-    const events = [
-        ...visits.map(v => ({
-            type: "Property Visit",
-            label: `${v.unit_name} — ${v.visit_time}`,
-            status: v.status,
-        })),
-        ...maintenance.map(m => ({
-            type: "Maintenance",
-            label: `${m.unit_name} — ${m.subject}`,
-            status: m.status,
-        }))
-    ];
+  const events = [
+    ...visits.map((v) => ({
+      type: "Property Visit",
+      label: `${v.unit_name} — ${v.visit_time}`,
+      status: v.status,
+    })),
+    ...maintenance.map((m) => ({
+      type: "Maintenance",
+      label: `${m.unit_name} — ${m.subject}`,
+      status: m.status,
+    })),
+  ];
 
-    return (
-        <div
-            className="
-                relative group
-                rounded-2xl border border-gray-200 shadow
-                bg-white/30 backdrop-blur-xl
-                p-6
-                transition-all duration-300
-                hover:-translate-y-1 hover:shadow-xl
-                min-h-[300px]
-            "
-        >
-            {/* 🔵 Hover Overlay (same effect as PaymentSummaryCard) */}
-            <div
-                className="
-                    absolute inset-0 rounded-2xl
-                    bg-gradient-to-r from-blue-600/0 via-emerald-400/0 to-emerald-600/0
-                    group-hover:from-blue-600/10 group-hover:via-emerald-400/10 group-hover:to-emerald-600/10
-                    opacity-0 group-hover:opacity-100
-                    transition-all duration-300
-                    pointer-events-none
-                "
-            />
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
+        <h2 className="text-sm md:text-base font-semibold text-gray-900">
+          Today's Schedule
+        </h2>
+      </div>
 
-            {/* CONTENT */}
-            <div className="relative z-10">
+      {/* Date Display */}
+      <div className="text-center mb-6">
+        <p className="text-sm text-gray-600 mb-1">{monthYear}</p>
+        <p className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent mb-1">
+          {dayNumber}
+        </p>
+        <p className="text-xs text-gray-500">{weekday}</p>
+      </div>
 
-                {/* Month + Year */}
-                <h2 className="text-xl font-bold text-gray-900 text-center">
-                    {monthYear}
-                </h2>
-
-                {/* Date Number */}
-                <p className="text-5xl font-extrabold text-center text-blue-700 leading-tight mt-1">
-                    {dayNumber}
-                </p>
-
-                {/* Weekday */}
-                <p className="text-center text-gray-500 text-sm mb-4">
-                    {weekday}
-                </p>
-
-                {/* Events Label */}
-                <div className="flex items-center gap-2 mb-2">
-                    <CalendarIcon className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-semibold text-gray-800">Events</h3>
-                </div>
-
-                {/* Loading */}
-                {isLoading && (
-                    <p className="text-gray-500 text-sm">Loading events...</p>
-                )}
-
-                {/* No events */}
-                {!isLoading && events.length === 0 && (
-                    <p className="text-gray-500 text-sm">No events scheduled today.</p>
-                )}
-
-                {/* Event Cards */}
-                <div className="mt-3 space-y-3">
-                    {events.map((ev, index) => (
-                        <div
-                            key={index}
-                            className="
-                                p-3 border rounded-xl bg-gray-50
-                                flex flex-col transition-all duration-300
-                                hover:bg-blue-50 hover:shadow-md hover:-translate-y-[2px]
-                            "
-                        >
-                            <span className="text-xs text-gray-500 uppercase tracking-wide">
-                                {ev.type}
-                            </span>
-
-                            <span className="font-medium text-gray-800 text-sm">
-                                {index + 1}. {ev.label}
-                            </span>
-
-                            <span className="text-xs text-gray-600 mt-1">
-                                Status: {ev.status}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+      {/* Events Section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+          <Calendar className="w-4 h-4 text-blue-600" />
+          <h3 className="text-sm font-semibold text-gray-900">Events</h3>
         </div>
-    );
+
+        {/* Loading */}
+        {isLoading && (
+          <div className="space-y-2 animate-pulse">
+            <div className="h-16 bg-gray-100 rounded-lg"></div>
+            <div className="h-16 bg-gray-100 rounded-lg"></div>
+          </div>
+        )}
+
+        {/* No events */}
+        {!isLoading && events.length === 0 && (
+          <div className="text-center py-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Calendar className="w-6 h-6 text-blue-600" />
+            </div>
+            <p className="text-sm text-gray-600">No events scheduled today</p>
+          </div>
+        )}
+
+        {/* Event Cards */}
+        {!isLoading && events.length > 0 && (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {events.map((ev, index) => (
+              <div
+                key={index}
+                className="p-3 border border-gray-200 rounded-lg bg-gray-50 hover:bg-blue-50 hover:border-blue-200 transition-all duration-200"
+              >
+                <div className="flex items-start gap-2 mb-1">
+                  <Clock className="w-3 h-3 text-gray-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-gray-500 uppercase font-medium">
+                    {ev.type}
+                  </span>
+                </div>
+                <p className="font-medium text-gray-900 text-sm mb-1">
+                  {ev.label}
+                </p>
+                <span
+                  className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${
+                    ev.status === "Confirmed"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : ev.status === "Pending"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {ev.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

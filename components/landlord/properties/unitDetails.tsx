@@ -1,11 +1,3 @@
-/**
- * @component    UnitDetails
- * @desc         Displays unit details and analytics info (no lease data).
- * @usedIn       app/pages/landlord/properties/[id]/units/details/[unitId]/page.js
- * @props
- *    - unitId: string
- */
-
 "use client";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -68,10 +60,47 @@ export default function UnitDetails({ unitId }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading unit details...</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
+          {/* Back Button Skeleton */}
+          <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse mb-4" />
+
+          {/* Header Skeleton */}
+          <div className="mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
+              <div className="flex-1">
+                <div className="h-7 bg-gray-200 rounded w-64 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-40 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs Skeleton */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="border-b border-gray-200">
+              <div className="flex gap-2 p-2">
+                <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+                <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+            </div>
+
+            {/* Tab Content Skeleton */}
+            <div className="p-4 md:p-6 space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white border border-gray-200 rounded-xl p-4"
+                >
+                  <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse mb-3" />
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -79,7 +108,6 @@ export default function UnitDetails({ unitId }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Proper spacing for navbar and sidebar */}
       <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
         {/* Back Button */}
         <button
@@ -138,7 +166,6 @@ export default function UnitDetails({ unitId }) {
           {/* Tab Content */}
           <div className="p-4 md:p-6">
             {activeTab === "meter" && <MeterReadings unitId={unitId} />}
-
             {activeTab === "analytics" && <UnitAnalytics unitId={unitId} />}
           </div>
         </div>

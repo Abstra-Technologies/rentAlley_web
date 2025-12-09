@@ -220,10 +220,83 @@ const EditUnit = () => {
 
   if (!unit) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30 flex items-center justify-center">
-        <div className="flex items-center gap-3 bg-white px-6 py-4 rounded-xl shadow-lg border border-gray-100">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-          <p className="text-gray-700 font-medium">Loading unit details...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
+        <div className="px-4 pt-20 pb-24 md:px-8 lg:px-12 xl:px-16">
+          {/* Header Skeleton */}
+          <div className="mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 bg-gray-200 rounded-xl animate-pulse flex-shrink-0" />
+              <div>
+                <div className="h-8 bg-gray-200 rounded w-48 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Form Container Skeleton */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            {/* Section 1 */}
+            <div className="p-5 md:p-6 space-y-5">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                <div className="h-6 bg-gray-200 rounded w-40 animate-pulse" />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-5 bg-gray-200 rounded w-32 animate-pulse" />
+                    <div className="h-11 bg-gray-200 rounded-xl animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Section 2 */}
+            <div className="p-5 md:p-6 space-y-5 bg-gray-50/50">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                <div className="h-6 bg-gray-200 rounded w-40 animate-pulse" />
+              </div>
+
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <div className="h-5 bg-gray-200 rounded w-32 animate-pulse" />
+                  <div className="h-11 bg-gray-200 rounded-xl animate-pulse" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
+                  <div className="h-32 bg-gray-200 rounded-xl animate-pulse" />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3 - Photos */}
+            <div className="p-5 md:p-6 space-y-5">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                <div className="h-6 bg-gray-200 rounded w-32 animate-pulse" />
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="aspect-square bg-gray-200 rounded-xl animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons Skeleton */}
+            <div className="p-5 md:p-6 bg-gray-50">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="h-12 flex-1 sm:flex-initial sm:w-32 bg-gray-200 rounded-xl animate-pulse" />
+                <div className="h-12 flex-1 bg-gray-200 rounded-xl animate-pulse" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
