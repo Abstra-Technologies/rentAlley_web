@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   Inbox,
   AlertCircle,
+    Handshake
 } from "lucide-react";
 import SendTenantInviteModal from "@/components/landlord/properties/sendInvite";
 import NotificationSection from "@/components/notification/notifCenter";
@@ -111,6 +112,11 @@ export default function LandlordLayout({
       href: "/pages/landlord/analytics/performance",
       icon: ChartArea,
     },
+      {
+          label: "Help & Support",
+          href: "/pages/commons/support",
+          icon: Handshake ,
+      },
   ];
 
   const handleLogout = async () => {

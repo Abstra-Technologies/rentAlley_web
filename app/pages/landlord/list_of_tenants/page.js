@@ -3,7 +3,6 @@
 
 import useAuthStore from "@/zustand/authStore";
 import TenantListLandlords from "@/components/landlord/properties/listOfCurrentTenants";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
 
 
 export default function LandlordsTenantsListPage() {
