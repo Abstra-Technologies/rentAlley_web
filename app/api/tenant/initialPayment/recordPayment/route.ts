@@ -5,20 +5,25 @@ export async function POST(req: NextRequest) {
     const connection = await db.getConnection();
 
     try {
-        const { agreement_id, payment_types, ref } = await req.json();
+        const { agreement_id, payment_types, ref, totalAmount, status } =
+            await req.json();
 
-        if (!agreement_id || !payment_types || !ref) {
+        /** ------------------------------------------------------------
+         * Validate input
+         * ------------------------------------------------------------ */
+        if (!agreement_id || !payment_types || !ref || !status) {
             return NextResponse.json(
                 { error: "Missing required fields." },
                 { status: 400 }
             );
         }
 
-        const typesArray = payment_types.split(",").map(t => t.trim());
+        const typesArray = payment_types.split(",").map((t: string) => t.trim());
 
-        /* -------------------------------------------------------------------
-           1) IDEMPOTENCY CHECK — Same ref already processed?
-        ------------------------------------------------------------------- */
+        /** ------------------------------------------------------------
+         * IDEMPOTENCY CHECK
+         * Prevent ANY duplicate record using reference code
+         * ------------------------------------------------------------ */
         const [existing]: any = await connection.query(
             `
             SELECT payment_id 
@@ -26,13 +31,13 @@ export async function POST(req: NextRequest) {
             WHERE receipt_reference = ?
             LIMIT 1
             `,
-            [ref]
+            [ref] // parameterized
         );
 
         if (existing.length > 0) {
             return NextResponse.json(
                 {
-                    message: "Payment already processed (idempotent).",
+                    message: "Idempotent: payment already logged.",
                     agreement_id,
                     types: typesArray,
                     ref,
@@ -41,14 +46,9 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* -------------------------------------------------------------------
-           2) BEGIN TRANSACTION
-        ------------------------------------------------------------------- */
-        await connection.beginTransaction();
-
-        /* -------------------------------------------------------------------
-           3) FETCH tenant_id once (needed for both tables)
-        ------------------------------------------------------------------- */
+        /** ------------------------------------------------------------
+         * Get tenant_id (needed for updates)
+         * ------------------------------------------------------------ */
         const [leaseRows]: any = await connection.query(
             `
             SELECT tenant_id
@@ -59,7 +59,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (leaseRows.length === 0) {
-            await connection.rollback();
             return NextResponse.json(
                 { error: "Agreement not found." },
                 { status: 404 }
@@ -68,14 +67,63 @@ export async function POST(req: NextRequest) {
 
         const tenant_id = leaseRows[0].tenant_id;
 
-        /* -------------------------------------------------------------------
-           4) Get actual payable amounts from their own tables
-        ------------------------------------------------------------------- */
+        /** ------------------------------------------------------------
+         * FAILED or CANCELLED
+         * We still insert into Payment for history logs.
+         * ------------------------------------------------------------ */
+        if (status === "failed" || status === "cancelled") {
+            await connection.beginTransaction();
 
-        // Security Deposit
+            for (const type of typesArray) {
+                await connection.query(
+                    `
+                    INSERT INTO Payment (
+                        bill_id,
+                        agreement_id,
+                        payment_type,
+                        amount_paid,
+                        payment_method_id,
+                        payment_status,
+                        receipt_reference,
+                        proof_of_payment
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `,
+                    [
+                        null,
+                        agreement_id,
+                        type,
+                        totalAmount || 0,
+                        "MAYA",
+                        status, // cancelled | failed
+                        ref,
+                        null,
+                    ]
+                );
+            }
+
+            await connection.commit();
+
+            return NextResponse.json(
+                {
+                    message: `Payment logged as ${status}.`,
+                    agreement_id,
+                    types: typesArray,
+                    ref,
+                },
+                { status: 200 }
+            );
+        }
+
+        /** ------------------------------------------------------------
+         * SUCCESS PAYMENT — FULLY ATOMIC
+         * ------------------------------------------------------------ */
+        await connection.beginTransaction();
+
+        // Fetch payable amounts
         const [depositRows]: any = await connection.query(
             `
-            SELECT amount, status
+            SELECT amount
             FROM SecurityDeposit
             WHERE lease_id = ? AND tenant_id = ?
             ORDER BY deposit_id DESC
@@ -84,10 +132,9 @@ export async function POST(req: NextRequest) {
             [agreement_id, tenant_id]
         );
 
-        // Advance Payment
         const [advanceRows]: any = await connection.query(
             `
-            SELECT amount, status
+            SELECT amount
             FROM AdvancePayment
             WHERE lease_id = ? AND tenant_id = ?
             ORDER BY advance_id DESC
@@ -96,26 +143,17 @@ export async function POST(req: NextRequest) {
             [agreement_id, tenant_id]
         );
 
-        /* -------------------------------------------------------------------
-           5) Process each payment type separately (correct amounts)
-        ------------------------------------------------------------------- */
+        /** Process each payment type */
         for (const type of typesArray) {
             let amount = 0;
 
-            if (type === "security_deposit" && depositRows.length > 0) {
+            if (type === "security_deposit" && depositRows.length > 0)
                 amount = Number(depositRows[0].amount);
-            }
 
-            if (type === "advance_payment" && advanceRows.length > 0) {
+            if (type === "advance_payment" && advanceRows.length > 0)
                 amount = Number(advanceRows[0].amount);
-            }
 
-            // Skip if no amount found or zero
-            if (!amount || amount <= 0) continue;
-
-            /* -------------------------------------------------
-               INSERT Payment (bill_id = NULL, method = MAYA)
-            ------------------------------------------------- */
+            /** Insert payment record */
             await connection.query(
                 `
                 INSERT INTO Payment (
@@ -131,20 +169,18 @@ export async function POST(req: NextRequest) {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
-                    null,              // bill_id, INITIAL doesn't belong to Billing
+                    null,
                     agreement_id,
                     type,
                     amount,
-                    "MAYA",            // text, no more FK
+                    "MAYA",
                     "confirmed",
                     ref,
                     null,
                 ]
             );
 
-            /* -------------------------------------------------
-               UPDATE SECURITY DEPOSIT TABLE
-            ------------------------------------------------- */
+            /** Update payable tables */
             if (type === "security_deposit") {
                 await connection.query(
                     `
@@ -156,9 +192,6 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            /* -------------------------------------------------
-               UPDATE ADVANCE PAYMENT TABLE
-            ------------------------------------------------- */
             if (type === "advance_payment") {
                 await connection.query(
                     `
@@ -171,14 +204,12 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        /* -------------------------------------------------------------------
-           6) COMMIT TRANSACTION
-        ------------------------------------------------------------------- */
+        /** Commit transaction */
         await connection.commit();
 
         return NextResponse.json(
             {
-                message: "Payment recorded successfully.",
+                message: "Payment successfully recorded.",
                 agreement_id,
                 types: typesArray,
                 ref,
@@ -193,8 +224,8 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             {
-                error: "Failed to record payment.",
-                details: error.message ?? String(error),
+                error: "Failed to process payment.",
+                details: error.message,
             },
             { status: 500 }
         );

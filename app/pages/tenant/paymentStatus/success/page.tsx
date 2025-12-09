@@ -19,12 +19,20 @@ export default function PaymentSuccessPage() {
     const payment_types = params.get("types");
     const totalAmount = params.get("totalAmount");
 
-    const [imageURL, setImageURL] = useState<string | null>(null);
     const receiptRef = useRef<HTMLDivElement>(null);
 
+    // Prevent double execution (Next.js strict mode)
+    const hasRecorded = useRef(false);
+
     useEffect(() => {
+        if (hasRecorded.current) return;
+        hasRecorded.current = true;
+
         const recordPayment = async () => {
             try {
+                // Avoid sending empty data
+                if (!agreement_id || !ref) return;
+
                 await fetch("/api/tenant/initialPayment/recordPayment", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -33,6 +41,7 @@ export default function PaymentSuccessPage() {
                         ref,
                         payment_types,
                         totalAmount,
+                        status: "success",
                     }),
                 });
             } catch (error) {
@@ -41,7 +50,7 @@ export default function PaymentSuccessPage() {
         };
 
         recordPayment();
-    }, []);
+    }, [agreement_id, ref, payment_types, totalAmount]);
 
     const downloadPNG = async () => {
         if (!receiptRef.current) return;
@@ -49,7 +58,7 @@ export default function PaymentSuccessPage() {
         try {
             const dataUrl = await htmlToImage.toPng(receiptRef.current, {
                 cacheBust: true,
-                pixelRatio: 2, // HD output
+                pixelRatio: 2, // high resolution
             });
 
             const link = document.createElement("a");
@@ -69,7 +78,7 @@ export default function PaymentSuccessPage() {
 
             <h1 className="text-2xl font-bold text-gray-900">Payment Successful!</h1>
             <p className="text-gray-600 mt-2">
-                Payment for <b>Agreement #{agreement_id}</b> is confirmed.
+                Payment for <b>Agreement #{agreement_id}</b> has been confirmed.
             </p>
 
             {/* RECEIPT BLOCK */}
