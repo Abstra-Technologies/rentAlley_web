@@ -129,11 +129,7 @@ export default function LandlordMainDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* PROPERTIES QUICK VIEW */}
             <div
-              className="
-                                bg-white rounded-lg shadow-sm border border-gray-200 p-4 
-                                cursor-pointer transition-all duration-200
-                                hover:shadow-md hover:-translate-y-0.5
-                            "
+              className="cursor-pointer min-h-[400px]"
               onClick={() => router.push(`/pages/landlord/property-listing`)}
             >
               <LandlordPropertyMarquee landlordId={user?.landlord_id} />
@@ -141,11 +137,7 @@ export default function LandlordMainDashboard() {
 
             {/* MAINTENANCE DONUT */}
             <div
-              className="
-                                bg-white rounded-lg shadow-sm border border-gray-200 p-4
-                                cursor-pointer transition-all duration-200
-                                hover:shadow-md hover:-translate-y-0.5
-                            "
+              className="cursor-pointer min-h-[400px]"
               onClick={() => router.push(`/pages/landlord/tenant-activity`)}
             >
               <PendingMaintenanceDonut landlordId={user?.landlord_id} />
@@ -153,23 +145,23 @@ export default function LandlordMainDashboard() {
 
             {/* RECENT PAYMENTS */}
             <div
-              className="
-                                bg-white rounded-lg shadow-sm border border-gray-200 p-4
-                                cursor-pointer transition-all duration-200
-                                hover:shadow-md hover:-translate-y-0.5
-                            "
+              className="cursor-pointer min-h-[400px] flex flex-col"
               onClick={() => router.push(`/pages/landlord/payment-history`)}
             >
-              <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
-                Recent Payments
-              </h2>
-              <PaymentList landlord_id={user?.landlord_id} />
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 min-h-[400px] flex flex-col">
+                <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
+                  Recent Payments
+                </h2>
+                <div className="flex-1 overflow-hidden">
+                  <PaymentList landlord_id={user?.landlord_id} />
+                </div>
+              </div>
             </div>
           </div>
 
           {/* REVENUE PERFORMANCE */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div>
             <RevenuePerformanceChart landlord_id={user?.landlord_id} />
           </div>
         </div>
@@ -188,7 +180,7 @@ export default function LandlordMainDashboard() {
 
           {/* Properties Quick View - Mobile */}
           <div
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+            className="cursor-pointer min-h-[400px]"
             onClick={() => router.push(`/pages/landlord/property-listing`)}
           >
             <LandlordPropertyMarquee landlordId={user?.landlord_id} />
@@ -196,7 +188,7 @@ export default function LandlordMainDashboard() {
 
           {/* Maintenance - Mobile */}
           <div
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+            className="cursor-pointer min-h-[400px]"
             onClick={() => router.push(`/pages/landlord/tenant-activity`)}
           >
             <PendingMaintenanceDonut landlordId={user?.landlord_id} />
@@ -204,18 +196,22 @@ export default function LandlordMainDashboard() {
 
           {/* Recent Payments - Mobile */}
           <div
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+            className="cursor-pointer min-h-[400px] flex flex-col"
             onClick={() => router.push(`/pages/landlord/payment-history`)}
           >
-            <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
-              Recent Payments
-            </h2>
-            <PaymentList landlord_id={user?.landlord_id} />
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 min-h-[400px] flex flex-col transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+              <h2 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
+                Recent Payments
+              </h2>
+              <div className="flex-1 overflow-hidden">
+                <PaymentList landlord_id={user?.landlord_id} />
+              </div>
+            </div>
           </div>
 
           {/* Revenue Performance - Mobile */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div>
             <RevenuePerformanceChart landlord_id={user?.landlord_id} />
           </div>
         </div>
