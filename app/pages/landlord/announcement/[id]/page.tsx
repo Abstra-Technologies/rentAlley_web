@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 export default function ViewAnnouncement() {
   const router = useRouter();
   const { id } = useParams();
-    const { user, fetchSession } = useAuthStore();
+  const { user, fetchSession } = useAuthStore();
   const [announcement, setAnnouncement] = useState<any>(null);
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,10 +118,49 @@ export default function ViewAnnouncement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-12 h-12 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-600 text-sm">Loading...</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="px-4 pt-20 pb-24 sm:px-6 lg:px-8 md:pt-8 md:pb-8 max-w-4xl mx-auto">
+          {/* Header Skeleton */}
+          <div className="mb-6">
+            <div className="h-5 bg-gray-200 rounded w-48 animate-pulse mb-4" />
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex-1">
+                <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse mb-3" />
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="h-6 bg-gray-200 rounded w-32 animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-40 animate-pulse" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-10 bg-gray-200 rounded-lg w-20 animate-pulse" />
+                <div className="h-10 bg-gray-200 rounded-lg w-24 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+            </div>
+
+            {/* Images Skeleton */}
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="h-6 bg-gray-200 rounded w-32 animate-pulse mb-4" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-32 sm:h-36 bg-gray-200 rounded-lg animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -264,12 +303,12 @@ export default function ViewAnnouncement() {
         {/* Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-4 sm:p-6">
-              <div className="prose max-w-none">
-                  <div
-                      className="text-gray-700 leading-relaxed text-sm sm:text-base"
-                      dangerouslySetInnerHTML={{ __html: announcement.description }}
-                  />
-              </div>
+            <div className="prose max-w-none">
+              <div
+                className="text-gray-700 leading-relaxed text-sm sm:text-base"
+                dangerouslySetInnerHTML={{ __html: announcement.description }}
+              />
+            </div>
 
             {/* Images */}
             {images.length > 0 && (
