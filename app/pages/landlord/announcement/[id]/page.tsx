@@ -264,11 +264,12 @@ export default function ViewAnnouncement() {
         {/* Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-4 sm:p-6">
-            <div className="prose max-w-none">
-              <div className="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm sm:text-base">
-                {announcement.description}
+              <div className="prose max-w-none">
+                  <div
+                      className="text-gray-700 leading-relaxed text-sm sm:text-base"
+                      dangerouslySetInnerHTML={{ __html: announcement.description }}
+                  />
               </div>
-            </div>
 
             {/* Images */}
             {images.length > 0 && (
