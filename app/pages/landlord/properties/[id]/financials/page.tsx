@@ -6,226 +6,336 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import { Line } from "react-chartjs-2";
 import { formatCurrency } from "@/utils/formatter/formatters";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Calendar,
+  BarChart3,
+} from "lucide-react";
 
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Tooltip,
-    Legend,
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
 } from "chart.js";
 
 ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Tooltip,
-    Legend
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend
 );
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function FinancialsPage() {
-    const { id } = useParams();
-    const propertyId = id;
+  const { id } = useParams();
+  const propertyId = id;
 
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showNOIChart, setShowNOIChart] = useState(false);
+  const [showGrossChart, setShowGrossChart] = useState(false);
 
-    // chart visibility toggles
-    const [showNOIChart, setShowNOIChart] = useState(false);
-    const [showGrossChart, setShowGrossChart] = useState(false);
+  const { data, isLoading } = useSWR(
+    propertyId
+      ? `/api/analytics/landlord/revenue-expense-trend?property_id=${propertyId}&year=${selectedYear}`
+      : null,
+    fetcher
+  );
 
-    const { data } = useSWR(
-        propertyId
-            ? `/api/analytics/landlord/revenue-expense-trend?property_id=${propertyId}&year=${selectedYear}`
-            : null,
-        fetcher
-    );
+  const metrics = data?.metrics || {};
 
-    const metrics = data?.metrics || {};
+  const chartDataNOI = {
+    labels: metrics.monthNames || [],
+    datasets: [
+      {
+        label: "NOI Trend",
+        data: metrics.noiTrend || [],
+        borderColor: "rgb(59, 130, 246)",
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  };
 
-    const chartDataNOI = {
-        labels: metrics.monthNames || [],
-        datasets: [
-            {
-                label: "NOI Trend",
-                data: metrics.noiTrend || [],
-                borderWidth: 2,
-                tension: 0.3,
-            },
-        ],
-    };
+  const chartGrossRent = {
+    labels: metrics.monthNames || [],
+    datasets: [
+      {
+        label: "Gross Rent Trend",
+        data: metrics.grossRentTrend || [],
+        borderColor: "rgb(16, 185, 129)",
+        backgroundColor: "rgba(16, 185, 129, 0.1)",
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  };
 
-    const chartGrossRent = {
-        labels: metrics.monthNames || [],
-        datasets: [
-            {
-                label: "Gross Rent Trend",
-                data: metrics.grossRentTrend || [],
-                borderWidth: 2,
-                tension: 0.3,
-            },
-        ],
-    };
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        padding: 12,
+        titleFont: {
+          size: 14,
+          weight: "bold",
+        },
+        bodyFont: {
+          size: 13,
+        },
+        cornerRadius: 8,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+        ticks: {
+          callback: function (value) {
+            return "₱" + value.toLocaleString();
+          },
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+      },
+    },
+  };
 
+  if (isLoading) {
     return (
-        <div className="min-h-screen p-6 bg-gradient-to-br from-gray-50 to-blue-50/30">
-
-            {/* HEADER */}
-            <div className="mb-6">
-                <h1 className="text-3xl font-black text-gray-800 tracking-tight">
-                    Financial Dashboard
-                </h1>
-                <p className="text-gray-500 mt-1">
-                    Financial insights for <span className="font-semibold">Property #{propertyId}</span>
-                </p>
+      <div className="pb-24 md:pb-6">
+        <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+              ))}
             </div>
-
-            {/* YEAR FILTER */}
-            <div className="flex items-center gap-3 mb-6">
-                <label className="font-medium text-gray-700">Year:</label>
-                <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="px-4 py-2 border rounded-lg shadow-sm bg-white hover:border-gray-400"
-                >
-                    <option>{new Date().getFullYear()}</option>
-                    <option>{new Date().getFullYear() - 1}</option>
-                </select>
-            </div>
-
-            {/* SECTION TITLE */}
-            <h2 className="text-xl font-bold text-gray-800 mt-4 mb-2">Net Operating Income (NOI)</h2>
-
-            {/* NOI METRIC GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
-                <MetricCard
-                    label="Month to Month"
-                    value={formatCurrency(metrics.noi?.mtm?.current)}
-                    last={formatCurrency(metrics.noi?.mtm?.last)}
-                    variance={metrics.noi?.mtm?.variance}
-                />
-
-                <MetricCard
-                    label="Year to Date"
-                    value={formatCurrency(metrics.noi?.ytd?.current)}
-                    last={formatCurrency(metrics.noi?.ytd?.last)}
-                    variance={metrics.noi?.ytd?.variance}
-                />
-
-                <MetricCard
-                    label="Year Over Year"
-                    value={formatCurrency(metrics.noi?.yoy?.current)}
-                    last={formatCurrency(metrics.noi?.yoy?.last)}
-                    variance={metrics.noi?.yoy?.variance}
-                />
-            </div>
-
-            {/* NOI CHART - COLLAPSIBLE */}
-            <ChartSection
-                title="Monthly NOI Trend"
-                isOpen={showNOIChart}
-                onToggle={() => setShowNOIChart(!showNOIChart)}
-            >
-                <Line data={chartDataNOI} />
-            </ChartSection>
-
-            {/* SECTION TITLE */}
-            <h2 className="text-xl font-bold text-gray-800 mt-10 mb-2">Gross Rent</h2>
-
-            {/* GROSS RENT METRIC GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
-                <MetricCard
-                    label="Month to Month"
-                    value={formatCurrency(metrics.grossRent?.mtm?.current)}
-                    last={formatCurrency(metrics.grossRent?.mtm?.last)}
-                    variance={metrics.grossRent?.mtm?.variance}
-                />
-
-                <MetricCard
-                    label="Year to Date"
-                    value={formatCurrency(metrics.grossRent?.ytd?.current)}
-                    last={formatCurrency(metrics.grossRent?.ytd?.last)}
-                    variance={metrics.grossRent?.ytd?.variance}
-                />
-
-                <MetricCard
-                    label="Year Over Year"
-                    value={formatCurrency(metrics.grossRent?.yoy?.current)}
-                    last={formatCurrency(metrics.grossRent?.yoy?.last)}
-                    variance={metrics.grossRent?.yoy?.variance}
-                />
-            </div>
-
-            {/* GROSS RENT CHART - COLLAPSIBLE */}
-            <ChartSection
-                title="Gross Rent Trend"
-                isOpen={showGrossChart}
-                onToggle={() => setShowGrossChart(!showGrossChart)}
-            >
-                <Line data={chartGrossRent} />
-            </ChartSection>
+          </div>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="pb-24 md:pb-6">
+      <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+        {/* Header */}
+        <div className="mb-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                Financial Dashboard
+              </h1>
+              <p className="text-xs md:text-sm text-gray-600 mt-0.5">
+                Revenue and expense insights for Property #{propertyId}
+              </p>
+            </div>
+          </div>
+
+          {/* Year Filter */}
+          <div className="flex items-center gap-3">
+            <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <label className="text-sm font-medium text-gray-700">Year:</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            >
+              <option>{new Date().getFullYear()}</option>
+              <option>{new Date().getFullYear() - 1}</option>
+              <option>{new Date().getFullYear() - 2}</option>
+            </select>
+          </div>
+        </div>
+
+        {/* NOI Section */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg md:text-xl font-bold text-gray-900">
+              Net Operating Income (NOI)
+            </h2>
+          </div>
+
+          {/* NOI Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <MetricCard
+              label="Month to Month"
+              value={formatCurrency(metrics.noi?.mtm?.current)}
+              last={formatCurrency(metrics.noi?.mtm?.last)}
+              variance={metrics.noi?.mtm?.variance}
+            />
+            <MetricCard
+              label="Year to Date"
+              value={formatCurrency(metrics.noi?.ytd?.current)}
+              last={formatCurrency(metrics.noi?.ytd?.last)}
+              variance={metrics.noi?.ytd?.variance}
+            />
+            <MetricCard
+              label="Year Over Year"
+              value={formatCurrency(metrics.noi?.yoy?.current)}
+              last={formatCurrency(metrics.noi?.yoy?.last)}
+              variance={metrics.noi?.yoy?.variance}
+            />
+          </div>
+
+          {/* NOI Chart */}
+          <ChartSection
+            title="Monthly NOI Trend"
+            isOpen={showNOIChart}
+            onToggle={() => setShowNOIChart(!showNOIChart)}
+          >
+            <Line data={chartDataNOI} options={chartOptions} />
+          </ChartSection>
+        </div>
+
+        {/* Gross Rent Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-lg md:text-xl font-bold text-gray-900">
+              Gross Rent
+            </h2>
+          </div>
+
+          {/* Gross Rent Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <MetricCard
+              label="Month to Month"
+              value={formatCurrency(metrics.grossRent?.mtm?.current)}
+              last={formatCurrency(metrics.grossRent?.mtm?.last)}
+              variance={metrics.grossRent?.mtm?.variance}
+            />
+            <MetricCard
+              label="Year to Date"
+              value={formatCurrency(metrics.grossRent?.ytd?.current)}
+              last={formatCurrency(metrics.grossRent?.ytd?.last)}
+              variance={metrics.grossRent?.ytd?.variance}
+            />
+            <MetricCard
+              label="Year Over Year"
+              value={formatCurrency(metrics.grossRent?.yoy?.current)}
+              last={formatCurrency(metrics.grossRent?.yoy?.last)}
+              variance={metrics.grossRent?.yoy?.variance}
+            />
+          </div>
+
+          {/* Gross Rent Chart */}
+          <ChartSection
+            title="Gross Rent Trend"
+            isOpen={showGrossChart}
+            onToggle={() => setShowGrossChart(!showGrossChart)}
+          >
+            <Line data={chartGrossRent} options={chartOptions} />
+          </ChartSection>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ======================================
-   METRIC CARD (unchanged, simple clean)
+   METRIC CARD COMPONENT
 ====================================== */
 function MetricCard({ label, value, last, variance }) {
-    const isPositive = variance >= 0;
+  const isPositive = variance >= 0;
 
-    return (
-        <div className="bg-white p-5 rounded-xl shadow-md border hover:shadow-lg transition-all">
-            <p className="text-gray-600 text-sm font-medium">{label}</p>
+  return (
+    <div className="bg-white p-4 md:p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all">
+      <p className="text-xs md:text-sm text-gray-600 font-medium mb-2">
+        {label}
+      </p>
 
-            <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
-            <p className="text-gray-500 text-sm">Last: {last}</p>
+      <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+        {value || "₱0.00"}
+      </p>
+      <p className="text-xs md:text-sm text-gray-500">
+        Last: {last || "₱0.00"}
+      </p>
 
-            <p
-                className={`mt-3 text-sm font-semibold ${
-                    isPositive ? "text-green-600" : "text-red-600"
-                }`}
-            >
-                {isPositive ? "+" : ""}
-                {variance?.toFixed(2)}%
-            </p>
+      <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="flex items-center gap-1.5">
+          {isPositive ? (
+            <TrendingUp className="w-4 h-4 text-emerald-600" />
+          ) : (
+            <TrendingDown className="w-4 h-4 text-red-600" />
+          )}
+          <span
+            className={`text-sm font-semibold ${
+              isPositive ? "text-emerald-600" : "text-red-600"
+            }`}
+          >
+            {isPositive ? "+" : ""}
+            {variance?.toFixed(2) || "0.00"}%
+          </span>
         </div>
-    );
+      </div>
+    </div>
+  );
 }
 
 /* ======================================
-   CHART SECTION WITH TOGGLE + ANIMATION
+   CHART SECTION WITH TOGGLE
 ====================================== */
 function ChartSection({ title, children, isOpen, onToggle }) {
-    return (
-        <div className="bg-white p-5 shadow-md rounded-xl border mt-6">
-
-            {/* Toggle Header */}
-            <button
-                onClick={onToggle}
-                className="w-full flex items-center justify-between text-left"
-            >
-                <h3 className="font-semibold text-gray-800">{title}</h3>
-                {isOpen ? (
-                    <ChevronUp className="w-5 h-5 text-gray-600" />
-                ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-600" />
-                )}
-            </button>
-
-            {/* Smooth Expand */}
-            <div
-                className={`overflow-hidden transition-all duration-500 ${
-                    isOpen ? "max-h-[500px] mt-4 opacity-100" : "max-h-0 opacity-0"
-                }`}
-            >
-                <div className="w-full">{children}</div>
-            </div>
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* Toggle Header */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors rounded-t-lg"
+      >
+        <h3 className="text-sm md:text-base font-semibold text-gray-900">
+          {title}
+        </h3>
+        <div
+          className={`transition-transform duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        >
+          <ChevronDown className="w-5 h-5 text-gray-600" />
         </div>
-    );
+      </button>
+
+      {/* Chart Content */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ${
+          isOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="p-4 border-t border-gray-100">
+          <div className="w-full h-[300px] md:h-[400px]">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
 }
