@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell } from "recharts";
+import { DollarSign, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function PaymentSummaryCard({
   landlord_id,
   onClick,
 }: {
   landlord_id: number | undefined;
-  onClick?: () => void; // optional click handler
+  onClick?: () => void;
 }) {
   const [pending, setPending] = useState(0);
   const [overdue, setOverdue] = useState(0);
@@ -59,131 +60,127 @@ export default function PaymentSummaryCard({
 
   const COLORS =
     pending === 0 && overdue === 0 && collected === 0
-      ? ["#d1d5db"]
+      ? ["#e5e7eb"]
       : ["#10b981", "#3b82f6", "#f97316"];
 
   if (loading) {
     return (
-      <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm text-center text-gray-500">
-        Loading…
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+        <div className="h-32 bg-gray-200 rounded"></div>
       </div>
     );
   }
 
   return (
     <div
-    onClick={onClick}
-    className="
-      relative group cursor-pointer
-      rounded-2xl border border-gray-200 shadow
-      bg-white/30 backdrop-blur-xl
-      p-5 md:p-7 
-      flex flex-col md:flex-row
-      items-center justify-between
-      gap-8
-      transition-all duration-300 
-      hover:-translate-y-1 hover:shadow-xl
-       h-[300px] 
-    "
-  >
-    {/* OVERLAY EFFECT */}
-    <div
+      onClick={onClick}
       className="
-        absolute inset-0 rounded-2xl 
-        bg-gradient-to-r from-blue-600/0 via-emerald-400/0 to-emerald-600/0
-        group-hover:from-blue-600/10 group-hover:via-emerald-400/10 group-hover:to-emerald-600/10
-        opacity-0 group-hover:opacity-100 
-        transition-all duration-300 
-        pointer-events-none
-      "
-    />
-
-    {/* CTA BUTTON (TOP RIGHT) */}
-    <div
-      className="
-        absolute top-3 right-4
-        opacity-0 group-hover:opacity-100
-        transition-opacity duration-300 
-        pointer-events-none     /* ⛔ does NOT block chart hover */
-        z-20
+        relative group cursor-pointer
+        bg-white rounded-lg shadow-sm border border-gray-200
+        p-4 md:p-6
+        transition-all duration-200
+        hover:shadow-md hover:-translate-y-0.5
       "
     >
-      <span
-        className="
-          bg-white/90 text-gray-800 
-          text-xs sm:text-sm font-medium 
-          px-3 py-1 
-          rounded-full shadow-md backdrop-blur-md
-        "
-      >
-        View Payment History →
-      </span>
-    </div>
-
-      {/* CONTENT */}
-      <div className="flex flex-col gap-4 w-full md:w-1/3 z-10">
-        <div>
-          <p className="text-sm text-gray-600">Upcoming</p>
-          <p className="text-xl font-bold text-blue-600">
-            ₱{pending.toLocaleString()}
-          </p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
+          <h2 className="text-sm md:text-base font-semibold text-gray-900">
+            Payment Summary
+          </h2>
         </div>
-
-        <div>
-          <p className="text-sm text-gray-600">Overdue</p>
-          <p className="text-xl font-bold text-orange-600">
-            ₱{overdue.toLocaleString()}
-          </p>
-        </div>
-
-        <div>
-          <p className="text-sm text-gray-600">Collected</p>
-          <p className="text-xl font-bold text-emerald-600">
-            ₱{collected.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
-      {/* DONUT CHART */}
-      <div className="flex flex-col items-center md:w-1/3 z-10">
-        <PieChart width={150} height={150}>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={45}
-            outerRadius={65}
-            strokeWidth={2}
-            dataKey="value"
-          >
-            {data.map((entry, i) => (
-              <Cell key={i} fill={COLORS[i]} />
-            ))}
-          </Pie>
-        </PieChart>
-        <p className="text-xs text-gray-600 mt-1">
+        <span className="text-xs text-gray-500">
           {new Date().toLocaleString("en-US", { month: "long" })}
-        </p>
-        <p className="text-sm text-gray-800 font-semibold">
-          ₱{total.toLocaleString()} total
-        </p>
+        </span>
       </div>
 
-      {/* LEGEND */}
-      <div className="flex flex-col gap-1.5 text-sm md:w-1/3 z-10">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-emerald-500 rounded-full"></span>
-          <span className="text-gray-700">Collected</span>
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        {/* Stats Column */}
+        <div className="flex flex-col gap-3 md:gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="w-4 h-4 text-blue-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-600">Upcoming</p>
+              <p className="text-lg md:text-xl font-bold text-blue-600 truncate">
+                ₱{pending.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-4 h-4 text-orange-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-600">Overdue</p>
+              <p className="text-lg md:text-xl font-bold text-orange-600 truncate">
+                ₱{overdue.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-600">Collected</p>
+              <p className="text-lg md:text-xl font-bold text-emerald-600 truncate">
+                ₱{collected.toLocaleString()}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
-          <span className="text-gray-700">Upcoming</span>
+
+        {/* Chart Column */}
+        <div className="flex flex-col items-center justify-center">
+          <PieChart width={140} height={140}>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={45}
+              outerRadius={60}
+              strokeWidth={0}
+              dataKey="value"
+            >
+              {data.map((entry, i) => (
+                <Cell key={i} fill={COLORS[i]} />
+              ))}
+            </Pie>
+          </PieChart>
+          <div className="text-center mt-2">
+            <p className="text-xs text-gray-500">Total</p>
+            <p className="text-sm font-semibold text-gray-900">
+              ₱{total.toLocaleString()}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
-          <span className="text-gray-700">Overdue</span>
+
+        {/* Legend Column */}
+        <div className="flex flex-col justify-center gap-2">
+          <div className="flex items-center gap-2 text-xs md:text-sm">
+            <span className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0"></span>
+            <span className="text-gray-700">Collected</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs md:text-sm">
+            <span className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></span>
+            <span className="text-gray-700">Upcoming</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs md:text-sm">
+            <span className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></span>
+            <span className="text-gray-700">Overdue</span>
+          </div>
         </div>
       </div>
+
+      {/* Hover overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 to-emerald-600/0 group-hover:from-blue-600/5 group-hover:to-emerald-600/5 rounded-lg transition-all duration-200 pointer-events-none" />
     </div>
   );
 }
