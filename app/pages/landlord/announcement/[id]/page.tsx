@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import useAuth from "../../../../../hooks/useSession";
+import useAuthStore from "@/zustand/authStore";
 import Swal from "sweetalert2";
 
 export default function ViewAnnouncement() {
   const router = useRouter();
   const { id } = useParams();
-  const { user } = useAuth();
+    const { user, fetchSession } = useAuthStore();
   const [announcement, setAnnouncement] = useState<any>(null);
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
