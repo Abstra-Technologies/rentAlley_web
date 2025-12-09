@@ -82,8 +82,8 @@ export default function PaymentList({ landlord_id }) {
   }
 
   return (
-    <div className="space-y-2 max-h-64 overflow-y-auto">
-      {payments.slice(0, 5).map((payment) => (
+    <div className="space-y-2 max-h-56 overflow-y-auto">
+      {payments.slice(0, 3).map((payment) => (
         <div
           key={payment.payment_id}
           className="p-3 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 hover:border-gray-300 transition-all"
@@ -120,9 +120,9 @@ export default function PaymentList({ landlord_id }) {
         </div>
       ))}
 
-      {payments.length > 5 && (
+      {payments.length > 3 && (
         <p className="text-center text-xs text-gray-500 pt-2">
-          +{payments.length - 5} more payments
+          +{payments.length - 3} more payments
         </p>
       )}
     </div>
