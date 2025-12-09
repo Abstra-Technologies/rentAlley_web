@@ -46,7 +46,7 @@ export default function TodayCalendar({ landlordId }) {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 min-h-[480px] flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
@@ -65,7 +65,7 @@ export default function TodayCalendar({ landlordId }) {
       </div>
 
       {/* Events Section */}
-      <div className="space-y-3">
+      <div className="space-y-3 flex-1 flex flex-col">
         <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
           <Calendar className="w-4 h-4 text-blue-600" />
           <h3 className="text-sm font-semibold text-gray-900">Events</h3>
@@ -91,7 +91,7 @@ export default function TodayCalendar({ landlordId }) {
 
         {/* Event Cards */}
         {!isLoading && events.length > 0 && (
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2 overflow-y-auto flex-1">
             {events.map((ev, index) => (
               <div
                 key={index}

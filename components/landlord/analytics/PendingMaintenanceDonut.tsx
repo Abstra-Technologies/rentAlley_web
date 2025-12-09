@@ -74,7 +74,7 @@ export default function PendingMaintenanceDonut({
     : ORDERED_STATUSES.map((status) => STATUS_COLORS[status]);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 min-h-[400px] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export default function PendingMaintenanceDonut({
       </div>
 
       {/* Today's Work Section */}
-      <div className="border-t border-gray-100 pt-4">
+      <div className="border-t border-gray-100 pt-4 flex-1 flex flex-col">
         <div className="flex items-center gap-2 mb-3">
           <Clock className="w-4 h-4 text-blue-600" />
           <h3 className="text-sm font-semibold text-gray-900">
