@@ -149,7 +149,7 @@ export default function LandlordLayout({
                 href="/pages/landlord/dashboard"
                 className="flex items-center"
               >
-                <h1 className="text-2xl font-bold text-white">UpKyp</h1>
+                <h1 className="text-2xl font-bold text-white">Upkyp</h1>
               </Link>
               <div className="flex items-center gap-2">
                 <div className="relative">

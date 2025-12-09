@@ -208,11 +208,18 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             />
 
 
+            <Script src='https://cdn.jotfor.ms/agent/embedjs/019b0280f4fb7d588c91faf90b838470de4b/embed.js'>
+            </Script>
+
+
             {/* ✅ Facebook SDK root */}
             <div id="fb-root"></div>
 
+
             <Navbar />
             {children}
+
+
         </>
     );
 }

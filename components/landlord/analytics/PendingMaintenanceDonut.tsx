@@ -23,7 +23,7 @@ export default function MaintenanceStatusDonut({
 
     const { data: todayWorkOrders } = useSWR(
         landlordId
-            ? `/api/analytics/landlord/getTodayMaintenance?landlord_id=${landlordId}`
+            ? `/api/analytics/landlord/getMaintenanceStatuses/getTodayMaintenance?landlord_id=${landlordId}`
             : null,
         fetcher
     );
