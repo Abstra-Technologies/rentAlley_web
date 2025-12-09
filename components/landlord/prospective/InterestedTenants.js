@@ -16,7 +16,6 @@ import {
   Clock,
 } from "lucide-react";
 import useAuthStore from "@/zustand/authStore";
-import LoadingScreen from "@/components/loadingScreen";
 
 export default function InterestedTenants({ propertyId, landlordId }) {
   const router = useRouter();
@@ -157,10 +156,110 @@ export default function InterestedTenants({ propertyId, landlordId }) {
   };
 
   /* =====================================================
-     🔹 Rendering Section
+     🔹 Loading Skeleton
      ===================================================== */
-  if (loading) return <LoadingScreen />;
-  if (error)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+        <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+          {/* Header Skeleton */}
+          <div className="mb-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
+              <div className="flex-1">
+                <div className="h-7 bg-gray-200 rounded w-48 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Subscription Banner Skeleton */}
+          <div className="mb-5 rounded-lg border border-gray-200 p-3 md:p-4">
+            <div className="h-5 bg-gray-200 rounded w-40 animate-pulse mb-2" />
+            <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+          </div>
+
+          {/* Stats Bar Skeleton */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4 mb-5">
+            <div className="h-5 bg-gray-200 rounded w-56 animate-pulse" />
+          </div>
+
+          {/* Mobile Cards Skeleton */}
+          <div className="block md:hidden space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="h-5 bg-gray-200 rounded w-32 animate-pulse mb-2" />
+                    <div className="h-6 bg-gray-200 rounded w-24 animate-pulse" />
+                  </div>
+                </div>
+                <div className="space-y-2 mb-3 pb-3 border-b border-gray-100">
+                  <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+                </div>
+                <div className="h-10 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table Skeleton */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <th key={i} className="px-4 py-3">
+                        <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse" />
+                          <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-40 animate-pulse" />
+                          <div className="h-3 bg-gray-200 rounded w-32 animate-pulse" />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse" />
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="h-8 bg-gray-200 rounded-lg w-20 mx-auto animate-pulse" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* =====================================================
+     🔹 Error State
+     ===================================================== */
+  if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="text-center p-6 bg-red-50 border border-red-200 rounded-lg">
@@ -168,7 +267,11 @@ export default function InterestedTenants({ propertyId, landlordId }) {
         </div>
       </div>
     );
+  }
 
+  /* =====================================================
+     🔹 Main Render
+     ===================================================== */
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
       <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
