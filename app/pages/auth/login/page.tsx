@@ -32,17 +32,19 @@ function Login() {
             {/* Main Section */}
             <main className="relative z-10 flex flex-col lg:flex-row items-center justify-center flex-1 px-4 sm:px-6 py-6 lg:py-10 gap-4 lg:gap-8">
                 {/* Hero Text (Desktop only) */}
-                <div className="hidden lg:block text-white max-w-lg text-center lg:text-left space-y-2">
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight drop-shadow-lg">
-                        Manage. Automate. Simplify.
-                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-lime-300 to-emerald-400 mt-1">
-                            UpKyp
-                        </span>
+                <div className="hidden lg:block text-white max-w-lg text-center lg:text-left space-y-4">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight drop-shadow-lg">
+                        Your Property Journey, Simplified.
+                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-lime-300 to-emerald-400 mt-2">
+      Upkyp
+    </span>
                     </h1>
-                    <p className="text-sm sm:text-base lg:text-sm">
-                        Automate billing, leases, and tenant communication in one platform.
+                    <p className="text-base sm:text-lg lg:text-base text-gray-100">
+                        From browsing to billing, Upkyp keeps your rentals organized and hassle-free.
                     </p>
                 </div>
+
+
 
                 {/* Desktop Login Form */}
                 <div className="hidden sm:block">
