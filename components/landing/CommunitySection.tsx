@@ -1,3 +1,5 @@
+// File: /components/landing/CommunitySection.tsx
+
 "use client";
 
 import Link from "next/link";
@@ -7,7 +9,7 @@ import { COMMUNITY_FEATURES } from "@/constant/landing";
 
 export default function CommunitySection() {
   return (
-    <section className="py-20 sm:py-28 bg-gradient-to-br from-gray-900 via-blue-900 to-emerald-900 relative overflow-hidden">
+    <section className="py-12 sm:py-16 bg-gradient-to-br from-gray-900 via-blue-900 to-emerald-900 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:64px_64px]"></div>

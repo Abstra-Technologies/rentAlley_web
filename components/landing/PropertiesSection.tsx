@@ -1,3 +1,5 @@
+// File: /components/landing/PropertiesSection.tsx
+
 "use client";
 
 import Link from "next/link";
@@ -40,10 +42,10 @@ export default function PropertiesSection({
     : "Explore All Listings";
 
   return (
-    <section className={`py-20 sm:py-28 bg-gradient-to-br ${bgColor}`}>
+    <section className={`py-12 sm:py-16 bg-gradient-to-br ${bgColor}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <SectionBadge icon={BadgeIcon} text={badgeText} />
           <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
             {title}

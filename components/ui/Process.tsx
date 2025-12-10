@@ -21,7 +21,7 @@ export default function AnimatedFeaturesPopLoop() {
       icon: <Home className="w-10 h-10" />,
       title: "Property Listings",
       description:
-        "Discover verified properties with detailed information and virtual tours",
+        "Discover verified properties with detailed information and 360° views",
       gradient: "from-blue-500 to-blue-600",
       lightGradient: "from-blue-50 to-blue-100",
       glowColor: "shadow-blue-500/20",
@@ -47,7 +47,7 @@ export default function AnimatedFeaturesPopLoop() {
   ];
 
   return (
-    <section className="relative py-20 sm:py-28 overflow-hidden">
+    <section className="relative pt-16 pb-16 sm:pb-20 overflow-hidden">
       {/* Background with subtle gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50 to-white"></div>
 
@@ -66,7 +66,7 @@ export default function AnimatedFeaturesPopLoop() {
               Platform Features
             </span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
             Everything You Need
           </h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
@@ -75,7 +75,7 @@ export default function AnimatedFeaturesPopLoop() {
         </div>
 
         {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
           {features.map((feature, index) => {
             const animateProps = reducedMotion
               ? {}

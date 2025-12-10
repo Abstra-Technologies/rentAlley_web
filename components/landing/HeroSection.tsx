@@ -1,3 +1,5 @@
+// File: /components/landing/HeroSection.tsx
+
 "use client";
 
 import { FormEvent } from "react";
@@ -18,7 +20,7 @@ export default function HeroSection({
   router,
 }: HeroSectionProps) {
   return (
-    <div className="relative min-h-[85vh] sm:min-h-[90vh] overflow-hidden">
+    <div className="relative min-h-[80vh] overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
         <div
@@ -33,7 +35,7 @@ export default function HeroSection({
       </div>
 
       {/* Content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-16 sm:pb-20">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
         <div className="text-center max-w-5xl mx-auto">
           <HeroBadge />
           <HeroHeadline />
@@ -95,7 +97,7 @@ function AnimatedBackground() {
 
 function HeroBadge() {
   return (
-    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-full mb-8 border border-white/20 shadow-2xl animate-fade-in">
+    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-full mb-6 border border-white/20 shadow-2xl animate-fade-in">
       <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
       <Shield className="w-4 h-4 text-white" />
       <span className="text-sm font-semibold text-white">
@@ -107,7 +109,7 @@ function HeroBadge() {
 
 function HeroHeadline() {
   return (
-    <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] animate-slide-up">
+    <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-4 leading-[1.1] animate-slide-up">
       <span className="block mb-2">Find Your Perfect</span>
       <span className="relative inline-block">
         <span className="relative z-10 bg-gradient-to-r from-emerald-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
@@ -121,7 +123,7 @@ function HeroHeadline() {
 
 function HeroDescription() {
   return (
-    <p className="text-lg sm:text-xl lg:text-2xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed font-light animate-slide-up animation-delay-200">
+    <p className="text-lg sm:text-xl lg:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed font-light animate-slide-up animation-delay-200">
       Discover verified listings and manage properties seamlessly—all in one
       powerful platform
     </p>
@@ -132,7 +134,7 @@ function SearchBar({ searchQuery, setSearchQuery, handleSearch }: any) {
   return (
     <form
       onSubmit={handleSearch}
-      className="max-w-4xl mx-auto mb-10 animate-slide-up animation-delay-400"
+      className="max-w-4xl mx-auto mb-6 animate-slide-up animation-delay-400"
     >
       <div className="relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-3xl blur-lg opacity-25 group-hover:opacity-40 transition-opacity duration-500"></div>
@@ -180,7 +182,7 @@ function PopularSearches({ router }: any) {
 
 function TrustIndicators() {
   return (
-    <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto mt-16 animate-fade-in animation-delay-800">
+    <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto mt-8 animate-fade-in animation-delay-800">
       {TRUST_INDICATORS.map((item, i) => (
         <div
           key={i}

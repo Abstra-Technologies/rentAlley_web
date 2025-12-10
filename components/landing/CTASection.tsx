@@ -1,3 +1,5 @@
+// File: /components/landing/CTASection.tsx
+
 "use client";
 
 import Link from "next/link";
@@ -5,7 +7,7 @@ import { Sparkles, ArrowRight } from "lucide-react";
 
 export default function CTASection() {
   return (
-    <section className="relative py-24 sm:py-32 overflow-hidden">
+    <section className="relative py-16 sm:py-20 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-emerald-600"></div>
 

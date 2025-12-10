@@ -1,8 +1,10 @@
+// File: /app/page.tsx (or wherever your landing page is)
+
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-
+import Page_footer from "@/components/navigation/page_footer";
 import LoadingScreen from "@/components/loadingScreen";
 import AnimatedFeatures from "@/components/ui/Process";
 import HeroSection from "@/components/landing/HeroSection";
@@ -11,7 +13,6 @@ import CommunitySection from "@/components/landing/CommunitySection";
 import CTASection from "@/components/landing/CTASection";
 import { Unit } from "@/types/landing";
 import "@/app/styles/landing-animations.css";
-import Page_footer from "@/components/navigation/page_footer";
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -89,11 +90,8 @@ export default function SplashScreen() {
       />
 
       {/* Features Section */}
-      <section className="py-20 sm:py-28 bg-white relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white pointer-events-none"></div>
-        <div className="relative">
-          <AnimatedFeatures />
-        </div>
+      <section className="bg-white relative -mt-8">
+        <AnimatedFeatures />
       </section>
 
       {/* Featured Properties */}
