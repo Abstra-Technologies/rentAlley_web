@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Image from "next/image";
-import TenantLayout from "../../../../../components/navigation/sidebar-tenant";
 import useAuth from "../../../../../hooks/useSession";
 import {
   ClockIcon,
@@ -100,7 +99,6 @@ export default function MaintenanceHistoryPage() {
   };
 
   return (
-    <TenantLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50 -m-4 md:-m-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -510,6 +508,5 @@ export default function MaintenanceHistoryPage() {
           </div>
         )}
       </div>
-    </TenantLayout>
   );
 }
