@@ -1,5 +1,3 @@
-// File: /app/page.tsx (or wherever your landing page is)
-
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
