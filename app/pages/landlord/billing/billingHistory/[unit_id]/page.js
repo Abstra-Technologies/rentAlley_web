@@ -1,7 +1,6 @@
 "use client";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 
 export default function BillingHistory() {
   const { unit_id } = useParams();
@@ -102,18 +101,15 @@ export default function BillingHistory() {
   // Loading state
   if (loading) {
     return (
-      <LandlordLayout>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
-      </LandlordLayout>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <LandlordLayout>
         <div className="bg-red-50 border-l-4 border-red-500 p-4 my-6 mx-6 rounded">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -134,14 +130,12 @@ export default function BillingHistory() {
             </div>
           </div>
         </div>
-      </LandlordLayout>
     );
   }
 
   // Empty state
   if (billingHistory.length === 0) {
     return (
-      <LandlordLayout>
         <div className="flex flex-col items-center justify-center h-64 p-6">
           <svg
             className="h-16 w-16 text-gray-400"
@@ -163,12 +157,10 @@ export default function BillingHistory() {
             No billing records found for this unit.
           </p>
         </div>
-      </LandlordLayout>
     );
   }
 
   return (
-    <LandlordLayout>
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -416,6 +408,5 @@ export default function BillingHistory() {
           </div>
         </div>
       </div>
-    </LandlordLayout>
   );
 }

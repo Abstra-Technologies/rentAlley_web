@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import useAuthStore from "@/zustand/authStore";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
 import { BackButton } from "@/components/navigation/backButton";
 
 export default function PayoutDetails() {

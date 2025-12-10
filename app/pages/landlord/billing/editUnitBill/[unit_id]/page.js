@@ -2,7 +2,6 @@
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 
 export default function EditUnitBill() {
   const router = useRouter();
@@ -165,7 +164,6 @@ export default function EditUnitBill() {
     );
 
   return (
-    <LandlordLayout>
       <div className="max-w-xl mx-auto p-4 sm:p-6 bg-white rounded-xl shadow-sm">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">
           Edit Billing  {unit_id} {" "}
@@ -616,6 +614,5 @@ export default function EditUnitBill() {
           </>
         )}
       </div>
-    </LandlordLayout>
   );
 }

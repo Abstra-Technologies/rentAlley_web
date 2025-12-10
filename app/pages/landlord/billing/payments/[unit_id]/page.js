@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 import Swal from "sweetalert2";
 
 export default function PaymentManagement() {
@@ -80,7 +79,6 @@ export default function PaymentManagement() {
   if (payments.length === 0) return <p>No payments found.</p>;
 
   return (
-    <LandlordLayout>
       <div className="p-4 md:p-6 max-w-5xl mx-auto">
         {/* Back Button */}
         <button
@@ -259,6 +257,5 @@ export default function PaymentManagement() {
           </div>
         )}
       </div>
-    </LandlordLayout>
   );
 }

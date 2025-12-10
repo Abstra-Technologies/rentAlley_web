@@ -1,5 +1,4 @@
 'use client';
-import LandlordLayout from "../../../../../components/navigation/sidebar-landlord";
 
 import useAuthStore from '@/zustand/authStore';
 import { useEffect, useState } from 'react';
@@ -60,7 +59,6 @@ export default function PaymentReviewPageWidget() {
 
     // @ts-ignore
     return (
-        <LandlordLayout>
 
         <div className="p-6">
             <Typography variant="h5" gutterBottom>
@@ -148,6 +146,5 @@ export default function PaymentReviewPageWidget() {
             </TableContainer>
         </div>
 
-        </LandlordLayout>
     );
 }

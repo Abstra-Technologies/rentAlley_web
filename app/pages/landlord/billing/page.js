@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import useAuthStore from "../../../../zustand/authStore";
-import LandlordLayout from "../../../../components/navigation/sidebar-landlord";
 import { useEffect } from "react";
 import axios from "axios";
 import LoadingScreen from "../../../../components/loadingScreen";
@@ -52,7 +51,6 @@ const PropertyListPage = () => {
   }
 
   return (
-    <LandlordLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <h1 className="text-3xl font-bold text-gray-800">My Properties</h1>
@@ -126,7 +124,6 @@ const PropertyListPage = () => {
           </div>
         )}
       </div>
-    </LandlordLayout>
   );
 };
 

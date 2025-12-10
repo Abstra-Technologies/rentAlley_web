@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Box, IconButton, Tooltip, useMediaQuery } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import LandlordLayout from "@/components/navigation/sidebar-landlord";
 import LeaseStatusInfo from "@/components/landlord/widgets/LeaseStatusInfo";
 import useAuthStore from "@/zustand/authStore";
 import { useRouter } from "next/navigation";
@@ -66,7 +65,6 @@ export default function LeaseContractsPage() {
     const visibleLeases = leases.slice(start, start + itemsPerPage);
 
     return (
-        <LandlordLayout>
             <div className="p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
                 <header className="mb-6">
                     <h1 className="gradient-header">Lease Contracts</h1>
@@ -299,6 +297,5 @@ export default function LeaseContractsPage() {
                     />
                 </section>
             </div>
-        </LandlordLayout>
     );
 }

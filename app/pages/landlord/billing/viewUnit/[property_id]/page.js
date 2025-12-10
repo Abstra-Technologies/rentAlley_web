@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import axios from "axios";
-import LandlordLayout from "../../../../../../components/navigation/sidebar-landlord";
 import LoadingScreen from "../../../../../../components/loadingScreen";
 import Swal from "sweetalert2";
 
@@ -173,7 +172,6 @@ export default function ViewUnits() {
   }
 
   return (
-    <LandlordLayout>
       <div className="p-6 max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
@@ -397,6 +395,5 @@ export default function ViewUnits() {
         )}
 
       </div>
-    </LandlordLayout>
   );
 }
