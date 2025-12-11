@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
+//  to be deleted. using webhook.
+
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

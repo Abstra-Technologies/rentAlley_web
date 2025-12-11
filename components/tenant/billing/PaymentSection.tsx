@@ -13,13 +13,17 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
     const [loadingPayment, setLoadingPayment] = React.useState(false);
 
     /* -------------------- MAYA PAYMENT -------------------- */
-    const handleMayaPayment = async () => {
+    const handleXenditPayment = async () => {
         const confirm = await Swal.fire({
-            title: "Pay via Maya?",
-            text: "Do you want to proceed?",
+            title: "Pay via Xendit?",
+            text: "This will redirect you to Xendit's secure checkout page.",
             icon: "warning",
             showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Proceed",
         });
+
         if (!confirm.isConfirmed) return;
 
         setLoadingPayment(true);
@@ -40,8 +44,14 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
             });
 
             if (res.data.checkoutUrl) {
+                // Redirect tenant to Xendit invoice
                 window.location.href = res.data.checkoutUrl;
+            } else {
+                Swal.fire("Error", "No checkout URL returned.", "error");
             }
+
+        } catch (err) {
+            Swal.fire("Error", "Failed to initiate Xendit payment.", "error");
         } finally {
             setLoadingPayment(false);
         }
@@ -62,7 +72,7 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
                 <>
                     {/* Pay with Maya */}
                     <button
-                        onClick={handleMayaPayment}
+                        onClick={handleXenditPayment}
                         disabled={loadingPayment}
                         className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
                     >
