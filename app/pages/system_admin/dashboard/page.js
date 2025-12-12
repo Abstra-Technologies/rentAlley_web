@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
 import LoadingScreen from "../../../../components/loadingScreen";
-import SideNavAdmin from "../../../../components/navigation/sidebar-admin";
 
 export default function AdminDashboard() {
   const { admin, loading } = useAuth();
@@ -55,7 +54,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <SideNavAdmin admin={admin} />
 
       <div className="flex-1 p-8 overflow-auto">
         <div className="bg-white shadow-lg rounded-lg p-6">
