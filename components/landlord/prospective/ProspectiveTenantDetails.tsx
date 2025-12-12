@@ -114,62 +114,83 @@ const ProspectiveTenantDetails = () => {
     }
   };
 
-  const updateTenantStatus = async (newStatus) => {
-    let disapprovalReason = null;
+    const updateTenantStatus = async (newStatus) => {
+        let disapprovalReason = null;
 
-    try {
-      if (newStatus === "approved") setIsApproving(true);
-      if (newStatus === "disapproved") setIsDisapproving(true);
+        try {
+            if (newStatus === "approved") setIsApproving(true);
+            if (newStatus === "disapproved") setIsDisapproving(true);
 
-      if (newStatus === "disapproved") {
-        const { value } = await Swal.fire({
-          title: "Disapprove Tenant",
-          input: "textarea",
-          inputLabel: "Provide a reason for disapproval",
-          inputPlaceholder: "Type your reason here...",
-          showCancelButton: true,
-        });
-        if (!value) {
-          setIsDisapproving(false);
-          return;
+            // Disapproval reason prompt
+            if (newStatus === "disapproved") {
+                const { value } = await Swal.fire({
+                    title: "Disapprove Tenant",
+                    input: "textarea",
+                    inputLabel: "Provide a reason for disapproval",
+                    inputPlaceholder: "Type your reason here...",
+                    showCancelButton: true,
+                });
+
+                if (!value) {
+                    setIsDisapproving(false);
+                    return;
+                }
+                disapprovalReason = value;
+            }
+
+            const payload = {
+                unitId,
+                tenant_id: tenant?.tenant_id,
+                status: newStatus,
+                message: disapprovalReason,
+            };
+
+            await axios.put(
+                "/api/landlord/prospective/updateApplicationStatus",
+                payload
+            );
+
+            setApplicationStatus(newStatus);
+
+            // APPROVED → Ask if landlord wants to set the lease now
+            if (newStatus === "approved") {
+                const result = await Swal.fire({
+                    icon: "success",
+                    title: "Tenant Approved!",
+                    text: "Would you like to set the lease now?",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, set lease",
+                    cancelButtonText: "Not now",
+                    confirmButtonColor: "#10B981",
+                });
+
+                if (result.isConfirmed) {
+                    router.push(`/pages/landlord/properties/${propertyId}/activeLease`);
+                }
+
+                return; // Stop further navigation
+            }
+
+            // Disapproved → Go back
+            if (newStatus === "disapproved") {
+                await Swal.fire({
+                    icon: "success",
+                    title: "Status Updated",
+                    text: "Tenant application marked as disapproved.",
+                    confirmButtonColor: "#3085d6",
+                });
+
+                router.back();
+            }
+
+        } catch (error) {
+            console.error("Error updating tenant status:", error);
+            Swal.fire("Error!", "Failed to update tenant status.", "error");
+        } finally {
+            setIsApproving(false);
+            setIsDisapproving(false);
         }
-        disapprovalReason = value;
-      }
-
-      const payload = {
-        unitId,
-        tenant_id: tenant?.tenant_id,
-        status: newStatus,
-        message: disapprovalReason,
-      };
-
-      await axios.put(
-        "/api/landlord/prospective/updateApplicationStatus",
-        payload
-      );
-
-      setApplicationStatus(newStatus);
-
-      await Swal.fire({
-        icon: "success",
-        title: "Status Updated",
-        text: `Tenant application marked as ${newStatus}.`,
-        confirmButtonColor: "#3085d6",
-      });
-
-      if (newStatus === "approved") {
-        router.push(`/pages/landlord/properties/${propertyId}/activeLease`);
-      } else {
-        router.back();
-      }
-    } catch (error) {
-      console.error("Error updating tenant status:", error);
-      Swal.fire("Error!", "Failed to update tenant status.", "error");
-    } finally {
-      setIsApproving(false);
-      setIsDisapproving(false);
-    }
-  };
+    };
 
   // Loading Skeleton
   if (isLoading) {
