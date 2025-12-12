@@ -12,12 +12,13 @@ export default function PaymentLogs() {
     }, [user]);
 
     return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
-                <div className="max-w-9xl mx-auto space-y-6">
-                    <div className="flex items-center justify-between mb-4">
-                    </div>
-                    <PaymentLogsPage landlord_id={user?.landlord_id} />
-                </div>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
+
+            <div className="w-full space-y-6">
+
+                <PaymentLogsPage landlord_id={user?.landlord_id} />
+
             </div>
+        </div>
     );
 }
