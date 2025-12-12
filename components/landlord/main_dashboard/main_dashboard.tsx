@@ -95,7 +95,7 @@ export default function LandlordMainDashboard() {
         </div>
 
         {/* QUICK ACTIONS */}
-        <div className="mb-5">
+          <div className="mb-5 flex justify-center">
           <QuickActions
             onAddProperty={() =>
               router.push("/pages/landlord/property-listing/create-property")
