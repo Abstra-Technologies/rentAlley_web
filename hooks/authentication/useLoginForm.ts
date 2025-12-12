@@ -15,6 +15,7 @@ export function useLoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, fetchSession } = useAuthStore();
+
     const errorParam = searchParams.get("error");
 
     const [formData, setFormData] = useState({ email: "", password: "" });
@@ -24,18 +25,22 @@ export function useLoginForm() {
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [rememberMe, setRememberMe] = useState(false);
 
+    // If already logged in → redirect
     useEffect(() => {
         if (user) {
             if (user.userType === "tenant") router.replace("/pages/tenant/feeds");
             else if (user.userType === "landlord") router.replace("/pages/landlord/dashboard");
             else router.replace("/");
-        } else fetchSession();
-    }, [user, router]);
+        } else {
+            fetchSession();
+        }
+    }, [user]);
 
+    // Clean pending states
     useEffect(() => {
         sessionStorage.removeItem("pending2FA");
         window.history.replaceState(null, "", "/pages/auth/login");
-    }, [user]);
+    }, []);
 
     useEffect(() => {
         if (errorParam) setErrorMessage("Authentication failed. Please try again.");
@@ -53,8 +58,7 @@ export function useLoginForm() {
         try {
             logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1);
             router.push("/api/auth/google-login");
-        } catch (err: any) {
-            console.error(err);
+        } catch {
             setErrorMessage("Google sign-in failed. Please try again.");
         } finally {
             setIsLoggingIn(false);
@@ -63,6 +67,8 @@ export function useLoginForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate fields
         try {
             loginSchema.parse(formData);
         } catch {
@@ -85,12 +91,21 @@ export function useLoginForm() {
                 body: JSON.stringify({ ...formData, captchaToken, rememberMe }),
                 credentials: "include",
             });
+
+            // 🔥 If server responds with redirect → immediately navigate
+            if (res.redirected) {
+                window.location.href = res.url;
+                return;
+            }
+
+            // For 2FA logic (API returns JSON + does NOT redirect)
             const data = await res.json();
+
             if (res.ok) {
-                if (data.requires_otp) router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
-                else {
-                    await fetchSession();
-                    if (data.redirectUrl) router.replace(data.redirectUrl);
+                if (data.requires_otp) {
+                    router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
+                } else {
+                    await fetchSession(); // sync auth store
                 }
             } else {
                 setErrorMessage(data.error || "Invalid credentials");
