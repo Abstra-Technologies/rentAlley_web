@@ -41,15 +41,15 @@ const ViewPropertyDetailedPage = () => {
     const [billingMode, setBillingMode] = useState(false);
     const [unitBillingStatus, setUnitBillingStatus] = useState<Record<string, boolean>>({});
     const [propertyDetails, setPropertyDetails] = useState<any>(null);
+
     const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
+    const [inviteModalOpen, setInviteModalOpen] = useState(false);
+    const [bulkImportModal, setBulkImportModal] = useState(false);
 
     const { subscription, units, error, isLoading } = usePropertyData(property_id, landlord_id);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [draggableUnits, setDraggableUnits] = useState<any[]>([]);
-
-    const [inviteModalOpen, setInviteModalOpen] = useState(false);
-    const [bulkImportModal, setBulkImportModal] = useState(false);
 
     useEffect(() => {
         if (!user) fetchSession();
@@ -58,14 +58,6 @@ const ViewPropertyDetailedPage = () => {
     useEffect(() => {
         if (units) setDraggableUnits(units);
     }, [units]);
-
-
-    const handleDownloadTemplate = () => {
-        const link = document.createElement("a");
-        link.href = "/templates/unit_bulk_import_template.xlsx"; // <-- you place template in /public/templates/
-        link.download = "Unit Bulk Import Template.xlsx";
-        link.click();
-    };
 
     const handlePageChange = (event: any, value: number) => {
         setPage(value);
@@ -131,6 +123,7 @@ const ViewPropertyDetailedPage = () => {
         }
     };
 
+    // Fuse.js search
     const fuse = useMemo(() => {
         return new Fuse(units || [], {
             keys: ["unit_name", "unit_style", "furnish", "amenities", "status"],
@@ -138,19 +131,16 @@ const ViewPropertyDetailedPage = () => {
         });
     }, [units]);
 
-    // ✅ Filter units
     const filteredUnits = useMemo(() => {
         if (!searchQuery.trim()) return draggableUnits || [];
         return fuse.search(searchQuery).map((result) => result.item);
     }, [searchQuery, fuse, draggableUnits]);
 
-    // ✅ Pagination
     const currentUnits = filteredUnits?.slice(startIndex, startIndex + itemsPerPage) || [];
 
-    // ✅ DnD sensors
+    // DnD
     const sensors = useSensors(useSensor(PointerSensor));
 
-    // ✅ DnD Handler
     const handleDragEnd = (event: any) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -160,9 +150,6 @@ const ViewPropertyDetailedPage = () => {
 
         const reordered = arrayMove(draggableUnits, oldIndex, newIndex);
         setDraggableUnits(reordered);
-
-        // Optionally persist to backend
-        // axios.post('/api/unitListing/updateOrder', { property_id, newOrder: reordered.map(u => u.unit_id) });
     };
 
     if (error) {
@@ -177,6 +164,7 @@ const ViewPropertyDetailedPage = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
+
                 {/* Header */}
                 <div className="mb-6">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
@@ -191,70 +179,99 @@ const ViewPropertyDetailedPage = () => {
                                 </p>
                             </div>
                         </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-
-                            {/* Add Unit Button */}
-                            <button
-                                onClick={handleAddUnitClick}
-                                className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm font-semibold rounded-lg shadow-md hover:from-blue-700 hover:to-emerald-700 transition-all"
-                            >
-                                <Plus className="h-5 w-5" />
-                                <span>Add Unit</span>
-                            </button>
-
-                            {/* Bulk Import Button (new!) */}
-                            {/* Bulk Import Button */}
-                            <button
-                                onClick={() => setBulkImportModal(true)}
-                                className="flex items-center justify-center gap-2 px-5 py-2
-               bg-gradient-to-r from-indigo-600 to-blue-600
-               text-white text-sm font-semibold rounded-lg shadow-md
-               hover:from-indigo-700 hover:to-blue-700 transition-all"
-                            >
-                                <Sparkles className="h-5 w-5" />
-                                <span>Bulk Import</span>
-                            </button>
-
-
-                            {/* AI Generator Button */}
-                            <button
-                                onClick={() => {
-                                    if (!subscription || subscription?.is_active !== 1) {
-                                        Swal.fire({
-                                            title: "Subscription Required",
-                                            text: "Activate your subscription to use AI unit generation.",
-                                            icon: "info",
-                                            confirmButtonColor: "#3b82f6",
-                                        });
-                                        return;
-                                    }
-                                    setIsAIGeneratorOpen(true);
-                                }}
-                                className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-semibold rounded-lg shadow-md hover:from-emerald-700 hover:to-teal-700 transition-all"
-                            >
-                                <Sparkles className="h-5 w-5" />
-                                <span>Generate with AI</span>
-                            </button>
-
-                            {/* Invite Tenant */}
-                            <button
-                                onClick={() => setInviteModalOpen(true)}
-                                className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg shadow-md hover:from-purple-700 hover:to-pink-700 transition-all"
-                            >
-                                <Sparkles className="h-5 w-5" />
-                                <span>Invite Tenant</span>
-                            </button>
-                        </div>
                     </div>
 
-                    {/* ✅ Search Bar */}
+                    {/* ACTION BUTTONS — Fully Responsive */}
+                    <div
+                        className="
+                            grid grid-cols-1
+                            xs:grid-cols-2
+                            sm:flex sm:flex-row sm:justify-end
+                            gap-2 sm:gap-3
+                        "
+                    >
+                        <button
+                            onClick={handleAddUnitClick}
+                            className="
+                                flex items-center justify-center gap-2
+                                px-5 py-2 text-sm
+                                lg:px-4 lg:py-1.5 lg:text-xs lg:w-36
+                                bg-gradient-to-r from-blue-600 to-emerald-600 text-white
+                                font-semibold rounded-lg shadow-md
+                                hover:from-blue-700 hover:to-emerald-700
+                                transition-all
+                            "
+                        >
+                            <Plus className="h-5 w-5 lg:h-4 lg:w-4" />
+                            Add Unit
+                        </button>
+
+                        <button
+                            onClick={() => setBulkImportModal(true)}
+                            className="
+                                flex items-center justify-center gap-2
+                                px-5 py-2 text-sm
+                                lg:px-4 lg:py-1.5 lg:text-xs lg:w-36
+                                bg-gradient-to-r from-indigo-600 to-blue-600 text-white
+                                font-semibold rounded-lg shadow-md
+                                hover:from-indigo-700 hover:to-blue-700
+                                transition-all
+                            "
+                        >
+                            <Sparkles className="h-5 w-5 lg:h-4 lg:w-4" />
+                            Bulk Import
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                if (!subscription || subscription?.is_active !== 1) {
+                                    Swal.fire({
+                                        title: "Subscription Required",
+                                        text: "Activate your subscription to use AI unit generation.",
+                                        icon: "info",
+                                        confirmButtonColor: "#3b82f6",
+                                    });
+                                    return;
+                                }
+                                setIsAIGeneratorOpen(true);
+                            }}
+                            className="
+                                flex items-center justify-center gap-2
+                                px-5 py-2 text-sm
+                                lg:px-4 lg:py-1.5 lg:text-xs lg:w-40
+                                bg-gradient-to-r from-emerald-600 to-teal-600 text-white
+                                font-semibold rounded-lg shadow-md
+                                hover:from-emerald-700 hover:to-teal-700
+                                transition-all
+                            "
+                        >
+                            <Sparkles className="h-5 w-5 lg:h-4 lg:w-4" />
+                            Generate with AI
+                        </button>
+
+                        <button
+                            onClick={() => setInviteModalOpen(true)}
+                            className="
+                                flex items-center justify-center gap-2
+                                px-5 py-2 text-sm
+                                lg:px-4 lg:py-1.5 lg:text-xs lg:w-36
+                                bg-gradient-to-r from-purple-600 to-pink-600 text-white
+                                font-semibold rounded-lg shadow-md
+                                hover:from-purple-700 hover:to-pink-700
+                                transition-all
+                            "
+                        >
+                            <Sparkles className="h-5 w-5 lg:h-4 lg:w-4" />
+                            Invite Tenant
+                        </button>
+                    </div>
+
+                    {/* SEARCH BAR */}
                     <div className="mt-4 relative max-w-md">
                         <Search className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
                         <input
                             type="text"
-                            placeholder="Search units (e.g. 501, studio, furnished, aircon)"
+                            placeholder="Search units (e.g. 501, studio, furnished)"
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
@@ -265,13 +282,10 @@ const ViewPropertyDetailedPage = () => {
                     </div>
                 </div>
 
-                {/* ✅ Draggable Units List */}
+                {/* UNITS LIST */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext
-                            items={currentUnits.map((unit) => unit.unit_id)}
-                            strategy={verticalListSortingStrategy}
-                        >
+                        <SortableContext items={currentUnits.map((unit) => unit.unit_id)} strategy={verticalListSortingStrategy}>
                             <UnitsTab
                                 units={currentUnits}
                                 isLoading={isLoading}
@@ -301,7 +315,7 @@ const ViewPropertyDetailedPage = () => {
                 </div>
             </div>
 
-            {/* AI Generator Modal */}
+            {/* MODALS */}
             {isAIGeneratorOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 relative border border-gray-200">
@@ -317,12 +331,8 @@ const ViewPropertyDetailedPage = () => {
             )}
 
             {inviteModalOpen && (
-                <InviteTenantModal
-                    propertyId={property_id}
-                    onClose={() => setInviteModalOpen(false)}
-                />
+                <InviteTenantModal propertyId={property_id} onClose={() => setInviteModalOpen(false)} />
             )}
-
 
             {bulkImportModal && (
                 <BulkImportUnitModal
@@ -331,8 +341,6 @@ const ViewPropertyDetailedPage = () => {
                     propertyId={property_id}
                 />
             )}
-
-
         </div>
     );
 };
