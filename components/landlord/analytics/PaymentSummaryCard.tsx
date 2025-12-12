@@ -216,7 +216,7 @@ export default function PaymentSummaryCard({
             {tenants.map((t) => (
               <Link
                 key={t.tenant_id}
-                href={`/pages/tenant/profile/${t.tenant_id}`}
+                href={`/pages/landlord/list_of_tenants/${t.tenant_id}`}
                 className="relative group/avatar"
                 onClick={(e) => e.stopPropagation()}
               >
