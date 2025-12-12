@@ -76,7 +76,7 @@ export default function LandlordMainDashboard() {
 
   return (
     <div className="pb-24 md:pb-6">
-      <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+      <div className="w-full px-4 md:px-6 pt-4 md:pt-6">
         {/* POINTS ALERT */}
         {showAlert && <PointsEarnedAlert points={user?.points} />}
 

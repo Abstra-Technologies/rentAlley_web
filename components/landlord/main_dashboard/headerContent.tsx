@@ -17,27 +17,32 @@ export default function HeaderContent({
   });
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-      {/* LEFT: Greeting */}
-      <div className="flex-1 min-w-0">
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
-          {greeting}, {displayName}
-        </h1>
-        <p className="text-xs md:text-sm text-gray-600 mt-0.5">
-          <span className="hidden sm:inline">
-            Simplifying property management, empowering landlords.
-          </span>
-          <span className="sm:hidden">Welcome back!</span>
-        </p>
-      </div>
-
-      <div className="hidden sm:flex items-center gap-3 text-right flex-shrink-0">
-        <div className="flex flex-col items-end">
-          <div className="text-xl lg:text-2xl font-bold text-gray-900">
-            <Clock />
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        {/* LEFT: Greeting */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              Dashboard
+            </span>
           </div>
-          <div className="text-xs lg:text-sm text-gray-600 mt-0.5">
-            {formattedDate}
+          <h1 className="text-2xl md:text-3xl font-bold truncate">
+            <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              {greeting}
+            </span>
+            <span className="text-gray-500"> • </span>
+            <span className="text-gray-900">{displayName}</span>
+          </h1>
+        </div>
+
+        {/* RIGHT: Date & Time - Hidden on mobile */}
+        <div className="hidden sm:flex items-center gap-3 bg-gradient-to-r from-blue-50 to-emerald-50 px-4 py-3 rounded-lg border border-blue-100/50">
+          <div className="flex flex-col items-end">
+            <div className="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              <Clock />
+            </div>
+            <div className="text-xs text-gray-600 mt-0.5">{formattedDate}</div>
           </div>
         </div>
       </div>
