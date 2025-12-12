@@ -105,7 +105,7 @@ export default function LandlordMainDashboard() {
               router.push("/pages/landlord/announcement/create-announcement")
             }
             onWorkOrder={() => setShowNewModal(true)}
-            onIncome={() => router.push("/pages/landlord/income")}
+            onIncome={() => router.push("/pages/landlord/payouts")}
           />
         </div>
 
