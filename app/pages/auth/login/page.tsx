@@ -17,7 +17,8 @@ export default function LoginPage() {
 
 function Login() {
     return (
-        <div className="relative flex flex-col min-h-screen bg-gradient-to-br from-blue-900 via-emerald-700 to-emerald-500 overflow-hidden">
+        <div className="relative flex flex-col min-h-[115vh] bg-gradient-to-br from-blue-900 via-emerald-700 to-emerald-500 overflow-hidden">
+
             {/* Background */}
             <Image
                 src="/images/hero-section.jpeg"
@@ -30,7 +31,7 @@ function Login() {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-emerald-800/70 to-emerald-600/70" />
 
             {/* Main Section */}
-            <main className="relative z-10 flex flex-col lg:flex-row items-center justify-center flex-1 px-4 sm:px-6 py-6 lg:py-10 gap-4 lg:gap-8">
+            <main className="relative z-10 flex flex-col lg:flex-row items-center justify-center flex-1 px-4 sm:px-6 py-20 lg:py-28 gap-6 lg:gap-10">
                 {/* Hero Text (Desktop only) */}
                 <div className="hidden lg:block text-white max-w-lg text-center lg:text-left space-y-4">
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight drop-shadow-lg">
