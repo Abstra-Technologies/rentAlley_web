@@ -13,7 +13,6 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // ✅ Follows Upkyp schema relations
         const [properties] = await db.query(
             `
       SELECT
@@ -23,11 +22,11 @@ export async function GET(req: NextRequest) {
         -- 🏠 Total units per property
         (SELECT COUNT(*) FROM Unit u WHERE u.property_id = p.property_id) AS total_units,
 
-        -- 🟢 Occupied units (active leases)
+        -- 🟢 Correct Occupancy: count only units with status = 'occupied'
         (SELECT COUNT(*)
          FROM Unit u
-         JOIN LeaseAgreement la ON la.unit_id = u.unit_id
-         WHERE u.property_id = p.property_id AND la.status = 'active') AS occupied_units,
+         WHERE u.property_id = p.property_id
+           AND u.status = 'occupied') AS occupied_units,
 
         -- 💰 Total income (from all time)
         (

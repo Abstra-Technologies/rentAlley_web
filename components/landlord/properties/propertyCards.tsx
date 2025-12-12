@@ -67,11 +67,18 @@ const PropertyCard = ({
 
     const statusConfig = getStatusConfig();
 
-    // Example analytics placeholders
-    const totalUnits = property.total_units || 10;
-    const occupiedUnits = property.occupied_units || 7;
-    const totalIncome = property.total_income || 45200;
-    const occupancyRate = Math.round((occupiedUnits / totalUnits) * 100);
+    const totalIncome = property.total_income || 0;
+
+    const totalUnits = property.total_units;
+    const occupiedUnits = property.occupied_units;
+
+// compute occupancy ONLY if backend provided numbers
+    let occupancyRate = 0;
+
+    if (typeof totalUnits === "number" && totalUnits > 0) {
+        occupancyRate = Math.round((occupiedUnits / totalUnits) * 100);
+    }
+
 
     return (
         <div
