@@ -5,9 +5,8 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { BackButton } from "@/components/navigation/backButton";
 import useAuthStore from "@/zustand/authStore";
-import { Upload } from "lucide-react";
+import { Upload, FileCheck } from "lucide-react";
 import TaxComputationCard from "@/components/landlord/taxManagement/TaxComputationCard";
-import LoadingScreen from "@/components/loadingScreen";
 
 export default function LandlordTaxProfilePage() {
   const { user, fetchSession } = useAuthStore();
@@ -69,6 +68,7 @@ export default function LandlordTaxProfilePage() {
       await axios.post("/api/landlord/taxProfile", formData);
       Swal.fire("Success", "Tax profile saved successfully!", "success");
       loadTaxProfile();
+      setBirFile(null); // Clear file selection after successful save
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Failed to save tax profile.", "error");
@@ -78,24 +78,89 @@ export default function LandlordTaxProfilePage() {
   };
 
   if (isInitialLoad) {
-    return <LoadingScreen message="Loading tax profile..." />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 md:p-6 pb-20 md:pb-6">
+        <div className="mb-3 sm:mb-4">
+          <BackButton label="Back to Dashboard" />
+        </div>
+
+        {/* Skeleton Loading */}
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm sm:shadow-lg p-4 sm:p-6 md:p-8 border border-gray-200 mb-4 sm:mb-6 animate-pulse">
+          {/* Header Skeleton */}
+          <div className="mb-4 sm:mb-6">
+            <div className="h-6 sm:h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded w-48 mb-2"></div>
+            <div className="h-3 sm:h-4 bg-gray-200 rounded w-64"></div>
+          </div>
+
+          {/* Info Alert Skeleton */}
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-100 rounded-lg">
+            <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+          </div>
+
+          {/* Form Fields Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className={i === 0 || i === 1 ? "sm:col-span-2" : ""}
+              >
+                <div className="h-3 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="h-10 sm:h-12 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Button Skeleton */}
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <div className="h-12 bg-gray-300 rounded-lg w-40"></div>
+          </div>
+        </div>
+
+        {/* Tax Computation Skeleton */}
+        <div className="bg-gradient-to-br from-blue-50 to-emerald-50 p-4 sm:p-5 md:p-6 rounded-xl sm:rounded-2xl border border-blue-100 animate-pulse">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-9 h-9 bg-gray-300 rounded-lg"></div>
+            <div className="flex-1">
+              <div className="h-5 bg-gray-300 rounded w-48 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-64"></div>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="h-24 bg-white rounded-lg"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="h-24 bg-white rounded-lg"></div>
+              <div className="h-24 bg-white rounded-lg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-6">
-      <BackButton label="Back to Dashboard" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-4 md:p-6 pb-20 md:pb-6">
+      <div className="mb-3 sm:mb-4">
+        <BackButton label="Back to Dashboard" />
+      </div>
 
-      <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100 mt-4">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-          Tax Information
-        </h1>
-        <p className="text-gray-500 mb-6">
-          Manage your BIR registration details and tax filing preferences.
-        </p>
+      {/* Main Form Card */}
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm sm:shadow-lg p-4 sm:p-6 md:p-8 border border-gray-200 mb-4 sm:mb-6">
+        {/* Header */}
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1 sm:mb-2">
+            Tax Information
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500">
+            Manage your BIR registration details and tax filing preferences.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+        {/* Form Fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          {/* TIN Number - Required */}
+          <div className="sm:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               TIN Number <span className="text-red-500">*</span>
             </label>
             <input
@@ -103,12 +168,13 @@ export default function LandlordTaxProfilePage() {
               value={taxProfile.tin_number}
               onChange={handleChange}
               placeholder="e.g., 123-456-789-000"
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* Registered Name */}
+          <div className="sm:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Registered Name
             </label>
             <input
@@ -116,12 +182,13 @@ export default function LandlordTaxProfilePage() {
               value={taxProfile.registered_name}
               onChange={handleChange}
               placeholder="e.g., Juan Dela Cruz Rentals"
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all"
             />
           </div>
 
+          {/* BIR Branch Code */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               BIR Branch Code
             </label>
             <input
@@ -129,19 +196,20 @@ export default function LandlordTaxProfilePage() {
               value={taxProfile.bir_branch_code}
               onChange={handleChange}
               placeholder="e.g., 039"
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all"
             />
           </div>
 
+          {/* Tax Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Tax Type
             </label>
             <select
               name="tax_type"
               value={taxProfile.tax_type}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all bg-white"
             >
               <option value="percentage">Percentage (3%)</option>
               <option value="vat">VAT (12%)</option>
@@ -149,26 +217,29 @@ export default function LandlordTaxProfilePage() {
             </select>
           </div>
 
+          {/* Filing Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               Filing Type
             </label>
             <select
               name="filing_type"
               value={taxProfile.filing_type}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full border border-gray-300 rounded-lg p-2.5 sm:p-3 text-sm sm:text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all bg-white"
             >
               <option value="monthly">Monthly</option>
               <option value="quarterly">Quarterly</option>
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* BIR Certificate Upload */}
+          <div className="sm:col-span-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
               BIR Certificate (optional)
             </label>
-            <div className="flex items-center gap-3">
+
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
                 type="file"
                 accept="image/*,application/pdf"
@@ -178,38 +249,62 @@ export default function LandlordTaxProfilePage() {
               />
               <label
                 htmlFor="bir_upload"
-                className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg cursor-pointer transition"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs sm:text-sm rounded-lg cursor-pointer transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
               >
-                <Upload size={16} className="mr-2" />
-                {birFile ? "File Selected" : "Upload File"}
+                {birFile ? (
+                  <>
+                    <FileCheck className="w-4 h-4" />
+                    <span className="truncate max-w-[200px]">
+                      {birFile.name}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    <span>Choose File</span>
+                  </>
+                )}
               </label>
+
               {taxProfile.bir_certificate_url && (
                 <a
                   href={taxProfile.bir_certificate_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline text-sm"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs sm:text-sm rounded-lg transition-all"
                 >
-                  View Current
+                  <FileCheck className="w-4 h-4" />
+                  View Current Certificate
                 </a>
               )}
             </div>
+
+            {birFile && (
+              <p className="text-[10px] sm:text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+                <FileCheck className="w-3 h-3" />
+                New file selected. Click "Save" to upload.
+              </p>
+            )}
           </div>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={`px-6 py-3 rounded-lg font-semibold shadow-md transition-all ${
-            saving
-              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
-          }`}
-        >
-          {saving ? "Saving..." : "Save Tax Profile"}
-        </button>
+        {/* Save Button */}
+        <div className="pt-4 border-t border-gray-200">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold text-sm sm:text-base shadow-md transition-all ${
+              saving
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white hover:shadow-lg active:scale-[0.98]"
+            }`}
+          >
+            {saving ? "Saving..." : "Save Tax Profile"}
+          </button>
+        </div>
       </div>
 
+      {/* Tax Computation Card */}
       <TaxComputationCard
         landlordId={user?.landlord_id}
         taxType={taxProfile.tax_type}
