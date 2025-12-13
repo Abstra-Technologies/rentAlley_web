@@ -19,7 +19,6 @@ export default function LeaseSetupWizard() {
     const property_id = id as string;
 
     const [requirements, setRequirements] = useState<any>(null);
-
     const [documentUploaded, setDocumentUploaded] = useState(false);
     const [moveInDate, setMoveInDate] = useState<string | null>(null);
 
@@ -34,21 +33,23 @@ export default function LeaseSetupWizard() {
     const [moveInModalOpen, setMoveInModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    /* ---------------- LOAD DATA ---------------- */
+    /* --------------------------------------------------
+     * LOAD DATA
+     * -------------------------------------------------- */
     useEffect(() => {
         const load = async () => {
             try {
-                const reqRes = await axios.get(
-                    `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
-                );
-
-                const moveInRes = await axios.get(
-                    `/api/landlord/activeLease/moveIn?agreement_id=${agreement_id}`
-                );
-
-                const payRes = await axios.get(
-                    `/api/landlord/activeLease/initialPayments?agreement_id=${agreement_id}`
-                );
+                const [reqRes, moveInRes, payRes] = await Promise.all([
+                    axios.get(
+                        `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
+                    ),
+                    axios.get(
+                        `/api/landlord/activeLease/moveIn?agreement_id=${agreement_id}`
+                    ),
+                    axios.get(
+                        `/api/landlord/activeLease/initialPayments?agreement_id=${agreement_id}`
+                    ),
+                ]);
 
                 setRequirements(reqRes.data.requirements || {});
                 setDocumentUploaded(reqRes.data.document_uploaded || false);
@@ -83,16 +84,9 @@ export default function LeaseSetupWizard() {
         );
     }
 
-    /* ---------------- COMPLETION ---------------- */
-    const paymentsRequired =
-        requirements.security_deposit || requirements.advance_payment;
-
-    const allComplete =
-        (!requirements.lease_agreement || documentUploaded) &&
-        (!requirements.move_in_checklist || !!moveInDate) &&
-        (!paymentsRequired || paymentsSaved);
-
-    /* ---------------- SAVE PAYMENTS ---------------- */
+    /* --------------------------------------------------
+     * SAVE PAYMENTS
+     * -------------------------------------------------- */
     const savePayments = async () => {
         try {
             await axios.post(`/api/landlord/activeLease/initialPayments`, {
@@ -105,138 +99,153 @@ export default function LeaseSetupWizard() {
         }
     };
 
+    /* --------------------------------------------------
+     * BUILD STEPS DYNAMICALLY
+     * -------------------------------------------------- */
+    const steps: any[] = [];
+
+    if (requirements.lease_agreement) {
+        steps.push({
+            key: "lease",
+            title: "Lease Agreement",
+            completed: documentUploaded,
+            render: () =>
+                !documentUploaded && (
+                    <button
+                        onClick={() =>
+                            router.push(
+                                `/pages/landlord/properties/${property_id}/activeLease/setup?agreement_id=${agreement_id}`
+                            )
+                        }
+                        className="primary-btn"
+                    >
+                        Start Lease Agreement
+                    </button>
+                ),
+        });
+    }
+
+    if (requirements.move_in_checklist) {
+        steps.push({
+            key: "movein",
+            title: "Move-In Date",
+            completed: !!moveInDate,
+            render: () => (
+                <>
+                    {moveInModalOpen && (
+                        <MoveInModal
+                            agreement_id={agreement_id}
+                            defaultDate={moveInDate}
+                            onClose={() => setMoveInModalOpen(false)}
+                            onSaved={(date: string) => setMoveInDate(date)}
+                        />
+                    )}
+                </>
+            ),
+            onClick: () => setMoveInModalOpen(true),
+        });
+    }
+
+    if (requirements.security_deposit || requirements.advance_payment) {
+        steps.push({
+            key: "payments",
+            title: "Initial Payments",
+            completed: paymentsSaved,
+            render: () => (
+                <div className="space-y-4 mt-4">
+                    {requirements.security_deposit && (
+                        <PaymentInput
+                            label="Security Deposit"
+                            amount={paymentData.security_deposit_amount}
+                            months={paymentData.security_deposit_months}
+                            onAmountChange={(v) =>
+                                setPaymentData((p) => ({
+                                    ...p,
+                                    security_deposit_amount: v,
+                                }))
+                            }
+                            onMonthsChange={(v) =>
+                                setPaymentData((p) => ({
+                                    ...p,
+                                    security_deposit_months: v,
+                                }))
+                            }
+                        />
+                    )}
+
+                    {requirements.advance_payment && (
+                        <PaymentInput
+                            label="Advance Payment"
+                            amount={paymentData.advance_payment_amount}
+                            months={paymentData.advance_payment_months}
+                            onAmountChange={(v) =>
+                                setPaymentData((p) => ({
+                                    ...p,
+                                    advance_payment_amount: v,
+                                }))
+                            }
+                            onMonthsChange={(v) =>
+                                setPaymentData((p) => ({
+                                    ...p,
+                                    advance_payment_months: v,
+                                }))
+                            }
+                        />
+                    )}
+
+                    <button
+                        onClick={savePayments}
+                        className="w-full mt-3 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                        Save Payments
+                    </button>
+                </div>
+            ),
+        });
+    }
+
+    /* --------------------------------------------------
+     * LOCK + COMPLETION LOGIC
+     * -------------------------------------------------- */
+    let unlocked = true;
+    const stepsWithState = steps.map((step) => {
+        const locked = !unlocked;
+        if (!step.completed) unlocked = false;
+        return { ...step, locked };
+    });
+
+    const allComplete = stepsWithState.every((s) => s.completed);
+
+    /* --------------------------------------------------
+     * RENDER
+     * -------------------------------------------------- */
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
             <div className="w-full max-w-lg space-y-5">
 
                 {/* HEADER */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Lease Setup</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        Lease Setup
+                    </h1>
                     <p className="text-xs text-gray-500 mt-1">
                         Agreement ID: {agreement_id}
                     </p>
                 </div>
 
-                {/* STEP 1 */}
-                {requirements.lease_agreement && (
+                {/* STEPS */}
+                {stepsWithState.map((step, index) => (
                     <StepCard
-                        title="Step 1: Lease Agreement"
-                        completed={documentUploaded}
-                        icon={<FileSignature />}
-                        description={
-                            documentUploaded
-                                ? "✓ Completed"
-                                : "Upload and finalize the lease agreement."
-                        }
-                        action={
-                            !documentUploaded && (
-                                <button
-                                    onClick={() =>
-                                        router.push(
-                                            `/pages/landlord/properties/${property_id}/activeLease/setup?agreement_id=${agreement_id}`
-                                        )
-                                    }
-                                    className="primary-btn"
-                                >
-                                    Start Lease Agreement
-                                </button>
-                            )
-                        }
-                    />
-                )}
-
-                {/* STEP 2 */}
-                {requirements.move_in_checklist && (
-                    <StepCard
-                        title="Step 2: Move-In Date"
-                        completed={!!moveInDate}
-                        locked={!documentUploaded}
-                        icon={<ClipboardList />}
-                        description={
-                            !documentUploaded
-                                ? "Complete Step 1 to unlock."
-                                : moveInDate
-                                    ? `✓ ${moveInDate}`
-                                    : "Click to set move-in date."
-                        }
-                        onClick={() => documentUploaded && setMoveInModalOpen(true)}
-                    />
-                )}
-
-                {moveInModalOpen && (
-                    <MoveInModal
-                        agreement_id={agreement_id}
-                        defaultDate={moveInDate}
-                        onClose={() => setMoveInModalOpen(false)}
-                        onSaved={(date: string) => setMoveInDate(date)}
-                    />
-                )}
-
-                {/* STEP 3 — PAYMENTS */}
-                {(requirements.security_deposit || requirements.advance_payment) && (
-                    <div
-                        className={`bg-white p-5 rounded-2xl border shadow-sm ${
-                            paymentsSaved ? "border-green-400" : "border-gray-200"
-                        }`}
+                        key={step.key}
+                        index={index + 1}
+                        title={step.title}
+                        completed={step.completed}
+                        locked={step.locked}
+                        onClick={!step.locked ? step.onClick : undefined}
                     >
-                        <div className="flex items-center gap-3 mb-4">
-                            <CreditCard className="w-5 h-5 text-blue-600" />
-                            <h2 className="font-semibold text-gray-900">
-                                Step 3: Initial Payments
-                            </h2>
-                        </div>
-
-                        <div className="space-y-4">
-
-                            {requirements.security_deposit && (
-                                <PaymentInput
-                                    label="Security Deposit"
-                                    amount={paymentData.security_deposit_amount}
-                                    months={paymentData.security_deposit_months}
-                                    onAmountChange={(v) =>
-                                        setPaymentData((p) => ({
-                                            ...p,
-                                            security_deposit_amount: v,
-                                        }))
-                                    }
-                                    onMonthsChange={(v) =>
-                                        setPaymentData((p) => ({
-                                            ...p,
-                                            security_deposit_months: v,
-                                        }))
-                                    }
-                                />
-                            )}
-
-                            {requirements.advance_payment && (
-                                <PaymentInput
-                                    label="Advance Payment"
-                                    amount={paymentData.advance_payment_amount}
-                                    months={paymentData.advance_payment_months}
-                                    onAmountChange={(v) =>
-                                        setPaymentData((p) => ({
-                                            ...p,
-                                            advance_payment_amount: v,
-                                        }))
-                                    }
-                                    onMonthsChange={(v) =>
-                                        setPaymentData((p) => ({
-                                            ...p,
-                                            advance_payment_months: v,
-                                        }))
-                                    }
-                                />
-                            )}
-                        </div>
-
-                        <button
-                            onClick={savePayments}
-                            className="w-full mt-5 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-                        >
-                            Save Payments
-                        </button>
-                    </div>
-                )}
+                        {step.render?.()}
+                    </StepCard>
+                ))}
 
                 {/* COMPLETE */}
                 {allComplete && (
@@ -263,15 +272,16 @@ export default function LeaseSetupWizard() {
     );
 }
 
-/* ---------------- SMALL COMPONENTS ---------------- */
+/* --------------------------------------------------
+ * COMPONENTS
+ * -------------------------------------------------- */
 
 function StepCard({
+                      index,
                       title,
-                      description,
                       completed,
                       locked,
-                      icon,
-                      action,
+                      children,
                       onClick,
                   }: any) {
     return (
@@ -286,14 +296,22 @@ function StepCard({
             }`}
         >
             <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">{icon}</div>
+                <div className="p-2 bg-gray-100 rounded-lg">
+                    {completed ? (
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : locked ? (
+                        <Lock className="w-5 h-5 text-gray-400" />
+                    ) : (
+                        <span className="font-bold">{index}</span>
+                    )}
+                </div>
+
                 <div className="flex-1">
                     <h2 className="font-semibold text-gray-900">{title}</h2>
-                    <p className="text-xs text-gray-500">{description}</p>
                 </div>
-                {locked && <Lock className="w-4 h-4 text-gray-400" />}
             </div>
-            {action && <div className="mt-4">{action}</div>}
+
+            {children}
         </div>
     );
 }

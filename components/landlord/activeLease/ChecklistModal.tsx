@@ -3,12 +3,21 @@
 import { FileSignature, Wallet, CalendarRange } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { formatDate } from "@/utils/formatter/formatters";
 
 interface Props {
     lease: any;
     onClose: () => void;
     onContinue: (data: any) => void;
 }
+
+/* ----------------------------------------------------
+ * Helper for <input type="date">
+ * -------------------------------------------------- */
+const formatDateForInput = (date?: string | null): string => {
+    if (!date) return "";
+    return new Date(date).toISOString().split("T")[0];
+};
 
 export default function ChecklistSetupModal({
                                                 lease,
@@ -29,7 +38,9 @@ export default function ChecklistSetupModal({
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
-    /* ---------------- LOAD EXISTING ---------------- */
+    /* ----------------------------------------------------
+     * LOAD EXISTING CHECKLIST + LEASE DATES
+     * -------------------------------------------------- */
     useEffect(() => {
         const load = async () => {
             try {
@@ -37,26 +48,34 @@ export default function ChecklistSetupModal({
                     `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
                 );
 
-                if (res.data?.requirements) {
-                    const r = res.data.requirements;
-                    setForm({
-                        lease_agreement: r.lease_agreement === 1,
-                        security_deposit: r.security_deposit === 1,
-                        advance_payment: r.advance_payment === 1,
-                        set_lease_dates: !!(r.lease_start_date || r.lease_end_date),
-                        lease_start_date: r.lease_start_date || "",
-                        lease_end_date: r.lease_end_date || "",
-                    });
-                }
+                const r = res.data?.requirements || {};
+
+                const leaseStart = formatDateForInput(res.data?.lease_start_date);
+                const leaseEnd = formatDateForInput(res.data?.lease_end_date);
+
+                setForm({
+                    lease_agreement: r.lease_agreement === 1,
+                    security_deposit: r.security_deposit === 1,
+                    advance_payment: r.advance_payment === 1,
+
+                    // auto-enable if dates exist
+                    set_lease_dates: !!(leaseStart || leaseEnd),
+
+                    // formatted for date input
+                    lease_start_date: leaseStart,
+                    lease_end_date: leaseEnd,
+                });
             } catch {
-                // first time setup
+                // first-time setup
             }
         };
 
         load();
     }, [agreement_id]);
 
-    /* ---------------- SAVE ---------------- */
+    /* ----------------------------------------------------
+     * SAVE
+     * -------------------------------------------------- */
     const handleSave = async () => {
         setLoading(true);
         setErrorMessage("");
@@ -66,30 +85,18 @@ export default function ChecklistSetupModal({
                 `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
             );
 
-            const payload: any = { agreement_id };
-
-            const onlyDatesSelected =
-                form.set_lease_dates &&
-                !form.lease_agreement &&
-                !form.security_deposit &&
-                !form.advance_payment;
-
-            if (onlyDatesSelected) {
-                payload.lease_start_date = form.lease_start_date || null;
-                payload.lease_end_date = form.lease_end_date || null;
-            } else {
-                payload.lease_agreement = form.lease_agreement;
-                payload.security_deposit = form.security_deposit;
-                payload.advance_payment = form.advance_payment;
-
-                payload.lease_start_date = form.set_lease_dates
+            const payload = {
+                agreement_id,
+                lease_agreement: form.lease_agreement,
+                security_deposit: form.security_deposit,
+                advance_payment: form.advance_payment,
+                lease_start_date: form.set_lease_dates
                     ? form.lease_start_date || null
-                    : null;
-
-                payload.lease_end_date = form.set_lease_dates
+                    : null,
+                lease_end_date: form.set_lease_dates
                     ? form.lease_end_date || null
-                    : null;
-            }
+                    : null,
+            };
 
             if (existing.data?.requirements) {
                 await axios.put(
@@ -121,7 +128,7 @@ export default function ChecklistSetupModal({
                     Lease Setup Options
                 </h2>
                 <p className="text-sm text-gray-600 mb-5">
-                    Select any options that apply. All items are optional.
+                    Select any options that apply. You may choose multiple.
                 </p>
 
                 {/* ERROR */}
@@ -170,7 +177,7 @@ export default function ChecklistSetupModal({
                             setForm((p) => ({ ...p, set_lease_dates: !p.set_lease_dates }))
                         }
                         icon={<CalendarRange className="w-4 h-4 text-indigo-600" />}
-                        label="Set Lease Dates Only"
+                        label="Set Lease Dates"
                         disabled={loading}
                     />
 
@@ -190,6 +197,15 @@ export default function ChecklistSetupModal({
                                     setForm((p) => ({ ...p, lease_end_date: v }))
                                 }
                             />
+
+                            {(form.lease_start_date || form.lease_end_date) && (
+                                <p className="text-xs text-gray-500">
+                                    Current Lease Period:{" "}
+                                    {formatDate(form.lease_start_date)}{" "}
+                                    {form.lease_end_date &&
+                                        `– ${formatDate(form.lease_end_date)}`}
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
