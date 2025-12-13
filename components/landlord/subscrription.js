@@ -236,7 +236,7 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
             No active subscription found.
           </p>
           <Link
-            href="/pages/landlord/sub_two/subscription"
+            href="/pages/landlord/subsciption_plan/pricing"
             onClick={() =>
               logEvent(
                 "No Subscription",
