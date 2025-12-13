@@ -31,7 +31,7 @@ const excludePages = [
 
 ];
 
-export async function middleware(req) {
+export async function proxy(req) {
   const token = req.cookies.get("token")?.value;
   if (!token) {
     if (req.nextUrl.pathname.startsWith("/pages/system_admin") || req.nextUrl.pathname.startsWith("/pages/admin_login")) {
