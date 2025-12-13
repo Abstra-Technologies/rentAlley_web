@@ -132,6 +132,8 @@ export default function EditProperty() {
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
+      confirmButtonText: "Yes, discard",
+      cancelButtonText: "Keep editing",
     }).then((res) => {
       if (res.isConfirmed)
         router.push(`/pages/landlord/properties/${propertyId}`);
@@ -142,54 +144,56 @@ export default function EditProperty() {
     useEditPropertyStore.getState().property?.propertyName || "Loading...";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
-      <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30 pb-20 md:pb-8">
+      <div className="px-3 sm:px-4 md:px-8 lg:px-12 xl:px-16 pt-4 sm:pt-6">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
             Edit Property:{" "}
             <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
               {propertyName}
             </span>
           </h1>
-          <p className="text-sm text-gray-600">Update your property details</p>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Update your property details
+          </p>
         </div>
 
         {/* FULL PAGE FORM (Step 1 only) */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-6">
-          <div className="p-5 md:p-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl shadow-gray-200/50 border border-gray-100 mb-4 sm:mb-6">
+          <div className="p-4 sm:p-5 md:p-6">
             <StepOneEdit propertyId={propertyId} />
           </div>
         </div>
 
         {/* Buttons */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden sticky bottom-4 md:static">
-          <div className="p-5 md:p-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden sticky bottom-4 md:static z-50">
+          <div className="p-4 sm:p-5 md:p-6">
             <div className="flex flex-col sm:flex-row gap-3 sm:justify-between">
               {/* Cancel */}
               <button
                 onClick={handleCancel}
                 disabled={loading}
-                className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-medium rounded-xl transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-medium rounded-lg sm:rounded-xl transition-all hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
               >
-                <X className="w-5 h-5" />
-                Cancel
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Cancel</span>
               </button>
 
               {/* Save */}
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg sm:rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.98]"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                     <span>Updating...</span>
                   </>
                 ) : (
                   <>
-                    <Check className="w-5 h-5" />
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span>Update Property</span>
                   </>
                 )}

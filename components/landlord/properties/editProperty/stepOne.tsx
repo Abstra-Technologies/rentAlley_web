@@ -9,11 +9,11 @@ import { UTILITY_BILLING_TYPES } from "@/constant/utilityBillingType";
 import { PAYMENT_METHODS } from "@/constant/paymentMethods";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
-import { FaImage, FaInfoCircle } from "react-icons/fa";
-import { Camera, X, Loader2 } from "lucide-react";
+import { FaInfoCircle } from "react-icons/fa";
+import { Camera, X, Sparkles } from "lucide-react";
 
-const PropertyMap = dynamic(
-  () => import("@/components/landlord/createProperty/propertyMap"),
+const PropertyMapWrapper = dynamic(
+  () => import("@/components/landlord/createProperty/propertyMapWrapper"),
   { ssr: false }
 );
 
@@ -25,7 +25,6 @@ export const StepOneEdit = ({ propertyId }) => {
   const [coords, setCoords] = useState({ lat: null, lng: null });
   const [addressQuery, setAddressQuery] = useState("");
   const [addressResults, setAddressResults] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
 
   /* =========================================================
@@ -235,12 +234,67 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
     setLoadingAI(false);
   };
 
+  // SKELETON LOADING
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3 bg-white px-6 py-4 rounded-xl shadow-lg border border-gray-100">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-          <p className="text-gray-700 font-medium">Loading…</p>
+      <div className="space-y-6 animate-pulse">
+        {/* Property Type Skeleton */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+            <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
+            <div className="h-5 bg-gray-300 rounded w-32"></div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Property Name Skeleton */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+            <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
+            <div className="h-5 bg-gray-300 rounded w-36"></div>
+          </div>
+          <div className="h-12 bg-gray-200 rounded-xl"></div>
+        </div>
+
+        {/* Map Skeleton */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+            <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
+            <div className="h-5 bg-gray-300 rounded w-40"></div>
+          </div>
+          <div className="h-64 bg-gray-200 rounded-xl"></div>
+        </div>
+
+        {/* Address Fields Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-4 bg-gray-300 rounded w-20"></div>
+              <div className="h-12 bg-gray-200 rounded-xl"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Description Skeleton */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+            <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
+            <div className="h-5 bg-gray-300 rounded w-28"></div>
+          </div>
+          <div className="h-32 bg-gray-200 rounded-xl"></div>
+        </div>
+
+        {/* Photos Skeleton */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
+            <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
+            <div className="h-5 bg-gray-300 rounded w-36"></div>
+          </div>
+          <div className="h-40 bg-gray-200 rounded-xl"></div>
         </div>
       </div>
     );
@@ -257,7 +311,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             1
           </div>
-          <label className="text-lg font-semibold text-gray-800">
+          <label className="text-base sm:text-lg font-semibold text-gray-800">
             Property Type
           </label>
         </div>
@@ -271,14 +325,16 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
                 onClick={() =>
                   setProperty({ ...property, propertyType: type.value })
                 }
-                className={`p-4 rounded-xl shadow-sm transition-all ${
+                className={`p-3 sm:p-4 rounded-xl shadow-sm transition-all ${
                   active
                     ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/30"
                     : "bg-white border border-gray-200 hover:border-blue-400 hover:shadow-md"
                 }`}
               >
-                <span className="text-2xl block mb-1">{type.icon}</span>
-                <p className="text-sm font-medium">{type.label}</p>
+                <span className="text-xl sm:text-2xl block mb-1">
+                  {type.icon}
+                </span>
+                <p className="text-xs sm:text-sm font-medium">{type.label}</p>
               </button>
             );
           })}
@@ -291,7 +347,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             2
           </div>
-          <label className="text-lg font-semibold text-gray-800">
+          <label className="text-base sm:text-lg font-semibold text-gray-800">
             Property Name
           </label>
         </div>
@@ -300,7 +356,8 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           name="propertyName"
           value={property.propertyName || ""}
           onChange={handleChange}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+          placeholder="Enter property name"
+          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
         />
       </div>
 
@@ -310,36 +367,36 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             3
           </div>
-          <label className="text-lg font-semibold text-gray-800">
+          <label className="text-base sm:text-lg font-semibold text-gray-800">
             Property Location
           </label>
         </div>
-        <div className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm">
-          <PropertyMap
+        <div className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-sm h-64 sm:h-80 relative z-0">
+          <PropertyMapWrapper
             coordinates={
               coords.lat && coords.lng ? [coords.lat, coords.lng] : null
             }
             setFields={({
-              lat,
-              lng,
-              address,
-              barangay,
+              latitude,
+              longitude,
+              street,
+              brgyDistrict,
               city,
               province,
-              postcode,
+              zipCode,
             }) => {
-              setCoords({ lat, lng });
+              setCoords({ lat: latitude, lng: longitude });
               setProperty({
                 ...property,
-                lat,
-                lng,
-                street: address,
-                brgyDistrict: barangay,
+                lat: latitude,
+                lng: longitude,
+                street,
+                brgyDistrict,
                 city,
                 province,
-                zipCode: postcode,
+                zipCode,
               });
-              setAddressQuery(address);
+              setAddressQuery(street);
             }}
           />
         </div>
@@ -347,20 +404,23 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
 
       {/* ADDRESS SEARCH */}
       <div className="space-y-3 relative">
-        <label className="text-sm font-semibold text-gray-700">Street</label>
+        <label className="text-xs sm:text-sm font-semibold text-gray-700">
+          Street
+        </label>
         <input
           value={addressQuery}
           onChange={(e) => setAddressQuery(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+          placeholder="Search for address..."
+          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
         />
 
         {addressResults.length > 0 && (
-          <ul className="absolute bg-white border border-gray-200 rounded-xl mt-2 w-full max-h-60 overflow-auto z-10 shadow-xl">
+          <ul className="absolute bg-white border border-gray-200 rounded-xl mt-2 w-full max-h-60 overflow-auto z-40 shadow-xl">
             {addressResults.map((item, i) => (
               <li
                 key={i}
                 onClick={() => handleAddressSelect(item)}
-                className="p-3 hover:bg-blue-50 cursor-pointer text-sm transition-colors border-b border-gray-100 last:border-b-0"
+                className="p-3 hover:bg-blue-50 cursor-pointer text-xs sm:text-sm transition-colors border-b border-gray-100 last:border-b-0"
               >
                 {item.display_name}
               </li>
@@ -370,48 +430,50 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
       </div>
 
       {/* Auto-Filled */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">
+          <label className="text-xs sm:text-sm font-semibold text-gray-700">
             Barangay
           </label>
           <input
             readOnly
             value={property.brgyDistrict || ""}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl"
+            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-gray-100 border border-gray-200 rounded-xl"
             placeholder="Barangay"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">City</label>
+          <label className="text-xs sm:text-sm font-semibold text-gray-700">
+            City
+          </label>
           <input
             name="city"
             onChange={handleChange}
             value={property.city || ""}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             placeholder="City"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">
+          <label className="text-xs sm:text-sm font-semibold text-gray-700">
             ZIP Code
           </label>
           <input
             name="zipCode"
             onChange={handleChange}
             value={property.zipCode || ""}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             placeholder="ZIP Code"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">
+          <label className="text-xs sm:text-sm font-semibold text-gray-700">
             Province
           </label>
           <input
             readOnly
             value={property.province || ""}
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl"
+            className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-gray-100 border border-gray-200 rounded-xl"
             placeholder="Province"
           />
         </div>
@@ -423,9 +485,11 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             4
           </div>
-          <h2 className="text-lg font-semibold text-gray-800">Amenities</h2>
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+            Amenities
+          </h2>
         </div>
-        <div className="bg-gray-50 p-4 border border-gray-200 rounded-xl">
+        <div className="bg-gray-50 p-3 sm:p-4 border border-gray-200 rounded-xl">
           <AmenitiesSelector
             selectedAmenities={property.amenities || []}
             onAmenityChange={toggleAmenity}
@@ -439,7 +503,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             5
           </div>
-          <label className="text-lg font-semibold text-gray-800">
+          <label className="text-base sm:text-lg font-semibold text-gray-800">
             Description
           </label>
         </div>
@@ -448,15 +512,26 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           rows={5}
           onChange={handleChange}
           value={property.description || ""}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+          placeholder="Describe your property..."
+          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
         />
         <button
           type="button"
           onClick={generateDescription}
           disabled={loadingAI}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-medium text-xs sm:text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loadingAI ? "Generating…" : "✨ Generate with AI"}
+          {loadingAI ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Generating...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              <span>Generate with AI</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -466,7 +541,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             6
           </div>
-          <label className="text-lg font-semibold text-gray-800">
+          <label className="text-base sm:text-lg font-semibold text-gray-800">
             Total Property Size (sqm)
           </label>
         </div>
@@ -475,7 +550,8 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           name="floorArea"
           value={property.floorArea || ""}
           onChange={handleChange}
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+          placeholder="Enter floor area"
+          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
         />
       </div>
 
@@ -485,7 +561,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             7
           </div>
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">
             Property Preferences
           </h2>
         </div>
@@ -498,14 +574,14 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
                 key={pref.key}
                 type="button"
                 onClick={() => togglePreference(pref.key)}
-                className={`p-4 rounded-xl shadow-sm transition-all ${
+                className={`p-3 sm:p-4 rounded-xl shadow-sm transition-all ${
                   active
                     ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/30"
                     : "bg-white border border-gray-200 hover:border-blue-400 hover:shadow-md"
                 }`}
               >
-                <Icon className="text-xl mb-1 mx-auto" />
-                <p className="text-sm font-medium">{pref.label}</p>
+                <Icon className="text-lg sm:text-xl mb-1 mx-auto" />
+                <p className="text-xs sm:text-sm font-medium">{pref.label}</p>
               </button>
             );
           })}
@@ -518,20 +594,20 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             8
           </div>
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">
             Utility Billing
           </h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div className="space-y-2">
-            <label className="font-semibold flex items-center gap-1 text-sm">
-              Water Billing <FaInfoCircle className="text-blue-500" />
+            <label className="font-semibold flex items-center gap-1 text-xs sm:text-sm">
+              Water Billing <FaInfoCircle className="text-blue-500 text-xs" />
             </label>
             <select
               name="water_billing_type"
               onChange={handleChange}
               value={property.water_billing_type || ""}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                 backgroundRepeat: "no-repeat",
@@ -549,14 +625,15 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           </div>
 
           <div className="space-y-2">
-            <label className="font-semibold flex items-center gap-1 text-sm">
-              Electricity Billing <FaInfoCircle className="text-blue-500" />
+            <label className="font-semibold flex items-center gap-1 text-xs sm:text-sm">
+              Electricity Billing{" "}
+              <FaInfoCircle className="text-blue-500 text-xs" />
             </label>
             <select
               name="electricity_billing_type"
               onChange={handleChange}
               value={property.electricity_billing_type || ""}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                 backgroundRepeat: "no-repeat",
@@ -581,14 +658,14 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             9
           </div>
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">
             Property Photos
           </h2>
         </div>
 
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed p-8 rounded-xl cursor-pointer transition-all ${
+          className={`border-2 border-dashed p-6 sm:p-8 rounded-xl cursor-pointer transition-all ${
             isDragActive
               ? "border-blue-500 bg-blue-50 shadow-inner"
               : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/30"
@@ -596,19 +673,21 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
         >
           <input {...getInputProps()} />
           <div className="text-center">
-            <div className="w-14 h-14 mx-auto bg-gradient-to-br from-blue-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
-              <Camera className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-gradient-to-br from-blue-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
+              <Camera className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
-            <p className="text-sm font-medium text-gray-700 mb-1">
+            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1">
               Drag or upload images
             </p>
-            <p className="text-xs text-gray-500">PNG, JPG up to 10MB</p>
+            <p className="text-[10px] sm:text-xs text-gray-500">
+              PNG, JPG up to 10MB
+            </p>
           </div>
         </div>
 
         {photos.length > 0 && (
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-3">
+            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-3">
               {photos.length} photo{photos.length !== 1 ? "s" : ""} uploaded
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -616,7 +695,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
                 <div key={index} className="relative group aspect-square">
                   <img
                     src={photo.preview}
-                    alt="Property"
+                    alt={`Property photo ${index + 1}`}
                     className="w-full h-full object-cover rounded-xl border border-gray-200"
                   />
                   <button
@@ -624,7 +703,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
                     onClick={() => removePhoto(index)}
                     className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-all"></div>
                 </div>
@@ -640,7 +719,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
             10
           </div>
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">
             Payment Methods Accepted
           </h2>
         </div>
@@ -649,7 +728,7 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           {PAYMENT_METHODS.map((m) => (
             <label
               key={m.key}
-              className="flex items-center gap-3 border border-gray-200 p-4 rounded-xl shadow-sm cursor-pointer hover:border-blue-400 hover:shadow-md transition-all bg-white"
+              className="flex items-center gap-3 border border-gray-200 p-3 sm:p-4 rounded-xl shadow-sm cursor-pointer hover:border-blue-400 hover:shadow-md transition-all bg-white"
             >
               <input
                 type="checkbox"
@@ -665,9 +744,9 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
                         : [...(property.paymentMethodsAccepted || []), m.key],
                   })
                 }
-                className="w-5 h-5 accent-blue-600 rounded"
+                className="w-4 h-4 sm:w-5 sm:h-5 accent-blue-600 rounded"
               />
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-xs sm:text-sm font-medium text-gray-700">
                 {m.label}
               </span>
             </label>
