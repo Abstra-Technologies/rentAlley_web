@@ -77,16 +77,15 @@ export default function UnitCardDesktop({
     onPayInitial: (agreementId: string) => void;
 }) {
     const sig = unit.leaseSignature;
-
     const isLeaseExpired = new Date(unit.end_date) < new Date();
 
-    /* ----------------------- SIGNATURE STATES ----------------------- */
+    /* ----------------------- SIGNATURE STATES (UNCHANGED) ----------------------- */
     const isSignaturePending =
         sig === "pending" ||
         sig === "sent" ||
         sig === "pending_signature" ||
         sig === "landlord_signed" ||
-        sig === "tenant_signed"; // still waiting for landlord
+        sig === "tenant_signed";
 
     const isFullySigned = sig === "active" || sig === "completed";
 
@@ -133,12 +132,10 @@ export default function UnitCardDesktop({
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-                {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                     <LeaseStatusBadge unit={unit} />
                 </div>
 
-                {/* Rent Tag */}
                 <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg">
                     <div className="flex items-center gap-1">
                         <CurrencyDollarIcon className="w-4 h-4 text-blue-600" />
@@ -149,7 +146,6 @@ export default function UnitCardDesktop({
                     </div>
                 </div>
 
-                {/* Next Billing */}
                 {unit.due_date && unit.due_day && !isLeaseExpired && isFullySigned && (
                     <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white px-4 py-2.5 text-xs backdrop-blur-sm">
                         <div className="flex items-center justify-between">
@@ -172,7 +168,6 @@ export default function UnitCardDesktop({
                     {unit.property_name}
                 </p>
 
-                {/* Location */}
                 <div className="flex items-center gap-3 text-xs text-gray-600 mb-4">
           <span className="flex items-center gap-1">
             <MapPinIcon className="w-3.5 h-3.5 text-blue-600" />
@@ -185,18 +180,18 @@ export default function UnitCardDesktop({
           </span>
                 </div>
 
-                {/* BUTTONS */}
+                {/* ACTIONS */}
                 <div className="space-y-2">
 
-                    {/* ---------------- PENDING DOCUMENTS ONLY ---------------- */}
+                    {/* PENDING DOCUMENTS */}
                     {isSignaturePending && !isFullySigned && (
                         <PendingDocumentsWidget agreement_id={unit.agreement_id} />
                     )}
 
-                    {/* ---------------- FULLY SIGNED → ACTIONS ---------------- */}
+                    {/* FULLY SIGNED */}
                     {isFullySigned && (
                         <>
-                            {/* PAY INITIAL */}
+                            {/* PAY INITIAL (BLOCKS PORTAL) */}
                             {hasInitialPayables && (
                                 <button
                                     onClick={() => onPayInitial(unit.agreement_id)}
@@ -213,16 +208,18 @@ export default function UnitCardDesktop({
                                 </button>
                             )}
 
-                            {/* ACCESS PORTAL */}
-                            <button
-                                onClick={() => onAccessPortal(unit.agreement_id)}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4
-                bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg
-                font-semibold text-sm hover:shadow-md"
-                            >
-                                <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                                Access Portal
-                            </button>
+                            {/* ACCESS PORTAL (ONLY WHEN PAID — EVEN IF EXPIRED) */}
+                            {!hasInitialPayables && (
+                                <button
+                                    onClick={() => onAccessPortal(unit.agreement_id)}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4
+                  bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg
+                  font-semibold text-sm hover:shadow-md"
+                                >
+                                    <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                                    Access Portal
+                                </button>
+                            )}
 
                             {/* CONTACT LANDLORD */}
                             <button
@@ -235,7 +232,7 @@ export default function UnitCardDesktop({
                                 Message Landlord
                             </button>
 
-                            {/* EXPIRED LEASE ACTIONS */}
+                            {/* EXPIRED ACTIONS */}
                             {isLeaseExpired && (
                                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
                                     <button

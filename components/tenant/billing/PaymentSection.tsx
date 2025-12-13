@@ -7,6 +7,9 @@ import Swal from "sweetalert2";
 import axios from "axios";
 import useAuthStore from "@/zustand/authStore";
 
+// With Xendit implementation, test environment first.
+
+
 export default function PaymentSection({ bill, totalDue, agreement_id }) {
     const router = useRouter();
     const { user } = useAuthStore();
