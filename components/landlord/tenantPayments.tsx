@@ -82,25 +82,25 @@ export default function PaymentList({ landlord_id }) {
   }
 
   return (
-    <div className="space-y-2 max-h-56 overflow-y-auto">
-      {payments.slice(0, 3).map((payment) => (
+    <div className="space-y-2 max-h-80 overflow-y-auto">
+      {payments.slice(0, 6).map((payment) => (
         <div
           key={payment.payment_id}
-          className="p-3 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 hover:border-gray-300 transition-all"
+          className="p-2.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 hover:border-gray-300 transition-all"
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2.5">
             {/* Icon */}
-            <div className="w-8 h-8 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Receipt className="w-4 h-4 text-emerald-700" />
+            <div className="w-7 h-7 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Receipt className="w-3.5 h-3.5 text-emerald-700" />
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <p className="text-sm font-semibold text-gray-900 truncate">
+              <div className="flex items-start justify-between gap-2 mb-0.5">
+                <p className="text-xs font-semibold text-gray-900 truncate">
                   {payment.tenant_name || "Unknown Tenant"}
                 </p>
-                <span className="text-sm font-bold text-emerald-700 flex-shrink-0">
+                <span className="text-xs font-bold text-emerald-700 flex-shrink-0">
                   {formatCurrency(payment.amount_paid)}
                 </span>
               </div>
@@ -120,9 +120,9 @@ export default function PaymentList({ landlord_id }) {
         </div>
       ))}
 
-      {payments.length > 3 && (
+      {payments.length > 6 && (
         <p className="text-center text-xs text-gray-500 pt-2">
-          +{payments.length - 3} more payments
+          +{payments.length - 6} more payments
         </p>
       )}
     </div>

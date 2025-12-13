@@ -54,10 +54,10 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
       </div>
     );
 
-  const limitedProperties = properties.slice(0, 3);
+  const limitedProperties = properties.slice(0, 5);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 min-h-[400px] space-y-3">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -77,9 +77,9 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
             onClick={() =>
               router.push(`/pages/landlord/properties/${property.property_id}`)
             }
-            className="snap-start min-w-[240px] bg-gray-50 rounded-lg overflow-hidden cursor-pointer hover:bg-gray-100 transition-all flex-shrink-0 border border-gray-200"
+            className="snap-start min-w-[220px] bg-gray-50 rounded-lg overflow-hidden cursor-pointer hover:bg-gray-100 transition-all flex-shrink-0 border border-gray-200"
           >
-            <div className="relative w-full h-32 bg-gray-100">
+            <div className="relative w-full h-28 bg-gray-100">
               {property.photos?.[0]?.photo_url ? (
                 <Image
                   src={property.photos[0].photo_url}
@@ -123,9 +123,9 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
             onClick={() =>
               router.push(`/pages/landlord/properties/${property.property_id}`)
             }
-            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all first:pt-0 last:pb-0"
+            className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-all first:pt-0 last:pb-0"
           >
-            <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
               {property.photos?.length > 0 ? (
                 <Image
                   src={property.photos[0].photo_url}
@@ -162,7 +162,7 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
       </div>
 
       {/* View All Link */}
-      {properties.length > 3 && (
+      {properties.length > 5 && (
         <button
           onClick={(e) => {
             e.stopPropagation();
