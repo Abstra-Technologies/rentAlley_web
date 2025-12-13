@@ -26,7 +26,7 @@ interface BillingDetail {
 }
 
 interface LeaseDetails {
-  lease_id: number;
+  lease_id: string;
   property_id?: number;
   property_name: string;
   unit_name: string;
