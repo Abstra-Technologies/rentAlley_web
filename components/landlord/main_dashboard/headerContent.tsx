@@ -31,7 +31,7 @@ export default function HeaderContent({
             <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
               {greeting}
             </span>
-            <span className="text-gray-500"> • </span>
+            <span className="text-gray-500">, </span>
             <span className="text-gray-900">{displayName}</span>
           </h1>
         </div>
