@@ -57,7 +57,7 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
   const limitedProperties = properties.slice(0, 5);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 space-y-3">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 space-y-3 h-[500px] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function LandlordPropertyMarquee({ landlordId }: Props) {
       </div>
 
       {/* DESKTOP STACKED LIST */}
-      <div className="hidden md:block space-y-0 divide-y divide-gray-100">
+      <div className="hidden md:block space-y-0 divide-y divide-gray-100 flex-1 overflow-y-auto">
         {limitedProperties.map((property) => (
           <div
             key={property.property_id}
