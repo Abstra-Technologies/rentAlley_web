@@ -104,8 +104,8 @@ export default function usePropertyListingPage() {
                     });
                     return;
                 }
-                router.push(`/pages/landlord/properties/${property.property_id}/editPropertyDetails?id=${property.property_id}`);
-                // router.push(`/pages/landlord/properties/${property.property_id}`);
+                // router.push(`/pages/landlord/properties/${property.property_id}/editPropertyDetails?id=${property.property_id}`);
+                router.push(`/pages/landlord/properties/${property.property_id}`);
             } catch {
                 await Swal.fire("Error", "Unable to validate property access.", "error");
             }
