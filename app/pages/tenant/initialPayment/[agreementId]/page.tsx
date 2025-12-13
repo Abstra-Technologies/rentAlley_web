@@ -10,6 +10,7 @@ import {
     ArrowLeftIcon,
     PhotoIcon,
     CheckCircleIcon,
+    CreditCardIcon,
 } from "@heroicons/react/24/outline";
 
 import LoadingScreen from "@/components/loadingScreen";
@@ -18,10 +19,7 @@ export default function InitialPaymentPage() {
     const router = useRouter();
     const params = useParams();
 
-    /** ✅ SAFE IN NEXT 16 */
     const agreementId = params?.agreementId as string | undefined;
-
-    console.log("agreement id", agreementId);
 
     const [loading, setLoading] = useState(true);
     const [paymentData, setPaymentData] = useState<any>(null);
@@ -29,7 +27,7 @@ export default function InitialPaymentPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [isRedirecting, setIsRedirecting] = useState(false);
 
-    const { user, fetchSession } = useAuthStore();
+    const { user } = useAuthStore();
 
     /* -----------------------------------------
        FETCH PAYMENT DETAILS
@@ -47,7 +45,6 @@ export default function InitialPaymentPage() {
 
             setPaymentData(res.data);
         } catch (err: any) {
-            console.error(err);
             setError(err.response?.data?.message || "Failed to load details");
         } finally {
             setLoading(false);
@@ -72,20 +69,14 @@ export default function InitialPaymentPage() {
                 type === "advance" ? "Advance Payment" : "Security Deposit"
             }`,
             input: "file",
-            inputAttributes: {
-                accept: "image/*,application/pdf",
-            },
+            inputAttributes: { accept: "image/*,application/pdf" },
             showCancelButton: true,
         });
 
         if (!file) return;
 
         setIsUploading(true);
-        Swal.fire({
-            title: "Uploading...",
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading(),
-        });
+        Swal.fire({ title: "Uploading...", didOpen: () => Swal.showLoading() });
 
         try {
             const formData = new FormData();
@@ -106,7 +97,46 @@ export default function InitialPaymentPage() {
     };
 
     /* -----------------------------------------
-       LOADING / ERROR
+       PAY VIA XENDIT
+    ----------------------------------------- */
+    const handlePay = async (type: "advance" | "deposit", amount: number) => {
+        if (!agreementId || !user) return;
+
+        try {
+            setIsRedirecting(true);
+
+            const res = await axios.post(
+                "/api/tenant/initialPayment",
+                {
+                    agreement_id: agreementId,
+                    payment_type: type,
+                    amount,
+                    payer: {
+                        first_name: user.firstName,
+                        last_name: user.lastName,
+                        email: user.email,
+                    },
+                    redirect_url: {
+                        success: `${window.location.origin}/pages/payment/initialPaymentSuccess`,
+                        failure: `${window.location.origin}/pages/payment/initialPaymentFailed`,
+                    },
+                }
+            );
+
+            if (res.data?.checkout_url) {
+                window.location.href = res.data.checkout_url;
+            } else {
+                Swal.fire("Error", "No checkout URL returned.", "error");
+            }
+        } catch (err: any) {
+            Swal.fire("Payment Error", "Payment failed.", "error");
+        } finally {
+            setIsRedirecting(false);
+        }
+    };
+
+    /* -----------------------------------------
+       GUARDS
     ----------------------------------------- */
     if (!agreementId) {
         return (
@@ -146,10 +176,6 @@ export default function InitialPaymentPage() {
     const advanceAmount = Number(advance?.amount || 0);
     const depositAmount = Number(deposit?.amount || 0);
 
-    const totalDue =
-        (hasAdvance ? advanceAmount : 0) +
-        (hasDeposit ? depositAmount : 0);
-
     /* -----------------------------------------
        RENDER
     ----------------------------------------- */
@@ -172,38 +198,77 @@ export default function InitialPaymentPage() {
             <div className="bg-white border rounded-xl shadow-sm p-4 mb-6">
                 <h2 className="font-semibold mb-3">Initial Payment Overview</h2>
 
-                {totalDue > 0 ? (
-                    <>
-                        {hasAdvance && (
-                            <div className="flex justify-between">
-                                <span>Advance Payment</span>
-                                <span className="font-bold">₱{advanceAmount.toLocaleString()}</span>
-                            </div>
-                        )}
-                        {hasDeposit && (
-                            <div className="flex justify-between">
-                                <span>Security Deposit</span>
-                                <span className="font-bold">₱{depositAmount.toLocaleString()}</span>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="text-emerald-600 font-semibold text-center">
+                {hasAdvance && (
+                    <div className="flex justify-between">
+                        <span>Advance Payment</span>
+                        <span className="font-bold">₱{advanceAmount.toLocaleString()}</span>
+                    </div>
+                )}
+
+                {hasDeposit && (
+                    <div className="flex justify-between">
+                        <span>Security Deposit</span>
+                        <span className="font-bold">₱{depositAmount.toLocaleString()}</span>
+                    </div>
+                )}
+
+                {!hasAdvance && !hasDeposit && (
+                    <div className="text-emerald-600 font-semibold text-center mt-3">
                         <CheckCircleIcon className="w-6 h-6 mx-auto mb-2" />
                         Your initial payments are fully settled.
+                        <button
+                            onClick={() => router.push("/pages/tenant/my-unit")}
+                            className="mt-4 w-full py-2.5 bg-emerald-600 text-white rounded-lg font-semibold"
+                        >
+                            Back to My Units
+                        </button>
                     </div>
                 )}
             </div>
 
-            {/* FIRST PAYMENT */}
+            {/* FIRST PENDING PAYMENT ONLY */}
             {firstPending === "advance" && (
-                <button
-                    onClick={() => handleUploadProof("advance")}
-                    className="w-full py-3 bg-gray-100 rounded-lg font-semibold"
-                >
-                    <PhotoIcon className="inline w-5 h-5 mr-2" />
-                    Upload Proof of Advance Payment
-                </button>
+                <div className="space-y-3">
+                    <button
+                        onClick={() => handlePay("advance", advanceAmount)}
+                        disabled={isRedirecting || isUploading}
+                        className="w-full py-3 bg-emerald-600 text-white rounded-lg font-semibold"
+                    >
+                        <CreditCardIcon className="inline w-5 h-5 mr-2" />
+                        Pay Advance via Xendit
+                    </button>
+
+                    <button
+                        onClick={() => handleUploadProof("advance")}
+                        disabled={isRedirecting || isUploading}
+                        className="w-full py-3 bg-gray-100 rounded-lg font-semibold"
+                    >
+                        <PhotoIcon className="inline w-5 h-5 mr-2" />
+                        Upload Proof of Advance Payment
+                    </button>
+                </div>
+            )}
+
+            {firstPending === "deposit" && (
+                <div className="space-y-3">
+                    <button
+                        onClick={() => handlePay("deposit", depositAmount)}
+                        disabled={isRedirecting || isUploading}
+                        className="w-full py-3 bg-emerald-600 text-white rounded-lg font-semibold"
+                    >
+                        <CreditCardIcon className="inline w-5 h-5 mr-2" />
+                        Pay Security Deposit via Xendit
+                    </button>
+
+                    <button
+                        onClick={() => handleUploadProof("deposit")}
+                        disabled={isRedirecting || isUploading}
+                        className="w-full py-3 bg-gray-100 rounded-lg font-semibold"
+                    >
+                        <PhotoIcon className="inline w-5 h-5 mr-2" />
+                        Upload Proof of Security Deposit
+                    </button>
+                </div>
             )}
         </div>
     );
