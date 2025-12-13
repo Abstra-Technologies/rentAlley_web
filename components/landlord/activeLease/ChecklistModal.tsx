@@ -1,147 +1,205 @@
 "use client";
 
-import { FileSignature } from "lucide-react";
+import { FileSignature, Wallet, CalendarRange } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
 interface Props {
-    lease: any; // contains lease_id
+    lease: any;
     onClose: () => void;
-    onContinue: (requirements: any) => void;
+    onContinue: (data: any) => void;
 }
 
-export default function ChecklistSetupModal({ lease, onClose, onContinue }: Props) {
-    const agreement_id = lease.lease_id; // 🔥 correct FK from your API
+export default function ChecklistSetupModal({
+                                                lease,
+                                                onClose,
+                                                onContinue,
+                                            }: Props) {
+    const agreement_id = lease.lease_id;
 
-    const [requirements, setRequirements] = useState({
-        lease_agreement: true,
-        move_in_checklist: true,
+    const [form, setForm] = useState({
+        lease_agreement: false,
         security_deposit: false,
         advance_payment: false,
-        other_essential: false,
+        set_lease_dates: false,
+        lease_start_date: "",
+        lease_end_date: "",
     });
 
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
-    // =======================================================
-    //  Auto-load existing checklist if record exists (GET)
-    // =======================================================
+    /* ---------------- LOAD EXISTING ---------------- */
     useEffect(() => {
-        const loadChecklist = async () => {
+        const load = async () => {
             try {
                 const res = await axios.get(
                     `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
                 );
 
                 if (res.data?.requirements) {
-                    setRequirements({
-                        lease_agreement: res.data.requirements.lease_agreement === 1,
-                        move_in_checklist: res.data.requirements.move_in_checklist === 1,
-                        security_deposit: res.data.requirements.security_deposit === 1,
-                        advance_payment: res.data.requirements.advance_payment === 1,
-                        other_essential: res.data.requirements.other_essential === 1,
+                    const r = res.data.requirements;
+                    setForm({
+                        lease_agreement: r.lease_agreement === 1,
+                        security_deposit: r.security_deposit === 1,
+                        advance_payment: r.advance_payment === 1,
+                        set_lease_dates: !!(r.lease_start_date || r.lease_end_date),
+                        lease_start_date: r.lease_start_date || "",
+                        lease_end_date: r.lease_end_date || "",
                     });
                 }
-            } catch (e) {
-                console.warn("No existing checklist found.");
+            } catch {
+                // first time setup
             }
         };
 
-        loadChecklist();
+        load();
     }, [agreement_id]);
 
-    // =======================================================
-    // 🔥 Save checklist (POST if new, PUT if exists)
-    // =======================================================
+    /* ---------------- SAVE ---------------- */
     const handleSave = async () => {
         setLoading(true);
         setErrorMessage("");
 
         try {
-            // check if checklist exists
             const existing = await axios.get(
                 `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
             );
 
-            const doesExist = existing.data?.requirements;
+            const payload: any = { agreement_id };
 
-            if (doesExist) {
-                // UPDATE
-                await axios.put("/api/landlord/activeLease/saveChecklistRequirements", {
-                    agreement_id,
-                    ...requirements
-                });
+            const onlyDatesSelected =
+                form.set_lease_dates &&
+                !form.lease_agreement &&
+                !form.security_deposit &&
+                !form.advance_payment;
+
+            if (onlyDatesSelected) {
+                payload.lease_start_date = form.lease_start_date || null;
+                payload.lease_end_date = form.lease_end_date || null;
             } else {
-                // CREATE
-                await axios.post("/api/landlord/activeLease/saveChecklistRequirements", {
-                    agreement_id,
-                    ...requirements
-                });
+                payload.lease_agreement = form.lease_agreement;
+                payload.security_deposit = form.security_deposit;
+                payload.advance_payment = form.advance_payment;
+
+                payload.lease_start_date = form.set_lease_dates
+                    ? form.lease_start_date || null
+                    : null;
+
+                payload.lease_end_date = form.set_lease_dates
+                    ? form.lease_end_date || null
+                    : null;
+            }
+
+            if (existing.data?.requirements) {
+                await axios.put(
+                    "/api/landlord/activeLease/saveChecklistRequirements",
+                    payload
+                );
+            } else {
+                await axios.post(
+                    "/api/landlord/activeLease/saveChecklistRequirements",
+                    payload
+                );
             }
 
             setLoading(false);
-            onContinue(requirements);
-        } catch (error: any) {
-            console.error("Error saving checklist:", error);
+            onContinue(payload);
+        } catch (err) {
+            console.error(err);
             setLoading(false);
-            setErrorMessage("Failed to save checklist. Please try again.");
+            setErrorMessage("Failed to save setup. Please try again.");
         }
-    };
-
-    const toggle = (key: string) => {
-        setRequirements((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
 
                 {/* HEADER */}
-                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <FileSignature className="w-5 h-5 text-blue-600" />
-                    Lease Setup Requirements
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    Lease Setup Options
                 </h2>
-
-                <p className="text-sm text-gray-600 mb-4">
-                    Select the initial requirements you want to prepare for this lease.
+                <p className="text-sm text-gray-600 mb-5">
+                    Select any options that apply. All items are optional.
                 </p>
 
-                {/* ERROR MESSAGE */}
+                {/* ERROR */}
                 {errorMessage && (
-                    <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 text-sm text-red-700 rounded-lg">
                         {errorMessage}
                     </div>
                 )}
 
-                {/* CHECKBOXES */}
+                {/* OPTIONS */}
                 <div className="space-y-4">
-                    {[
-                        ["lease_agreement", "Lease Agreement"],
-                        ["move_in_checklist", "Move-in Checklist"],
-                        ["security_deposit", "Security Deposit Payment"],
-                        ["advance_payment", "Advance Payment"],
-                        ["other_essential", "Other Essential Documents"],
-                    ].map(([key, label]) => (
-                        <label key={key} className="flex items-center gap-3">
-                            <input
-                                type="checkbox"
-                                className="h-4 w-4"
-                                checked={requirements[key]}
-                                onChange={() => toggle(key)}
-                                disabled={loading}
+
+                    <Option
+                        checked={form.lease_agreement}
+                        onChange={() =>
+                            setForm((p) => ({ ...p, lease_agreement: !p.lease_agreement }))
+                        }
+                        icon={<FileSignature className="w-4 h-4 text-blue-600" />}
+                        label="Lease Agreement"
+                        disabled={loading}
+                    />
+
+                    <Option
+                        checked={form.security_deposit}
+                        onChange={() =>
+                            setForm((p) => ({ ...p, security_deposit: !p.security_deposit }))
+                        }
+                        icon={<Wallet className="w-4 h-4 text-emerald-600" />}
+                        label="Security Deposit"
+                        disabled={loading}
+                    />
+
+                    <Option
+                        checked={form.advance_payment}
+                        onChange={() =>
+                            setForm((p) => ({ ...p, advance_payment: !p.advance_payment }))
+                        }
+                        icon={<Wallet className="w-4 h-4 text-purple-600" />}
+                        label="Advance Payment"
+                        disabled={loading}
+                    />
+
+                    <Option
+                        checked={form.set_lease_dates}
+                        onChange={() =>
+                            setForm((p) => ({ ...p, set_lease_dates: !p.set_lease_dates }))
+                        }
+                        icon={<CalendarRange className="w-4 h-4 text-indigo-600" />}
+                        label="Set Lease Dates Only"
+                        disabled={loading}
+                    />
+
+                    {form.set_lease_dates && (
+                        <div className="ml-7 space-y-3">
+                            <DateField
+                                label="Lease Start Date"
+                                value={form.lease_start_date}
+                                onChange={(v) =>
+                                    setForm((p) => ({ ...p, lease_start_date: v }))
+                                }
                             />
-                            <span className="text-sm text-gray-800">{label}</span>
-                        </label>
-                    ))}
+                            <DateField
+                                label="Lease End Date"
+                                value={form.lease_end_date}
+                                onChange={(v) =>
+                                    setForm((p) => ({ ...p, lease_end_date: v }))
+                                }
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* FOOTER */}
-                <div className="flex justify-end gap-3 mt-6">
+                <div className="flex justify-end gap-3 mt-8">
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
                     >
                         Cancel
                     </button>
@@ -149,13 +207,44 @@ export default function ChecklistSetupModal({ lease, onClose, onContinue }: Prop
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg shadow hover:opacity-90 disabled:opacity-50"
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow"
                     >
                         {loading ? "Saving..." : "Continue"}
                     </button>
                 </div>
-
             </div>
+        </div>
+    );
+}
+
+/* ---------------- SMALL COMPONENTS ---------------- */
+
+function Option({ checked, onChange, icon, label, disabled }: any) {
+    return (
+        <label className="flex items-center gap-3">
+            <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={checked}
+                onChange={onChange}
+                disabled={disabled}
+            />
+            {icon}
+            <span className="text-sm text-gray-800">{label}</span>
+        </label>
+    );
+}
+
+function DateField({ label, value, onChange }: any) {
+    return (
+        <div>
+            <label className="block text-sm text-gray-600 mb-1">{label}</label>
+            <input
+                type="date"
+                className="w-full border rounded-lg px-3 py-2 text-sm"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
         </div>
     );
 }

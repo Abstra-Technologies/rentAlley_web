@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { Home, Edit2, Trash2, Eye, DollarSign } from "lucide-react";
+import { Home, Edit2, Trash2, Eye, DollarSign, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
+import axios from "axios";
 
 interface UnitsTabProps {
     units: any[];
@@ -16,203 +18,271 @@ interface UnitsTabProps {
     handleAddUnitClick: () => void;
 }
 
-const statusClass = (status: string) => {
-    switch (status) {
-        case "occupied":
-            return "bg-emerald-50 text-emerald-700 border-emerald-200";
-        case "reserved":
-            return "bg-orange-50 text-orange-700 border-orange-200";
-        case "unoccupied":
-            return "bg-blue-50 text-blue-700 border-blue-200";
-        case "inactive":
-            return "bg-gray-100 text-gray-700 border-gray-200";
-        case "archived":
-            return "bg-red-50 text-red-700 border-red-200";
-        default:
-            return "bg-gray-50 text-gray-600 border-gray-200";
-    }
-};
-
-export default function UnitsTab({
-                                     units,
-                                     isLoading,
-                                     propertyId,
-                                     handleEditUnit,
-                                     handleDeleteUnit,
-                                     handleAddUnitClick,
-                                 }: UnitsTabProps) {
+const UnitsTab: React.FC<UnitsTabProps> = ({
+                                               units,
+                                               isLoading,
+                                               propertyId,
+                                               handleEditUnit,
+                                               handleDeleteUnit,
+                                               handleAddUnitClick,
+                                           }) => {
     const router = useRouter();
 
-    /* ================= LOADING ================= */
-    if (isLoading) {
-        return (
-            <div className="p-6 space-y-4">
-                {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-24 rounded-lg bg-gray-100 animate-pulse" />
-                ))}
-            </div>
-        );
-    }
+    // 🧩 Helper function to check if unit is occupied
+    const isOccupied = (status: string) => status?.toLowerCase() === "occupied";
 
-    /* ================= EMPTY ================= */
-    if (!units || units.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mb-4">
-                    <Home className="w-8 h-8 text-blue-600" />
-                </div>
-                <p className="text-lg font-semibold text-gray-900">
-                    No Units Available
-                </p>
-                <p className="text-sm text-gray-500 mt-1 mb-5">
-                    Start building your rental portfolio.
-                </p>
-                <button
-                    onClick={handleAddUnitClick}
-                    className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold shadow"
-                >
-                    Add Your First Unit
-                </button>
-            </div>
-        );
-    }
+    // 🧠 Handle publish toggle
+    const handleTogglePublish = async (unitId: string, currentValue: boolean) => {
+        const newValue = !currentValue;
+
+        try {
+            await axios.put(`/api/unitListing/publish`, {
+                unit_id: unitId,
+                publish: newValue,
+            });
+
+            Swal.fire({
+                title: newValue ? "Unit Published" : "Unit Unlisted",
+                text: newValue
+                    ? "This unit is now visible in listings."
+                    : "This unit is now hidden from public listings.",
+                icon: "success",
+                confirmButtonColor: "#10b981",
+            });
+
+            // Optional: refresh list
+            window.location.reload();
+        } catch (error) {
+            console.error("Publish toggle failed:", error);
+            Swal.fire({
+                title: "Error",
+                text: "Failed to update publish status.",
+                icon: "error",
+                confirmButtonColor: "#ef4444",
+            });
+        }
+    };
 
     return (
-        <div className="p-4 md:p-6 space-y-4">
-
-            {/* ================= DESKTOP HEADER ================= */}
-            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1.5fr] gap-4 px-4 pb-2 border-b text-xs font-semibold text-gray-500 uppercase">
-                <div>Unit</div>
-                <div>Monthly Rent</div>
-                <div>Tenant</div>
-                <div>Last Updated</div>
-                <div>Status</div>
-                <div className="text-right">Actions</div>
-            </div>
-
-            {/* ================= ROWS ================= */}
-            {units.map((unit) => (
-                <div
-                    key={unit.unit_id}
-                    className="bg-white border rounded-lg hover:shadow-sm transition overflow-hidden"
-                >
-                    {/* DESKTOP ROW */}
-                    <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1.5fr] gap-4 items-center px-4 py-3">
-                        {/* Unit */}
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                                <Home className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div className="truncate">
-                                <p className="font-semibold text-gray-900 truncate">
-                                    {unit.unit_name}
-                                </p>
-                                <p className="text-xs text-gray-500 truncate">
-                                    {unit.tenant_name || "Available"}
-                                </p>
-                            </div>
+        <div className="p-4 md:p-6">
+            {isLoading ? (
+                <div className="space-y-4">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="animate-pulse bg-gray-100 rounded-lg h-24"></div>
+                    ))}
+                </div>
+            ) : units && units.length > 0 ? (
+                <div className="space-y-4">
+                    {/* Header Row - Desktop */}
+                    <div className="hidden md:flex items-center px-4 pb-2 border-b border-gray-200">
+                        <div style={{ width: "calc(20% + 48px)" }}>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Unit
+                            </p>
+                        </div>
+                        <div style={{ width: "120px" }}>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Rent
+                            </p>
                         </div>
 
-                        {/* Rent */}
-                        <div className="font-bold text-gray-900">
-                            ₱{Number(unit.rent_amount || 0).toLocaleString()}
+                        <div style={{ width: "100px" }}>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Status
+                            </p>
                         </div>
-
-                        {/* Tenant */}
-                        <div className="truncate text-sm">
-                            {unit.tenant_name || "—"}
+                        <div style={{ width: "120px" }}>
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Published
+                            </p>
                         </div>
-
-                        {/* Updated */}
-                        <div className="text-xs text-gray-600">
-                            {unit.last_updated
-                                ? new Date(unit.last_updated).toLocaleDateString()
-                                : "—"}
-                        </div>
-
-                        {/* Status */}
-                        <span
-                            className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border capitalize ${statusClass(
-                                unit.status
-                            )}`}
-                        >
-              {unit.status}
-            </span>
-
-                        {/* Actions */}
-                        <div className="flex justify-end gap-2">
-                            <button
-                                onClick={() =>
-                                    router.push(
-                                        `/pages/landlord/properties/${propertyId}/units/details/${unit.unit_id}`
-                                    )
-                                }
-                                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm"
-                            >
-                                <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => handleEditUnit(unit.unit_id)}
-                                className="px-3 py-1.5 text-orange-600 hover:bg-orange-50 rounded-lg"
-                            >
-                                <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => handleDeleteUnit(unit.unit_id)}
-                                className="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
+                        <div className="flex-1 text-right">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </p>
                         </div>
                     </div>
 
-                    {/* MOBILE CARD */}
-                    <div className="md:hidden p-4 space-y-3">
-                        <div className="flex justify-between">
-                            <p className="font-semibold">{unit.unit_name}</p>
-                            <span
-                                className={`px-2 py-1 text-xs rounded-full border ${statusClass(
-                                    unit.status
-                                )}`}
-                            >
-                {unit.status}
-              </span>
-                        </div>
+                    {/* Unit Rows */}
+                    <div className="space-y-3">
+                        {units.map((unit) => {
+                            const occupied = isOccupied(unit.status);
 
-                        <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Rent</span>
-                            <span className="font-bold">
-                ₱{Number(unit.rent_amount || 0).toLocaleString()}
-              </span>
-                        </div>
+                            return (
+                                <div
+                                    key={unit.unit_id}
+                                    className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200"
+                                >
+                                    <div className="flex flex-col sm:flex-row sm:items-center p-3 sm:p-4">
+                                        {/* Unit Info */}
+                                        <div className="flex items-center gap-3 w-[calc(20%+48px)]">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <Home className="h-6 w-6 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base font-bold text-gray-900 truncate">
+                                                    {unit.unit_name || "Untitled Unit"}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 truncate">
+                                                    {occupied && unit.tenant_name
+                                                        ? `Tenant: ${unit.tenant_name}`
+                                                        : "Available for rent"}
+                                                </p>
+                                            </div>
+                                        </div>
 
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() =>
-                                    router.push(
-                                        `/pages/landlord/properties/${propertyId}/units/details/${unit.unit_id}`
-                                    )
-                                }
-                                className="flex-1 bg-blue-600 text-white py-2 rounded-lg"
-                            >
-                                View
-                            </button>
-                            <button
-                                onClick={() => handleEditUnit(unit.unit_id)}
-                                className="px-4 py-2 border rounded-lg"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={() => handleDeleteUnit(unit.unit_id)}
-                                className="px-4 py-2 border border-red-200 text-red-600 rounded-lg"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
+                                        {/* Rent */}
+                                        <div className="hidden md:flex items-center w-[120px]">
+                                            <p className="text-sm font-bold text-gray-900">
+                                                ₱{Number(unit.rent_amount || 0).toLocaleString()}
+                                            </p>
+                                        </div>
+
+
+                                        {/* Status */}
+                                        <div className="hidden md:flex items-center w-[100px]">
+                      <span
+                          className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full border capitalize
+                          ${
+                              unit.status === "occupied"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : unit.status === "reserved"
+                                      ? "bg-orange-50 text-orange-700 border-orange-200"
+                                      : unit.status === "unoccupied"
+                                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                                          : "bg-gray-50 text-gray-600 border-gray-200"
+                          }`}
+                      >
+                        {unit.status || "Unknown"}
+                      </span>
+                                        </div>
+
+                                        {/* ✅ Publish Toggle */}
+                                        <div className="hidden md:flex items-center justify-center w-[120px]">
+                                            <button
+                                                onClick={() =>
+                                                    handleTogglePublish(unit.unit_id, !!unit.publish)
+                                                }
+                                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                                                    unit.publish
+                                                        ? "bg-emerald-100 text-emerald-700 border border-emerald-300 hover:bg-emerald-200"
+                                                        : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+                                                }`}
+                                            >
+                                                <Globe className="h-4 w-4" />
+                                                {unit.publish ? "Published" : "Hidden"}
+                                            </button>
+                                        </div>
+
+                                        {/* Actions */}
+                                        <div className="hidden md:flex items-center gap-2 flex-1 justify-end">
+                                            <button
+                                                onClick={() =>
+                                                    router.push(
+                                                        `/pages/landlord/properties/${propertyId}/units/details/${unit.unit_id}`
+                                                    )
+                                                }
+                                                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                            >
+                                                <Eye className="w-4 h-4 inline-block mr-1" />
+                                                View
+                                            </button>
+                                            <button
+                                                onClick={() => handleEditUnit(unit.unit_id)}
+                                                className="px-3 py-1.5 rounded-lg text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+                                            >
+                                                <Edit2 className="w-4 h-4 inline-block mr-1" />
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteUnit(unit.unit_id)}
+                                                className="px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4 inline-block mr-1" />
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Mobile View */}
+                                    <div className="md:hidden border-t border-gray-100 px-4 py-3 bg-gray-50">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <div>
+                                                <p className="text-xs text-gray-600">Monthly Rent</p>
+                                                <p className="text-sm font-bold text-gray-900">
+                                                    ₱{Number(unit.rent_amount || 0).toLocaleString()}
+                                                </p>
+                                            </div>
+
+                                            {/* Publish toggle for mobile */}
+                                            <button
+                                                onClick={() =>
+                                                    handleTogglePublish(unit.unit_id, !!unit.publish)
+                                                }
+                                                className={`px-3 py-1 text-xs font-semibold rounded-lg border transition ${
+                                                    unit.publish
+                                                        ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+                                                        : "bg-gray-100 text-gray-600 border-gray-300"
+                                                }`}
+                                            >
+                                                {unit.publish ? "Published" : "Hidden"}
+                                            </button>
+                                        </div>
+
+                                        {/* Mobile Actions */}
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() =>
+                                                    router.push(
+                                                        `/pages/landlord/properties/${propertyId}/units/details/${unit.unit_id}`
+                                                    )
+                                                }
+                                                className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition"
+                                            >
+                                                View
+                                            </button>
+                                            <button
+                                                onClick={() => handleEditUnit(unit.unit_id)}
+                                                className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-orange-600 border border-orange-200 hover:bg-orange-50 transition"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteUnit(unit.unit_id)}
+                                                className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
-            ))}
+            ) : (
+                <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mb-4">
+                        <Home className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <p className="text-gray-900 text-lg font-semibold mb-1">
+                        No Units Available
+                    </p>
+                    <p className="text-gray-500 text-sm mb-5 text-center max-w-sm">
+                        Start building your rental portfolio by adding your first unit.
+                    </p>
+                    <button
+                        className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 rounded-lg shadow-md transition-all"
+                        onClick={handleAddUnitClick}
+                    >
+                        <Home className="w-4 h-4" />
+                        Add Your First Unit
+                    </button>
+                </div>
+            )}
         </div>
     );
-}
+};
+
+export default UnitsTab;
+
