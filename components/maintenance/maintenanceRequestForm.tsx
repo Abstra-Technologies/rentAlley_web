@@ -61,6 +61,32 @@ export default function MaintenanceRequestForm() {
         }
     };
 
+    const extractAssetIdFromQR = (decodedText: string): string | null => {
+        console.log("[QR] Attempting to extract asset ID from:", decodedText);
+
+        // Case 1: QR is just the asset ID
+        if (/^[A-Z0-9]{8,12}$/.test(decodedText)) {
+            console.log("[QR] QR is plain asset ID");
+            return decodedText;
+        }
+
+        // Case 2: QR is a URL containing /assets/{asset_id}
+        try {
+            const url = new URL(decodedText);
+            const match = url.pathname.match(/\/assets\/([A-Z0-9]{8,12})/);
+            if (match) {
+                console.log("[QR] Asset ID extracted from URL:", match[1]);
+                return match[1];
+            }
+        } catch (err) {
+            console.warn("[QR] Decoded text is not a valid URL");
+        }
+
+        console.error("[QR] Failed to extract asset ID");
+        return null;
+    };
+
+
 
     /* -------------------------------------------------------------------------- */
     /* FETCH ASSET DETAILS                                                        */
@@ -93,9 +119,17 @@ export default function MaintenanceRequestForm() {
     /* QR SCANNER                                                                 */
     /* -------------------------------------------------------------------------- */
     useEffect(() => {
-        if (!showScanner) return;
+        if (!showScanner) {
+            console.log("[QR] Scanner not shown, skipping init");
+            return;
+        }
 
         let scanner: Html5QrcodeScanner | null = null;
+
+        console.log("[QR] Initializing scanner…", {
+            user_id: user?.user_id,
+            agreement_id,
+        });
 
         try {
             scanner = new Html5QrcodeScanner(
@@ -104,77 +138,104 @@ export default function MaintenanceRequestForm() {
                 false
             );
 
+            console.log("[QR] Scanner instance created");
+
             scanner.render(
                 async (decodedText) => {
-                    logQR("Decoded QR text:", decodedText);
+                    console.log("[QR] ✅ QR detected");
+                    console.log("[QR] Raw decoded text:", decodedText);
 
-                    // 1️⃣ Validate QR payload
-                    if (!/^[A-Z0-9]{8,12}$/.test(decodedText)) {
-                        logQR("Invalid QR format", decodedText);
-                        Swal.fire(
-                            "Invalid QR Code",
-                            "This QR code is not a valid asset.",
-                            "error"
-                        );
+                    // 1️⃣ Extract asset ID (supports ID or URL)
+                    const extractedAssetId = extractAssetIdFromQR(decodedText);
+
+                    if (!extractedAssetId) {
+                        console.error("[QR] ❌ Invalid QR format:", decodedText);
+
+                        Swal.fire({
+                            icon: "error",
+                            title: "Invalid QR Code",
+                            html: `
+<b>Scanned value:</b>
+<pre style="background:#f8f8f8;padding:8px;border-radius:6px;max-height:120px;overflow:auto;">
+${decodedText}
+</pre>
+<p>This QR code does not contain a valid asset.</p>
+                        `,
+                        });
                         return;
                     }
 
-                    // 2️⃣ Close scanner immediately (important UX)
+                    console.log("[QR] Extracted asset ID:", extractedAssetId);
+
+                    // 2️⃣ Close scanner immediately
+                    console.log("[QR] Closing scanner UI…");
                     setShowScanner(false);
-                    await scanner?.clear();
 
-                    // 3️⃣ Backend CHECK-IN (authoritative)
                     try {
-                        logQR("Checking in asset:", decodedText);
+                        await scanner?.clear();
+                        console.log("[QR] Scanner successfully cleared");
+                    } catch (clearErr) {
+                        console.warn("[QR] Scanner clear warning:", clearErr);
+                    }
 
-                        const checkinRes = await axios.post("/api/assets/checkin", {
-                            asset_id: decodedText,
-                            user_id: user?.user_id,
-                            agreement_id,
+                    // 3️⃣ VERIFY ASSET USING EXISTING API
+                    try {
+                        console.log("[QR] 🔄 Verifying asset via detailed API", {
+                            asset_id: extractedAssetId,
                         });
 
+                        const assetRes = await axios.get(
+                            `/api/landlord/properties/assets/detailed?asset_id=${extractedAssetId}`
+                        );
 
-                        if (!checkinRes.data?.success) {
-                            logQR("Backend rejected asset", checkinRes.data);
+                        console.log("[QR] Asset verification response:", assetRes.data);
 
+                        if (!assetRes.data) {
                             Swal.fire(
-                                "Access Denied",
-                                checkinRes.data?.error ||
-                                "You are not allowed to access this asset.",
+                                "Asset Not Found",
+                                "This asset does not exist or you do not have access.",
                                 "error"
                             );
                             return;
                         }
 
-                        // 4️⃣ Only NOW set assetId → triggers fetchAsset
-                        setAssetId(decodedText);
+                        // 4️⃣ Asset verified → set state
+                        console.log("[QR] ✅ Asset verified, setting assetId");
+                        setAssetId(extractedAssetId);
+                        setAssetDetails(assetRes.data); // avoid double fetch
 
                         Swal.fire({
                             icon: "success",
                             title: "Asset Verified",
-                            text: "Loading asset information…",
+                            text: "Asset information loaded successfully.",
                             timer: 1200,
                             showConfirmButton: false,
                         });
 
                     } catch (err: any) {
-                        logQR("Check-in error", err);
+                        console.error("[QR] ❌ Asset verification failed", {
+                            error: err,
+                            response: err?.response,
+                        });
 
                         Swal.fire(
-                            "Scan Failed",
+                            "Access Denied",
                             err.response?.data?.error ||
-                            "Unable to verify asset. Please try again.",
+                            "Unable to verify asset. You may not have access.",
                             "error"
                         );
                     }
                 },
                 (scanError) => {
-                    // Camera / runtime errors (VERY COMMON on prod)
-                    logQR("Scanner runtime error:", scanError);
+                    console.warn("[QR] Scanner runtime warning:", scanError);
                 }
             );
+
+            console.log("[QR] Scanner render started");
+
         } catch (err) {
-            logQR("Scanner init error:", err);
+            console.error("[QR] ❌ Scanner initialization failed", err);
+
             Swal.fire(
                 "Camera Error",
                 "Unable to start camera. Please check permissions.",
@@ -183,9 +244,13 @@ export default function MaintenanceRequestForm() {
         }
 
         return () => {
+            console.log("[QR] Cleaning up scanner…");
             try {
                 scanner?.clear();
-            } catch {}
+                console.log("[QR] Scanner cleanup complete");
+            } catch (cleanupErr) {
+                console.warn("[QR] Scanner cleanup warning:", cleanupErr);
+            }
         };
     }, [showScanner, user?.user_id, agreement_id]);
 
