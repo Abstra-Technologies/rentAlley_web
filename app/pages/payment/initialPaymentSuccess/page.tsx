@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useRef, useEffect, useState } from "react";
 import * as htmlToImage from "html-to-image";
@@ -11,7 +12,27 @@ import {
     DocumentArrowDownIcon,
 } from "@heroicons/react/24/outline";
 
+/* ------------------------------------------------------------------ */
+/* PAGE EXPORT (Suspense wrapper REQUIRED) */
+/* ------------------------------------------------------------------ */
 export default function PaymentSuccessPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                    <p className="text-gray-500">Loading payment status…</p>
+                </div>
+            }
+        >
+            <PaymentSuccessContent />
+        </Suspense>
+    );
+}
+
+/* ------------------------------------------------------------------ */
+/* INNER COMPONENT (same file, uses useSearchParams) */
+/* ------------------------------------------------------------------ */
+function PaymentSuccessContent() {
     const params = useSearchParams();
     const router = useRouter();
 
@@ -36,7 +57,7 @@ export default function PaymentSuccessPage() {
         }
 
         let attempts = 0;
-        const maxAttempts = 20; // ~60 seconds
+        const maxAttempts = 20;
         let interval: NodeJS.Timeout;
 
         const checkStatus = async () => {
