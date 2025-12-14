@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const tenantId = searchParams.get("tenantId");
-
+console.log('tenant id active rent: ' + tenantId);
         if (!tenantId) {
             return NextResponse.json(
                 { message: "Tenant ID is required" },

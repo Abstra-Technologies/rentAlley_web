@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
 import { useEffect, useState } from "react";
 import LeaseDurationTracker from "@/components/tenant/analytics-insights/LeaseAgreementWidget";
@@ -18,8 +18,8 @@ import QuickActionButtons from "@/components/tenant/currentRent/QuickActionButto
 
 export default function RentPortalPage() {
   const { user, fetchSession } = useAuthStore();
-  const params = useParams();
-  const agreementId = params?.agreement_id;
+    const searchParams = useSearchParams();
+    const agreementId = searchParams.get("agreement_id");
 
   const [unitInfo, setUnitInfo] = useState<{
     unit_name: string;

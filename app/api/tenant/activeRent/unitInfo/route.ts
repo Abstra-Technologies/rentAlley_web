@@ -5,6 +5,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const agreementId = searchParams.get("agreement_id");
 
+  console.log('unit info: ', agreementId);
+
   if (!agreementId) {
     return NextResponse.json(
       { message: "Missing agreement_id" },

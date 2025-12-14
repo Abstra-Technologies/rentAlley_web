@@ -15,6 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import axios from "axios";
 import { LogOut } from 'lucide-react';
+import { useParams } from "next/navigation";
 
 interface PropertyInfo {
   property_name: string;
@@ -22,17 +23,18 @@ interface PropertyInfo {
 }
 
 export default function TenantPortalLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { agreement_id: string };
+                                               children,
+                                           }: {
+    children: React.ReactNode;
 }) {
-  const agreement_id = params?.agreement_id ?? null;
+    const params = useParams();
+    const agreement_id = params?.agreement_id as string | undefined;
   const pathname = usePathname();
   const router = useRouter();
   const [propertyInfo, setPropertyInfo] = useState<PropertyInfo | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  console.log('inner layout id:', agreement_id);
 
   /* ================== FETCH PROPERTY INFO ================== */
   useEffect(() => {
@@ -40,9 +42,9 @@ export default function TenantPortalLayout({
 
     const fetchPropertyUnitInfo = async () => {
       try {
-        const res = await axios.get(`/api/tenant/activeRent/propertyUnitInfo`, {
-          params: { agreement_id },
-        });
+          const res = await axios.get(`/api/tenant/activeRent/propertyUnitInfo`, {
+              params: { agreement_id },
+          });
         if (mounted) setPropertyInfo(res.data || null);
       } catch (err) {
         console.error("Failed to fetch property info:", err);
