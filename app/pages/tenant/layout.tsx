@@ -14,6 +14,8 @@ import {
   AlertCircle,
   MapPin,
   User,
+  Search,
+  MessageCircle,
 } from "lucide-react";
 import { MdOutlineRssFeed } from "react-icons/md";
 import { RiCommunityFill } from "react-icons/ri";
@@ -23,10 +25,17 @@ import {
   ChatBubbleLeftRightIcon,
   Bars3Icon,
   XMarkIcon,
+  HomeIcon,
+  BellIcon,
+  WrenchScrewdriverIcon,
+  CreditCardIcon,
+  DocumentTextIcon,
+  BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
 
 import Image from "next/image";
 import LoadingScreen from "@/components/loadingScreen";
+import axios from "axios";
 
 export default function TenantLayout({ children }) {
   const router = useRouter();
@@ -38,14 +47,17 @@ export default function TenantLayout({ children }) {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  // Portal context state
+  const [isInPortalMode, setIsInPortalMode] = useState(false);
+  const [portalAgreementId, setPortalAgreementId] = useState(null);
+  const [portalPropertyInfo, setPortalPropertyInfo] = useState(null);
+
   // Draggable button state
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [showHint, setShowHint] = useState(false);
   const buttonRef = useRef(null);
-
-  // If inside rentalPortal → completely disable this outer layout
-  const isInsideRentalPortal = pathname.includes("/pages/tenant/rentalPortal/");
 
   useEffect(() => {
     async function checkAuth() {
@@ -63,6 +75,40 @@ export default function TenantLayout({ children }) {
       router.replace("/pages/auth/login");
     }
   }, [user, isAuthChecking, router]);
+
+  // Check portal context - SIMPLIFIED VERSION
+  useEffect(() => {
+    const checkPortalContext = () => {
+      const agreementId = localStorage.getItem("portalAgreementId");
+
+      // We're in portal mode if we have a portalAgreementId
+      const inPortal = !!agreementId;
+
+      setIsInPortalMode(inPortal);
+      setPortalAgreementId(agreementId);
+
+      // Fetch property info if in portal mode
+      if (inPortal && agreementId && !portalPropertyInfo) {
+        axios
+          .get(`/api/tenant/activeRent/propertyUnitInfo`, {
+            params: { agreement_id: agreementId },
+          })
+          .then((res) => setPortalPropertyInfo(res.data || null))
+          .catch((err) => console.error("Failed to fetch property info:", err));
+      } else if (!inPortal) {
+        setPortalPropertyInfo(null);
+      }
+    };
+
+    checkPortalContext();
+
+    // Check on pathname changes
+    const intervalId = setInterval(checkPortalContext, 300);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [pathname, portalPropertyInfo]);
 
   // Fetch pending applications count
   useEffect(() => {
@@ -89,19 +135,34 @@ export default function TenantLayout({ children }) {
 
   // Initialize button position from localStorage or default
   useEffect(() => {
-    const savedPosition = localStorage.getItem("burgerMenuPosition");
+    const positionKey = isInPortalMode
+      ? "portalBurgerMenuPosition"
+      : "burgerMenuPosition";
+    const savedPosition = localStorage.getItem(positionKey);
+    const hasSeenHint = localStorage.getItem("burgerMenuHintSeen");
+
     if (savedPosition) {
       setPosition(JSON.parse(savedPosition));
     } else {
       // Default position: bottom-right
       setPosition({ x: window.innerWidth - 80, y: window.innerHeight - 160 });
     }
-  }, []);
+
+    // Show hint for first-time users
+    if (!hasSeenHint && !isInPortalMode) {
+      setShowHint(true);
+      setTimeout(() => {
+        setShowHint(false);
+        localStorage.setItem("burgerMenuHintSeen", "true");
+      }, 3000);
+    }
+  }, [isInPortalMode]);
 
   // Handle touch/mouse start
   const handleDragStart = (e) => {
     e.preventDefault();
     setIsDragging(true);
+    setShowHint(false);
 
     const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
     const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
@@ -123,7 +184,7 @@ export default function TenantLayout({ children }) {
     const newY = clientY - dragStart.y;
 
     // Constrain to viewport
-    const buttonSize = 56; // 14 * 4 (w-14 h-14)
+    const buttonSize = 56;
     const maxX = window.innerWidth - buttonSize;
     const maxY = window.innerHeight - buttonSize;
 
@@ -137,8 +198,10 @@ export default function TenantLayout({ children }) {
   const handleDragEnd = () => {
     if (isDragging) {
       setIsDragging(false);
-      // Save position to localStorage
-      localStorage.setItem("burgerMenuPosition", JSON.stringify(position));
+      const positionKey = isInPortalMode
+        ? "portalBurgerMenuPosition"
+        : "burgerMenuPosition";
+      localStorage.setItem(positionKey, JSON.stringify(position));
     }
   };
 
@@ -162,6 +225,7 @@ export default function TenantLayout({ children }) {
     }
   }, [isDragging, dragStart, position]);
 
+  // Regular navigation items
   const navItems = [
     {
       name: "Feeds",
@@ -171,10 +235,17 @@ export default function TenantLayout({ children }) {
       badge: null,
     },
     {
+      name: "Find Rent",
+      href: "/pages/find-rent",
+      path: "/pages/find-rent",
+      icon: Search,
+      badge: null,
+    },
+    {
       name: "Chats",
       href: "/pages/tenant/chat",
       path: "/pages/tenant/chat",
-      icon: ChatBubbleLeftRightIcon,
+      icon: MessageCircle,
       badge: null,
     },
     {
@@ -207,6 +278,40 @@ export default function TenantLayout({ children }) {
     },
   ];
 
+  // Portal navigation items
+  const portalNavItems = [
+    {
+      name: "Dashboard",
+      href: `/pages/tenant/rentalPortal/${portalAgreementId}`,
+      icon: HomeIcon,
+    },
+    {
+      name: "Billing Statement",
+      href: `/pages/tenant/rentalPortal/${portalAgreementId}/billing`,
+      icon: CreditCardIcon,
+    },
+    {
+      name: "Payment History",
+      href: `/pages/tenant/rentalPortal/${portalAgreementId}/paymentHistory`,
+      icon: DocumentTextIcon,
+    },
+    {
+      name: "Announcements",
+      href: `/pages/tenant/rentalPortal/${portalAgreementId}/announcement`,
+      icon: BellIcon,
+    },
+    {
+      name: "Maintenance",
+      href: `/pages/tenant/rentalPortal/${portalAgreementId}/maintenance`,
+      icon: WrenchScrewdriverIcon,
+    },
+    {
+      name: "Chats",
+      href: `/pages/tenant/chat`,
+      icon: ChatBubbleLeftRightIcon,
+    },
+  ];
+
   const isActive = (path) => pathname === path;
 
   const logoutNow = async () => {
@@ -219,6 +324,20 @@ export default function TenantLayout({ children }) {
     logoutNow();
   };
 
+  const handleExitPortal = () => {
+    // Clear ONLY the agreement ID
+    localStorage.removeItem("portalAgreementId");
+
+    // Update state
+    setIsInPortalMode(false);
+    setPortalAgreementId(null);
+    setPortalPropertyInfo(null);
+
+    // Navigate away
+    router.push("/pages/tenant/my-unit");
+    setMobileMenuOpen(false);
+  };
+
   // Show loading screen during auth check
   if (isAuthChecking) {
     return <LoadingScreen message="Verifying your session..." />;
@@ -229,11 +348,8 @@ export default function TenantLayout({ children }) {
     return <LoadingScreen message="Redirecting to login..." />;
   }
 
-  if (isInsideRentalPortal) {
-    return <main className="flex-1 min-h-screen">{children}</main>;
-  }
-
-  const SidebarContent = () => (
+  // Regular Sidebar Content
+  const RegularSidebarContent = () => (
     <>
       {/* Logo/Brand */}
       <div className="p-6 border-b border-gray-200">
@@ -343,37 +459,146 @@ export default function TenantLayout({ children }) {
     </>
   );
 
+  // Portal Sidebar Content
+  const PortalSidebarContent = () => (
+    <>
+      {/* Logo/Brand */}
+      <div className="p-6 border-b border-gray-200">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+          Upkyp Portal
+        </h1>
+        <p className="text-xs text-gray-500 mt-1">Rental Management</p>
+      </div>
+
+      {/* Property Info Card */}
+      <div className="p-4 border-b border-gray-200">
+        {portalPropertyInfo ? (
+          <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg p-4 border border-blue-100">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                <BuildingOfficeIcon className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-bold text-gray-900 line-clamp-2 leading-tight">
+                  {portalPropertyInfo.property_name}
+                </h2>
+                <p className="text-xs text-gray-600 mt-1">
+                  Unit{" "}
+                  <span className="font-semibold">
+                    {portalPropertyInfo.unit_name}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg p-4 border border-blue-100 animate-pulse">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gray-200"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-4">
+        <ul className="space-y-1">
+          {portalNavItems.map(({ href, name, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href);
+
+            return (
+              <li key={href}>
+                <button
+                  onClick={() => {
+                    router.push(href);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`
+                    flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium
+                    ${
+                      active
+                        ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700 shadow-sm"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }
+                  `}
+                >
+                  <Icon
+                    className={`w-5 h-5 mr-3 flex-shrink-0 ${
+                      active ? "text-blue-600" : "text-gray-400"
+                    }`}
+                  />
+                  <span className="flex-1 text-left">{name}</span>
+                  {active && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 flex-shrink-0" />
+                  )}
+                </button>
+              </li>
+            );
+          })}
+
+          {/* Exit Portal */}
+          <li className="pt-2 border-t border-gray-200 mt-2">
+            <button
+              onClick={handleExitPortal}
+              className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 group"
+            >
+              <LogOut className="w-5 h-5 mr-3 flex-shrink-0 text-gray-400 group-hover:text-red-600" />
+              <span className="flex-1 text-left">Exit Portal</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </>
+  );
+
   return (
     <>
       {/* Draggable Mobile Menu Button */}
-      <button
-        ref={buttonRef}
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-        onClick={(e) => {
-          // Only open menu if not dragging
-          if (!isDragging) {
-            setMobileMenuOpen(true);
-          }
-        }}
-        className="md:hidden fixed z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow touch-none"
-        style={{
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-          cursor: isDragging ? "grabbing" : "grab",
-          transition: isDragging ? "none" : "box-shadow 0.2s",
-        }}
-        aria-label="Open menu"
-      >
-        <Bars3Icon className="w-6 h-6 pointer-events-none" />
+      <div className="md:hidden">
+        <button
+          ref={buttonRef}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          onClick={(e) => {
+            if (!isDragging) {
+              setMobileMenuOpen(true);
+            }
+          }}
+          className="fixed z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow touch-none"
+          style={{
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            cursor: isDragging ? "grabbing" : "grab",
+            transition: isDragging ? "none" : "box-shadow 0.2s",
+          }}
+          aria-label="Open menu"
+        >
+          <Bars3Icon className="w-6 h-6 pointer-events-none" />
 
-        {/* Drag indicator dots */}
-        {!isDragging && (
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-sm flex items-center justify-center">
-            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+          {!isDragging && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-sm flex items-center justify-center">
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+            </div>
+          )}
+        </button>
+
+        {/* Hint Tooltip */}
+        {showHint && !isDragging && !isInPortalMode && (
+          <div
+            className="fixed z-50 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg animate-bounce"
+            style={{
+              left: `${position.x - 80}px`,
+              top: `${position.y - 40}px`,
+            }}
+          >
+            Drag me anywhere! 👋
           </div>
         )}
-      </button>
+      </div>
 
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && (
@@ -385,7 +610,7 @@ export default function TenantLayout({ children }) {
             className="fixed left-0 top-0 w-72 bg-white h-full shadow-xl flex flex-col pt-14"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button - Top Right Corner */}
+            {/* Close button */}
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -394,7 +619,12 @@ export default function TenantLayout({ children }) {
               <XMarkIcon className="w-6 h-6 text-gray-600" />
             </button>
 
-            <SidebarContent />
+            {/* Conditional Sidebar Content */}
+            {isInPortalMode ? (
+              <PortalSidebarContent />
+            ) : (
+              <RegularSidebarContent />
+            )}
           </aside>
         </div>
       )}
@@ -434,8 +664,13 @@ export default function TenantLayout({ children }) {
       )}
 
       <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/30">
+        {/* Desktop Sidebar - Shows portal or regular content based on context */}
         <aside className="hidden lg:flex lg:flex-col fixed left-0 top-14 w-72 bg-white border-r border-gray-200 h-[calc(100vh-3.5rem)] z-20">
-          <SidebarContent />
+          {isInPortalMode ? (
+            <PortalSidebarContent />
+          ) : (
+            <RegularSidebarContent />
+          )}
         </aside>
 
         {/* MAIN CONTENT */}

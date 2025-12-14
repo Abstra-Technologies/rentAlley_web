@@ -86,18 +86,14 @@ const Navbar = () => {
         { href: "/pages/public/how-it-works", label: "How It Works" },
         { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/public/download", label: "Download App" },
-                { href: "/pages/find-rent", label: "Pricing" },
-        // { href: "/pages/partner", label: "Partner" },
+        { href: "/pages/find-rent", label: "Pricing" },
         { href: "/pages/contact-us", label: "Contact Us" },
       ];
-    }
-
-    else if (user?.userType === "tenant") {
+    } else if (user?.userType === "tenant") {
       return [
         { href: "/pages/find-rent", label: "Find Rent" },
-          { href: "/pages/tenant/my-unit", label: "My Units" },
-
-          { href: "/pages/tenant/visit-history", label: "My Bookings" },
+        { href: "/pages/tenant/my-unit", label: "My Units" },
+        { href: "/pages/tenant/visit-history", label: "My Bookings" },
       ];
     }
 
@@ -110,52 +106,6 @@ const Navbar = () => {
   };
 
   const navigationLinks = getNavigationLinks();
-
-  const getMobileNavTabs = () => {
-    if (admin) {
-      return [
-        {
-          href: "/system_admin/dashboard",
-          label: "Dashboard",
-          icon: LayoutDashboard,
-        },
-        {
-          href: "/pages/system_admin/profile/" + admin.admin_id,
-          label: "Profile",
-          icon: User,
-        },
-      ];
-    }
-
-    if (!user) {
-      return [];
-    }
-
-    // mobile
-    if (user?.userType === "tenant") {
-      return [
-        { href: "/pages/tenant/feeds", label: "Home", icon: Home },
-        { href: "/pages/find-rent", label: "Find", icon: Search },
-        { href: "/pages/tenant/chat", label: "Chat", icon: MessageSquare },
-
-        // {
-        //   href: "/pages/tenant/visit-history",
-        //   label: "Bookings",
-        //   icon: Calendar,
-        // },
-        { href: "/pages/commons/profile", label: "Profile", icon: User },
-      ];
-    }
-
-    // Landlords don't use the mobile navbar anymore - they use the sidebar
-    if (user?.userType === "landlord") {
-      return [];
-    }
-
-    return [];
-  };
-
-  const mobileNavTabs = getMobileNavTabs();
 
   // Don't render navbar for landlords
   if (user?.userType === "landlord") {
@@ -427,27 +377,6 @@ const Navbar = () => {
           )}
         </div>
       </nav>
-
-      {/* Mobile Bottom Navigation */}
-      {(user || admin) && mobileNavTabs.length > 0 && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-          <div className="flex justify-around items-center h-16 px-2">
-            {mobileNavTabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  className="flex flex-col items-center justify-center flex-1 py-2 text-gray-600 hover:text-blue-600 transition-colors"
-                >
-                  <Icon className="w-5 h-5 mb-1" />
-                  <span className="text-xs">{tab.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      )}
     </>
   );
 };
