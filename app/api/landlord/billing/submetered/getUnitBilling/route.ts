@@ -1,3 +1,5 @@
+// used for submetered billing
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { RowDataPacket } from "mysql2";
@@ -70,13 +72,13 @@ export async function GET(req: NextRequest) {
 
         const [leaseRows] = await db.execute<RowDataPacket[]>(
             `
-      SELECT agreement_id, rent_amount
-      FROM LeaseAgreement
-      WHERE unit_id = ?
-        AND status IN ('active','tenant_signed','landlord_signed')
-      ORDER BY start_date DESC
-      LIMIT 1
-      `,
+            SELECT agreement_id, rent_amount
+            FROM LeaseAgreement
+            WHERE unit_id = ?
+              AND status IN ('active','tenant_signed','landlord_signed')
+            ORDER BY start_date DESC
+            LIMIT 1
+            `,
             [unit_id]
         );
 
@@ -87,7 +89,7 @@ export async function GET(req: NextRequest) {
         }
 
         /* -------------------------------------------------
-           5. CURRENT MONTH BILLING
+           5. EXISTING BILLING (USE REAL billing_period)
         -------------------------------------------------- */
         const today = new Date();
         const monthStart = firstDayOfMonth(today);
@@ -95,30 +97,37 @@ export async function GET(req: NextRequest) {
 
         const [billingRows] = await db.execute<RowDataPacket[]>(
             `
-      SELECT *
-      FROM Billing
-      WHERE unit_id = ?
-        AND billing_period BETWEEN ? AND ?
-      LIMIT 1
-      `,
+            SELECT *
+            FROM Billing
+            WHERE unit_id = ?
+              AND billing_period BETWEEN ? AND ?
+            ORDER BY billing_period DESC
+            LIMIT 1
+            `,
             [unit_id, ymd(monthStart), ymd(monthEnd)]
         );
 
         let billing_id: string | null = null;
         let total_amount_due: number | null = null;
+        let billing_period: string | null = ymd(monthStart);
         let additionalCharges: any[] = [];
         let discounts: any[] = [];
 
         if (billingRows.length > 0) {
-            billing_id = billingRows[0].billing_id;
-            total_amount_due = billingRows[0].total_amount_due;
+            const billing = billingRows[0];
+
+            billing_id = billing.billing_id;
+            total_amount_due = billing.total_amount_due;
+
+            // ✅ USE ACTUAL billing_period FROM DB
+            billing_period = ymd(billing.billing_period);
 
             const [charges] = await db.execute<RowDataPacket[]>(
                 `
-        SELECT id, charge_category, charge_type, amount
-        FROM BillingAdditionalCharge
-        WHERE billing_id = ?
-        `,
+                SELECT id, charge_category, charge_type, amount
+                FROM BillingAdditionalCharge
+                WHERE billing_id = ?
+                `,
                 [billing_id]
             );
 
@@ -127,39 +136,29 @@ export async function GET(req: NextRequest) {
         }
 
         /* -------------------------------------------------
-           6. METER READINGS (ADD PERIOD START / END)
+           6. METER READINGS
         -------------------------------------------------- */
         const [[waterCurr]] = await db.execute<RowDataPacket[]>(
             `
-      SELECT
-        period_start,
-        period_end,
-        previous_reading,
-        current_reading,
-        reading_date
-      FROM WaterMeterReading
-      WHERE unit_id = ?
-        AND DATE_FORMAT(reading_date,'%Y-%m') = DATE_FORMAT(?,'%Y-%m')
-      ORDER BY reading_date DESC
-      LIMIT 1
-      `,
+            SELECT period_start, period_end, previous_reading, current_reading, reading_date
+            FROM WaterMeterReading
+            WHERE unit_id = ?
+              AND DATE_FORMAT(reading_date,'%Y-%m') = DATE_FORMAT(?,'%Y-%m')
+            ORDER BY reading_date DESC
+            LIMIT 1
+            `,
             [unit_id, ymd(today)]
         );
 
         const [[elecCurr]] = await db.execute<RowDataPacket[]>(
             `
-      SELECT
-        period_start,
-        period_end,
-        previous_reading,
-        current_reading,
-        reading_date
-      FROM ElectricMeterReading
-      WHERE unit_id = ?
-        AND DATE_FORMAT(reading_date,'%Y-%m') = DATE_FORMAT(?,'%Y-%m')
-      ORDER BY reading_date DESC
-      LIMIT 1
-      `,
+            SELECT period_start, period_end, previous_reading, current_reading, reading_date
+            FROM ElectricMeterReading
+            WHERE unit_id = ?
+              AND DATE_FORMAT(reading_date,'%Y-%m') = DATE_FORMAT(?,'%Y-%m')
+            ORDER BY reading_date DESC
+            LIMIT 1
+            `,
             [unit_id, ymd(today)]
         );
 
@@ -176,8 +175,9 @@ export async function GET(req: NextRequest) {
         const dueDate = ymd(new Date(ref.getFullYear(), ref.getMonth(), safeDay));
 
         /* -------------------------------------------------
-           8. RESPONSE (ONLY ADD PERIOD FIELDS)
+           8. RESPONSE
         -------------------------------------------------- */
+
         return NextResponse.json(
             {
                 unit: {
@@ -190,11 +190,13 @@ export async function GET(req: NextRequest) {
                 existingBilling: {
                     billing_id,
                     lease_id: activeLeaseId,
-                    billing_period: ymd(monthStart),
+
+                    // ✅ CORRECT billing period
+                    billing_period,
+
                     due_date: dueDate,
                     total_amount_due,
 
-                    // ✅ UTILITY PERIOD COVERAGE (ADDED)
                     utility_period_from: ymd(
                         waterCurr?.period_start || elecCurr?.period_start || null
                     ),

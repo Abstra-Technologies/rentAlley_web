@@ -11,11 +11,13 @@ export function useCreateSubmeteredUnitBill() {
     const { unit_id } = useParams();
     const router = useRouter();
 
-    /* ------------------ STATE ------------------ */
+    /* ------------------ DATE ------------------ */
     const today = new Date().toISOString().split("T")[0];
 
+    /* ------------------ STATE ------------------ */
     const [unit, setUnit] = useState<any>(null);
     const [property, setProperty] = useState<any>(null);
+
     const [propertyRates, setPropertyRates] = useState({
         waterRate: 0,
         electricityRate: 0,
@@ -23,6 +25,7 @@ export function useCreateSubmeteredUnitBill() {
 
     const [extraExpenses, setExtraExpenses] = useState<any[]>([]);
     const [discounts, setDiscounts] = useState<any[]>([]);
+
     const [hasExistingBilling, setHasExistingBilling] = useState(false);
     const [existingBillingMeta, setExistingBillingMeta] = useState<any>(null);
 
@@ -39,8 +42,6 @@ export function useCreateSubmeteredUnitBill() {
         waterCurrentReading: "",
         electricityPrevReading: "",
         electricityCurrentReading: "",
-        discountAmount: "",
-        otherCharges: "",
     });
 
     /* ------------------ ONBOARDING ------------------ */
@@ -54,6 +55,7 @@ export function useCreateSubmeteredUnitBill() {
     useEffect(() => {
         if (!unit_id) return;
         fetchUnitData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [unit_id]);
 
     async function fetchUnitData() {
@@ -61,21 +63,20 @@ export function useCreateSubmeteredUnitBill() {
             const res = await axios.get(
                 `/api/landlord/billing/submetered/getUnitBilling?unit_id=${unit_id}`
             );
-            const data = res.data;
 
-            if (!data.unit || !data.property)
+            const data = res.data;
+            if (!data.unit || !data.property) {
                 throw new Error("Missing unit or property data.");
+            }
 
             setUnit(data.unit);
             setProperty(data.property);
 
-            const dueDate = data.dueDate
-                ? new Date(data.dueDate).toISOString().split("T")[0]
-                : "";
-
+            /* -------- PROPERTY RATES -------- */
             const rateRes = await axios.get(
                 `/api/landlord/billing/checkPropertyBillingStats?property_id=${data.property.property_id}`
             );
+
             const billing = rateRes.data.billingData;
 
             setPropertyRates({
@@ -91,20 +92,32 @@ export function useCreateSubmeteredUnitBill() {
 
             const eb = data.existingBilling;
 
+            /* -------- FORM HYDRATION (IMPORTANT) -------- */
             setForm((prev) => ({
                 ...prev,
+
+                // ✅ BILLING PERIOD (SOURCE OF TRUTH)
+                billingDate: eb?.billing_period
+                    ? new Date(eb.billing_period).toISOString().split("T")[0]
+                    : prev.billingDate,
+
                 readingDate: eb?.reading_date
                     ? new Date(eb.reading_date).toISOString().split("T")[0]
                     : today,
+
                 dueDate: eb?.due_date
                     ? new Date(eb.due_date).toISOString().split("T")[0]
-                    : dueDate,
+                    : data.dueDate
+                        ? new Date(data.dueDate).toISOString().split("T")[0]
+                        : "",
+
                 waterPrevReading: eb?.water_prev ?? "",
                 waterCurrentReading: eb?.water_curr ?? "",
                 electricityPrevReading: eb?.elec_prev ?? "",
                 electricityCurrentReading: eb?.elec_curr ?? "",
             }));
 
+            /* -------- CHARGES -------- */
             setExtraExpenses(
                 eb?.additional_charges?.map((c: any) => ({
                     charge_id: c.id,
@@ -123,13 +136,14 @@ export function useCreateSubmeteredUnitBill() {
                 })) || []
             );
 
+            /* -------- META -------- */
             const meta = {
-                billing_id: eb?.billing_id,
-                lease_id: eb?.lease_id,
+                billing_id: eb?.billing_id || null,
+                lease_id: eb?.lease_id || null,
             };
 
             setExistingBillingMeta(meta);
-            setHasExistingBilling(!!eb?.billing_id);
+            setHasExistingBilling(!!meta.billing_id);
 
             if (meta.billing_id || meta.lease_id) {
                 fetchPDC(meta.billing_id, meta.lease_id);
@@ -142,20 +156,22 @@ export function useCreateSubmeteredUnitBill() {
         }
     }
 
+    /* ------------------ PDC ------------------ */
     async function fetchPDC(billingId?: number, leaseId?: number) {
         try {
             setLoadingPdc(true);
+
             const res = billingId
                 ? await axios.get(`/api/landlord/pdc/getByBilling?billing_id=${billingId}`)
                 : await axios.get(`/api/landlord/pdc/getByLease?lease_id=${leaseId}`);
 
-            const pdc =
+            const found =
                 res.data?.pdcs?.find((p: any) => p.status === "pending") ||
                 res.data?.pdcs?.find((p: any) => p.status === "cleared") ||
                 res.data?.pdcs?.[0] ||
                 null;
 
-            setPdc(pdc);
+            setPdc(found);
         } finally {
             setLoadingPdc(false);
         }
@@ -163,16 +179,18 @@ export function useCreateSubmeteredUnitBill() {
 
     /* ------------------ HANDLERS ------------------ */
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-        setForm({ ...form, [e.target.name]: e.target.value });
+        setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
     const handleAddExpense = () =>
         setExtraExpenses((p) => [...p, { type: "", amount: 0 }]);
 
     const handleExpenseChange = (idx: number, field: string, value: any) => {
-        const updated = [...extraExpenses];
-        updated[idx][field] =
-            field === "amount" ? parseFloat(value) || 0 : value;
-        setExtraExpenses(updated);
+        setExtraExpenses((prev) => {
+            const updated = [...prev];
+            updated[idx][field] =
+                field === "amount" ? parseFloat(value) || 0 : value;
+            return updated;
+        });
     };
 
     const handleRemoveExpense = async (idx: number, item: any) => {
@@ -183,10 +201,12 @@ export function useCreateSubmeteredUnitBill() {
                 showCancelButton: true,
             });
             if (!confirm.isConfirmed) return;
+
             await axios.delete("/api/billing/non_submetered/deleteCharge", {
                 data: { charge_id: item.charge_id },
             });
         }
+
         setExtraExpenses((p) => p.filter((_, i) => i !== idx));
     };
 
@@ -194,10 +214,12 @@ export function useCreateSubmeteredUnitBill() {
         setDiscounts((p) => [...p, { type: "", amount: 0 }]);
 
     const handleDiscountChange = (idx: number, field: string, value: any) => {
-        const updated = [...discounts];
-        updated[idx][field] =
-            field === "amount" ? parseFloat(value) || 0 : value;
-        setDiscounts(updated);
+        setDiscounts((prev) => {
+            const updated = [...prev];
+            updated[idx][field] =
+                field === "amount" ? parseFloat(value) || 0 : value;
+            return updated;
+        });
     };
 
     const handleRemoveDiscount = async (idx: number, item: any) => {
@@ -208,16 +230,18 @@ export function useCreateSubmeteredUnitBill() {
                 showCancelButton: true,
             });
             if (!confirm.isConfirmed) return;
+
             await axios.delete("/api/billing/non_submetered/deleteCharge", {
                 data: { charge_id: item.charge_id },
             });
         }
+
         setDiscounts((p) => p.filter((_, i) => i !== idx));
     };
 
     /* ------------------ BILL COMPUTATION ------------------ */
     const bill = useMemo(() => {
-        if (!unit || !property)
+        if (!unit || !property) {
             return {
                 rent: 0,
                 dues: 0,
@@ -229,6 +253,7 @@ export function useCreateSubmeteredUnitBill() {
                 totalDiscounts: 0,
                 adjustedTotal: 0,
             };
+        }
 
         const wPrev = +form.waterPrevReading || 0;
         const wCurr = +form.waterCurrentReading || 0;
@@ -241,8 +266,8 @@ export function useCreateSubmeteredUnitBill() {
         const waterCost = waterUsage * propertyRates.waterRate;
         const elecCost = elecUsage * propertyRates.electricityRate;
 
-        const rent = +unit?.effective_rent_amount || +unit?.rent_amount || 0;
-        const dues = +property?.assoc_dues || 0;
+        const rent = +unit.effective_rent_amount || +unit.rent_amount || 0;
+        const dues = +property.assoc_dues || 0;
 
         const extra = extraExpenses.reduce((s, e) => s + (+e.amount || 0), 0);
         const discount = discounts.reduce((s, d) => s + (+d.amount || 0), 0);
@@ -287,9 +312,8 @@ export function useCreateSubmeteredUnitBill() {
                 ],
             };
 
-            const method = hasExistingBilling ? "put" : "post";
             await axios({
-                method,
+                method: hasExistingBilling ? "put" : "post",
                 url: "/api/landlord/billing/submetered/createUnitMonthlyBilling",
                 data: payload,
             });

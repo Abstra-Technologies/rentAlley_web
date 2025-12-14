@@ -1,47 +1,76 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { parse } from "cookie";
+import { jwtVerify } from "jose";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const agreementId = searchParams.get("agreement_id");
+    try {
+        /* 1️⃣ AUTH */
+        const cookieHeader = req.headers.get("cookie");
+        const cookies = cookieHeader ? parse(cookieHeader) : null;
 
-  console.log('unit info: ', agreementId);
+        if (!cookies?.token) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }
 
-  if (!agreementId) {
-    return NextResponse.json(
-      { message: "Missing agreement_id" },
-      { status: 400 }
-    );
-  }
+        const secretKey = new TextEncoder().encode(process.env.JWT_SECRET!);
+        const { payload } = await jwtVerify(cookies.token, secretKey);
 
-  try {
-    const [rows] = await db.query(
-      `SELECT u.unit_name, p.property_name
-       FROM LeaseAgreement la
-       JOIN Unit u ON la.unit_id = u.unit_id
-       JOIN Property p ON u.property_id = p.property_id
-       WHERE la.agreement_id = ?`,
-      [agreementId]
-    );
-// @ts-ignore
-    if (!rows || rows.length === 0) {
-      return NextResponse.json(
-        { message: "No unit or property found for the given agreement" },
-        { status: 404 }
-      );
+        const userId = payload.user_id as string;
+        if (!userId) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }
+
+        /* 2️⃣ agreement_id is REQUIRED */
+        const { searchParams } = new URL(req.url);
+        const agreementId = searchParams.get("agreement_id");
+
+        if (!agreementId) {
+            return NextResponse.json(
+                { message: "Missing agreement_id" },
+                { status: 400 }
+            );
+        }
+
+        /* 3️⃣ STRICT OWNERSHIP CHECK */
+        const [rows]: any = await db.query(
+            `
+      SELECT 
+        la.agreement_id,
+        u.unit_name,
+        p.property_name
+      FROM LeaseAgreement la
+      JOIN Tenant t ON la.tenant_id = t.tenant_id
+      JOIN Unit u ON la.unit_id = u.unit_id
+      JOIN Property p ON u.property_id = p.property_id
+      WHERE la.agreement_id = ?
+        AND t.user_id = ?
+        AND la.status = 'active'
+        AND (la.end_date IS NULL OR la.end_date >= CURDATE())
+      LIMIT 1
+      `,
+            [agreementId, userId]
+        );
+
+        /* 4️⃣ HARD BLOCK */
+        if (!rows || rows.length === 0) {
+            return NextResponse.json(
+                { message: "Forbidden: Lease does not belong to user" },
+                { status: 403 }
+            );
+        }
+
+        /* 5️⃣ SAFE RESPONSE */
+        return NextResponse.json({
+            agreement_id: rows[0].agreement_id,
+            unit_name: rows[0].unit_name,
+            property_name: rows[0].property_name,
+        });
+    } catch (error) {
+        console.error("Secure tenant unitInfo error:", error);
+        return NextResponse.json(
+            { message: "Internal Server Error" },
+            { status: 500 }
+        );
     }
-
-    return NextResponse.json({
-      // @ts-ignore
-      unit_name: rows[0].unit_name,
-      // @ts-ignore
-      property_name: rows[0].property_name,
-    });
-  } catch (error) {
-    console.error("Error fetching unit and property:", error);
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
-  }
 }

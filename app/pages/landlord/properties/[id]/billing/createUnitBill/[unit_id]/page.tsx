@@ -68,15 +68,16 @@ export default function CreateUnitBill() {
                     </div>
 
                     <div>
-                        <p className="text-gray-500">Billing Date</p>
+                        <p className="text-gray-500">Billing Period</p>
                         <input
                             type="date"
-                            name="readingDate"
-                            value={form.readingDate}
+                            name="billingDate"
+                            value={form.billingDate}
                             onChange={handleChange}
                             className="w-full border rounded-md px-2 py-1 bg-white"
                         />
                     </div>
+
 
                     <div>
                         <p className="text-gray-500">Due Date</p>

@@ -59,7 +59,10 @@ export default function TenantLayout({ children }) {
   const [showHint, setShowHint] = useState(false);
   const buttonRef = useRef(null);
 
-  useEffect(() => {
+    const [portalValidated, setPortalValidated] = useState(false);
+
+
+    useEffect(() => {
     async function checkAuth() {
       if (!user) {
         await fetchSession();
@@ -77,38 +80,44 @@ export default function TenantLayout({ children }) {
   }, [user, isAuthChecking, router]);
 
   // Check portal context - SIMPLIFIED VERSION
-  useEffect(() => {
-    const checkPortalContext = () => {
-      const agreementId = localStorage.getItem("portalAgreementId");
+    useEffect(() => {
+        const agreementId = localStorage.getItem("portalAgreementId");
 
-      // We're in portal mode if we have a portalAgreementId
-      const inPortal = !!agreementId;
+        // No agreement → definitely not in portal
+        if (!agreementId) {
+            setIsInPortalMode(false);
+            setPortalAgreementId(null);
+            setPortalPropertyInfo(null);
+            setPortalValidated(false);
+            return;
+        }
 
-      setIsInPortalMode(inPortal);
-      setPortalAgreementId(agreementId);
-
-      // Fetch property info if in portal mode
-      if (inPortal && agreementId && !portalPropertyInfo) {
+        // 🔐 SERVER VALIDATION (CRITICAL)
         axios
-          .get(`/api/tenant/activeRent/propertyUnitInfo`, {
-            params: { agreement_id: agreementId },
-          })
-          .then((res) => setPortalPropertyInfo(res.data || null))
-          .catch((err) => console.error("Failed to fetch property info:", err));
-      } else if (!inPortal) {
-        setPortalPropertyInfo(null);
-      }
-    };
+            .get("/api/tenant/activeRent/propertyUnitInfo", {
+                params: { agreement_id: agreementId },
+            })
+            .then((res) => {
+                // ✅ Server confirms ownership
+                setIsInPortalMode(true);
+                setPortalAgreementId(agreementId);
+                setPortalPropertyInfo(res.data);
+                setPortalValidated(true);
+            })
+            .catch((err) => {
+                // ❌ NOT OWNER / EXPIRED LEASE
+                console.warn("Portal access denied");
 
-    checkPortalContext();
+                localStorage.removeItem("portalAgreementId");
 
-    // Check on pathname changes
-    const intervalId = setInterval(checkPortalContext, 300);
+                setIsInPortalMode(false);
+                setPortalAgreementId(null);
+                setPortalPropertyInfo(null);
+                setPortalValidated(false);
 
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [pathname, portalPropertyInfo]);
+                router.replace("/pages/tenant/my-unit");
+            });
+    }, [pathname]);
 
   // Fetch pending applications count
   useEffect(() => {

@@ -114,5 +114,6 @@ export const config = {
     "/pages/landlord/:path*",
     "/pages/system_admin/:path*",
     "/pages/commons/:path*",
+      "/pages/tenant/rentalPortal/:path*"
   ],
 };
