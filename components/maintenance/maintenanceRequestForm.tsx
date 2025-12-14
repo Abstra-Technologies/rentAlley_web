@@ -7,34 +7,43 @@ import { z } from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
 import { MAINTENANCE_CATEGORIES } from "@/constant/maintenanceCategories";
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 import {
     WrenchScrewdriverIcon,
     XMarkIcon,
     CloudArrowUpIcon,
     CheckCircleIcon,
-    ExclamationCircleIcon,
     HomeIcon,
     BuildingOffice2Icon,
     WrenchIcon,
+    QrCodeIcon,
 } from "@heroicons/react/24/outline";
 import { BackButton } from "../navigation/backButton";
 
+/* -------------------------------------------------------------------------- */
+/* VALIDATION                                                                  */
+/* -------------------------------------------------------------------------- */
 const maintenanceSchema = z.object({
     category: z.string().min(1, "Category is required"),
     description: z.string().min(1, "Description is required"),
 });
 
+/* -------------------------------------------------------------------------- */
+/* COMPONENT                                                                   */
+/* -------------------------------------------------------------------------- */
 export default function MaintenanceRequestForm() {
     const { user } = useAuthStore();
     const router = useRouter();
     const searchParams = useSearchParams();
     const agreement_id = searchParams.get("agreement_id");
 
+    /* ----------------------------- ASSET STATE ------------------------------ */
     const [assetId, setAssetId] = useState("");
     const [assetDetails, setAssetDetails] = useState<any>(null);
     const [loadingAsset, setLoadingAsset] = useState(false);
 
+    /* ----------------------------- FORM STATE ------------------------------- */
     const [selectedCategory, setSelectedCategory] = useState("");
     const [description, setDescription] = useState("");
     const [isEmergency, setIsEmergency] = useState(false);
@@ -42,10 +51,19 @@ export default function MaintenanceRequestForm() {
     const [photos, setPhotos] = useState<File[]>([]);
     const [dragActive, setDragActive] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    /* ----------------------------- QR STATE --------------------------------- */
+    const [showScanner, setShowScanner] = useState(false);
+
+    const logQR = (...args: any[]) => {
+        if (process.env.NODE_ENV === "production") {
+            console.log("[QR_SCAN]", ...args);
+        }
+    };
+
 
     /* -------------------------------------------------------------------------- */
-    /* FETCH ASSET                                                                 */
+    /* FETCH ASSET DETAILS                                                        */
     /* -------------------------------------------------------------------------- */
     useEffect(() => {
         if (!assetId.trim()) {
@@ -62,7 +80,7 @@ export default function MaintenanceRequestForm() {
                 setAssetDetails(res.data);
             } catch {
                 setAssetDetails(null);
-                Swal.fire("Asset Not Found", "No asset found with this code.", "error");
+                Swal.fire("Asset Not Found", "No asset matches this QR / code.", "error");
             } finally {
                 setLoadingAsset(false);
             }
@@ -72,7 +90,107 @@ export default function MaintenanceRequestForm() {
     }, [assetId]);
 
     /* -------------------------------------------------------------------------- */
-    /* FILE HANDLING                                                               */
+    /* QR SCANNER                                                                 */
+    /* -------------------------------------------------------------------------- */
+    useEffect(() => {
+        if (!showScanner) return;
+
+        let scanner: Html5QrcodeScanner | null = null;
+
+        try {
+            scanner = new Html5QrcodeScanner(
+                "qr-reader",
+                { fps: 10, qrbox: 250 },
+                false
+            );
+
+            scanner.render(
+                async (decodedText) => {
+                    logQR("Decoded QR text:", decodedText);
+
+                    // 1️⃣ Validate QR payload
+                    if (!/^[A-Z0-9]{8,12}$/.test(decodedText)) {
+                        logQR("Invalid QR format", decodedText);
+                        Swal.fire(
+                            "Invalid QR Code",
+                            "This QR code is not a valid asset.",
+                            "error"
+                        );
+                        return;
+                    }
+
+                    // 2️⃣ Close scanner immediately (important UX)
+                    setShowScanner(false);
+                    await scanner?.clear();
+
+                    // 3️⃣ Backend CHECK-IN (authoritative)
+                    try {
+                        logQR("Checking in asset:", decodedText);
+
+                        const checkinRes = await axios.post("/api/assets/checkin", {
+                            asset_id: decodedText,
+                            user_id: user?.user_id,
+                            agreement_id,
+                        });
+
+
+                        if (!checkinRes.data?.success) {
+                            logQR("Backend rejected asset", checkinRes.data);
+
+                            Swal.fire(
+                                "Access Denied",
+                                checkinRes.data?.error ||
+                                "You are not allowed to access this asset.",
+                                "error"
+                            );
+                            return;
+                        }
+
+                        // 4️⃣ Only NOW set assetId → triggers fetchAsset
+                        setAssetId(decodedText);
+
+                        Swal.fire({
+                            icon: "success",
+                            title: "Asset Verified",
+                            text: "Loading asset information…",
+                            timer: 1200,
+                            showConfirmButton: false,
+                        });
+
+                    } catch (err: any) {
+                        logQR("Check-in error", err);
+
+                        Swal.fire(
+                            "Scan Failed",
+                            err.response?.data?.error ||
+                            "Unable to verify asset. Please try again.",
+                            "error"
+                        );
+                    }
+                },
+                (scanError) => {
+                    // Camera / runtime errors (VERY COMMON on prod)
+                    logQR("Scanner runtime error:", scanError);
+                }
+            );
+        } catch (err) {
+            logQR("Scanner init error:", err);
+            Swal.fire(
+                "Camera Error",
+                "Unable to start camera. Please check permissions.",
+                "error"
+            );
+        }
+
+        return () => {
+            try {
+                scanner?.clear();
+            } catch {}
+        };
+    }, [showScanner, user?.user_id, agreement_id]);
+
+    /* -------------------------------------------------------------------------- */
+    /* FILE HANDLING                                                              */
     /* -------------------------------------------------------------------------- */
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -89,12 +207,8 @@ export default function MaintenanceRequestForm() {
         setPhotos((prev) => [...prev, ...images]);
     };
 
-    const removePhoto = (i: number) => {
-        setPhotos((prev) => prev.filter((_, idx) => idx !== i));
-    };
-
     /* -------------------------------------------------------------------------- */
-    /* SUBMIT                                                                      */
+    /* SUBMIT                                                                     */
     /* -------------------------------------------------------------------------- */
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -106,14 +220,8 @@ export default function MaintenanceRequestForm() {
         });
 
         if (!validation.success) {
-            const formatted = validation.error.format();
-            setErrors({
-                category: formatted.category?._errors[0],
-                description: formatted.description?._errors[0],
-            });
-
-            Swal.fire("Missing Fields", "Please complete all required fields.", "error");
             setIsSubmitting(false);
+            Swal.fire("Missing Fields", "Please complete required fields.", "error");
             return;
         }
 
@@ -125,29 +233,28 @@ export default function MaintenanceRequestForm() {
             fd.append("description", description);
             fd.append("is_emergency", isEmergency ? "1" : "0");
             fd.append("user_id", user?.user_id || "");
-            if (assetId.trim()) fd.append("asset_id", assetId);
+            if (assetId) fd.append("asset_id", assetId);
             photos.forEach((p) => fd.append("photos", p));
 
             const res = await axios.post("/api/maintenance/createMaintenance", fd);
 
             if (res.data?.success) {
-                Swal.fire("Submitted!", "Maintenance request sent.", "success").then(() =>
-                    router.push(`/pages/tenant/maintenance?agreement_id=${agreement_id}`)
+                Swal.fire("Submitted!", "Maintenance request sent.", "success").then(
+                    () =>
+                        router.push(
+                            `/pages/tenant/maintenance?agreement_id=${agreement_id}`
+                        )
                 );
             }
-        } catch (err: any) {
-            Swal.fire(
-                "Submission Failed",
-                err.response?.data?.error || "Please try again later.",
-                "error"
-            );
+        } catch {
+            Swal.fire("Error", "Submission failed.", "error");
         } finally {
             setIsSubmitting(false);
         }
     };
 
     /* -------------------------------------------------------------------------- */
-    /* UI                                                                          */
+    /* UI                                                                         */
     /* -------------------------------------------------------------------------- */
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-emerald-50">
@@ -155,67 +262,76 @@ export default function MaintenanceRequestForm() {
                 <div className="max-w-4xl lg:max-w-3xl xl:max-w-2xl mx-auto">
                     <BackButton label="Back to Requests" />
 
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm mt-5 overflow-hidden">
+                    <div className="bg-white rounded-2xl border shadow-sm mt-5 overflow-hidden">
                         {/* HEADER */}
-                        <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-5 py-6 lg:py-5 xl:py-4 text-white">
-                            <div className="flex items-center gap-3">
-                                <div className="w-11 h-11 lg:w-10 lg:h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                                    <WrenchScrewdriverIcon className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h1 className="text-xl sm:text-2xl lg:text-xl font-bold">
-                                        Maintenance Request
-                                    </h1>
-                                    <p className="text-blue-100 text-xs sm:text-sm lg:text-xs">
-                                        Report an issue and we’ll take care of it.
-                                    </p>
-                                </div>
-                            </div>
+                        <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-5 py-6 text-white flex items-center gap-3">
+                            <WrenchScrewdriverIcon className="w-6 h-6" />
+                            <h1 className="text-xl font-bold">Maintenance Request</h1>
                         </div>
 
-                        {/* FORM */}
                         <form
                             onSubmit={handleSubmit}
-                            className="p-5 sm:p-6 lg:p-5 space-y-6 lg:space-y-4"
+                            className="p-5 sm:p-6 space-y-6"
                         >
-                            {/* ASSET */}
+                            {/* ASSET CODE + QR */}
                             <div>
                                 <label className="text-sm font-semibold text-gray-800">
                                     Asset Code (optional)
                                 </label>
-                                <input
-                                    value={assetId}
-                                    onChange={(e) => setAssetId(e.target.value)}
-                                    className="mt-2 w-full px-4 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Enter asset code"
-                                />
+                                <div className="flex gap-2 mt-2">
+                                    <input
+                                        value={assetId}
+                                        onChange={(e) => setAssetId(e.target.value)}
+                                        className="flex-1 px-4 py-2.5 text-sm border rounded-xl"
+                                        placeholder="Enter or scan asset code"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowScanner(true)}
+                                        className="px-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+                                    >
+                                        <QrCodeIcon className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
 
                             {loadingAsset && (
-                                <p className="text-sm text-blue-600">Loading asset...</p>
+                                <p className="text-sm text-blue-600">Loading asset…</p>
                             )}
 
+                            {/* ASSET INFO */}
                             {assetDetails && (
-                                <div className="p-4 bg-blue-50 border rounded-xl text-sm space-y-2">
+                                <div className="p-4 bg-gradient-to-br from-blue-50 to-emerald-50 border border-blue-200 rounded-xl text-sm space-y-3">
                                     <div className="flex items-center gap-2 font-semibold">
-                                        <WrenchIcon className="w-4 h-4" />
-                                        Asset Details
+                                        <WrenchIcon className="w-5 h-5 text-blue-600" />
+                                        Asset Information
                                     </div>
-                                    <p><b>Name:</b> {assetDetails.asset_name}</p>
-                                    <p><b>Model:</b> {assetDetails.model || "—"}</p>
-                                    <p className="flex items-center gap-1">
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <p><b>ID:</b> {assetDetails.asset_id}</p>
+                                        <p><b>Name:</b> {assetDetails.asset_name}</p>
+                                        <p><b>Category:</b> {assetDetails.category || "—"}</p>
+                                        <p><b>Model:</b> {assetDetails.model || "—"}</p>
+                                        <p><b>Manufacturer:</b> {assetDetails.manufacturer || "—"}</p>
+                                        <p><b>Serial:</b> {assetDetails.serial_number || "—"}</p>
+                                        <p className="capitalize"><b>Status:</b> {assetDetails.status}</p>
+                                        <p className="capitalize"><b>Condition:</b> {assetDetails.condition}</p>
+                                    </div>
+
+                                    <div className="pt-2 border-t border-blue-200">
+                                        <b>Assigned To:</b>{" "}
                                         {assetDetails.unit_name ? (
-                                            <>
-                                                <HomeIcon className="w-4 h-4" />
+                                            <span className="inline-flex items-center gap-1 text-blue-700">
+                        <HomeIcon className="w-4 h-4" />
                                                 {assetDetails.unit_name}
-                                            </>
+                      </span>
                                         ) : (
-                                            <>
-                                                <BuildingOffice2Icon className="w-4 h-4" />
-                                                Property Level
-                                            </>
+                                            <span className="inline-flex items-center gap-1 text-gray-700">
+                        <BuildingOffice2Icon className="w-4 h-4" />
+                        Property-level asset
+                      </span>
                                         )}
-                                    </p>
+                                    </div>
                                 </div>
                             )}
 
@@ -226,21 +342,21 @@ export default function MaintenanceRequestForm() {
                                 </label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
                                     {MAINTENANCE_CATEGORIES.map((item) => {
-                                        const active = selectedCategory === item.value;
                                         const Icon = item.icon;
+                                        const active = selectedCategory === item.value;
                                         return (
                                             <button
                                                 type="button"
                                                 key={item.value}
                                                 onClick={() => setSelectedCategory(item.value)}
-                                                className={`h-24 sm:h-28 lg:h-20 flex flex-col items-center justify-center rounded-xl border transition ${
+                                                className={`h-24 sm:h-28 lg:h-20 flex flex-col items-center justify-center rounded-xl border ${
                                                     active
                                                         ? "bg-blue-50 border-blue-500"
                                                         : "bg-white border-gray-200"
                                                 }`}
                                             >
-                                                <Icon className="w-6 h-6 mb-1 text-blue-600" />
-                                                <span className="text-xs sm:text-sm lg:text-xs font-semibold">
+                                                <Icon className="w-6 h-6 text-blue-600 mb-1" />
+                                                <span className="text-xs sm:text-sm font-semibold">
                           {item.label}
                         </span>
                                             </button>
@@ -257,8 +373,7 @@ export default function MaintenanceRequestForm() {
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="mt-2 w-full p-4 text-sm border rounded-xl min-h-[140px] lg:min-h-[110px] xl:min-h-[90px]"
-                                    placeholder="Describe the issue..."
+                                    className="mt-2 w-full p-4 text-sm border rounded-xl min-h-[140px]"
                                 />
                             </div>
 
@@ -286,7 +401,7 @@ export default function MaintenanceRequestForm() {
                                 }}
                                 onDragLeave={() => setDragActive(false)}
                                 onDrop={handleDrop}
-                                className={`border-2 border-dashed rounded-xl p-6 lg:p-4 text-center ${
+                                className={`border-2 border-dashed rounded-xl p-6 text-center ${
                                     dragActive ? "bg-blue-50" : ""
                                 }`}
                             >
@@ -306,16 +421,31 @@ export default function MaintenanceRequestForm() {
                             {/* SUBMIT */}
                             <button
                                 type="submit"
-                                disabled={isSubmitting}
-                                className="w-full py-3 lg:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold text-sm flex items-center justify-center gap-2"
+                                disabled={isSubmitting || (!!assetId && !assetDetails)}
+                                className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                {isSubmitting ? "Submitting..." : "Submit Request"}
                                 <CheckCircleIcon className="w-5 h-5" />
+                                {isSubmitting ? "Submitting..." : "Submit Request"}
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
+
+            {/* QR MODAL */}
+            {showScanner && (
+                <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl p-4 w-full max-w-sm">
+                        <div className="flex justify-between mb-2">
+                            <h3 className="font-semibold">Scan Asset QR</h3>
+                            <button onClick={() => setShowScanner(false)}>
+                                <XMarkIcon className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div id="qr-reader" />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
