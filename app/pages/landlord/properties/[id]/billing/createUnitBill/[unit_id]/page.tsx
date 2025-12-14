@@ -67,28 +67,33 @@ export default function CreateUnitBill() {
                         </p>
                     </div>
 
-                    <div>
-                        <p className="text-gray-500">Billing Period</p>
-                        <input
-                            type="date"
-                            name="billingDate"
-                            value={form.billingDate}
-                            onChange={handleChange}
-                            className="w-full border rounded-md px-2 py-1 bg-white"
-                        />
-                    </div>
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                <Calendar className="w-3.5 h-3.5" />
+                Billing Date
+              </label>
+              <input
+                type="date"
+                name="readingDate"
+                value={form.readingDate}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              />
+            </div>
 
-
-                    <div>
-                        <p className="text-gray-500">Due Date</p>
-                        <input
-                            type="date"
-                            value={form.dueDate}
-                            readOnly
-                            className="w-full border rounded-md px-2 py-1 bg-gray-100 cursor-not-allowed"
-                        />
-                    </div>
-                </div>
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Due Date
+              </label>
+              <input
+                type="date"
+                value={form.dueDate}
+                readOnly
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+              />
+            </div>
+          </div>
 
                 {/* ================= BASE RENT ================= */}
                 <div className="p-5 border-b space-y-4">
