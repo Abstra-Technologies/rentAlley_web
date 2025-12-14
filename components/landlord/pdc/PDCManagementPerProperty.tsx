@@ -28,7 +28,7 @@ interface PDC {
 }
 
 interface Props {
-  propertyId: number;
+  propertyId: string;
 }
 
 export default function PDCManagementPerProperty({ propertyId }: Props) {
@@ -39,6 +39,7 @@ export default function PDCManagementPerProperty({ propertyId }: Props) {
     page: 1,
     limit: 10,
   });
+
 
   // ✅ Fetch ALL PDCs for the property
   const fetchPDCs = async () => {
@@ -260,8 +261,7 @@ export default function PDCManagementPerProperty({ propertyId }: Props) {
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                Due Date
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Issue Date
               </th>
               <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Status

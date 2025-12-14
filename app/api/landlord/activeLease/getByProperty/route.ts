@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
                 la.security_deposit_amount,
                 la.advance_payment_amount,
                 la.agreement_url,
-
+la.rent_amount,
                 u.unit_id,
                 u.unit_name,
                 u.rent_amount,

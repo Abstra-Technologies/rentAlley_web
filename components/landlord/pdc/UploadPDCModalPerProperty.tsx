@@ -228,7 +228,7 @@ export default function UploadPDCModal({
                   <option value="">-- Select Lease --</option>
                   {leases.map((l) => (
                     <option key={l.lease_id} value={l.lease_id}>
-                      🏠 {l.unit_name} — {l.tenant_name}
+                      🏠 {l.unit_name} — {l.tenant_name} | Rent Amount: {l.rent_amount}
                     </option>
                   ))}
                 </select>

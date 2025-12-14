@@ -12,7 +12,9 @@ export default function PDCPerPropertyPage() {
   const propertyId = id as string;
   const [openUpload, setOpenUpload] = useState(false);
 
-  console.log("pdc property:", propertyId);
+
+  console.log('propperty id pdc: ', propertyId);
+
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
@@ -45,7 +47,7 @@ export default function PDCPerPropertyPage() {
         </div>
 
         {/* Main Content */}
-        <PDCManagementPerProperty propertyId={Number(propertyId)} />
+        <PDCManagementPerProperty propertyId={propertyId} />
 
         {/* Modal */}
         <UploadPDCModal
