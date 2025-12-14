@@ -168,11 +168,41 @@ export default function AnnouncementFeeds({
 
   if (loading)
     return (
-      <div className="flex justify-center items-center py-12">
-        <div className="relative w-10 h-10">
-          <div className="absolute inset-0 animate-spin rounded-full border-4 border-gray-200"></div>
-          <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-blue-500"></div>
-        </div>
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+          >
+            {/* Status Bar */}
+            <div className="h-1 bg-gray-200 animate-pulse" />
+
+            <div className="p-4">
+              {/* Header Skeleton */}
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="h-4 bg-gray-200 rounded w-32 animate-pulse mb-2" />
+                  <div className="h-3 bg-gray-200 rounded w-40 animate-pulse" />
+                </div>
+                <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
+              </div>
+
+              {/* Content Skeleton */}
+              <div className="space-y-2">
+                <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-full animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse" />
+
+                {/* Image Skeleton (only on first card) */}
+                {i === 1 && (
+                  <div className="h-48 bg-gray-200 rounded-lg animate-pulse mt-3" />
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
 

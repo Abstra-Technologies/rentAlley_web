@@ -121,14 +121,65 @@ export default function TenantMaintenanceWidget({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="relative w-10 h-10 mb-3">
-          <div className="absolute inset-0 animate-spin rounded-full border-4 border-gray-200"></div>
-          <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-blue-500"></div>
+      <div className="space-y-4">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="h-5 bg-gray-200 rounded w-32 animate-pulse" />
+          </div>
+          <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
         </div>
-        <p className="text-gray-600 text-sm font-medium">
-          Loading maintenance...
-        </p>
+
+        {/* Cards Skeleton */}
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+            >
+              {/* Status Bar */}
+              <div className="h-1 bg-gray-200 animate-pulse" />
+
+              <div className="p-3">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                  <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse" />
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2 mb-3">
+                  <div className="h-3 bg-gray-200 rounded w-full animate-pulse" />
+                  <div className="h-3 bg-gray-200 rounded w-5/6 animate-pulse" />
+                </div>
+
+                {/* Image (only first card) */}
+                {i === 1 && (
+                  <div className="h-32 bg-gray-200 rounded-lg animate-pulse mb-3" />
+                )}
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div>
+                    <div className="h-3 bg-gray-200 rounded w-16 animate-pulse mb-1" />
+                    <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="h-3 bg-gray-200 rounded w-12 animate-pulse mb-1" />
+                    <div className="h-3 bg-gray-200 rounded w-20 animate-pulse" />
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <div className="h-3 bg-gray-200 rounded w-32 animate-pulse" />
+                  <div className="h-3 bg-gray-200 rounded w-12 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
