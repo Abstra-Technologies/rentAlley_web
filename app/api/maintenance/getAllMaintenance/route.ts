@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { redis } from "@/lib/redis";
 import { decryptData } from "@/crypto/encrypt";
 
-const SECRET_KEY = process.env.ENCRYPTION_SECRET;
+const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -15,7 +16,30 @@ export async function GET(req: NextRequest) {
         );
     }
 
+    /* --------------------------------------------------
+       REDIS CACHE KEY
+    -------------------------------------------------- */
+    const cacheKey = `maintenance:requests:${landlord_id}`;
+
     try {
+        /* --------------------------------------------------
+           CACHE HIT
+        -------------------------------------------------- */
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+            let parsed;
+            try {
+                parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+            } catch {
+                parsed = cached;
+            }
+
+            return NextResponse.json({ success: true, data: parsed });
+        }
+
+        /* --------------------------------------------------
+           DATABASE QUERY
+        -------------------------------------------------- */
         const query = `
             SELECT 
                 mr.request_id,
@@ -28,19 +52,17 @@ export async function GET(req: NextRequest) {
                 mr.completion_date,
                 mr.created_at,
 
-                -- PROPERTY + UNIT
                 p.property_id,
                 p.property_name,
+
                 un.unit_id,
                 un.unit_name,
 
-                -- TENANT (NULL when landlord-created)
                 u.firstName AS tenant_first_name,
                 u.lastName AS tenant_last_name,
                 u.email AS tenant_email,
                 u.phoneNumber AS tenant_phone,
 
-                -- ASSET (NULL when not linked)
                 a.asset_id,
                 a.asset_name,
                 a.category AS asset_category,
@@ -54,11 +76,7 @@ export async function GET(req: NextRequest) {
                 COALESCE(GROUP_CONCAT(mp.photo_url SEPARATOR '||'), '') AS photo_urls
 
             FROM MaintenanceRequest mr
-
-            -- Always available: property_id
             JOIN Property p ON mr.property_id = p.property_id
-
-            -- Optional joins:
             LEFT JOIN Unit un ON mr.unit_id = un.unit_id
             LEFT JOIN Tenant t ON mr.tenant_id = t.tenant_id
             LEFT JOIN User u ON t.user_id = u.user_id
@@ -66,32 +84,34 @@ export async function GET(req: NextRequest) {
             LEFT JOIN MaintenancePhoto mp ON mr.request_id = mp.request_id
 
             WHERE p.landlord_id = ?
-
             GROUP BY mr.request_id
             ORDER BY mr.created_at DESC
         `;
 
-        const [rows] = await db.query(query, [landlord_id]);
+        const [rows]: any = await db.query(query, [landlord_id]);
 
+        /* --------------------------------------------------
+           FORMAT + DECRYPT (ONCE)
+        -------------------------------------------------- */
         const formatted = rows.map((req: any) => {
-            // decrypt photos
+            // 🔐 decrypt maintenance photos
             let decryptedPhotos: string[] = [];
             if (req.photo_urls) {
-                const urls = req.photo_urls.split("||").filter(Boolean);
-                decryptedPhotos = urls.map((enc) => {
-                    try {
-                        return decryptData(JSON.parse(enc), SECRET_KEY);
-                    } catch {
-                        return null;
-                    }
-                }).filter(Boolean);
+                decryptedPhotos = req.photo_urls
+                    .split("||")
+                    .filter(Boolean)
+                    .map((enc: string) => {
+                        try {
+                            return decryptData(JSON.parse(enc), SECRET_KEY);
+                        } catch {
+                            return null;
+                        }
+                    })
+                    .filter(Boolean);
             }
 
-            // decrypt tenant
-            let first = req.tenant_first_name;
-            let last = req.tenant_last_name;
-            let email = req.tenant_email;
-
+            // 🔐 decrypt tenant info
+            let first, last, email;
             if (req.tenant_first_name) {
                 try {
                     first = decryptData(JSON.parse(req.tenant_first_name), SECRET_KEY);
@@ -100,7 +120,7 @@ export async function GET(req: NextRequest) {
                 } catch {}
             }
 
-            // asset images
+            // 📦 asset images
             let assetImages: string[] = [];
             try {
                 if (req.asset_image_urls) {
@@ -119,11 +139,11 @@ export async function GET(req: NextRequest) {
                 completion_date: req.completion_date,
                 created_at: req.created_at,
 
-                // property + unit
                 property: {
                     property_id: req.property_id,
                     property_name: req.property_name,
                 },
+
                 unit: req.unit_id
                     ? {
                         unit_id: req.unit_id,
@@ -131,7 +151,6 @@ export async function GET(req: NextRequest) {
                     }
                     : null,
 
-                // tenant (may be null)
                 tenant: req.tenant_first_name
                     ? {
                         first_name: first,
@@ -141,7 +160,6 @@ export async function GET(req: NextRequest) {
                     }
                     : null,
 
-                // asset (may be null)
                 asset: req.asset_id
                     ? {
                         asset_id: req.asset_id,
@@ -160,10 +178,19 @@ export async function GET(req: NextRequest) {
             };
         });
 
-        return NextResponse.json({ success: true, data: formatted });
+        /* --------------------------------------------------
+           CACHE RESULT
+        -------------------------------------------------- */
+        await redis.set(
+            cacheKey,
+            JSON.stringify(formatted),
+            { ex: 60 } // ⏱ 1 minute (status can change)
+        );
 
+        return NextResponse.json({ success: true, data: formatted });
     } catch (error) {
-        console.error(error);
+        console.error("[MAINTENANCE_REQUESTS_ERROR]", error);
+
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }
