@@ -71,47 +71,55 @@ export default function BillingSummary({
           </div>
         )}
 
-        {/* ====================== FIXED CHARGES ====================== */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <h4 className="text-sm font-semibold text-gray-800 mb-3">
-            Fixed Charges
-          </h4>
+          {/* ====================== FIXED CHARGES ====================== */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                  Fixed Charges
+              </h4>
 
-          <div className="divide-y divide-gray-200">
-            <div className="flex justify-between py-2 text-sm">
-              <span>🏠 Rent</span>
-              <span className="font-semibold">
-                ₱
-                {fmtPHP(
-                  unit?.effective_rent_amount ??
-                    unit?.rent_amount ??
-                    0
-                )}
-              </span>
-            </div>
+              <div className="divide-y divide-gray-200">
 
-            <div className="flex justify-between py-2 text-sm">
-              <span>🏢 Assoc. Dues</span>
-              <span className="font-semibold">
-                ₱{fmtPHP(bill?.dues ?? 0)}
-              </span>
-            </div>
+                  {/* RENT */}
+                  <div className="flex justify-between items-center py-2 text-sm">
+                      <div className="flex flex-col">
+        <span className="flex items-center gap-2 font-medium">
+          🏠 Base Rent
+        </span>
+                      </div>
 
-            <div className="flex justify-between items-center py-2">
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-700">
-                  ⏰ Late Fee
-                </span>
-                <span className="text-xs text-gray-500 italic">
-                  (for reference only)
-                </span>
+                      <span className="font-semibold text-gray-900">
+{fmtPHP(
+    unit?.effective_rent_amount && Number(unit.effective_rent_amount) > 0
+        ? unit.effective_rent_amount
+        : unit?.rent_amount ?? 0
+)}      </span>
+                  </div>
+
+                  {/* ASSOC DUES */}
+                  <div className="flex justify-between py-2 text-sm">
+                      <span>🏢 Assoc. Dues</span>
+                      <span className="font-semibold">
+        ₱{fmtPHP(bill?.dues ?? 0)}
+      </span>
+                  </div>
+
+                  {/* LATE FEE (REFERENCE) */}
+                  <div className="flex justify-between items-center py-2">
+                      <div className="flex flex-col">
+        <span className="text-sm font-medium text-gray-700">
+          ⏰ Late Fee
+        </span>
+                          <span className="text-xs text-gray-500 italic">
+          (applies only if overdue)
+        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">
+        ₱{fmtPHP(bill?.lateFee ?? 0)}
+      </span>
+                  </div>
+
               </div>
-              <span className="text-sm font-semibold text-gray-900">
-                ₱{fmtPHP(bill?.lateFee ?? 0)}
-              </span>
-            </div>
           </div>
-        </div>
 
         {/* ====================== ADJUSTMENTS ====================== */}
         <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg p-4">

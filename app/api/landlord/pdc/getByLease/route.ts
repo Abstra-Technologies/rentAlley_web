@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const leaseId = searchParams.get("lease_id");
 
+
     if (!leaseId)
         return NextResponse.json(
             { error: "Missing lease_id parameter" },
