@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 import { listingLimits } from "@/constant/subscription/limits";
 
@@ -11,7 +12,6 @@ export async function GET(
     const requestId = crypto.randomUUID();
     const startTime = Date.now();
 
-    // ✅ REQUIRED IN NEXT 16
     const { landlord_id } = await params;
 
     console.log(
@@ -31,18 +31,56 @@ export async function GET(
         );
     }
 
-    try {
-        console.log(`[SUBSCRIPTION][${requestId}] QUERY subscription`);
+    /* --------------------------------------------------
+       REDIS CACHE KEY (per landlord)
+    -------------------------------------------------- */
+    const cacheKey = `subscription:active:${landlord_id}`;
 
+    try {
+        /* --------------------------------------------------
+           CHECK CACHE FIRST
+        -------------------------------------------------- */
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+            let parsed;
+            try {
+                parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+            } catch (err) {
+                console.error(
+                    `[SUBSCRIPTION][${requestId}] CACHE PARSE ERROR`,
+                    err
+                );
+                parsed = cached;
+            }
+
+            console.log(
+                `[SUBSCRIPTION][${requestId}] CACHE HIT`,
+                `duration=${Date.now() - startTime}ms`
+            );
+
+            return NextResponse.json(parsed);
+        }
+
+        /* --------------------------------------------------
+           DATABASE QUERY
+        -------------------------------------------------- */
+        console.log(`[SUBSCRIPTION][${requestId}] QUERY subscription`);
         const queryStart = Date.now();
 
         const [rows]: any = await db.query({
             sql: `
-        SELECT plan_name, start_date, end_date, payment_status, is_trial, is_active
-        FROM Subscription
-        WHERE landlord_id = ? AND is_active = 1
-        LIMIT 1
-      `,
+                SELECT
+                    plan_name,
+                    start_date,
+                    end_date,
+                    payment_status,
+                    is_trial,
+                    is_active
+                FROM Subscription
+                WHERE landlord_id = ?
+                  AND is_active = 1
+                LIMIT 1
+            `,
             values: [landlord_id],
             timeout: 5000,
         });
@@ -66,6 +104,9 @@ export async function GET(
 
         const subscription = rows[0];
 
+        /* --------------------------------------------------
+           EXPIRATION CHECK (authoritative DB logic)
+        -------------------------------------------------- */
         const currentDate = new Date();
         const endDate = subscription.end_date
             ? new Date(subscription.end_date)
@@ -77,9 +118,13 @@ export async function GET(
                 { endDate }
             );
 
-            // fire-and-forget update (non-blocking)
+            // Fire-and-forget deactivate
             db.query({
-                sql: "UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?",
+                sql: `
+                    UPDATE Subscription
+                    SET is_active = 0
+                    WHERE landlord_id = ?
+                `,
                 values: [landlord_id],
                 timeout: 3000,
             }).catch((err) => {
@@ -92,12 +137,19 @@ export async function GET(
             subscription.is_active = 0;
         }
 
-        const limits = listingLimits[subscription.plan_name] || {};
-        subscription.listingLimits = limits;
+        /* --------------------------------------------------
+           ATTACH LIMITS
+        -------------------------------------------------- */
+        subscription.listingLimits =
+            listingLimits[subscription.plan_name] || {};
 
-        console.log(
-            `[SUBSCRIPTION][${requestId}] SUCCESS`,
-            `totalDuration=${Date.now() - startTime}ms`
+        /* --------------------------------------------------
+           CACHE RESULT (short TTL = safe)
+        -------------------------------------------------- */
+        await redis.set(
+            cacheKey,
+            JSON.stringify(subscription),
+            { ex: 60 } // ⏱ 1 minute (billing-safe)
         );
 
         return NextResponse.json(subscription);
