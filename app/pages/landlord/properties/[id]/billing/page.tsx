@@ -48,15 +48,31 @@ export default function PropertyBillingPage() {
   const [configMissing, setConfigMissing] = useState(false);
   const [configModal, setConfigModal] = useState(false);
 
+  // Add loading state for initial data
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   // Initialize onboarding
   const { startTour } = useOnboarding({
     tourId: "property-billing",
     steps: propertyBillingSteps,
-    autoStart: true, // Auto-start on first visit
+    autoStart: true,
   });
 
   useEffect(() => {
     if (!property_id) return;
+
+    async function loadAllData() {
+      setIsInitialLoad(true);
+      try {
+        await Promise.all([
+          checkPropertyConfig(),
+          fetchPropertyDetails(),
+          fetchBillingData(),
+        ]);
+      } finally {
+        setIsInitialLoad(false);
+      }
+    }
 
     async function checkPropertyConfig() {
       try {
@@ -64,7 +80,6 @@ export default function PropertyBillingPage() {
           params: { id: property_id },
         });
 
-        // If PropertyConfiguration missing, backend returns {}
         if (!res.data || !res.data.billingDueDay) {
           setConfigMissing(true);
           setConfigModal(true);
@@ -73,7 +88,6 @@ export default function PropertyBillingPage() {
         }
       } catch (err) {
         console.error("Error checking property configuration:", err);
-        // On failure → treat as missing so landlords can fix
         setConfigMissing(true);
         setConfigModal(true);
       }
@@ -93,7 +107,6 @@ export default function PropertyBillingPage() {
       }
     }
 
-    // getting the utility rates if submetered
     async function fetchBillingData() {
       try {
         const response = await axios.get(
@@ -124,13 +137,9 @@ export default function PropertyBillingPage() {
       }
     }
 
-    checkPropertyConfig();
-    fetchPropertyDetails();
-    fetchBillingData();
-    checkPropertyConfig();
+    loadAllData();
   }, [property_id]);
 
-  // getting active units with lease only.active or draft.
   const { data: billsData, isLoading: loadingBills } = useSWR(
     property_id
       ? `/api/landlord/billing/current?property_id=${property_id}`
@@ -227,7 +236,6 @@ export default function PropertyBillingPage() {
     }
   };
 
-  // helper to guard navigation actions that require configuration
   const guardActionWithConfig = (action: () => void) => {
     if (configMissing) {
       Swal.fire(
@@ -239,6 +247,137 @@ export default function PropertyBillingPage() {
     }
     action();
   };
+
+  // ============================================
+  // SKELETON LOADING STATE
+  // ============================================
+  if (isInitialLoad) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+        <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+          {/* Header Skeleton */}
+          <div className="mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="h-7 bg-gray-200 rounded w-48 animate-pulse mb-2" />
+                  <div className="h-4 bg-gray-200 rounded w-96 animate-pulse" />
+                </div>
+              </div>
+              <div className="h-10 bg-gray-200 rounded-lg w-32 animate-pulse" />
+            </div>
+
+            {/* Action Buttons Skeleton */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4">
+              <div className="h-10 bg-gray-200 rounded-lg w-32 animate-pulse" />
+              <div className="h-10 bg-gray-200 rounded-lg w-32 animate-pulse" />
+            </div>
+
+            {/* Stats Cards Skeleton */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 mt-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="p-4 bg-white rounded-xl shadow border border-gray-200"
+                >
+                  <div className="h-3 bg-gray-200 rounded w-20 animate-pulse mb-2" />
+                  <div className="h-6 bg-gray-200 rounded w-16 animate-pulse" />
+                </div>
+              ))}
+            </div>
+
+            {/* Rate Status Skeleton */}
+            <div className="rounded-lg border-l-4 border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 bg-gray-200 rounded-full animate-pulse flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-48 animate-pulse mb-2" />
+                  <div className="h-3 bg-gray-200 rounded w-64 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Cards Skeleton */}
+          <div className="block md:hidden space-y-3 mb-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2 flex-1">
+                    <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+                    <div className="flex-1">
+                      <div className="h-5 bg-gray-200 rounded w-32 animate-pulse mb-1" />
+                      <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse" />
+                </div>
+
+                <div className="space-y-2 mb-3 pb-3 border-b border-gray-100">
+                  <div className="flex justify-between">
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+                    <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                  </div>
+                </div>
+
+                <div className="h-10 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table Skeleton */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <th key={i} className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 rounded w-28 animate-pulse" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse" />
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="h-8 bg-gray-200 rounded-lg w-24 mx-auto animate-pulse" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
@@ -573,12 +712,36 @@ export default function PropertyBillingPage() {
         {/* Mobile Cards View */}
         <div className="block md:hidden space-y-3 mb-6" id="units-list-section">
           {loadingBills ? (
-            <div className="animate-pulse space-y-3">
-              {[...Array(3)].map((_, i) => (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="bg-gray-100 rounded-lg h-32 w-full"
-                ></div>
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+                      <div className="flex-1">
+                        <div className="h-5 bg-gray-200 rounded w-32 animate-pulse mb-1" />
+                        <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse" />
+                  </div>
+
+                  <div className="space-y-2 mb-3 pb-3 border-b border-gray-100">
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                    </div>
+                  </div>
+
+                  <div className="h-10 bg-gray-200 rounded-lg animate-pulse" />
+                </div>
               ))}
             </div>
           ) : bills.length === 0 ? (
@@ -736,13 +899,33 @@ export default function PropertyBillingPage() {
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
                 {loadingBills ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-12 text-gray-500">
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <tr key={i}>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
+                            <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="h-4 bg-gray-200 rounded w-28 animate-pulse" />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse" />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="h-8 bg-gray-200 rounded-lg w-24 mx-auto animate-pulse" />
+                        </td>
+                      </tr>
+                    ))}
+                  </>
                 ) : bills.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-12">
