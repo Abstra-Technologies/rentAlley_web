@@ -27,7 +27,7 @@ export default function LeaseDurationTracker({
   const [lease, setLease] = useState<LeaseAgreement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+console.log('lease duration agreement id: ', agreement_id);
   useEffect(() => {
     async function fetchLease() {
       try {
