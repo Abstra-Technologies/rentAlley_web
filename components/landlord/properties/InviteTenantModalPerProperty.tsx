@@ -11,25 +11,39 @@ export default function InviteTenantModal({ propertyId, onClose }) {
     const [loading, setLoading] = useState(false);
     const [loadingUnits, setLoadingUnits] = useState(true);
 
+    console.log('property id invite tenant modal: ', propertyId);
+
     // NEW
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
     useEffect(() => {
+        if (!propertyId) {
+            console.warn("InviteTenantModal: propertyId not ready");
+            return;
+        }
+
         async function fetchUnits() {
             setLoadingUnits(true);
             try {
-                const res = await axios.get(`/api/properties/${propertyId}/units`);
+                const res = await axios.get(
+                    `/api/properties/${propertyId}/units`
+                );
+
+                console.log("priopert id api: ", propertyId);
+
                 setUnits(res.data.data || []);
             } catch (err) {
                 console.error("Error loading units:", err);
                 Swal.fire("Error", "Failed to load units. Try again.", "error");
+            } finally {
+                setLoadingUnits(false);
             }
-            setLoadingUnits(false);
         }
 
         fetchUnits();
     }, [propertyId]);
+
 
     const handleInvite = async () => {
         if (!email || !unitId || !startDate || !endDate) {
