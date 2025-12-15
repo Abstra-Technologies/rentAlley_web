@@ -126,7 +126,12 @@ export default function LandlordMainDashboard() {
                                 landlord_id={landlordId}
                             />
                         </div>
-                        <TodayCalendar landlordId={landlordId} />
+                        <div  onClick={() =>
+                            router.push("/pages/landlord/booking-appointment")
+                        }>
+                            <TodayCalendar landlordId={landlordId} />
+
+                        </div>
                     </div>
 
                     {/* Middle grid */}
