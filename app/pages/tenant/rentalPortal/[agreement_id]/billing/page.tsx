@@ -124,13 +124,27 @@ function BillingContent() {
         {/* Current Billing Section */}
         <div className="mb-8">
 
-            <OverdueBilling
-                agreement_id={agreementId}
-                user_id={user?.user_id}
-            />
-
           <TenantBilling agreement_id={agreementId} user_id={user?.user_id} />
         </div>
+
+          <div className="relative mb-8">
+              <div
+                  className="absolute inset-0 flex items-center"
+                  aria-hidden="true"
+              >
+                  <div className="w-full border-t-2 border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center">
+            <span className="bg-gradient-to-br from-blue-50 via-white to-emerald-50 px-4 text-sm font-bold text-gray-500 uppercase tracking-wide">
+                Overdue Billing
+            </span>
+              </div>
+          </div>
+
+          <OverdueBilling
+              agreement_id={agreementId}
+              user_id={user?.user_id}
+          />
 
         {/* Divider */}
         <div className="relative mb-8">
