@@ -36,7 +36,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-
 /* ===================================
    CUSTOM COMPONENT CLASSES
    =================================== */
@@ -502,16 +501,28 @@ body {
   display: none !important;
 }
 
-
 /* Notifications */
 @media (max-width: 768px) {
   .notification-mobile-overlay {
     position: fixed;
-    top: 56px;
+    top: 56px; /* 14 * 4 = 56px (h-14) */
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 999;
+    background-color: rgba(0, 0, 0, 0.5); /* Optional: overlay backdrop */
+  }
+
+  /* Ensure mobile dropdown is below navbar but above content */
+  .notification-mobile-dropdown {
+    z-index: 100;
+  }
+}
+
+/* Desktop notifications should never exceed viewport */
+@media (min-width: 769px) {
+  .notification-dropdown {
+    max-width: calc(100vw - 16px);
   }
 }
 
@@ -520,13 +531,13 @@ body {
    ================================================= */
 
 .text-responsive {
-  font-size: 0.85rem;  /* mobile base */
+  font-size: 0.85rem; /* mobile base */
   line-height: 1.35;
 }
 
 @media (min-width: 480px) {
   .text-responsive {
-    font-size: 0.90rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -544,10 +555,9 @@ body {
 
 @media (min-width: 1280px) {
   .text-responsive {
-    font-size: 1.10rem; /* Large desktop */
+    font-size: 1.1rem; /* Large desktop */
   }
 }
-
 
 /* ========== ICONS ========== */
 .icon-responsive {
@@ -575,7 +585,6 @@ body {
     height: 1.5rem;
   }
 }
-
 
 /* ========== CARD PADDING ========== */
 .card-responsive {
@@ -608,7 +617,8 @@ body {
 .driverjs-theme-upkyp .driver-popover {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
   border: 1px solid #e5e7eb;
   max-width: 400px;
 }
@@ -754,11 +764,11 @@ body {
   .driverjs-theme-upkyp .driver-popover {
     max-width: 90vw;
   }
-  
+
   .driverjs-theme-upkyp .driver-popover-title {
     font-size: 16px;
   }
-  
+
   .driverjs-theme-upkyp .driver-popover-description {
     font-size: 13px;
   }
