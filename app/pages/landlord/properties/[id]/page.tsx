@@ -73,37 +73,49 @@ export default function ViewPropertyDetailedPage() {
 
                         {/* ACTION BUTTONS */}
                         <div className="flex flex-wrap gap-2">
+                            {/* Add Unit */}
                             <button
                                 onClick={handleAddUnitClick}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold
-                           bg-gradient-to-r from-blue-600 to-emerald-600
-                           hover:from-blue-700 hover:to-emerald-700
-                           text-white shadow-sm transition"
+                                className="inline-flex items-center gap-2
+      px-3 py-2 md:px-4 md:py-2.5
+      rounded-md md:rounded-lg
+      text-xs md:text-sm font-semibold
+      bg-gradient-to-r from-blue-600 to-emerald-600
+      hover:from-blue-700 hover:to-emerald-700
+      text-white shadow-sm transition"
                             >
                                 <Plus className="w-4 h-4" />
-                                Add Unit
+                                <span className="hidden sm:inline">Add Unit</span>
                             </button>
 
+                            {/* Bulk Import */}
                             <button
                                 onClick={() => setBulkImportModal(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold
-                           bg-gradient-to-r from-indigo-600 to-blue-600
-                           hover:from-indigo-700 hover:to-blue-700
-                           text-white shadow-sm transition"
+                                className="inline-flex items-center gap-2
+      px-3 py-2 md:px-4 md:py-2.5
+      rounded-md md:rounded-lg
+      text-xs md:text-sm font-semibold
+      bg-gradient-to-r from-indigo-600 to-blue-600
+      hover:from-indigo-700 hover:to-blue-700
+      text-white shadow-sm transition"
                             >
                                 <Sparkles className="w-4 h-4" />
-                                Bulk Import
+                                <span className="hidden sm:inline">Bulk Import</span>
                             </button>
 
+                            {/* Invite Tenant */}
                             <button
                                 onClick={() => setInviteModalOpen(true)}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold
-                           bg-gradient-to-r from-purple-600 to-pink-600
-                           hover:from-purple-700 hover:to-pink-700
-                           text-white shadow-sm transition"
+                                className="inline-flex items-center gap-2
+      px-3 py-2 md:px-4 md:py-2.5
+      rounded-md md:rounded-lg
+      text-xs md:text-sm font-semibold
+      bg-gradient-to-r from-purple-600 to-pink-600
+      hover:from-purple-700 hover:to-pink-700
+      text-white shadow-sm transition"
                             >
                                 <Sparkles className="w-4 h-4" />
-                                Invite Tenant
+                                <span className="hidden sm:inline">Invite Tenant</span>
                             </button>
                         </div>
                     </div>
