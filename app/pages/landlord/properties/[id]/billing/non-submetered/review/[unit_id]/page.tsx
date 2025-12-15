@@ -56,7 +56,7 @@ const ReviewBillingPage = () => {
     isLoading,
     mutate,
   } = useSWR(
-    unit_id ? `/api/billing/non_submetered/getByUnit?unit_id=${unit_id}` : null,
+    unit_id ? `/api/landlord/billing/non-submetered/getByUnitId?unit_id=${unit_id}` : null,
     fetcher
   );
 
@@ -80,17 +80,14 @@ const ReviewBillingPage = () => {
   async function fetchPDCData(billingId?: number, leaseId?: number) {
     try {
       setLoadingPdc(true);
-      console.log("🔍 Fetching PDC data...", { billingId, leaseId });
 
       // Prefer by billing first, then lease
       let res;
       if (billingId) {
-        console.log(`➡️ Fetching PDC by billing_id=${billingId}`);
         res = await axios.get(
           `/api/landlord/pdc/getByBilling?billing_id=${billingId}`
         );
       } else if (leaseId) {
-        console.log(`➡️ Fetching PDC by lease_id=${leaseId}`);
         res = await axios.get(
           `/api/landlord/pdc/getByLease?lease_id=${leaseId}`
         );
@@ -101,9 +98,7 @@ const ReviewBillingPage = () => {
       }
 
       const data = res?.data;
-      console.log("✅ Raw PDC API response:", data);
 
-      // Expecting a single PDC or null.
       let _pdc = null;
       if (Array.isArray(data?.pdcs)) {
         // Pick pending first, then cleared, then fallback
@@ -127,7 +122,6 @@ const ReviewBillingPage = () => {
       setPdc(null);
     } finally {
       setLoadingPdc(false);
-      console.log("⏹️ Finished fetching PDC data.");
     }
   }
 
@@ -410,365 +404,314 @@ const ReviewBillingPage = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
-      <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
-        {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4 text-sm font-medium transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
+    return (
+        <div className="min-h-screen bg-slate-100 pb-24">
+            <div className="w-full px-4 md:px-6 pt-10">
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-700">
-              {currentBill?.property_name || "Property"}
-            </h2>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-              Monthly Billing Review –{" "}
-              {currentBill?.billing_period
-                ? new Date(currentBill.billing_period).toLocaleDateString(
-                    "en-US",
-                    {
-                      month: "long",
-                      year: "numeric",
-                    }
-                  )
-                : ""}
-            </h1>
-            <p className="mt-2 text-xs sm:text-sm text-gray-600">
-              Review and confirm non-submetered billing for{" "}
-              <strong>{currentBill?.unit_name || "—"}</strong>.
-            </p>
-          </div>
-
-          {bills.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No billing data for this unit.</p>
-            </div>
-          ) : (
-            <>
-              {/* Unit Info */}
-              <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <Building2 className="w-5 h-5 text-blue-600" />
-                  <p className="text-base font-semibold text-gray-900">
-                    {currentBill.unit_name}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <User className="w-4 h-4 text-gray-400" />
-                  <p className="text-sm text-gray-700">
-                    {currentBill.tenant_name || "Vacant"}
-                  </p>
-                </div>
-              </div>
-
-              {/* PDC Section */}
-              {loadingPdc ? (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span className="text-blue-700">Loading PDC...</span>
-                  </div>
-                </div>
-              ) : pdc ? (
-                <div
-                  className={`mb-6 p-4 rounded-lg border ${getPdcStatusColor(
-                    pdc.status
-                  )}`}
+                {/* Back Button */}
+                <button
+                    onClick={() => router.back()}
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline mb-6"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      {getPdcStatusIcon(pdc.status)}
-                      <div>
-                        <p className="font-semibold text-sm">
-                          Post-Dated Check
-                        </p>
-                        <p className="text-xs text-gray-600 mt-0.5">
-                          Check #{pdc.check_number} • ₱{peso(pdc.amount)} • Due:{" "}
-                          {formatDate(pdc.due_date)}
-                        </p>
-                        {pdc.status === "pending" && (
-                          <p className="text-xs text-orange-600 mt-1">
-                            Awaiting deposit
-                          </p>
-                        )}
-                        {pdc.status === "cleared" && (
-                          <p className="text-xs text-green-600 mt-1">
-                            Cleared on {formatDate(pdc.cleared_at)}
-                          </p>
-                        )}
-                        {pdc.status === "bounced" && (
-                          <p className="text-xs text-red-600 mt-1">
-                            Bounced on {formatDate(pdc.bounced_at)}
-                          </p>
-                        )}
-                      </div>
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                </button>
+
+                <div className="bg-white border border-gray-300 rounded-xl shadow-sm max-w-4xl mx-auto">
+
+                    {/* HEADER */}
+                    <div className="px-6 py-5 border-b">
+                        <h1 className="text-2xl font-bold text-gray-900">
+                            Billing Statement
+                        </h1>
                     </div>
-                    <span
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getPdcBadgeColor(
-                        pdc.status
-                      )}`}
-                    >
+
+                    {/* BILLING META */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 py-4 bg-slate-50 border-b text-sm">
+                        <div>
+                            <p className="text-gray-500">Billing Period</p>
+                            <p className="font-semibold text-gray-900">
+                                {currentBill?.billing_period
+                                    ? new Date(currentBill.billing_period).toLocaleDateString(
+                                        "en-US",
+                                        { month: "long", year: "numeric" }
+                                    )
+                                    : "—"}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-gray-500">Unit</p>
+                            <p className="font-semibold text-gray-900 flex items-center gap-1">
+                                <Building2 className="w-4 h-4 text-blue-600" />
+                                {currentBill.unit_name}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-gray-500">Tenant</p>
+                            <p className="font-semibold text-gray-900 flex items-center gap-1">
+                                <User className="w-4 h-4 text-gray-400" />
+                                {currentBill.tenant_name || "Vacant"}
+                            </p>
+                        </div>
+                    </div>
+
+                    {bills.length === 0 ? (
+                        <div className="text-center py-16">
+                            <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600">No billing data for this unit.</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* PDC */}
+                            <div className="px-6 py-4 border-b">
+                                {loadingPdc ? (
+                                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                                        <div className="animate-spin h-4 w-4 border-b-2 border-blue-600 rounded-full" />
+                                        Loading PDC…
+                                    </div>
+                                ) : pdc ? (
+                                    <div
+                                        className={`p-4 rounded-lg border ${getPdcStatusColor(
+                                            pdc.status
+                                        )}`}
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex gap-2">
+                                                {getPdcStatusIcon(pdc.status)}
+                                                <div>
+                                                    <p className="text-sm font-semibold">
+                                                        Post-Dated Check
+                                                    </p>
+                                                    <p className="text-xs text-gray-600">
+                                                        Check #{pdc.check_number} • ₱{peso(pdc.amount)} • Due{" "}
+                                                        {formatDate(pdc.due_date)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span
+                                                className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getPdcBadgeColor(
+                                                    pdc.status
+                                                )}`}
+                                            >
                       {pdc.status.toUpperCase()}
                     </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-amber-900 text-sm">
-                        No PDC attached
-                      </p>
-                      <p className="text-amber-700 text-xs mt-1">
-                        Tenant has not submitted a post-dated check.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm">
+                                        <p className="font-medium text-amber-900">
+                                            No PDC attached
+                                        </p>
+                                        <p className="text-amber-700 text-xs mt-1">
+                                            Tenant has not submitted a post-dated check.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
 
-              {/* Charges */}
-              <div className="space-y-3 mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">Base Rent:</span>
-                  <span className="font-bold text-gray-900">
-                    ₱{peso(parseAmount(currentBill.base_rent))}
+                            {/* CORE CHARGES */}
+                            <div className="px-6 py-6 border-b">
+                                <div className="flex justify-between text-sm mb-3">
+                                    <span className="text-gray-600">Base Rent</span>
+                                    <span className="font-semibold">
+                  ₱{peso(parseAmount(currentBill.base_rent))}
+                </span>
+                                </div>
+
+                                <div className="flex justify-between text-xs text-gray-500">
+                                    <span>Late Fee per Day (reference)</span>
+                                    <span>
+                  ₱{peso(parseAmount(currentBill.late_penalty_amount))}
+                </span>
+                                </div>
+                            </div>
+
+                            {/* LEASE CHARGES */}
+                            {currentBill.lease_additional_expenses?.length > 0 && (
+                                <div className="px-6 py-4 border-b bg-slate-50">
+                                    <h4 className="text-xs font-semibold text-gray-600 mb-2">
+                                        Lease Charges
+                                    </h4>
+                                    {currentBill.lease_additional_expenses.map(
+                                        (exp: any, i: number) => (
+                                            <div
+                                                key={i}
+                                                className="flex justify-between text-sm text-gray-700"
+                                            >
+                                                <span>{exp.type}</span>
+                                                <span>₱{peso(exp.amount)}</span>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ADDITIONAL CHARGES */}
+                            <div className="px-6 py-6 border-b">
+                                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                                    Additional Charges
+                                </h4>
+
+                                {extraExpenses.map((exp, i) => (
+                                    <div key={i} className="flex gap-2 mb-2 items-center">
+                                        <input
+                                            value={exp.type}
+                                            onChange={(e) =>
+                                                handleExpenseChange(i, "type", e.target.value)
+                                            }
+                                            disabled={exp.fromDB}
+                                            className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm"
+                                        />
+                                        <input
+                                            type="number"
+                                            value={exp.amount}
+                                            onChange={(e) =>
+                                                handleExpenseChange(i, "amount", e.target.value)
+                                            }
+                                            disabled={exp.fromDB}
+                                            className="w-28 border border-gray-300 rounded-md px-2 py-1 text-sm text-right"
+                                        />
+                                        <button
+                                            onClick={() => handleRemoveExpense(i, exp)}
+                                            className="p-2 text-gray-400 hover:text-red-600"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                <button
+                                    onClick={handleAddExpense}
+                                    className="text-sm text-blue-600 hover:underline mt-2"
+                                >
+                                    + Add Charge
+                                </button>
+                            </div>
+
+                            {/* DISCOUNTS */}
+                            <div className="px-6 py-6 border-b bg-slate-50">
+                                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                                    Discounts
+                                </h4>
+
+                                {discounts.map((disc, i) => (
+                                    <div key={i} className="flex gap-2 mb-2 items-center">
+                                        <input
+                                            value={disc.type}
+                                            onChange={(e) =>
+                                                handleDiscountChange(i, "type", e.target.value)
+                                            }
+                                            disabled={disc.fromDB}
+                                            className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm"
+                                        />
+                                        <input
+                                            type="number"
+                                            value={disc.amount}
+                                            onChange={(e) =>
+                                                handleDiscountChange(i, "amount", e.target.value)
+                                            }
+                                            disabled={disc.fromDB}
+                                            className="w-28 border border-gray-300 rounded-md px-2 py-1 text-sm text-right"
+                                        />
+                                        <button
+                                            onClick={() => handleRemoveDiscount(i, disc)}
+                                            className="p-2 text-gray-400 hover:text-red-600"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+
+                                <button
+                                    onClick={handleAddDiscount}
+                                    className="text-sm text-emerald-600 hover:underline mt-2"
+                                >
+                                    + Add Discount
+                                </button>
+                            </div>
+
+                            {/* TOTAL SUMMARY */}
+                            <div className="px-6 py-6 bg-slate-50">
+                                <div className="max-w-sm ml-auto space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span>Subtotal</span>
+                                        <span>
+                    ₱{peso(calculateSubtotal(currentBill, extraExpenses))}
                   </span>
-                </div>
+                                    </div>
 
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-700">
-                    Late Fee per Day (reference only):
-                  </span>
-                  <span className="font-bold text-gray-900">
-                    ₱{peso(parseAmount(currentBill.late_penalty_amount))}
-                  </span>
-                </div>
-              </div>
-
-              {currentBill.lease_additional_expenses?.length > 0 && (
-                <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-sm text-blue-900 mb-2">
-                    Lease Charges:
-                  </h4>
-                  <div className="space-y-1">
-                    {currentBill.lease_additional_expenses.map(
-                      (exp: any, i: number) => (
-                        <p key={i} className="text-xs text-blue-800">
-                          • {exp.type}: ₱{peso(exp.amount)} ({exp.frequency})
-                        </p>
-                      )
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Additional Charges */}
-              <div className="mb-6">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  Additional Charges
-                </h4>
-                {extraExpenses.map((exp, i) => (
-                  <div key={i} className="flex gap-2 mb-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="Type"
-                      value={exp.type}
-                      onChange={(e) =>
-                        handleExpenseChange(i, "type", e.target.value)
-                      }
-                      disabled={exp.fromDB}
-                      className={`flex-1 px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        exp.fromDB ? "bg-gray-100 cursor-not-allowed" : ""
-                      }`}
-                    />
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      value={exp.amount}
-                      onChange={(e) =>
-                        handleExpenseChange(i, "amount", e.target.value)
-                      }
-                      disabled={exp.fromDB}
-                      className={`w-28 px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-right focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        exp.fromDB ? "bg-gray-100 cursor-not-allowed" : ""
-                      }`}
-                    />
-                    <button
-                      onClick={() => handleRemoveExpense(i, exp)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={handleAddExpense}
-                  className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg font-medium transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Charge
-                </button>
-              </div>
-
-              {/* Discounts */}
-              <div className="mb-6">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  Discounts
-                </h4>
-                {discounts.map((disc, i) => (
-                  <div key={i} className="flex gap-2 mb-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="Type"
-                      value={disc.type}
-                      onChange={(e) =>
-                        handleDiscountChange(i, "type", e.target.value)
-                      }
-                      disabled={disc.fromDB}
-                      className={`flex-1 px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
-                        disc.fromDB ? "bg-gray-100 cursor-not-allowed" : ""
-                      }`}
-                    />
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      value={disc.amount}
-                      onChange={(e) =>
-                        handleDiscountChange(i, "amount", e.target.value)
-                      }
-                      disabled={disc.fromDB}
-                      className={`w-28 px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-right focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${
-                        disc.fromDB ? "bg-gray-100 cursor-not-allowed" : ""
-                      }`}
-                    />
-                    <button
-                      onClick={() => handleRemoveDiscount(i, disc)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={handleAddDiscount}
-                  className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm text-emerald-600 hover:bg-emerald-50 border border-emerald-200 rounded-lg font-medium transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Discount
-                </button>
-              </div>
-
-              {/* Total Section */}
-              <div className="bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-lg p-5 mb-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm opacity-90">
-                    <span>Subtotal:</span>
-                    <span>
-                      ₱{peso(calculateSubtotal(currentBill, extraExpenses))}
+                                    {calculateDiscountTotal(discounts) > 0 && (
+                                        <div className="flex justify-between text-emerald-600">
+                                            <span>Discounts</span>
+                                            <span>
+                      -₱{peso(calculateDiscountTotal(discounts))}
                     </span>
-                  </div>
+                                        </div>
+                                    )}
 
-                  {calculateDiscountTotal(discounts) > 0 && (
-                    <div className="flex justify-between text-sm opacity-90">
-                      <span>Discounts:</span>
-                      <span>-₱{peso(calculateDiscountTotal(discounts))}</span>
-                    </div>
-                  )}
-
-                  {pdc && pdc.status === "cleared" && (
-                    <div className="flex justify-between text-sm opacity-90">
-                      <span>Rent Covered by Cleared PDC:</span>
-                      <span>-₱{peso(parseAmount(currentBill.base_rent))}</span>
-                    </div>
-                  )}
-
-                  <div className="h-px bg-white/30 my-2"></div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total Due:</span>
-                    <span className="text-2xl font-bold">
-                      ₱
-                      {peso(
-                        calculateTotal(
-                          currentBill,
-                          extraExpenses,
-                          discounts,
-                          pdc
-                        )
-                      )}
+                                    {pdc?.status === "cleared" && (
+                                        <div className="flex justify-between text-green-600">
+                                            <span>PDC Deduction</span>
+                                            <span>
+                      -₱{peso(parseAmount(currentBill.base_rent))}
                     </span>
-                  </div>
-                </div>
-              </div>
+                                        </div>
+                                    )}
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <button
-                  onClick={() => handleSaveBill(currentBill)}
-                  className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors ${
-                    savedBills[currentBill.unit_id]?.saved
-                      ? "bg-emerald-600 text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
-                >
-                  {savedBills[currentBill.unit_id]?.saved
-                    ? "✓ Saved"
-                    : "Save Bill"}
-                </button>
+                                    <div className="border-t pt-2 flex justify-between text-base font-bold">
+                                        <span>Total Due</span>
+                                        <span>
+                    ₱
+                                            {peso(
+                                                calculateTotal(
+                                                    currentBill,
+                                                    extraExpenses,
+                                                    discounts,
+                                                    pdc
+                                                )
+                                            )}
+                  </span>
+                                    </div>
+                                </div>
+                            </div>
 
-                {bills.length > 1 && (
-                  <div className="flex gap-2 flex-1">
-                    {currentIndex > 0 && (
-                      <button
-                        onClick={() => setCurrentIndex((prev) => prev - 1)}
-                        className="flex-1 py-2.5 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold transition-colors"
-                      >
-                        ← Prev
-                      </button>
+                            {/* ACTIONS */}
+                            <div className="border-t px-6 py-4 flex flex-col sm:flex-row gap-3">
+                                <button
+                                    onClick={() => handleSaveBill(currentBill)}
+                                    className={`flex-1 py-2.5 rounded-lg font-semibold text-sm ${
+                                        savedBills[currentBill.unit_id]?.saved
+                                            ? "bg-emerald-600 text-white"
+                                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                                    }`}
+                                >
+                                    {savedBills[currentBill.unit_id]?.saved
+                                        ? "✓ Saved"
+                                        : "Save Bill"}
+                                </button>
+
+                                {savedBills[currentBill.unit_id]?.saved && (
+                                    <button
+                                        onClick={handleApproveBilling}
+                                        className="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                                    >
+                                        Approve & Send to Tenant
+                                    </button>
+                                )}
+                            </div>
+
+                            <p className="text-center text-xs text-gray-500 py-4">
+                                Unit {currentIndex + 1} of {bills.length}
+                            </p>
+                        </>
                     )}
-                    {currentIndex < bills.length - 1 && (
-                      <button
-                        onClick={() => setCurrentIndex((prev) => prev + 1)}
-                        className="flex-1 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-800 text-white text-sm font-semibold transition-colors"
-                      >
-                        Next →
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <p className="text-center text-xs text-gray-500">
-                Unit {currentIndex + 1} of {bills.length}
-              </p>
-
-              {/* Final Approve Button */}
-              {savedBills[currentBill.unit_id]?.saved && (
-                <div className="mt-6 text-center">
-                  <button
-                    onClick={handleApproveBilling}
-                    className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-lg shadow-sm transition-all"
-                  >
-                    Approve & Send to Tenant
-                  </button>
                 </div>
-              )}
-            </>
-          )}
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
+
 };
 
 const formatDate = (date: string) =>
