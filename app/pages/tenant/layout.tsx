@@ -79,7 +79,7 @@ export default function TenantLayout({ children }) {
     }
   }, [user, isAuthChecking, router]);
 
-  // Check portal context - SIMPLIFIED VERSION
+// Check portal context - VALIDATED VERSION
     useEffect(() => {
         const agreementId = localStorage.getItem("portalAgreementId");
 
@@ -92,20 +92,25 @@ export default function TenantLayout({ children }) {
             return;
         }
 
-        // 🔐 SERVER VALIDATION (CRITICAL)
-        axios
-            .get("/api/tenant/activeRent/propertyUnitInfo", {
-                params: { agreement_id: agreementId },
-            })
-            .then((res) => {
-                // ✅ Server confirms ownership
+        async function validatePortal() {
+            try {
+                // 🔐 SINGLE SOURCE OF TRUTH
+                await axios.get(
+                    `/api/tenant/validate-agreement/${agreementId}`
+                );
+
+                const res = await axios.get(
+                    "/api/tenant/activeRent/propertyUnitInfo",
+                    {
+                        params: { agreement_id: agreementId },
+                    }
+                );
+
                 setIsInPortalMode(true);
                 setPortalAgreementId(agreementId);
                 setPortalPropertyInfo(res.data);
                 setPortalValidated(true);
-            })
-            .catch((err) => {
-                // ❌ NOT OWNER / EXPIRED LEASE
+            } catch {
                 console.warn("Portal access denied");
 
                 localStorage.removeItem("portalAgreementId");
@@ -116,7 +121,10 @@ export default function TenantLayout({ children }) {
                 setPortalValidated(false);
 
                 router.replace("/pages/tenant/my-unit");
-            });
+            }
+        }
+
+        validatePortal();
     }, [pathname]);
 
   // Fetch pending applications count
