@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
 
-// @method: GET
-// Get property concessionaire utility rates for latest reading period
+//  getting the property rates inside billing page/
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -22,10 +21,14 @@ export async function GET(req: NextRequest) {
                 bill_id,
                 period_start,
                 period_end,
+
                 electricity_total,
                 electricity_consumption,
+                electricity_rate,
+
                 water_total,
-                water_consumption
+                water_consumption,
+                water_rate
             FROM ConcessionaireBilling
             WHERE property_id = ?
             ORDER BY period_start DESC
@@ -40,24 +43,28 @@ export async function GET(req: NextRequest) {
 
         const row = rows[0];
 
-        const billingData = {
-            period_start: row.period_start,
-            period_end: row.period_end,
-            electricity: row.electricity_total
-                ? {
-                    total: row.electricity_total,
-                    consumption: row.electricity_consumption,
-                }
-                : null,
-            water: row.water_total
-                ? {
-                    total: row.water_total,
-                    consumption: row.water_consumption,
-                }
-                : null,
-        };
+        return NextResponse.json({
+            billingData: {
+                period_start: row.period_start,
+                period_end: row.period_end,
 
-        return NextResponse.json({ billingData });
+                electricity: row.electricity_total
+                    ? {
+                        total: Number(row.electricity_total),
+                        consumption: Number(row.electricity_consumption),
+                        rate: Number(row.electricity_rate),
+                    }
+                    : null,
+
+                water: row.water_total
+                    ? {
+                        total: Number(row.water_total),
+                        consumption: Number(row.water_consumption),
+                        rate: Number(row.water_rate),
+                    }
+                    : null,
+            },
+        });
     } catch (error) {
         console.error("Error fetching billing data:", error);
         return NextResponse.json(

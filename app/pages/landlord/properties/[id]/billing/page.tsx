@@ -153,7 +153,7 @@ export default function PropertyBillingPage() {
     setBillingForm({ ...billingForm, [name]: value });
   };
 
-  const handleSaveOrUpdateBilling = async (e: React.FormEvent) => {
+  const handleSaveorUpdateRates = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (configMissing) {
@@ -696,7 +696,7 @@ export default function PropertyBillingPage() {
           propertyDetails={propertyDetails}
           hasBillingForMonth={hasBillingForMonth}
           handleInputChange={handleInputChange}
-          handleSaveOrUpdateBilling={handleSaveOrUpdateBilling}
+          handleSaveorUpdateRates={handleSaveorUpdateRates}
           onBillingUpdated={(updatedData: any) => {
             setBillingData(updatedData);
             setHasBillingForMonth(true);

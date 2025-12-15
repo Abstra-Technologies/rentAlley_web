@@ -4,8 +4,10 @@ import { BackButton } from "@/components/navigation/backButton";
 import UtilityRatesCard from "@/components/landlord/unitBilling/UtilityRatesCard";
 import PDCCard from "@/components/landlord/unitBilling/PDCCard";
 import { useCreateSubmeteredUnitBill } from "@/hooks/landlord/billing/useCreateSubmeteredUnitBill";
+import {AlertCircle, Calendar} from "lucide-react";
 
 export default function CreateUnitBill() {
+
     const {
         unit,
         property,
@@ -28,7 +30,12 @@ export default function CreateUnitBill() {
         handleRemoveDiscount,
         handleSubmit,
         handleMarkCleared,
+        updateBilling
     } = useCreateSubmeteredUnitBill();
+
+
+    const round2 = (n: number) =>
+        Math.round((n + Number.EPSILON) * 100) / 100;
 
     if (!unit || !property) {
         return <div className="text-center mt-10 text-gray-500">Loading...</div>;
@@ -57,17 +64,19 @@ export default function CreateUnitBill() {
 
                 {/* ================= BILLING PERIOD ================= */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b p-5 text-sm bg-gray-50">
+
                     <div>
                         <p className="text-gray-500">Billing Period</p>
                         <p className="font-semibold">
-                            {new Date(form.readingDate).toLocaleString("en-PH", {
+                            {new Date(form.billingDate).toLocaleString("en-PH", {
                                 month: "long",
                                 year: "numeric",
                             })}
                         </p>
                     </div>
 
-            <div>
+
+                    <div>
               <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
                 <Calendar className="w-3.5 h-3.5" />
                 Billing Date
@@ -75,7 +84,7 @@ export default function CreateUnitBill() {
               <input
                 type="date"
                 name="readingDate"
-                value={form.readingDate}
+                value={form.billingDate}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               />
@@ -227,7 +236,10 @@ export default function CreateUnitBill() {
                                         {bill.elecUsage}
                                     </td>
                                     <td className="px-4 py-2 text-right">
-                                        ₱{bill.elecCost.toFixed(2)}
+                                        ₱{Number(bill.elecCost).toLocaleString("en-PH", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                    })}
                                     </td>
                                 </tr>
                             )}
@@ -343,7 +355,6 @@ export default function CreateUnitBill() {
                 </div>
 
                 {/* ================= TOTAL ================= */}
-                {/* ================= TOTAL ================= */}
                 <div className="p-5 border-t bg-gray-50">
                     <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
                         Billing Summary
@@ -427,7 +438,7 @@ export default function CreateUnitBill() {
                 {/* ================= ACTION ================= */}
                 <div className="p-5 flex justify-end">
                     <button
-                        onClick={handleSubmit}
+                        onClick={hasExistingBilling ? updateBilling : handleSubmit}
                         className={`px-6 py-3 rounded-lg font-semibold shadow ${
                             hasExistingBilling
                                 ? "bg-yellow-500 hover:bg-yellow-600 text-white"
@@ -436,6 +447,7 @@ export default function CreateUnitBill() {
                     >
                         {hasExistingBilling ? "Update Billing" : "Submit Billing"}
                     </button>
+
                 </div>
 
             </div>

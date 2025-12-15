@@ -7,9 +7,13 @@ import Swal from "sweetalert2";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { createUnitBillSteps } from "@/lib/onboarding/createUnitBill";
 
+
+
 export function useCreateSubmeteredUnitBill() {
     const { unit_id } = useParams();
     const router = useRouter();
+
+
 
     /* ------------------ DATE ------------------ */
     const today = new Date().toISOString().split("T")[0];
@@ -35,7 +39,7 @@ export function useCreateSubmeteredUnitBill() {
     const [isRateModalOpen, setIsRateModalOpen] = useState(false);
 
     const [form, setForm] = useState({
-        billingDate: today,
+        billingDate: "",
         readingDate: today,
         dueDate: "",
         waterPrevReading: "",
@@ -58,6 +62,14 @@ export function useCreateSubmeteredUnitBill() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [unit_id]);
 
+    useEffect(() => {
+        console.log("🔥 PROPERTY RATES UPDATED:", propertyRates);
+    }, [propertyRates]);
+
+
+    const round2 = (n: number) =>
+        Math.round((n + Number.EPSILON) * 100) / 100;
+
     async function fetchUnitData() {
         try {
             const res = await axios.get(
@@ -65,6 +77,9 @@ export function useCreateSubmeteredUnitBill() {
             );
 
             const data = res.data;
+
+            console.log('data billing: ', data);
+
             if (!data.unit || !data.property) {
                 throw new Error("Missing unit or property data.");
             }
@@ -77,45 +92,47 @@ export function useCreateSubmeteredUnitBill() {
                 `/api/landlord/billing/checkPropertyBillingStats?property_id=${data.property.property_id}`
             );
 
-            const billing = rateRes.data.billingData;
+            const billingData = rateRes.data.billingData;
+
+            console.log('UTILITY RTATES API: ', billingData);
 
             setPropertyRates({
-                waterRate:
-                    billing?.water?.total && billing?.water?.consumption
-                        ? billing.water.total / billing.water.consumption
-                        : 0,
-                electricityRate:
-                    billing?.electricity?.total && billing?.electricity?.consumption
-                        ? billing.electricity.total / billing.electricity.consumption
-                        : 0,
+                waterRate: billingData?.water?.rate ?? 0,
+                waterTotal: billingData?.water?.total ?? 0,
+                waterConsumption: billingData?.water?.consumption ?? 0,
+
+                electricityRate: billingData?.electricity?.rate ?? 0,
+                electricityTotal: billingData?.electricity?.total ?? 0,
+                electricityConsumption: billingData?.electricity?.consumption ?? 0,
             });
+
+            console.log('PROPERTY RATES SET: ', propertyRates);
+
+
 
             const eb = data.existingBilling;
 
-            /* -------- FORM HYDRATION (IMPORTANT) -------- */
+            /* -------- FORM HYDRATION -------- */
             setForm((prev) => ({
                 ...prev,
 
-                // ✅ BILLING PERIOD (SOURCE OF TRUTH)
-                billingDate: eb?.billing_period
-                    ? new Date(eb.billing_period).toISOString().split("T")[0]
-                    : prev.billingDate,
+                // ✅ KEEP billing_period UNCHANGED
+                billingDate: eb?.billing_period,
 
                 readingDate: eb?.reading_date
-                    ? new Date(eb.reading_date).toISOString().split("T")[0]
+                    ? eb.reading_date
                     : today,
 
-                dueDate: eb?.due_date
-                    ? new Date(eb.due_date).toISOString().split("T")[0]
-                    : data.dueDate
-                        ? new Date(data.dueDate).toISOString().split("T")[0]
-                        : "",
+                dueDate: eb?.due_date ?? "",
 
                 waterPrevReading: eb?.water_prev ?? "",
                 waterCurrentReading: eb?.water_curr ?? "",
                 electricityPrevReading: eb?.elec_prev ?? "",
                 electricityCurrentReading: eb?.elec_curr ?? "",
             }));
+
+            console.log('billing period: ', eb.billing_period);
+
 
             /* -------- CHARGES -------- */
             setExtraExpenses(
@@ -255,75 +272,180 @@ export function useCreateSubmeteredUnitBill() {
             };
         }
 
-        const wPrev = +form.waterPrevReading || 0;
-        const wCurr = +form.waterCurrentReading || 0;
-        const ePrev = +form.electricityPrevReading || 0;
-        const eCurr = +form.electricityCurrentReading || 0;
+        const wPrev = Number(form.waterPrevReading) || 0;
+        const wCurr = Number(form.waterCurrentReading) || 0;
+        const ePrev = Number(form.electricityPrevReading) || 0;
+        const eCurr = Number(form.electricityCurrentReading) || 0;
 
         const waterUsage = Math.max(0, wCurr - wPrev);
         const elecUsage = Math.max(0, eCurr - ePrev);
 
-        const waterCost = waterUsage * propertyRates.waterRate;
-        const elecCost = elecUsage * propertyRates.electricityRate;
+        // ✅ ROUND EACH COST
+        const waterCost = round2(waterUsage * propertyRates.waterRate);
+        const elecCost = round2(elecUsage * propertyRates.electricityRate);
 
-        const rent = +unit.effective_rent_amount || +unit.rent_amount || 0;
-        const dues = +property.assoc_dues || 0;
+        const rent =
+            Number(unit.effective_rent_amount) ||
+            Number(unit.rent_amount) ||
+            0;
 
-        const extra = extraExpenses.reduce((s, e) => s + (+e.amount || 0), 0);
-        const discount = discounts.reduce((s, d) => s + (+d.amount || 0), 0);
+        const dues = Number(property.assoc_dues) || 0;
+
+        const totalExtraCharges = round2(
+            extraExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0)
+        );
+
+        const totalDiscounts = round2(
+            discounts.reduce((s, d) => s + (Number(d.amount) || 0), 0)
+        );
 
         const pdcCovered =
-            pdc?.status === "cleared" ? Math.min(+pdc.amount || 0, rent) : 0;
+            pdc?.status === "cleared"
+                ? Math.min(Number(pdc.amount) || 0, rent)
+                : 0;
+
+        // ✅ ROUND FINAL TOTAL
+        const adjustedTotal = round2(
+            rent -
+            pdcCovered +
+            dues +
+            waterCost +
+            elecCost +
+            totalExtraCharges -
+            totalDiscounts
+        );
 
         return {
-            rent,
-            dues,
+            rent: round2(rent),
+            dues: round2(dues),
             waterUsage,
             elecUsage,
             waterCost,
             elecCost,
-            totalExtraCharges: extra,
-            totalDiscounts: discount,
-            adjustedTotal:
-                rent - pdcCovered + dues + waterCost + elecCost + extra - discount,
+            totalExtraCharges,
+            totalDiscounts,
+            adjustedTotal,
         };
     }, [unit, property, form, extraExpenses, discounts, pdc, propertyRates]);
+
+    /* ------------------ PAYLOAD ------------------ */
+    const buildPayload = () => ({
+        unit_id: unit.unit_id,
+        ...form,
+        totalWaterAmount: bill.waterCost,
+        totalElectricityAmount: bill.elecCost,
+        total_amount_due: bill.adjustedTotal,
+        additionalCharges: [
+            ...extraExpenses.map((e) => ({
+                charge_category: "additional",
+                charge_type: e.type,
+                amount: e.amount,
+            })),
+            ...discounts.map((d) => ({
+                charge_category: "discount",
+                charge_type: d.type,
+                amount: d.amount,
+            })),
+        ],
+    });
+
+    const handleMarkCleared = async () => {
+        if (!pdc?.pdc_id) return;
+        const confirm = await Swal.fire({
+            title: "Mark PDC as Cleared?",
+            text: "This will mark the check as cleared and apply it against this billing.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Yes, mark cleared",
+        });
+        if (!confirm.isConfirmed) return;
+        try {
+            const res = await axios.put(`/api/landlord/pdc/updateStatus`, {
+                pdc_id: pdc.pdc_id,
+                status: "cleared",
+            });
+            if (res.status === 200) {
+                setPdc((prev: any) => (prev ? { ...prev, status: "cleared" } : prev));
+                Swal.fire(
+                    "✅ Updated",
+                    "PDC has been marked as cleared successfully.",
+                    "success"
+                );
+            } else Swal.fire("Warning", "Unexpected server response.", "warning");
+        } catch (error: any) {
+            console.error("❌ Error marking PDC cleared:", error);
+            Swal.fire(
+                "Error",
+                error.response?.data?.error || "Failed to update PDC status.",
+                "error"
+            );
+        }
+    };
+
+    /* ------------------ CREATE ------------------ */
+    const createBilling = async () => {
+        await axios.post(
+            "/api/landlord/billing/submetered/createUnitMonthlyBilling",
+            buildPayload()
+        );
+    };
+
+    /* ------------------ UPDATE ------------------ */
+    const updateBilling = async () => {
+        try {
+            Swal.fire({
+                title: "Updating billing…",
+                text: "Please wait while we save the changes.",
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
+            await axios.put(
+                "/api/landlord/billing/submetered/createUnitMonthlyBilling",
+                {
+                    ...buildPayload(),
+                    billing_id: existingBillingMeta?.billing_id,
+                }
+            );
+
+            Swal.fire({
+                icon: "success",
+                title: "Billing Updated",
+                text: "The billing statement has been updated successfully.",
+                confirmButtonColor: "#10b981", // emerald
+            });
+
+            fetchUnitData(); // 🔄 refresh values
+        } catch (error: any) {
+            console.error("❌ Update billing failed:", error);
+
+            Swal.fire({
+                icon: "error",
+                title: "Update Failed",
+                text:
+                    error.response?.data?.error ||
+                    "Something went wrong while updating the billing.",
+                confirmButtonColor: "#ef4444", // red
+            });
+        }
+    };
+
 
     /* ------------------ SUBMIT ------------------ */
     const handleSubmit = async () => {
         try {
-            const payload = {
-                unit_id: unit.unit_id,
-                ...form,
-                totalWaterAmount: bill.waterCost,
-                totalElectricityAmount: bill.elecCost,
-                total_amount_due: bill.adjustedTotal,
-                additionalCharges: [
-                    ...extraExpenses.map((e) => ({
-                        charge_category: "additional",
-                        charge_type: e.type,
-                        amount: e.amount,
-                    })),
-                    ...discounts.map((d) => ({
-                        charge_category: "discount",
-                        charge_type: d.type,
-                        amount: d.amount,
-                    })),
-                ],
-            };
-
-            await axios({
-                method: hasExistingBilling ? "put" : "post",
-                url: "/api/landlord/billing/submetered/createUnitMonthlyBilling",
-                data: payload,
-            });
-
-            Swal.fire("Success", "Billing saved successfully", "success");
+            await createBilling();
+            Swal.fire("Success", "Billing created successfully", "success");
             fetchUnitData();
-        } catch {
-            Swal.fire("Error", "Failed to save billing", "error");
+        } catch (err) {
+            console.error(err);
+            Swal.fire("Error", "Failed to create billing", "error");
         }
     };
+
 
     /* ------------------ RETURN ------------------ */
     return {
@@ -351,5 +473,7 @@ export function useCreateSubmeteredUnitBill() {
         handleDiscountChange,
         handleRemoveDiscount,
         handleSubmit,
+        updateBilling,
+        handleMarkCleared
     };
 }

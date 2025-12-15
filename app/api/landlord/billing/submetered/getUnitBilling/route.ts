@@ -191,7 +191,6 @@ export async function GET(req: NextRequest) {
                     billing_id,
                     lease_id: activeLeaseId,
 
-                    // ✅ CORRECT billing period
                     billing_period,
 
                     due_date: dueDate,

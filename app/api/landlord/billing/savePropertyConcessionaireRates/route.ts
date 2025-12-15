@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
 
+const round4 = (n: number) =>
+    Math.round((n + Number.EPSILON) * 10000) / 10000;
 
 export async function POST(req: NextRequest) {
     try {
@@ -16,44 +18,59 @@ export async function POST(req: NextRequest) {
 
         if (!property_id || !period_start || !period_end) {
             return NextResponse.json(
-                { error: "Property ID, Period Start and Period End are required" },
+                { error: "Property ID, period start, and period end are required" },
                 { status: 400 }
             );
         }
 
-        // Check if record exists for same property + exact reading period
+        const eTotal = Number(electricityTotal) || 0;
+        const eCons = Number(electricityConsumption) || 0;
+        const wTotal = Number(waterTotal) || 0;
+        const wCons = Number(waterConsumption) || 0;
+
+        const electricityRate =
+            eTotal > 0 && eCons > 0 ? round4(eTotal / eCons) : null;
+
+        const waterRate =
+            wTotal > 0 && wCons > 0 ? round4(wTotal / wCons) : null;
+
+        /* ---------- CHECK EXISTING PERIOD ---------- */
         const [existing]: any = await db.query(
             `
-            SELECT bill_id 
-            FROM ConcessionaireBilling 
-            WHERE property_id = ? 
-              AND period_start = ? 
+            SELECT bill_id
+            FROM ConcessionaireBilling
+            WHERE property_id = ?
+              AND period_start = ?
               AND period_end = ?
             LIMIT 1
             `,
             [property_id, period_start, period_end]
         );
 
+        /* ---------- UPDATE ---------- */
         if (existing.length > 0) {
-            // UPDATE existing
             await db.execute(
                 `
                 UPDATE ConcessionaireBilling
-                SET 
-                  electricity_total = ?,
-                  electricity_consumption = ?,
-                  water_total = ?,
-                  water_consumption = ?,
-                  updated_at = NOW()
-                WHERE property_id = ? 
+                SET
+                    electricity_total = ?,
+                    electricity_consumption = ?,
+                    electricity_rate = ?,
+                    water_total = ?,
+                    water_consumption = ?,
+                    water_rate = ?,
+                    updated_at = NOW()
+                WHERE property_id = ?
                   AND period_start = ?
                   AND period_end = ?
                 `,
                 [
-                    parseFloat(electricityTotal) || 0,
-                    parseFloat(electricityConsumption) || 0,
-                    parseFloat(waterTotal) || 0,
-                    parseFloat(waterConsumption) || 0,
+                    eTotal,
+                    eCons,
+                    electricityRate,
+                    wTotal,
+                    wCons,
+                    waterRate,
                     property_id,
                     period_start,
                     period_end,
@@ -61,45 +78,56 @@ export async function POST(req: NextRequest) {
             );
 
             return NextResponse.json(
-                { message: "Billing record updated successfully" },
+                {
+                    message: "Concessionaire rates updated successfully",
+                },
                 { status: 200 }
             );
         }
 
-        // INSERT new record
+        /* ---------- INSERT ---------- */
         await db.execute(
             `
             INSERT INTO ConcessionaireBilling
-            (property_id, period_start, period_end, 
-             electricity_total, electricity_consumption,
-             water_total, water_consumption, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            (
+                property_id,
+                period_start,
+                period_end,
+                electricity_total,
+                electricity_consumption,
+                electricity_rate,
+                water_total,
+                water_consumption,
+                water_rate,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             `,
             [
                 property_id,
                 period_start,
                 period_end,
-                parseFloat(electricityTotal) || 0,
-                parseFloat(electricityConsumption) || 0,
-                parseFloat(waterTotal) || 0,
-                parseFloat(waterConsumption) || 0,
+                eTotal,
+                eCons,
+                electricityRate,
+                wTotal,
+                wCons,
+                waterRate,
             ]
         );
 
         return NextResponse.json(
-            { message: "Billing record created successfully" },
+            { message: "Concessionaire rates saved successfully" },
             { status: 201 }
         );
     } catch (error) {
-        console.error("Billing Upsert Error:", error);
+        console.error("Concessionaire Billing UPSERT Error:", error);
         return NextResponse.json(
-            { error: `Database Server Error: ${error}` },
+            { error: "Database server error" },
             { status: 500 }
         );
     }
 }
-
-
 
 
 export async function GET(req: NextRequest) {
@@ -114,42 +142,74 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        const [billings]: any = await db.execute(
+        const [rows]: any = await db.execute(
             `
-            SELECT 
-              bill_id,
-              property_id,
-              period_start,
-              period_end,
-              electricity_total,
-              electricity_consumption,
-              water_total,
-              water_consumption,
-              created_at,
-              updated_at
+            SELECT
+                bill_id,
+                property_id,
+                period_start,
+                period_end,
+
+                water_consumption,
+                water_total,
+                water_rate,
+
+                electricity_consumption,
+                electricity_total,
+                electricity_rate,
+
+                created_at,
+                updated_at
             FROM ConcessionaireBilling
             WHERE property_id = ?
-            ORDER BY created_at DESC
+            ORDER BY period_start DESC
             LIMIT 1
             `,
             [property_id]
         );
 
-        if (billings.length === 0) {
+        if (!rows || rows.length === 0) {
             return NextResponse.json(
-                { message: "No billing record found for this property." },
-                { status: 404 }
+                { billingData: null },
+                { status: 200 }
             );
         }
 
-        return NextResponse.json(billings[0], { status: 200 });
-    } catch (error) {
-        console.error("Billing Fetch Error:", error);
+        const row = rows[0];
+
         return NextResponse.json(
-            { error: `Database Server Error: ${error}` },
+            {
+                billingData: {
+                    period_start: row.period_start,
+                    period_end: row.period_end,
+
+                    water: row.water_total
+                        ? {
+                            consumption: row.water_consumption,
+                            total: row.water_total,
+                            rate: row.water_rate,
+                        }
+                        : null,
+
+                    electricity: row.electricity_total
+                        ? {
+                            consumption: row.electricity_consumption,
+                            total: row.electricity_total,
+                            rate: row.electricity_rate,
+                        }
+                        : null,
+
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                },
+            },
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error("Concessionaire Billing FETCH Error:", error);
+        return NextResponse.json(
+            { error: "Database server error" },
             { status: 500 }
         );
     }
 }
-
-
