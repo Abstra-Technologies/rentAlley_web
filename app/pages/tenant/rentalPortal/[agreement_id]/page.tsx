@@ -30,16 +30,44 @@ export default function RentPortalPage() {
   const [loadingUnitInfo, setLoadingUnitInfo] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Auth check
-  useEffect(() => {
-    async function checkAuth() {
-      if (!user) {
-        await fetchSession();
-      }
-      setIsInitialLoad(false);
-    }
-    checkAuth();
-  }, [user, fetchSession]);
+    const [authorized, setAuthorized] = useState(false);
+    const [authChecked, setAuthChecked] = useState(false);
+    const [authReady, setAuthReady] = useState(false);
+
+    useEffect(() => {
+        async function checkAuth() {
+            if (!user) {
+                await fetchSession();
+            }
+            setAuthReady(true);
+            setIsInitialLoad(false);
+        }
+
+        checkAuth();
+    }, [user, fetchSession]);
+
+    console.log("inner page AGREREMENT ID: ", agreementId);
+
+
+    useEffect(() => {
+        if (!authReady || !agreementId) return;
+
+
+        async function validateAgreement() {
+            try {
+                await axios.get(
+                    `/api/tenant/validate-agreement/${agreementId}`
+                );
+                setAuthorized(true);
+            } catch {
+                window.location.href = "/pages/tenant/not-authorized";
+            } finally {
+                setAuthChecked(true);
+            }
+        }
+
+        validateAgreement();
+    }, [authReady, agreementId]);
 
   // Fetch Unit Info
   useEffect(() => {
