@@ -240,17 +240,42 @@ const NotificationDropdown = ({
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [isPositioned, setIsPositioned] = useState(false); // Add this
 
   useEffect(() => {
     if (buttonRef.current && dropdownRef.current) {
       const buttonRect = buttonRef.current.getBoundingClientRect();
       const dropdownWidth = 384; // w-96 = 24rem = 384px
+      const viewportWidth = window.innerWidth;
+      const spacing = 8; // Gap from edge
 
-      // Position dropdown to the right of the button
+      // Calculate if dropdown fits to the right of button
+      const fitsRight = buttonRect.left + dropdownWidth + spacing <= viewportWidth;
+      
+      // Calculate if dropdown fits to the left of button
+      const fitsLeft = buttonRect.right - dropdownWidth >= spacing;
+
+      let leftPosition;
+      
+      if (fitsRight) {
+        // Position to the right (preferred for sidebar)
+        leftPosition = buttonRect.left;
+      } else if (fitsLeft) {
+        // Position to the left (fallback for navbar on smaller screens)
+        leftPosition = buttonRect.right - dropdownWidth;
+      } else {
+        // Center with padding if neither fits perfectly
+        leftPosition = Math.max(spacing, Math.min(
+          buttonRect.left,
+          viewportWidth - dropdownWidth - spacing
+        ));
+      }
+
       setPosition({
-        top: buttonRect.bottom + 8, // 8px gap (mt-2)
-        left: buttonRect.left,
+        top: buttonRect.bottom + 8,
+        left: leftPosition,
       });
+      setIsPositioned(true); // Mark as positioned
     }
   }, [buttonRef]);
 
@@ -262,7 +287,9 @@ const NotificationDropdown = ({
   return (
     <div
       ref={dropdownRef}
-      className="fixed w-96 bg-white text-black rounded-xl shadow-2xl border border-gray-200 z-[9999] flex flex-col overflow-hidden"
+      className={`fixed w-96 max-w-[calc(100vw-16px)] bg-white text-black rounded-xl shadow-2xl border border-gray-200 z-[9999] flex flex-col overflow-hidden transition-opacity duration-150 ${
+        isPositioned ? 'opacity-100' : 'opacity-0'
+      }`}
       style={{ top: `${position.top}px`, left: `${position.left}px` }}
     >
       {/* Header */}
@@ -384,7 +411,7 @@ const NotificationDropdown = ({
         )}
       </div>
 
-      {/* Page_footer */}
+      {/* Footer */}
       {notifications.length > 0 && (
         <div className="border-t border-gray-200 p-3 text-center bg-gradient-to-r from-gray-50 to-gray-50">
           <Link
@@ -524,7 +551,7 @@ const MobileNotificationDropdown = ({
       )}
     </div>
 
-    {/* Page_footer */}
+    {/* Footer */}
     {notifications.length > 0 && (
       <div className="border-t border-gray-200 p-3 text-center bg-gradient-to-r from-gray-50 to-gray-50">
         <Link
