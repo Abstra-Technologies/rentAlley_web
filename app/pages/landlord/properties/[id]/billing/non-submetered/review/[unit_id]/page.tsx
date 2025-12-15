@@ -62,6 +62,7 @@ const ReviewBillingPage = () => {
 
   const bills = billingData?.bills || [];
   const currentBill = bills[currentIndex];
+    const isExistingBill = Boolean(currentBill?.billing_id);
 
   // Parse amount safely
   const parseAmount = (v: any): number => {
@@ -320,14 +321,13 @@ const ReviewBillingPage = () => {
         0
       );
 
-      // ✅ New: Exclude rent if PDC is cleared
       const includeRent = !(pdc && pdc.status === "cleared");
       const baseRent = includeRent ? parseAmount(bill.base_rent) : 0;
 
       const total =
         baseRent + additionalExpenseTotal - advanceDeduction - discountTotal;
 
-      await axios.post("/api/billing/non_submetered/saveBill", {
+      await axios.post("/api/landlord/billing/non-submetered/saveBill", {
         unit_id: bill.unit_id,
         agreement_id: bill.agreement_id,
         total,
@@ -684,22 +684,20 @@ const ReviewBillingPage = () => {
                                     className={`flex-1 py-2.5 rounded-lg font-semibold text-sm ${
                                         savedBills[currentBill.unit_id]?.saved
                                             ? "bg-emerald-600 text-white"
-                                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                                            : isExistingBill
+                                                ? "bg-amber-600 hover:bg-amber-700 text-white"
+                                                : "bg-blue-600 hover:bg-blue-700 text-white"
                                     }`}
                                 >
                                     {savedBills[currentBill.unit_id]?.saved
-                                        ? "✓ Saved"
-                                        : "Save Bill"}
+                                        ? isExistingBill
+                                            ? "✓ Updated"
+                                            : "✓ Saved"
+                                        : isExistingBill
+                                            ? "Update Bill"
+                                            : "Save Bill"}
                                 </button>
 
-                                {savedBills[currentBill.unit_id]?.saved && (
-                                    <button
-                                        onClick={handleApproveBilling}
-                                        className="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-                                    >
-                                        Approve & Send to Tenant
-                                    </button>
-                                )}
                             </div>
 
                             <p className="text-center text-xs text-gray-500 py-4">
