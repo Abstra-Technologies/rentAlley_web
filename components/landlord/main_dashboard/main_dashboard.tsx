@@ -124,9 +124,6 @@ export default function LandlordMainDashboard() {
                         <div className="lg:col-span-2">
                             <PaymentSummaryCard
                                 landlord_id={landlordId}
-                                onClick={() =>
-                                    router.push("/pages/landlord/payment-history")
-                                }
                             />
                         </div>
                         <TodayCalendar landlordId={landlordId} />
@@ -145,9 +142,6 @@ export default function LandlordMainDashboard() {
 
                         <div
                             className="cursor-pointer"
-                            onClick={() =>
-                                router.push("/pages/landlord/tenant-activity")
-                            }
                         >
                             <PendingMaintenanceDonut landlordId={landlordId} />
                         </div>
@@ -155,7 +149,7 @@ export default function LandlordMainDashboard() {
                         <div
                             className="cursor-pointer"
                             onClick={() =>
-                                router.push("/pages/landlord/payment-history")
+                                router.push("/pages/landlord/analytics/detailed/paymentLogs")
                             }
                         >
                             <PaymentList landlord_id={landlordId} />
@@ -195,7 +189,7 @@ export default function LandlordMainDashboard() {
                     <div
                         className="cursor-pointer"
                         onClick={() =>
-                            router.push("/pages/landlord/payment-history")
+                            router.push("/pages/landlord/analytics/detailed/paymentLogs")
                         }
                     >
                         <PaymentList landlord_id={landlordId} />
