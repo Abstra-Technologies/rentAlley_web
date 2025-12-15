@@ -147,6 +147,9 @@ export default function LandlordMainDashboard() {
 
                         <div
                             className="cursor-pointer"
+                            onClick={() =>
+                                router.push("/pages/landlord/maintenance-request")
+                            }
                         >
                             <PendingMaintenanceDonut landlordId={landlordId} />
                         </div>
