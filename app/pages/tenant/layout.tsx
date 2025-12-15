@@ -81,9 +81,21 @@ export default function TenantLayout({ children }) {
 
 // Check portal context - VALIDATED VERSION
     useEffect(() => {
+        const isPortalRoute = pathname.startsWith(
+            "/pages/tenant/rentalPortal"
+        );
+
+        // 🚪 If NOT in portal route, force-exit portal mode
+        if (!isPortalRoute) {
+            setIsInPortalMode(false);
+            setPortalAgreementId(null);
+            setPortalPropertyInfo(null);
+            setPortalValidated(false);
+            return;
+        }
+
         const agreementId = localStorage.getItem("portalAgreementId");
 
-        // No agreement → definitely not in portal
         if (!agreementId) {
             setIsInPortalMode(false);
             setPortalAgreementId(null);
@@ -94,7 +106,6 @@ export default function TenantLayout({ children }) {
 
         async function validatePortal() {
             try {
-                // 🔐 SINGLE SOURCE OF TRUTH
                 await axios.get(
                     `/api/tenant/validate-agreement/${agreementId}`
                 );
@@ -111,8 +122,6 @@ export default function TenantLayout({ children }) {
                 setPortalPropertyInfo(res.data);
                 setPortalValidated(true);
             } catch {
-                console.warn("Portal access denied");
-
                 localStorage.removeItem("portalAgreementId");
 
                 setIsInPortalMode(false);
