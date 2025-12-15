@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, AlertCircle, CheckCircle, Users } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import axios from "axios";
 
 export default function PaymentSummaryCard({
   landlord_id,
@@ -26,51 +27,53 @@ export default function PaymentSummaryCard({
     }[]
   >([]);
 
-  useEffect(() => {
-    if (!landlord_id) return;
+    useEffect(() => {
+        if (!landlord_id) return;
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch payment summary
-        const res = await fetch(
-          `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
-        );
-        const data = await res.json();
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const { data } = await axios.get(
+                    "/api/analytics/landlord/getTotalReceivablesforTheMonth",
+                    {
+                        params: { landlord_id },
+                    }
+                );
 
-        const pendingAmount = Number(data.total_pending || 0);
-        const overdueAmount = Number(data.total_overdue || 0);
-        const collectedAmount = Number(data.total_collected || 0);
+                const pendingAmount = Number(data?.total_pending || 0);
+                const overdueAmount = Number(data?.total_overdue || 0);
+                const collectedAmount = Number(data?.total_collected || 0);
 
-        setPending(pendingAmount);
-        setOverdue(overdueAmount);
-        setCollected(collectedAmount);
-        setTotal(pendingAmount + overdueAmount + collectedAmount);
+                setPending(pendingAmount);
+                setOverdue(overdueAmount);
+                setCollected(collectedAmount);
+                setTotal(pendingAmount + overdueAmount + collectedAmount);
 
-        // Fetch current tenants
-        const tenantRes = await fetch(
-          `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}`
-        );
-        const tenantData = await tenantRes.json();
-        if (Array.isArray(tenantData)) {
-          setTenants(tenantData.slice(0, 8)); // Limit to 8 tenants
-        } else {
-          setTenants([]);
-        }
-      } catch (err) {
-        console.error("Error:", err);
-        setPending(0);
-        setOverdue(0);
-        setCollected(0);
-        setTotal(0);
-        setTenants([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+                /* ---------------- Current Tenants ---------------- */
+                const tenantRes = await axios.get(
+                    "/api/landlord/properties/getCurrentTenants",
+                    {
+                        params: { landlord_id },
+                    }
+                );
 
-    fetchData();
-  }, [landlord_id]);
+                const tenantData = tenantRes.data;
+
+                setTenants(Array.isArray(tenantData) ? tenantData.slice(0, 8) : []);
+            } catch (error) {
+                console.error("Error fetching landlord analytics:", error);
+                setPending(0);
+                setOverdue(0);
+                setCollected(0);
+                setTotal(0);
+                setTenants([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [landlord_id]);
 
   const data =
     pending === 0 && overdue === 0 && collected === 0

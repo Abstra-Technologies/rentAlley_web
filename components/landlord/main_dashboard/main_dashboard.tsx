@@ -36,6 +36,11 @@ export default function LandlordMainDashboard() {
   const [greeting, setGreeting] = useState("");
   const [showNewModal, setShowNewModal] = useState(false);
 
+
+    useEffect(() => {
+        if (!user) fetchSession();
+    }, [user]);
+
   // Greeting logic
   useEffect(() => {
     const hour = new Date().getHours();
@@ -43,11 +48,6 @@ export default function LandlordMainDashboard() {
       hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening"
     );
   }, []);
-
-  // Fetch user session
-  useEffect(() => {
-    if (!user) fetchSession();
-  }, [user]);
 
   // Points earned logic
   useEffect(() => {
@@ -60,16 +60,6 @@ export default function LandlordMainDashboard() {
       prevPointsRef.current = user.points;
     }
   }, [user?.points]);
-
-  // CMS Header image
-  useEffect(() => {
-    axios
-      .get(`/api/systemadmin/cms/imagesList?folder=upkyp/headers/landlord`)
-      .then((res) =>
-        setHeaderImage(res.data.resources?.[0]?.secure_url || null)
-      )
-      .catch(() => setHeaderImage(null));
-  }, []);
 
   const displayName =
     user?.firstName || user?.companyName || user?.email || "Landlord";
