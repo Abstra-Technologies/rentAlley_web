@@ -17,24 +17,31 @@ const php = (v: any) =>
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { billing_id: string } }
+    context: { params: Promise<{ billing_id: string }> }
 ) {
     try {
-        const billingId = params.billing_id;
+        const { billing_id } = await context.params;
 
         // 1️⃣ Fetch billing, unit, and property
         const [rows]: any = await db.query(
             `
                 SELECT
-                    b.*, u.unit_name, u.rent_amount, u.unit_id,
-                    p.property_id, p.property_name, p.city, p.province, p.advance_payment_months
+                    b.*,
+                    u.unit_name,
+                    u.rent_amount,
+                    u.unit_id,
+                    p.property_id,
+                    p.property_name,
+                    p.city,
+                    p.province
                 FROM Billing b
                          JOIN Unit u ON b.unit_id = u.unit_id
                          JOIN Property p ON u.property_id = p.property_id
                 WHERE b.billing_id = ?
                 LIMIT 1
+
             `,
-            [billingId]
+            [billing_id]
         );
 
         if (!rows?.length)
@@ -104,7 +111,7 @@ export async function GET(
         // 4️⃣ Additional charges
         const [addCharges]: any = await db.query(
             `SELECT charge_category, charge_type, amount FROM BillingAdditionalCharge WHERE billing_id = ?`,
-            [billingId]
+            [billing_id]
         );
 
         // 5️⃣ PDCs
@@ -288,7 +295,7 @@ export async function GET(
   <body>
     <div class="content">
       <div class="header">
-        <div class="billing-id">Billing ID: ${billingId}</div>
+        <div class="billing-id">Billing ID: ${billing_id}</div>
         <h1>UpKyp</h1>
         <p>Connect More. Manage Less.</p>
         <div class="header-divider"></div>
@@ -356,10 +363,11 @@ export async function GET(
         const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
         await browser.close();
 
+        // @ts-ignore
         return new NextResponse(pdfBuffer, {
             headers: {
                 "Content-Type": "application/pdf",
-                "Content-Disposition": `attachment; filename="billing-statement-${billingId}.pdf"`,
+                "Content-Disposition": `attachment; filename="billing-statement-${billing_id}.pdf"`,
             },
         });
     } catch (err: any) {
