@@ -5,6 +5,7 @@ import useAuthStore from "@/zustand/authStore";
 import TenantBilling from "@/components/tenant/billing/currentBilling";
 import PreviousBilling from "@/components/tenant/billing/prevBillingList";
 import { ReceiptPercentIcon, ClockIcon } from "@heroicons/react/24/outline";
+import OverdueBilling from "@/components/tenant/billing/OverdueBilling";
 
 function BillingContent() {
   const { user, fetchSession } = useAuthStore();
@@ -118,8 +119,16 @@ function BillingContent() {
           </div>
         </div>
 
+
+
         {/* Current Billing Section */}
         <div className="mb-8">
+
+            <OverdueBilling
+                agreement_id={agreementId}
+                user_id={user?.user_id}
+            />
+
           <TenantBilling agreement_id={agreementId} user_id={user?.user_id} />
         </div>
 
