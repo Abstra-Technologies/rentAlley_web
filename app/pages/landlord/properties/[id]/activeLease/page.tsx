@@ -7,19 +7,17 @@ import {
     FileText,
     Building2,
     User2,
-    AlertCircle,
-    FileSignature,
+    Clock,
     Eye,
     ShieldCheck,
-    MailCheck,
-    Clock
+    FileSignature,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 
-import { useState } from "react";
 import LeaseDetailsPanel from "@/components/landlord/activeLease/LeaseDetailsPanel";
 import ChecklistSetupModal from "@/components/landlord/activeLease/ChecklistModal";
 
-const fetcher = (url: string) => axios.get(url).then(res => res.data);
+const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function PropertyLeasesPage() {
     const { id } = useParams();
@@ -30,262 +28,250 @@ export default function PropertyLeasesPage() {
         fetcher
     );
 
-    const [selectedLease, setSelectedLease] = useState(null);
-    const [setupModalLease, setSetupModalLease] = useState(null);
+    const [search, setSearch] = useState("");
+    const [selectedLease, setSelectedLease] = useState<any>(null);
+    const [setupModalLease, setSetupModalLease] = useState<any>(null);
 
-    const handleAuthenticate = (lease) => {
+    const leases = data?.leases || [];
+
+    /* ---------------- SEARCH ---------------- */
+    const filteredLeases = useMemo(() => {
+        if (!search.trim()) return leases;
+        const q = search.toLowerCase();
+        return leases.filter(
+            (l) =>
+                l.unit_name?.toLowerCase().includes(q) ||
+                l.tenant_name?.toLowerCase().includes(q) ||
+                l.invite_email?.toLowerCase().includes(q) ||
+                l.lease_status?.toLowerCase().includes(q)
+        );
+    }, [leases, search]);
+
+    /* ---------------- STATUS BADGE ---------------- */
+    const getStatusBadge = (lease: any) => {
+        if (lease.type === "invite") {
+            return (
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border">
+          <Clock className="w-3 h-3" />
+          Invite Pending
+        </span>
+            );
+        }
+
+        if (lease.lease_status === "pending_signature") {
+            return (
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border">
+          <Clock className="w-3 h-3" />
+          Pending Signature
+        </span>
+            );
+        }
+
+        if (lease.lease_status === "active") {
+            return (
+                <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
+          Active
+        </span>
+            );
+        }
+
+        return (
+            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border">
+        {lease.lease_status}
+      </span>
+        );
+    };
+
+    const handleAuthenticate = (lease: any) => {
         router.push(
             `/pages/landlord/properties/${id}/activeLease/authenticate/${lease.lease_id}`
         );
     };
 
+    /* ---------------- LOADING ---------------- */
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading leases...</p>
-                </div>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="animate-spin h-10 w-10 border-b-2 border-blue-600 rounded-full" />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-                <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6 max-w-md w-full">
-                    <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <AlertCircle className="h-5 w-5 text-red-600" />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-bold text-gray-900 mb-1">
-                                Failed to Load Leases
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                                Unable to fetch lease information. Please try again later.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <p className="text-red-600 text-sm">
+                    Failed to load leases. Please try again.
+                </p>
             </div>
         );
     }
 
-    const leases = data?.leases || [];
-
-    /** Determine signature pending label **/
-    const getSignaturePendingLabel = (lease) => {
-        if (lease.lease_status !== "pending_signature") return null;
-
-        const landlordSigned = lease.landlord_signed;
-        const tenantSigned = lease.tenant_signed;
-
-        if (landlordSigned && !tenantSigned)
-            return "Tenant Pending Signature";
-
-        if (!landlordSigned && tenantSigned)
-            return "Landlord Pending Signature";
-
-        return "Waiting for Signatures";
-    };
-
     return (
-        <div className="min-h-screen bg-gray-50">
-            <div className="px-4 pt-20 pb-24 md:pt-6 md:pb-8 md:px-8 lg:px-12 xl:px-16">
+        <div className="min-h-screen w-full max-w-none bg-gray-50 pb-24 md:pb-6 overflow-x-hidden">
+            <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
 
-                {/* HEADER */}
+                {/* ================= HEADER ================= */}
                 <div className="mb-6">
-                    <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex items-center justify-center">
-                            <FileText className="h-6 w-6 text-blue-600" />
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Current Leases</h1>
-                            <p className="text-sm text-gray-600 mt-1">{leases.length} records found</p>
+                            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                                Current Leases
+                            </h1>
+                            <p className="text-xs md:text-sm text-gray-600">
+                                {filteredLeases.length} records found
+                            </p>
                         </div>
                     </div>
+
+                    <input
+                        type="text"
+                        placeholder="Search unit, tenant, email, status…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full max-w-md px-4 py-2 text-sm border rounded-lg
+                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                 </div>
 
-                {/* TABLE */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    {leases.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenant</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">End</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
-                                </tr>
-                                </thead>
+                {/* ================= MOBILE CARDS ================= */}
+                <div className="space-y-4 md:hidden">
+                    {filteredLeases.map((lease: any) => (
+                        <div
+                            key={lease.lease_id || lease.invite_id}
+                            className="bg-white border rounded-lg p-4 shadow-sm"
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <p className="font-semibold flex items-center gap-2">
+                                        <Building2 className="w-4 h-4 text-blue-600" />
+                                        {lease.unit_name}
+                                    </p>
+                                    <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+                                        <User2 className="w-4 h-4" />
+                                        {lease.type === "invite"
+                                            ? lease.invite_email
+                                            : lease.tenant_name || "—"}
+                                    </p>
+                                </div>
+                                {getStatusBadge(lease)}
+                            </div>
 
-                                <tbody className="bg-white divide-y divide-gray-200">
+                            <div className="grid grid-cols-2 text-xs text-gray-600 mb-3">
+                                <div>
+                                    <span className="block">Start</span>
+                                    <span className="font-medium">
+                    {lease.start_date
+                        ? new Date(lease.start_date).toLocaleDateString()
+                        : "—"}
+                  </span>
+                                </div>
+                                <div>
+                                    <span className="block">End</span>
+                                    <span className="font-medium">
+                    {lease.end_date
+                        ? new Date(lease.end_date).toLocaleDateString()
+                        : "—"}
+                  </span>
+                                </div>
+                            </div>
 
-                                {leases.map((lease) => {
-                                    const sigLabel = getSignaturePendingLabel(lease);
+                            <div className="flex flex-col gap-2">
+                                {(lease.lease_status === "active" ||
+                                    lease.landlord_signed) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedLease(lease)}
+                                        className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white text-sm"
+                                    >
+                                        View Details
+                                    </button>
+                                )}
 
-                                    const showViewDetails =
-                                        lease.lease_status === "active" ||
-                                        lease.landlord_signed === true;
-
-                                    const showAuthenticate =
-                                        lease.lease_status === "pending_signature" &&
-                                        lease.tenant_signed === true &&
-                                        lease.landlord_signed === false;
-
-                                    const showSetup =
-                                        lease.lease_status !== "active";
-
-                                    return (
-                                        <tr
-                                            key={lease.lease_id || `invite-${lease.invite_id}`}
-                                            onClick={() =>
-                                                lease.type === "lease" && setSelectedLease(lease)
-                                            }
-                                            className={`transition-colors ${
-                                                lease.type === "lease"
-                                                    ? "hover:bg-gray-50 cursor-pointer"
-                                                    : "bg-amber-50/30"
-                                            }`}
+                                {lease.lease_status === "pending_signature" &&
+                                    lease.tenant_signed &&
+                                    !lease.landlord_signed && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleAuthenticate(lease)}
+                                            className="w-full px-3 py-2 rounded-lg bg-amber-500 text-white text-sm"
                                         >
+                                            Authenticate
+                                        </button>
+                                    )}
 
-                                            {/* UNIT */}
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <Building2 className="h-4 w-4 text-blue-600" />
-                                                    <span className="text-sm font-medium text-gray-900">
-                                                            {lease.unit_name}
-                                                        </span>
-                                                </div>
-                                            </td>
-
-                                            {/* TENANT */}
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <User2 className="h-4 w-4 text-gray-400" />
-                                                    <span className="text-sm text-gray-900">
-                                                            {lease.type === "invite"
-                                                                ? lease.invite_email
-                                                                : lease.tenant_name || "—"}
-                                                        </span>
-                                                </div>
-                                            </td>
-
-                                            {/* START DATE */}
-                                            <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
-                                                {lease.start_date
-                                                    ? new Date(lease.start_date).toLocaleDateString()
-                                                    : "—"}
-                                            </td>
-
-                                            {/* END DATE */}
-                                            <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
-                                                {lease.end_date
-                                                    ? new Date(lease.end_date).toLocaleDateString()
-                                                    : "—"}
-                                            </td>
-
-                                            {/* STATUS */}
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {lease.type === "invite" ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border">
-                                                            <Clock className="h-3 w-3" />
-                                                            Invite Pending
-                                                        </span>
-                                                ) : sigLabel ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border">
-                                                            <Clock className="h-3 w-3" />
-                                                        {sigLabel}
-                                                        </span>
-                                                ) : (
-                                                    <span
-                                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                                                            lease.lease_status === "active"
-                                                                ? "bg-green-100 text-green-800 border-green-200"
-                                                                : "bg-gray-100 text-gray-700 border-gray-200"
-                                                        }`}
-                                                    >
-                                                            {lease.lease_status}
-                                                        </span>
-                                                )}
-                                            </td>
-
-                                            {/* ACTIONS */}
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex flex-col gap-2 items-end">
-
-                                                {/* INVITE */}
-                                                {lease.type === "invite" && (
-                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/80 text-white shadow-sm">
-                                                            <MailCheck className="w-4 h-4" />
-                                                            Invite Sent
-                                                        </span>
-                                                )}
-
-                                                {/* VIEW DETAILS */}
-                                                {showViewDetails && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSelectedLease(lease);
-                                                        }}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-700 text-white hover:bg-gray-800 transition"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                        View Details
-                                                    </button>
-                                                )}
-
-                                                {/* AUTHENTICATE */}
-                                                {showAuthenticate && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleAuthenticate(lease);
-                                                        }}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm"
-                                                    >
-                                                        <ShieldCheck className="w-4 h-4" />
-                                                        Authenticate
-                                                    </button>
-                                                )}
-
-                                                {/* SETUP — visible until ACTIVE */}
-                                                {showSetup && lease.type === "lease" && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSetupModalLease(lease);
-                                                        }}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-sm"
-                                                    >
-                                                        <FileSignature className="w-4 h-4" />
-                                                        Setup
-                                                    </button>
-                                                )}
-
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-
-                                </tbody>
-                            </table>
+                                {lease.type === "lease" &&
+                                    lease.lease_status !== "active" && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSetupModalLease(lease)}
+                                            className="w-full px-3 py-2 rounded-lg bg-blue-600 text-white text-sm"
+                                        >
+                                            Setup Lease
+                                        </button>
+                                    )}
+                            </div>
                         </div>
-                    ) : (
-                        <div className="p-8 text-center text-gray-500">
-                            No leases found.
-                        </div>
-                    )}
+                    ))}
                 </div>
 
-                {/* DETAILS PANEL */}
-                {selectedLease && selectedLease.type === "lease" && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+                {/* ================= DESKTOP TABLE ================= */}
+                <div className="hidden md:block bg-white border rounded-lg shadow-sm overflow-hidden">
+                    <table className="w-full table-fixed divide-y">
+                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                        <tr>
+                            <th className="px-6 py-3 text-left">Unit</th>
+                            <th className="px-6 py-3 text-left">Tenant</th>
+                            <th className="px-6 py-3 text-left">Start</th>
+                            <th className="px-6 py-3 text-left">End</th>
+                            <th className="px-6 py-3 text-left">Status</th>
+                            <th className="px-6 py-3 text-right">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                        {filteredLeases.map((lease: any) => (
+                            <tr key={lease.lease_id || lease.invite_id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 font-medium truncate">
+                                    {lease.unit_name}
+                                </td>
+                                <td className="px-6 py-4">
+                                    {lease.type === "invite"
+                                        ? lease.invite_email
+                                        : lease.tenant_name || "—"}
+                                </td>
+                                <td className="px-6 py-4">
+                                    {lease.start_date
+                                        ? new Date(lease.start_date).toLocaleDateString()
+                                        : "—"}
+                                </td>
+                                <td className="px-6 py-4">
+                                    {lease.end_date
+                                        ? new Date(lease.end_date).toLocaleDateString()
+                                        : "—"}
+                                </td>
+                                <td className="px-6 py-4">{getStatusBadge(lease)}</td>
+                                <td className="px-6 py-4 text-right">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedLease(lease)}
+                                        className="px-3 py-1.5 text-sm bg-gray-800 text-white rounded-lg"
+                                    >
+                                        View
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* ================= MODALS ================= */}
+                {selectedLease && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
                             <LeaseDetailsPanel
                                 lease={selectedLease}
                                 onClose={() => setSelectedLease(null)}
@@ -294,7 +280,6 @@ export default function PropertyLeasesPage() {
                     </div>
                 )}
 
-                {/* SETUP CHECKLIST */}
                 {setupModalLease && (
                     <ChecklistSetupModal
                         lease={setupModalLease}
@@ -308,7 +293,6 @@ export default function PropertyLeasesPage() {
                         }}
                     />
                 )}
-
             </div>
         </div>
     );
