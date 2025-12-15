@@ -4,53 +4,33 @@ import Image from "next/image";
 import {
     CurrencyDollarIcon,
     PhotoIcon,
-    MapPinIcon,
-    HomeIcon,
-    ChevronRightIcon,
+    ChatBubbleLeftRightIcon,
+    ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
+import { RefreshCw, XCircle } from "lucide-react";
 
 import { Unit } from "@/types/units";
 import { formatCurrency } from "@/utils/formatter/formatters";
+import PendingDocumentsWidget from "../../analytics-insights/PendingDocumentsWidget";
 
-/* ----------------------- SIGNATURE BADGE ----------------------- */
+/* ----------------------- BADGE ----------------------- */
 const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
     const sig = unit.leaseSignature;
 
-    const badgeStyles: any = {
-        pending: {
-            text: "Awaiting Signatures",
-            color: "bg-amber-50 text-amber-700 border-amber-200",
-        },
-        sent: {
-            text: "Waiting for Tenant to Sign",
-            color: "bg-amber-50 text-amber-700 border-amber-200",
-        },
-        landlord_signed: {
-            text: "Waiting for Tenant Signature",
-            color: "bg-amber-50 text-amber-700 border-amber-200",
-        },
-        tenant_signed: {
-            text: "Waiting for Landlord Signature",
-            color: "bg-yellow-50 text-yellow-700 border-yellow-300",
-        },
-        active: {
-            text: "Active",
-            color: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        },
-        completed: {
-            text: "Completed",
-            color: "bg-blue-50 text-blue-700 border-blue-200",
-        },
+    const badge: any = {
+        pending: { text: "Awaiting Signatures", color: "bg-amber-100 text-amber-700" },
+        sent: { text: "Waiting for Tenant", color: "bg-amber-100 text-amber-700" },
+        landlord_signed: { text: "Waiting for Tenant", color: "bg-amber-100 text-amber-700" },
+        tenant_signed: { text: "Waiting for Landlord", color: "bg-yellow-100 text-yellow-700" },
+        active: { text: "Active", color: "bg-emerald-100 text-emerald-700" },
+        completed: { text: "Completed", color: "bg-blue-100 text-blue-700" },
     };
 
-    const info = badgeStyles[sig] ?? badgeStyles.pending;
+    const info = badge[sig] ?? badge.pending;
 
     return (
-        <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${info.color}`}
-        >
-      <span className="w-1.5 h-1.5 bg-current rounded-full animate-pulse" />
-            {info.text}
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${info.color}`}>
+      {info.text}
     </span>
     );
 };
@@ -59,12 +39,19 @@ const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
 export default function UnitCardMobile({
                                            unit,
                                            onAccessPortal,
+                                           onPayInitial,
+                                           onRenewLease,
+                                           onEndContract,
+                                           onContactLandlord,
                                        }: {
     unit: Unit;
     onAccessPortal: (agreementId: string) => void;
+    onPayInitial: (agreementId: string) => void;
+    onRenewLease: (unitId: string, agreementId: string) => void;
+    onEndContract: (unitId: string, agreementId: string) => void;
+    onContactLandlord: () => void;
 }) {
     const sig = unit.leaseSignature;
-
     const isLeaseExpired = new Date(unit.end_date) < new Date();
 
     const isSignaturePending =
@@ -76,45 +63,42 @@ export default function UnitCardMobile({
 
     const isFullySigned = sig === "active" || sig === "completed";
 
-    return (
-        <div
-            onClick={() => onAccessPortal(unit.agreement_id)}
-            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden
-                 active:scale-[0.98] transition-all"
-        >
-            {/* Status Bar */}
-            <div
-                className={`h-1 ${
-                    isLeaseExpired
-                        ? "bg-gray-400"
-                        : isSignaturePending
-                            ? "bg-amber-400"
-                            : "bg-gradient-to-r from-emerald-500 to-blue-500"
-                }`}
-            />
+    const requiresSecurityDeposit =
+        Number(unit.security_deposit_amount) > 0 &&
+        unit.security_deposit_status !== "paid";
 
-            <div className="flex items-center gap-3 p-3">
+    const requiresAdvancePayment =
+        Number(unit.advance_payment_amount) > 0 &&
+        unit.advance_payment_status !== "paid";
+
+    const hasInitialPayables = requiresSecurityDeposit || requiresAdvancePayment;
+
+    return (
+        <article
+            className="bg-white rounded-xl
+  border-2 border-gray-200
+  shadow-sm overflow-hidden
+  hover:border-gray-300
+  transition-colors"
+        >
+
+            {/* HEADER */}
+            <div className="flex gap-3 p-3">
                 {/* IMAGE */}
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                     {unit.unit_photos?.[0] ? (
-                        <Image
-                            src={unit.unit_photos[0]}
-                            fill
-                            className="object-cover"
-                            alt={unit.unit_name}
-                        />
+                        <Image src={unit.unit_photos[0]} fill className="object-cover" alt={unit.unit_name} />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                            <PhotoIcon className="w-8 h-8 text-gray-300" />
+                            <PhotoIcon className="w-7 h-7 text-gray-300" />
                         </div>
                     )}
                 </div>
 
-                {/* DETAILS */}
+                {/* CORE INFO */}
                 <div className="flex-1 min-w-0">
-                    {/* Header Row */}
-                    <div className="flex items-start justify-between mb-2">
-                        <div className="min-w-0">
+                    <div className="flex items-start justify-between">
+                        <div>
                             <h2 className="font-bold text-sm text-gray-900 truncate">
                                 Unit {unit.unit_name}
                             </h2>
@@ -122,37 +106,87 @@ export default function UnitCardMobile({
                                 {unit.property_name}
                             </p>
                         </div>
-
-                        {/* Signature Badge */}
                         <LeaseStatusBadge unit={unit} />
                     </div>
 
-                    {/* Rent */}
-                    <div className="flex items-center gap-1 mb-1">
+                    <div className="flex items-center gap-1 mt-1">
                         <CurrencyDollarIcon className="w-4 h-4 text-blue-600" />
                         <span className="font-bold text-blue-700 text-sm">
               {formatCurrency(unit.rent_amount)}
             </span>
                         <span className="text-xs text-gray-500">/mo</span>
                     </div>
-
-                    {/* Location */}
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-            <span className="flex items-center gap-1 truncate">
-              <MapPinIcon className="w-3 h-3" />
-                {unit.city}
-            </span>
-                        <span className="text-gray-300">•</span>
-                        <span className="flex items-center gap-1">
-              <HomeIcon className="w-3 h-3" />
-                            {unit.unit_size} sqm
-            </span>
-                    </div>
                 </div>
-
-                {/* Arrow */}
-                <ChevronRightIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
             </div>
-        </div>
+
+            {/* ACTIONS */}
+            <div className="px-3 pb-3 space-y-2">
+
+                {/* Pending Docs */}
+                {isSignaturePending && !isFullySigned && (
+                    <PendingDocumentsWidget agreement_id={unit.agreement_id} />
+                )}
+
+                {/* Pay Initial */}
+                {isFullySigned && hasInitialPayables && (
+                    <button
+                        onClick={() => onPayInitial(unit.agreement_id)}
+                        className="w-full py-2.5 rounded-lg text-sm font-semibold
+              bg-gradient-to-r from-pink-600 to-red-600 text-white"
+                    >
+                        {requiresSecurityDeposit && requiresAdvancePayment
+                            ? "Pay Security + Advance"
+                            : requiresSecurityDeposit
+                                ? "Pay Security Deposit"
+                                : "Pay Advance Payment"}
+                    </button>
+                )}
+
+                {/* Access Portal */}
+                {isFullySigned && !hasInitialPayables && (
+                    <button
+                        onClick={() => onAccessPortal(unit.agreement_id)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg
+              bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-sm font-semibold"
+                    >
+                        <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                        Access Portal
+                    </button>
+                )}
+
+                {/* Message Landlord (always visible when signed) */}
+                {isFullySigned && (
+                    <button
+                        onClick={onContactLandlord}
+                        className="w-full flex items-center justify-center gap-2 py-2
+              bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold"
+                    >
+                        <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                        Message Landlord
+                    </button>
+                )}
+
+                {/* Expired */}
+                {isFullySigned && isLeaseExpired && (
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                        <button
+                            onClick={() => onRenewLease(unit.unit_id, unit.agreement_id)}
+                            className="py-2 text-xs rounded-lg bg-emerald-600 text-white"
+                        >
+                            <RefreshCw className="w-3 h-3 inline mr-1" />
+                            Renew
+                        </button>
+
+                        <button
+                            onClick={() => onEndContract(unit.unit_id, unit.agreement_id)}
+                            className="py-2 text-xs rounded-lg bg-red-600 text-white"
+                        >
+                            <XCircle className="w-3 h-3 inline mr-1" />
+                            End
+                        </button>
+                    </div>
+                )}
+            </div>
+        </article>
     );
 }
