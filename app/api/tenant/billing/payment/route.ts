@@ -170,6 +170,10 @@ export async function POST(req: NextRequest) {
 
     const { amount, billing_id, tenant_id, redirectUrl } = body;
 
+    console.log('payment body: ', body);
+
+    console.log('billing id  ', billing_id);
+
     if (!amount || !billing_id || !tenant_id)
         return httpError(400, "Missing amount, billing_id, or tenant_id.");
 

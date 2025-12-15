@@ -8,26 +8,50 @@ export function useTenantBilling(agreement_id, user_id) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    console.log('HOOK AGREEMENT ID: ', agreement_id);
+    console.log('HOOK USER ID: ', user_id);
+
     useEffect(() => {
-        if (!user_id) return;
+        if (!user_id) {
+            setLoading(false);
+            setBillingData([]);
+            return;
+        }
 
         const fetchBilling = async () => {
             try {
-                const res = await axios.get("/api/tenant/billing/viewCurrentBilling", {
-                    params: { agreement_id, user_id },
-                });
+                setLoading(true);
 
-                const bill = res.data.billing || {};
-                bill.showRent = true;
-                bill.showUtility = true;
+                const res = await axios.get(
+                    "/api/tenant/billing/viewCurrentBilling",
+                    { params: { agreement_id, user_id } }
+                );
+
+                const bill = res.data.billing;
+
+                if (!bill) {
+                    setBillingData([]);
+                    return;
+                }
 
                 setBillingData([
                     {
-                        ...bill,
+                        billing_id: bill.billing_id,
+                        billing_period: bill.billing_period ?? null,
+                        due_date: bill.due_date ?? null,
+                        status: bill.status,
+                        unit_name: bill.unit_name,
+                        total_amount_due: bill.total_amount_due,
+
+                        showRent: true,
+                        showUtility: true,
+
                         breakdown: res.data.breakdown || {},
                         propertyConfig: res.data.propertyConfig || {},
-                        billingAdditionalCharges: res.data.billingAdditionalCharges || [],
-                        leaseAdditionalExpenses: res.data.leaseAdditionalExpenses || [],
+                        billingAdditionalCharges:
+                            res.data.billingAdditionalCharges || [],
+                        leaseAdditionalExpenses:
+                            res.data.leaseAdditionalExpenses || [],
                         postDatedChecks: res.data.postDatedChecks || [],
                         utilities: res.data.utilities || {},
                     },

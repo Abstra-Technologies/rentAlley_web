@@ -6,6 +6,9 @@ export async function GET(req: NextRequest) {
     let agreementId = searchParams.get("agreement_id");
     const userId = searchParams.get("user_id");
 
+    console.log('API CURRENT BILLING AGREEMENRT: ', agreementId);
+    console.log('API CURRENT BILLING USER: ', userId);
+
     try {
 
         let tenantId: number | null = null;
@@ -184,19 +187,7 @@ export async function GET(req: NextRequest) {
         }
 
         /* -----------------------------------------------------
-           Lease Additional Expenses
-        ----------------------------------------------------- */
-        const [leaseExpenses]: any = await db.query(
-            `
-            SELECT *
-            FROM LeaseAdditionalExpense
-            WHERE agreement_id = ?
-            `,
-            [agreementId]
-        );
-
-        /* -----------------------------------------------------
-           1️⃣2️⃣ PDC for current month
+           1PDC for current month
         ----------------------------------------------------- */
         const [pdcRows]: any = await db.query(
             `
@@ -254,7 +245,6 @@ export async function GET(req: NextRequest) {
             },
 
             billingAdditionalCharges,
-            leaseAdditionalExpenses: leaseExpenses,
             postDatedChecks: pdcRows,
             paymentProcessing,
 

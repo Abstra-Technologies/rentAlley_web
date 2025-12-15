@@ -6,11 +6,11 @@ import { computeLateFee } from "@/utils/tenants/billing/computeLateFee";
 import { calculateTotals } from "@/utils/tenants/billing/calculateTotals";
 import { getBillingDueDate } from "@/utils/tenants/billing/formatDueDate";
 
+import { formatDate } from "@/utils/formatter/formatters"; // ✅ ADDED
+
 import LoadingScreen from "@/components/loadingScreen";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 
-import BillingHeader from "./BillingHeader";
-import BillingTotal from "./BillingTotal";
 import RentBreakdown from "./RentBreakdown";
 import UtilityBreakdown from "./UtilityBreakdown";
 import PDCSection from "./PDCSection";
@@ -25,6 +25,10 @@ export default function TenantBilling({ agreement_id, user_id }) {
         error,
     } = useTenantBilling(agreement_id, user_id);
 
+
+    console.log('CURRENT AGREEMENT agreement id: ', agreement_id);
+    console.log('user id: ', user_id);
+
     if (loading) return <LoadingScreen />;
     if (error)
         return <ErrorBoundary error={error} onRetry={() => location.reload()} />;
@@ -32,8 +36,12 @@ export default function TenantBilling({ agreement_id, user_id }) {
     if (!billingData.length)
         return (
             <div className="text-center py-16">
-                <h2 className="text-xl font-bold text-gray-700">No Billing Available</h2>
-                <p className="text-gray-500">Billing will appear once generated.</p>
+                <h2 className="text-xl font-bold text-gray-700">
+                    No Billing Available
+                </h2>
+                <p className="text-gray-500">
+                    Billing will appear once generated.
+                </p>
             </div>
         );
 
@@ -47,36 +55,60 @@ export default function TenantBilling({ agreement_id, user_id }) {
                 return (
                     <div
                         key={bill.billing_id}
-                        className="bg-white border rounded-2xl shadow-sm"
+                        className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
                     >
-                        <BillingHeader bill={bill} dueDate={dueDate} />
+                        {/* HEADER */}
+                        <div className="px-4 py-3 border-b bg-gray-50">
+                            <p className="text-sm font-semibold text-gray-900">
+                                {formatDate(bill.billing_period)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                Due {formatDate(dueDate)}
+                            </p>
+                        </div>
 
-                        <BillingTotal totalDue={totals.totalDue} />
+                        {/* TOTAL */}
+                        <div className="px-4 py-3 flex justify-between items-center">
+              <span className="text-xs text-gray-500 font-medium">
+                Total Amount Due
+              </span>
+                            <span className="text-lg font-bold text-emerald-600">
+                ₱{totals.totalDue.toFixed(2)}
+              </span>
+                        </div>
 
-                        <RentBreakdown
-                            bill={bill}
-                            totals={totals}
-                            lateFee={lateFee}
-                            setBillingData={setBillingData}
-                        />
+                        {/* DETAILS */}
+                        <div className="px-4 pb-4 space-y-4">
+                            <RentBreakdown
+                                bill={bill}
+                                totals={totals}
+                                lateFee={lateFee}
+                                setBillingData={setBillingData}
+                                compact
+                            />
 
-                        <UtilityBreakdown
-                            bill={bill}
-                            totals={totals}
-                            meterReadings={meterReadings}
-                            setBillingData={setBillingData}
-                        />
+                            <UtilityBreakdown
+                                bill={bill}
+                                totals={totals}
+                                meterReadings={meterReadings}
+                                setBillingData={setBillingData}
+                                compact
+                            />
 
-                        {bill.postDatedChecks?.length > 0 && (
-                            <PDCSection pdcs={bill.postDatedChecks} />
-                        )}
+                            {bill.postDatedChecks?.length > 0 && (
+                                <PDCSection pdcs={bill.postDatedChecks} compact />
+                            )}
+                        </div>
 
-                        {/* ✅ Payment & Download Section (added here) */}
-                        <PaymentSection
-                            bill={bill}
-                            totalDue={totals.totalDue}
-                            agreement_id={agreement_id}
-                        />
+                        {/* PAYMENT */}
+                        <div className="px-4 py-3 border-t bg-gray-50">
+                            <PaymentSection
+                                bill={bill}
+                                totalDue={totals.totalDue}
+                                agreement_id={agreement_id}
+                                compact
+                            />
+                        </div>
                     </div>
                 );
             })}

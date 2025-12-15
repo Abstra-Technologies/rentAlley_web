@@ -87,7 +87,7 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
                         ) : (
                             <>
                                 <CreditCardIcon className="w-5 h-5" />
-                                <span>Pay with Maya</span>
+                                <span>Pay Bill</span>
                             </>
                         )}
                     </button>

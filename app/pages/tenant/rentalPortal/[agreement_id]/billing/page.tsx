@@ -1,6 +1,5 @@
 "use client";
-
-import { useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import useAuthStore from "@/zustand/authStore";
 import TenantBilling from "@/components/tenant/billing/currentBilling";
@@ -10,8 +9,14 @@ import { ReceiptPercentIcon, ClockIcon } from "@heroicons/react/24/outline";
 function BillingContent() {
   const { user, fetchSession } = useAuthStore();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const searchParams = useSearchParams();
-  const agreementId = searchParams.get("agreement_id");
+
+    const params = useParams();
+    const agreementId = params?.agreement_id as string | undefined;
+
+    console.log("main billing page agreementId:", agreementId);
+
+
+    console.log("main billing page: ", agreementId);
 
   useEffect(() => {
     async function init() {
@@ -115,7 +120,7 @@ function BillingContent() {
 
         {/* Current Billing Section */}
         <div className="mb-8">
-          <TenantBilling agreement_id={agreementId} user_id={user.user_id} />
+          <TenantBilling agreement_id={agreementId} user_id={user?.user_id} />
         </div>
 
         {/* Divider */}
