@@ -13,12 +13,16 @@ import {
 
 import useSubscription from "@/hooks/landlord/useSubscription";
 import useAuthStore from "@/zustand/authStore";
+import CreateFolderModal from "@/components/landlord/documents/CreateFolderModal";
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function PropertyDocumentsPage() {
     const { id } = useParams();
     const property_id = id as string;
+
+    const [showCreateFolder, setShowCreateFolder] = useState(false);
+
 
     const { user } = useAuthStore();
     const landlordId = user?.landlord_id;
@@ -64,6 +68,8 @@ export default function PropertyDocumentsPage() {
 
                     <button
                         disabled={storageLimitReached}
+                        onClick={() => setShowCreateFolder(true)}
+
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition
               ${
                             storageLimitReached
@@ -120,6 +126,8 @@ export default function PropertyDocumentsPage() {
 
                         <button
                             disabled={storageLimitReached}
+                            onClick={() => setShowCreateFolder(true)}
+
                             className={`px-5 py-2.5 rounded-lg font-semibold transition
                 ${
                                 storageLimitReached
@@ -155,6 +163,16 @@ export default function PropertyDocumentsPage() {
                     </div>
                 )}
             </div>
+
+            <CreateFolderModal
+                propertyId={property_id}
+                isOpen={showCreateFolder}
+                onClose={() => setShowCreateFolder(false)}
+                onCreated={() => mutateFolders()}
+                disabled={storageLimitReached}
+            />
         </div>
+
+
     );
 }
