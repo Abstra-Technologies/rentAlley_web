@@ -18,11 +18,13 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         popular: false,
         features: [
             "1 Property",
-            "10 Unit Listings",
-            "10 Maintenance Requests",
-            "Mobile Access",
-            "Limited to 3 Prospective per unit.",
-            "Limited to 10 Billing Units",
+            "Limited to 20 units",
+            "Property and Unit Management",
+            "Maintenance Management",
+            "Announcement and Messaging",
+            "Billing Management",
+            "Payment Ledger Logs",
+            "3% Commisson Transaction Fee ( Inclusive of Payment Gateway + Platform Fees)"
         ],
     },
     {
@@ -33,7 +35,6 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         popular: true,
         features: [
             "Up to 5 Properties",
-            "Up to 10 Property Listings",
             "Limited to 10 Maintenance Requests per property",
             "Mobile Access",
             "Upto 10 PDC Management",
@@ -45,13 +46,28 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     },
     {
         id: 3,
-        name: "Premium Plan",
+        name: "Pro Plan",
         price: 1000,
         trialDays: 14,
         popular: false,
         features: [
             "Unlimited Properties",
-            "Unlimited Property Listings",
+            "Unlimited Maintenance Requests",
+            "Mobile Access",
+            "Analytics Reports",
+            "Unlimited Prospective Tenant Lists",
+            "Unlimited Billing Units",
+            "14-day Free Trial",
+        ],
+    },
+    {
+        id: 4,
+        name: "Enterprise Plan",
+        price: 1000,
+        trialDays: 14,
+        popular: false,
+        features: [
+            "Unlimited Properties",
             "Unlimited Maintenance Requests",
             "Mobile Access",
             "Analytics Reports",
