@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 
 import useAuthStore from "@/zustand/authStore";
 
-// Light components (keep static)
+// Light components
 import PointsEarnedAlert from "@/components/Commons/alertPoints";
 import LandlordProfileStatus from "../profile/LandlordProfileStatus";
 import QuickActions from "./QuickActions";
@@ -42,42 +42,40 @@ const RevenuePerformanceChart = dynamic(
 
 export default function LandlordMainDashboard() {
     const router = useRouter();
-    const { user, fetchSession, loading } = useAuthStore();
-
-    const [showAlert, setShowAlert] = useState(false);
-    const prevPointsRef = useRef<number | null>(null);
-    const [greeting, setGreeting] = useState("");
-    const [showNewModal, setShowNewModal] = useState(false);
-
-    /* ---------------- Session ---------------- */
-    useEffect(() => {
-        if (!user && !loading) {
-            fetchSession();
-        }
-    }, [user, loading, fetchSession]);
-
-    useEffect(() => {
-        const hour = new Date().getHours();
-        setGreeting(
-            hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening"
-        );
-    }, []);
-
-    useEffect(() => {
-        if (!loading && user?.points != null) {
-            const prev = prevPointsRef.current;
-            if (prev !== null && user.points > prev) {
-                setShowAlert(true);
-                const t = setTimeout(() => setShowAlert(false), 4000);
-                return () => clearTimeout(t);
-            }
-            prevPointsRef.current = user.points;
-        }
-    }, [user?.points, loading]);
+    const { user, loading } = useAuthStore();
 
     const landlordId = user?.landlord_id;
+
+    /* ---------------- GREETING (SYNC) ---------------- */
+    const greeting = useMemo(() => {
+        const hour = new Date().getHours();
+        return hour < 12
+            ? "Good Morning"
+            : hour < 18
+                ? "Good Afternoon"
+                : "Good Evening";
+    }, []);
+
     const displayName =
         user?.firstName || user?.companyName || user?.email || "Landlord";
+
+    /* ---------------- POINTS ALERT (NO EFFECT) ---------------- */
+    const prevPointsRef = useRef<number | null>(null);
+    const [showAlert, setShowAlert] = useState(false);
+
+    if (!loading && user?.points != null) {
+        const prev = prevPointsRef.current;
+
+        if (prev !== null && user.points > prev && !showAlert) {
+            setShowAlert(true);
+            setTimeout(() => setShowAlert(false), 4000);
+        }
+
+        prevPointsRef.current = user.points;
+    }
+
+    /* ---------------- MODAL ---------------- */
+    const [showNewModal, setShowNewModal] = useState(false);
 
     return (
         <div className="pb-24 md:pb-6">
@@ -122,15 +120,15 @@ export default function LandlordMainDashboard() {
                     {/* Top analytics */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div className="lg:col-span-2">
-                            <PaymentSummaryCard
-                                landlord_id={landlordId}
-                            />
+                            <PaymentSummaryCard landlord_id={landlordId} />
                         </div>
-                        <div  onClick={() =>
-                            router.push("/pages/landlord/booking-appointment")
-                        }>
-                            <TodayCalendar landlordId={landlordId} />
 
+                        <div
+                            onClick={() =>
+                                router.push("/pages/landlord/booking-appointment")
+                            }
+                        >
+                            <TodayCalendar landlordId={landlordId} />
                         </div>
                     </div>
 
@@ -170,7 +168,11 @@ export default function LandlordMainDashboard() {
 
                 {/* ================= MOBILE ================= */}
                 <div className="block md:hidden space-y-4">
-                    <div onClick={() => router.push("/pages/landlord/payment-history")}>
+                    <div
+                        onClick={() =>
+                            router.push("/pages/landlord/payment-history")
+                        }
+                    >
                         <PaymentSummaryCard landlord_id={landlordId} />
                     </div>
 
@@ -203,10 +205,10 @@ export default function LandlordMainDashboard() {
                         <PaymentList landlord_id={landlordId} />
                     </div>
 
-                    {/* Optional: remove on mobile if you want it faster */}
                     <RevenuePerformanceChart landlord_id={landlordId} />
                 </div>
 
+                {/* NEW WORK ORDER MODAL */}
                 {showNewModal && (
                     <NewWorkOrderModal
                         landlordId={landlordId}
