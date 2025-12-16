@@ -8,6 +8,7 @@ export const subscriptionConfig = {
             maxMaintenanceRequest: 10,
             maxBilling: 2,
             maxProspect: 3,
+            maxStorage: 2,
         },
         features: {
             reports: false,
@@ -24,6 +25,8 @@ export const subscriptionConfig = {
             maxMaintenanceRequest: 10,
             maxBilling: 10,
             maxProspect: 10,
+            maxStorage: 2,
+
         },
         features: {
             reports: true,
@@ -40,6 +43,8 @@ export const subscriptionConfig = {
             maxMaintenanceRequest: 100,
             maxBilling: 50,
             maxProspect: 50,
+            maxStorage: 2,
+
         },
         features: {
             reports: true,
