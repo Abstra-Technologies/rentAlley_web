@@ -9,12 +9,18 @@ export const subscriptionConfig = {
             maxBilling: 2,
             maxProspect: 3,
             maxStorage: 2,
+            maxAssetsPerProperty: 50,      // hard cap
+            financialHistoryYears: 1,     // how many years can be viewed
+
         },
         features: {
             reports: false,
-            postDatedChecks: false,
+            announcements: true,
+            pdcManagement: false,
             aiUnitGenerator: false,
             bulkImport: false,
+            assetManagement:false,
+            financialInsights: false,
         },
     },
 
@@ -26,17 +32,23 @@ export const subscriptionConfig = {
             maxBilling: 10,
             maxProspect: 10,
             maxStorage: 2,
+            maxAssetsPerProperty: 50,      // hard cap
+            financialHistoryYears: 1,     // how many years can be viewed
 
         },
         features: {
             reports: true,
-            postDatedChecks: true,
+            pdcManagement: true,
             aiUnitGenerator: false,
             bulkImport: true,
+            announcements: true,
+            assetManagement:true,
+            financialInsights: true,
+
         },
     },
 
-    "Premium Plan": {
+    "Pro Plan": {
         limits: {
             maxProperties: 20,
             maxUnits: 50,
@@ -44,13 +56,44 @@ export const subscriptionConfig = {
             maxBilling: 50,
             maxProspect: 50,
             maxStorage: 2,
+            assetManagement:true,
+            maxAssetsPerProperty: 50,
+            financialHistoryYears: 1,     // how many years can be viewed
 
         },
         features: {
             reports: true,
-            postDatedChecks: true,
+            pdcManagement: true,
             aiUnitGenerator: true,
             bulkImport: true,
+            announcements: true,
+            assetManagement:true,
+            financialInsights: true,
+
+        },
+    },
+
+    "Enterprise Plan": {
+        limits: {
+            maxProperties: 20,
+            maxUnits: 50,
+            maxMaintenanceRequest: 100,
+            maxBilling: 50,
+            maxProspect: 50,
+            maxStorage: 2,
+            maxAssetsPerProperty: 50,      // hard cap
+            financialHistoryYears: 1,     // how many years can be viewed
+
+        },
+        features: {
+            reports: true,
+            pdcManagement: true,
+            aiUnitGenerator: true,
+            bulkImport: true,
+            announcements: true,
+            assetManagement:true,
+            financialInsights: true,
+
         },
     },
 } as const;

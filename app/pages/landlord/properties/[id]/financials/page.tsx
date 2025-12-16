@@ -35,13 +35,29 @@ ChartJS.register(
   Legend
 );
 
+import useSubscription from "@/hooks/landlord/useSubscription";
+import useAuthStore from "@/zustand/authStore";
+import { subscriptionConfig } from "@/constant/subscription/limits";
+import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
+
+
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function FinancialsPage() {
   const { id } = useParams();
   const propertyId = id;
 
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const { user } = useAuthStore();
+    const router = useRouter();
+
+    const landlordId = user?.landlord_id;
+
+    const { subscription, loadingSubscription } =
+        useSubscription(landlordId);
+
+
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showNOIChart, setShowNOIChart] = useState(false);
   const [showGrossChart, setShowGrossChart] = useState(false);
 
@@ -52,7 +68,21 @@ export default function FinancialsPage() {
     fetcher
   );
 
-  const metrics = data?.metrics || {};
+    const planName =
+        subscription?.plan_name as keyof typeof subscriptionConfig;
+
+    const planConfig = planName
+        ? subscriptionConfig[planName]
+        : null;
+
+    const canUseFinancials =
+        planConfig?.features?.financialInsights === true;
+
+    const allowedHistoryYears =
+        planConfig?.limits?.financialHistoryYears;
+
+
+    const metrics = data?.metrics || {};
 
   const chartDataNOI = {
     labels: metrics.monthNames || [],
@@ -124,7 +154,15 @@ export default function FinancialsPage() {
     },
   };
 
-  if (isLoading) {
+    const currentYear = new Date().getFullYear();
+
+    const allowedYears =
+        allowedHistoryYears === null
+            ? [currentYear, currentYear - 1, currentYear - 2, currentYear - 3]
+            : Array.from({ length: allowedHistoryYears }, (_, i) => currentYear - i);
+
+
+    if (isLoading) {
     return (
       <div className="pb-24 md:pb-6">
         <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
@@ -142,7 +180,40 @@ export default function FinancialsPage() {
     );
   }
 
-  return (
+    if (!loadingSubscription && !canUseFinancials) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 max-w-md w-full text-center">
+                    <div className="mx-auto mb-4 w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center">
+                        <BarChart3 className="w-7 h-7 text-white" />
+                    </div>
+
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        Upgrade Required
+                    </h2>
+
+                    <p className="text-gray-600 text-sm mb-6">
+                        Financial Insights are not available on your current plan.
+                        Upgrade to view revenue and performance analytics.
+                    </p>
+
+                    <button
+                        onClick={() =>
+                            router.push("/pages/landlord/subsciption_plan/pricing")
+                        }
+                        className="w-full px-5 py-2.5 rounded-xl font-semibold text-white
+          bg-gradient-to-r from-blue-600 to-emerald-600
+          hover:from-blue-700 hover:to-emerald-700 transition-all"
+                    >
+                        View Plans
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+
+    return (
     <div className="pb-24 md:pb-6">
       <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
         {/* Header */}
@@ -165,15 +236,35 @@ export default function FinancialsPage() {
           <div className="flex items-center gap-3">
             <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
             <label className="text-sm font-medium text-gray-700">Year:</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            >
-              <option>{new Date().getFullYear()}</option>
-              <option>{new Date().getFullYear() - 1}</option>
-              <option>{new Date().getFullYear() - 2}</option>
-            </select>
+              <select
+                  value={selectedYear}
+                  onChange={(e) => {
+                      const year = Number(e.target.value);
+
+                      if (
+                          allowedHistoryYears !== null &&
+                          currentYear - year >= allowedHistoryYears
+                      ) {
+                          Swal.fire({
+                              icon: "warning",
+                              title: "Upgrade Required",
+                              text: "Your plan allows limited financial history.",
+                              confirmButtonColor: "#3b82f6",
+                          });
+                          return;
+                      }
+
+                      setSelectedYear(year);
+                  }}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
+              >
+                  {allowedYears.map((year) => (
+                      <option key={year} value={year}>
+                          {year}
+                      </option>
+                  ))}
+              </select>
+
           </div>
         </div>
 

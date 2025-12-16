@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import useAuthStore from "@/zustand/authStore";
 import Swal from "sweetalert2";
-import LoadingScreen from "@/components/loadingScreen";
+import useSubscription from "@/hooks/landlord/useSubscription";
+import {subscriptionConfig} from "@/constant/subscription/limits";
 
 interface Announcement {
   id: string | number;
@@ -27,6 +28,20 @@ export default function AnnouncementsList() {
       fetchSession();
     }
   }, [user, admin, fetchSession]);
+
+
+    const landlordId = user?.landlord_id;
+
+    const {
+        subscription,
+        loadingSubscription,
+    } = useSubscription(landlordId);
+
+
+    const planName = subscription?.plan_name;
+    const canUseAnnouncements =
+        planName &&
+        subscriptionConfig[planName]?.features?.announcements === true;
 
   useEffect(() => {
     async function fetchAnnouncements() {
@@ -186,10 +201,17 @@ export default function AnnouncementsList() {
             </div>
           </div>
 
-          <button
-            onClick={handleCreate}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:from-blue-700 hover:to-emerald-700 transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl whitespace-nowrap"
-          >
+            <button
+                onClick={handleCreate}
+                disabled={!canUseAnnouncements}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold
+    ${
+                    canUseAnnouncements
+                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:from-blue-700 hover:to-emerald-700"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
+            >
+
             <svg
               className="w-5 h-5"
               fill="none"

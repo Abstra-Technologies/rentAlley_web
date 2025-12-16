@@ -11,7 +11,7 @@ export async function GET(req: Request) {
         }
 
         /* ======================================================
-           1️⃣  GROSS REVENUE — Confirmed Billing Payments
+            GROSS REVENUE — Confirmed Billing Payments
         ====================================================== */
         const [revenueRows] = await db.query(
             `
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
         );
 
         /* ======================================================
-           2️⃣  PROPERTY EXPENSES — ConcessionaireBilling
+           ⃣ PROPERTY EXPENSES — ConcessionaireBilling
            Group by period_start month
         ====================================================== */
         const [expenseRows] = await db.query(
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
         );
 
         /* ======================================================
-           3️⃣ Normalize month keys
+           3Normalize month keys
         ====================================================== */
         const monthKeys = Array.from(
             new Set([
@@ -77,7 +77,7 @@ export async function GET(req: Request) {
         );
 
         /* ======================================================
-           4️⃣ Final Response (Property-Specific)
+           4️Final Response (Property-Specific)
         ====================================================== */
         return NextResponse.json({
             months: monthKeys.map((ym) => labelMap.get(ym)),

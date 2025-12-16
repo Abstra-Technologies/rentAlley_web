@@ -20,13 +20,26 @@ import { formatDate } from "@/utils/formatter/formatters";
 import Pagination from "@/components/Commons/Pagination";
 import AddAssetModal from "@/components/landlord/properties/AddAssetModal";
 
+import useSubscription from "@/hooks/landlord/useSubscription";
+import useAuthStore from "@/zustand/authStore";
+import {subscriptionConfig} from "@/constant/subscription/limits";
+
+
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 const AssetsManagementPage = () => {
-  const { id } = useParams(); // property_id
+  const { id } = useParams();
   const router = useRouter();
   const property_id = id as string;
-  const [showAddModal, setShowAddModal] = useState(false);
+
+    const { user } = useAuthStore();
+    const landlordId = user?.landlord_id;
+
+    const { subscription, loadingSubscription } =
+        useSubscription(landlordId);
+
+
+    const [showAddModal, setShowAddModal] = useState(false);
 
   const [activeFilter, setActiveFilter] = useState<"all" | "property" | "unit">(
     "all"
@@ -34,16 +47,37 @@ const AssetsManagementPage = () => {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
-  const {
-    data: assets,
-    isLoading,
-    error,
-  } = useSWR(
-    property_id
-      ? `/api/landlord/properties/assets?property_id=${property_id}`
-      : null,
-    fetcher
-  );
+    const {
+        data: assets,
+        isLoading,
+        error,
+    } = useSWR(
+        property_id
+            ? `/api/landlord/properties/assets?property_id=${property_id}`
+            : null,
+        fetcher
+    );
+
+    const planName =
+        subscription?.plan_name as keyof typeof subscriptionConfig;
+
+    const assetConfig = planName
+        ? subscriptionConfig[planName]
+        : null;
+
+    const canUseAssets =
+        assetConfig?.features?.assetManagement === true;
+
+    const maxAssetsPerProperty =
+        assetConfig?.limits?.maxAssetsPerProperty;
+
+
+    const totalAssets = assets?.length || 0;
+
+    const reachedAssetLimit =
+        maxAssetsPerProperty !== null &&
+        totalAssets >= maxAssetsPerProperty;
+
 
   const { data: propertyDetails } = useSWR(
     property_id
@@ -122,7 +156,37 @@ const AssetsManagementPage = () => {
       </div>
     );
 
-  return (
+    if (!loadingSubscription && !canUseAssets) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 max-w-md w-full text-center">
+                    <div className="mx-auto mb-4 w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center">
+                        <Wrench className="w-7 h-7 text-white" />
+                    </div>
+
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        Upgrade Required
+                    </h2>
+
+                    <p className="text-gray-600 text-sm mb-6">
+                        Asset Management is not available on your current plan.
+                        Upgrade to track and maintain property assets.
+                    </p>
+
+                    <button
+                        onClick={() => router.push("/pages/landlord/subsciption_plan/pricing")}
+                        className="w-full px-5 py-2.5 rounded-xl font-semibold text-white
+          bg-gradient-to-r from-blue-600 to-emerald-600
+          hover:from-blue-700 hover:to-emerald-700 transition-all"
+                    >
+                        View Plans
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
     <>
       <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
         <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
@@ -145,15 +209,34 @@ const AssetsManagementPage = () => {
 
             {/* Action Bar */}
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-lg font-semibold text-sm transition-all shadow-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add Asset
-              </button>
+                <button
+                    onClick={() => {
+                        if (reachedAssetLimit) {
+                            Swal.fire({
+                                icon: "warning",
+                                title: "Asset Limit Reached",
+                                text: `Your plan allows up to ${maxAssetsPerProperty} assets per property.`,
+                                confirmButtonColor: "#3b82f6",
+                            });
+                            return;
+                        }
+                        setShowAddModal(true);
+                    }}
+                    disabled={reachedAssetLimit}
+                    className={`inline-flex items-center justify-center gap-2 px-4 py-2.5
+    rounded-lg font-semibold text-sm transition-all shadow-sm
+    ${
+                        reachedAssetLimit
+                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                            : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
+                    }`}
+                >
+                    <Plus className="w-4 h-4" />
+                    Add Asset
+                </button>
 
-              {/* Filters */}
+
+                {/* Filters */}
               <div className="flex gap-2 sm:ml-auto">
                 {["all", "property", "unit"].map((filter) => (
                   <button
