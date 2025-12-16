@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { redis } from "@/lib/redis";
-import { listingLimits } from "@/constant/subscription/limits";
+import { subscriptionConfig } from "@/constant/subscription/limits";
 
 export async function POST(req: NextRequest) {
     try {
@@ -81,7 +81,8 @@ export async function POST(req: NextRequest) {
 
         const planName = subscriptionRows[0].plan_name?.trim() || "Free Plan";
 
-        const planLimits = listingLimits[planName];
+        // @ts-ignore
+        const planLimits = subscriptionConfig[planName];
         if (!planLimits) {
             return NextResponse.json(
                 { error: `Invalid plan '${planName}'` },
