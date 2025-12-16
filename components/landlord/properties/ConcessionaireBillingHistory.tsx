@@ -1,244 +1,258 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { MRT_ColumnDef, MaterialReactTable } from "material-react-table";
 import { formatCurrency } from "@/utils/formatter/formatters";
-import { Droplets, Zap, Calendar, AlertCircle } from "lucide-react";
+import { Droplets, Zap, AlertCircle, Calendar } from "lucide-react";
+
+/* -------------------------------------------------
+   Desktop-only MRT imports
+------------------------------------------------- */
+import dynamic from "next/dynamic";
+import type { MRT_ColumnDef } from "material-react-table";
+
+const MaterialReactTable = dynamic(
+    () =>
+        import("material-react-table").then((mod) => mod.MaterialReactTable),
+    { ssr: false }
+);
 
 export default function ConcessionaireBillingHistory({
-  propertyId,
-}: {
-  propertyId: number;
+                                                         propertyId,
+                                                     }: {
+    propertyId: number;
 }) {
-  const [billings, setBillings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+    const [billings, setBillings] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    if (!propertyId) return;
-    fetchBillingData();
-  }, [propertyId]);
+    /* ---------------- Viewport Detection ---------------- */
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768);
+        check();
+        window.addEventListener("resize", check);
+        return () => window.removeEventListener("resize", check);
+    }, []);
 
-  const fetchBillingData = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(
-        `/api/landlord/properties/getConcessionaireHistory?property_id=${propertyId}`
-      );
-      setBillings(res.data.billings || []);
-    } catch (err) {
-      console.error("❌ Failed to load concessionaire billing:", err);
-      Swal.fire(
-        "Error",
-        "Failed to fetch concessionaire billing history.",
-        "error"
-      );
-    } finally {
-      setLoading(false);
+    /* ---------------- Data Fetch ---------------- */
+    useEffect(() => {
+        if (!propertyId) return;
+        fetchData();
+    }, [propertyId]);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const res = await axios.get(
+                `/api/landlord/properties/getConcessionaireHistory?property_id=${propertyId}`
+            );
+            setBillings(res.data.billings || []);
+        } catch {
+            Swal.fire(
+                "Error",
+                "Failed to fetch concessionaire billing history.",
+                "error"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /* ---------------- Totals ---------------- */
+    const totals = useMemo(() => ({
+        water: billings.reduce(
+            (sum, b) => sum + Number(b.water_consumption || 0),
+            0
+        ),
+        electricity: billings.reduce(
+            (sum, b) => sum + Number(b.electricity_consumption || 0),
+            0
+        ),
+    }), [billings]);
+
+    /* ---------------- Desktop Columns ---------------- */
+    const columns: MRT_ColumnDef<any>[] = [
+        {
+            accessorKey: "period_start",
+            header: "Period",
+            size: 160,
+            Cell: ({ row }) => (
+                <span className="truncate block">
+          {new Date(row.original.period_start).toLocaleDateString("en-PH", {
+              month: "short",
+              year: "numeric",
+          })}{" "}
+                    –{" "}
+                    {new Date(row.original.period_end).toLocaleDateString("en-PH", {
+                        month: "short",
+                        year: "numeric",
+                    })}
+        </span>
+            ),
+        },
+        { accessorKey: "water_consumption", header: "Water (m³)", size: 110 },
+        { accessorKey: "water_rate", header: "Water Rate", size: 110 },
+        {
+            accessorKey: "water_total",
+            header: "Water Total",
+            size: 120,
+            Cell: ({ cell }) => formatCurrency(cell.getValue()),
+        },
+        { accessorKey: "electricity_consumption", header: "Elec (kWh)", size: 120 },
+        { accessorKey: "electricity_rate", header: "Elec Rate", size: 120 },
+        {
+            accessorKey: "electricity_total",
+            header: "Elec Total",
+            size: 120,
+            Cell: ({ cell }) => formatCurrency(cell.getValue()),
+        },
+    ];
+
+    /* ---------------- Loading ---------------- */
+    if (loading) {
+        return (
+            <div className="space-y-3 animate-pulse">
+                {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-14 bg-gray-100 rounded-lg" />
+                ))}
+            </div>
+        );
     }
-  };
 
-  // 🧾 Define table columns
-  const columns: MRT_ColumnDef<any>[] = [
-    {
-      accessorKey: "billing_period",
-      header: "Billing Period",
-      Cell: ({ cell }) =>
-        new Date(cell.getValue() as string).toLocaleDateString("en-PH", {
-          year: "numeric",
-          month: "long",
-        }),
-    },
-    {
-      accessorKey: "water_consumption",
-      header: "Water (m³)",
-      Cell: ({ cell }) => Number(cell.getValue() || 0).toFixed(2),
-    },
-    {
-      id: "water_rate",
-      header: "Water Rate",
-      Cell: ({ row }) => {
-        const wCons = Number(row.original.water_consumption || 0);
-        const wTotal = Number(row.original.water_total || 0);
-        const rate = wCons > 0 ? wTotal / wCons : 0;
-        return rate ? `₱${rate.toFixed(2)}/m³` : "-";
-      },
-    },
-    {
-      accessorKey: "water_total",
-      header: "Water Total",
-      Cell: ({ cell }) => formatCurrency(cell.getValue()),
-    },
-    {
-      accessorKey: "electricity_consumption",
-      header: "Electricity (kWh)",
-      Cell: ({ cell }) => Number(cell.getValue() || 0).toFixed(2),
-    },
-    {
-      id: "electricity_rate",
-      header: "Electricity Rate",
-      Cell: ({ row }) => {
-        const eCons = Number(row.original.electricity_consumption || 0);
-        const eTotal = Number(row.original.electricity_total || 0);
-        const rate = eCons > 0 ? eTotal / eCons : 0;
-        return rate ? `₱${rate.toFixed(2)}/kWh` : "-";
-      },
-    },
-    {
-      accessorKey: "electricity_total",
-      header: "Electricity Total",
-      Cell: ({ cell }) => formatCurrency(cell.getValue()),
-    },
-    {
-      accessorKey: "created_at",
-      header: "Created",
-      Cell: ({ cell }) =>
-        new Date(cell.getValue() as string).toLocaleDateString("en-PH"),
-    },
-  ];
+    /* ---------------- Empty ---------------- */
+    if (!billings.length) {
+        return (
+            <div className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+                <AlertCircle className="w-10 h-10 text-blue-600 mx-auto mb-3" />
+                <p className="font-semibold text-gray-900 mb-1">
+                    No Utility Records Found
+                </p>
+                <p className="text-sm text-gray-500">
+                    No concessionaire billing data available.
+                </p>
+            </div>
+        );
+    }
 
-  // ⏳ Loading state
-  if (loading)
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-pulse space-y-4 w-full">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-gray-100 rounded-lg h-16 w-full"></div>
-          ))}
-        </div>
-      </div>
-    );
+        <div className="space-y-6">
 
-  // 🧍 No data
-  if (!billings.length)
+            {/* ---------------- Summary ---------------- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SummaryCard
+                    icon={<Droplets className="w-5 h-5 text-white" />}
+                    title="Total Water Consumption"
+                    value={`${totals.water.toFixed(2)} m³`}
+                    color="bg-blue-600"
+                />
+                <SummaryCard
+                    icon={<Zap className="w-5 h-5 text-white" />}
+                    title="Total Electricity Consumption"
+                    value={`${totals.electricity.toFixed(2)} kWh`}
+                    color="bg-amber-600"
+                />
+            </div>
+
+            {/* ---------------- MOBILE (NO MRT) ---------------- */}
+            {isMobile && (
+                <div className="space-y-4">
+                    {billings.map((b) => (
+                        <div key={b.bill_id} className="bg-white border rounded-lg p-4">
+                            <div className="flex items-center gap-2 text-sm font-semibold mb-3">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                {new Date(b.period_start).toLocaleDateString("en-PH", {
+                                    month: "short",
+                                    year: "numeric",
+                                })}{" "}
+                                –{" "}
+                                {new Date(b.period_end).toLocaleDateString("en-PH", {
+                                    month: "short",
+                                    year: "numeric",
+                                })}
+                            </div>
+
+                            <Row label="Water Consumption" value={`${b.water_consumption} m³`} />
+                            <Row label="Water Total" value={formatCurrency(b.water_total)} bold />
+
+                            <Row
+                                label="Electricity Consumption"
+                                value={`${b.electricity_consumption} kWh`}
+                            />
+                            <Row
+                                label="Electricity Total"
+                                value={formatCurrency(b.electricity_total)}
+                                bold
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ---------------- DESKTOP (MRT ONLY) ---------------- */}
+            {!isMobile && (
+                <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
+                    <MaterialReactTable
+                        layoutMode="grid"
+                        columns={columns}
+                        data={billings}
+                        enableTopToolbar={false}
+                        enableColumnActions={false}
+                        enableColumnFilters={false}
+                        enableSorting
+                        initialState={{
+                            pagination: { pageIndex: 0, pageSize: 10 },
+                        }}
+                        muiTableContainerProps={{
+                            sx: { maxWidth: "100%", overflowX: "hidden" },
+                        }}
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* -------------------------------------------------
+   Helpers
+------------------------------------------------- */
+function SummaryCard({
+                         icon,
+                         title,
+                         value,
+                         color,
+                     }: {
+    icon: React.ReactNode;
+    title: string;
+    value: string;
+    color: string;
+}) {
     return (
-      <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <AlertCircle className="w-8 h-8 text-blue-600" />
-        </div>
-        <p className="text-gray-900 font-semibold text-lg mb-1">
-          No Billing Records
-        </p>
-        <p className="text-gray-500 text-sm">
-          No concessionaire billing records found for this property.
-        </p>
-      </div>
-    );
-
-  return (
-    <div className="space-y-5">
-      {/* Info Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm text-blue-900 font-medium mb-1">
-              About This Data
-            </p>
-            <p className="text-xs text-blue-700">
-              These records reflect utility costs inputted from your utility
-              providers. They serve as the basis for computing the submetered
-              water and electricity charges applied to each tenant unit.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Water Stats */}
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Droplets className="w-5 h-5 text-white" />
+        <div className="bg-white border rounded-lg p-4 flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center`}>
+                {icon}
             </div>
             <div>
-              <p className="text-xs text-gray-600 font-medium">
-                Total Water Consumption
-              </p>
-              <p className="text-lg font-bold text-gray-900">
-                {billings
-                  .reduce(
-                    (sum, b) => sum + Number(b.water_consumption || 0),
-                    0
-                  )
-                  .toFixed(2)}{" "}
-                m³
-              </p>
+                <p className="text-xs text-gray-600">{title}</p>
+                <p className="text-lg font-bold">{value}</p>
             </div>
-          </div>
         </div>
+    );
+}
 
-        {/* Electricity Stats */}
-        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg border border-amber-200 p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 font-medium">
-                Total Electricity Consumption
-              </p>
-              <p className="text-lg font-bold text-gray-900">
-                {billings
-                  .reduce(
-                    (sum, b) => sum + Number(b.electricity_consumption || 0),
-                    0
-                  )
-                  .toFixed(2)}{" "}
-                kWh
-              </p>
-            </div>
-          </div>
+function Row({
+                 label,
+                 value,
+                 bold,
+             }: {
+    label: string;
+    value: string;
+    bold?: boolean;
+}) {
+    return (
+        <div className="flex justify-between text-sm mb-1">
+            <span className="text-gray-600">{label}</span>
+            <span className={bold ? "font-semibold" : ""}>{value}</span>
         </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <MaterialReactTable
-          columns={columns}
-          data={billings}
-          enablePagination
-          enableColumnActions={false}
-          enableColumnFilters={false}
-          enableSorting={true}
-          enableTopToolbar={false}
-          initialState={{
-            density: "comfortable",
-            pagination: { pageIndex: 0, pageSize: 10 },
-          }}
-          muiTableContainerProps={{
-            sx: { maxHeight: "600px" },
-            className: "overflow-x-auto",
-          }}
-          muiTableHeadCellProps={{
-            sx: {
-              fontWeight: 700,
-              fontSize: "0.875rem",
-              backgroundColor: "#f9fafb",
-              color: "#374151",
-              borderBottom: "2px solid #e5e7eb",
-            },
-          }}
-          muiTableBodyCellProps={{
-            sx: {
-              fontSize: "0.875rem",
-              color: "#1f2937",
-            },
-          }}
-          muiTableBodyProps={{
-            sx: {
-              "& tr:hover": {
-                backgroundColor: "#f3f4f6",
-              },
-            },
-          }}
-          muiTablePaginationProps={{
-            rowsPerPageOptions: [5, 10, 20],
-          }}
-        />
-      </div>
-    </div>
-  );
+    );
 }
