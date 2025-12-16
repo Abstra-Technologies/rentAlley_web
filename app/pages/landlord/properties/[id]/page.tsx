@@ -54,10 +54,10 @@ export default function ViewPropertyDetailedPage() {
     } = usePropertyUnitsPage();
 
     const currentUnitsCount = filteredUnits.length;
-    const maxUnits = subscription?.listingLimits?.maxUnits ?? 0;
+    const maxUnits = subscription?.limits?.maxUnits ?? null;
 
     const reachedUnitLimit =
-        !!subscription && currentUnitsCount >= maxUnits;
+        maxUnits !== null && currentUnitsCount >= maxUnits;
 
     const unitActionsDisabled =
         loadingSubscription || !subscription || reachedUnitLimit;

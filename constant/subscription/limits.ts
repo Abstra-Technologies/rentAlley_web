@@ -1,31 +1,51 @@
-//  This contsnat file is iused for subscription limisrs per tier.
+// Used for subscription capabilities per tier
 
-export const listingLimits = {
+export const subscriptionConfig = {
     "Free Plan": {
-        maxProperties: 5,
-        maxUnits: 2,
-        maxMaintenanceRequest: 10,
-        maxReports: 3,
-        maxBilling: 2,
-        maxProspect: 3,
-        maxPDC: 0,
+        limits: {
+            maxProperties: 5,
+            maxUnits: 2,
+            maxMaintenanceRequest: 10,
+            maxBilling: 2,
+            maxProspect: 3,
+        },
+        features: {
+            reports: false,
+            postDatedChecks: false,
+            aiUnitGenerator: false,
+            bulkImport: false,
+        },
     },
+
     "Standard Plan": {
-        maxProperties: 10,
-        maxUnits: Infinity,
-        maxMaintenanceRequest: 10,
-        maxReports: 5,
-        maxBilling: 10,
-        maxProspect: 10,
-        maxPDC: 20,
+        limits: {
+            maxProperties: 10,
+            maxUnits: null, // null = unlimited
+            maxMaintenanceRequest: 10,
+            maxBilling: 10,
+            maxProspect: 10,
+        },
+        features: {
+            reports: true,
+            postDatedChecks: true,
+            aiUnitGenerator: false,
+            bulkImport: true,
+        },
     },
+
     "Premium Plan": {
-        maxProperties: 20,
-        maxUnits: 50,
-        maxMaintenanceRequest: 100,
-        maxReports: 5,
-        maxBilling: 5,
-        maxProspect: 5,
-        maxPDC: 100,
+        limits: {
+            maxProperties: 20,
+            maxUnits: 50,
+            maxMaintenanceRequest: 100,
+            maxBilling: 50,
+            maxProspect: 50,
+        },
+        features: {
+            reports: true,
+            postDatedChecks: true,
+            aiUnitGenerator: true,
+            bulkImport: true,
+        },
     },
-};
+} as const;

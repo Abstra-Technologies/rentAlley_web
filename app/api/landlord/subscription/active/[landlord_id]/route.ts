@@ -4,7 +4,7 @@
 import { db } from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
-import { listingLimits } from "@/constant/subscription/limits";
+import {subscriptionConfig} from "@/constant/subscription/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -143,8 +143,12 @@ export async function GET(
         /* --------------------------------------------------
            ATTACH LIMITS
         -------------------------------------------------- */
-        subscription.listingLimits =
-            listingLimits[subscription.plan_name] || {};
+        // @ts-ignore
+        const planConfig =
+            subscriptionConfig[subscription.plan_name];
+
+        subscription.limits = planConfig?.limits ?? {};
+        subscription.features = planConfig?.features ?? {};
 
         /* --------------------------------------------------
            CACHE RESULT (short TTL = safe)
