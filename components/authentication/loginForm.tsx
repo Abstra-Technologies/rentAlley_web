@@ -1,4 +1,5 @@
 "use client";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 import { useLoginForm } from "@/hooks/authentication/useLoginForm";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -35,19 +36,79 @@ export default function LoginForm() {
                 </div>
 
                 <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label
+                        htmlFor="password"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Password
+                    </label>
+
                     <div className="relative">
                         <input
                             type={showPassword ? "text" : "password"}
                             id="password"
                             value={formData.password}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border-2 rounded-lg text-sm bg-white/80 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-3 py-2 pr-10 border-2 rounded-lg text-sm
+                 bg-white/80 border-gray-200
+                 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                             placeholder="••••••••"
                             disabled={isLoggingIn}
                         />
+
+                        {/* 👁️ Show / Hide Password */}
+                        <button
+                            type="button"
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            onClick={() => setShowPassword(!showPassword)}
+                            disabled={isLoggingIn}
+                            className="absolute right-3 top-1/2 -translate-y-1/2
+                 text-gray-500 hover:text-gray-700
+                 focus:outline-none"
+                        >
+                            {showPassword ? (
+                                /* Eye Off */
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.61.38-3.132 1.056-4.48M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                </svg>
+                            ) : (
+                                /* Eye */
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                    />
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                </svg>
+                            )}
+                        </button>
                     </div>
                 </div>
+
 
                 <div className="flex items-center justify-between text-xs">
                     <label className="flex items-center">

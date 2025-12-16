@@ -6,6 +6,7 @@ import Page_footer from "../../../../components/navigation/page_footer";
 import LoadingScreen from "@/components/loadingScreen";
 import LoginForm from "@/components/authentication/loginForm";
 import MobileLoginForm from "@/components/authentication/mobileLoginForm";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function LoginPage() {
     return (
@@ -16,6 +17,8 @@ export default function LoginPage() {
 }
 
 function Login() {
+
+
     return (
         <div className="relative flex flex-col min-h-[115vh] bg-gradient-to-br from-blue-900 via-emerald-700 to-emerald-500 overflow-hidden">
 
