@@ -1,3 +1,6 @@
+
+//  API to get Suvscritipon limit on plans.
+
 import { db } from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";

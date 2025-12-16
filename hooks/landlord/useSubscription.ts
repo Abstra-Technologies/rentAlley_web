@@ -10,7 +10,7 @@ export default function useSubscription(landlordId?: number | string) {
     const abortRef = useRef<AbortController | null>(null);
 
     const fetchSubscription = useCallback(async () => {
-        // 🔒 HARD GUARD
+
         if (!landlordId) {
             setSubscription(null);
             setLoadingSubscription(false);

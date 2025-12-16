@@ -12,7 +12,7 @@ export const listingLimits = {
     },
     "Standard Plan": {
         maxProperties: 10,
-        maxUnits: 10,
+        maxUnits: Infinity,
         maxMaintenanceRequest: 10,
         maxReports: 5,
         maxBilling: 10,

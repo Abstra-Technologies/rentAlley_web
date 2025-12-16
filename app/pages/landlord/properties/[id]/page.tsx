@@ -4,6 +4,10 @@ import React from "react";
 import { Home, Plus, Sparkles, Search } from "lucide-react";
 import { Pagination } from "@mui/material";
 
+import useSubscription from "@/hooks/landlord/useSubscription";
+import UnitLimitsCard from "@/components/landlord/subscriptions-limitations/UnitLimitsCard";
+import useAuthStore from "@/zustand/authStore";
+
 import UnitsTab from "@/components/landlord/properties/UnitsTab";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 import AIUnitGenerator from "@/components/landlord/ai/AIUnitGenerator";
@@ -13,6 +17,16 @@ import BulkImportUnitModal from "@/components/landlord/properties/BulkImportUnit
 import { usePropertyUnitsPage } from "@/hooks/landlord/usePropertyUnitsPage";
 
 export default function ViewPropertyDetailedPage() {
+
+    const { user } = useAuthStore();
+    const landlordId = user?.landlord_id;
+
+    const {
+        subscription,
+        loadingSubscription,
+        errorSubscription,
+    } = useSubscription(landlordId);
+
     const {
         property_id,
         error,
@@ -39,6 +53,15 @@ export default function ViewPropertyDetailedPage() {
         setBulkImportModal,
     } = usePropertyUnitsPage();
 
+    const currentUnitsCount = filteredUnits.length;
+    const maxUnits = subscription?.listingLimits?.maxUnits ?? 0;
+
+    const reachedUnitLimit =
+        !!subscription && currentUnitsCount >= maxUnits;
+
+    const unitActionsDisabled =
+        loadingSubscription || !subscription || reachedUnitLimit;
+
     if (error) {
         return (
             <ErrorBoundary
@@ -50,7 +73,7 @@ export default function ViewPropertyDetailedPage() {
 
     return (
         <div className="min-h-screen w-full max-w-none bg-gray-50 pb-24 md:pb-6 overflow-x-hidden">
-            {/* MATCHES BILLING PAGE SPACING */}
+
             <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
 
                 {/* ================= HEADER ================= */}
@@ -76,17 +99,23 @@ export default function ViewPropertyDetailedPage() {
                             {/* Add Unit */}
                             <button
                                 onClick={handleAddUnitClick}
-                                className="inline-flex items-center gap-2
-      px-3 py-2 md:px-4 md:py-2.5
-      rounded-md md:rounded-lg
-      text-xs md:text-sm font-semibold
-      bg-gradient-to-r from-blue-600 to-emerald-600
-      hover:from-blue-700 hover:to-emerald-700
-      text-white shadow-sm transition"
+                                disabled={unitActionsDisabled}
+                                className={`inline-flex items-center gap-2
+    px-3 py-2 md:px-4 md:py-2.5
+    rounded-md md:rounded-lg
+    text-xs md:text-sm font-semibold
+    transition shadow-sm
+    ${
+                                    unitActionsDisabled
+                                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                        : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
+                                }
+  `}
                             >
                                 <Plus className="w-4 h-4" />
                                 <span className="hidden sm:inline">Add Unit</span>
                             </button>
+
 
                             {/* Bulk Import */}
                             <button
@@ -136,6 +165,17 @@ export default function ViewPropertyDetailedPage() {
                         />
                     </div>
                 </div>
+
+                {/* ================= UNIT LIMITS ================= */}
+
+                {!loadingSubscription && (
+                    <div className="mb-4 max-w-xl">
+                        <UnitLimitsCard
+                            subscription={subscription}
+                            currentUnitsCount={currentUnitsCount}
+                        />
+                    </div>
+                )}
 
                 {/* ================= UNITS LIST ================= */}
                 <div className="bg-white w-full rounded-lg shadow-sm border border-gray-200 overflow-hidden">
