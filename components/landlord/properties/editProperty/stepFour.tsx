@@ -1,6 +1,5 @@
 "use client";
 import useEditPropertyStore from "../../../../zustand/property/useEditPropertyStore";
-import { PAYMENT_FREQUENCIES } from "../../../../constant/paymentFrequency";
 import { PAYMENT_METHODS } from "../../../../constant/paymentMethods";
 
 export function StepFourEdit() {
