@@ -30,7 +30,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     {
         id: 2,
         name: "Standard Plan",
-        price: 500,
+        price: 1499,
         trialDays: 10,
         popular: true,
         features: [
@@ -47,7 +47,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     {
         id: 3,
         name: "Pro Plan",
-        price: 1000,
+        price: 2499,
         trialDays: 14,
         popular: false,
         features: [
@@ -63,7 +63,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     {
         id: 4,
         name: "Enterprise Plan",
-        price: 1000,
+        price: 0,
         trialDays: 14,
         popular: false,
         features: [
