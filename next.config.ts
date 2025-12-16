@@ -10,10 +10,6 @@ const baseConfig: NextConfig = {
         ignoreBuildErrors: true,
     },
 
-    /**
-     * 🔴 REQUIRED FOR NEXT 16
-     * Explicitly tell Next to use webpack
-     */
     bundler: "webpack",
 
     /**
