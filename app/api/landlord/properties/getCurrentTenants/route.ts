@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 
-const SECRET_KEY = process.env.ENCRYPTION_SECRET;
+const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
 
-export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const landlord_id = searchParams.get("landlord_id");
-
-    if (!landlord_id) {
-        return NextResponse.json({ message: "Missing landlord_id" }, { status: 400 });
-    }
-
-    try {
+/* --------------------------------------------------
+   CACHED QUERY (per landlord)
+-------------------------------------------------- */
+const getCurrentTenantsCached = unstable_cache(
+    async (landlord_id: string) => {
         const query = `
       SELECT
         t.tenant_id,
@@ -42,21 +39,21 @@ export async function GET(req: NextRequest) {
             ON la.agreement_id = ls_tenant.agreement_id AND ls_tenant.role = 'tenant'
       LEFT JOIN LeaseSignature ls_landlord 
             ON la.agreement_id = ls_landlord.agreement_id AND ls_landlord.role = 'landlord'
-      WHERE la.status = 'active' AND p.landlord_id = ?
+      WHERE la.status = 'active'
+        AND p.landlord_id = ?
       ORDER BY la.start_date DESC
     `;
 
         const [rows] = await db.execute(query, [landlord_id]);
         const tenants = rows as any[];
 
-        const tenantMap = new Map();
+        const tenantMap = new Map<number, any>();
 
-        tenants.forEach((tenant) => {
+        for (const tenant of tenants) {
             const email = decryptData(JSON.parse(tenant.email), SECRET_KEY);
             const firstName = decryptData(JSON.parse(tenant.firstName), SECRET_KEY);
             const lastName = decryptData(JSON.parse(tenant.lastName), SECRET_KEY);
 
-            // ✅ decrypt phone number
             const phoneNumber = tenant.phoneNumber
                 ? decryptData(JSON.parse(tenant.phoneNumber), SECRET_KEY)
                 : null;
@@ -75,19 +72,19 @@ export async function GET(req: NextRequest) {
                     firstName,
                     lastName,
                     email,
-                    phoneNumber, // ← 📌 included here
+                    phoneNumber,
                     profilePicture,
                     employment_type: tenant.employment_type,
                     occupation: tenant.occupation,
                     units: [],
                     agreements: [],
-                    property_names: new Set(),
+                    property_names: new Set<string>(),
                 });
             }
 
             const entry = tenantMap.get(tenant.tenant_id);
 
-            if (!entry.units.some((u) => u.unit_id === tenant.unit_id)) {
+            if (!entry.units.some((u: any) => u.unit_id === tenant.unit_id)) {
                 entry.units.push({
                     unit_id: tenant.unit_id,
                     unit_name: tenant.unit_name,
@@ -105,16 +102,46 @@ export async function GET(req: NextRequest) {
             });
 
             entry.property_names.add(tenant.property_name);
-        });
+        }
 
-        const result = Array.from(tenantMap.values()).map((t) => ({
+        return Array.from(tenantMap.values()).map((t) => ({
             ...t,
             property_names: Array.from(t.property_names),
         }));
+    },
 
-        return NextResponse.json(result);
+    /* 🔑 Cache key */
+    (landlord_id: string) => ["current-tenants", landlord_id],
+
+    /* ⏱ Cache config */
+    {
+        revalidate: 120, // 2 minutes (safe for tenants)
+        tags: ["current-tenants"],
+    }
+);
+
+/* --------------------------------------------------
+   API HANDLER
+-------------------------------------------------- */
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const landlord_id = searchParams.get("landlord_id");
+
+    if (!landlord_id) {
+        return NextResponse.json(
+            { message: "Missing landlord_id" },
+            { status: 400 }
+        );
+    }
+
+    try {
+        const result = await getCurrentTenantsCached(landlord_id);
+        return NextResponse.json(result, { status: 200 });
     } catch (error) {
-        console.error("Database error:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        console.error("[CURRENT_TENANTS_CACHE_ERROR]", error);
+        return NextResponse.json(
+            { message: "Internal Server Error" },
+            { status: 500 }
+        );
     }
 }

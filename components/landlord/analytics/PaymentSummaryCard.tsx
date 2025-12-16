@@ -1,251 +1,259 @@
 "use client";
-import { useEffect, useState } from "react";
-import { PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, AlertCircle, CheckCircle, Users } from "lucide-react";
+
+import React, { useMemo } from "react";
+import dynamic from "next/dynamic";
+import axios from "axios";
+import useSWR from "swr";
 import Link from "next/link";
 import Image from "next/image";
-import axios from "axios";
+import {
+    TrendingUp,
+    AlertCircle,
+    CheckCircle,
+    Users,
+} from "lucide-react";
+
+/* ---------------- ApexCharts (CLIENT ONLY) ---------------- */
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+
+/* ---------------- Fetcher ---------------- */
+const fetcher = (url: string) =>
+    axios.get(url).then((res) => res.data);
+
+/* ---------------- Color System (SINGLE SOURCE OF TRUTH) ---------------- */
+const PAYMENT_COLORS = {
+    collected: "#10b981",
+    pending: "#3b82f6",
+    overdue: "#f97316",
+};
+
+/* ---------------- Types ---------------- */
+type Tenant = {
+    tenant_id: number;
+    profilePicture: string | null;
+    firstName: string;
+    lastName: string;
+};
 
 export default function PaymentSummaryCard({
-  landlord_id,
-  onClick,
-}: {
-  landlord_id: number | undefined;
-  onClick?: () => void;
+                                               landlord_id,
+                                               onClick,
+                                           }: {
+    landlord_id?: number;
+    onClick?: () => void;
 }) {
-  const [pending, setPending] = useState(0);
-  const [overdue, setOverdue] = useState(0);
-  const [collected, setCollected] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [tenants, setTenants] = useState<
-    {
-      tenant_id: number;
-      profilePicture: string | null;
-      firstName: string;
-      lastName: string;
-    }[]
-  >([]);
-
-    useEffect(() => {
-        if (!landlord_id) return;
-
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const { data } = await axios.get(
-                    "/api/analytics/landlord/getTotalReceivablesforTheMonth",
-                    {
-                        params: { landlord_id },
-                    }
-                );
-
-                const pendingAmount = Number(data?.total_pending || 0);
-                const overdueAmount = Number(data?.total_overdue || 0);
-                const collectedAmount = Number(data?.total_collected || 0);
-
-                setPending(pendingAmount);
-                setOverdue(overdueAmount);
-                setCollected(collectedAmount);
-                setTotal(pendingAmount + overdueAmount + collectedAmount);
-
-                /* ---------------- Current Tenants ---------------- */
-                const tenantRes = await axios.get(
-                    "/api/landlord/properties/getCurrentTenants",
-                    {
-                        params: { landlord_id },
-                    }
-                );
-
-                const tenantData = tenantRes.data;
-
-                setTenants(Array.isArray(tenantData) ? tenantData.slice(0, 8) : []);
-            } catch (error) {
-                console.error("Error fetching landlord analytics:", error);
-                setPending(0);
-                setOverdue(0);
-                setCollected(0);
-                setTotal(0);
-                setTenants([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [landlord_id]);
-
-  const data =
-    pending === 0 && overdue === 0 && collected === 0
-      ? [{ name: "No Data", value: 1 }]
-      : [
-          { name: "Collected", value: collected },
-          { name: "Pending", value: pending },
-          { name: "Overdue", value: overdue },
-        ];
-
-  const COLORS =
-    pending === 0 && overdue === 0 && collected === 0
-      ? ["#e5e7eb"]
-      : ["#10b981", "#3b82f6", "#f97316"];
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 min-h-[480px] animate-pulse">
-        <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="h-24 bg-gray-100 rounded-lg"></div>
-          <div className="h-24 bg-gray-100 rounded-lg"></div>
-        </div>
-        <div className="h-32 bg-gray-100 rounded-full mx-auto w-32"></div>
-      </div>
+    /* ---------------- SWR ---------------- */
+    const { data: stats, isLoading } = useSWR(
+        landlord_id
+            ? `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
+            : null,
+        fetcher,
+        { revalidateOnFocus: false }
     );
-  }
 
-  return (
-    <div
-      onClick={onClick}
-      className="
-                relative group cursor-pointer
-                bg-white rounded-lg shadow-sm border border-gray-200
-                p-4 md:p-6
-                transition-all duration-200
-                hover:shadow-md hover:-translate-y-0.5
-                min-h-[480px] flex flex-col
-            "
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
-          <h2 className="text-sm md:text-base font-semibold text-gray-900">
-            Payment Summary
-          </h2>
-        </div>
-        <span className="text-xs text-gray-500">
+    const { data: tenants } = useSWR<Tenant[]>(
+        landlord_id
+            ? `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}`
+            : null,
+        fetcher,
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 120_000,
+        }
+    );
+
+    /* ---------------- Derived ---------------- */
+    const pending = Number(stats?.total_pending || 0);
+    const overdue = Number(stats?.total_overdue || 0);
+    const collected = Number(stats?.total_collected || 0);
+    const total = pending + overdue + collected;
+
+    /* ---------------- Apex Donut Config ---------------- */
+    const series = useMemo(
+        () => [collected, pending, overdue],
+        [collected, pending, overdue]
+    );
+
+    const options = useMemo(
+        () => ({
+            chart: {
+                type: "donut",
+                animations: {
+                    enabled: total > 0,
+                    easing: "easeinout",
+                    speed: 600,
+                },
+            },
+            labels: ["Collected", "Upcoming", "Overdue"],
+            colors: [
+                PAYMENT_COLORS.collected,
+                PAYMENT_COLORS.pending,
+                PAYMENT_COLORS.overdue,
+            ],
+            legend: {
+                show: false,
+            },
+            stroke: {
+                width: 2,
+                colors: ["#ffffff"],
+            },
+            dataLabels: {
+                enabled: false,
+            },
+            tooltip: {
+                y: {
+                    formatter: (val: number) =>
+                        `₱${val.toLocaleString()}`,
+                },
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: "65%",
+                    },
+                },
+            },
+        }),
+        [total]
+    );
+
+    /* ---------------- Skeleton ---------------- */
+    if (isLoading) {
+        return (
+            <div className="bg-white border rounded-lg p-6 min-h-[420px] animate-pulse">
+                <div className="h-5 w-1/3 bg-gray-200 rounded mb-6" />
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                    <div className="h-20 bg-gray-100 rounded" />
+                    <div className="h-20 bg-gray-100 rounded" />
+                    <div className="h-20 bg-gray-100 rounded" />
+                </div>
+                <div className="h-[120px] w-[120px] bg-gray-100 rounded-full mx-auto" />
+            </div>
+        );
+    }
+
+    return (
+        <div
+            onClick={onClick}
+            className="bg-white border rounded-lg p-6 hover:shadow-md transition min-h-[420px] flex flex-col cursor-pointer"
+        >
+            {/* Header */}
+            <div className="flex justify-between mb-4">
+                <h2 className="font-semibold text-gray-900 text-sm">
+                    Payment Summary
+                </h2>
+                <span className="text-xs text-gray-500">
           {new Date().toLocaleString("en-US", { month: "long" })}
         </span>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {/* Upcoming */}
-        <div className="flex flex-col items-center p-3 rounded-lg bg-blue-50 border border-blue-100">
-          <TrendingUp className="w-5 h-5 text-blue-600 mb-2" />
-          <p className="text-[10px] md:text-xs text-gray-600 mb-1">Upcoming</p>
-          <p className="text-sm md:text-base font-bold text-blue-600 truncate w-full text-center">
-            ₱{pending.toLocaleString()}
-          </p>
-        </div>
-
-        {/* Overdue */}
-        <div className="flex flex-col items-center p-3 rounded-lg bg-orange-50 border border-orange-100">
-          <AlertCircle className="w-5 h-5 text-orange-600 mb-2" />
-          <p className="text-[10px] md:text-xs text-gray-600 mb-1">Overdue</p>
-          <p className="text-sm md:text-base font-bold text-orange-600 truncate w-full text-center">
-            ₱{overdue.toLocaleString()}
-          </p>
-        </div>
-
-        {/* Collected */}
-        <div className="flex flex-col items-center p-3 rounded-lg bg-emerald-50 border border-emerald-100">
-          <CheckCircle className="w-5 h-5 text-emerald-600 mb-2" />
-          <p className="text-[10px] md:text-xs text-gray-600 mb-1">Collected</p>
-          <p className="text-sm md:text-base font-bold text-emerald-600 truncate w-full text-center">
-            ₱{collected.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
-      {/* Chart & Legend */}
-      <div className="flex items-center justify-center gap-6 mb-6">
-        {/* Chart */}
-        <div className="flex flex-col items-center">
-          <PieChart width={120} height={120}>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={40}
-              outerRadius={55}
-              strokeWidth={0}
-              dataKey="value"
-            >
-              {data.map((entry, i) => (
-                <Cell key={i} fill={COLORS[i]} />
-              ))}
-            </Pie>
-          </PieChart>
-          <div className="text-center mt-2">
-            <p className="text-xs text-gray-500">Total</p>
-            <p className="text-sm font-bold text-gray-900">
-              ₱{total.toLocaleString()}
-            </p>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0"></span>
-            <span className="text-gray-700">Collected</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></span>
-            <span className="text-gray-700">Upcoming</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></span>
-            <span className="text-gray-700">Overdue</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Current Tenants Section */}
-      {tenants.length > 0 && (
-        <div className="mt-auto pt-4 border-t border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-600" />
-              <h3 className="text-sm font-semibold text-gray-900">
-                Current Tenants
-              </h3>
             </div>
-            <span className="text-xs text-gray-500">
-              {tenants.length} active
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {tenants.map((t) => (
-              <Link
-                key={t.tenant_id}
-                href={`/pages/landlord/list_of_tenants/${t.tenant_id}`}
-                className="relative group/avatar"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-all hover:scale-110">
-                  <Image
-                    src={
-                      t.profilePicture ||
-                      "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                    }
-                    alt={`${t.firstName} ${t.lastName}`}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-opacity pointer-events-none z-10">
-                  {t.firstName} {t.lastName}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Hover overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 to-emerald-600/0 group-hover:from-blue-600/5 group-hover:to-emerald-600/5 rounded-lg transition-all duration-200 pointer-events-none" />
-    </div>
-  );
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+                <Stat
+                    icon={<TrendingUp />}
+                    label="Upcoming"
+                    value={pending}
+                    color="blue"
+                />
+                <Stat
+                    icon={<AlertCircle />}
+                    label="Overdue"
+                    value={overdue}
+                    color="orange"
+                />
+                <Stat
+                    icon={<CheckCircle />}
+                    label="Collected"
+                    value={collected}
+                    color="emerald"
+                />
+            </div>
+
+            {/* Donut Chart */}
+            <div className="flex justify-center mb-6">
+                {total > 0 ? (
+                    <div className="relative">
+                        <Chart
+                            options={options}
+                            series={series}
+                            type="donut"
+                            width={180}
+                            height={180}
+                        />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <p className="text-xs text-gray-500">Total</p>
+                            <p className="font-bold text-sm">
+                                ₱{total.toLocaleString()}
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="w-[140px] h-[140px] rounded-full border-4 border-gray-200 flex items-center justify-center">
+                        <span className="text-xs text-gray-400">No data</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Tenants */}
+            {Array.isArray(tenants) && tenants.length > 0 && (
+                <div className="mt-auto pt-4 border-t">
+                    <div className="flex items-center gap-2 mb-2 text-sm font-semibold">
+                        <Users className="w-4 h-4 text-blue-600" />
+                        Current Tenants
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                        {tenants.slice(0, 8).map((t) => (
+                            <Link
+                                key={t.tenant_id}
+                                href={`/pages/landlord/list_of_tenants/${t.tenant_id}`}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="w-10 h-10 rounded-full overflow-hidden border hover:scale-110 transition">
+                                    <Image
+                                        src={
+                                            t.profilePicture ||
+                                            "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+                                        }
+                                        alt={`${t.firstName} ${t.lastName}`}
+                                        width={40}
+                                        height={40}
+                                        loading="lazy"
+                                    />
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ---------------- Stat ---------------- */
+function Stat({
+                  icon,
+                  label,
+                  value,
+                  color,
+              }: {
+    icon: React.ReactNode;
+    label: string;
+    value: number;
+    color: "blue" | "orange" | "emerald";
+}) {
+    const colors = {
+        blue: "bg-blue-50 text-blue-600",
+        orange: "bg-orange-50 text-orange-600",
+        emerald: "bg-emerald-50 text-emerald-600",
+    };
+
+    return (
+        <div className={`p-3 rounded-lg border ${colors[color]} flex flex-col items-center`}>
+            {icon}
+            <p className="text-[10px] mt-1">{label}</p>
+            <p className="font-bold text-sm">
+                ₱{value.toLocaleString()}
+            </p>
+        </div>
+    );
 }

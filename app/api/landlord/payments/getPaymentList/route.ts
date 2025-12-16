@@ -1,40 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
+import { unstable_cache } from "next/cache";
 
-export async function GET(req: NextRequest) {
-    try {
-        const { searchParams } = new URL(req.url);
-        const landlordId = searchParams.get("landlord_id");
-        const propertyId = searchParams.get("property_id");
-        const month = searchParams.get("month"); // format: YYYY-MM
+const SECRET = process.env.ENCRYPTION_SECRET!;
 
-        if (!landlordId) {
-            return NextResponse.json({ error: "Missing landlord_id" }, { status: 400 });
-        }
-
+/* -------------------------------------------------------
+   CACHED QUERY FUNCTION
+------------------------------------------------------- */
+const getPaymentsCached = unstable_cache(
+    async (
+        landlordId: string,
+        propertyId?: string | null,
+        month?: string | null
+    ) => {
         let query = `
-      SELECT
-          p.payment_id,
-          p.payment_type,
-          p.amount_paid,
-          p.payment_status,
-          p.payment_date,
-          p.receipt_reference,
-          p.created_at,
-          u.unit_name,
-          pr.property_name,
-          usr.firstName,
-          usr.lastName
-      FROM Payment p
-          JOIN LeaseAgreement la ON p.agreement_id = la.agreement_id
-          JOIN Tenant t ON la.tenant_id = t.tenant_id
-          JOIN User usr ON t.user_id = usr.user_id
-          JOIN Unit u ON la.unit_id = u.unit_id
-          JOIN Property pr ON u.property_id = pr.property_id
-      WHERE pr.landlord_id = ?
-        AND p.payment_status = 'confirmed'
-    `;
+            SELECT
+                p.payment_id,
+                p.payment_type,
+                p.amount_paid,
+                p.payment_status,
+                p.payment_date,
+                p.receipt_reference,
+                p.created_at,
+                u.unit_name,
+                pr.property_name,
+                usr.firstName,
+                usr.lastName
+            FROM Payment p
+                JOIN LeaseAgreement la ON p.agreement_id = la.agreement_id
+                JOIN Tenant t ON la.tenant_id = t.tenant_id
+                JOIN User usr ON t.user_id = usr.user_id
+                JOIN Unit u ON la.unit_id = u.unit_id
+                JOIN Property pr ON u.property_id = pr.property_id
+            WHERE pr.landlord_id = ?
+              AND p.payment_status = 'confirmed'
+        `;
 
         const params: any[] = [landlordId];
 
@@ -52,33 +53,83 @@ export async function GET(req: NextRequest) {
 
         const [rows]: any = await db.query(query, params);
 
-        // 🔹 Decrypt tenant names (same pattern as your activity logs)
-        const decryptedRows = rows.map((row: any) => {
-            const decryptedRow = { ...row };
+        /* ---------------- Decrypt Names ---------------- */
+        return rows.map((row: any) => {
+            let firstName = "";
+            let lastName = "";
 
             try {
                 if (row.firstName) {
-                    const parsedFirst = JSON.parse(row.firstName);
-                    decryptedRow.firstName = decryptData(parsedFirst, process.env.ENCRYPTION_SECRET);
+                    firstName = decryptData(
+                        JSON.parse(row.firstName),
+                        SECRET
+                    );
                 }
 
                 if (row.lastName) {
-                    const parsedLast = JSON.parse(row.lastName);
-                    decryptedRow.lastName = decryptData(parsedLast, process.env.ENCRYPTION_SECRET);
+                    lastName = decryptData(
+                        JSON.parse(row.lastName),
+                        SECRET
+                    );
                 }
-
-                decryptedRow.tenant_name = `${decryptedRow.firstName || ""} ${decryptedRow.lastName || ""}`.trim();
-            } catch (decryptionError) {
-                console.error(`Decryption failed for tenant in payment ID ${row.payment_id}:`, decryptionError);
-                decryptedRow.tenant_name = "Unknown Tenant";
+            } catch (err) {
+                console.error(
+                    `❌ Decryption failed for payment ${row.payment_id}`,
+                    err
+                );
             }
 
-            return decryptedRow;
+            return {
+                ...row,
+                firstName,
+                lastName,
+                tenant_name: `${firstName} ${lastName}`.trim() || "Unknown Tenant",
+            };
         });
+    },
+    // 🔑 cache key factory
+    (landlordId, propertyId, month) => [
+        "payments",
+        landlordId,
+        propertyId ?? "all",
+        month ?? "all",
+    ],
+    {
+        revalidate: 60, // ⏱ 1 minute
+        tags: ["payments"],
+    }
+);
 
-        return NextResponse.json(decryptedRows, { status: 200 });
+/* -------------------------------------------------------
+   ROUTE HANDLER
+------------------------------------------------------- */
+export async function GET(req: NextRequest) {
+    try {
+        const { searchParams } = new URL(req.url);
+
+        const landlordId = searchParams.get("landlord_id");
+        const propertyId = searchParams.get("property_id");
+        const month = searchParams.get("month"); // YYYY-MM
+
+        if (!landlordId) {
+            return NextResponse.json(
+                { error: "Missing landlord_id" },
+                { status: 400 }
+            );
+        }
+
+        const result = await getPaymentsCached(
+            landlordId,
+            propertyId,
+            month
+        );
+
+        return NextResponse.json(result, { status: 200 });
     } catch (error) {
         console.error("❌ Error fetching payments:", error);
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+        return NextResponse.json(
+            { error: "Internal server error" },
+            { status: 500 }
+        );
     }
 }
