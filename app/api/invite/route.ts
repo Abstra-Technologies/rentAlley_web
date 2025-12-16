@@ -2,15 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
-import { generateLeaseId } from "@/utils/id_generator";
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, unitId, propertyName: incomingName, unitName, startDate, endDate } =
-            await req.json();
+        const {
+            email,
+            unitId,
+            propertyName: incomingName,
+            unitName,
+            startDate,
+            endDate,
+            datesDeferred = false,
+        } = await req.json();
 
-        console.log(email, unitId, incomingName, unitName, startDate, endDate);
-
+        /* ===============================
+           Basic validation
+        =============================== */
         if (!email || !unitId || !unitName) {
             return NextResponse.json(
                 { error: "Missing required fields." },
@@ -18,47 +25,45 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (!startDate || !endDate) {
-            return NextResponse.json(
-                { error: "Start and end date are required." },
-                { status: 400 }
-            );
-        }
+        /* ===============================
+           Conditional date validation
+        =============================== */
+        if (!datesDeferred) {
+            if (!startDate || !endDate) {
+                return NextResponse.json(
+                    { error: "Start and end date are required." },
+                    { status: 400 }
+                );
+            }
 
-        if (new Date(startDate) >= new Date(endDate)) {
-            return NextResponse.json(
-                { error: "End date must be after start date." },
-                { status: 400 }
-            );
+            if (new Date(startDate) >= new Date(endDate)) {
+                return NextResponse.json(
+                    { error: "End date must be after start date." },
+                    { status: 400 }
+                );
+            }
         }
 
         const inviteCode = crypto.randomBytes(8).toString("hex");
-        const leaseId = generateLeaseId();
 
         const conn = await db.getConnection();
         await conn.beginTransaction();
 
         try {
-            // Insert invite record
-            await conn.query(
+            /* ===============================
+               Lock unit row & validate status
+            =============================== */
+            const [unitRows]: any = await conn.query(
                 `
-                INSERT INTO InviteCode (code, email, unitId, start_date, end_date, status, expiresAt)
-                VALUES (?, ?, ?, ?, ?, 'PENDING', DATE_ADD(NOW(), INTERVAL 7 DAY))
-                `,
-                [inviteCode, email, unitId, startDate, endDate]
-            );
-
-            // Get property_id & rent amount from the unit
-            const [unitData]: any = await conn.query(
-                `
-                SELECT property_id, rent_amount
-                FROM Unit
-                WHERE unit_id = ?
-                `,
+        SELECT property_id, status
+        FROM Unit
+        WHERE unit_id = ?
+        FOR UPDATE
+        `,
                 [unitId]
             );
 
-            if (!unitData.length) {
+            if (!unitRows.length) {
                 await conn.rollback();
                 return NextResponse.json(
                     { error: "Unit not found." },
@@ -66,10 +71,46 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            const { property_id: propertyId, rent_amount: rentAmount } = unitData[0];
+            const { property_id: propertyId, status: unitStatus } = unitRows[0];
 
-            // 🔍 Auto-fetch property name if not provided
+            if (unitStatus !== "unoccupied") {
+                await conn.rollback();
+                return NextResponse.json(
+                    { error: `Unit is not available (current status: ${unitStatus}).` },
+                    { status: 409 }
+                );
+            }
+
+            /* ===============================
+               Insert invite record
+            =============================== */
+            await conn.query(
+                `
+        INSERT INTO InviteCode (
+          code,
+          email,
+          unitId,
+          start_date,
+          end_date,
+          status,
+          expiresAt
+        )
+        VALUES (?, ?, ?, ?, ?, 'PENDING', DATE_ADD(NOW(), INTERVAL 7 DAY))
+        `,
+                [
+                    inviteCode,
+                    email,
+                    unitId,
+                    datesDeferred ? null : startDate,
+                    datesDeferred ? null : endDate,
+                ]
+            );
+
+            /* ===============================
+               Resolve property name
+            =============================== */
             let propertyName = incomingName;
+
             if (!propertyName) {
                 const [propRows]: any = await conn.query(
                     `SELECT property_name FROM Property WHERE property_id = ?`,
@@ -87,27 +128,23 @@ export async function POST(req: NextRequest) {
                 propertyName = propRows[0].property_name;
             }
 
-            // Insert lease agreement draft
+            /* ===============================
+               Reserve unit
+            =============================== */
             await conn.query(
                 `
-                INSERT INTO LeaseAgreement (
-                    agreement_id,
-                    tenant_id,
-                    unit_id,
-                    start_date,
-                    end_date,
-                    rent_amount,
-                    status,
-                    created_at
-                )
-                VALUES (?, NULL, ?, ?, ?, ?, 'draft', NOW())
-                `,
-                [leaseId, unitId, startDate, endDate, rentAmount || 0.0]
+        UPDATE Unit
+        SET status = 'reserved'
+        WHERE unit_id = ?
+        `,
+                [unitId]
             );
 
             await conn.commit();
 
-            // Setup email
+            /* ===============================
+               Send email
+            =============================== */
             const transporter = nodemailer.createTransport({
                 service: "gmail",
                 auth: {
@@ -122,16 +159,28 @@ export async function POST(req: NextRequest) {
                 from: `[Upkyp] "${propertyName}" <${process.env.EMAIL_USER}>`,
                 to: email,
                 subject: `You're invited to join ${propertyName}`,
-                html: `... same email template ...`,
+                html: `
+          <p>You’ve been invited to join <strong>${propertyName}</strong>.</p>
+          <p>Unit: <strong>${unitName}</strong></p>
+          <p>
+            <a href="${registrationUrl}">
+              Accept Invitation
+            </a>
+          </p>
+          ${
+                    datesDeferred
+                        ? `<p><em>Lease dates will be finalized after acceptance.</em></p>`
+                        : ""
+                }
+        `,
             });
 
             return NextResponse.json({
                 success: true,
                 code: inviteCode,
-                lease_id: leaseId,
-                rent_amount: rentAmount,
                 propertyName,
-                message: "Invite sent successfully.",
+                datesDeferred,
+                message: "Invite sent and unit reserved.",
             });
         } catch (err) {
             await conn.rollback();

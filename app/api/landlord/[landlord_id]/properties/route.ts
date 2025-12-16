@@ -1,22 +1,23 @@
 
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db"; // adjust to your DB connection
+import { NextResponse, NextRequest } from "next/server";
+import { db } from "@/lib/db";
 
 export async function GET(
     req: Request,
-    { params }: { params: { landlord_id: string } }
+    { params }: { params: Promise<{ landlord_id: string }> }
 ) {
     try {
-        const landlordId = params.landlord_id;
+        const { landlord_id } = await params;
 
-        if (!landlordId) {
+
+        if (!landlord_id) {
             return NextResponse.json(
                 { success: false, error: "Missing landlordId" },
                 { status: 400 }
             );
         }
 
-        // ✅ Query all properties with units
+        //  Query all properties with units
         const [rows]: any = await db.query(
             `
       SELECT 
@@ -33,7 +34,7 @@ export async function GET(
       WHERE p.landlord_id = ?
       ORDER BY p.property_id, u.unit_id
     `,
-            [landlordId]
+            [landlord_id]
         );
 
         if (!rows || rows.length === 0) {
