@@ -13,21 +13,27 @@ import {
     Users,
 } from "lucide-react";
 
-/* ---------------- ApexCharts (CLIENT ONLY) ---------------- */
-const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+/* --------------------------------------------------
+   FAST ApexCharts (lazy + skeleton)
+-------------------------------------------------- */
+const Chart = dynamic(() => import("react-apexcharts"), {
+    ssr: false,
+    loading: () => (
+        <div className="w-[180px] h-[180px] rounded-full bg-gray-100 animate-pulse" />
+    ),
+});
 
-/* ---------------- Fetcher ---------------- */
+/* --------------------------------------------------
+   Fetcher
+-------------------------------------------------- */
 const fetcher = (url: string) =>
-    axios.get(url).then((res) => res.data);
+    axios.get(url).then(res => res.data);
 
-/* ---------------- Color System (SINGLE SOURCE OF TRUTH) ---------------- */
-const PAYMENT_COLORS = {
-    collected: "#10b981",
-    pending: "#3b82f6",
-    overdue: "#f97316",
-};
+/* --------------------------------------------------
+   Colors
+-------------------------------------------------- */
+const COLORS = ["#10b981", "#3b82f6", "#f97316"];
 
-/* ---------------- Types ---------------- */
 type Tenant = {
     tenant_id: number;
     profilePicture: string | null;
@@ -42,15 +48,29 @@ export default function PaymentSummaryCard({
     landlord_id?: number;
     onClick?: () => void;
 }) {
-    /* ---------------- SWR ---------------- */
-    const { data: stats, isLoading } = useSWR(
+
+    /* --------------------------------------------------
+       PRIMARY DATA (FAST)
+    -------------------------------------------------- */
+    const { data: stats } = useSWR(
         landlord_id
             ? `/api/analytics/landlord/getTotalReceivablesforTheMonth?landlord_id=${landlord_id}`
             : null,
         fetcher,
-        { revalidateOnFocus: false }
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 60_000,
+            fallbackData: {
+                total_pending: 0,
+                total_overdue: 0,
+                total_collected: 0,
+            },
+        }
     );
 
+    /* --------------------------------------------------
+       SECONDARY DATA (DEFERRED)
+    -------------------------------------------------- */
     const { data: tenants } = useSWR<Tenant[]>(
         landlord_id
             ? `/api/landlord/properties/getCurrentTenants?landlord_id=${landlord_id}`
@@ -62,13 +82,17 @@ export default function PaymentSummaryCard({
         }
     );
 
-    /* ---------------- Derived ---------------- */
+    /* --------------------------------------------------
+       Numbers
+    -------------------------------------------------- */
+    const collected = Number(stats?.total_collected || 0);
     const pending = Number(stats?.total_pending || 0);
     const overdue = Number(stats?.total_overdue || 0);
-    const collected = Number(stats?.total_collected || 0);
-    const total = pending + overdue + collected;
+    const total = collected + pending + overdue;
 
-    /* ---------------- Apex Donut Config ---------------- */
+    /* --------------------------------------------------
+       Chart Data (MEMOIZED)
+    -------------------------------------------------- */
     const series = useMemo(
         () => [collected, pending, overdue],
         [collected, pending, overdue]
@@ -79,59 +103,31 @@ export default function PaymentSummaryCard({
             chart: {
                 type: "donut",
                 animations: {
-                    enabled: total > 0,
-                    easing: "easeinout",
-                    speed: 600,
+                    enabled: false, // ⛔ fastest initial paint
                 },
             },
             labels: ["Collected", "Upcoming", "Overdue"],
-            colors: [
-                PAYMENT_COLORS.collected,
-                PAYMENT_COLORS.pending,
-                PAYMENT_COLORS.overdue,
-            ],
-            legend: {
-                show: false,
-            },
-            stroke: {
-                width: 2,
-                colors: ["#ffffff"],
-            },
-            dataLabels: {
-                enabled: false,
+            colors: COLORS,
+            legend: { show: false },
+            stroke: { width: 2, colors: ["#fff"] },
+            dataLabels: { enabled: false },
+            plotOptions: {
+                pie: {
+                    donut: { size: "65%" },
+                },
             },
             tooltip: {
                 y: {
-                    formatter: (val: number) =>
-                        `₱${val.toLocaleString()}`,
-                },
-            },
-            plotOptions: {
-                pie: {
-                    donut: {
-                        size: "65%",
-                    },
+                    formatter: (v: number) => `₱${v.toLocaleString()}`,
                 },
             },
         }),
-        [total]
+        []
     );
 
-    /* ---------------- Skeleton ---------------- */
-    if (isLoading) {
-        return (
-            <div className="bg-white border rounded-lg p-6 min-h-[420px] animate-pulse">
-                <div className="h-5 w-1/3 bg-gray-200 rounded mb-6" />
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                    <div className="h-20 bg-gray-100 rounded" />
-                    <div className="h-20 bg-gray-100 rounded" />
-                    <div className="h-20 bg-gray-100 rounded" />
-                </div>
-                <div className="h-[120px] w-[120px] bg-gray-100 rounded-full mx-auto" />
-            </div>
-        );
-    }
-
+    /* --------------------------------------------------
+       UI
+    -------------------------------------------------- */
     return (
         <div
             onClick={onClick}
@@ -149,27 +145,12 @@ export default function PaymentSummaryCard({
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 mb-6">
-                <Stat
-                    icon={<TrendingUp />}
-                    label="Upcoming"
-                    value={pending}
-                    color="blue"
-                />
-                <Stat
-                    icon={<AlertCircle />}
-                    label="Overdue"
-                    value={overdue}
-                    color="orange"
-                />
-                <Stat
-                    icon={<CheckCircle />}
-                    label="Collected"
-                    value={collected}
-                    color="emerald"
-                />
+                <Stat icon={<TrendingUp />} label="Upcoming" value={pending} color="blue" />
+                <Stat icon={<AlertCircle />} label="Overdue" value={overdue} color="orange" />
+                <Stat icon={<CheckCircle />} label="Collected" value={collected} color="emerald" />
             </div>
 
-            {/* Donut Chart */}
+            {/* Chart (mount ONLY when data exists) */}
             <div className="flex justify-center mb-6">
                 {total > 0 ? (
                     <div className="relative">
@@ -194,13 +175,14 @@ export default function PaymentSummaryCard({
                 )}
             </div>
 
-            {/* Tenants */}
+            {/* Tenants (NOT blocking chart) */}
             {Array.isArray(tenants) && tenants.length > 0 && (
                 <div className="mt-auto pt-4 border-t">
                     <div className="flex items-center gap-2 mb-2 text-sm font-semibold">
                         <Users className="w-4 h-4 text-blue-600" />
                         Current Tenants
                     </div>
+
                     <div className="flex gap-2 flex-wrap">
                         {tenants.slice(0, 8).map((t) => (
                             <Link
@@ -229,7 +211,9 @@ export default function PaymentSummaryCard({
     );
 }
 
-/* ---------------- Stat ---------------- */
+/* --------------------------------------------------
+   Stat
+-------------------------------------------------- */
 function Stat({
                   icon,
                   label,
@@ -241,14 +225,14 @@ function Stat({
     value: number;
     color: "blue" | "orange" | "emerald";
 }) {
-    const colors = {
+    const styles = {
         blue: "bg-blue-50 text-blue-600",
         orange: "bg-orange-50 text-orange-600",
         emerald: "bg-emerald-50 text-emerald-600",
     };
 
     return (
-        <div className={`p-3 rounded-lg border ${colors[color]} flex flex-col items-center`}>
+        <div className={`p-3 rounded-lg border ${styles[color]} flex flex-col items-center`}>
             {icon}
             <p className="text-[10px] mt-1">{label}</p>
             <p className="font-bold text-sm">

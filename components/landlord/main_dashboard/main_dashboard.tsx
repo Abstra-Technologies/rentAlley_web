@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
+import axios from "axios";
 
 import useAuthStore from "@/zustand/authStore";
 
@@ -12,19 +14,30 @@ import LandlordProfileStatus from "../profile/LandlordProfileStatus";
 import QuickActions from "./QuickActions";
 import HeaderContent from "./headerContent";
 import NewWorkOrderModal from "../maintenance_management/NewWorkOrderModal";
-
-// Desktop-only components
 import LandlordPropertyMarquee from "@/components/landlord/main_dashboard/LandlordPropertyQuickView";
 
-// Heavy desktop analytics (lazy)
+const fetcher = (url: string) => axios.get(url).then(r => r.data);
+
+const CardSkeleton = () => (
+    <div className="h-[240px] rounded-xl bg-gray-100 animate-pulse" />
+);
+
+// --------------------------------------------------
+// Heavy components (lazy + skeleton)
+// --------------------------------------------------
 const PaymentSummaryCard = dynamic(
     () => import("../analytics/PaymentSummaryCard"),
-    { ssr: false }
+    { ssr: false, loading: CardSkeleton }
 );
 
 const PendingMaintenanceDonut = dynamic(
     () => import("../analytics/PendingMaintenanceDonut"),
-    { ssr: false }
+    { ssr: false, loading: CardSkeleton }
+);
+
+const RevenuePerformanceChart = dynamic(
+    () => import("../analytics/revenuePerformance"),
+    { ssr: false, loading: CardSkeleton }
 );
 
 const TodayCalendar = dynamic(
@@ -37,12 +50,6 @@ const PaymentList = dynamic(
     { ssr: false }
 );
 
-const RevenuePerformanceChart = dynamic(
-    () => import("../analytics/revenuePerformance"),
-    { ssr: false }
-);
-
-// ✅ Mobile dashboard
 const MobileLandlordDashboard = dynamic(
     () => import("@/components/landlord/main_dashboard/mobile_dashboard"),
     { ssr: false }
@@ -51,139 +58,111 @@ const MobileLandlordDashboard = dynamic(
 export default function LandlordMainDashboard() {
     const router = useRouter();
     const { user, loading } = useAuthStore();
-
     const landlordId = user?.landlord_id;
 
-    /* ================= GREETING ================= */
+    /* ---------------- Greeting ---------------- */
     const greeting = useMemo(() => {
-        const hour = new Date().getHours();
-        if (hour < 12) return "Good Morning";
-        if (hour < 18) return "Good Afternoon";
+        const h = new Date().getHours();
+        if (h < 12) return "Good Morning";
+        if (h < 18) return "Good Afternoon";
         return "Good Evening";
     }, []);
 
     const displayName =
         user?.firstName || user?.companyName || user?.email || "Landlord";
 
-    /* ================= POINTS ALERT (SAFE EFFECT) ================= */
-    const prevPointsRef = useRef<number | null>(null);
+    /* ---------------- Points Alert ---------------- */
+    const prevPoints = useRef<number | null>(null);
     const [showAlert, setShowAlert] = useState(false);
 
-    useEffect(() => {
-        if (loading || user?.points == null) return;
-
-        const prev = prevPointsRef.current;
-
-        if (prev !== null && user.points > prev) {
+    if (!loading && user?.points != null) {
+        if (
+            prevPoints.current !== null &&
+            user.points > prevPoints.current &&
+            !showAlert
+        ) {
             setShowAlert(true);
-            const timer = setTimeout(() => setShowAlert(false), 4000);
-            return () => clearTimeout(timer);
+            setTimeout(() => setShowAlert(false), 4000);
         }
+        prevPoints.current = user.points;
+    }
 
-        prevPointsRef.current = user.points;
-    }, [user?.points, loading]);
+    /* ---------------- Warm subscription cache ---------------- */
+    useSWR(
+        landlordId ? `/api/landlord/subscription/active/${landlordId}` : null,
+        fetcher,
+        { dedupingInterval: 60_000, revalidateOnFocus: false }
+    );
 
-    /* ================= MODALS ================= */
+    /* ---------------- Modal ---------------- */
     const [showNewModal, setShowNewModal] = useState(false);
 
     return (
         <div className="pb-24 md:pb-6">
-            <div className="w-full px-4 md:px-6 pt-4 md:pt-6">
+            <div className="px-4 md:px-6 pt-4 md:pt-6 space-y-5">
 
-                {/* POINTS ALERT */}
                 {showAlert && <PointsEarnedAlert points={user?.points} />}
 
-                {/* HEADER */}
-                <div className="mb-5">
-                    <HeaderContent
-                        greeting={greeting}
-                        displayName={displayName}
-                        landlordId={landlordId}
-                    />
-                </div>
+                <HeaderContent
+                    greeting={greeting}
+                    displayName={displayName}
+                    landlordId={landlordId}
+                />
 
-                {/* PROFILE STATUS */}
-                <div className="mb-4">
-                    <LandlordProfileStatus landlord_id={landlordId} />
-                </div>
+                <LandlordProfileStatus landlord_id={landlordId} />
 
-                {/* QUICK ACTIONS */}
-                <div className="mb-5 flex justify-center">
+                <div className="flex justify-center">
                     <QuickActions
-                        onAddProperty={() =>
-                            router.push("/pages/landlord/property-listing/create-property")
-                        }
-                        onInviteTenant={() =>
-                            router.push("/pages/landlord/invite-tenant")
-                        }
-                        onAnnouncement={() =>
-                            router.push("/pages/landlord/announcement/create-announcement")
-                        }
+                        onAddProperty={() => router.push("/pages/landlord/property-listing/create-property")}
+                        onInviteTenant={() => router.push("/pages/landlord/invite-tenant")}
+                        onAnnouncement={() => router.push("/pages/landlord/announcement/create-announcement")}
                         onWorkOrder={() => setShowNewModal(true)}
                         onIncome={() => router.push("/pages/landlord/payouts")}
                     />
                 </div>
 
-                {/* ================= DESKTOP DASHBOARD ================= */}
+                {/* ================= DESKTOP ================= */}
                 <div className="hidden md:block space-y-4">
-                    {/* Top row */}
+
+                    {/* Top Row */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                         <div className="lg:col-span-2">
-                            <PaymentSummaryCard landlord_id={landlordId} />
+                            {landlordId ? (
+                                <PaymentSummaryCard landlord_id={landlordId} />
+                            ) : (
+                                <CardSkeleton />
+                            )}
                         </div>
 
-                        <div
-                            className="cursor-pointer"
-                            onClick={() =>
-                                router.push("/pages/landlord/booking-appointment")
-                            }
-                        >
-                            <TodayCalendar landlordId={landlordId} />
-                        </div>
+                        <TodayCalendar landlordId={landlordId} />
                     </div>
 
-                    {/* Middle row */}
+                    {/* Middle Row */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div
-                            className="cursor-pointer"
-                            onClick={() =>
-                                router.push("/pages/landlord/property-listing")
-                            }
-                        >
-                            <LandlordPropertyMarquee landlordId={landlordId} />
-                        </div>
+                        <LandlordPropertyMarquee landlordId={landlordId} />
 
-                        <div
-                            className="cursor-pointer"
-                            onClick={() =>
-                                router.push("/pages/landlord/maintenance-request")
-                            }
-                        >
+                        {landlordId ? (
                             <PendingMaintenanceDonut landlordId={landlordId} />
-                        </div>
+                        ) : (
+                            <CardSkeleton />
+                        )}
 
-                        <div
-                            className="cursor-pointer"
-                            onClick={() =>
-                                router.push(
-                                    "/pages/landlord/analytics/detailed/paymentLogs"
-                                )
-                            }
-                        >
-                            <PaymentList landlord_id={landlordId} />
-                        </div>
+                        <PaymentList landlord_id={landlordId} />
                     </div>
 
-                    {/* Revenue */}
-                    <RevenuePerformanceChart landlord_id={landlordId} />
+                    {/* Heavy Revenue Chart (last) */}
+                    {landlordId ? (
+                        <RevenuePerformanceChart landlord_id={landlordId} />
+                    ) : (
+                        <CardSkeleton />
+                    )}
                 </div>
 
-                {/* ================= MOBILE DASHBOARD ================= */}
-                <div className="block md:hidden">
+                {/* ================= MOBILE ================= */}
+                <div className="md:hidden">
                     <MobileLandlordDashboard landlordId={landlordId} />
                 </div>
 
-                {/* NEW WORK ORDER MODAL */}
                 {showNewModal && (
                     <NewWorkOrderModal
                         landlordId={landlordId}
