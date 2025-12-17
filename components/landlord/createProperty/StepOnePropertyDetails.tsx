@@ -191,68 +191,85 @@ export default function StepOneMerged() {
        PAGE RENDER
     ----------------------------------------- */
     return (
-        <div className="bg-white shadow-xl rounded-xl p-6 sm:p-8 lg:p-10 space-y-12">
+        <div className="bg-white shadow-xl rounded-xl p-4 sm:p-6 lg:p-10 space-y-10">
 
             {/* TITLE */}
             <div>
-                <h1 className="text-3xl font-bold">Property Details</h1>
-                <p className="text-gray-600 mt-1">Fill in the details below.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold">Property Details</h1>
+                <p className="text-gray-600 text-sm sm:text-base mt-1">
+                    Fill in the details below.
+                </p>
             </div>
 
-            <form className="space-y-12">
+            <form className="space-y-10">
 
-                {/* ---------------- PROPERTY TYPE ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-4">1. Property Type</h2>
+                {/* PROPERTY TYPE */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        1. Property Type
+                    </h2>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                         {PROPERTY_TYPES.map((type) => {
                             const active = property.propertyType === type.value;
                             return (
                                 <button
-                                    type="button"
                                     key={type.value}
-                                    onClick={() => setProperty({ ...property, propertyType: type.value })}
-                                    className={`p-3 rounded-lg border ${
+                                    type="button"
+                                    onClick={() =>
+                                        setProperty({ ...property, propertyType: type.value })
+                                    }
+                                    className={`
+                  flex flex-col items-center justify-center
+                  min-h-[88px] sm:min-h-[96px]
+                  p-3 rounded-xl border text-sm transition
+                  ${
                                         active
-                                            ? "bg-blue-600 text-white border-blue-600"
-                                            : "border-gray-300 hover:border-blue-400"
-                                    }`}
+                                            ? "bg-blue-600 text-white border-blue-600 shadow-md"
+                                            : "border-gray-300 hover:bg-blue-50"
+                                    }
+                `}
                                 >
-                                    <div className="text-xl">{type.icon}</div>
-                                    {type.label}
+                                    <div className="text-xl mb-1">{type.icon}</div>
+                                    <span className="text-center leading-tight">
+                  {type.label}
+                </span>
                                 </button>
                             );
                         })}
                     </div>
-                </div>
+                </section>
 
-                {/* ---------------- PROPERTY NAME ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">2. Property Name</h2>
-
+                {/* PROPERTY NAME */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-2">
+                        2. Property Name
+                    </h2>
                     <input
                         type="text"
                         name="propertyName"
                         value={property.propertyName || ""}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2.5 border rounded-lg"
                         placeholder="e.g., Sunshine Residences"
                     />
-                </div>
+                </section>
 
-                {/* ---------------- PROPERTY LOCATION ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">3. Property Location</h2>
+                {/* LOCATION */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        3. Property Location
+                    </h2>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4">
 
-                        {/* LEFT SIDE — FIELDS */}
+                        {/* ADDRESS FIELDS */}
                         <div className="lg:col-span-2 space-y-4">
 
                             <div className="relative">
-                                <label className="font-semibold text-sm">Street Address *</label>
-
+                                <label className="text-sm font-medium">
+                                    Street Address *
+                                </label>
                                 <input
                                     type="text"
                                     value={addressQuery}
@@ -264,12 +281,12 @@ export default function StepOneMerged() {
                                 />
 
                                 {addressResults.length > 0 && (
-                                    <ul className="absolute z-20 w-full bg-white border rounded-xl shadow-xl mt-1 max-h-60 overflow-auto">
+                                    <ul className="absolute z-20 w-full bg-white border rounded-xl shadow max-h-60 overflow-auto">
                                         {addressResults.map((res, i) => (
                                             <li
                                                 key={i}
                                                 onClick={() => handleAddressSelect(res)}
-                                                className="p-3 cursor-pointer hover:bg-blue-50"
+                                                className="p-3 text-sm cursor-pointer hover:bg-blue-50"
                                             >
                                                 {res.display_name}
                                             </li>
@@ -278,8 +295,7 @@ export default function StepOneMerged() {
                                 )}
                             </div>
 
-                            {/* AUTO POPULATED FIELDS */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <input
                                     name="brgyDistrict"
                                     value={property.brgyDistrict || ""}
@@ -313,11 +329,10 @@ export default function StepOneMerged() {
                                     className="px-3 py-2.5 border rounded-lg bg-gray-100"
                                 />
                             </div>
-
                         </div>
 
-                        {/* RIGHT SIDE — SMALL MAP */}
-                        <div className="w-full h-[250px] border rounded-xl overflow-hidden">
+                        {/* MAP */}
+                        <div className="relative w-full h-[220px] sm:h-[260px] lg:h-full rounded-xl overflow-hidden border">
                             <PropertyMap
                                 setFields={mapSetFields}
                                 coordinates={[coords.lat, coords.lng]}
@@ -325,12 +340,14 @@ export default function StepOneMerged() {
                         </div>
 
                     </div>
-                </div>
+                </section>
 
-                {/* ---------------- AMENITIES ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">4. Amenities</h2>
-                    <div className="p-4 bg-blue-50 rounded-xl">
+                {/* AMENITIES */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        4. Amenities
+                    </h2>
+                    <div className="p-3 sm:p-4 bg-blue-50 rounded-xl">
                         <AmenitiesSelector
                             selectedAmenities={property.amenities || []}
                             onAmenityChange={(a) => {
@@ -344,80 +361,92 @@ export default function StepOneMerged() {
                             }}
                         />
                     </div>
-                </div>
+                </section>
 
-                {/* ---------------- DESCRIPTION ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">5. Property Description</h2>
-
+                {/* DESCRIPTION */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        5. Property Description
+                    </h2>
                     <textarea
                         name="propDesc"
                         value={property.propDesc || ""}
                         onChange={handleChange}
                         className="w-full h-32 border rounded-lg px-3 py-2"
                     />
-
                     <button
                         type="button"
                         onClick={handleGenerateDescription}
                         disabled={loading}
-                        className="mt-2 text-blue-600 underline"
+                        className="mt-2 text-sm text-blue-600 underline"
                     >
                         {loading ? "Generating..." : "Generate with AI"}
                     </button>
-                </div>
+                </section>
 
-                {/* ---------------- FLOOR AREA ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">6. Total Property Size</h2>
-
+                {/* FLOOR AREA */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        6. Total Property Size
+                    </h2>
                     <input
                         type="number"
                         name="floorArea"
                         value={property.floorArea || ""}
                         onChange={handleChange}
-                        className="px-3 py-2 border rounded-lg w-full"
+                        className="w-full sm:max-w-xs px-3 py-2.5 border rounded-lg"
                         placeholder="sqm"
                     />
-                </div>
+                </section>
 
-                {/* ---------------- PREFERENCES ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">7. Preferences & Rules</h2>
+                {/* PREFERENCES */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        7. Preferences & Rules
+                    </h2>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {PROPERTY_PREFERENCES.map((pref) => {
                             const Icon = pref.icon;
-                            const active = (property.propertyPreferences || []).includes(pref.key);
+                            const active = property.propertyPreferences?.includes(pref.key);
 
                             return (
                                 <button
                                     key={pref.key}
                                     onClick={() => togglePreference(pref.key)}
-                                    className={`p-3 rounded-lg border flex flex-col items-center ${
+                                    className={`
+                  flex flex-col items-center justify-center
+                  min-h-[88px]
+                  p-3 rounded-xl border text-sm
+                  ${
                                         active
                                             ? "bg-blue-600 text-white border-blue-600"
                                             : "border-gray-300"
-                                    }`}
+                                    }
+                `}
                                 >
                                     <Icon className="text-lg mb-1" />
-                                    {pref.label}
+                                    <span className="text-center leading-tight">
+                  {pref.label}
+                </span>
                                 </button>
                             );
                         })}
                     </div>
-                </div>
+                </section>
 
-                {/* ---------------- UTILITY BILLING ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">8. Utility Billing</h2>
+                {/* UTILITY BILLING */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        8. Utility Configuration (Water and Electricity)
+                    </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <select
                             name="waterBillingType"
                             value={property.waterBillingType || ""}
                             onChange={handleChange}
-                            className="border px-3 py-2 rounded-lg"
+                            className="px-3 py-2.5 border rounded-lg"
                         >
                             <option value="">Water Billing</option>
                             <option value="included">Included</option>
@@ -428,39 +457,42 @@ export default function StepOneMerged() {
                             name="electricityBillingType"
                             value={property.electricityBillingType || ""}
                             onChange={handleChange}
-                            className="border px-3 py-2 rounded-lg"
+                            className="px-3 py-2.5 border rounded-lg"
                         >
                             <option value="">Electricity Billing</option>
                             <option value="included">Included</option>
                             <option value="submetered">Submetered</option>
                         </select>
                     </div>
-                </div>
+                </section>
 
-                {/* ---------------- PHOTOS ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">9. Property Photos</h2>
+                {/* PHOTOS */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        9. Property Photos
+                    </h2>
 
                     <div
                         {...getRootProps()}
-                        className={`border-2 border-dashed p-5 rounded-xl cursor-pointer ${
-                            isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
-                        }`}
+                        className={`
+            border-2 border-dashed rounded-xl p-5 text-center cursor-pointer
+            ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"}
+          `}
                     >
                         <input {...getInputProps()} />
-                        <FaImage className="text-4xl text-gray-400 mx-auto" />
-                        <p className="text-center mt-2 text-gray-600">
-                            {isDragActive ? "Drop photos here…" : "Click or drag images here"}
+                        <FaImage className="text-3xl text-gray-400 mx-auto" />
+                        <p className="text-sm text-gray-600 mt-2">
+                            {isDragActive ? "Drop photos here…" : "Tap or drag images here"}
                         </p>
                     </div>
 
                     {photos.length > 0 && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4">
                             {photos.map((p, i) => (
                                 <div key={i} className="relative group">
                                     <img
                                         src={p.preview}
-                                        className="rounded-lg w-full h-32 object-cover"
+                                        className="w-full h-32 object-cover rounded-lg"
                                     />
                                     <button
                                         onClick={() => removeImage(i)}
@@ -472,32 +504,36 @@ export default function StepOneMerged() {
                             ))}
                         </div>
                     )}
-                </div>
+                </section>
 
-                {/* ---------------- RENT INCREASE ---------------- */}
-                <div>
-                    <h2 className="text-lg font-semibold mb-3">10. Rent Increase Policy</h2>
+                {/* RENT INCREASE */}
+                <section>
+                    <h2 className="text-base sm:text-lg font-semibold mb-3">
+                        10. Rent Increase Policy
+                    </h2>
 
-                    <div className="relative w-full max-w-xs">
+                    <div className="relative w-full sm:max-w-xs">
                         <input
                             type="number"
                             name="rentIncreasePercent"
                             value={property.rentIncreasePercent || ""}
                             onChange={handleChange}
                             placeholder="5"
-                            className="w-full px-3 py-2 border rounded-lg"
+                            className="w-full px-3 py-2.5 border rounded-lg"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600">
-              %
-            </span>
+            %
+          </span>
                     </div>
 
                     <p className="text-sm text-gray-500 mt-1">
                         Applied annually during lease renewal.
                     </p>
-                </div>
+                </section>
 
             </form>
         </div>
     );
+
 }
+

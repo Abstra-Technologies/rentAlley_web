@@ -4,15 +4,21 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import axios from "axios";
 
-interface PropertyData {
+/* ===============================
+   TYPES
+================================ */
+
+export interface PropertyData {
     propertyName: string;
     propertyType: string;
     amenities: string[];
+
     street: string;
     brgyDistrict: string;
     city: string;
     zipCode: number | string;
     province: string;
+
     propDesc: string;
     floorArea: number;
 
@@ -20,36 +26,44 @@ interface PropertyData {
     electricityBillingType: string;
 
     rentIncreasePercent: number;
-
     propertyPreferences: string[];
 
     latitude: number | null;
     longitude: number | null;
 }
 
-interface PropertyStore {
-    // CREATE PROPERTY
-    property: PropertyData;
-    photos: any[];
+interface PhotoPreview {
+    file: File;
+    preview: string;
+}
 
-    // LISTING PROPERTIES
+interface PropertyStore {
+    /* CREATE PROPERTY */
+    property: PropertyData;
+
+    /* PHOTOS (RUNTIME ONLY) */
+    photos: PhotoPreview[];
+
+    /* LISTING */
     properties: any[];
     selectedProperty: any;
     loading: boolean;
     error: string | null;
 
-    // VERIFICATION DOCS
+    /* VERIFICATION DOCS (RUNTIME ONLY) */
     docType: string;
     submittedDoc: File | null;
     govID: File | null;
     indoorPhoto: File | null;
     outdoorPhoto: File | null;
 
-    // METHODS
-    setProperty: (details: Partial<PropertyData>) => void;
+    /* ACTIONS */
+    setProperty: (data: Partial<PropertyData>) => void;
     toggleAmenity: (amenity: string) => void;
 
-    setPhotos: (photos: any[]) => void;
+    setPhotos: (photos: PhotoPreview[]) => void;
+    removePhoto: (index: number) => void;
+
     setSubmittedDoc: (file: File | null) => void;
     setGovID: (file: File | null) => void;
     setIndoorPhoto: (file: File | null) => void;
@@ -63,15 +77,21 @@ interface PropertyStore {
     reset: () => void;
 }
 
+/* ===============================
+   INITIAL STATE
+================================ */
+
 const initialPropertyState: PropertyData = {
     propertyName: "",
     propertyType: "",
     amenities: [],
+
     street: "",
     brgyDistrict: "",
     city: "",
     zipCode: "",
     province: "",
+
     propDesc: "",
     floorArea: 0,
 
@@ -79,45 +99,43 @@ const initialPropertyState: PropertyData = {
     electricityBillingType: "",
 
     rentIncreasePercent: 0,
-
     propertyPreferences: [],
 
     latitude: null,
     longitude: null,
 };
 
+/* ===============================
+   STORE
+================================ */
+
 const usePropertyStore = create<PropertyStore>()(
     persist(
         (set, get) => ({
-            /** ================================
-             *  CREATE PROPERTY STATE
-             * ================================= */
+            /* CREATE PROPERTY */
             property: { ...initialPropertyState },
+
+            /* PHOTOS (NOT PERSISTED) */
             photos: [],
 
-            /** ================================
-             *  PROPERTY LISTING
-             * ================================= */
+            /* LISTING */
             properties: [],
             selectedProperty: null,
             loading: false,
             error: null,
 
-            /** ================================
-             *  VERIFICATION DOCS
-             * ================================= */
+            /* VERIFICATION DOCS */
             submittedDoc: null,
             govID: null,
             indoorPhoto: null,
             outdoorPhoto: null,
             docType: "business_permit",
 
-            /** ================================
-             *  SETTERS
-             * ================================= */
-            setProperty: (details) =>
+            /* ================= ACTIONS ================= */
+
+            setProperty: (data) =>
                 set((state) => ({
-                    property: { ...state.property, ...details },
+                    property: { ...state.property, ...data },
                 })),
 
             toggleAmenity: (amenity) =>
@@ -133,16 +151,30 @@ const usePropertyStore = create<PropertyStore>()(
                     };
                 }),
 
+            /* PHOTOS */
             setPhotos: (photos) => set({ photos }),
+
+            removePhoto: (index) =>
+                set((state) => {
+                    const photo = state.photos[index];
+                    if (photo?.preview) {
+                        URL.revokeObjectURL(photo.preview);
+                    }
+
+                    return {
+                        photos: state.photos.filter((_, i) => i !== index),
+                    };
+                }),
+
+            /* DOCS */
             setSubmittedDoc: (file) => set({ submittedDoc: file }),
             setGovID: (file) => set({ govID: file }),
             setIndoorPhoto: (file) => set({ indoorPhoto: file }),
             setOutdoorPhoto: (file) => set({ outdoorPhoto: file }),
             setDocType: (type) => set({ docType: type }),
 
-            /** ================================
-             *  FETCH PROPERTIES FOR LANDLORD
-             * ================================= */
+            /* ================= API ================= */
+
             fetchAllProperties: async (landlordId) => {
                 set({ loading: true, error: null });
 
@@ -151,7 +183,7 @@ const usePropertyStore = create<PropertyStore>()(
                         axios.get(
                             `/api/propertyListing/getAllpropertyListing?landlord_id=${landlordId}`
                         ),
-                        axios.get(`/api/propertyListing/propertyPhotos`)
+                        axios.get(`/api/propertyListing/propertyPhotos`),
                     ]);
 
                     const properties = propertiesRes.data || [];
@@ -173,9 +205,6 @@ const usePropertyStore = create<PropertyStore>()(
                 }
             },
 
-            /** ================================
-             *  UPDATE PROPERTY LOCALLY
-             * ================================= */
             updateProperty: (id, updatedData) =>
                 set((state) => ({
                     properties: state.properties.map((p: any) =>
@@ -185,10 +214,12 @@ const usePropertyStore = create<PropertyStore>()(
 
             setSelectedProperty: (property) => set({ selectedProperty: property }),
 
-            /** ================================
-             *  RESET STORE
-             * ================================= */
-            reset: () =>
+            /* ================= RESET ================= */
+
+            reset: () => {
+                const { photos } = get();
+                photos.forEach((p) => p.preview && URL.revokeObjectURL(p.preview));
+
                 set({
                     property: { ...initialPropertyState },
                     photos: [],
@@ -197,15 +228,17 @@ const usePropertyStore = create<PropertyStore>()(
                     indoorPhoto: null,
                     outdoorPhoto: null,
                     docType: "business_permit",
-                }),
+                });
+            },
         }),
         {
             name: "property-store",
+
+            /* ONLY PERSIST SAFE DATA */
             partialize: (state) => ({
                 property: state.property,
                 properties: state.properties,
                 selectedProperty: state.selectedProperty,
-                photos: state.photos,
             }),
         }
     )
