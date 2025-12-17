@@ -22,7 +22,7 @@
   },
   "Standard Plan": {
     "limits": {
-      "maxProperties": 4,
+      "maxProperties": 10,
       "maxUnits": null,
       "maxMaintenanceRequest": 10,
       "maxBilling": 10,

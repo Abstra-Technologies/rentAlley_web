@@ -10,27 +10,28 @@ import ErrorBoundary from "@/components/Commons/ErrorBoundary";
 
 export default function PropertyListingPage() {
     const {
-        // data
+        // ================= DATA =================
         user,
         subscription,
-        filteredProperties,
+        properties,            // ✅ TOTAL properties (IMPORTANT)
+        filteredProperties,    // UI-only filtered list
 
-        // ui state
+        // ================= UI STATE =================
         page,
         setPage,
         searchQuery,
         setSearchQuery,
 
-        // flags
+        // ================= FLAGS =================
         loading,
         error,
 
-        // handlers
+        // ================= HANDLERS =================
         handleView,
         handleDelete,
         handleAddProperty,
 
-        // pagination
+        // ================= PAGINATION =================
         itemsPerPage,
     } = usePropertyListingPage();
 
@@ -56,18 +57,19 @@ export default function PropertyListingPage() {
 
     /* =========================
        SUBSCRIPTION LIMIT LOGIC
+       ✅ FIXED (TOTAL COUNT ONLY)
     ========================== */
     const maxProperties = subscription?.limits?.maxProperties ?? null;
-    const currentCount = filteredProperties.length;
+    const totalCount = properties.length;
 
     const isAddDisabled =
-        maxProperties !== null && currentCount >= maxProperties;
+        maxProperties !== null && totalCount >= maxProperties;
 
     /* =========================
-       PAGINATION
+       PAGINATION (UI ONLY)
     ========================== */
     const startIndex = (page - 1) * itemsPerPage;
-    const current = filteredProperties.slice(
+    const currentPageItems = filteredProperties.slice(
         startIndex,
         startIndex + itemsPerPage
     );
@@ -77,6 +79,7 @@ export default function PropertyListingPage() {
             {/* ================= HEADER ================= */}
             <div className="bg-white border-b border-gray-200 pt-20 pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
                     {/* Title */}
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex items-center justify-center">
@@ -96,10 +99,10 @@ export default function PropertyListingPage() {
                     {subscription && (
                         <div className="flex items-center gap-3">
                             <div className="bg-gray-50 rounded-lg border border-gray-200 px-4 py-2">
-                <span className="text-sm font-bold text-gray-900">
-                  {currentCount} /{" "}
-                    {maxProperties === null ? "∞" : maxProperties}
-                </span>
+                                <span className="text-sm font-bold text-gray-900">
+                                    {totalCount} /{" "}
+                                    {maxProperties === null ? "∞" : maxProperties}
+                                </span>
                             </div>
 
                             <button
@@ -125,18 +128,22 @@ export default function PropertyListingPage() {
                     </div>
                     <input
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setPage(1); // ✅ reset pagination on search
+                        }}
                         placeholder="Search properties by name, address, or ID..."
-                        className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                        className="w-full pl-10 pr-4 py-2.5 border rounded-lg
+                                   focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                 </div>
             </div>
 
             {/* ================= CONTENT ================= */}
             <div className="px-4 md:px-8 lg:px-12 xl:px-16 pt-5 pb-24">
-                {current.length > 0 ? (
+                {currentPageItems.length > 0 ? (
                     <div className="flex flex-col gap-4">
-                        {current.map((property: any, idx: number) => (
+                        {currentPageItems.map((property: any, idx: number) => (
                             <PropertyCard
                                 key={property.property_id}
                                 property={property}
@@ -162,7 +169,9 @@ export default function PropertyListingPage() {
                 {filteredProperties.length > itemsPerPage && (
                     <div className="mt-6 flex justify-center">
                         <Pagination
-                            count={Math.ceil(filteredProperties.length / itemsPerPage)}
+                            count={Math.ceil(
+                                filteredProperties.length / itemsPerPage
+                            )}
                             page={page}
                             onChange={(_, v) => setPage(v)}
                             shape="rounded"

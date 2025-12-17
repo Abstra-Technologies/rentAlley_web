@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -17,46 +17,33 @@ export default function usePropertyListingPage() {
         usePropertyStore();
 
     const { subscription, loadingSubscription } = useSubscription(
-        user?.landlord_id ?? null
+        user?.landlord_id
     );
 
+    /* ================= STATE ================= */
     const [verificationStatus, setVerificationStatus] =
         useState<string>("not verified");
     const [isFetchingVerification, setIsFetchingVerification] =
         useState<boolean>(true);
-    const [pendingApproval, setPendingApproval] = useState<boolean>(false);
     const [isNavigating, setIsNavigating] = useState<boolean>(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [page, setPage] = useState(1);
 
     const itemsPerPage = 9;
 
-    /* ---------------- SESSION ---------------- */
-
+    /* ================= SESSION ================= */
     useEffect(() => {
         if (!user) fetchSession();
     }, [user, fetchSession]);
 
-    /* ---------------- PROPERTIES ---------------- */
-
+    /* ================= PROPERTIES ================= */
     useEffect(() => {
         if (user?.landlord_id) {
             fetchAllProperties(user.landlord_id);
         }
     }, [user?.landlord_id, fetchAllProperties]);
 
-    useEffect(() => {
-        if (!properties.length) return;
-
-        setPendingApproval(
-            properties.some(
-                (p: any) => p?.verification_status?.toLowerCase() !== "verified"
-            )
-        );
-    }, [properties]);
-
-    /* ---------------- VERIFICATION ---------------- */
-
+    /* ================= VERIFICATION ================= */
     useEffect(() => {
         if (user?.userType !== "landlord") return;
 
@@ -77,7 +64,31 @@ export default function usePropertyListingPage() {
             });
     }, [user]);
 
-    /* ---------------- ACTIONS ---------------- */
+    /* ================= DERIVED (IMPORTANT) ================= */
+
+    // ✅ TOTAL count — never filtered
+    const totalPropertyCount = properties.length;
+
+    // ✅ SINGLE SOURCE OF TRUTH for limits
+    const maxProperties =
+        subscription?.limits?.maxProperties ??
+        subscription?.listingLimits?.maxProperties ??
+        null;
+
+    const hasReachedLimit =
+        maxProperties !== null && totalPropertyCount >= maxProperties;
+
+    // ✅ UI-only filtered list
+    const filteredProperties = useMemo(() => {
+        const q = searchQuery.toLowerCase();
+        return properties.filter((p: any) =>
+            p.property_name?.toLowerCase().includes(q) ||
+            p.address?.toLowerCase().includes(q) ||
+            p.city?.toLowerCase().includes(q)
+        );
+    }, [properties, searchQuery]);
+
+    /* ================= ACTIONS ================= */
 
     const handleView = useCallback(
         async (property: any, event: React.MouseEvent) => {
@@ -100,20 +111,19 @@ export default function usePropertyListingPage() {
                         icon: "error",
                         title: "Access Denied",
                         text: data.error,
-                        confirmButtonColor: "#ef4444",
                     });
                     return;
                 }
-                // router.push(`/pages/landlord/properties/${property.property_id}/editPropertyDetails?id=${property.property_id}`);
+
                 router.push(`/pages/landlord/properties/${property.property_id}`);
             } catch {
                 await Swal.fire("Error", "Unable to validate property access.", "error");
             }
         },
-        [router, user]
+        [router, user?.landlord_id]
     );
 
-    const handleAddProperty = () => {
+    const handleAddProperty = useCallback(() => {
         if (verificationStatus !== "approved") {
             Swal.fire("Verification Required", "", "warning");
             return;
@@ -124,17 +134,24 @@ export default function usePropertyListingPage() {
             return;
         }
 
-        if (
-            properties.length >=
-            (subscription.listingLimits?.maxProperties || 0)
-        ) {
-            Swal.fire("Limit Reached", "", "error");
+        if (hasReachedLimit) {
+            Swal.fire(
+                "Limit Reached",
+                `You’ve reached your plan limit of ${maxProperties} properties.`,
+                "error"
+            );
             return;
         }
 
         setIsNavigating(true);
         router.push("/pages/landlord/property-listing/create-property");
-    };
+    }, [
+        verificationStatus,
+        subscription,
+        hasReachedLimit,
+        maxProperties,
+        router,
+    ]);
 
     const handleDelete = useCallback(
         async (propertyId: string | number, event: React.MouseEvent) => {
@@ -153,49 +170,45 @@ export default function usePropertyListingPage() {
                 { method: "DELETE" }
             );
 
-            if (res.ok) {
-                fetchAllProperties(user?.landlord_id);
+            if (res.ok && user?.landlord_id) {
+                fetchAllProperties(user.landlord_id);
             }
         },
         [fetchAllProperties, user?.landlord_id]
     );
 
-    /* ---------------- DERIVED ---------------- */
+    /* ================= UI FLAGS ================= */
 
     const isAddDisabled =
         isFetchingVerification ||
         loadingSubscription ||
-        verificationStatus !== "approved" ||
+        isNavigating ||
         !subscription ||
-        subscription?.is_active !== 1 ||
-        isNavigating;
+        subscription.is_active !== 1 ||
+        verificationStatus !== "approved" ||
+        hasReachedLimit;
 
-    const filteredProperties = properties.filter((p: any) => {
-        const q = searchQuery.toLowerCase();
-        return (
-            p.property_name?.toLowerCase().includes(q) ||
-            p.address?.toLowerCase().includes(q) ||
-            p.city?.toLowerCase().includes(q)
-        );
-    });
-
+    /* ================= RETURN ================= */
     return {
         // data
         user,
+        subscription,
         properties,
         filteredProperties,
-        subscription,
+        totalPropertyCount,
+        maxProperties,
+
+        // flags
         loading,
         error,
+        hasReachedLimit,
+        isAddDisabled,
 
-        // ui state
+        // ui
         page,
         setPage,
         searchQuery,
         setSearchQuery,
-        verificationStatus,
-        pendingApproval,
-        isAddDisabled,
 
         // handlers
         handleView,
