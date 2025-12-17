@@ -4,12 +4,25 @@ import { motion } from "framer-motion";
 
 const LoadingScreen = ({ message = "Loading…" }) => {
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white overflow-hidden">
-            {/* Soft background wash */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-emerald-50" />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden">
 
-            {/* Center Content */}
-            <div className="relative z-10 flex flex-col items-center text-center">
+            {/* BACKGROUND IMAGE */}
+            <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{
+                    backgroundImage:
+                        "url('https://res.cloudinary.com/dpukdla69/image/upload/v1765966152/Whisk_mtnhzwyxajzmdtyw0yn2mtotijzhrtllbjzh1sn_wpw850.jpg')",
+                }}
+            />
+
+            {/* OVERLAY FOR READABILITY */}
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px]" />
+
+            {/* SOFT GRADIENT WASH */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/70 via-white/60 to-emerald-50/70" />
+
+            {/* CENTER CONTENT */}
+            <div className="relative z-10 flex flex-col items-center text-center px-6">
 
                 {/* Logo with pulse */}
                 <motion.div
@@ -27,13 +40,18 @@ const LoadingScreen = ({ message = "Loading…" }) => {
                     <img
                         src="/upkeep_blue.png"
                         alt="Upkyp"
-                        className="w-14 h-14 sm:w-16 sm:h-16 object-contain"
+                        className="
+    w-[clamp(3.5rem,8vw,5rem)]
+    h-[clamp(3.5rem,8vw,5rem)]
+    object-contain
+  "
                     />
+
 
                     {/* Halo pulse */}
                     <motion.div
                         className="absolute inset-0 -z-10 rounded-full blur-2xl
-                        bg-gradient-to-br from-blue-400 to-emerald-400"
+                                   bg-gradient-to-br from-blue-400 to-emerald-400"
                         animate={{
                             opacity: [0.2, 0.45, 0.2],
                             scale: [1, 1.25, 1],
@@ -66,12 +84,12 @@ const LoadingScreen = ({ message = "Loading…" }) => {
                 </motion.p>
             </div>
 
-            {/* Footer branding */}
+            {/* FOOTER BRANDING */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="absolute bottom-6 flex flex-col items-center gap-1"
+                className="absolute bottom-6 z-10 flex flex-col items-center gap-1"
             >
                 <img
                     src="https://res.cloudinary.com/dptmeluy0/image/upload/v1764504569/abstra_dark_rvu7id.png"
