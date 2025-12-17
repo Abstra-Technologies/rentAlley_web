@@ -59,11 +59,12 @@ export default function RootLayout({
         <ClientLayout>
 
             {children}
-            <InstallPrompt />
+            
             <CookiesPermission />
             {/*<GoogleTranslateProvider />*/}
             {/* <FeedbackWidget /> */}
         </ClientLayout>
+        <InstallPrompt />
         </body>
         </html>
     );
