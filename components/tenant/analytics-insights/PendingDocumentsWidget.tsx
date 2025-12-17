@@ -9,8 +9,11 @@ import {
     CheckCircleIcon,
     ClockIcon,
     ShieldCheckIcon,
+    CalendarIcon,
+    CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 import useAuthStore from "@/zustand/authStore";
+import { formatDate, formatCurrency } from "@/utils/formatter/formatters";
 
 interface Props {
     agreement_id: string;
@@ -28,19 +31,19 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
     const [cooldown, setCooldown] = useState(0);
     const [verifying, setVerifying] = useState(false);
 
-    /* ---------------- AUTH ---------------- */
+    /* ================= AUTH ================= */
     useEffect(() => {
         if (!user) fetchSession();
     }, [user, fetchSession]);
 
-    /* ---------------- OTP COOLDOWN ---------------- */
+    /* ================= OTP COOLDOWN ================= */
     useEffect(() => {
         if (cooldown <= 0) return;
-        const t = setInterval(() => setCooldown((c) => c - 1), 1000);
-        return () => clearInterval(t);
+        const timer = setInterval(() => setCooldown((c) => c - 1), 1000);
+        return () => clearInterval(timer);
     }, [cooldown]);
 
-    /* ---------------- LOAD LEASE ---------------- */
+    /* ================= LOAD LEASE ================= */
     useEffect(() => {
         async function loadLease() {
             try {
@@ -48,7 +51,14 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                     `/api/tenant/activeRent/leaseAgreement/signatureStatus`,
                     { params: { agreement_id } }
                 );
-                setLease(res.data || null);
+
+                const data = res.data;
+
+                // 🔑 Normalize API response for UI
+                setLease({
+                    ...data,
+                    ...data.lease,
+                });
             } catch {
                 Swal.fire("Error", "Failed to load lease information.", "error");
             } finally {
@@ -62,11 +72,15 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
         return <p className="text-sm text-gray-500">Loading lease information…</p>;
     }
 
-    const hasLeaseAgreement = Boolean(lease?.agreement_url);
-    const sig = lease?.tenant_signature;
+    if (!lease) {
+        return <p className="text-sm text-gray-500">Lease not found.</p>;
+    }
+
+    const hasLeaseAgreement = Boolean(lease.agreement_url);
+    const sig = lease.tenant_signature;
     const alreadySigned = sig?.status === "signed";
 
-    /* ---------------- OTP ACTIONS ---------------- */
+    /* ================= OTP ACTIONS ================= */
     const sendOtp = async () => {
         try {
             await axios.post(`/api/tenant/activeRent/leaseAgreement/sendOtp`, {
@@ -107,10 +121,8 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
 
     const resendOtp = async () => {
         if (cooldown > 0) return;
-        try {
-            await sendOtp();
-            setCooldown(60);
-        } catch {}
+        await sendOtp();
+        setCooldown(60);
     };
 
     /* ========================================================= */
@@ -119,16 +131,15 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
 
     return (
         <>
-            {/* ================= CARD ================= */}
             <div className="space-y-4">
 
-                {/* Header */}
+                {/* HEADER */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <DocumentTextIcon className="w-5 h-5 text-gray-600" />
                         <span className="text-sm font-bold text-gray-900">
-              Lease Agreement
-            </span>
+                            Lease Information
+                        </span>
                     </div>
 
                     <span
@@ -140,31 +151,46 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                     : "bg-amber-100 text-amber-700 border-amber-200"
                         }`}
                     >
-            {!hasLeaseAgreement
-                ? "Not Available"
-                : alreadySigned
-                    ? "Signed"
-                    : "Pending"}
-          </span>
+                        {!hasLeaseAgreement
+                            ? "No Document"
+                            : alreadySigned
+                                ? "Signed"
+                                : "Pending"}
+                    </span>
                 </div>
 
-                {/* ================= NO LEASE ================= */}
+                {/* ================= NO LEASE DOCUMENT ================= */}
                 {!hasLeaseAgreement && (
-                    <div className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <DocumentTextIcon className="w-5 h-5 text-gray-400 mt-0.5" />
-                        <div>
-                            <p className="text-sm font-semibold text-gray-800">
-                                No Lease Agreement Uploaded
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                                Your landlord has not uploaded the lease agreement yet.
-                                You will be notified once it becomes available.
-                            </p>
-                        </div>
+                    <div className="space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+
+                        <p className="text-sm font-semibold text-gray-800">
+                            Lease Details
+                        </p>
+
+                        <LeaseRow
+                            icon={<CurrencyDollarIcon className="w-4 h-4" />}
+                            label="Monthly Rent"
+                            value={formatCurrency(lease.rent_amount || 0)}
+                        />
+
+                        <LeaseRow
+                            label="Security Deposit"
+                            value={formatCurrency(lease.security_deposit_amount || 0)}
+                        />
+
+                        <LeaseRow
+                            label="Advance Payment"
+                            value={formatCurrency(lease.advance_payment_amount || 0)}
+                        />
+
+                        <p className="text-xs text-gray-600">
+                            Your landlord has not uploaded the lease document yet.
+                            You will be notified once it becomes available.
+                        </p>
                     </div>
                 )}
 
-                {/* ================= LEASE EXISTS ================= */}
+                {/* ================= LEASE DOCUMENT EXISTS ================= */}
                 {hasLeaseAgreement && (
                     <>
                         <button
@@ -209,7 +235,6 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-2">
                     <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-xl shadow-lg overflow-hidden flex flex-col">
 
-                        {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b">
                             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                 <ShieldCheckIcon className="w-5 h-5 text-blue-600" />
@@ -220,7 +245,6 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                             </button>
                         </div>
 
-                        {/* Body */}
                         <div className="p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-6">
                             <iframe
                                 src={lease.agreement_url}
@@ -259,7 +283,9 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                                 disabled={cooldown > 0}
                                                 className="text-sm text-blue-600"
                                             >
-                                                {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
+                                                {cooldown > 0
+                                                    ? `Resend in ${cooldown}s`
+                                                    : "Resend OTP"}
                                             </button>
                                         </>
                                     )}
@@ -270,5 +296,19 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                 </div>
             )}
         </>
+    );
+}
+
+/* ================= SMALL UI ================= */
+
+function LeaseRow({ icon, label, value }: any) {
+    return (
+        <div className="flex items-center justify-between text-sm text-gray-700">
+            <div className="flex items-center gap-2 text-gray-600">
+                {icon}
+                <span>{label}</span>
+            </div>
+            <span className="font-semibold text-gray-900">{value}</span>
+        </div>
     );
 }

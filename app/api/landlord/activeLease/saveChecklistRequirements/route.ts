@@ -15,24 +15,22 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        /* ---------- CHECKLIST ---------- */
         const [[requirements]]: any = await db.query(
             `
-            SELECT *
-            FROM rentalley_db.LeaseSetupRequirements
-            WHERE agreement_id = ?
-            LIMIT 1
+                SELECT *
+                FROM rentalley_db.LeaseSetupRequirements
+                WHERE agreement_id = ?
+                LIMIT 1
             `,
             [agreement_id]
         );
 
-        /* ---------- LEASE ---------- */
         const [[lease]]: any = await db.query(
             `
-            SELECT agreement_url, start_date, end_date, status
-            FROM rentalley_db.LeaseAgreement
-            WHERE agreement_id = ?
-            LIMIT 1
+                SELECT agreement_url, start_date, end_date, status
+                FROM rentalley_db.LeaseAgreement
+                WHERE agreement_id = ?
+                LIMIT 1
             `,
             [agreement_id]
         );
@@ -73,6 +71,7 @@ export async function POST(req: NextRequest) {
             agreement_id,
             lease_agreement = false,
             move_in_checklist = false,
+            move_out_checklist = false, // ✅ NEW
             security_deposit = false,
             advance_payment = false,
             other_essential = false,
@@ -87,10 +86,10 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* ---------- INSERT CHECKLIST ONLY IF ANY REQUIREMENT EXISTS ---------- */
         const hasChecklist =
             lease_agreement ||
             move_in_checklist ||
+            move_out_checklist || // ✅ NEW
             security_deposit ||
             advance_payment ||
             other_essential;
@@ -98,21 +97,23 @@ export async function POST(req: NextRequest) {
         if (hasChecklist) {
             await db.query(
                 `
-                INSERT INTO rentalley_db.LeaseSetupRequirements
-                (
-                    agreement_id,
-                    lease_agreement,
-                    move_in_checklist,
-                    security_deposit,
-                    advance_payment,
-                    other_essential
-                )
-                VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO rentalley_db.LeaseSetupRequirements
+                    (
+                        agreement_id,
+                        lease_agreement,
+                        move_in_checklist,
+                        move_out_checklist,
+                        security_deposit,
+                        advance_payment,
+                        other_essential
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 `,
                 [
                     agreement_id,
                     lease_agreement ? 1 : 0,
                     move_in_checklist ? 1 : 0,
+                    move_out_checklist ? 1 : 0,
                     security_deposit ? 1 : 0,
                     advance_payment ? 1 : 0,
                     other_essential ? 1 : 0,
@@ -120,21 +121,19 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        /* ---------- SAVE DATES ---------- */
         if (lease_start_date || lease_end_date) {
             await db.query(
                 `
-                UPDATE rentalley_db.LeaseAgreement
-                SET
-                    start_date = COALESCE(?, start_date),
-                    end_date   = COALESCE(?, end_date)
-                WHERE agreement_id = ?
+                    UPDATE rentalley_db.LeaseAgreement
+                    SET
+                        start_date = COALESCE(?, start_date),
+                        end_date   = COALESCE(?, end_date)
+                    WHERE agreement_id = ?
                 `,
                 [lease_start_date || null, lease_end_date || null, agreement_id]
             );
         }
 
-        /* ---------- AUTO ACTIVATE ---------- */
         await maybeActivateLease(agreement_id);
 
         return NextResponse.json({
@@ -159,6 +158,7 @@ export async function PUT(req: NextRequest) {
             agreement_id,
             lease_agreement,
             move_in_checklist,
+            move_out_checklist, // ✅ NEW
             security_deposit,
             advance_payment,
             other_essential,
@@ -173,21 +173,22 @@ export async function PUT(req: NextRequest) {
             );
         }
 
-        /* ---------- UPDATE CHECKLIST ---------- */
         await db.query(
             `
-            UPDATE rentalley_db.LeaseSetupRequirements
-            SET
-                lease_agreement     = COALESCE(?, lease_agreement),
-                move_in_checklist   = COALESCE(?, move_in_checklist),
-                security_deposit    = COALESCE(?, security_deposit),
-                advance_payment     = COALESCE(?, advance_payment),
-                other_essential     = COALESCE(?, other_essential)
-            WHERE agreement_id = ?
+                UPDATE rentalley_db.LeaseSetupRequirements
+                SET
+                    lease_agreement     = COALESCE(?, lease_agreement),
+                    move_in_checklist   = COALESCE(?, move_in_checklist),
+                    move_out_checklist  = COALESCE(?, move_out_checklist),
+                    security_deposit    = COALESCE(?, security_deposit),
+                    advance_payment     = COALESCE(?, advance_payment),
+                    other_essential     = COALESCE(?, other_essential)
+                WHERE agreement_id = ?
             `,
             [
                 lease_agreement !== undefined ? (lease_agreement ? 1 : 0) : null,
                 move_in_checklist !== undefined ? (move_in_checklist ? 1 : 0) : null,
+                move_out_checklist !== undefined ? (move_out_checklist ? 1 : 0) : null,
                 security_deposit !== undefined ? (security_deposit ? 1 : 0) : null,
                 advance_payment !== undefined ? (advance_payment ? 1 : 0) : null,
                 other_essential !== undefined ? (other_essential ? 1 : 0) : null,
@@ -195,21 +196,19 @@ export async function PUT(req: NextRequest) {
             ]
         );
 
-        /* ---------- UPDATE DATES ---------- */
         if (lease_start_date !== undefined || lease_end_date !== undefined) {
             await db.query(
                 `
-                UPDATE rentalley_db.LeaseAgreement
-                SET
-                    start_date = COALESCE(?, start_date),
-                    end_date   = COALESCE(?, end_date)
-                WHERE agreement_id = ?
+                    UPDATE rentalley_db.LeaseAgreement
+                    SET
+                        start_date = COALESCE(?, start_date),
+                        end_date   = COALESCE(?, end_date)
+                    WHERE agreement_id = ?
                 `,
                 [lease_start_date || null, lease_end_date || null, agreement_id]
             );
         }
 
-        /* ---------- AUTO ACTIVATE ---------- */
         await maybeActivateLease(agreement_id);
 
         return NextResponse.json({
