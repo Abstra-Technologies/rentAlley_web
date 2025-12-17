@@ -7,18 +7,16 @@ import axios from "axios";
 import { Suspense, useState } from "react";
 import useAuthStore from "@/zustand/authStore";
 import { formatCurrency } from "@/utils/formatter/formatters";
-import { ADD_ON_SERVICES } from "@/constant/subscription/addOns"; // <-- your add-ons constant file
+import { ADD_ON_SERVICES } from "@/constant/subscription/addOns";
 
 function SubscriptionReview() {
     const router = useRouter();
     const params = useSearchParams();
     const { user } = useAuthStore();
 
-    // Extract base values from URL
     const planId = params.get("planId");
     const proratedAmount = Number(params.get("prorated") || 0);
 
-    // Load selected addons if passed
     let initialAddOns: any[] = [];
     try {
         initialAddOns = JSON.parse(params.get("addons") || "[]");
@@ -38,26 +36,44 @@ function SubscriptionReview() {
         );
     }
 
-    // LOCAL STATE FOR ADD-ONS (user can toggle them)
+    /* ===============================
+       FREE TRIAL ELIGIBILITY
+    =============================== */
+    const isPaidPlan = selectedPlan.price > 0;
+    const hasTrial = selectedPlan.trialDays > 0;
+
+    // TEMP client-side eligibility (replace with backend later)
+    const isEligibleForFreeTrial = isPaidPlan && hasTrial;
+
+    const trialDays = selectedPlan.trialDays;
+    const originalFee = selectedPlan.transactionFeeRate;
+    const discountedFee = selectedPlan.discountedFeeRate;
+
+    /* ===============================
+       ADD-ONS
+    =============================== */
     const [selectedAddOns, setSelectedAddOns] = useState(initialAddOns);
 
     const toggleAddOn = (addon: any) => {
         const exists = selectedAddOns.some((a) => a.id === addon.id);
-        if (exists) {
-            setSelectedAddOns(selectedAddOns.filter((a) => a.id !== addon.id));
-        } else {
-            setSelectedAddOns([...selectedAddOns, addon]);
-        }
+        setSelectedAddOns(
+            exists
+                ? selectedAddOns.filter((a) => a.id !== addon.id)
+                : [...selectedAddOns, addon]
+        );
     };
 
-    // ---- PRICE COMPUTATIONS ----
+    /* ===============================
+       PRICE COMPUTATION
+    =============================== */
     const basePrice = selectedPlan.price;
     const proratedDiscount = basePrice - proratedAmount;
     const addOnTotal = selectedAddOns.reduce((sum, a) => sum + a.price, 0);
-
     const finalTotal = proratedAmount + addOnTotal;
 
-    // ---- PAYMENT ----
+    /* ===============================
+       PAYMENT
+    =============================== */
     const goToPayment = async () => {
         try {
             const response = await axios.post("/api/payment/checkout-payment", {
@@ -82,7 +98,7 @@ function SubscriptionReview() {
                 alert("Payment Error: No checkout URL received.");
             }
         } catch {
-            alert("Unable to start Maya payment.");
+            alert("Unable to start payment.");
         }
     };
 
@@ -90,7 +106,7 @@ function SubscriptionReview() {
         <div className="min-h-screen bg-gray-50 py-10 px-4">
             <div className="max-w-5xl mx-auto">
 
-                {/* Back Button */}
+                {/* Back */}
                 <button
                     className="flex items-center text-gray-600 hover:text-gray-800 mb-6"
                     onClick={() => router.back()}
@@ -98,69 +114,115 @@ function SubscriptionReview() {
                     <ArrowLeft className="w-5 h-5 mr-2" /> Back
                 </button>
 
-                <h1 className="text-3xl font-bold mb-8">Subscription Checkout</h1>
+                <h1 className="text-3xl font-bold mb-8">
+                    Subscription Checkout
+                </h1>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                    {/* LEFT SIDE — PLAN + ADD-ONS (SELECTABLE) */}
+                    {/* LEFT */}
                     <div className="lg:col-span-2 space-y-6">
 
                         {/* PLAN DETAILS */}
                         <div className="bg-white rounded-xl shadow border p-6">
-                            <h2 className="text-xl font-bold mb-4">{selectedPlan.name}</h2>
+                            <h2 className="text-xl font-bold mb-4">
+                                {selectedPlan.name}
+                            </h2>
 
                             <div className="space-y-3 text-gray-700">
-
                                 <div className="flex justify-between">
                                     <span>Base Price</span>
-                                    <span className="font-semibold">{formatCurrency(basePrice)}</span>
+                                    <span className="font-semibold">
+                                        {formatCurrency(basePrice)}
+                                    </span>
                                 </div>
 
                                 {proratedDiscount > 0 && (
                                     <div className="flex justify-between text-green-600">
                                         <span>Prorated Discount</span>
-                                        <span>- {formatCurrency(proratedDiscount)}</span>
+                                        <span>
+                                            - {formatCurrency(proratedDiscount)}
+                                        </span>
                                     </div>
                                 )}
 
-                                <div className="flex justify-between font-bold text-gray-900 pt-2">
+                                <div className="flex justify-between font-bold pt-2">
                                     <span>Plan Subtotal</span>
-                                    <span>{formatCurrency(proratedAmount)}</span>
+                                    <span>
+                                        {formatCurrency(proratedAmount)}
+                                    </span>
                                 </div>
                             </div>
+
+                            {/* FREE TRIAL DETAILS */}
+                            {isEligibleForFreeTrial && (
+                                <div className="mt-5 p-4 rounded-lg border border-blue-200 bg-blue-50">
+                                    <p className="text-sm font-semibold text-blue-800">
+                                        🎉 Free Trial Applied
+                                    </p>
+
+                                    <ul className="mt-2 text-sm text-blue-700 space-y-1">
+                                        <li>
+                                            • <strong>{trialDays} days</strong> free subscription
+                                        </li>
+                                        <li>
+                                            • <strong>{discountedFee}%</strong> transaction fee
+                                            <span className="ml-1 line-through text-gray-500">
+                                                {originalFee}%
+                                            </span>
+                                        </li>
+                                        <li>
+                                            • All-in (gateway + Upkyp + payout)
+                                        </li>
+                                    </ul>
+
+                                    <p className="mt-2 text-xs text-blue-600">
+                                        After {trialDays} days, billing and the{" "}
+                                        {originalFee}% transaction fee will apply.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
-                        {/* ADD-ONS SELECTABLE */}
+                        {/* ADD-ONS */}
                         <div className="bg-white rounded-xl shadow border p-6">
                             <h2 className="text-xl font-bold mb-4">Add-ons</h2>
 
                             <div className="space-y-4">
-
                                 {ADD_ON_SERVICES.map((addon) => {
-                                    const selected = selectedAddOns.some((a) => a.id === addon.id);
+                                    const selected = selectedAddOns.some(
+                                        (a) => a.id === addon.id
+                                    );
 
                                     return (
                                         <div
                                             key={addon.id}
-                                            className={`
-                                                flex justify-between border rounded-lg p-4 cursor-pointer
-                                                ${selected ? "bg-blue-50 border-blue-300" : "bg-gray-50"}
-                                            `}
                                             onClick={() => toggleAddOn(addon)}
+                                            className={`flex justify-between border rounded-lg p-4 cursor-pointer
+                                                ${
+                                                selected
+                                                    ? "bg-blue-50 border-blue-300"
+                                                    : "bg-gray-50"
+                                            }`}
                                         >
                                             <div>
-                                                <p className="font-medium">{addon.name}</p>
-                                                <p className="text-gray-500 text-sm">{addon.description}</p>
+                                                <p className="font-medium">
+                                                    {addon.name}
+                                                </p>
+                                                <p className="text-sm text-gray-500">
+                                                    {addon.description}
+                                                </p>
                                             </div>
 
                                             <div className="text-right">
-                                                <p className="font-semibold">{formatCurrency(addon.price)}</p>
-
+                                                <p className="font-semibold">
+                                                    {formatCurrency(addon.price)}
+                                                </p>
                                                 <input
                                                     type="checkbox"
                                                     checked={selected}
+                                                    className="mt-2 h-5 w-5 accent-blue-600"
                                                     onChange={() => toggleAddOn(addon)}
-                                                    className="h-5 w-5 accent-blue-600 mt-2"
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             </div>
@@ -174,59 +236,54 @@ function SubscriptionReview() {
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
-                    {/* RIGHT SIDE — ORDER SUMMARY */}
+                    {/* RIGHT */}
                     <div className="bg-white shadow rounded-xl border p-6 h-fit">
-                        <h3 className="text-lg font-bold mb-4">Order Summary</h3>
+                        <h3 className="text-lg font-bold mb-4">
+                            Order Summary
+                        </h3>
 
                         <div className="space-y-4 text-gray-700">
-
-                            {/* Base Plan */}
                             <div className="flex justify-between">
-                                <span>Base Plan Price</span>
+                                <span>Base Plan</span>
                                 <span>{formatCurrency(basePrice)}</span>
                             </div>
 
-                            {/* Prorated deduction */}
-                            {proratedDiscount > 0 && (
-                                <div className="flex justify-between text-green-600">
-                                    <span>Prorated Discount</span>
-                                    <span>- {formatCurrency(proratedDiscount)}</span>
-                                </div>
-                            )}
-
-                            {/* Plan Subtotal */}
-                            <div className="flex justify-between font-medium">
-                                <span>Plan Subtotal</span>
-                                <span>{formatCurrency(proratedAmount)}</span>
-                            </div>
-
-                            {/* Add-ons */}
                             <div className="flex justify-between">
                                 <span>Add-ons</span>
                                 <span>{formatCurrency(addOnTotal)}</span>
                             </div>
 
+                            {isEligibleForFreeTrial && (
+                                <div className="border-t pt-3 text-sm text-blue-700">
+                                    <p className="font-semibold">
+                                        Free Trial Active
+                                    </p>
+                                    <p>
+                                        {trialDays} days • {discountedFee}% transaction fee
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        Then {originalFee}%
+                                    </p>
+                                </div>
+                            )}
+
                             <hr />
 
-                            {/* GRAND TOTAL */}
                             <div className="flex justify-between text-xl font-bold">
-                                <span>Total</span>
+                                <span>Total Due Today</span>
                                 <span>{formatCurrency(finalTotal)}</span>
                             </div>
                         </div>
 
-                        {/* CHECKOUT BUTTON */}
                         <button
                             onClick={goToPayment}
-                            className="w-full mt-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 transition"
+                            className="w-full mt-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700"
                         >
-                            Continue to Payment
+                            Pay Now
                         </button>
                     </div>
-
                 </div>
             </div>
         </div>

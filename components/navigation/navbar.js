@@ -82,12 +82,12 @@ const Navbar = () => {
 
     if (!user) {
       return [
-        { href: "/pages/about-us", label: "About Us" },
+        // { href: "/pages/about-us", label: "About Us" },
         { href: "/pages/public/how-it-works", label: "How It Works" },
-        { href: "/pages/find-rent", label: "Find Rent" },
+          // { href: "/pages/public/beta-program", label: "Join Beta" },
+          { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/public/download", label: "Download App" },
         { href: "/pages/find-rent", label: "Pricing" },
-        { href: "/pages/contact-us", label: "Contact Us" },
       ];
     } else if (user?.userType === "tenant") {
       return [

@@ -7,6 +7,8 @@ export interface SubscriptionPlan {
     trialDays: number;
     popular: boolean;
     features: string[];
+    transactionFeeRate: number;
+    discountedFeeRate: number;
 }
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
@@ -16,6 +18,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         price: 0,
         trialDays: 0,
         popular: false,
+        transactionFeeRate: 4.8,
+        discountedFeeRate:4.0,
         features: [
             "1 Property",
             "Limited to 20 units",
@@ -24,7 +28,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
             "Announcement and Messaging",
             "Billing Management",
             "Payment Ledger Logs",
-            "3% Commisson Transaction Fee ( Inclusive of Payment Gateway + Platform Fees)"
+            "Transaction Fee: 4.8% (Inclusive of Gateway fees + Upkyp fees) in every payouts."
         ],
     },
     {
@@ -33,7 +37,10 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         price: 1499,
         trialDays: 60,
         popular: true,
+        transactionFeeRate: 4.8,
+        discountedFeeRate:4.5,
         features: [
+            "60-day Free Trial",
             "Up to 5 Properties",
             "Limited to 10 Maintenance Requests per property",
             "Mobile Access",
@@ -41,7 +48,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
             "Analytics Reports",
             "Up to 10 Prospective Tenant Lists",
             "Limited to 10 Billing Units",
-            "10-day Free Trial",
+            "Transaction Fee: 4.8% (Inclusive of Gateway fees + Upkyp fees"
+
         ],
     },
     {
@@ -50,7 +58,11 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         price: 2499,
         trialDays: 60,
         popular: false,
+        transactionFeeRate: 4.8,
+        discountedFeeRate:4.5,
         features: [
+            "60-day Free Trial",
+
             "Unlimited Properties",
             "Unlimited Maintenance Requests",
             "Mobile Access",
@@ -66,7 +78,11 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         price: 0,
         trialDays: 60,
         popular: false,
+        transactionFeeRate: 4.8,
+        discountedFeeRate:4.5,
         features: [
+            "60-day Free Trial",
+
             "Unlimited Properties",
             "Unlimited Maintenance Requests",
             "Mobile Access",

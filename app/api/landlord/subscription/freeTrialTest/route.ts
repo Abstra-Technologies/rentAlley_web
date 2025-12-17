@@ -1,100 +1,177 @@
 import { NextRequest, NextResponse } from "next/server";
-import mysql from "mysql2/promise";
+import { db } from "@/lib/db";
+
+const PLAN_MAP: Record<string, {
+    code: "FREE" | "STANDARD" | "PRO" | "ENTERPRISE";
+    trialDays: number;
+    isFree: boolean;
+}> = {
+    "Free Plan": { code: "FREE", trialDays: 0, isFree: true },
+    "Standard Plan": { code: "STANDARD", trialDays: 60, isFree: false },
+    "Pro Plan": { code: "PRO", trialDays: 60, isFree: false },
+    "Enterprise Plan": { code: "ENTERPRISE", trialDays: 60, isFree: false },
+};
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    console.log(`Debug: Received request body:`, body);
+    const conn = await db.getConnection();
 
-    const { landlord_id, plan_name } = body;
+    try {
+        const { landlord_id, plan_name } = await req.json();
 
-    if (!landlord_id) {
-      console.error("Missing landlord_id.");
-      return NextResponse.json({ error: "Missing landlord_id." }, { status: 400 });
+        console.log('landlord id: ' + landlord_id);
+        console.log('plan: ' + plan_name);
+
+        if (!landlord_id || !plan_name) {
+            return NextResponse.json(
+                { error: "Missing landlord_id or plan_name." },
+                { status: 400 }
+            );
+        }
+
+        const plan = PLAN_MAP[plan_name];
+        if (!plan) {
+            return NextResponse.json(
+                { error: "Invalid plan selection." },
+                { status: 400 }
+            );
+        }
+
+        await conn.beginTransaction();
+
+        /* --------------------------------------------------
+           LOCK landlord row (prevents race conditions)
+        -------------------------------------------------- */
+        const [landlordRows]: any = await conn.execute(
+            "SELECT is_trial_used FROM Landlord WHERE landlord_id = ? FOR UPDATE",
+            [landlord_id]
+        );
+
+        if (!landlordRows.length) {
+            await conn.rollback();
+            return NextResponse.json(
+                { error: "Landlord not found." },
+                { status: 404 }
+            );
+        }
+
+        const isTrialUsed = landlordRows[0].is_trial_used === 1;
+
+        /* --------------------------------------------------
+           IDEMPOTENCY CHECK
+           If same active plan already exists → success
+        -------------------------------------------------- */
+        const [activeSubs]: any = await conn.execute(
+            `SELECT subscription_id
+       FROM Subscription
+       WHERE landlord_id = ?
+         AND plan_code = ?
+         AND is_active = 1
+       LIMIT 1`,
+            [landlord_id, plan.code]
+        );
+
+        if (activeSubs.length) {
+            await conn.commit();
+            return NextResponse.json(
+                { message: "Subscription already active." },
+                { status: 200 }
+            );
+        }
+
+        /* --------------------------------------------------
+           TRIAL RULE ENFORCEMENT
+        -------------------------------------------------- */
+        if (!plan.isFree && isTrialUsed) {
+            await conn.rollback();
+            return NextResponse.json(
+                { error: "Free trial already used." },
+                { status: 403 }
+            );
+        }
+
+        /* --------------------------------------------------
+           Deactivate previous subscriptions
+        -------------------------------------------------- */
+        await conn.execute(
+            "UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?",
+            [landlord_id]
+        );
+
+        /* --------------------------------------------------
+           Dates
+        -------------------------------------------------- */
+        const startDate = new Date();
+        let endDate: Date | null = null;
+        let isTrial = 0;
+
+        if (!plan.isFree && plan.trialDays > 0) {
+            isTrial = 1;
+            endDate = new Date();
+            endDate.setDate(endDate.getDate() + plan.trialDays);
+
+            await conn.execute(
+                "UPDATE Landlord SET is_trial_used = 1, trial_used_at = NOW() WHERE landlord_id = ?",
+                [landlord_id]
+            );
+        }
+
+        /* --------------------------------------------------
+           Insert subscription
+        -------------------------------------------------- */
+        await conn.execute(
+            `
+      INSERT INTO Subscription (
+        landlord_id,
+        plan_name,
+        plan_code,
+        start_date,
+        end_date,
+        payment_status,
+        is_trial,
+        amount_paid,
+        request_reference_number,
+        is_active
+      )
+      VALUES (?, ?, ?, ?, ?, 'paid', ?, 0.00, UUID(), 1)
+      `,
+            [
+                landlord_id,
+                plan_name,
+                plan.code,
+                startDate,
+                endDate,
+                isTrial,
+            ]
+        );
+
+        await conn.commit();
+
+        return NextResponse.json(
+            {
+                message: plan.isFree
+                    ? "Free plan activated."
+                    : `${plan.trialDays}-day free trial activated.`,
+                trial_end_date: endDate,
+            },
+            { status: 201 }
+        );
+    } catch (err: any) {
+        await conn.rollback();
+
+        // Idempotency safety net (DB constraint)
+        if (err.code === "ER_DUP_ENTRY") {
+            return NextResponse.json(
+                { message: "Subscription already exists." },
+                { status: 200 }
+            );
+        }
+
+        console.error("[SubscriptionActivation]", err);
+        return NextResponse.json(
+            { error: "Internal server error." },
+            { status: 500 }
+        );
+    } finally {
+        conn.release();
     }
-
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST!,
-      user: process.env.DB_USER!,
-      password: process.env.DB_PASSWORD!,
-      database: process.env.DB_NAME!,
-    });
-
-    console.log(`Checking database for landlord_id: ${landlord_id}`);
-    const [landlordData] = await connection.execute(
-      "SELECT is_trial_used FROM Landlord WHERE landlord_id = ? LIMIT 1",
-      [landlord_id]
-    );
-
-    console.log(`Debug: Fetched landlordData:`, landlordData);
-
-    if (!Array.isArray(landlordData) || landlordData.length === 0) {
-      console.error(`No landlord found with landlord_id: ${landlord_id}`);
-      await connection.end();
-      return NextResponse.json({ error: "Landlord not found." }, { status: 404 });
-    }
-
-    const { is_trial_used } = landlordData[0] as any;
-    const startDate = new Date().toISOString().split("T")[0];
-
-    if (!plan_name) {
-      await connection.end();
-      return NextResponse.json({ is_trial_used }, { status: 200 });
-    }
-
-    if (plan_name === "Free Plan") {
-      await connection.execute(
-        "INSERT INTO Subscription (landlord_id, plan_name, start_date, end_date, payment_status, is_trial, created_at, request_reference_number, is_active) VALUES (?, ?, ?, '', 'paid', 0, NOW(), 0, 1)",
-        [landlord_id, plan_name, startDate]
-      );
-      await connection.end();
-      return NextResponse.json({ message: "Free Plan activated.", startDate }, { status: 201 });
-    }
-
-    if (is_trial_used) {
-      await connection.end();
-      return NextResponse.json(
-        { error: "Trial already used. Please subscribe to continue." },
-        { status: 403 }
-      );
-    }
-
-    if (["Standard Plan", "Premium Plan"].includes(plan_name)) {
-      const trialDays = plan_name === "Standard Plan" ? 10 : 14;
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + trialDays);
-      const formattedTrialEndDate = trialEndDate.toISOString().split("T")[0];
-
-      await connection.execute(
-        "UPDATE Subscription SET is_active = 0 WHERE landlord_id = ?",
-        [landlord_id]
-      );
-
-      await connection.execute(
-        "INSERT INTO Subscription (landlord_id, plan_name, start_date, end_date, payment_status, is_trial, created_at, request_reference_number, is_active)" +
-        " VALUES (?, ?, ?, ?, 'paid', 1, NOW(), 0, 1)",
-        [landlord_id, plan_name, startDate, formattedTrialEndDate]
-      );
-
-      await connection.execute(
-        "UPDATE Landlord SET is_trial_used = 1 WHERE landlord_id = ?",
-        [landlord_id]
-      );
-
-      await connection.end();
-      return NextResponse.json(
-        {
-          message: `${trialDays}-day free trial activated.`,
-          trialEndDate: formattedTrialEndDate,
-        },
-        { status: 201 }
-      );
-    }
-
-    await connection.end();
-    return NextResponse.json({ error: "Invalid plan selection." }, { status: 400 });
-  } catch (error) {
-    console.error("[grantingFreeTrial] Internal error:", error);
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
-  }
 }

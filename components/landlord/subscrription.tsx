@@ -15,7 +15,8 @@ import useAuthStore from "../../zustand/authStore";
 import Swal from "sweetalert2";
 import { logEvent } from "@/utils/gtag";
 
-const fetcher = (url: string) => axios.get(url).then(res => res.data);
+const fetcher = (url: string) =>
+    axios.get(url).then(res => res.data);
 
 export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
     const { user } = useAuthStore();
@@ -79,41 +80,27 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
     };
 
     /* ===============================
-       Loading / Error
+       Loading State
     =============================== */
     if (isLoading) {
         return (
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                 <p className="mt-3 text-sm text-gray-600">
-                    Loading your subscription...
+                    Loading your subscription…
                 </p>
             </div>
         );
     }
 
-    if (error) {
-        return (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
-                <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-5 h-5 mt-0.5" />
-                    <div>
-                        <p className="font-medium">Failed to load subscription</p>
-                        <p className="text-sm mt-1">Please try again later.</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     /* ===============================
-       No Subscription
+       NO SUBSCRIPTION (404)
     =============================== */
-    if (!subscription || !subscription.plan_name) {
+    if (error?.response?.status === 404) {
         return (
             <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
                 <p className="text-sm text-gray-600 mb-4">
-                    No active subscription found.
+                    No subscription subscribed yet.
                 </p>
                 <Link
                     href="/pages/landlord/subsciption_plan/pricing"
@@ -121,6 +108,25 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                 >
                     Subscribe Now
                 </Link>
+            </div>
+        );
+    }
+
+    /* ===============================
+       REAL ERROR
+    =============================== */
+    if (error) {
+        return (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 mt-0.5" />
+                    <div>
+                        <p className="font-medium">Something went wrong</p>
+                        <p className="text-sm mt-1">
+                            Unable to load subscription details.
+                        </p>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -152,12 +158,12 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                                     : "bg-red-100 text-red-700"
                         }`}
                     >
-            {isCancelled
-                ? "Cancels Soon"
-                : subscription.is_active
-                    ? "Active"
-                    : "Expired"}
-          </span>
+                        {isCancelled
+                            ? "Cancels Soon"
+                            : subscription.is_active
+                                ? "Active"
+                                : "Expired"}
+                    </span>
                 </div>
 
                 {/* Dates */}
@@ -177,12 +183,12 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
 
                 {/* Payment Status */}
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-          <span className="text-sm font-medium text-gray-700">
-            Payment Status
-          </span>
+                    <span className="text-sm font-medium text-gray-700">
+                        Payment Status
+                    </span>
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">
-            {subscription.payment_status}
-          </span>
+                        {subscription.payment_status}
+                    </span>
                 </div>
 
                 {/* Cancelled Banner */}
@@ -214,14 +220,12 @@ export default function LandlordSubscriptionPlanComponent({ landlord_id }) {
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                         <div className="flex items-start gap-3">
                             <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5" />
-                            <div>
-                                <p className="text-sm text-emerald-900">
-                                    Free trial until{" "}
-                                    <strong>
-                                        {new Date(subscription.end_date).toLocaleDateString()}
-                                    </strong>
-                                </p>
-                            </div>
+                            <p className="text-sm text-emerald-900">
+                                Free trial until{" "}
+                                <strong>
+                                    {new Date(subscription.end_date).toLocaleDateString()}
+                                </strong>
+                            </p>
                         </div>
                     </div>
                 )}

@@ -13,18 +13,25 @@ import { SUBSCRIPTION_PLANS } from "@/constant/subscription/subscriptionPlans";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/utils/formatter/formatters";
+import axios from "axios";
+import useAuthStore from "@/zustand/authStore";
 
 export default function SubscriptionPlans() {
     const router = useRouter();
     const { trialUsed, currentSubscription, loading } = useSubscriptionData();
     const prorate = useProrate(currentSubscription);
+    const {user} = useAuthStore();
 
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
     const [proratedAmount, setProratedAmount] = useState<number>(0);
     const [selectedAddOns, setSelectedAddOns] = useState<any[]>([]);
+    const [activating, setActivating] = useState(false);
 
     if (loading) return <div className="text-center py-20">Loading…</div>;
 
+    /* ===============================
+       PLAN SELECTION
+    =============================== */
     const handleSelectPlan = (plan: any) => {
         setSelectedPlan(plan);
         setProratedAmount(prorate(plan));
@@ -32,23 +39,98 @@ export default function SubscriptionPlans() {
     };
 
     const addOnTotal = selectedAddOns.reduce((s, a) => s + a.price, 0);
-    const finalTotal = proratedAmount + addOnTotal;
 
+    /* ===============================
+       PLAN TYPE & ELIGIBILITY
+    =============================== */
+    const isFreePlan = selectedPlan?.price === 0 && selectedPlan?.trialDays === 0;
+    const isPaidPlan = selectedPlan?.price > 0;
+    const hasTrial = selectedPlan?.trialDays > 0;
+
+    const isEligibleForTrial = isPaidPlan && hasTrial && !trialUsed;
+
+    const originalPlanPrice = selectedPlan?.price || 0;
+    const finalPlanAmount =
+        isFreePlan || isEligibleForTrial
+            ? 0
+            : proratedAmount || originalPlanPrice;
+
+    const finalTotal = finalPlanAmount + addOnTotal;
+
+    /* ===============================
+       ACTIVATE (FREE PLAN / TRIAL)
+    =============================== */
+    const activateSubscription = async () => {
+        if (!selectedPlan || !user?.landlord_id) return;
+
+        setActivating(true);
+
+        try {
+            await axios.post("/api/landlord/subscription/activate", {
+                landlord_id: user.landlord_id,
+                plan_name: selectedPlan.name,
+            });
+
+            await Swal.fire({
+                title: "Activated 🎉",
+                text: `${selectedPlan.name} is now active.`,
+                icon: "success",
+                confirmButtonText: "Go to Dashboard",
+            });
+
+            router.push("/pages/landlord/dashboard");
+        } catch (err: any) {
+            Swal.fire(
+                "Activation Failed",
+                err?.response?.data?.error ||
+                "Unable to activate plan. Please try again.",
+                "error"
+            );
+        } finally {
+            setActivating(false);
+        }
+    };
+
+    /* ===============================
+       PROCEED HANDLER
+    =============================== */
     const handleProceed = () => {
         if (!selectedPlan) {
             Swal.fire("Plan Required", "Select a plan to continue.", "warning");
             return;
         }
 
+        // ✅ FREE PLAN or FREE TRIAL → AUTO ACTIVATE
+        if (isFreePlan || isEligibleForTrial) {
+            activateSubscription();
+            return;
+        }
+
+        // 💳 PAID CHECKOUT
         router.push(
             `/pages/landlord/subsciption_plan/payment/review?planId=${selectedPlan.id}` +
-            `&planName=${encodeURIComponent(selectedPlan.name)}` +
             `&amount=${finalTotal}` +
-            `&prorated=${proratedAmount}` +
+            `&prorated=${finalPlanAmount}` +
             `&addons=${encodeURIComponent(JSON.stringify(selectedAddOns))}`
         );
     };
 
+    /* ===============================
+       BUTTON LABEL
+    =============================== */
+    const actionLabel = isFreePlan
+        ? activating
+            ? "Activating…"
+            : "Activate Free Plan"
+        : isEligibleForTrial
+            ? activating
+                ? "Activating…"
+                : "Activate Free Trial"
+            : "Proceed to Checkout";
+
+    /* ===============================
+       UI
+    =============================== */
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             {/* Header */}
@@ -56,7 +138,7 @@ export default function SubscriptionPlans() {
                 <h1 className="text-3xl sm:text-4xl font-bold">
                     Choose Your Perfect Plan
                 </h1>
-                <p className="mt-2 text-gray-600 text-sm sm:text-base">
+                <p className="mt-2 text-gray-600">
                     Upgrade anytime. Transparent pricing. No hidden fees.
                 </p>
             </div>
@@ -64,11 +146,9 @@ export default function SubscriptionPlans() {
             <CurrentSubscriptionBanner currentSubscription={currentSubscription} />
             <TrialBanner trialUsed={trialUsed} />
 
-            {/* Main Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
-                {/* LEFT CONTENT */}
+                {/* LEFT */}
                 <div className="lg:col-span-2 space-y-10">
-                    {/* Plans */}
                     <section>
                         <h2 className="text-xl font-semibold mb-4">Plans</h2>
 
@@ -77,25 +157,25 @@ export default function SubscriptionPlans() {
                                 <PlanCard
                                     key={plan.id}
                                     plan={plan}
-                                    isCurrent={currentSubscription?.plan_name === plan.name}
+                                    isCurrent={
+                                        currentSubscription?.plan_name === plan.name
+                                    }
                                     isSelected={selectedPlan?.id === plan.id}
                                     trialAvailable={!trialUsed}
                                     onSelect={handleSelectPlan}
                                 />
                             ))}
                         </div>
-
-
                     </section>
 
-                    {/* Proration */}
-                    {selectedPlan && currentSubscription && (
+                    {selectedPlan && currentSubscription && !isEligibleForTrial && !isFreePlan && (
                         <ProrateNotice proratedAmount={proratedAmount} />
                     )}
 
-                    {/* Add-ons */}
                     <section>
-                        <h2 className="text-xl font-semibold mb-4">Add-on Services</h2>
+                        <h2 className="text-xl font-semibold mb-4">
+                            Add-on Services
+                        </h2>
                         <AddOnServices
                             selectedAddOns={selectedAddOns}
                             onChange={setSelectedAddOns}
@@ -104,76 +184,75 @@ export default function SubscriptionPlans() {
                     </section>
                 </div>
 
-                {/* SUMMARY (Sticky Desktop) */}
+                {/* SUMMARY */}
                 <aside className="lg:sticky lg:top-24 h-fit">
                     <div className="bg-white border rounded-2xl shadow-md p-6">
                         <h3 className="text-lg font-bold mb-4">Summary</h3>
 
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between">
-                                <span>Plan</span>
-                                <span className="font-semibold">
-                  {selectedPlan
-                      ? formatCurrency(proratedAmount || selectedPlan.price)
-                      : "—"}
-                </span>
+                                <span>Plan Price</span>
+                                <span>{formatCurrency(originalPlanPrice)}</span>
                             </div>
+
+                            {(isFreePlan || isEligibleForTrial) && (
+                                <div className="flex justify-between text-green-600">
+                                    <span>
+                                        {isFreePlan
+                                            ? "Free Plan"
+                                            : `Free Trial (${selectedPlan.trialDays} days)`}
+                                    </span>
+                                    <span>- {formatCurrency(originalPlanPrice)}</span>
+                                </div>
+                            )}
 
                             <div className="flex justify-between">
                                 <span>Add-ons</span>
-                                <span className="font-semibold">
-                  {formatCurrency(addOnTotal)}
-                </span>
+                                <span>{formatCurrency(addOnTotal)}</span>
                             </div>
 
                             <hr />
 
                             <div className="flex justify-between text-base font-bold">
-                                <span>Total</span>
+                                <span>Total Due Now</span>
                                 <span>{formatCurrency(finalTotal)}</span>
                             </div>
                         </div>
 
-                        {!selectedPlan && (
-                            <p className="mt-4 text-xs text-red-500">
-                                Select a plan to continue
-                            </p>
-                        )}
-
                         <button
                             onClick={handleProceed}
-                            disabled={!selectedPlan}
+                            disabled={!selectedPlan || activating}
                             className={`w-full mt-6 py-3 rounded-lg text-white font-semibold transition ${
                                 selectedPlan
                                     ? "bg-blue-600 hover:bg-blue-700"
                                     : "bg-gray-400 cursor-not-allowed"
                             }`}
                         >
-                            Proceed to Checkout
+                            {actionLabel}
                         </button>
                     </div>
                 </aside>
             </div>
 
-            {/* MOBILE FIXED CTA */}
+            {/* MOBILE CTA */}
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
                 <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">Total</span>
+                    <span className="font-semibold">Total Due Now</span>
                     <span className="font-bold">
-            {formatCurrency(finalTotal)}
-          </span>
+                        {formatCurrency(finalTotal)}
+                    </span>
                 </div>
 
                 <button
                     onClick={handleProceed}
-                    disabled={!selectedPlan}
+                    disabled={!selectedPlan || activating}
                     className={`w-full py-3 rounded-lg text-white font-semibold ${
                         selectedPlan
                             ? "bg-blue-600"
                             : "bg-gray-400 cursor-not-allowed"
                     }`}
                 >
-                    Proceed to Checkout
+                    {actionLabel}
                 </button>
             </div>
 
