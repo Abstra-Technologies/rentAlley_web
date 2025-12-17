@@ -39,6 +39,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 { label: "Suspended Accounts", href: "/pages/system_admin/tenant_landlord/suspendedAccounts", icon: Users },
                 { label: "Deactivated Accounts", href: "/pages/system_admin/deactivatedAccounts", icon: Users },
                 { label: "Support", href: "/pages/system_admin/supportIssues", icon: ScrollText },
+                { label: "Beta Program", href: "/pages/system_admin/beta_programs", icon: Users },
+
             ],
         },
 
