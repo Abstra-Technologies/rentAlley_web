@@ -21,17 +21,19 @@ export default function LandlordBetaBanner() {
 
     const status = data?.status; // none | pending | approved | rejected
 
+    /* ================= APPROVED / ALREADY IN BETA ================= */
     if (!user || status === "approved") {
         return (
             <div className="px-4 pt-4">
-                <div className="max-w-6xl mx-auto rounded-2xl border border-emerald-200
-          bg-gradient-to-r from-emerald-600 to-green-600
-          text-white shadow-lg p-4 sm:p-5"
+                <div
+                    className="max-w-6xl mx-auto rounded-2xl border border-emerald-200
+                     bg-gradient-to-r from-emerald-600 to-green-600
+                     text-white shadow-lg p-4 sm:p-5"
                 >
-                    <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5" />
+                    <div className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" />
                         <div>
-                            <h3 className="text-sm sm:text-base font-bold">
+                            <h3 className="text-sm sm:text-base font-bold leading-tight">
                                 You’re in the UPKYP Beta 🎉
                             </h3>
                             <p className="text-xs sm:text-sm text-emerald-100 mt-1">
@@ -44,20 +46,22 @@ export default function LandlordBetaBanner() {
         );
     }
 
+    /* ================= JOIN / PENDING ================= */
     return (
         <div className="px-4 pt-4">
-            <div className="max-w-6xl mx-auto rounded-2xl border border-blue-200
-        bg-gradient-to-r from-blue-600 to-emerald-600
-        text-white shadow-lg p-4 sm:p-5"
+            <div
+                className="max-w-6xl mx-auto rounded-2xl border border-blue-200
+                   bg-gradient-to-r from-blue-600 to-emerald-600
+                   text-white shadow-lg p-4 sm:p-5"
             >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
 
-                    {/* Text */}
-                    <div className="flex items-start sm:items-center gap-3">
+                    {/* LEFT: TEXT */}
+                    <div className="flex items-start gap-3">
                         {status === "pending" ? (
-                            <Clock className="w-5 h-5 shrink-0" />
+                            <Clock className="w-5 h-5 mt-0.5 shrink-0" />
                         ) : (
-                            <Rocket className="w-5 h-5 shrink-0" />
+                            <Rocket className="w-5 h-5 mt-0.5 shrink-0" />
                         )}
 
                         <div>
@@ -75,15 +79,17 @@ export default function LandlordBetaBanner() {
                         </div>
                     </div>
 
-                    {/* CTA */}
+                    {/* RIGHT / BOTTOM CTA */}
                     {status !== "pending" && (
                         <div className="sm:ml-auto">
                             <button
                                 onClick={() => router.push("/pages/landlord/beta-program")}
-                                className="inline-flex items-center gap-2
-                  text-xs sm:text-sm font-semibold
-                  bg-white/15 hover:bg-white/25
-                  px-4 py-2 rounded-lg transition"
+                                className="w-full sm:w-auto
+                           inline-flex items-center justify-center gap-2
+                           text-xs sm:text-sm font-semibold
+                           bg-white/20 hover:bg-white/30
+                           px-4 py-2.5 rounded-lg
+                           transition active:scale-95"
                             >
                                 Join Beta
                                 <ArrowRight className="w-4 h-4" />
