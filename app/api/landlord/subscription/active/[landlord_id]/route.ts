@@ -4,7 +4,7 @@
 import { db } from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
-import {subscriptionConfig} from "@/constant/subscription/limits";
+import subscriptionConfig from "@/constant/subscription/limits.json";
 
 export const dynamic = "force-dynamic";
 

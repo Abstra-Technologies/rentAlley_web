@@ -26,7 +26,7 @@ export const subscriptionConfig = {
 
     "Standard Plan": {
         limits: {
-            maxProperties: 10,
+            maxProperties: 4,
             maxUnits: null, // null = unlimited
             maxMaintenanceRequest: 10,
             maxBilling: 10,

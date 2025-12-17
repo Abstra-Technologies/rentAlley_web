@@ -1,11 +1,7 @@
 "use client";
 
 import Pagination from "@mui/material/Pagination";
-import {
-    Building2,
-    Plus,
-    Search,
-} from "lucide-react";
+import { Building2, Plus, Search } from "lucide-react";
 
 import usePropertyListingPage from "@/hooks/landlord/usePropertyListingPage";
 import PropertyCard from "@/components/landlord/properties/propertyCards";
@@ -24,7 +20,6 @@ export default function PropertyListingPage() {
         setPage,
         searchQuery,
         setSearchQuery,
-        isAddDisabled,
 
         // flags
         loading,
@@ -39,13 +34,13 @@ export default function PropertyListingPage() {
         itemsPerPage,
     } = usePropertyListingPage();
 
+    /* =========================
+       ERROR / LOADING
+    ========================== */
     if (error) {
         return (
             <ErrorBoundary
-                error={
-                    error.message ||
-                    "Failed to load data. Please try again."
-                }
+                error={error.message || "Failed to load properties."}
                 onRetry={() => window.location.reload()}
             />
         );
@@ -54,11 +49,23 @@ export default function PropertyListingPage() {
     if (!user?.landlord_id || loading) {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
-                <LoadingScreen message="Fetching your properties, please wait..." />
+                <LoadingScreen message="Fetching your properties..." />
             </div>
         );
     }
 
+    /* =========================
+       SUBSCRIPTION LIMIT LOGIC
+    ========================== */
+    const maxProperties = subscription?.limits?.maxProperties ?? null;
+    const currentCount = filteredProperties.length;
+
+    const isAddDisabled =
+        maxProperties !== null && currentCount >= maxProperties;
+
+    /* =========================
+       PAGINATION
+    ========================== */
     const startIndex = (page - 1) * itemsPerPage;
     const current = filteredProperties.slice(
         startIndex,
@@ -70,6 +77,7 @@ export default function PropertyListingPage() {
             {/* ================= HEADER ================= */}
             <div className="bg-white border-b border-gray-200 pt-20 pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    {/* Title */}
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-lg flex items-center justify-center">
                             <Building2 className="w-6 h-6 text-blue-600" />
@@ -84,13 +92,13 @@ export default function PropertyListingPage() {
                         </div>
                     </div>
 
-                    {/* ===== Subscription Counter ===== */}
+                    {/* Subscription Counter + CTA */}
                     {subscription && (
                         <div className="flex items-center gap-3">
                             <div className="bg-gray-50 rounded-lg border border-gray-200 px-4 py-2">
                 <span className="text-sm font-bold text-gray-900">
-                  {filteredProperties.length} /{" "}
-                    {subscription?.listingLimits?.maxProperties}
+                  {currentCount} /{" "}
+                    {maxProperties === null ? "∞" : maxProperties}
                 </span>
                             </div>
 
@@ -110,7 +118,7 @@ export default function PropertyListingPage() {
                     )}
                 </div>
 
-                {/* ===== Search ===== */}
+                {/* Search */}
                 <div className="mt-4 max-w-2xl relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-gray-400" />
@@ -150,7 +158,7 @@ export default function PropertyListingPage() {
                     </div>
                 )}
 
-                {/* ===== Pagination ===== */}
+                {/* Pagination */}
                 {filteredProperties.length > itemsPerPage && (
                     <div className="mt-6 flex justify-center">
                         <Pagination
