@@ -1,8 +1,9 @@
 "use client";
 
 import { FileSignature, Wallet, CalendarRange } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 import { formatDate } from "@/utils/formatter/formatters";
 
 interface Props {
@@ -11,13 +12,8 @@ interface Props {
     onContinue: (data: any) => void;
 }
 
-/* ----------------------------------------------------
- * Helper for <input type="date">
- * -------------------------------------------------- */
-const formatDateForInput = (date?: string | null): string => {
-    if (!date) return "";
-    return new Date(date).toISOString().split("T")[0];
-};
+const formatDateForInput = (date?: string | null) =>
+    date ? new Date(date).toISOString().split("T")[0] : "";
 
 export default function ChecklistSetupModal({
                                                 lease,
@@ -25,6 +21,10 @@ export default function ChecklistSetupModal({
                                                 onContinue,
                                             }: Props) {
     const agreement_id = lease.lease_id;
+
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [showDecision, setShowDecision] = useState(false);
 
     const [form, setForm] = useState({
         lease_agreement: false,
@@ -35,56 +35,72 @@ export default function ChecklistSetupModal({
         lease_end_date: "",
     });
 
-    const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
+    const hasInvalidDates =
+        form.set_lease_dates &&
+        form.lease_start_date &&
+        form.lease_end_date &&
+        new Date(form.lease_end_date) < new Date(form.lease_start_date);
 
-    /* ----------------------------------------------------
-     * LOAD EXISTING CHECKLIST + LEASE DATES
-     * -------------------------------------------------- */
+
+    const leaseIncludesOthers = form.lease_agreement;
+
+    /* ================= LOAD EXISTING ================= */
     useEffect(() => {
-        const load = async () => {
-            try {
-                const res = await axios.get(
-                    `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
-                );
-
+        axios
+            .get(
+                `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
+            )
+            .then((res) => {
                 const r = res.data?.requirements || {};
 
-                const leaseStart = formatDateForInput(res.data?.lease_start_date);
-                const leaseEnd = formatDateForInput(res.data?.lease_end_date);
-
-                setForm({
+                const loadedForm = {
                     lease_agreement: r.lease_agreement === 1,
                     security_deposit: r.security_deposit === 1,
                     advance_payment: r.advance_payment === 1,
+                    set_lease_dates: !!(
+                        res.data?.lease_start_date || res.data?.lease_end_date
+                    ),
+                    lease_start_date: formatDateForInput(res.data?.lease_start_date),
+                    lease_end_date: formatDateForInput(res.data?.lease_end_date),
+                };
 
-                    // auto-enable if dates exist
-                    set_lease_dates: !!(leaseStart || leaseEnd),
+                setForm(loadedForm);
 
-                    // formatted for date input
-                    lease_start_date: leaseStart,
-                    lease_end_date: leaseEnd,
-                });
-            } catch {
-                // first-time setup
-            }
-        };
-
-        load();
+                // 👇 decision screen rule (exclude dates-only)
+                if (
+                    loadedForm.lease_agreement ||
+                    loadedForm.security_deposit ||
+                    loadedForm.advance_payment
+                ) {
+                    setShowDecision(true);
+                }
+            })
+            .catch(() => {});
     }, [agreement_id]);
 
-    /* ----------------------------------------------------
-     * SAVE
-     * -------------------------------------------------- */
+    /* ================= SAVE ================= */
     const handleSave = async () => {
         setLoading(true);
         setErrorMessage("");
 
-        try {
-            const existing = await axios.get(
-                `/api/landlord/activeLease/saveChecklistRequirements?agreement_id=${agreement_id}`
-            );
+        if (hasInvalidDates) {
+            Swal.fire({
+                icon: "warning",
+                title: "Invalid lease dates",
+                text: "End date cannot be earlier than the start date.",
+                confirmButtonColor: "#ef4444",
+            });
+            return;
+        }
 
+
+        Swal.fire({
+            title: "Saving lease setup...",
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+        });
+
+        try {
             const payload = {
                 agreement_id,
                 lease_agreement: form.lease_agreement,
@@ -98,24 +114,40 @@ export default function ChecklistSetupModal({
                     : null,
             };
 
-            if (existing.data?.requirements) {
-                await axios.put(
-                    "/api/landlord/activeLease/saveChecklistRequirements",
-                    payload
-                );
-            } else {
-                await axios.post(
-                    "/api/landlord/activeLease/saveChecklistRequirements",
-                    payload
-                );
-            }
+            await axios.post(
+                "/api/landlord/activeLease/saveChecklistRequirements",
+                payload
+            );
 
+            Swal.close();
+
+            // 🔀 FLOW CONTROL
+            if (form.lease_agreement) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Lease setup saved",
+                    text: "Continue setting up the lease.",
+                    confirmButtonColor: "#2563eb",
+                }).then(() => onContinue(payload));
+            } else {
+                Swal.fire({
+                    icon: "success",
+                    title: "Dates saved",
+                    text: "Lease dates updated successfully.",
+                    confirmButtonColor: "#10b981",
+                }).then(() => onClose());
+            }
+        } catch {
+            Swal.close();
+            setErrorMessage("Failed to save checklist.");
+
+            Swal.fire({
+                icon: "error",
+                title: "Save failed",
+                text: "Please try again.",
+            });
+        } finally {
             setLoading(false);
-            onContinue(payload);
-        } catch (err) {
-            console.error(err);
-            setLoading(false);
-            setErrorMessage("Failed to save setup. Please try again.");
         }
     };
 
@@ -124,129 +156,199 @@ export default function ChecklistSetupModal({
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
 
                 {/* HEADER */}
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    Lease Setup Options
-                </h2>
-                <p className="text-sm text-gray-600 mb-5">
-                    Select any options that apply. You may choose multiple.
+                <h2 className="text-lg font-bold mb-1">Lease Setup</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                    Configure requirements for this lease.
                 </p>
 
-                {/* ERROR */}
                 {errorMessage && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 text-sm text-red-700 rounded-lg">
                         {errorMessage}
                     </div>
                 )}
 
-                {/* OPTIONS */}
-                <div className="space-y-4">
+                {/* ================= DECISION SCREEN ================= */}
+                {showDecision ? (
+                    <div className="space-y-4">
+                        <p className="text-sm text-gray-700">
+                            This lease already has setup requirements.
+                        </p>
 
-                    <Option
-                        checked={form.lease_agreement}
-                        onChange={() =>
-                            setForm((p) => ({ ...p, lease_agreement: !p.lease_agreement }))
-                        }
-                        icon={<FileSignature className="w-4 h-4 text-blue-600" />}
-                        label="Lease Agreement"
-                        disabled={loading}
-                    />
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => onContinue(form)}
+                                className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm"
+                            >
+                                Continue Setting Up
+                            </button>
 
-                    <Option
-                        checked={form.security_deposit}
-                        onChange={() =>
-                            setForm((p) => ({ ...p, security_deposit: !p.security_deposit }))
-                        }
-                        icon={<Wallet className="w-4 h-4 text-emerald-600" />}
-                        label="Security Deposit"
-                        disabled={loading}
-                    />
-
-                    <Option
-                        checked={form.advance_payment}
-                        onChange={() =>
-                            setForm((p) => ({ ...p, advance_payment: !p.advance_payment }))
-                        }
-                        icon={<Wallet className="w-4 h-4 text-purple-600" />}
-                        label="Advance Payment"
-                        disabled={loading}
-                    />
-
-                    <Option
-                        checked={form.set_lease_dates}
-                        onChange={() =>
-                            setForm((p) => ({ ...p, set_lease_dates: !p.set_lease_dates }))
-                        }
-                        icon={<CalendarRange className="w-4 h-4 text-indigo-600" />}
-                        label="Set Lease Dates"
-                        disabled={loading}
-                    />
-
-                    {form.set_lease_dates && (
-                        <div className="ml-7 space-y-3">
-                            <DateField
-                                label="Lease Start Date"
-                                value={form.lease_start_date}
-                                onChange={(v) =>
-                                    setForm((p) => ({ ...p, lease_start_date: v }))
-                                }
-                            />
-                            <DateField
-                                label="Lease End Date"
-                                value={form.lease_end_date}
-                                onChange={(v) =>
-                                    setForm((p) => ({ ...p, lease_end_date: v }))
-                                }
-                            />
-
-                            {(form.lease_start_date || form.lease_end_date) && (
-                                <p className="text-xs text-gray-500">
-                                    Current Lease Period:{" "}
-                                    {formatDate(form.lease_start_date)}{" "}
-                                    {form.lease_end_date &&
-                                        `– ${formatDate(form.lease_end_date)}`}
-                                </p>
-                            )}
+                            <button
+                                onClick={() => setShowDecision(false)}
+                                className="flex-1 py-2 rounded-lg border text-sm text-gray-700"
+                            >
+                                Edit Checklist
+                            </button>
                         </div>
-                    )}
-                </div>
+                    </div>
+                ) : (
+                    /* ================= CHECKLIST ================= */
+                    <div className="space-y-4">
 
-                {/* FOOTER */}
-                <div className="flex justify-end gap-3 mt-8">
-                    <button
-                        onClick={onClose}
-                        disabled={loading}
-                        className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
-                    >
-                        Cancel
-                    </button>
+                        <Option
+                            checked={form.lease_agreement}
+                            onChange={() =>
+                                setForm((p) => ({
+                                    ...p,
+                                    lease_agreement: !p.lease_agreement,
+                                }))
+                            }
+                            icon={<FileSignature className="w-4 h-4 text-blue-600" />}
+                            disabled={loading}
+                            label={
+                                <div>
+                                    <div className="font-medium">Lease Agreement</div>
+                                    <div className="text-xs text-gray-500">
+                                        Includes deposit, advance payment, and lease dates
+                                    </div>
+                                </div>
+                            }
+                        />
 
-                    <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow"
-                    >
-                        {loading ? "Saving..." : "Continue"}
-                    </button>
-                </div>
+                        <Option
+                            checked={form.security_deposit}
+                            onChange={() =>
+                                setForm((p) => ({
+                                    ...p,
+                                    security_deposit: !p.security_deposit,
+                                }))
+                            }
+                            icon={<Wallet className="w-4 h-4 text-emerald-600" />}
+                            disabled={loading || leaseIncludesOthers}
+                            label={
+                                leaseIncludesOthers
+                                    ? "Security Deposit (included)"
+                                    : "Security Deposit"
+                            }
+                        />
+
+                        <Option
+                            checked={form.advance_payment}
+                            onChange={() =>
+                                setForm((p) => ({
+                                    ...p,
+                                    advance_payment: !p.advance_payment,
+                                }))
+                            }
+                            icon={<Wallet className="w-4 h-4 text-purple-600" />}
+                            disabled={loading || leaseIncludesOthers}
+                            label={
+                                leaseIncludesOthers
+                                    ? "Advance Payment (included)"
+                                    : "Advance Payment"
+                            }
+                        />
+
+                        <Option
+                            checked={form.set_lease_dates}
+                            onChange={() =>
+                                setForm((p) => ({
+                                    ...p,
+                                    set_lease_dates: !p.set_lease_dates,
+                                }))
+                            }
+                            icon={<CalendarRange className="w-4 h-4 text-indigo-600" />}
+                            disabled={loading || leaseIncludesOthers}
+                            label={
+                                leaseIncludesOthers
+                                    ? "Lease Dates (included)"
+                                    : "Set Lease Dates Only"
+                            }
+                        />
+
+                        {form.set_lease_dates && (
+                            <div className="ml-7 space-y-3">
+                                <DateField
+                                    label="Start Date"
+                                    value={form.lease_start_date}
+                                    onChange={(v) =>
+                                        setForm((p) => ({ ...p, lease_start_date: v }))
+                                    }
+                                />
+                                <DateField
+                                    label="End Date"
+                                    value={form.lease_end_date}
+                                    onChange={(v) =>
+                                        setForm((p) => ({ ...p, lease_end_date: v }))
+                                    }
+                                />
+
+                                {(form.lease_start_date || form.lease_end_date) && (
+                                    <p className="text-xs text-gray-500">
+                                        Lease Period: {formatDate(form.lease_start_date)}
+                                        {form.lease_end_date &&
+                                            ` – ${formatDate(form.lease_end_date)}`}
+                                    </p>
+                                )}
+                            </div>
+
+                        )}
+
+                        {hasInvalidDates && (
+                            <p className="text-xs text-red-600">
+                                End date cannot be earlier than start date.
+                            </p>
+                        )}
+
+
+                        {/* FOOTER */}
+                        <div className="flex justify-end gap-3 pt-4">
+                            <button
+                                onClick={onClose}
+                                disabled={loading}
+                                className="px-4 py-2 rounded-lg border text-gray-700"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={handleSave}
+                                disabled={loading || hasInvalidDates}
+                                className={`px-4 py-2 rounded-lg text-white transition
+        ${
+                                    loading || hasInvalidDates
+                                        ? "bg-gray-400 cursor-not-allowed"
+                                        : "bg-gradient-to-r from-blue-600 to-emerald-600"
+                                }`}
+                            >
+                                {loading ? "Saving..." : "Continue"}
+                            </button>
+
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
-/* ---------------- SMALL COMPONENTS ---------------- */
+/* ================= SMALL COMPONENTS ================= */
 
 function Option({ checked, onChange, icon, label, disabled }: any) {
     return (
-        <label className="flex items-center gap-3">
+        <label
+            className={`flex items-start gap-3 ${
+                disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+            }`}
+        >
             <input
                 type="checkbox"
-                className="h-4 w-4"
+                className="mt-1 h-4 w-4"
                 checked={checked}
                 onChange={onChange}
                 disabled={disabled}
             />
             {icon}
-            <span className="text-sm text-gray-800">{label}</span>
+            <div className="text-sm">{label}</div>
         </label>
     );
 }

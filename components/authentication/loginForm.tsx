@@ -1,5 +1,4 @@
 "use client";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 import { useLoginForm } from "@/hooks/authentication/useLoginForm";
 import ReCAPTCHA from "react-google-recaptcha";

@@ -8,16 +8,13 @@ import {
     Building2,
     User2,
     Clock,
-    Eye,
-    ShieldCheck,
-    FileSignature,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import LeaseDetailsPanel from "@/components/landlord/activeLease/LeaseDetailsPanel";
 import ChecklistSetupModal from "@/components/landlord/activeLease/ChecklistModal";
 
-const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function PropertyLeasesPage() {
     const { id } = useParams();
@@ -34,61 +31,79 @@ export default function PropertyLeasesPage() {
 
     const leases = data?.leases || [];
 
-    /* ---------------- SEARCH ---------------- */
+    /* ===============================
+       SEARCH
+    =============================== */
     const filteredLeases = useMemo(() => {
         if (!search.trim()) return leases;
         const q = search.toLowerCase();
-        return leases.filter(
-            (l) =>
-                l.unit_name?.toLowerCase().includes(q) ||
-                l.tenant_name?.toLowerCase().includes(q) ||
-                l.invite_email?.toLowerCase().includes(q) ||
-                l.lease_status?.toLowerCase().includes(q)
+        return leases.filter((l: any) =>
+            l.unit_name?.toLowerCase().includes(q) ||
+            l.tenant_name?.toLowerCase().includes(q) ||
+            l.invite_email?.toLowerCase().includes(q) ||
+            l.lease_status?.toLowerCase().includes(q)
         );
     }, [leases, search]);
 
-    /* ---------------- STATUS BADGE ---------------- */
+    /* ===============================
+       STATUS BADGE
+    =============================== */
     const getStatusBadge = (lease: any) => {
         if (lease.type === "invite") {
             return (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border">
-          <Clock className="w-3 h-3" />
-          Invite Pending
-        </span>
+                    <Clock className="w-3 h-3" />
+                    Invite Pending
+                </span>
+            );
+        }
+
+        if (lease.lease_status === "draft") {
+            return (
+                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 border">
+                    Draft
+                </span>
             );
         }
 
         if (lease.lease_status === "pending_signature") {
             return (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border">
-          <Clock className="w-3 h-3" />
-          Pending Signature
-        </span>
+                    <Clock className="w-3 h-3" />
+                    Pending Signature
+                </span>
             );
         }
 
         if (lease.lease_status === "active") {
             return (
-                <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
-          Active
-        </span>
+                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 border border-green-200">
+                    Active
+                </span>
             );
         }
 
         return (
-            <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border">
-        {lease.lease_status}
-      </span>
+            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border">
+                {lease.lease_status}
+            </span>
         );
     };
 
-    const handleAuthenticate = (lease: any) => {
-        router.push(
-            `/pages/landlord/properties/${id}/activeLease/authenticate/${lease.lease_id}`
-        );
+    /* ===============================
+       PRIMARY ACTION HANDLER
+    =============================== */
+    const handlePrimaryAction = (lease: any) => {
+        if (lease.lease_status === "draft") {
+            setSetupModalLease(lease);
+        } else {
+            setSelectedLease(lease);
+        }
     };
 
-    /* ---------------- LOADING ---------------- */
+    /* ===============================
+       LOADING / ERROR
+    =============================== */
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -108,8 +123,8 @@ export default function PropertyLeasesPage() {
     }
 
     return (
-        <div className="min-h-screen w-full max-w-none bg-gray-50 pb-24 md:pb-6 overflow-x-hidden">
-            <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+        <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+            <div className="px-4 md:px-6 pt-20 md:pt-6">
 
                 {/* ================= HEADER ================= */}
                 <div className="mb-6">
@@ -133,11 +148,11 @@ export default function PropertyLeasesPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full max-w-md px-4 py-2 text-sm border rounded-lg
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
 
-                {/* ================= MOBILE CARDS ================= */}
+                {/* ================= MOBILE ================= */}
                 <div className="space-y-4 md:hidden">
                     {filteredLeases.map((lease: any) => (
                         <div
@@ -164,63 +179,42 @@ export default function PropertyLeasesPage() {
                                 <div>
                                     <span className="block">Start</span>
                                     <span className="font-medium">
-                    {lease.start_date
-                        ? new Date(lease.start_date).toLocaleDateString()
-                        : "—"}
-                  </span>
+                                        {lease.start_date
+                                            ? new Date(lease.start_date).toLocaleDateString()
+                                            : "—"}
+                                    </span>
                                 </div>
                                 <div>
                                     <span className="block">End</span>
                                     <span className="font-medium">
-                    {lease.end_date
-                        ? new Date(lease.end_date).toLocaleDateString()
-                        : "—"}
-                  </span>
+                                        {lease.end_date
+                                            ? new Date(lease.end_date).toLocaleDateString()
+                                            : "—"}
+                                    </span>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-2">
-                                {(lease.lease_status === "active" ||
-                                    lease.landlord_signed) && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedLease(lease)}
-                                        className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white text-sm"
-                                    >
-                                        View Details
-                                    </button>
-                                )}
-
-                                {lease.lease_status === "pending_signature" &&
-                                    lease.tenant_signed &&
-                                    !lease.landlord_signed && (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleAuthenticate(lease)}
-                                            className="w-full px-3 py-2 rounded-lg bg-amber-500 text-white text-sm"
-                                        >
-                                            Authenticate
-                                        </button>
-                                    )}
-
-                                {lease.type === "lease" &&
-                                    lease.lease_status !== "active" && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setSetupModalLease(lease)}
-                                            className="w-full px-3 py-2 rounded-lg bg-blue-600 text-white text-sm"
-                                        >
-                                            Setup Lease
-                                        </button>
-                                    )}
-                            </div>
+                            {lease.type === "lease" && (
+                                <button
+                                    onClick={() => handlePrimaryAction(lease)}
+                                    className={`w-full px-3 py-2 rounded-lg text-sm text-white ${
+                                        lease.lease_status === "draft"
+                                            ? "bg-blue-600"
+                                            : "bg-gray-800"
+                                    }`}
+                                >
+                                    {lease.lease_status === "draft"
+                                        ? "Setup Lease"
+                                        : "View Details"}
+                                </button>
+                            )}
                         </div>
                     ))}
                 </div>
 
-                {/* ================= DESKTOP TABLE ================= */}
+                {/* ================= DESKTOP ================= */}
                 <div className="hidden md:block bg-white border rounded-lg shadow-sm overflow-hidden">
-                    <table className="w-full table-fixed divide-y">
+                    <table className="w-full divide-y">
                         <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                         <tr>
                             <th className="px-6 py-3 text-left">Unit</th>
@@ -233,7 +227,7 @@ export default function PropertyLeasesPage() {
                         </thead>
                         <tbody className="divide-y">
                         {filteredLeases.map((lease: any) => (
-                            <tr key={lease.lease_id || lease.invite_id} className="hover:bg-gray-50">
+                            <tr key={lease.lease_id || lease.invite_id}>
                                 <td className="px-6 py-4 font-medium truncate">
                                     {lease.unit_name}
                                 </td>
@@ -252,15 +246,24 @@ export default function PropertyLeasesPage() {
                                         ? new Date(lease.end_date).toLocaleDateString()
                                         : "—"}
                                 </td>
-                                <td className="px-6 py-4">{getStatusBadge(lease)}</td>
+                                <td className="px-6 py-4">
+                                    {getStatusBadge(lease)}
+                                </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedLease(lease)}
-                                        className="px-3 py-1.5 text-sm bg-gray-800 text-white rounded-lg"
-                                    >
-                                        View
-                                    </button>
+                                    {lease.type === "lease" && (
+                                        <button
+                                            onClick={() => handlePrimaryAction(lease)}
+                                            className={`px-3 py-1.5 text-sm rounded-lg text-white ${
+                                                lease.lease_status === "draft"
+                                                    ? "bg-blue-600"
+                                                    : "bg-gray-800"
+                                            }`}
+                                        >
+                                            {lease.lease_status === "draft"
+                                                ? "Setup"
+                                                : "View"}
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}
