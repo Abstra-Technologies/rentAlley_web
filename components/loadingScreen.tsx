@@ -6,33 +6,36 @@ const LoadingScreen = ({ message = "Loading…" }) => {
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden">
 
-            {/* BACKGROUND IMAGE */}
+            {/* BACKGROUND IMAGE (VERY SUBTLE) */}
             <div
-                className="absolute inset-0 bg-cover bg-center"
+                className="absolute inset-0 bg-cover bg-center scale-[1.02]"
                 style={{
                     backgroundImage:
                         "url('https://res.cloudinary.com/dpukdla69/image/upload/v1765966152/Whisk_mtnhzwyxajzmdtyw0yn2mtotijzhrtllbjzh1sn_wpw850.jpg')",
                 }}
             />
 
-            {/* OVERLAY FOR READABILITY */}
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px]" />
+            {/* PRIMARY WHITE WASH (dominant) */}
+            <div className="absolute inset-0 bg-white/50" />
 
-            {/* SOFT GRADIENT WASH */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/70 via-white/60 to-emerald-50/70" />
+            {/* SOFT DEPTH GRADIENT (barely visible) */}
+            <div
+                className="absolute inset-0 bg-gradient-to-br
+          from-blue-50/25 via-white/15 to-emerald-50/25"
+            />
 
             {/* CENTER CONTENT */}
             <div className="relative z-10 flex flex-col items-center text-center px-6">
 
-                {/* Logo with pulse */}
+                {/* LOGO */}
                 <motion.div
-                    className="relative mb-5"
+                    className="relative mb-6"
                     animate={{
-                        scale: [1, 1.06, 1],
-                        opacity: [0.9, 1, 0.9],
+                        scale: [1, 1.05, 1],
+                        opacity: [0.96, 1, 0.96],
                     }}
                     transition={{
-                        duration: 1.6,
+                        duration: 1.8,
                         repeat: Infinity,
                         ease: "easeInOut",
                     }}
@@ -41,42 +44,46 @@ const LoadingScreen = ({ message = "Loading…" }) => {
                         src="/upkeep_blue.png"
                         alt="Upkyp"
                         className="
-    w-[clamp(3.5rem,8vw,5rem)]
-    h-[clamp(3.5rem,8vw,5rem)]
-    object-contain
-  "
+              w-[clamp(4rem,9vw,5.75rem)]
+              h-[clamp(4rem,9vw,5.75rem)]
+              object-contain
+              drop-shadow-[0_4px_12px_rgba(0,0,0,0.18)]
+            "
                     />
 
-
-                    {/* Halo pulse */}
+                    {/* HALO (SOFT, NOT FLASHY) */}
                     <motion.div
-                        className="absolute inset-0 -z-10 rounded-full blur-2xl
-                                   bg-gradient-to-br from-blue-400 to-emerald-400"
+                        className="absolute inset-0 -z-10 rounded-full blur-3xl
+                       bg-gradient-to-br from-blue-400 to-emerald-400"
                         animate={{
-                            opacity: [0.2, 0.45, 0.2],
-                            scale: [1, 1.25, 1],
+                            opacity: [0.15, 0.28, 0.15],
+                            scale: [1, 1.18, 1],
                         }}
                         transition={{
-                            duration: 2.2,
+                            duration: 2.8,
                             repeat: Infinity,
                             ease: "easeInOut",
                         }}
                     />
                 </motion.div>
 
-                {/* Brand */}
+                {/* BRAND */}
                 <motion.h1
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight mb-4"
+                    className="text-2xl sm:text-2xl font-semibold text-gray-900 tracking-tight mb-4"
                 >
                     Upkyp
+                    <span className="block mt-1 text-sm sm:text-base font-medium text-gray-500">
+    Connect More. Manage Less.
+  </span>
                 </motion.h1>
 
-                {/* Pulsating text */}
+
+                {/* LOADING TEXT */}
                 <motion.p
-                    className="text-xs sm:text-sm text-gray-500 font-medium"
+                    className="text-xs sm:text-sm text-gray-600 font-medium"
                     animate={{ opacity: [0.4, 1, 0.4] }}
                     transition={{ duration: 1.8, repeat: Infinity }}
                 >
@@ -96,7 +103,7 @@ const LoadingScreen = ({ message = "Loading…" }) => {
                     alt="Abstra Technologies"
                     className="w-28 opacity-70"
                 />
-                <p className="text-[11px] text-gray-400 font-medium">
+                <p className="text-[11px] text-gray-500 font-medium">
                     Property Management Platform
                 </p>
             </motion.div>
