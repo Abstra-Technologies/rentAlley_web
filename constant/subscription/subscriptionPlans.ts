@@ -31,7 +31,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         id: 2,
         name: "Standard Plan",
         price: 1499,
-        trialDays: 10,
+        trialDays: 60,
         popular: true,
         features: [
             "Up to 5 Properties",
@@ -48,7 +48,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         id: 3,
         name: "Pro Plan",
         price: 2499,
-        trialDays: 14,
+        trialDays: 60,
         popular: false,
         features: [
             "Unlimited Properties",
@@ -64,7 +64,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
         id: 4,
         name: "Enterprise Plan",
         price: 0,
-        trialDays: 14,
+        trialDays: 60,
         popular: false,
         features: [
             "Unlimited Properties",
