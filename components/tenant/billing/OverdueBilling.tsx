@@ -2,19 +2,22 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { formatDate } from "@/utils/formatter/formatters";
+import {
+    formatDate,
+    formatCurrency,
+} from "@/utils/formatter/formatters";
 import {
     ExclamationTriangleIcon,
     CreditCardIcon,
     ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
-import { useRouter } from "next/navigation";
+import { useXenditPayment } from "@/hooks/payments/useXenditPayment";
 
 interface OverdueBill {
     billing_id: string;
     billing_period: string;
     due_date: string;
-    total_amount_due: number;
+    total_amount_due: number | string;
     days_overdue: number;
 }
 
@@ -27,7 +30,8 @@ export default function OverdueBilling({
 }) {
     const [bills, setBills] = useState<OverdueBill[]>([]);
     const [loading, setLoading] = useState(true);
-    const router = useRouter();
+
+    const { payWithXendit, loadingPayment } = useXenditPayment();
 
     useEffect(() => {
         if (!user_id) {
@@ -47,7 +51,7 @@ export default function OverdueBilling({
 
                 setBills(res.data.bills || []);
             } catch (err) {
-                console.error("Failed to load overdue bills");
+                console.error("Failed to load overdue bills", err);
             } finally {
                 setLoading(false);
             }
@@ -99,28 +103,42 @@ export default function OverdueBilling({
                             {/* Right */}
                             <div className="text-right">
                                 <p className="text-sm font-bold text-red-700">
-                                    ₱{bill.total_amount_due.toFixed(2)}
+                                    {formatCurrency(bill.total_amount_due)}
                                 </p>
                             </div>
                         </div>
 
                         {/* Actions */}
                         <div className="mt-3 flex gap-2">
+                            {/* Pay Now – Inline Xendit */}
                             <button
                                 onClick={() =>
-                                    router.push(
-                                        `/pages/tenant/pay/${bill.billing_id}`
-                                    )
+                                    payWithXendit({
+                                        billing_id: bill.billing_id,
+                                        amount: bill.total_amount_due,
+                                    })
                                 }
+                                disabled={loadingPayment}
                                 className="flex-1 flex items-center justify-center gap-1
                   bg-red-600 hover:bg-red-700
                   text-white text-xs font-semibold
-                  py-2 rounded-lg"
+                  py-2 rounded-lg
+                  disabled:opacity-50"
                             >
-                                <CreditCardIcon className="w-4 h-4" />
-                                Pay Now
+                                {loadingPayment ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CreditCardIcon className="w-4 h-4" />
+                                        Pay Now
+                                    </>
+                                )}
                             </button>
 
+                            {/* Download PDF */}
                             <button
                                 onClick={() =>
                                     window.open(
