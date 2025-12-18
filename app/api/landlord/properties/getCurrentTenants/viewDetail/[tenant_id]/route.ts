@@ -4,8 +4,11 @@ import { decryptData } from "@/crypto/encrypt";
 
 const SECRET_KEY = process.env.ENCRYPTION_SECRET;
 
-export async function GET(req: NextRequest, { params }) {
-    const { tenant_id } = params;
+export async function GET(
+    req: NextRequest,
+    context: { params: Promise<{ tenant_id: string }> }
+) {
+    const { tenant_id } = await context.params;
 
     if (!tenant_id) {
         return NextResponse.json(
