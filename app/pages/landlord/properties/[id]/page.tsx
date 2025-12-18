@@ -15,6 +15,7 @@ import InviteTenantModal from "@/components/landlord/properties/InviteTenantModa
 import BulkImportUnitModal from "@/components/landlord/properties/BulkImportUnitModal";
 
 import { usePropertyUnitsPage } from "@/hooks/landlord/usePropertyUnitsPage";
+import { mutate } from "swr";
 
 export default function ViewPropertyDetailedPage() {
 
@@ -179,17 +180,27 @@ export default function ViewPropertyDetailedPage() {
 
                 {/* ================= UNITS LIST ================= */}
                 <div className="bg-white w-full rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+
                     <UnitsTab
                         units={currentUnits}
                         isLoading={isLoading}
-                        unitBillingStatus={{}}
-                        billingMode={false}
                         propertyId={property_id}
-                        propertyDetails={null}
                         handleEditUnit={handleEditUnit}
                         handleDeleteUnit={handleDeleteUnit}
                         handleAddUnitClick={handleAddUnitClick}
+                        onPublishToggle={(unitId, publish) => {
+                            // update local SWR cache
+                            mutate(
+                                `/api/unitListing/getUnitListings?property_id=${property_id}`,
+                                (prev: any[]) =>
+                                    prev.map((u) =>
+                                        u.unit_id === unitId ? { ...u, publish } : u
+                                    ),
+                                false // no re-fetch
+                            );
+                        }}
                     />
+
 
                     {filteredUnits.length > itemsPerPage && (
                         <div className="flex justify-center p-4 border-t border-gray-100">

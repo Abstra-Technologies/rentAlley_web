@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { mutate } from "swr";
+import useSWR, { mutate } from "swr";
 import axios from "axios";
 import Swal from "sweetalert2";
 
 import useAuthStore from "@/zustand/authStore";
 import { usePropertyData } from "@/hooks/usePropertyData";
+
+const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export function usePropertyUnitsPage() {
     const router = useRouter();
@@ -16,16 +18,22 @@ export function usePropertyUnitsPage() {
     const property_id =
         typeof params?.id === "string" ? params.id : null;
 
-    const { fetchSession, user } = useAuthStore();
+    const { user } = useAuthStore();
+
+    /* ---------------- AUTH (SWR) ---------------- */
+
+    useSWR(
+        user ? null : "/api/auth/session",
+        fetcher,
+        {
+            revalidateOnFocus: false,
+            dedupingInterval: 60_000,
+        }
+    );
+
     const landlord_id = user?.landlord_id ?? null;
 
-    /* ---------------- AUTH ---------------- */
-
-    useEffect(() => {
-        if (!user) fetchSession();
-    }, [user, fetchSession]);
-
-    /* ---------------- DATA ---------------- */
+    /* ---------------- PROPERTY + UNITS ---------------- */
 
     const {
         subscription,
@@ -38,14 +46,13 @@ export function usePropertyUnitsPage() {
 
     const [page, setPage] = useState(1);
     const itemsPerPage = 10;
-
     const [searchQuery, setSearchQuery] = useState("");
 
     const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
     const [inviteModalOpen, setInviteModalOpen] = useState(false);
     const [bulkImportModal, setBulkImportModal] = useState(false);
 
-    /* ---------------- SIMPLE SEARCH ---------------- */
+    /* ---------------- SEARCH ---------------- */
 
     const filteredUnits = useMemo(() => {
         if (!searchQuery.trim()) return units;
@@ -110,6 +117,7 @@ export function usePropertyUnitsPage() {
     const handleDeleteUnit = async (unitId: number) => {
         const confirm = await Swal.fire({
             title: "Delete unit?",
+            text: "This action cannot be undone.",
             icon: "warning",
             showCancelButton: true,
         });
@@ -117,7 +125,11 @@ export function usePropertyUnitsPage() {
         if (!confirm.isConfirmed) return;
 
         await axios.delete(`/api/unitListing/deleteUnit?id=${unitId}`);
-        mutate(`/api/propertyListing/property/${property_id}`);
+
+        // 🔥 instant list update
+        mutate(
+            `/api/unitListing/getUnitListings?property_id=${property_id}`
+        );
     };
 
     return {

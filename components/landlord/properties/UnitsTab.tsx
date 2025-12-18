@@ -9,13 +9,11 @@ import axios from "axios";
 interface UnitsTabProps {
     units: any[];
     isLoading: boolean;
-    unitBillingStatus: Record<number, boolean>;
-    billingMode: boolean;
     propertyId: string | number;
-    propertyDetails: any;
     handleEditUnit: (unitId: number) => void;
     handleDeleteUnit: (unitId: number) => void;
     handleAddUnitClick: () => void;
+    onPublishToggle: (unitId: number, publish: boolean) => void;
 }
 
 const UnitsTab: React.FC<UnitsTabProps> = ({
@@ -25,6 +23,7 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
                                                handleEditUnit,
                                                handleDeleteUnit,
                                                handleAddUnitClick,
+    onPublishToggle
                                            }) => {
     const router = useRouter();
 
@@ -32,33 +31,44 @@ const UnitsTab: React.FC<UnitsTabProps> = ({
     const isOccupied = (status: string) => status?.toLowerCase() === "occupied";
 
     // 🧠 Handle publish toggle
-    const handleTogglePublish = async (unitId: string, currentValue: boolean) => {
+    const handleTogglePublish = async (
+        unitId: number,
+        currentValue: boolean
+    ) => {
         const newValue = !currentValue;
+
+        // 🚀 INSTANT UI UPDATE
+        onPublishToggle(unitId, newValue);
+
+        // 🔔 Non-blocking Swal toast (NO DELAY)
+        Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            title: newValue ? "Unit published" : "Unit unlisted",
+            showConfirmButton: false,
+            timer: 1500,
+            timerProgressBar: true,
+        });
 
         try {
             await axios.put(`/api/unitListing/publish`, {
                 unit_id: unitId,
                 publish: newValue,
             });
-
-            Swal.fire({
-                title: newValue ? "Unit Published" : "Unit Unlisted",
-                text: newValue
-                    ? "This unit is now visible in listings."
-                    : "This unit is now hidden from public listings.",
-                icon: "success",
-                confirmButtonColor: "#10b981",
-            });
-
-            // Optional: refresh list
-            window.location.reload();
         } catch (error) {
             console.error("Publish toggle failed:", error);
+
+            // ❌ ROLLBACK UI
+            onPublishToggle(unitId, currentValue);
+
             Swal.fire({
-                title: "Error",
-                text: "Failed to update publish status.",
+                toast: true,
+                position: "top-end",
                 icon: "error",
-                confirmButtonColor: "#ef4444",
+                title: "Failed to update status",
+                showConfirmButton: false,
+                timer: 2000,
             });
         }
     };
