@@ -194,6 +194,8 @@ const EditUnit = () => {
 
     if (!result.isConfirmed) return;
 
+    console.log('photo if ui: ', photoId);
+
     try {
       await axios.delete(`/api/unitListing/deleteUnitPhoto?id=${photoId}`);
       setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
@@ -517,14 +519,15 @@ const EditUnit = () => {
                               className="w-full h-full object-cover"
                             />
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleDeletePhoto(photo.id)}
-                            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-all"></div>
+                            <button
+                                type="button"
+                                onClick={() => handleDeletePhoto(photo.id)}
+                                className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-all"></div>
                         </div>
                       ))}
                     </div>

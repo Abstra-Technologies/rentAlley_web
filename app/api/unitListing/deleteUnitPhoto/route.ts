@@ -27,6 +27,8 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const photoId = searchParams.get("id");
 
+    console.log("photo id", photoId);
+
     if (!photoId) {
         return NextResponse.json({ error: "Missing photo ID" }, { status: 400 });
     }
