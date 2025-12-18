@@ -4,13 +4,14 @@ import {
     DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 
-const s3 = new S3Client({
+export const s3 = new S3Client({
     region: process.env.NEXT_AWS_REGION!,
     credentials: {
     accessKeyId: process.env.NEXT_AWS_ACCESS_KEY_ID!,
         secretAccessKey: process.env.NEXT_AWS_SECRET_ACCESS_KEY!,
 },
 });
+
 
 export async function deleteFromS3(fileUrl: string) {
     const bucket = process.env.NEXT_S3_BUCKET_NAME!;
