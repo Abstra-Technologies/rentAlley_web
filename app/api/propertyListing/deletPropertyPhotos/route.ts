@@ -9,6 +9,9 @@ export async function DELETE(req: Request) {
     try {
         const { photo_id, property_id } = await req.json();
 
+        console.log('property id photo: ', property_id);
+        console.log('photo if: ', photo_id);
+
         if (!photo_id || !property_id) {
             return NextResponse.json({ error: "photo_id and property_id are required" }, { status: 400 });
         }

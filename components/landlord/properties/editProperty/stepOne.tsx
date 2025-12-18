@@ -1,238 +1,282 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState, useRef } from "react";
 import dynamic from "next/dynamic";
+import useSWR from "swr";
 import useEditPropertyStore from "@/zustand/property/useEditPropertyStore";
 import { PROPERTY_TYPES } from "@/constant/propertyTypes";
 import AmenitiesSelector from "@/components/landlord/createProperty/amenities-selector";
 import { PROPERTY_PREFERENCES } from "@/constant/propertyPreferences";
 import { UTILITY_BILLING_TYPES } from "@/constant/utilityBillingType";
-import { PAYMENT_METHODS } from "@/constant/paymentMethods";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { FaInfoCircle } from "react-icons/fa";
 import { Camera, X, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 
 const PropertyMapWrapper = dynamic(
-  () => import("@/components/landlord/createProperty/propertyMapWrapper"),
-  { ssr: false }
+    () => import("@/components/landlord/createProperty/propertyMapWrapper"),
+    { ssr: false }
 );
 
-export const StepOneEdit = ({ propertyId }) => {
-  const { property, setProperty, photos, setPhotos } = useEditPropertyStore();
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-  // State
-  const [loading, setLoading] = useState(true);
-  const [coords, setCoords] = useState({ lat: null, lng: null });
-  const [addressQuery, setAddressQuery] = useState("");
-  const [addressResults, setAddressResults] = useState([]);
-  const [loadingAI, setLoadingAI] = useState(false);
+export const StepOneEdit = ({ propertyId }: { propertyId: number }) => {
+    const { property, setProperty, photos, setPhotos } =
+        useEditPropertyStore();
 
-  /* =========================================================
-       FETCH PROPERTY DETAILS + EXISTING PHOTOS
-    ========================================================== */
-  useEffect(() => {
-    if (!propertyId) return;
+    const [coords, setCoords] = useState({ lat: null, lng: null });
+    const [addressQuery, setAddressQuery] = useState("");
+    const [addressResults, setAddressResults] = useState<any[]>([]);
+    const [loadingAI, setLoadingAI] = useState(false);
+    const addressRef = useRef<HTMLInputElement>(null);
+    const [loading, setLoading] = useState(true);
+    /* =========================================================
+       PROPERTY DETAILS (SWR)
+    ========================================================= */
+    useEffect(() => {
+        if (!propertyId) return;
 
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `/api/propertyListing/editProperty?property_id=${propertyId}`
-        );
-        const data = await res.json();
+        let mounted = true;
 
-        if (data?.length > 0) {
-          const p = data[0];
+        (async () => {
+            try {
+                const res = await fetch(
+                    `/api/propertyListing/editProperty?property_id=${propertyId}`
+                );
+                const data = await res.json();
 
-          const mapped = {
-            propertyName: p.property_name,
-            propertyType: p.property_type,
-            amenities: p.amenities || [],
-            street: p.street,
-            brgyDistrict: p.brgy_district,
-            city: p.city,
-            zipCode: p.zip_code,
-            province: p.province,
-            description: p.description,
-            floorArea: p.floor_area,
-            minStay: p.min_stay,
-            water_billing_type: p.water_billing_type,
-            electricity_billing_type: p.electricity_billing_type,
-            propertyPreferences: p.property_preferences || [],
-            paymentMethodsAccepted: p.accepted_payment_methods || [],
-            lat: p.latitude,
-            lng: p.longitude,
-          };
+                if (!mounted || !data?.length) return;
 
-          setProperty(mapped);
-          setCoords({ lat: mapped.lat, lng: mapped.lng });
-          setAddressQuery(mapped.street || "");
+                const p = data[0];
+
+                const mapped = {
+                    propertyName: p.property_name,
+                    propertyType: p.property_type,
+                    amenities: p.amenities || [],
+                    street: p.street,
+                    brgyDistrict: p.brgy_district,
+                    city: p.city,
+                    zipCode: p.zip_code,
+                    province: p.province,
+                    description: p.description,
+                    floorArea: p.floor_area,
+                    minStay: p.min_stay,
+                    water_billing_type: p.water_billing_type,
+                    electricity_billing_type: p.electricity_billing_type,
+                    propertyPreferences: p.property_preferences || [],
+                    paymentMethodsAccepted: p.accepted_payment_methods || [],
+                    lat: p.latitude,
+                    lng: p.longitude,
+                };
+
+                setProperty(mapped);
+                setCoords({ lat: mapped.lat, lng: mapped.lng });
+                setAddressQuery(mapped.street || "");
+            } catch (err) {
+                console.error("Failed to fetch property details:", err);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        })();
+
+        return () => {
+            mounted = false;
+        };
+    }, [propertyId]);
+
+    /* =========================================================
+       EXISTING PHOTOS (SWR)
+    ========================================================= */
+    useEffect(() => {
+        if (!propertyId) return;
+
+        let mounted = true;
+
+        (async () => {
+            try {
+                const res = await fetch(
+                    `/api/propertyListing/propertyPhotos?property_id=${propertyId}`
+                );
+                const data = await res.json();
+
+                if (!mounted) return;
+
+                const mapped = data.map((p: any) => ({
+                    file: null,
+                    preview: p.photo_url,
+                    photo_id: p.photo_id,
+                    isNew: false,
+                }));
+
+                setPhotos(mapped);
+            } catch (err) {
+                console.error("Failed to fetch property photos:", err);
+            }
+        })();
+
+        return () => {
+            mounted = false;
+        };
+    }, [propertyId]);
+
+    /* =========================================================
+       ADDRESS SEARCH
+    ========================================================= */
+    const searchAddress = async (value: string) => {
+        setAddressQuery(value);
+        if (value.length < 4) {
+            setAddressResults([]);
+            return;
         }
 
-        /* Existing Photos */
-        const photoRes = await axios.get(
-          `/api/propertyListing/propertyPhotos?property_id=${propertyId}`
-        );
-        const serverPhotos = photoRes.data.map((photo) => ({
-          file: null,
-          preview: photo.photo_url,
-          photo_id: photo.photo_id,
-          isNew: false,
-        }));
-
-        setPhotos(serverPhotos);
-      } catch (err) {
-        console.error("Error:", err);
-      }
-      setLoading(false);
-    })();
-  }, [propertyId]);
-
-  /* =========================================================
-       ADDRESS SEARCH (Debounced)
-    ========================================================== */
-  useEffect(() => {
-    const timeout = setTimeout(async () => {
-      if (addressQuery.length < 4) {
-        setAddressResults([]);
-        return;
-      }
-      try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-            addressQuery
-          )}&addressdetails=1&countrycodes=ph`
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+                value
+            )}&addressdetails=1&countrycodes=ph`
         );
-        const data = await res.json();
-        setAddressResults(data);
-      } catch (err) {
-        console.error("Address search failed", err);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [addressQuery]);
-
-  const handleAddressSelect = (place) => {
-    const { lat, lon, address, display_name } = place;
-    const parsed = {
-      lat: parseFloat(lat),
-      lng: parseFloat(lon),
-      street: address?.road || display_name,
-      brgyDistrict: address?.suburb || "",
-      city: address?.city || address?.town || "",
-      province: address?.region || "",
-      zipCode: address?.postcode || "",
+        setAddressResults(await res.json());
     };
 
-    setCoords({ lat: parsed.lat, lng: parsed.lng });
-    setProperty({ ...property, ...parsed });
-    setAddressQuery(parsed.street);
-    setAddressResults([]);
-  };
+    const handleAddressSelect = (place: any) => {
+        const parsed = {
+            lat: parseFloat(place.lat),
+            lng: parseFloat(place.lon),
+            street: place.address?.road || place.display_name,
+            brgyDistrict: place.address?.suburb || "",
+            city: place.address?.city || place.address?.town || "",
+            province: place.address?.region || "",
+            zipCode: place.address?.postcode || "",
+        };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProperty({ ...property, [name]: value });
-  };
+        setCoords({ lat: parsed.lat, lng: parsed.lng });
+        setProperty({ ...property, ...parsed });
+        setAddressQuery(parsed.street);
+        setAddressResults([]);
+        addressRef.current?.blur();
+    };
 
-  /* =========================================================
+    const handleChange = (e: any) => {
+        const { name, value } = e.target;
+        setProperty({ ...property, [name]: value });
+    };
+
+    /* =========================================================
        AMENITIES
-    ========================================================== */
-  const toggleAmenity = (amenity) => {
-    const list = property.amenities || [];
-    setProperty({
-      ...property,
-      amenities: list.includes(amenity)
-        ? list.filter((a) => a !== amenity)
-        : [...list, amenity],
-    });
-  };
-
-  /* =========================================================
-       PREFERENCES
-    ========================================================== */
-  const togglePreference = (key) => {
-    const list = property.propertyPreferences || [];
-    setProperty({
-      ...property,
-      propertyPreferences: list.includes(key)
-        ? list.filter((x) => x !== key)
-        : [...list, key],
-    });
-  };
-
-  /* =========================================================
-       PHOTO UPLOAD (Dropzone)
-    ========================================================== */
-  const onDrop = (acceptedFiles) => {
-    const newFiles = acceptedFiles.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-      isNew: true,
-    }));
-    setPhotos([...photos, ...newFiles]);
-  };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: "image/*",
-    multiple: true,
-  });
-
-  const removePhoto = async (index) => {
-    const p = photos[index];
-    if (p.photo_id && !p.isNew) {
-      try {
-        await axios.delete("/api/propertyListing/deletPropertyPhotos", {
-          data: { photo_id: p.photo_id, property_id: propertyId },
+    ========================================================= */
+    const toggleAmenity = (amenity: string) => {
+        const list = property.amenities || [];
+        setProperty({
+            ...property,
+            amenities: list.includes(amenity)
+                ? list.filter((a) => a !== amenity)
+                : [...list, amenity],
         });
-      } catch (err) {
-        console.error("Failed to delete", err);
-      }
-    }
-    setPhotos(photos.filter((_, i) => i !== index));
-  };
+    };
 
-  /* =========================================================
-       AI DESCRIPTION BUILDER
-    ========================================================== */
-  const generateDescription = async () => {
-    setLoadingAI(true);
+    /* =========================================================
+       PREFERENCES
+    ========================================================= */
+    const togglePreference = (key: string) => {
+        const list = property.propertyPreferences || [];
+        setProperty({
+            ...property,
+            propertyPreferences: list.includes(key)
+                ? list.filter((x) => x !== key)
+                : [...list, key],
+        });
+    };
 
-    const prompt = `Generate a rental property description for:
-Name: ${property.propertyName}
-Type: ${property.propertyType}
-Amenities: ${property.amenities?.join(", ")}
-Location: ${property.street}, ${property.city}, ${property.province}, ${
-      property.zipCode
-    }.`;
+    /* =========================================================
+       PHOTO UPLOAD + DELETE
+    ========================================================= */
+    const onDrop = (acceptedFiles: File[]) => {
+        const newFiles = acceptedFiles.map((file) => ({
+            file,
+            preview: URL.createObjectURL(file),
+            isNew: true,
+        }));
+        setPhotos([...photos, ...newFiles]);
+    };
 
-    try {
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "deepseek/deepseek-r1:free",
-          messages: [
-            { role: "system", content: "You write property descriptions." },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: { "image/*": [] },
+        multiple: true,
+    });
 
-      const data = await res.json();
-      const text = data?.choices?.[0]?.message?.content;
-      if (text) setProperty({ ...property, description: text });
-    } catch (err) {
-      alert("AI failed to generate text.");
-    }
+    const removePhoto = async (photo: any) => {
+        try {
+            // 🔴 CASE 1: already saved photo → delete from backend
+            if (!photo.isNew && photo.photo_id) {
+                await axios.delete("/api/propertyListing/deletPropertyPhotos", {
+                    data: {
+                        photo_id: photo.photo_id,
+                        property_id: propertyId,
+                    },
+                });
 
-    setLoadingAI(false);
-  };
+                // remove saved photo by ID
+                setPhotos((prev) =>
+                    prev.filter((p) => p.photo_id !== photo.photo_id)
+                );
+                return;
+            }
+
+            // 🟡 CASE 2: new photo (not uploaded yet) → local only
+            setPhotos((prev) =>
+                prev.filter((p) => p.preview !== photo.preview)
+            );
+        } catch (err) {
+            console.error("Photo delete failed:", err);
+            alert("Failed to delete photo.");
+        }
+    };
+
+
+
+    /* =========================================================
+       AI DESCRIPTION
+    ========================================================= */
+    const generateDescription = async () => {
+        setLoadingAI(true);
+        try {
+            const res = await fetch(
+                "https://openrouter.ai/api/v1/chat/completions",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek/deepseek-r1:free",
+                        messages: [
+                            { role: "system", content: "You write property descriptions." },
+                            {
+                                role: "user",
+                                content: `Generate a rental property description for:
+                Name: ${property.propertyName}
+                Type: ${property.propertyType}
+                Amenities: ${property.amenities?.join(", ")}
+                Location: ${property.street}, ${property.city}`,
+                            },
+                        ],
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (data?.choices?.[0]?.message?.content) {
+                setProperty({
+                    ...property,
+                    description: data.choices[0].message.content,
+                });
+            }
+        } catch {
+            alert("AI generation failed.");
+        }
+        setLoadingAI(false);
+    };
 
   // SKELETON LOADING
   if (loading) {
@@ -685,73 +729,40 @@ Location: ${property.street}, ${property.city}, ${property.province}, ${
           </div>
         </div>
 
-        {photos.length > 0 && (
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-3">
-              {photos.length} photo{photos.length !== 1 ? "s" : ""} uploaded
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {photos.map((photo, index) => (
-                <div key={index} className="relative group aspect-square">
-                  <img
-                    src={photo.preview}
-                    alt={`Property photo ${index + 1}`}
-                    className="w-full h-full object-cover rounded-xl border border-gray-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
-                  >
-                    <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                  </button>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-all"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+          {photos.length > 0 && (
+              <div>
+                  <p className="text-xs sm:text-sm font-medium text-gray-700 mb-3">
+                      {photos.length} photo{photos.length !== 1 ? "s" : ""} uploaded
+                  </p>
 
-      {/* PAYMENT METHODS */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 pb-3 border-b border-gray-200">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shadow-md">
-            10
-          </div>
-          <h2 className="text-base sm:text-lg font-semibold text-gray-800">
-            Payment Methods Accepted
-          </h2>
-        </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {photos.map((photo) => (
+                          <div
+                              key={photo.photo_id ?? photo.preview}
+                              className="relative group aspect-square"
+                          >
+                              <img
+                                  src={photo.preview}
+                                  alt="Property photo"
+                                  className="w-full h-full object-cover rounded-xl border border-gray-200"
+                              />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {PAYMENT_METHODS.map((m) => (
-            <label
-              key={m.key}
-              className="flex items-center gap-3 border border-gray-200 p-3 sm:p-4 rounded-xl shadow-sm cursor-pointer hover:border-blue-400 hover:shadow-md transition-all bg-white"
-            >
-              <input
-                type="checkbox"
-                checked={property.paymentMethodsAccepted?.includes(m.key)}
-                onChange={() =>
-                  setProperty({
-                    ...property,
-                    paymentMethodsAccepted:
-                      property.paymentMethodsAccepted?.includes(m.key)
-                        ? property.paymentMethodsAccepted.filter(
-                            (x) => x !== m.key
-                          )
-                        : [...(property.paymentMethodsAccepted || []), m.key],
-                  })
-                }
-                className="w-4 h-4 sm:w-5 sm:h-5 accent-blue-600 rounded"
-              />
-              <span className="text-xs sm:text-sm font-medium text-gray-700">
-                {m.label}
-              </span>
-            </label>
-          ))}
-        </div>
+                              <button
+                                  type="button"
+                                  onClick={() => removePhoto(photo)}
+                                  className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                              >
+                                  <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                              </button>
+
+                              {/* 👇 FIXED OVERLAY */}
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-xl transition-all pointer-events-none"></div>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          )}
+
       </div>
     </div>
   );

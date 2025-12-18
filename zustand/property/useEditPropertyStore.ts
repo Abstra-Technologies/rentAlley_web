@@ -1,4 +1,3 @@
-
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -27,12 +26,19 @@ const initialEditPropertyState = {
 const useEditPropertyStore = create(
     persist(
         (set) => ({
+            /* =======================
+               STATE
+            ======================= */
             property: { ...initialEditPropertyState },
             photos: [],
             loading: false,
             error: null,
 
-            // Set or merge property fields
+            /* =======================
+               ACTIONS
+            ======================= */
+
+            // Merge property fields safely
             setProperty: (propertyDetails) =>
                 set((state) => ({
                     property: {
@@ -41,35 +47,50 @@ const useEditPropertyStore = create(
                     },
                 })),
 
-            // Toggle an amenity
+            // Toggle amenity
             toggleAmenity: (amenity) =>
                 set((state) => {
-                    const amenities = state.property.amenities || [];
-                    const exists = amenities.includes(amenity);
+                    const amenities = Array.isArray(state.property.amenities)
+                        ? state.property.amenities
+                        : [];
+
                     return {
                         property: {
                             ...state.property,
-                            amenities: exists
+                            amenities: amenities.includes(amenity)
                                 ? amenities.filter((a) => a !== amenity)
                                 : [...amenities, amenity],
                         },
                     };
                 }),
 
-            // Set photos/files individually
-            setPhotos: (photos) => set({ photos }),
+            // ✅ ALWAYS normalize photos to array
+            setPhotos: (photos) =>
+                set({
+                    photos: Array.isArray(photos) ? photos : [],
+                }),
 
-            // Reset state
+            // ✅ Remove single photo safely (for DELETE)
+            removePhoto: (photoId) =>
+                set((state) => ({
+                    photos: state.photos.filter(
+                        (photo) => photo.photo_id !== photoId
+                    ),
+                })),
+
+            // Reset everything
             reset: () =>
-                set(() => ({
+                set({
                     property: { ...initialEditPropertyState },
                     photos: [],
                     loading: false,
                     error: null,
-                })),
+                }),
         }),
         {
-            name: "edit-property-store", // 🔑 localStorage key
+            name: "edit-property-store",
+
+            // Persist only what matters
             partialize: (state) => ({
                 property: state.property,
                 photos: state.photos,
@@ -79,4 +100,3 @@ const useEditPropertyStore = create(
 );
 
 export default useEditPropertyStore;
-

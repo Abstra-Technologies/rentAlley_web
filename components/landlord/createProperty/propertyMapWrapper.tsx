@@ -1,46 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useRef } from "react";
 
-// Dynamically import PropertyMap with no SSR
-const PropertyMap = dynamic(
-  () => import("@/components/landlord/createProperty/propertyMap"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-          <p className="text-xs text-gray-500">Loading map...</p>
-        </div>
-      </div>
-    ),
-  }
-);
+export default function PropertyMap({ coordinates, setFields }) {
+    const mapRef = useRef<any>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
-export default function PropertyMapWrapper({ coordinates, setFields }) {
-  const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        let L: any;
 
-  useEffect(() => {
-    // Ensure client-side only rendering
-    setIsMounted(true);
-  }, []);
+        const initMap = async () => {
+            if (!containerRef.current || mapRef.current) return;
 
-  if (!isMounted) {
+            // ✅ Lazy import Leaflet (HMR-safe)
+            const leaflet = await import("leaflet");
+            L = leaflet.default;
+
+            // ❗ Fix missing marker icons (Leaflet + Next issue)
+            delete (L.Icon.Default.prototype as any)._getIconUrl;
+            L.Icon.Default.mergeOptions({
+                iconRetinaUrl:
+                    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+                iconUrl:
+                    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+                shadowUrl:
+                    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+            });
+
+            mapRef.current = L.map(containerRef.current).setView(
+                coordinates || [14.5995, 120.9842],
+                15
+            );
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                attribution: "&copy; OpenStreetMap contributors",
+            }).addTo(mapRef.current);
+        };
+
+        initMap();
+
+        return () => {
+            // ✅ Proper cleanup (prevents reuse error)
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+            }
+        };
+    }, []);
+
     return (
-      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-          <p className="text-xs text-gray-500">Loading map...</p>
-        </div>
-      </div>
+        <div
+            ref={containerRef}
+            className="w-full h-full rounded-xl"
+        />
     );
-  }
-
-  return (
-    <div className="w-full h-full">
-      <PropertyMap coordinates={coordinates} setFields={setFields} />
-    </div>
-  );
 }
