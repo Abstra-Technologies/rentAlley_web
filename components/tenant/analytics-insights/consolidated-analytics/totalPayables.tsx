@@ -82,9 +82,11 @@ export default function TenantPayables({
             minimumFractionDigits: 2,
         })}`;
 
-    const handleBillingPay = (billingId: number) => {
-        router.push(`/pages/tenant/pay/${billingId}`);
+    const handleBillingPay = (agreementId: string) => {
+        router.push(`/pages/tenant/rentalPortal/${agreementId}`);
     };
+
+
 
     const handleInitialPay = (agreementId: string) => {
         router.push(`/pages/tenant/initialPayment/${agreementId}`);
@@ -221,7 +223,7 @@ export default function TenantPayables({
                                                 subtitle={`Due ${formatDate(b.billing_due_date)}`}
                                                 amount={formatPHP(b.amount)}
                                                 status={b.status}
-                                                onPay={() => handleBillingPay(b.billing_id)}
+                                                onPay={() => handleBillingPay(unit.agreement_id)}
                                             />
                                         ))}
                                     </Section>

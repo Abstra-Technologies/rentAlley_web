@@ -11,12 +11,8 @@ export async function GET(
     context: { params: Promise<{ agreement_id: string }> }
 ) {
     try {
-        // ✅ NEXT.JS 16 FIX
         const { agreement_id } = await context.params;
 
-        console.log("[VALIDATE] Request start", {
-            agreement_id,
-        });
 
         /* ---------------- AUTH ---------------- */
         const cookieHeader = req.headers.get("cookie");
@@ -98,11 +94,6 @@ export async function GET(
                 { status: 403 }
             );
         }
-
-        console.log("[VALIDATE] Agreement authorized", {
-            agreement_id,
-            tenant_id: tenantId,
-        });
 
         return NextResponse.json({ ok: true });
     } catch (err) {

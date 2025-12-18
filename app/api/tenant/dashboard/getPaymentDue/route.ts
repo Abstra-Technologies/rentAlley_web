@@ -5,8 +5,6 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const agreement_id = searchParams.get("agreement_id");
 
-    console.log("🔍 [PaymentDue API] agreement_id:", agreement_id);
-
     if (!agreement_id) {
         console.warn("❌ agreement_id missing");
         return NextResponse.json(
@@ -16,9 +14,7 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        /* -------------------------------------------------
-           1️⃣ Resolve lease + unit (DEBUG)
-        ------------------------------------------------- */
+
         const [leaseRows]: any = await db.execute(
             `
             SELECT agreement_id, unit_id
@@ -41,11 +37,7 @@ export async function GET(req: NextRequest) {
 
         const { unit_id } = leaseRows[0];
 
-        console.log("✅ unit_id resolved:", unit_id);
 
-        /* -------------------------------------------------
-           2️⃣ DEBUG: show ALL billings for this lease
-        ------------------------------------------------- */
         const [allBills]: any = await db.execute(
             `
             SELECT billing_id, lease_id, unit_id, status, due_date, total_amount_due
@@ -56,11 +48,7 @@ export async function GET(req: NextRequest) {
             [agreement_id]
         );
 
-        console.log("📦 ALL bills for this agreement:", allBills);
 
-        /* -------------------------------------------------
-           3️⃣ Fetch ONE pending / overdue & due bill (CORRECT)
-        ------------------------------------------------- */
         const [billingRows]: any = await db.execute(
             `
             SELECT
