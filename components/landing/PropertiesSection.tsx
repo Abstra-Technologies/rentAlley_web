@@ -45,17 +45,39 @@ export default function PropertiesSection({
     <section className={`py-12 sm:py-16 bg-gradient-to-br ${bgColor}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <SectionBadge icon={BadgeIcon} text={badgeText} />
-          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-            {title}
-          </h2>
-          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            {description}
-          </p>
-        </div>
+          <div className="text-center mb-12">
+              <SectionBadge icon={BadgeIcon} text={badgeText} />
 
-        {/* Content */}
+              <h2
+                  className="
+      text-2xl
+      sm:text-3xl
+      lg:text-4xl
+      font-bold
+      text-gray-900
+      mb-4
+      leading-tight
+    "
+              >
+                  {title}
+              </h2>
+
+              <p
+                  className="
+      text-base
+      sm:text-lg
+      text-gray-600
+      max-w-xl
+      mx-auto
+      leading-relaxed
+    "
+              >
+                  {description}
+              </p>
+          </div>
+
+
+          {/* Content */}
         {loading ? (
           <LoadingSpinner color={spinnerColor} />
         ) : units.length === 0 ? (
