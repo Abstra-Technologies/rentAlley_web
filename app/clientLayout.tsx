@@ -212,6 +212,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             {/*</Script>*/}
 
 
+
+
             {/* ✅ Facebook SDK root */}
             <div id="fb-root"></div>
 

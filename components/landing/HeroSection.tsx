@@ -5,6 +5,7 @@
 import { FormEvent } from "react";
 import { Search, MapPin, Shield } from "lucide-react";
 import { POPULAR_CITIES, TRUST_INDICATORS } from "@/constant/landing";
+import HeroTypewriter from "../ui/heroTypeWriter";
 
 interface HeroSectionProps {
   searchQuery: string;
@@ -46,7 +47,7 @@ export default function HeroSection({
             handleSearch={handleSearch}
           />
           <PopularSearches router={router} />
-          <TrustIndicators />
+            <br/><br/>
         </div>
       </div>
 
@@ -100,35 +101,76 @@ function HeroBadge() {
     <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-full mb-6 border border-white/20 shadow-2xl animate-fade-in">
       <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
       <Shield className="w-4 h-4 text-white" />
-      <span className="text-sm font-semibold text-white">
-        Verified Listings • Secure Platform
-      </span>
+        <span className="text-sm font-semibold text-white">
+  Discover and Manage Rental Properties
+</span>
     </div>
   );
 }
 
+
 function HeroHeadline() {
-  return (
-    <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-4 leading-[1.1] animate-slide-up">
-      <span className="block mb-2">Find Your Perfect</span>
-      <span className="relative inline-block">
-        <span className="relative z-10 bg-gradient-to-r from-emerald-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
-          Rental Home
-        </span>
-        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400/20 to-purple-400/20 blur-2xl"></div>
+    return (
+        <h1
+            className="
+        text-2xl
+        sm:text-4xl
+        lg:text-5xl
+        font-bold
+        text-white
+        mb-4
+        leading-tight
+        animate-slide-up
+      "
+        >
+      <span className="block mb-2">
+        Browse Verified Rental Listings
       </span>
-    </h1>
-  );
+
+            <span className="relative inline-flex items-center">
+        <HeroTypewriter />
+        <span className="ml-1 text-white/70 animate-pulse">|</span>
+
+        <div
+            className="
+            absolute -inset-1
+            bg-gradient-to-r
+            from-emerald-400/20
+            to-purple-400/20
+            blur-2xl
+          "
+        />
+      </span>
+
+            {/* SEO fallback */}
+            <span className="sr-only">
+        Apartments, Homes, Office Spaces, Warehouses, Commercial Properties
+      </span>
+        </h1>
+    );
 }
 
 function HeroDescription() {
-  return (
-    <p className="text-lg sm:text-xl lg:text-2xl text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed font-light animate-slide-up animation-delay-200">
-      Discover verified listings and manage properties seamlessly—all in one
-      powerful platform
-    </p>
-  );
+    return (
+        <p className="
+      text-base
+      sm:text-lg
+      lg:text-xl
+      text-white/90
+      mb-8
+      max-w-2xl
+      mx-auto
+      leading-relaxed
+      font-light
+      animate-slide-up
+      animation-delay-200
+    ">
+            Discover verified listings and manage properties seamlessly — all in one
+            powerful platform.
+        </p>
+    );
 }
+
 
 function SearchBar({ searchQuery, setSearchQuery, handleSearch }: any) {
   return (

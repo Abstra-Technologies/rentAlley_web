@@ -1,72 +1,40 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+
+import useSWR from "swr";
 import axios from "axios";
 
-export default function useSubscription(landlordId?: number | string) {
-    const [subscription, setSubscription] = useState<any>(null);
-    const [loadingSubscription, setLoadingSubscription] = useState(false);
-    const [errorSubscription, setErrorSubscription] = useState<string | null>(null);
+const fetcher = (url: string) =>
+    axios.get(url).then((res) => res.data);
 
-    const abortRef = useRef<AbortController | null>(null);
-
-    const fetchSubscription = useCallback(async () => {
-
-        if (!landlordId) {
-            setSubscription(null);
-            setLoadingSubscription(false);
-            return;
+export default function useSubscription(
+    landlordId?: number | string
+) {
+    const {
+        data,
+        error,
+        isLoading,
+        mutate,
+    } = useSWR(
+        landlordId
+            ? `/api/landlord/subscription/active/${landlordId}`
+            : null,
+        fetcher,
+        {
+            revalidateOnFocus: false,
+            revalidateIfStale: false,
+            dedupingInterval: 60_000, // cache for 1 minute
+            keepPreviousData: true,  // 🚀 no loading flicker
         }
-
-        // cancel previous request
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
-
-        try {
-            setLoadingSubscription(true);
-
-            const response = await axios.get(
-                `/api/landlord/subscription/active/${landlordId}`,
-                { signal: controller.signal }
-            );
-
-            setSubscription(response.data);
-            setErrorSubscription(null);
-        } catch (error: any) {
-            if (error.name === "CanceledError") return;
-
-            if (error.response?.status !== 400) {
-                console.error("[Subscription] Error fetching subscription:", error);
-            }
-
-            setSubscription(null);
-            setErrorSubscription(
-                error.response?.data?.error ||
-                error.response?.data?.message ||
-                "Failed to fetch subscription."
-            );
-        } finally {
-            setLoadingSubscription(false);
-        }
-    }, [landlordId]);
-
-    useEffect(() => {
-        if (!landlordId) {
-            setLoadingSubscription(false);
-            return;
-        }
-
-        fetchSubscription();
-
-        return () => {
-            abortRef.current?.abort();
-        };
-    }, [fetchSubscription, landlordId]);
+    );
 
     return {
-        subscription,
-        loadingSubscription,
-        errorSubscription,
-        refreshSubscription: fetchSubscription,
+        subscription: data ?? null,
+        loadingSubscription: isLoading,
+        errorSubscription: error
+            ? error.response?.data?.error ??
+            error.response?.data?.message ??
+            "Failed to fetch subscription."
+            : null,
+        refreshSubscription: () => mutate(),
     };
 }
