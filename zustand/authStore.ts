@@ -1,235 +1,169 @@
+// zustand/authStore.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { decryptData } from "../crypto/encrypt";
 
-const useAuthStore = create(
-  persist(
-    (set) => ({
-      user: null,
-      admin: null,
-      loading: true,
+interface User {
+    user_id: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+    profilePicture: string | null;
+    phoneNumber: string | null;
+    birthDate: string | null;
+    points: number;
+    userType: string | null;
+    landlord_id: string | null;
+    tenant_id: string | null;
+    is_verified?: boolean | null;
+    is_trial_used?: boolean | null;
+    subscription?: {
+        subscription_id: string | null;
+        plan_name: string;
+        status: string;
+        start_date: string | null;
+        end_date: string | null;
+        payment_status: string;
+        trial_end_date: string | null;
+    } | null;
+    [key: string]: any; // for flexibility
+}
 
-      decryptUserData: (data) => {
-        try {
-          const encryptionKey = process.env.ENCRYPTION_SECRET;
-          if (!encryptionKey) {
-            console.error(
-              "[AuthStore] Missing ENCRYPTION_SECRET in environment variables."
-            );
-            return data;
-          }
+interface Admin {
+    admin_id: string | null;
+    username: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    role: string | null;
+    status: string;
+    profile_picture: string | null;
+    permissions: any;
+}
 
-          const safeParse = (value) => {
-            try {
-              return value ? JSON.parse(value) : null;
-            } catch (err) {
-              console.error("Failed to parse encrypted value:", value, err);
-              return null;
-            }
-          };
+interface AuthState {
+    user: User | null;
+    admin: Admin | null;
+    loading: boolean;
 
-          return {
-            user_id: data.user_id || null,
-            firstName: safeParse(data.firstName)
-              ? decryptData(safeParse(data.firstName), encryptionKey)
-              : null,
-            lastName: safeParse(data.lastName)
-              ? decryptData(safeParse(data.lastName), encryptionKey)
-              : null,
-            email: safeParse(data.email)
-              ? decryptData(safeParse(data.email), encryptionKey)
-              : null,
-            profilePicture: safeParse(data.profilePicture)
-              ? decryptData(safeParse(data.profilePicture), encryptionKey)
-              : null,
-            birthDate: safeParse(data.birthDate)
-              ? decryptData(safeParse(data.birthDate), encryptionKey)
-              : null,
-            phoneNumber: safeParse(data.phoneNumber)
-              ? decryptData(safeParse(data.phoneNumber), encryptionKey)
-              : null,
-            is_2fa_enabled: data.is_2fa_enabled || false,
-            tenant_id: data.tenant_id || null,
-            points: data.points || 0,
-              address: data.address || null,
-              citizenship: data.citizenship || null,
-              civil_status: data.civil_status || null,
-              occupation: data.occupation || null,
-            userType: data.userType || null,
-            landlord_id: data.landlord_id || null,
-            is_verified: data.landlord_id ? data.is_verified || false : null,
-            is_trial_used: data.landlord_id
-              ? data.is_trial_used || false
-              : null,
-            subscription: data.subscription
-              ? {
-                  subscription_id: data.subscription.subscription_id || null,
-                  plan_name: data.subscription.plan_name || "N/A",
-                  status: data.subscription.status || "inactive",
-                  start_date: data.subscription.start_date || null,
-                  end_date: data.subscription.end_date || null,
-                  payment_status: data.subscription.payment_status || "unpaid",
-                  trial_end_date: data.subscription.trial_end_date || null,
-                }
-              : null,
-          };
-        } catch (error) {
-          console.error("[AuthStore] Error decrypting user data:", error);
-          return data;
-        }
-      },
+    setUser: (userData: User) => void;
+    setAdmin: (adminData: Admin) => void;
+    updateUser: (updates: Partial<User>) => void;
+    logout: () => void;
 
-      decryptAdminData: (data) => {
-        try {
-          const encryptionKey = process.env.ENCRYPTION_SECRET;
-          if (!encryptionKey) {
-            console.error(
-              "[AuthStore] Missing ENCRYPTION_SECRET in environment variables."
-            );
-            return data;
-          }
+    fetchSession: () => Promise<void>;
+    signOut: () => Promise<void>;
+    signOutAdmin: () => Promise<void>;
+}
 
-          return {
-            admin_id: data.admin_id || null,
-            username: data.username || "N/A",
-            first_name: data.first_name
-              ? decryptData(JSON.parse(data.first_name), encryptionKey)
-              : null,
-            last_name: data.last_name
-              ? decryptData(JSON.parse(data.last_name), encryptionKey)
-              : null,
-            email: data.email
-              ? decryptData(JSON.parse(data.email), encryptionKey)
-              : null,
-            role: data.role,
-            status: data.status || "inactive",
-            profile_picture: data.profile_picture || null,
-            permissions: data.permissions,
-          };
-        } catch (error) {
-          console.error("[AuthStore] Error decrypting admin data:", error);
-          return data;
-        }
-      },
+const useAuthStore = create<AuthState>()(
+    persist(
+        (set) => ({
+            user: null,
+            admin: null,
+            loading: true,
 
-      setUser: (userData) =>
-        set((state) => ({
-          user: state.decryptUserData(userData),
-          admin: null,
-          loading: false,
-        })),
+            setUser: (userData) =>
+                set({
+                    user: userData,
+                    admin: null,
+                    loading: false,
+                }),
 
-      setAdmin: (adminData) =>
-        set((state) => ({
-          admin: state.decryptAdminData(adminData),
-          user: null,
-          loading: false,
-        })),
+            setAdmin: (adminData) =>
+                set({
+                    admin: adminData,
+                    user: null,
+                    loading: false,
+                }),
 
-      updateUser: (updatedData) =>
-        set((state) => {
-          if (!state.user) return state;
+            updateUser: (updates) =>
+                set((state) => ({
+                    user: state.user ? { ...state.user, ...updates } : null,
+                })),
 
-          return {
-            ...state,
-            user: {
-              ...state.user,
-              ...updatedData,
-            },
-          };
-        }),
+            logout: () => set({ user: null, admin: null, loading: false }),
 
-      logout: () => set({ user: null, admin: null, loading: false }),
+            fetchSession: async () => {
+                try {
+                    set({ loading: true });
 
-        fetchSession: async () => {
-            try {
-                set({ loading: true });
-                const response = await fetch("/api/auth/me", {
-                    method: "GET",
-                    credentials: "include",
-                });
+                    const response = await fetch("/api/auth/me", {
+                        method: "GET",
+                        credentials: "include",
+                    });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    set({ user: null, admin: null, loading: false });
-                    if (response.status === 401) {
-                        throw { status: 401, message: "Session expired or invalid token" };
-                    } else if (response.status === 403) {
-                        throw { status: 403, message: `Account ${errorData.error}` };
-                    } else if (response.status === 404) {
-                        throw { status: 404, message: "User or admin not found" };
-                    } else {
-                        throw { status: response.status, message: errorData.error || "Failed to validate session" };
+                    if (!response.ok) {
+                        set({ user: null, admin: null, loading: false });
+                        const errorData = await response.json().catch(() => ({}));
+                        throw {
+                            status: response.status,
+                            message: errorData.error || "Session validation failed",
+                        };
                     }
-                }
 
-                const data = await response.json();
+                    const data = await response.json();
 
-                if (data.admin_id) {
-                    set((state) => ({
-                        admin: state.decryptAdminData(data),
-                        user: null,
-                        loading: false,
-                    }));
-                } else if (data.user_id) {
-                    set((state) => ({
-                        user: state.decryptUserData(data),
-                        admin: null,
-                        loading: false,
-                    }));
-                } else {
+                    if (data.admin_id) {
+                        set({ admin: data, user: null, loading: false });
+                    } else if (data.user_id) {
+                        set({ user: data, admin: null, loading: false });
+                    } else {
+                        set({ user: null, admin: null, loading: false });
+                    }
+                } catch (error: any) {
                     set({ user: null, admin: null, loading: false });
-                    throw { status: 401, message: "No valid session data found" };
+                    console.error("[AuthStore] fetchSession error:", error);
+                    throw error;
                 }
-            } catch (error: any) {
-                set({ user: null, admin: null, loading: false });
-                console.error("[AuthStore] Session fetch error:", error);
-                throw error; // Re-throw to allow ClientLayout to handle
-            }
-        },
+            },
 
-      signOut: async () => {
-        try {
-          const res = await fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "include",
-          });
+            signOut: async () => {
+                try {
+                    await fetch("/api/auth/logout", {
+                        method: "POST",
+                        credentials: "include",
+                    });
+                } catch (err) {
+                    console.warn("[AuthStore] Logout request failed", err);
+                } finally {
+                    set({ user: null, admin: null, loading: false });
+                    window.location.href = "/pages/auth/login";
+                }
+            },
 
-          if (!res.ok) {
-            console.warn("[AuthStore] Failed to log out user.");
-            window.location.href = "/pages/auth/login";
-          }
-
-          set({ user: null, admin: null, loading: false });
-        } catch (error) {
-          set({ user: null, admin: null, loading: false });
+            signOutAdmin: async () => {
+                try {
+                    await fetch("/api/auth/logout", {
+                        method: "POST",
+                        credentials: "include",
+                    });
+                } catch (err) {
+                    console.warn("[AuthStore] Admin logout request failed", err);
+                } finally {
+                    set({ admin: null, user: null, loading: false });
+                    window.location.href = "/pages/admin_login";
+                }
+            },
+        }),
+        {
+            name: "auth-storage",
+            partialize: (state) => ({
+                // Only persist safe, non-sensitive data
+                user: state.user
+                    ? {
+                        user_id: state.user.user_id,
+                        landlord_id: state.user.landlord_id,
+                        tenant_id: state.user.tenant_id,
+                        userType: state.user.userType,
+                        points: state.user.points,
+                        is_verified: state.user.is_verified,
+                        is_trial_used: state.user.is_trial_used,
+                    }
+                    : null,
+                admin: state.admin ? { admin_id: state.admin.admin_id } : null,
+            }),
         }
-      },
-
-      signOutAdmin: async () => {
-        try {
-          const res = await fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "include",
-          });
-
-          if (!res.ok) {
-            console.warn("[AuthStore] Failed to log out admin.");
-          }
-
-          set({ admin: null, user: null, loading: false });
-          window.location.href = "/pages/admin_login";
-        } catch (error) {
-          console.error("[AuthStore] signOutAdmin error:", error);
-          set({ admin: null, user: null, loading: false });
-        }
-      },
-    }),
-    {
-      name: "auth-storage",
-      getStorage: () => localStorage,
-    }
-  )
+    )
 );
 
 export default useAuthStore;

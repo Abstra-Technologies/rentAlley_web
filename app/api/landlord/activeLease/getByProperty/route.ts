@@ -51,7 +51,7 @@ la.rent_amount,
             WHERE u.property_id = ?
               AND la.status IN (
                     'active','draft','pending','pending_signature',
-                    'tenant_signed','landlord_signed'
+                    'tenant_signed','landlord_signed', 'expired'
               )
             ORDER BY la.start_date DESC;
             `,

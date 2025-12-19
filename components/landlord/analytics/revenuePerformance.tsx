@@ -8,7 +8,12 @@ import { TrendingUp, DollarSign, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /* ---------------- ApexCharts (CLIENT ONLY) ---------------- */
-const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+const Chart = dynamic(() => import("react-apexcharts"), {
+    ssr: false,
+    loading: () => (
+        <div className="h-[260px] md:h-[320px] bg-gray-100 rounded-lg animate-pulse" />
+    ),
+});
 
 /* ---------------- Constants ---------------- */
 const ALL_MONTHS = [
@@ -16,141 +21,135 @@ const ALL_MONTHS = [
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-const fetcher = (url: string) =>
-    axios.get(url).then((res) => res.data);
+const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
-export default function RevenuePerformanceChart({
-                                                    landlord_id,
-                                                }: {
-    landlord_id: number;
-}) {
+interface RevenueData {
+    month: string;
+    revenue: number;
+}
+
+interface Props {
+    landlord_id: string; // Required string
+}
+
+export default function RevenuePerformanceChart({ landlord_id }: Props) {
     const router = useRouter();
 
     const currentYear = new Date().getFullYear();
     const currentMonthIndex = new Date().getMonth();
-    const [year, setYear] = useState(currentYear);
+    const [selectedYear, setSelectedYear] = useState(currentYear);
 
-    /* ---------------- SWR ---------------- */
-    const { data, isLoading } = useSWR(
-        landlord_id
-            ? `/api/analytics/landlord/getRevenuePerformance?landlordId=${landlord_id}`
-            : null,
+    /* ---------------- SWR Data Fetch ---------------- */
+    const { data = [], isLoading } = useSWR<RevenueData[]>(
+        `/api/analytics/landlord/getRevenuePerformance?landlordId=${landlord_id}&year=${selectedYear}`,
         fetcher,
         {
             revalidateOnFocus: false,
             dedupingInterval: 60_000,
+            keepPreviousData: true, // Smooth transition when changing year
         }
     );
 
-    /* ---------------- Normalize Data (12 months) ---------------- */
+    /* ---------------- Normalize Data to 12 Months ---------------- */
     const chartData = useMemo(() => {
-        const map = new Map<string, number>();
-
-        if (Array.isArray(data)) {
-            data.forEach((d: any) => {
-                map.set(d.month, Number(d.revenue) || 0);
-            });
-        }
+        const revenueMap = new Map<string, number>();
+        data.forEach((item) => {
+            revenueMap.set(item.month, Number(item.revenue) || 0);
+        });
 
         return ALL_MONTHS.map((month, index) => ({
             month,
-            revenue: map.get(month) ?? 0,
-            isCurrent: index === currentMonthIndex && year === currentYear,
-            isFuture: year === currentYear && index > currentMonthIndex,
+            revenue: revenueMap.get(month) ?? 0,
+            isCurrent: selectedYear === currentYear && index === currentMonthIndex,
+            isFuture: selectedYear === currentYear && index > currentMonthIndex,
         }));
-    }, [data, year, currentYear, currentMonthIndex]);
+    }, [data, selectedYear, currentYear, currentMonthIndex]);
 
     const hasValidData = chartData.some((d) => d.revenue > 0);
 
-    /* ---------------- Helpers ---------------- */
-    const formatCurrency = (value: number) => {
+    /* ---------------- Currency Formatter ---------------- */
+    const formatCurrency = (value: number): string => {
         if (value >= 1_000_000) return `₱${(value / 1_000_000).toFixed(1)}M`;
         if (value >= 1_000) return `₱${(value / 1_000).toFixed(0)}K`;
-        return `₱${value}`;
+        return `₱${value.toLocaleString()}`;
     };
 
-    /* ---------------- Apex Series ---------------- */
-    const series = [
-        {
-            name: "Revenue",
-            data: chartData.map((d) => d.revenue),
-        },
-    ];
+    /* ---------------- Chart Series ---------------- */
+    const series = useMemo(
+        () => [
+            {
+                name: "Revenue",
+                data: chartData.map((d) => d.revenue),
+            },
+        ],
+        [chartData]
+    );
 
-    /* ---------------- Apex Options ---------------- */
+    /* ---------------- Base Chart Options ---------------- */
     const baseOptions = {
         chart: {
             toolbar: { show: false },
             zoom: { enabled: false },
             animations: {
-                enabled: hasValidData,
-                easing: "easeinout",
+                enabled: !isLoading && hasValidData,
+                easing: "easeinout" as const,
                 speed: 600,
             },
         },
         xaxis: {
             categories: ALL_MONTHS,
-            labels: {
-                style: { fontSize: "12px" },
-            },
+            labels: { style: { fontSize: "12px", colors: "#6b7280" } },
         },
         yaxis: {
             labels: {
                 formatter: formatCurrency,
+                style: { colors: "#6b7280" },
             },
         },
         tooltip: {
-            y: {
-                formatter: formatCurrency,
-            },
+            y: { formatter: formatCurrency },
         },
-        grid: {
-            strokeDashArray: 4,
-        },
+        grid: { strokeDashArray: 4, borderColor: "#e5e7eb" },
         colors: ["#10b981"],
-        dataLabels: {
-            enabled: false,
-        },
+        dataLabels: { enabled: false },
     };
 
-    /* ---------------- Loading ---------------- */
+    /* ---------------- Loading State ---------------- */
     if (isLoading) {
         return (
-            <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 animate-pulse">
-                <div className="h-5 w-1/3 bg-gray-200 rounded mb-6" />
-                <div className="h-[260px] bg-gray-100 rounded" />
+            <div className="bg-white rounded-xl shadow-sm border p-5 md:p-6">
+                <div className="h-6 bg-gray-200 rounded w-48 mb-6 animate-pulse" />
+                <div className="h-[220px] md:h-[320px] bg-gray-100 rounded-lg animate-pulse" />
             </div>
         );
     }
 
     return (
         <div
-            className="bg-white rounded-lg shadow-sm border p-4 md:p-6 hover:shadow-md transition cursor-pointer"
-            onClick={() =>
-                router.push("/pages/landlord/analytics/detailed/revenue")
-            }
+            onClick={() => router.push("/pages/landlord/analytics/detailed/revenue")}
+            className="bg-white rounded-xl shadow-sm border p-5 md:p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer"
         >
             {/* Header */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-sm md:text-base font-semibold text-gray-900">
+                    <h2 className="text-base md:text-lg font-bold text-gray-900">
                         Revenue Performance
                     </h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                        Monthly revenue overview
+                    <p className="text-xs md:text-sm text-gray-500 mt-1">
+                        Monthly revenue breakdown
                     </p>
                 </div>
 
-                {/* Year Selector (UI-only) */}
+                {/* Year Selector */}
                 <div
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <Calendar className="w-4 h-4 text-gray-500" />
                     <select
-                        value={year}
-                        onChange={(e) => setYear(Number(e.target.value))}
-                        className="text-xs border rounded-md px-2 py-1 bg-white"
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        className="text-sm font-medium bg-transparent focus:outline-none cursor-pointer"
                     >
                         <option value={currentYear}>{currentYear}</option>
                         <option value={currentYear - 1}>{currentYear - 1}</option>
@@ -159,52 +158,49 @@ export default function RevenuePerformanceChart({
                 </div>
             </div>
 
-            {/* ---------------- Mobile: Area Chart ---------------- */}
+            {/* Mobile: Smooth Area Chart */}
             <div className="md:hidden">
                 <Chart
                     type="area"
-                    height={220}
+                    height={240}
                     series={series}
                     options={{
                         ...baseOptions,
                         fill: {
                             type: "gradient",
                             gradient: {
-                                shadeIntensity: 1,
-                                opacityFrom: 0.35,
+                                shadeIntensity: 0.8,
+                                opacityFrom: 0.5,
                                 opacityTo: 0.05,
-                                stops: [0, 100],
+                                stops: [0, 90],
                             },
                         },
-                        stroke: {
-                            curve: "smooth",
-                            width: 2,
-                        },
+                        stroke: { curve: "smooth", width: 3 },
                     }}
                 />
             </div>
 
-            {/* ---------------- Desktop: Bar Chart ---------------- */}
+            {/* Desktop: Bar Chart with Highlighting */}
             <div className="hidden md:block">
                 <Chart
                     type="bar"
-                    height={320}
+                    height={340}
                     series={series}
                     options={{
                         ...baseOptions,
                         plotOptions: {
                             bar: {
-                                columnWidth: "45%",
-                                borderRadius: 6,
+                                columnWidth: "50%",
+                                borderRadius: 8,
                                 colors: {
-                                    ranges: chartData.map((d, i) => ({
+                                    ranges: chartData.map((_, i) => ({
                                         from: i,
                                         to: i,
-                                        color: d.isCurrent
-                                            ? "#22c55e"
-                                            : d.isFuture
-                                                ? "#d1fae5"
-                                                : "#10b981",
+                                        color: chartData[i].isCurrent
+                                            ? "#16a34a" // Darker green for current month
+                                            : chartData[i].isFuture
+                                                ? "#dcfce7" // Very light for future
+                                                : "#10b981", // Standard emerald
                                     })),
                                 },
                             },
@@ -213,15 +209,15 @@ export default function RevenuePerformanceChart({
                 />
             </div>
 
-            {/* ---------------- Empty State ---------------- */}
+            {/* Empty State */}
             {!hasValidData && (
-                <div className="text-center py-4 mt-4 border-t">
-                    <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 flex items-center justify-center">
-                        <DollarSign className="w-6 h-6 text-emerald-600" />
+                <div className="text-center py-8 mt-4 border-t border-gray-100">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-100 to-blue-100 flex items-center justify-center shadow-inner">
+                        <DollarSign className="w-8 h-8 text-emerald-600" />
                     </div>
-                    <p className="text-sm text-gray-600">No revenue yet</p>
-                    <p className="text-xs text-gray-500">
-                        Revenue will appear once payments are recorded
+                    <p className="text-base font-medium text-gray-700">No revenue recorded yet</p>
+                    <p className="text-sm text-gray-500 mt-2 max-w-xs mx-auto">
+                        Revenue data will appear here once tenants start making payments.
                     </p>
                 </div>
             )}

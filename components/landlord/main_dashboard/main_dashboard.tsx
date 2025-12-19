@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -16,49 +16,50 @@ import HeaderContent from "./headerContent";
 import NewWorkOrderModal from "../maintenance_management/NewWorkOrderModal";
 import LandlordPropertyMarquee from "@/components/landlord/main_dashboard/LandlordPropertyQuickView";
 
-const fetcher = (url: string) => axios.get(url).then(r => r.data);
+const fetcher = (url: string) => axios.get(url).then((r) => r.data);
 
 const CardSkeleton = () => (
     <div className="h-[240px] rounded-xl bg-gray-100 animate-pulse" />
 );
 
-// --------------------------------------------------
-// Heavy components (lazy + skeleton)
-// --------------------------------------------------
-const PaymentSummaryCard = dynamic(
-    () => import("../analytics/PaymentSummaryCard"),
-    { ssr: false, loading: CardSkeleton }
-);
+// Heavy components
+const PaymentSummaryCard = dynamic(() => import("../analytics/PaymentSummaryCard"), {
+    ssr: false,
+    loading: () => <CardSkeleton />,
+});
 
-const PendingMaintenanceDonut = dynamic(
-    () => import("../analytics/PendingMaintenanceDonut"),
-    { ssr: false, loading: CardSkeleton }
-);
+const PendingMaintenanceDonut = dynamic(() => import("../analytics/PendingMaintenanceDonut"), {
+    ssr: false,
+    loading: () => <CardSkeleton />,
+});
 
-const RevenuePerformanceChart = dynamic(
-    () => import("../analytics/revenuePerformance"),
-    { ssr: false, loading: CardSkeleton }
-);
+const RevenuePerformanceChart = dynamic(() => import("../analytics/revenuePerformance"), {
+    ssr: false,
+    loading: () => <CardSkeleton />,
+});
 
-const TodayCalendar = dynamic(
-    () => import("@/components/landlord/main_dashboard/TodayCalendar"),
-    { ssr: false }
-);
+const TodayCalendar = dynamic(() => import("@/components/landlord/main_dashboard/TodayCalendar"), {
+    ssr: false,
+    loading: () => <CardSkeleton />,
+});
 
-const PaymentList = dynamic(
-    () => import("../tenantPayments"),
-    { ssr: false }
-);
+const PaymentList = dynamic(() => import("../tenantPayments"), {
+    ssr: false,
+    loading: () => <CardSkeleton />,
+});
 
-const MobileLandlordDashboard = dynamic(
-    () => import("@/components/landlord/main_dashboard/mobile_dashboard"),
-    { ssr: false }
-);
+const MobileLandlordDashboard = dynamic(() => import("@/components/landlord/main_dashboard/mobile_dashboard"), {
+    ssr: false,
+    loading: () => null,
+});
 
-export default function LandlordMainDashboard() {
+interface Props {
+    landlordId: string;
+}
+
+export default function LandlordMainDashboard({ landlordId }: Props) {
     const router = useRouter();
-    const { user, loading } = useAuthStore();
-    const landlordId = user?.landlord_id;
+    const { user } = useAuthStore(); // Only needed for name/points
 
     /* ---------------- Greeting ---------------- */
     const greeting = useMemo(() => {
@@ -68,46 +69,57 @@ export default function LandlordMainDashboard() {
         return "Good Evening";
     }, []);
 
-    const displayName =
-        user?.firstName || user?.companyName || user?.email || "Landlord";
+    const displayName = useMemo(
+        () => user?.firstName || user?.companyName || user?.email || "Landlord",
+        [user?.firstName, user?.companyName, user?.email]
+    );
 
-    /* ---------------- Points Alert ---------------- */
+    /* ---------------- Points Earned Alert ---------------- */
     const prevPoints = useRef<number | null>(null);
     const [showAlert, setShowAlert] = useState(false);
 
-    if (!loading && user?.points != null) {
+    useEffect(() => {
+        if (user?.points == null) {
+            prevPoints.current = null;
+            return;
+        }
+
         if (
             prevPoints.current !== null &&
             user.points > prevPoints.current &&
             !showAlert
         ) {
             setShowAlert(true);
-            setTimeout(() => setShowAlert(false), 4000);
+            const timer = setTimeout(() => setShowAlert(false), 4000);
+            return () => clearTimeout(timer);
         }
+
         prevPoints.current = user.points;
-    }
+    }, [user?.points, showAlert]);
 
     /* ---------------- Warm subscription cache ---------------- */
     useSWR(
-        landlordId ? `/api/landlord/subscription/active/${landlordId}` : null,
+        `/api/landlord/subscription/active/${landlordId}`,
         fetcher,
         { dedupingInterval: 60_000, revalidateOnFocus: false }
     );
+
+    /* ---------------- Delay heavy chart ---------------- */
+    const [showRevenueChart, setShowRevenueChart] = useState(false);
+    useEffect(() => {
+        const timer = setTimeout(() => setShowRevenueChart(true), 800);
+        return () => clearTimeout(timer);
+    }, []);
 
     /* ---------------- Modal ---------------- */
     const [showNewModal, setShowNewModal] = useState(false);
 
     return (
         <div className="pb-24 md:pb-6">
-            <div className="px-4 md:px-6 pt-4 md:pt-6 space-y-5">
-
+            <div className="px-4 md:px-6 pt-4 md:pt-6 space-y-6">
                 {showAlert && <PointsEarnedAlert points={user?.points} />}
 
-                <HeaderContent
-                    greeting={greeting}
-                    displayName={displayName}
-                    landlordId={landlordId}
-                />
+                <HeaderContent greeting={greeting} displayName={displayName} landlordId={landlordId} />
 
                 <LandlordProfileStatus landlord_id={landlordId} />
 
@@ -121,46 +133,46 @@ export default function LandlordMainDashboard() {
                     />
                 </div>
 
-                {/* ================= DESKTOP ================= */}
-                <div className="hidden md:block space-y-4">
-
-                    {/* Top Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Desktop */}
+                <div className="hidden md:block space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2">
-                            {landlordId ? (
+                            <Suspense fallback={<CardSkeleton />}>
                                 <PaymentSummaryCard landlord_id={landlordId} />
-                            ) : (
-                                <CardSkeleton />
-                            )}
+                            </Suspense>
                         </div>
 
-                        <TodayCalendar landlordId={landlordId} />
+                        <Suspense fallback={<CardSkeleton />}>
+                            <TodayCalendar landlordId={landlordId} />
+                        </Suspense>
                     </div>
 
-                    {/* Middle Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <LandlordPropertyMarquee landlordId={landlordId} />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <Suspense fallback={<CardSkeleton />}>
+                            <LandlordPropertyMarquee landlordId={landlordId} />
+                        </Suspense>
 
-                        {landlordId ? (
+                        <Suspense fallback={<CardSkeleton />}>
                             <PendingMaintenanceDonut landlordId={landlordId} />
-                        ) : (
-                            <CardSkeleton />
-                        )}
+                        </Suspense>
 
-                        <PaymentList landlord_id={landlordId} />
+                        <Suspense fallback={<CardSkeleton />}>
+                            <PaymentList landlord_id={landlordId} />
+                        </Suspense>
                     </div>
 
-                    {/* Heavy Revenue Chart (last) */}
-                    {landlordId ? (
-                        <RevenuePerformanceChart landlord_id={landlordId} />
-                    ) : (
-                        <CardSkeleton />
+                    {showRevenueChart && (
+                        <Suspense fallback={<CardSkeleton />}>
+                            <RevenuePerformanceChart landlord_id={landlordId} />
+                        </Suspense>
                     )}
                 </div>
 
-                {/* ================= MOBILE ================= */}
+                {/* Mobile */}
                 <div className="md:hidden">
-                    <MobileLandlordDashboard landlordId={landlordId} />
+                    <Suspense fallback={null}>
+                        <MobileLandlordDashboard landlordId={landlordId} />
+                    </Suspense>
                 </div>
 
                 {showNewModal && (
