@@ -1,6 +1,6 @@
 "use client";
 import { useParams, useSearchParams } from "next/navigation";
-import LeaseDetails from "@/components/landlord/properties/unitDetails";
+import UnitDetails from "../../../../../../../../components/landlord/properties/unitDetails";
 
 const ViewUnitTenantPage = () => {
   const { unitId } = useParams();
@@ -11,7 +11,7 @@ const ViewUnitTenantPage = () => {
   }
 
   return (
-      <LeaseDetails unitId={unitId} />
+      <UnitDetails unitId={unitId} />
   );
 
 };
