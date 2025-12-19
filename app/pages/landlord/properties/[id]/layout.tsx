@@ -81,6 +81,12 @@ export default function PropertyLayout({
       href: `/pages/landlord/properties/${id}/billing`,
       icon: CreditCard,
     },
+      {
+          id: "payments",
+          label: "Payments",
+          href: `/pages/landlord/properties/${id}/payments`,
+          icon: CreditCard,
+      },
     {
       id: "pdc-management",
       label: "PDC Management",
