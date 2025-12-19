@@ -11,6 +11,8 @@ export async function GET(
     // ✅ Await params first
     const { landlord_id } = await context.params;
 
+    console.log('landlord profile api: ', landlord_id);
+
     // Optional: validate ID
     if (!landlord_id || isNaN(Number(landlord_id))) {
         return NextResponse.json(

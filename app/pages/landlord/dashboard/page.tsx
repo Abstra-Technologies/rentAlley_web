@@ -13,8 +13,7 @@ export default function LandlordDashboard() {
 
     /* ==================== PROACTIVE SESSION CHECK ON MOUNT ==================== */
     useEffect(() => {
-        // If we don't have a user yet, trigger a session fetch
-        // This covers page refreshes or cold starts
+
         if (!user) {
             fetchSession();
         }
