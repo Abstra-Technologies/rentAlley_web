@@ -233,7 +233,6 @@ export default function JoinBetaPage() {
             </div>
 
             <div className="mt-10">
-                <Page_footer />
             </div>
         </div>
     );
