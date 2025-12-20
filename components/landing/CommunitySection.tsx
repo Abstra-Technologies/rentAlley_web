@@ -74,7 +74,7 @@ export default function CommunitySection() {
             <div className="relative h-80 sm:h-96 lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-transform duration-500">
               <div className="absolute inset-0 bg-gradient-to-t from-blue-900/80 via-transparent to-transparent z-10"></div>
               <Image
-                src="/images/aboutrent.jpeg"
+                src="/images/rent-point.jpeg"
                 alt="Happy renters"
                 fill
                 className="object-cover"
