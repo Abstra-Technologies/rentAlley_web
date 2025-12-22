@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import useAuthStore from "@/zustand/authStore";
-import LoadingScreen from "@/components/loadingScreen";
 import { IMPORTANT_DATES } from "@/constant/calendar/importantDates";
 
 const BookingAppointment = () => {
@@ -40,8 +39,7 @@ const BookingAppointment = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Daily booking limit configuration
-  const [dailyBookingLimit, setDailyBookingLimit] = useState(5); // Default limit of 5 visits per day
+  const [dailyBookingLimit, setDailyBookingLimit] = useState(5);
   const [showLimitSettings, setShowLimitSettings] = useState(false);
 
   useEffect(() => {
@@ -165,7 +163,6 @@ const BookingAppointment = () => {
     return acc;
   }, {});
 
-  // Check if a date has reached booking limit
   const isDateFullyBooked = (dateKey) => {
     const dayVisits = visitsByDate[dateKey] || [];
     const activeVisits = dayVisits.filter(
@@ -174,7 +171,6 @@ const BookingAppointment = () => {
     return activeVisits.length >= dailyBookingLimit;
   };
 
-  // Get remaining slots for a date
   const getRemainingSlots = (dateKey) => {
     const dayVisits = visitsByDate[dateKey] || [];
     const activeVisits = dayVisits.filter(
@@ -183,11 +179,10 @@ const BookingAppointment = () => {
     return Math.max(0, dailyBookingLimit - activeVisits.length);
   };
 
-  // Get dates with available slots
   const getAvailableDates = () => {
     const availableDates = [];
     const startDate = dayjs();
-    const endDate = startDate.add(30, "day"); // Check next 30 days
+    const endDate = startDate.add(30, "day");
 
     let currentDate = startDate;
     while (currentDate.isBefore(endDate)) {
@@ -486,7 +481,6 @@ const BookingAppointment = () => {
                     )}
                   </div>
 
-                  {/* Show booking availability */}
                   {isCurrentMonth && !isPastDate && (
                     <div className="space-y-1">
                       {isFullyBooked ? (
@@ -581,10 +575,131 @@ const BookingAppointment = () => {
     </div>
   );
 
+  // ============================================
+  // SKELETON LOADING STATE
+  // ============================================
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90">
-        <LoadingScreen message="Loading your booking calendar..." />
+      <div className="min-h-screen bg-gray-50">
+        {/* Header Skeleton */}
+        <div className="bg-white border-b border-gray-200 pt-20 pb-4 md:pt-6 md:pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse flex-shrink-0" />
+              <div>
+                <div className="h-7 bg-gray-200 rounded w-48 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+              </div>
+            </div>
+            <div className="h-10 bg-gray-200 rounded-xl w-40 animate-pulse" />
+          </div>
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="px-4 pb-24 md:pb-8 md:px-8 lg:px-12 xl:px-16 pt-5">
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-lg p-4 border border-gray-200"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-8 bg-gray-200 rounded w-12 animate-pulse" />
+                </div>
+                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          {/* Tab Navigation Skeleton */}
+          <div className="flex gap-2 mb-5 bg-white rounded-lg p-1 border border-gray-200">
+            <div className="flex-1 h-10 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="flex-1 h-10 bg-gray-200 rounded-lg animate-pulse" />
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Content Skeleton */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Calendar Skeleton */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                  <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                  <div className="h-6 bg-gray-200 rounded w-48 animate-pulse" />
+                  <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+                </div>
+
+                <div className="p-4">
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                      <div
+                        key={i}
+                        className="h-4 bg-gray-200 rounded animate-pulse"
+                      />
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1">
+                    {[...Array(35)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="min-h-[70px] lg:min-h-[90px] bg-gray-100 border border-gray-200 rounded-lg animate-pulse"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Selected Date Details Skeleton */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="p-4 border-b border-gray-200">
+                  <div className="h-5 bg-gray-200 rounded w-40 animate-pulse" />
+                </div>
+                <div className="p-4 space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                          <div className="h-3 bg-gray-200 rounded w-48 animate-pulse" />
+                          <div className="h-3 bg-gray-200 rounded w-24 animate-pulse" />
+                        </div>
+                        <div className="h-6 bg-gray-200 rounded-full w-20 animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar Skeleton */}
+            <div className="space-y-6">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200"
+                >
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="h-5 bg-gray-200 rounded w-32 animate-pulse" />
+                  </div>
+                  <div className="p-4 space-y-3">
+                    {[1, 2, 3].map((j) => (
+                      <div
+                        key={j}
+                        className="h-20 bg-gray-100 rounded-lg animate-pulse"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -608,7 +723,6 @@ const BookingAppointment = () => {
             </div>
           </div>
 
-          {/* Booking Limit Settings */}
           <button
             onClick={() => setShowLimitSettings(true)}
             className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl bg-white border-2 border-gray-300 text-gray-700 hover:border-gray-400 transition-all whitespace-nowrap"
@@ -899,7 +1013,7 @@ const BookingAppointment = () => {
         </div>
       </div>
 
-      {/* Cancellation Modal */}
+      {/* Modals remain unchanged */}
       {showCancellationModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
@@ -941,7 +1055,6 @@ const BookingAppointment = () => {
         </div>
       )}
 
-      {/* Disapproval Modal */}
       {showDisapprovalModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
@@ -966,7 +1079,7 @@ const BookingAppointment = () => {
                 </label>
                 <textarea
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows="4"
+                  rows={4}
                   value={disapprovalReason}
                   onChange={(e) => setDisapprovalReason(e.target.value)}
                   placeholder="Please provide a reason..."
@@ -993,7 +1106,6 @@ const BookingAppointment = () => {
         </div>
       )}
 
-      {/* Booking Limit Settings Modal */}
       {showLimitSettings && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
@@ -1044,7 +1156,7 @@ const BookingAppointment = () => {
                         Object.entries(visitsByDate).filter(
                           ([date, visits]) =>
                             visits.filter(
-                              (v) =>
+                              (v: any) =>
                                 v.status === "approved" ||
                                 v.status === "pending"
                             ).length >= dailyBookingLimit
