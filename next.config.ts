@@ -54,7 +54,7 @@ const baseConfig: NextConfig = {
 const withPWA = nextPwa({
     dest: "public",
     register: true,
-    sw: "firebase-messaging-sw.js",
+    sw: "sw.js",
     disable: process.env.NODE_ENV === "development",
 });
 

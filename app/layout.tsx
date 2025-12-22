@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./clientLayout";
-import FeedbackWidget from "../components/feedback/FeedbackWidget";
+import FeedbackWidget from "../components/beta/FeedbackWidget";
 import "leaflet/dist/leaflet.css";
 import InstallPrompt from "@/components/Commons/installPrompt";
 import Head from "next/head";
@@ -61,6 +61,7 @@ export default function RootLayout({
             {children}
       
             <CookiesPermission />
+            <FeedbackWidget />
             {/*<GoogleTranslateProvider />*/}
             {/* <FeedbackWidget /> */}
         </ClientLayout>
