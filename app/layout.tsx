@@ -59,7 +59,7 @@ export default function RootLayout({
         <ClientLayout>
 
             {children}
-            
+      
             <CookiesPermission />
             {/*<GoogleTranslateProvider />*/}
             {/* <FeedbackWidget /> */}
