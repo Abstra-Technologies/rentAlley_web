@@ -43,7 +43,6 @@ const RevenueExpenseTrendChart = dynamic(
 import ActiveListingsCard from "@/components/landlord/analytics/activeListings";
 import PendingListingsCard from "@/components/landlord/analytics/getPendingListings";
 import ScoreCard from "@/components/landlord/analytics/scoreCards";
-import LoadingScreen from "@/components/loadingScreen";
 
 export default function PropertyPerformancePage() {
   const { user, admin, fetchSession } = useAuthStore();
@@ -80,10 +79,97 @@ export default function PropertyPerformancePage() {
       .finally(() => setLoading(false));
   }, [user?.landlord_id]);
 
+  // ============================================
+  // SKELETON LOADING STATE
+  // ============================================
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90">
-        <LoadingScreen message="Loading analytics..." />
+      <div className="min-h-screen bg-gray-50">
+        {/* Header Skeleton */}
+        <div className="bg-white border-b border-gray-200 pt-20 pb-4 md:pt-6 md:pb-4 px-4 md:px-8 lg:px-12 xl:px-16">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse flex-shrink-0" />
+            <div className="flex-1">
+              <div className="h-7 bg-gray-200 rounded w-64 animate-pulse mb-2" />
+              <div className="h-4 bg-gray-200 rounded w-96 animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="px-4 pb-24 md:pb-8 md:px-8 lg:px-12 xl:px-16 pt-5">
+          {/* KPI Cards Skeleton */}
+          <section className="mb-6">
+            <div className="h-6 bg-gray-200 rounded w-64 animate-pulse mb-1" />
+            <div className="h-4 bg-gray-200 rounded w-80 animate-pulse mb-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                >
+                  <div className="h-4 bg-gray-200 rounded w-32 animate-pulse mb-2" />
+                  <div className="h-8 bg-gray-200 rounded w-20 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Revenue Trend Skeleton */}
+          <section className="mb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-4 sm:p-6 border-b border-gray-200">
+                <div className="h-5 bg-gray-200 rounded w-56 animate-pulse mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-72 animate-pulse" />
+              </div>
+              <div className="p-4 sm:p-6">
+                <div className="h-[400px] bg-gray-100 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          </section>
+
+          {/* Tenant Insights Skeleton */}
+          <section className="mb-6">
+            <div className="h-6 bg-gray-200 rounded w-48 animate-pulse mb-1" />
+            <div className="h-4 bg-gray-200 rounded w-64 animate-pulse mb-4" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200"
+                >
+                  <div className="p-4 sm:p-5 border-b border-gray-200">
+                    <div className="h-5 bg-gray-200 rounded w-40 animate-pulse" />
+                  </div>
+                  <div className="p-4 sm:p-5">
+                    <div className="h-[300px] bg-gray-100 rounded-lg animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Property Insights Skeleton */}
+          <section className="mb-6">
+            <div className="h-6 bg-gray-200 rounded w-48 animate-pulse mb-1" />
+            <div className="h-4 bg-gray-200 rounded w-72 animate-pulse mb-4" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200"
+                >
+                  <div className="p-4 sm:p-5 border-b border-gray-200">
+                    <div className="h-5 bg-gray-200 rounded w-40 animate-pulse" />
+                  </div>
+                  <div className="p-4 sm:p-5">
+                    <div className="h-[300px] bg-gray-100 rounded-lg animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
     );
   }
@@ -109,7 +195,7 @@ export default function PropertyPerformancePage() {
 
       {/* Main Content */}
       <div className="px-4 pb-24 md:pb-8 md:px-8 lg:px-12 xl:px-16 pt-5">
-        {/* 🎯 SECTION 1: KPI Cards - MOST IMPORTANT (Top Priority) */}
+        {/* 🎯 SECTION 1: KPI Cards */}
         <section className="mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-1">
             Key Performance Indicators
@@ -133,10 +219,9 @@ export default function PropertyPerformancePage() {
           </div>
         </section>
 
-        {/* 📈 SECTION 2: Revenue Trend - Financial Overview (Second Priority) */}
+        {/* 📈 SECTION 2: Revenue Trend */}
         <section className="mb-6">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            {/* Card Header */}
             <div className="p-4 sm:p-6 border-b border-gray-200">
               <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-0.5">
                 Revenue vs Expense Trend
@@ -145,8 +230,6 @@ export default function PropertyPerformancePage() {
                 Monthly financial performance overview
               </p>
             </div>
-
-            {/* Card Content */}
             <div className="p-4 sm:p-6">
               <div className="w-full h-[300px] sm:h-[400px]">
                 <RevenueExpenseTrendChart landlordId={user?.landlord_id} />
