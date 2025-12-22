@@ -6,6 +6,7 @@ import { FormEvent } from "react";
 import { Search, MapPin, Shield } from "lucide-react";
 import { POPULAR_CITIES, TRUST_INDICATORS } from "@/constant/landing";
 import HeroTypewriter from "../ui/heroTypeWriter";
+import BetaTag from "@/components/ui/BetaTag";
 
 interface HeroSectionProps {
   searchQuery: string;
@@ -39,6 +40,7 @@ export default function HeroSection({
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
         <div className="text-center max-w-5xl mx-auto">
           <HeroBadge />
+            <BetaTag/>
           <HeroHeadline />
           <HeroDescription />
           <SearchBar

@@ -11,6 +11,7 @@ import CommunitySection from "@/components/landing/CommunitySection";
 import CTASection from "@/components/landing/CTASection";
 import { Unit } from "@/types/landing";
 import "@/app/styles/landing-animations.css";
+import BetaTag from "@/components/ui/BetaTag";
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -80,6 +81,7 @@ export default function SplashScreen() {
   return (
     <div className="flex flex-col min-h-screen bg-white overflow-hidden">
       {/* Hero Section */}
+
       <HeroSection
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}

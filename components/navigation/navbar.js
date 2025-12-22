@@ -87,7 +87,9 @@ const Navbar = () => {
           // { href: "/pages/public/beta-program", label: "Join Beta" },
           { href: "/pages/find-rent", label: "Find Rent" },
         { href: "/pages/public/download", label: "Download App" },
-        { href: "/pages/find-rent", label: "Pricing" },
+          { href: "/pages/public/blogs", label: "Blogs" },
+
+          { href: "/pages/find-rent", label: "Pricing" },
       ];
     } else if (user?.userType === "tenant") {
       return [
