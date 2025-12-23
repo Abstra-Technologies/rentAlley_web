@@ -54,7 +54,7 @@ export default function TestimonialsSection() {
             </h2>
 
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Join hundreds of Filipino landlords who've simplified their
+              Join hundreds of landlords who've simplified their
               property management.
             </p>
           </motion.div>

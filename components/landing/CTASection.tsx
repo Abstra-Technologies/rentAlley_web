@@ -33,7 +33,7 @@ export default function CTASection() {
             </h2>
 
             <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-              Join Filipino landlords who've ditched the spreadsheets. Start
+              Join landlords who've ditched the spreadsheets. Start
               managing your properties the modern way.
             </p>
 

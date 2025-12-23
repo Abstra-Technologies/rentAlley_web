@@ -54,7 +54,7 @@ export default function HeroSection() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
               </span>
               <span className="text-sm font-medium text-white/90">
-                Property Management for Filipino Landlords
+                Property Management for Landlords
               </span>
             </motion.div>
 
@@ -68,7 +68,7 @@ export default function HeroSection() {
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl text-white/80 mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              The all-in-one platform that helps Filipino landlords manage 
+              The all-in-one platform that helps landlords manage 
               properties, track payments, and connect with tenants—without 
               the spreadsheet chaos.
             </p>

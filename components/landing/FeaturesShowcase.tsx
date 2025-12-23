@@ -75,7 +75,7 @@ export default function FeaturesShowcase() {
             </h2>
 
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Purpose-built tools designed specifically for Filipino landlords
+              Purpose-built tools designed specifically for landlords
               managing residential and commercial properties.
             </p>
           </motion.div>
