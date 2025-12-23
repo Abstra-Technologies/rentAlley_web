@@ -1,4 +1,4 @@
-// File: /components/landing/CommunitySection.tsx
+
 
 "use client";
 

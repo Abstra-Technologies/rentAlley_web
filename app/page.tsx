@@ -1,24 +1,20 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Page_footer from "@/components/navigation/page_footer";
 import LoadingScreen from "@/components/loadingScreen";
 import AnimatedFeatures from "@/components/ui/Process";
 import HeroSection from "@/components/landing/HeroSection";
-import PropertiesSection from "@/components/landing/PropertiesSection";
-import CommunitySection from "@/components/landing/CommunitySection";
+import PainPointsSection from "@/components/landing/PainPointsSection";
+import FeaturesShowcase from "@/components/landing/FeaturesShowcase";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import StatsSection from "@/components/landing/StatsSection";
 import CTASection from "@/components/landing/CTASection";
-import { Unit } from "@/types/landing";
 import "@/app/styles/landing-animations.css";
-import BetaTag from "@/components/ui/BetaTag";
 
 export default function SplashScreen() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [featuredUnits, setFeaturedUnits] = useState<Unit[]>([]);
-  const [recentUnits, setRecentUnits] = useState<Unit[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Check authentication and redirect if logged in
@@ -46,81 +42,27 @@ export default function SplashScreen() {
     redirectIfAuthenticated();
   }, [router]);
 
-  // Fetch property units
-  useEffect(() => {
-    async function fetchUnits() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/properties/findRent/units");
-        if (!res.ok) throw new Error("Failed to fetch units");
-        const data = await res.json();
-        if (data?.data && Array.isArray(data.data)) {
-          setFeaturedUnits(data.data.slice(0, 3));
-          setRecentUnits(data.data.slice(0, 6));
-        }
-      } catch (error) {
-        console.error("Error fetching units:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUnits();
-  }, []);
-
-  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(
-        `/pages/find-rent?searchQuery=${encodeURIComponent(searchQuery)}`
-      );
-    }
-  };
-
   if (checkingAuth) return <LoadingScreen />;
 
   return (
     <div className="flex flex-col min-h-screen bg-white overflow-hidden">
       {/* Hero Section */}
+      <HeroSection />
 
-      <HeroSection
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        handleSearch={handleSearch}
-        router={router}
-      />
+      {/* Pain Points */}
+      <PainPointsSection />
 
-      {/* Features Section */}
-      <section className="bg-white relative -mt-8">
-        <AnimatedFeatures />
-      </section>
+      {/* How It Works (Existing AnimatedFeatures) */}
+      <AnimatedFeatures />
 
-      {/* Featured Properties */}
-      <PropertiesSection
-        title="Featured Properties"
-        description="Hand-selected homes that meet our highest standards"
-        badgeText="Featured Listings"
-        units={featuredUnits}
-        loading={loading}
-        router={router}
-        emptyTitle="No Properties Available Yet"
-        emptyDescription="New listings coming soon. Check back shortly!"
-      />
+      {/* Features Showcase */}
+      <FeaturesShowcase />
 
-      {/* Community Section */}
-      <CommunitySection />
+      {/* Testimonials */}
+      <TestimonialsSection />
 
-      {/* Recently Added Properties */}
-      <PropertiesSection
-        title="Recently Added"
-        description="New properties added daily from verified landlords"
-        badgeText="Fresh Listings"
-        units={recentUnits}
-        loading={loading}
-        router={router}
-        emptyTitle="No Recent Listings"
-        emptyDescription="New properties are added regularly"
-        bgColor="from-gray-50 via-blue-50/30 to-white"
-      />
+      {/* Stats */}
+      <StatsSection />
 
       {/* CTA Section */}
       <CTASection />

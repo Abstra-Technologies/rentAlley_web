@@ -1,246 +1,256 @@
-// File: /components/landing/HeroSection.tsx
-
 "use client";
 
-import { FormEvent } from "react";
-import { Search, MapPin, Shield } from "lucide-react";
-import { POPULAR_CITIES, TRUST_INDICATORS } from "@/constant/landing";
-import HeroTypewriter from "../ui/heroTypeWriter";
-import BetaTag from "@/components/ui/BetaTag";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, ChevronRight, Receipt, Users } from "lucide-react";
+import { motion } from "motion/react";
 
-interface HeroSectionProps {
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
-  handleSearch: (e: FormEvent<HTMLFormElement>) => void;
-  router: any;
-}
-
-export default function HeroSection({
-  searchQuery,
-  setSearchQuery,
-  handleSearch,
-  router,
-}: HeroSectionProps) {
+export default function HeroSection() {
   return (
-    <div className="relative min-h-[80vh] overflow-hidden">
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
       {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-emerald-900" />
+
+      {/* Animated Mesh Gradient */}
       <div className="absolute inset-0">
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-105"
-          style={{
-            backgroundImage:
-              "url('https://res.cloudinary.com/dptmeluy0/image/upload/v1763083980/dd3b4bfd-cc30-46c5-8320-b2aaf85dd4bd_pe97mw.jpg')",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/95 via-blue-800/90 to-emerald-900/95"></div>
-        <AnimatedBackground />
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.3),transparent_50%)]" />
+        <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_70%,rgba(16,185,129,0.25),transparent_50%)]" />
       </div>
 
-      {/* Content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        <div className="text-center max-w-5xl mx-auto">
-          <HeroBadge />
-            <BetaTag/>
-          <HeroHeadline />
-          <HeroDescription />
-          <SearchBar
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            handleSearch={handleSearch}
-          />
-          <PopularSearches router={router} />
-            <br/><br/>
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
+
+      {/* Floating Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{ y: [0, -20, 0], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/4 left-[10%] w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ y: [0, 20, 0], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute bottom-1/4 right-[10%] w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"
+        />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-center lg:text-left"
+          >
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full mb-6 border border-white/20"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              </span>
+              <span className="text-sm font-medium text-white/90">
+                Property Management for Filipino Landlords
+              </span>
+            </motion.div>
+
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-[1.1] tracking-tight">
+              Connect More,
+              <span className="block mt-2 bg-gradient-to-r from-emerald-300 via-blue-300 to-emerald-300 bg-clip-text text-transparent">
+                Manage Less
+              </span>
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-lg sm:text-xl text-white/80 mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
+              The all-in-one platform that helps Filipino landlords manage 
+              properties, track payments, and connect with tenants—without 
+              the spreadsheet chaos.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <Link
+                href="/pages/auth/selectRole"
+                className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-gray-900 font-semibold text-lg rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <span className="relative z-10">Get Started Free</span>
+                <ArrowRight className="relative z-10 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+
+              <Link
+                href="#features"
+                className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md border border-white/30 text-white font-semibold text-lg rounded-xl hover:bg-white/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                See How It Works
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            {/* Trust Indicators */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="mt-10 flex flex-wrap items-center gap-6 justify-center lg:justify-start text-white/60 text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Free to start</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Secure Payments You Can Track</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Built for PH market</span>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Right - Dashboard Preview */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+            className="relative hidden lg:block"
+          >
+            {/* Dashboard Mockup Container */}
+            <div className="relative">
+              {/* Glow Effect */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 to-emerald-500/20 rounded-3xl blur-2xl" />
+              
+              {/* Main Dashboard Frame */}
+              <div className="relative bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-2 shadow-2xl">
+                {/* Browser Chrome */}
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-400/80" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-400/80" />
+                    <div className="w-3 h-3 rounded-full bg-green-400/80" />
+                  </div>
+                  <div className="flex-1 mx-4">
+                    <div className="bg-white/10 rounded-lg px-4 py-1.5 text-xs text-white/50 text-center">
+                      app.upkyp.com/dashboard
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Dashboard Content Placeholder */}
+                <div className="aspect-[4/3] bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg overflow-hidden">
+                  {/* Placeholder Dashboard UI */}
+                  <div className="p-4 h-full flex flex-col">
+                    {/* Top Bar */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500" />
+                        <div className="h-4 w-24 bg-white/20 rounded" />
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="h-8 w-8 bg-white/10 rounded-lg" />
+                        <div className="h-8 w-8 bg-white/10 rounded-lg" />
+                      </div>
+                    </div>
+                    
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      {[
+                        { label: "Properties", value: "12", color: "from-blue-500 to-blue-600" },
+                        { label: "Tenants", value: "28", color: "from-emerald-500 to-emerald-600" },
+                        { label: "Collected", value: "₱156K", color: "from-purple-500 to-purple-600" },
+                      ].map((stat, i) => (
+                        <div key={i} className="bg-white/5 rounded-xl p-3 border border-white/10">
+                          <div className={`text-lg font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                            {stat.value}
+                          </div>
+                          <div className="text-xs text-white/50">{stat.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Content Area */}
+                    <div className="flex-1 grid grid-cols-2 gap-3">
+                      <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+                        <div className="h-3 w-20 bg-white/20 rounded mb-3" />
+                        <div className="space-y-2">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded bg-white/10" />
+                              <div className="flex-1 h-2 bg-white/10 rounded" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+                        <div className="h-3 w-24 bg-white/20 rounded mb-3" />
+                        <div className="h-full flex items-end gap-1 pb-2">
+                          {[40, 65, 45, 80, 55, 70, 90].map((h, i) => (
+                            <div
+                              key={i}
+                              className="flex-1 bg-gradient-to-t from-emerald-500 to-blue-500 rounded-t opacity-80"
+                              style={{ height: `${h}%` }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Cards */}
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -left-8 top-1/4 bg-white rounded-xl p-4 shadow-xl border border-gray-100"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <Receipt className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Payment Received</div>
+                    <div className="font-semibold text-gray-900">₱15,000</div>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                className="absolute -right-4 bottom-1/4 bg-white rounded-xl p-4 shadow-xl border border-gray-100"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">New Tenant</div>
+                    <div className="font-semibold text-gray-900">Unit 4B</div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Wave Divider */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
-        <svg
-          viewBox="0 0 1440 120"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto"
-        >
+      {/* Bottom Wave */}
+      <div className="absolute bottom-0 left-0 right-0">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
           <path
             d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
             fill="white"
           />
         </svg>
       </div>
-    </div>
-  );
-}
-
-function AnimatedBackground() {
-  return (
-    <>
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-0 -left-20 w-96 h-96 bg-blue-500/40 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-0 -right-20 w-96 h-96 bg-emerald-500/40 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-purple-500/40 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-      </div>
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_110%)]"></div>
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-white/20 rounded-full animate-float-slow"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${5 + Math.random() * 10}s`,
-            }}
-          />
-        ))}
-      </div>
-    </>
-  );
-}
-
-function HeroBadge() {
-  return (
-    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-full mb-6 border border-white/20 shadow-2xl animate-fade-in">
-      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-      <Shield className="w-4 h-4 text-white" />
-        <span className="text-sm font-semibold text-white">
-  Discover and Manage Rental Properties
-</span>
-    </div>
-  );
-}
-
-
-function HeroHeadline() {
-    return (
-        <h1
-            className="
-        text-2xl
-        sm:text-4xl
-        lg:text-5xl
-        font-bold
-        text-white
-        mb-4
-        leading-tight
-        animate-slide-up
-      "
-        >
-      <span className="block mb-2">
-        Browse Verified Rental Listings
-      </span>
-
-            <span className="relative inline-flex items-center">
-        <HeroTypewriter />
-        <span className="ml-1 text-white/70 animate-pulse">|</span>
-
-        <div
-            className="
-            absolute -inset-1
-            bg-gradient-to-r
-            from-emerald-400/20
-            to-purple-400/20
-            blur-2xl
-          "
-        />
-      </span>
-
-            {/* SEO fallback */}
-            <span className="sr-only">
-        Apartments, Homes, Office Spaces, Warehouses, Commercial Properties
-      </span>
-        </h1>
-    );
-}
-
-function HeroDescription() {
-    return (
-        <p className="
-      text-base
-      sm:text-lg
-      lg:text-xl
-      text-white/90
-      mb-8
-      max-w-2xl
-      mx-auto
-      leading-relaxed
-      font-light
-      animate-slide-up
-      animation-delay-200
-    ">
-            Discover verified listings and manage properties seamlessly — all in one
-            powerful platform.
-        </p>
-    );
-}
-
-
-function SearchBar({ searchQuery, setSearchQuery, handleSearch }: any) {
-  return (
-    <form
-      onSubmit={handleSearch}
-      className="max-w-4xl mx-auto mb-6 animate-slide-up animation-delay-400"
-    >
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-3xl blur-lg opacity-25 group-hover:opacity-40 transition-opacity duration-500"></div>
-        <div className="relative bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-2 flex flex-col sm:flex-row gap-2">
-          <div className="flex-1 flex items-center gap-4 px-6 py-4 bg-white/50 rounded-xl transition-all hover:bg-white/70">
-            <MapPin className="w-6 h-6 text-blue-600 flex-shrink-0 animate-pulse" />
-            <input
-              type="text"
-              placeholder="Search by city or location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full outline-none text-base sm:text-lg text-gray-900 placeholder-gray-400 bg-transparent font-medium"
-            />
-          </div>
-          <button
-            type="submit"
-            className="group/btn relative px-8 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-semibold text-base transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-emerald-500 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
-            <Search className="w-5 h-5 relative z-10 group-hover/btn:rotate-12 transition-transform" />
-            <span className="relative z-10">Search</span>
-          </button>
-        </div>
-      </div>
-    </form>
-  );
-}
-
-function PopularSearches({ router }: any) {
-  return (
-    <div className="flex flex-wrap gap-3 justify-center items-center animate-fade-in animation-delay-600">
-      <span className="text-sm text-white/60 font-medium">Popular:</span>
-      {POPULAR_CITIES.map((city) => (
-        <button
-          key={city}
-          onClick={() => router.push(`/pages/find-rent?searchQuery=${city}`)}
-          className="group px-5 py-2.5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full text-sm font-medium hover:bg-white hover:text-blue-600 transition-all duration-300 hover:scale-110 hover:shadow-lg"
-        >
-          {city}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function TrustIndicators() {
-  return (
-    <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto mt-8 animate-fade-in animation-delay-800">
-      {TRUST_INDICATORS.map((item, i) => (
-        <div
-          key={i}
-          className="text-center group hover:scale-110 transition-transform duration-300"
-        >
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-md rounded-2xl mb-2 border border-white/20 group-hover:bg-white/20 transition-all">
-            <item.icon className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-300" />
-          </div>
-          <div className="text-sm sm:text-base font-bold text-white">
-            {item.text}
-          </div>
-          <div className="text-xs sm:text-sm text-white/60">{item.subtext}</div>
-        </div>
-      ))}
-    </div>
+    </section>
   );
 }
