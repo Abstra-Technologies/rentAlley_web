@@ -8,10 +8,9 @@ import AnimatedFeatures from "@/components/ui/Process";
 import HeroSection from "@/components/landing/HeroSection";
 import PainPointsSection from "@/components/landing/PainPointsSection";
 import FeaturesShowcase from "@/components/landing/FeaturesShowcase";
-import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import StatsSection from "@/components/landing/StatsSection";
 import CTASection from "@/components/landing/CTASection";
 import "@/app/styles/landing-animations.css";
+import PhilippineMarketSection from "@/components/landing/MarketSection";
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -59,10 +58,7 @@ export default function SplashScreen() {
       <FeaturesShowcase />
 
       {/* Testimonials */}
-      <TestimonialsSection />
-
-      {/* Stats */}
-      <StatsSection />
+      <PhilippineMarketSection />
 
       {/* CTA Section */}
       <CTASection />
