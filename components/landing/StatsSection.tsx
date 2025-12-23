@@ -6,21 +6,25 @@ import { motion } from "motion/react";
 export default function StatsSection() {
   const stats = [
     {
-      value: "500+",
-      label: "Properties Managed",
+      value: "5 min",
+      label: "Average Setup Time",
       icon: <Building2 className="w-6 h-6" />,
     },
     {
-      value: "200+",
-      label: "Active Landlords",
+      value: "24/7",
+      label: "Tenant Access",
       icon: <Users className="w-6 h-6" />,
     },
     {
-      value: "₱10M+",
-      label: "Rent Processed",
+      value: "70%",
+      label: "Time Saved Monthly",
       icon: <TrendingUp className="w-6 h-6" />,
     },
-    { value: "99.9%", label: "Uptime", icon: <Shield className="w-6 h-6" /> },
+    {
+      value: "100%",
+      label: "Mobile Optimized",
+      icon: <Shield className="w-6 h-6" />,
+    },
   ];
 
   return (
