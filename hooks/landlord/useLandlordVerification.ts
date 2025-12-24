@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import useAuthStore from "@/zustand/authStore";
 
-// ------------------------------------------------------------
-// IMAGE QUALITY CHECKER
-// ------------------------------------------------------------
+/* ------------------------------------------------------------
+   IMAGE QUALITY CHECKER (UNCHANGED)
+------------------------------------------------------------ */
 export const checkImageQuality = (imageData: string) => {
-    return new Promise((resolve) => {
+    return new Promise<any>((resolve) => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d")!;
         const img = new Image();
@@ -21,15 +21,13 @@ export const checkImageQuality = (imageData: string) => {
 
             const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-            // brightness
             let brightness = 0;
             for (let i = 0; i < data.length; i += 4)
                 brightness += (data[i] + data[i + 1] + data[i + 2]) / 3;
 
             const avgBrightness = brightness / (data.length / 4);
 
-            // blur detection (variance of Laplacian)
-            const gray = [];
+            const gray: number[] = [];
             for (let i = 0; i < data.length; i += 4)
                 gray.push((data[i] + data[i + 1] + data[i + 2]) / 3);
 
@@ -67,16 +65,14 @@ export const checkImageQuality = (imageData: string) => {
     });
 };
 
-// ------------------------------------------------------------
-// MAIN HOOK
-// ------------------------------------------------------------
+/* ------------------------------------------------------------
+   MAIN HOOK
+------------------------------------------------------------ */
 export default function useLandlordVerification() {
     const router = useRouter();
     const { user } = useAuthStore();
 
-    // ------------------------------------------------------------
-    // PERSONAL INFO
-    // ------------------------------------------------------------
+    /* ---------------- PERSONAL INFO ---------------- */
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [companyName, setCompanyName] = useState("");
@@ -88,26 +84,20 @@ export default function useLandlordVerification() {
     const [occupation, setOccupation] = useState("");
     const [landlordId, setLandlordId] = useState<string | null>(null);
 
-    // ------------------------------------------------------------
-    // PAYOUT INFO (NEW)
-    // ------------------------------------------------------------
+    /* ---------------- PAYOUT ---------------- */
     const [payoutMethod, setPayoutMethod] = useState("");
     const [accountName, setAccountName] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
     const [bankName, setBankName] = useState("");
 
-    // ------------------------------------------------------------
-    // DOCUMENT & SELFIE
-    // ------------------------------------------------------------
+    /* ---------------- DOCUMENT & SELFIE ---------------- */
     const [selectedDocument, setSelectedDocument] = useState("");
     const [uploadOption, setUploadOption] = useState("");
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [capturedDocument, setCapturedDocument] = useState<string | null>(null);
     const [selfie, setSelfie] = useState<string | null>(null);
 
-    // ------------------------------------------------------------
-    // CAMERA & QUALITY
-    // ------------------------------------------------------------
+    /* ---------------- CAMERA ---------------- */
     const webcamRef = useRef<any>(null);
     const [isCameraOpen, setIsCameraOpen] = useState(false);
     const [cameraAllowed, setCameraAllowed] = useState(false);
@@ -119,16 +109,12 @@ export default function useLandlordVerification() {
     const [captureGuidance, setCaptureGuidance] = useState("");
     const [captureCountdown, setCaptureCountdown] = useState(0);
 
-    // ------------------------------------------------------------
-    // STEP & SUGGESTIONS
-    // ------------------------------------------------------------
+    /* ---------------- STEP ---------------- */
     const [currentStep, setCurrentStep] = useState(1);
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [dataLoading, setDataLoading] = useState(true);
 
-    // ------------------------------------------------------------
-    // LOAD LANDLORD PROFILE
-    // ------------------------------------------------------------
+    /* ---------------- LOAD PROFILE ---------------- */
     useEffect(() => {
         if (!user?.landlord_id) return;
 
@@ -138,7 +124,6 @@ export default function useLandlordVerification() {
             .then((res) => res.json())
             .then((data) => {
                 setLandlordId(data.landlord_id);
-
                 setFirstName(user.firstName || "");
                 setLastName(user.lastName || "");
                 setCompanyName(user.companyName || "");
@@ -152,9 +137,7 @@ export default function useLandlordVerification() {
             .finally(() => setDataLoading(false));
     }, [user]);
 
-    // ------------------------------------------------------------
-    // CAMERA PERMISSION & DETECTION
-    // ------------------------------------------------------------
+    /* ---------------- CAMERA PERMISSION ---------------- */
     const detectCameraDevices = async () => {
         try {
             const devices = await navigator.mediaDevices.enumerateDevices();
@@ -169,17 +152,16 @@ export default function useLandlordVerification() {
     const requestCameraPermission = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            setCameraAllowed(true);
             stream.getTracks().forEach((t) => t.stop());
+            setCameraAllowed(true);
+            setCameraError(null);
         } catch {
             setCameraAllowed(false);
             setCameraError("Camera access denied.");
         }
     };
 
-    // ------------------------------------------------------------
-    // DOCUMENT CAPTURE WITH ANALYSIS
-    // ------------------------------------------------------------
+    /* ---------------- DOCUMENT CAPTURE ---------------- */
     const handleEnhancedCapture = async () => {
         if (!webcamRef.current) return;
 
@@ -189,16 +171,19 @@ export default function useLandlordVerification() {
         setIsAnalyzing(true);
         setCaptureGuidance("Analyzing...");
 
-        const quality = await checkImageQuality(img);
-        setImageQuality(quality);
+        try {
+            const quality = await checkImageQuality(img);
+            setImageQuality(quality);
 
-        if (quality.isBlurry) return setCaptureGuidance("Image is blurry.");
-        if (quality.isTooDark) return setCaptureGuidance("Too dark.");
-        if (quality.isTooLight) return setCaptureGuidance("Too bright.");
+            if (quality.isBlurry) return setCaptureGuidance("Image is blurry.");
+            if (quality.isTooDark) return setCaptureGuidance("Too dark.");
+            if (quality.isTooLight) return setCaptureGuidance("Too bright.");
 
-        setCapturedDocument(img);
-        setCaptureGuidance("Document captured!");
-        setIsAnalyzing(false);
+            setCapturedDocument(img);
+            setCaptureGuidance("Document captured!");
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     useEffect(() => {
@@ -222,9 +207,7 @@ export default function useLandlordVerification() {
         setCaptureGuidance("Hold still...");
     };
 
-    // ------------------------------------------------------------
-    // SELFIE CAPTURE
-    // ------------------------------------------------------------
+    /* ---------------- SELFIE ---------------- */
     const captureSelfie = () => {
         if (!webcamRef.current) return;
         const img = webcamRef.current.getScreenshot();
@@ -232,13 +215,42 @@ export default function useLandlordVerification() {
         setIsCameraOpen(false);
     };
 
-    // ------------------------------------------------------------
-    // FINAL SUBMIT
-    // ------------------------------------------------------------
+    /* ---------------- QUALITY INDICATOR (NEW) ---------------- */
+    const getQualityIndicator = () => imageQuality;
+
+    /* ---------------- STEP VALIDATION (NEW) ---------------- */
+    const canProceed = () => {
+        switch (currentStep) {
+            case 1:
+                return (
+                    firstName &&
+                    lastName &&
+                    phoneNumber &&
+                    dateOfBirth &&
+                    address &&
+                    citizenship &&
+                    occupation
+                );
+            case 2:
+                return (
+                    payoutMethod &&
+                    accountName &&
+                    accountNumber &&
+                    (payoutMethod !== "bank_transfer" || bankName)
+                );
+            case 3:
+                return selectedDocument && (uploadedFile || capturedDocument);
+            case 4:
+                return Boolean(selfie);
+            default:
+                return true;
+        }
+    };
+
+    /* ---------------- SUBMIT ---------------- */
     const handleSubmit = async () => {
         const form = new FormData();
 
-        // Personal info
         form.append("landlord_id", landlordId || "");
         form.append("firstName", firstName);
         form.append("lastName", lastName);
@@ -250,18 +262,14 @@ export default function useLandlordVerification() {
         form.append("occupation", occupation);
         form.append("address", address);
 
-        // Payout
         form.append("payoutMethod", payoutMethod);
         form.append("accountName", accountName);
         form.append("accountNumber", accountNumber);
         form.append("bankName", payoutMethod === "bank_transfer" ? bankName : "");
 
-        // Document
         form.append("documentType", selectedDocument);
         if (uploadedFile) form.append("uploadedFile", uploadedFile);
         if (capturedDocument) form.append("capturedDocument", capturedDocument);
-
-        // Selfie
         if (selfie) form.append("selfie", selfie);
 
         try {
@@ -272,21 +280,14 @@ export default function useLandlordVerification() {
 
             if (!res.ok) throw new Error("Upload failed");
 
-            Swal.fire({
-                icon: "success",
-                title: "Verification Submitted",
-                text: "Your details have been successfully submitted.",
-            });
-
+            Swal.fire("Success", "Verification submitted.", "success");
             router.push("/pages/landlord/dashboard");
         } catch (err: any) {
             Swal.fire("Error", err.message, "error");
         }
     };
 
-    // ------------------------------------------------------------
-    // EXPORT
-    // ------------------------------------------------------------
+    /* ---------------- EXPORT ---------------- */
     return {
         currentStep,
         selectedDocument,
@@ -352,5 +353,7 @@ export default function useLandlordVerification() {
         startAutoCapture,
         captureSelfie,
         handleSubmit,
+        canProceed,
+        getQualityIndicator,
     };
 }

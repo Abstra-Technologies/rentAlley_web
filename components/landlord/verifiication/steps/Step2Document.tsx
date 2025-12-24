@@ -1,71 +1,79 @@
-// components/landlordVerification/steps/Step2Document.jsx
 "use client";
 
+import { useState } from "react";
+import Webcam from "react-webcam";
+import { DOCUMENT_TYPES } from "@/constant/docTypes";
+
 import {
+    FiInfo,
+    FiAlertCircle,
     FiCamera,
     FiUpload,
     FiCheckCircle,
-    FiAlertCircle,
-    FiInfo,
+    FiFileText,
 } from "react-icons/fi";
 
-import DocumentModal from "../ui/DocumentModal";
-import DocumentCapture from "../camera/DocumentCapture";
-import { DOCUMENT_TYPES } from "@/constant/docTypes";
+export default function StepDocument(props: any) {
+    const {
+        selectedDocument,
+        setSelectedDocument,
+        uploadOption,
+        setUploadOption,
+        uploadedFile,
+        setUploadedFile,
+        capturedDocument,
+        setCapturedDocument,
 
-export default function Step2Document({
-                                          selectedDocument, setSelectedDocument,
-                                          uploadOption, setUploadOption,
-                                          uploadedFile, setUploadedFile,
+        webcamRef,
 
-                                          cameraAllowed, hasCamera, cameraError,
-                                          webcamRef,
+        cameraError,
+        hasCamera,
 
-                                          captureGuidance, captureCountdown,
-                                          isAnalyzing, capturedDocument, imageQuality,
+        detectCameraDevices,
+        requestCameraPermission,
 
-                                          startAutoCapture, handleEnhancedCapture,
+        handleEnhancedCapture,
+        startAutoCapture,
 
-                                          setCapturedDocument, setImageQuality, setCaptureGuidance,
+        imageQuality,
+        isAnalyzing,
+        captureGuidance,
+        captureCountdown,
+    } = props;
 
-                                          isModalOpen, setIsModalOpen,
-                                      }) {
+    /** ✅ LOCAL, REACTIVE CAMERA STATE */
+    const [cameraReady, setCameraReady] = useState(false);
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        if (file) setUploadedFile(file);
+    };
+
     return (
-        <div className="space-y-6">
-            {/* HEADER */}
+        <section className="space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                    <FiUpload className="w-6 h-6 text-blue-500 mr-3" />
+                    <FiFileText className="w-6 h-6 text-blue-500 mr-3" />
                     <h2 className="text-2xl font-bold text-gray-900">
                         Identity Document
                     </h2>
                 </div>
-
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200"
-                >
+                <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg">
                     <FiInfo className="w-4 h-4 mr-1" />
                     What's accepted?
                 </button>
             </div>
 
-            {/* MODAL */}
-            <DocumentModal
-                open={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-            />
-
-            {/* SELECT DOC TYPE */}
+            {/* Document type */}
             <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
                     Select Document Type
                 </label>
-
                 <select
                     value={selectedDocument}
                     onChange={(e) => setSelectedDocument(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl"
                 >
                     <option value="">Choose your document type...</option>
                     {DOCUMENT_TYPES.map((doc) => (
@@ -77,102 +85,156 @@ export default function Step2Document({
             </div>
 
             {selectedDocument && (
-                <div className="space-y-6">
-                    <p className="text-sm text-gray-600">How would you like to provide your document?</p>
-
+                <div className="space-y-4">
+                    {/* Upload / Capture choice */}
                     <div className="grid grid-cols-2 gap-4">
-                        {/* Upload */}
                         <button
                             onClick={() => setUploadOption("upload")}
-                            className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+                            className={`p-4 border-2 rounded-xl ${
                                 uploadOption === "upload"
-                                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                                    : "border-gray-200 hover:border-gray-300 text-gray-600"
+                                    ? "border-blue-500 bg-blue-50"
+                                    : "border-gray-200"
                             }`}
                         >
-                            <FiUpload className="w-6 h-6 mx-auto mb-2" />
-                            <p className="font-medium">Upload File</p>
-                            <p className="text-xs opacity-75">From your device</p>
+                            <FiUpload className="mx-auto mb-2" />
+                            Upload File
                         </button>
 
-                        {/* Capture */}
                         <button
-                            onClick={() => setUploadOption("capture")}
-                            className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+                            onClick={() => {
+                                setUploadOption("capture");
+                                detectCameraDevices();
+                                requestCameraPermission();
+                            }}
+                            className={`p-4 border-2 rounded-xl ${
                                 uploadOption === "capture"
-                                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                                    : "border-gray-200 hover:border-gray-300 text-gray-600"
+                                    ? "border-blue-500 bg-blue-50"
+                                    : "border-gray-200"
                             }`}
                         >
-                            <FiCamera className="w-6 h-6 mx-auto mb-2" />
-                            <p className="font-medium">Take Photo</p>
-                            <p className="text-xs opacity-75">Use camera</p>
+                            <FiCamera className="mx-auto mb-2" />
+                            Take Photo
                         </button>
                     </div>
 
-                    {/* UPLOAD MODE */}
+                    {/* FILE UPLOAD */}
                     {uploadOption === "upload" && (
-                        <div className="mt-6">
-                            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors duration-200">
-                                <FiUpload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-
-                                <input
-                                    type="file"
-                                    onChange={(e) => setUploadedFile(e.target.files[0])}
-                                    accept="image/*"
-                                    className="hidden"
-                                    id="file-upload"
-                                />
-
-                                <label
-                                    htmlFor="file-upload"
-                                    className="cursor-pointer inline-flex items-center px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors duration-200"
-                                >
-                                    Choose File
-                                </label>
-
-                                <p className="text-sm text-gray-500 mt-2">
-                                    PNG, JPG up to 10MB
-                                </p>
-                            </div>
-
+                        <div>
+                            <input
+                                type="file"
+                                onChange={handleFileUpload}
+                                accept="image/*"
+                            />
                             {uploadedFile && (
-                                <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                                    <div className="flex items-center">
-                                        <FiCheckCircle className="w-5 h-5 text-emerald-600 mr-3" />
-                                        <div>
-                                            <p className="font-medium text-emerald-800">
-                                                File uploaded successfully!
-                                            </p>
-                                            <p className="text-sm text-emerald-600">{uploadedFile.name}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                                <p className="text-emerald-600 text-sm mt-2">
+                                    {(uploadedFile as File).name}
+                                </p>
                             )}
                         </div>
                     )}
 
-                    {/* CAMERA CAPTURE MODE */}
+                    {/* CAMERA CAPTURE */}
                     {uploadOption === "capture" && (
-                        <DocumentCapture
-                            cameraAllowed={cameraAllowed}
-                            hasCamera={hasCamera}
-                            cameraError={cameraError}
-                            webcamRef={webcamRef}
-                            captureGuidance={captureGuidance}
-                            captureCountdown={captureCountdown}
-                            isAnalyzing={isAnalyzing}
-                            capturedDocument={capturedDocument}
-                            imageQuality={imageQuality}
-                            startAutoCapture={startAutoCapture}
-                            handleEnhancedCapture={handleEnhancedCapture}
-                            setCapturedDocument={setCapturedDocument}
-                            setImageQuality={setImageQuality}
-                            setCaptureGuidance={setCaptureGuidance}
-                        />
+                        <div className="space-y-4">
+                            {cameraError ? (
+                                <div className="text-red-600">{cameraError}</div>
+                            ) : !hasCamera ? (
+                                <div className="text-red-600">
+                                    No camera detected
+                                </div>
+                            ) : (
+                                <>
+                                    <Webcam
+                                        audio={false}
+                                        ref={webcamRef}
+                                        screenshotFormat="image/jpeg"
+                                        className="w-full rounded-xl border"
+                                        videoConstraints={{
+                                            width: { ideal: 1280 },
+                                            height: { ideal: 720 },
+                                        }}
+                                        onUserMedia={() =>
+                                            setCameraReady(true)
+                                        }
+                                        onUserMediaError={() =>
+                                            setCameraReady(false)
+                                        }
+                                    />
+
+                                    {captureGuidance && (
+                                        <div className="text-sm text-center text-white bg-black/70 rounded-lg p-2">
+                                            {captureCountdown > 0
+                                                ? `${captureGuidance} ${captureCountdown}`
+                                                : captureGuidance}
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={handleEnhancedCapture}
+                                            disabled={
+                                                isAnalyzing || !cameraReady
+                                            }
+                                            className="flex-1 bg-blue-500 text-white py-3 rounded-xl disabled:bg-blue-300"
+                                        >
+                                            {isAnalyzing
+                                                ? "Analyzing..."
+                                                : "Capture Document"}
+                                        </button>
+
+                                        <button
+                                            onClick={startAutoCapture}
+                                            disabled={
+                                                isAnalyzing ||
+                                                captureCountdown > 0 ||
+                                                !cameraReady
+                                            }
+                                            className="flex-1 bg-indigo-500 text-white py-3 rounded-xl disabled:bg-indigo-300"
+                                        >
+                                            Auto-capture
+                                        </button>
+                                    </div>
+
+                                    {/* IMAGE QUALITY */}
+                                    {imageQuality && (
+                                        <div className="text-sm mt-2">
+                                            {imageQuality.isBlurry ||
+                                            imageQuality.isTooDark ||
+                                            imageQuality.isTooLight ? (
+                                                <span className="text-amber-600">
+                                                    ⚠ Image quality issue detected
+                                                </span>
+                                            ) : (
+                                                <span className="text-emerald-600">
+                                                    ✓ Image quality is good
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {capturedDocument && (
+                                <div className="text-center">
+                                    <FiCheckCircle className="mx-auto text-emerald-500 text-3xl mb-2" />
+                                    <img
+                                        src={capturedDocument}
+                                        className="max-w-md mx-auto rounded-xl border"
+                                    />
+                                    <button
+                                        onClick={() =>
+                                            setCapturedDocument(null)
+                                        }
+                                        className="mt-3 text-sm text-blue-600"
+                                    >
+                                        Retake photo
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
             )}
-        </div>
+        </section>
     );
 }

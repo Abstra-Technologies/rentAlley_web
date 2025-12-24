@@ -14,7 +14,7 @@ export async function GET(
     console.log('landlord profile api: ', landlord_id);
 
     // Optional: validate ID
-    if (!landlord_id || isNaN(Number(landlord_id))) {
+    if (!landlord_id) {
         return NextResponse.json(
             { error: "Invalid landlord_id" },
             { status: 400 }
