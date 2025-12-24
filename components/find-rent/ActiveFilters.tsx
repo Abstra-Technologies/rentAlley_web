@@ -1,148 +1,131 @@
 "use client";
-import {
-  X,
-  MapPin,
-  DollarSign,
-  Home,
-  Building2,
-  Sofa,
-  Maximize,
-} from "lucide-react";
+import { X } from "lucide-react";
 import { FilterState } from "@/types/types";
+import {
+  LOCATIONS,
+  PROPERTY_TYPES,
+  UNIT_STYLES,
+  FURNISHING_OPTIONS,
+  PESO,
+} from "./utils";
 
 interface ActiveFiltersProps {
   filters: FilterState;
   setFilters: (filters: FilterState) => void;
+  onClearAll: () => void;
+}
+
+interface ActiveFilter {
+  key: keyof FilterState;
+  label: string;
+  value: string | number;
 }
 
 export default function ActiveFilters({
   filters,
   setFilters,
+  onClearAll,
 }: ActiveFiltersProps) {
+  // Build list of active filters
+  const activeFilters: ActiveFilter[] = [];
+
+  if (filters.location) {
+    const loc = LOCATIONS.find((l) => l.value === filters.location);
+    activeFilters.push({
+      key: "location",
+      label: loc?.label || filters.location,
+      value: filters.location,
+    });
+  }
+
+  if (filters.propertyType) {
+    const type = PROPERTY_TYPES.find((t) => t.value === filters.propertyType);
+    activeFilters.push({
+      key: "propertyType",
+      label: type?.label || filters.propertyType,
+      value: filters.propertyType,
+    });
+  }
+
+  if (filters.unitStyle) {
+    const style = UNIT_STYLES.find((s) => s.value === filters.unitStyle);
+    activeFilters.push({
+      key: "unitStyle",
+      label: style?.label || filters.unitStyle,
+      value: filters.unitStyle,
+    });
+  }
+
+  if (filters.furnishing) {
+    const furn = FURNISHING_OPTIONS.find((f) => f.value === filters.furnishing);
+    activeFilters.push({
+      key: "furnishing",
+      label: furn?.label || filters.furnishing,
+      value: filters.furnishing,
+    });
+  }
+
+  if (filters.minPrice > 0 || filters.maxPrice > 0) {
+    let priceLabel = "";
+    if (filters.minPrice > 0 && filters.maxPrice > 0) {
+      priceLabel = `${PESO}${filters.minPrice.toLocaleString()} - ${PESO}${filters.maxPrice.toLocaleString()}`;
+    } else if (filters.minPrice > 0) {
+      priceLabel = `${PESO}${filters.minPrice.toLocaleString()}+`;
+    } else if (filters.maxPrice > 0) {
+      priceLabel = `Up to ${PESO}${filters.maxPrice.toLocaleString()}`;
+    }
+    activeFilters.push({
+      key: "minPrice",
+      label: priceLabel,
+      value: filters.minPrice,
+    });
+  }
+
+  if (filters.minSize > 0) {
+    activeFilters.push({
+      key: "minSize",
+      label: `${filters.minSize}+ sqm`,
+      value: filters.minSize,
+    });
+  }
+
   const removeFilter = (key: keyof FilterState) => {
     const newFilters = { ...filters };
-    if (key === "minPrice" || key === "maxPrice" || key === "minSize") {
-      newFilters[key] = 0;
+    if (key === "minPrice") {
+      newFilters.minPrice = 0;
+      newFilters.maxPrice = 0;
+    } else if (typeof filters[key] === "number") {
+      (newFilters as any)[key] = 0;
     } else {
-      newFilters[key] = "";
+      (newFilters as any)[key] = "";
     }
     setFilters(newFilters);
   };
 
-  const clearAllFilters = () => {
-    setFilters({
-      searchQuery: filters.searchQuery,
-      propertyType: "",
-      furnishing: "",
-      minPrice: 0,
-      maxPrice: 0,
-      minSize: 0,
-      location: "",
-      unitStyle: "",
-    });
-  };
-
-  const formatFilterLabel = (key: string, value: string | number) => {
-    switch (key) {
-      case "propertyType":
-        return value.toString().replace(/_/g, " ");
-      case "furnishing":
-        return value.toString().replace(/_/g, " ");
-      case "minPrice":
-        return `Min: ₱${Number(value).toLocaleString()}`;
-      case "maxPrice":
-        return `Max: ₱${Number(value).toLocaleString()}`;
-      case "minSize":
-        return `${value} sqm+`;
-      case "location":
-        return value.toString().replace(/_/g, " ");
-      case "unitStyle":
-        const style = value.toString();
-        if (style.includes("-")) {
-          return style
-            .split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
-        }
-        return style.charAt(0).toUpperCase() + style.slice(1);
-      default:
-        return value.toString();
-    }
-  };
-
-  const getFilterIcon = (key: string) => {
-    const iconClass = "w-3.5 h-3.5 flex-shrink-0";
-    switch (key) {
-      case "location":
-        return <MapPin className={iconClass} />;
-      case "minPrice":
-      case "maxPrice":
-        return <DollarSign className={iconClass} />;
-      case "unitStyle":
-        return <Home className={iconClass} />;
-      case "propertyType":
-        return <Building2 className={iconClass} />;
-      case "furnishing":
-        return <Sofa className={iconClass} />;
-      case "minSize":
-        return <Maximize className={iconClass} />;
-      default:
-        return null;
-    }
-  };
-
-  const activeFilters = Object.entries(filters).filter(([key, value]) => {
-    if (key === "searchQuery") return false;
-    if (typeof value === "number") return value > 0;
-    return value !== "" && value !== null && value !== undefined;
-  });
-
-  if (activeFilters.length === 0) return null;
+  if (activeFilters.length === 0) {
+    return null;
+  }
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {activeFilters.map(([key, value]) => (
+      {activeFilters.map((filter) => (
         <button
-          key={key}
+          key={filter.key}
           type="button"
-          onClick={() => removeFilter(key as keyof FilterState)}
-          className="
-            group inline-flex items-center gap-2 
-            pl-3 pr-2 py-2
-            bg-gradient-to-r from-blue-50 to-emerald-50 
-            hover:from-blue-100 hover:to-emerald-100
-            text-gray-700 
-            rounded-full 
-            border border-blue-200/60 hover:border-blue-300
-            text-sm font-medium 
-            transition-all duration-200 
-            hover:shadow-md 
-            active:scale-95
-          "
+          onClick={() => removeFilter(filter.key)}
+          className="group flex items-center gap-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium transition-all duration-200"
         >
-          <span className="text-emerald-600">{getFilterIcon(key)}</span>
-          <span className="capitalize">{formatFilterLabel(key, value)}</span>
-          <span className="w-5 h-5 rounded-full bg-gray-200/80 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-            <X className="w-3 h-3 text-gray-500 group-hover:text-red-500 transition-colors" />
-          </span>
+          <span>{filter.label}</span>
+          <X className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
         </button>
       ))}
 
       {activeFilters.length > 1 && (
         <button
           type="button"
-          onClick={clearAllFilters}
-          className="
-            inline-flex items-center gap-1.5 
-            px-3 py-2 
-            text-sm font-medium 
-            text-gray-500 hover:text-red-600
-            hover:bg-red-50 
-            rounded-full
-            transition-all duration-200
-          "
+          onClick={onClearAll}
+          className="px-3 py-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full text-sm font-medium transition-all duration-200"
         >
-          <X className="w-3.5 h-3.5" />
           Clear all
         </button>
       )}

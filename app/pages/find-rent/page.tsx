@@ -1,19 +1,18 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { Unit, FilterState } from "@/types/types";
-import LoadingScreen from "@/components/loadingScreen";
+
+// Import components from the find-rent folder
 import MobileSearchHeader from "@/components/find-rent/MobileSearchHeader";
-import MobileFiltersPanel from "@/components/find-rent/MobileFiltersPanel";
-import DesktopFiltersPanel from "@/components/find-rent/DesktopFiltersPanel";
-import ActiveFilters from "@/components/find-rent/ActiveFilters";
 import GridView from "@/components/find-rent/GridView";
 import MapView from "@/components/find-rent/MapView";
-import { Suspense } from "react";
+import MobileFiltersPanel from "@/components/find-rent/MobileFiltersPanel";
+import UnitCard from "@/components/find-rent/UnitCard";
+import LoadingScreen from "@/components/loadingScreen";
 
-function getFiltersFromUrl(
-  params: Readonly<URLSearchParams> | null
-): FilterState {
+function getFiltersFromUrl(params: URLSearchParams | null): FilterState {
   return {
     searchQuery: params?.get("searchQuery") || "",
     propertyType: params?.get("propertyType") || "",
@@ -31,60 +30,66 @@ function UnitSearchContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
+  // State
   const [units, setUnits] = useState<Unit[]>([]);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [itemsPerPage] = useState(12);
+  const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"grid" | "map" | "split">("grid");
+  const [showFilters, setShowFilters] = useState(false);
+  const [isViewTransitioning, setIsViewTransitioning] = useState(false);
+  const itemsPerPage = 12;
 
-  const filters: FilterState = useMemo(
+  // Derived state
+  const filters = useMemo(
     () => getFiltersFromUrl(searchParams),
     [searchParams]
   );
+  const currentPage = Number(searchParams?.get("page")) || 1;
 
-  const currentPage: number = useMemo(
-    () => Number(searchParams?.get("page")) || 1,
-    [searchParams]
-  );
-
-  // ============================================================
-  // ⭐ SEO: Dynamic Metadata (Title, Description, Canonical, OG)
-  // ============================================================
-  const canonicalUrl = `https://rent-alley-web.vercel.app/pages/find-rent?${searchParams.toString()}`;
-
-  const pageTitle = filters.searchQuery
-    ? `Find Rent in ${filters.searchQuery} | Affordable Units for Rent`
-    : "Find Rent | Browse Apartments, Rooms, Warehouse, Office Space for Rent";
-
-  const pageDescription =
-    "Search rental units including apartments, condos, dorms, and rooms for rent in the Philippines. Filter by price, location, unit style, and more.";
-
+  // Create URL params
   const createParams = useCallback(
     (newFilters: FilterState, newPage: number) => {
       const params = new URLSearchParams();
-
-      const searchQuery = (newFilters.searchQuery || "").trim();
-      if (searchQuery) params.set("searchQuery", searchQuery);
-
+      const q = (newFilters.searchQuery || "").trim();
+      if (q) params.set("searchQuery", q);
       if (newFilters.propertyType)
         params.set("propertyType", newFilters.propertyType);
       if (newFilters.furnishing)
         params.set("furnishing", newFilters.furnishing);
-      if (newFilters.minPrice && newFilters.minPrice > 0)
-        params.set("minPrice", newFilters.minPrice.toString());
-      if (newFilters.maxPrice && newFilters.maxPrice > 0)
-        params.set("maxPrice", newFilters.maxPrice.toString());
-      if (newFilters.minSize && newFilters.minSize > 0)
-        params.set("minSize", newFilters.minSize.toString());
+      if (newFilters.minPrice > 0)
+        params.set("minPrice", String(newFilters.minPrice));
+      if (newFilters.maxPrice > 0)
+        params.set("maxPrice", String(newFilters.maxPrice));
+      if (newFilters.minSize > 0)
+        params.set("minSize", String(newFilters.minSize));
       if (newFilters.location) params.set("location", newFilters.location);
       if (newFilters.unitStyle) params.set("unitStyle", newFilters.unitStyle);
-
-      if (newPage > 1) params.set("page", newPage.toString());
-
+      if (newPage > 1) params.set("page", String(newPage));
       return params;
     },
     []
   );
+
+  // Handlers
+  const handleFiltersChange = useCallback(
+    (newFilters: FilterState) => {
+      const params = createParams(newFilters, 1);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, createParams]
+  );
+
+  const handlePageChange = useCallback(
+    (page: number) => {
+      const params = createParams(filters, page);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [router, pathname, filters, createParams]
+  );
+
+  const handleClearFilters = useCallback(() => {
+    router.push(pathname);
+  }, [router, pathname]);
 
   const handleUnitClick = useCallback(
     (unitId: string, propertyId: string) => {
@@ -93,59 +98,45 @@ function UnitSearchContent() {
     [router]
   );
 
-  const handlePageChange = useCallback(
-    (newPage: number) => {
-      const newParams = createParams(filters, newPage);
-      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+  const handleViewModeChange = useCallback(
+    (mode: "grid" | "map" | "split") => {
+      if (mode === viewMode) return;
+      setIsViewTransitioning(true);
+      setTimeout(() => {
+        setViewMode(mode);
+        setTimeout(() => setIsViewTransitioning(false), 50);
+      }, 150);
     },
-    [router, pathname, filters, createParams]
+    [viewMode]
   );
 
-  const handleFiltersChange = useCallback(
-    (newFilters: FilterState) => {
-      const newParams = createParams(newFilters, 1);
-      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
-    },
-    [router, pathname, createParams]
-  );
-
-  const handleClearFilters = useCallback(() => {
-    router.push(pathname);
-  }, [router, pathname]);
-
+  // Fetch units
   useEffect(() => {
     async function fetchUnits() {
       try {
         const res = await fetch("/api/properties/findRent/units");
-        if (!res.ok) throw new Error("Failed to fetch units");
-
+        if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-
-        if (data?.data && Array.isArray(data.data)) {
-          setUnits(data.data);
-        } else {
-          setUnits([]);
-        }
-      } catch (error) {
-        console.error("Error fetching units:", error);
+        setUnits(data?.data || []);
+      } catch (err) {
+        console.error(err);
         setUnits([]);
       } finally {
-        setIsInitialLoad(false);
+        setTimeout(() => setIsLoading(false), 300);
       }
     }
-
     fetchUnits();
   }, []);
 
+  // Filter units
   const filteredUnits = useMemo(() => {
     return units.filter((unit) => {
-      const searchLower = (filters.searchQuery || "").toLowerCase().trim();
+      const search = (filters.searchQuery || "").toLowerCase().trim();
       const matchesSearch =
-        !searchLower ||
-        unit.property_name.toLowerCase().includes(searchLower) ||
-        unit.city.toLowerCase().includes(searchLower) ||
-        unit.province.toLowerCase().replace(/_/g, " ").includes(searchLower) ||
-        unit.street?.toLowerCase().includes(searchLower);
+        !search ||
+        unit.property_name.toLowerCase().includes(search) ||
+        unit.city.toLowerCase().includes(search) ||
+        unit.province.toLowerCase().replace(/_/g, " ").includes(search);
 
       const matchesType =
         !filters.propertyType ||
@@ -155,26 +146,17 @@ function UnitSearchContent() {
         !filters.furnishing ||
         unit.furnish.toLowerCase() === filters.furnishing.toLowerCase();
 
-      const unitPrice = Number(unit.rent_amount);
-      const matchesMinPrice =
-        !filters.minPrice ||
-        filters.minPrice === 0 ||
-        unitPrice >= filters.minPrice;
-      const matchesMaxPrice =
-        !filters.maxPrice ||
-        filters.maxPrice === 0 ||
-        unitPrice <= filters.maxPrice;
-
+      const price = Number(unit.rent_amount);
+      const matchesMinPrice = !filters.minPrice || price >= filters.minPrice;
+      const matchesMaxPrice = !filters.maxPrice || price <= filters.maxPrice;
       const matchesMinSize =
-        !filters.minSize ||
-        filters.minSize === 0 ||
-        unit.unit_size >= filters.minSize;
+        !filters.minSize || unit.unit_size >= filters.minSize;
 
       const matchesLocation =
         !filters.location ||
         unit.province.toLowerCase() === filters.location.toLowerCase();
 
-      const matchesUnitStyle =
+      const matchesStyle =
         !filters.unitStyle ||
         unit.unit_style.toLowerCase() === filters.unitStyle.toLowerCase();
 
@@ -186,137 +168,115 @@ function UnitSearchContent() {
         matchesMaxPrice &&
         matchesMinSize &&
         matchesLocation &&
-        matchesUnitStyle
+        matchesStyle
       );
     });
   }, [units, filters]);
 
-  const mapUnits = useMemo(() => {
-    return filteredUnits.filter((unit) => unit.latitude && unit.longitude);
-  }, [filteredUnits]);
+  // Active filter count
+  const activeFilterCount = Object.entries(filters).filter(([key, value]) => {
+    if (key === "searchQuery") return false;
+    return typeof value === "number" ? value > 0 : value !== "";
+  }).length;
 
-  const paginationData = useMemo(() => {
-    const totalPages = Math.ceil(filteredUnits.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedUnits = filteredUnits.slice(startIndex, endIndex);
-    return { totalPages, paginatedUnits };
-  }, [filteredUnits, currentPage, itemsPerPage]);
-
-  const activeFilterCount = useMemo(() => {
-    return Object.entries(filters).filter(([key, value]) => {
-      if (key === "searchQuery") return false;
-      if (typeof value === "number") return value > 0;
-      return value !== "";
-    }).length;
-  }, [filters]);
-
-  if (isInitialLoad) {
-    return <LoadingScreen message="Finding perfect units for you..." />;
+  if (isLoading) {
+    return <LoadingScreen />;
   }
 
-  // ============================================================
-  // ⭐ SEO: JSON-LD Schema for Search Results + Units
-  // ============================================================
-  const jsonLdListings = {
-    "@context": "https://schema.org",
-    "@type": "SearchResultsPage",
-    name: "Find Rent - Upkyp",
-    description: pageDescription,
-    itemListElement: filteredUnits.map((unit, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      url: `https://rent-alley-web.vercel.app/pages/find-rent/${unit.property_id}/${unit.unit_id}`,
-      item: {
-        "@type": "Apartment",
-        name: `${unit.unit_style} for rent in ${unit.city}`,
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: unit.city,
-          addressRegion: unit.province,
-        },
-        geo: unit.latitude
-          ? {
-              "@type": "GeoCoordinates",
-              latitude: unit.latitude,
-              longitude: unit.longitude,
-            }
-          : undefined,
-        offers: {
-          "@type": "Offer",
-          price: unit.rent_amount,
-          priceCurrency: "PHP",
-          availability: unit.status === "unoccupied" ? "InStock" : "OutOfStock",
-        },
-      },
-    })),
-  };
-
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/80">
-      {/* Subtle background pattern */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Subtle pattern background */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.015]"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }}
       />
 
-      {/* Search Header */}
+      {/* Header */}
       <MobileSearchHeader
         filters={filters}
         setFilters={handleFiltersChange}
         viewMode={viewMode}
-        setViewMode={setViewMode}
-        filteredUnits={filteredUnits}
-        showMobileFilters={showMobileFilters}
-        setShowMobileFilters={setShowMobileFilters}
+        setViewMode={handleViewModeChange}
+        totalResults={filteredUnits.length}
         activeFilterCount={activeFilterCount}
-        MobileFiltersPanel={MobileFiltersPanel}
-        ActiveFilters={ActiveFilters}
+        onOpenFilters={() => setShowFilters(true)}
       />
 
       {/* Main Content */}
-      <main className="flex-1 relative">
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+      <main className="relative">
+        <div
+          className={`transition-opacity duration-200 ${
+            isViewTransitioning ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          {/* Grid View */}
           {viewMode === "grid" && (
             <GridView
-              filteredUnits={filteredUnits}
-              paginatedUnits={paginationData.paginatedUnits}
+              units={filteredUnits}
               currentPage={currentPage}
-              totalPages={paginationData.totalPages}
-              totalItems={filteredUnits.length}
               itemsPerPage={itemsPerPage}
-              onPageChange={handlePageChange}
               onUnitClick={handleUnitClick}
+              onPageChange={handlePageChange}
               onClearFilters={handleClearFilters}
-              filters={filters}
-              setFilters={handleFiltersChange}
-              DesktopFiltersPanel={DesktopFiltersPanel}
             />
           )}
 
+          {/* Map View */}
           {viewMode === "map" && (
-            <div className="h-[calc(100vh-140px)] md:h-[calc(100vh-160px)] -mx-4 sm:-mx-6 lg:-mx-8 md:mx-0 md:rounded-2xl md:overflow-hidden md:shadow-xl md:border md:border-gray-200/60">
-              <MapView
-                key="map-view-key"
-                filteredUnits={mapUnits}
-                onUnitClick={handleUnitClick}
-              />
+            <div className="h-[calc(100vh-140px)] lg:h-[calc(100vh-160px)]">
+              <MapView units={filteredUnits} onUnitClick={handleUnitClick} />
+            </div>
+          )}
+
+          {/* Split View - Desktop Only */}
+          {viewMode === "split" && (
+            <div className="hidden lg:flex h-[calc(100vh-160px)]">
+              {/* Map */}
+              <div className="flex-1 p-4">
+                <MapView units={filteredUnits} onUnitClick={handleUnitClick} />
+              </div>
+
+              {/* List */}
+              <div className="w-[420px] border-l border-slate-200 overflow-y-auto bg-white">
+                <div className="p-4 border-b border-slate-100 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+                  <h2 className="font-bold text-slate-900">
+                    {filteredUnits.length} Units
+                  </h2>
+                </div>
+                <div className="p-4 space-y-3">
+                  {filteredUnits.slice(0, 20).map((unit) => (
+                    <UnitCard
+                      key={unit.unit_id}
+                      unit={unit}
+                      onClick={() =>
+                        handleUnitClick(unit.unit_id, unit.property_id)
+                      }
+                      variant="compact"
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
       </main>
 
-      {/* Mobile bottom padding for fixed elements */}
-      <div className="h-20 md:hidden" />
+      {/* Filter Sheet */}
+      <MobileFiltersPanel
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        setFilters={handleFiltersChange}
+      />
     </div>
   );
 }
 
 export default function UnitSearchPage() {
   return (
-    <Suspense fallback={<LoadingScreen message="Loading search results..." />}>
+    <Suspense fallback={<LoadingScreen />}>
       <UnitSearchContent />
     </Suspense>
   );

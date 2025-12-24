@@ -1,207 +1,113 @@
 "use client";
-import { Search, MapPin, Sparkles, X } from "lucide-react";
-import { Unit, FilterState } from "../../types/types";
+import { useMemo } from "react";
+import { Unit } from "@/types/types";
 import UnitCard from "./UnitCard";
 import Pagination from "./Pagination";
 
 interface GridViewProps {
-  filteredUnits: Unit[];
-  paginatedUnits: Unit[];
+  units: Unit[];
   currentPage: number;
-  totalPages: number;
-  totalItems: number;
   itemsPerPage: number;
-  onPageChange: (page: number) => void;
   onUnitClick: (unitId: string, propertyId: string) => void;
+  onPageChange: (page: number) => void;
   onClearFilters: () => void;
-  filters?: FilterState;
-  DesktopFiltersPanel?: React.FC<any>;
-  setFilters?: (filters: FilterState) => void;
+}
+
+// Empty state component
+function EmptyState({ onClearFilters }: { onClearFilters: () => void }) {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh] px-6">
+      <div className="text-center max-w-md">
+        <div className="relative w-24 h-24 mx-auto mb-6">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 animate-pulse" />
+          <div className="absolute inset-4 rounded-full bg-white shadow-inner flex items-center justify-center">
+            <svg
+              className="w-10 h-10 text-slate-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+        </div>
+
+        <h3 className="text-2xl font-bold text-slate-900 mb-3">
+          No units found
+        </h3>
+        <p className="text-slate-500 mb-8 leading-relaxed">
+          We could not find any units matching your criteria. Try adjusting your
+          filters or search for a different location.
+        </p>
+
+        <button
+          type="button"
+          onClick={onClearFilters}
+          className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-semibold shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+        >
+          Clear All Filters
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function GridView({
-  filteredUnits,
-  paginatedUnits,
+  units,
   currentPage,
-  totalPages,
-  totalItems,
   itemsPerPage,
-  onPageChange,
   onUnitClick,
+  onPageChange,
   onClearFilters,
-  filters,
-  DesktopFiltersPanel,
-  setFilters,
 }: GridViewProps) {
+  // Calculate pagination
+  const totalPages = Math.ceil(units.length / itemsPerPage);
+  const paginatedUnits = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return units.slice(start, start + itemsPerPage);
+  }, [units, currentPage, itemsPerPage]);
+
+  if (units.length === 0) {
+    return <EmptyState onClearFilters={onClearFilters} />;
+  }
+
   return (
-    <div className="flex gap-8">
-      {/* Desktop Filters Sidebar */}
-      {DesktopFiltersPanel && filters && setFilters && (
-        <aside className="hidden lg:block w-[300px] flex-shrink-0">
-          <div className="sticky top-28">
-            <DesktopFiltersPanel filters={filters} setFilters={setFilters} />
+    <div className="max-w-[1800px] mx-auto px-4 py-6 lg:px-8 lg:py-8">
+      {/* Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
+        {paginatedUnits.map((unit, index) => (
+          <div
+            key={unit.unit_id}
+            className="animate-fade-in-up"
+            style={{
+              animationDelay: `${index * 50}ms`,
+              animationFillMode: "backwards",
+            }}
+          >
+            <UnitCard
+              unit={unit}
+              onClick={() => onUnitClick(unit.unit_id, unit.property_id)}
+              index={index}
+            />
           </div>
-        </aside>
-      )}
-
-      {/* Main Content */}
-      <div className="flex-1 min-w-0">
-        {filteredUnits.length === 0 ? (
-          /* Empty State */
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="max-w-md w-full text-center px-6">
-              {/* Animated Icon */}
-              <div className="relative mx-auto w-28 h-28 mb-8">
-                {/* Outer ring animation */}
-                <div className="absolute inset-0 rounded-full border-2 border-dashed border-gray-200 animate-[spin_20s_linear_infinite]" />
-                {/* Inner circle */}
-                <div className="absolute inset-3 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-full flex items-center justify-center">
-                  <div className="relative">
-                    <Search
-                      className="w-10 h-10 text-gray-300"
-                      strokeWidth={1.5}
-                    />
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-                      <MapPin className="w-3 h-3 text-white" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Heading */}
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                No properties found
-              </h3>
-
-              {/* Description */}
-              <p className="text-gray-500 text-base mb-8 leading-relaxed">
-                We couldn&apos;t find any properties matching your criteria. Try
-                adjusting your filters to see more options.
-              </p>
-
-              {/* Tips Card */}
-              <div className="bg-white rounded-2xl p-6 mb-8 text-left border border-gray-200 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 text-sm">
-                      Quick tips
-                    </h4>
-                    <ul className="space-y-2.5 text-sm text-gray-600">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
-                        <span>Use broader search terms</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
-                        <span>Remove some filters to see more results</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
-                        <span>Adjust your price or size range</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* CTA Button */}
-              <button
-                onClick={onClearFilters}
-                className="
-                  inline-flex items-center gap-2.5 px-8 py-4
-                  bg-gradient-to-r from-blue-600 to-emerald-600 
-                  text-white rounded-xl font-semibold
-                  shadow-lg shadow-emerald-600/20
-                  hover:shadow-xl hover:shadow-emerald-600/30 
-                  hover:-translate-y-0.5
-                  active:translate-y-0 active:shadow-lg
-                  transition-all duration-200
-                "
-              >
-                <X className="w-4 h-4" />
-                Clear all filters
-              </button>
-
-              {/* Help Link */}
-              <p className="text-sm text-gray-400 mt-8">
-                Need help?{" "}
-                <a
-                  href="/contact"
-                  className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline underline-offset-2"
-                >
-                  Contact our team
-                </a>
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Results Header */}
-            <div className="flex items-start sm:items-center justify-between gap-4 mb-6">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-                  Available Properties
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Showing{" "}
-                  <span className="font-semibold text-gray-700">
-                    {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)}
-                    –{Math.min(currentPage * itemsPerPage, totalItems)}
-                  </span>{" "}
-                  of{" "}
-                  <span className="font-semibold text-gray-700">
-                    {totalItems}
-                  </span>{" "}
-                  {totalItems === 1 ? "property" : "properties"}
-                </p>
-              </div>
-
-              {/* Mobile Results Count Badge */}
-              <div className="lg:hidden flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-full border border-emerald-100/60">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span className="text-xs font-medium text-gray-700">
-                  {totalItems} found
-                </span>
-              </div>
-            </div>
-
-            {/* Property Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6">
-              {paginatedUnits.map((unit, index) => (
-                <div
-                  key={unit.unit_id}
-                  className="animate-in fade-in slide-in-from-bottom-4 duration-300"
-                  style={{
-                    animationDelay: `${index * 50}ms`,
-                    animationFillMode: "backwards",
-                  }}
-                >
-                  <UnitCard
-                    unit={unit}
-                    onClick={() => onUnitClick(unit.unit_id, unit.property_id)}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-10 pt-6 border-t border-gray-100">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={onPageChange}
-                  totalItems={totalItems}
-                  itemsPerPage={itemsPerPage}
-                />
-              </div>
-            )}
-          </>
-        )}
+        ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-12 pt-8 border-t border-slate-200">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
+        </div>
+      )}
     </div>
   );
 }

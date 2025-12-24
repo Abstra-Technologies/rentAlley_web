@@ -1,703 +1,1022 @@
 "use client";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import dynamic from "next/dynamic";
-import Image from "next/image";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
-  X,
   MapPin,
-  Building2,
-  Maximize2,
-  Minimize2,
-  Home,
-  Shield,
-  BadgeCheck,
-  List,
-  Map as MapIcon,
+  X,
+  ChevronLeft,
   ChevronRight,
-  ImageIcon,
-  Sparkles,
+  Maximize2,
+  Sofa,
+  Navigation,
+  Minus,
+  Plus,
+  Eye,
+  BadgeCheck,
+  Layers,
 } from "lucide-react";
-
-import "leaflet/dist/leaflet.css";
-import type { Unit } from "../../types/types";
+import Image from "next/image";
+import { Unit } from "@/types/types";
+import {
+  formatCurrency,
+  formatLocation,
+  SPRING,
+  CLUSTER_CONFIG,
+} from "./utils";
 
 interface MapViewProps {
-  filteredUnits: Unit[];
+  units: Unit[];
   onUnitClick: (unitId: string, propertyId: string) => void;
+  selectedUnitId?: string;
+  onSelectUnit?: (unit: Unit | null) => void;
 }
 
-// Dynamic imports for Leaflet
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-
-const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false }
-);
-
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
-  ssr: false,
-});
-
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-function MapBoundsUpdater({ units }: { units: Unit[] }) {
-  const [L, setL] = useState<any>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      import("leaflet").then((leaflet) => {
-        setL(leaflet.default || leaflet);
-      });
-    }
-  }, []);
-
-  let map;
-  try {
-    const { useMap } = require("react-leaflet");
-    map = useMap();
-  } catch {
-    return null;
-  }
-
-  useEffect(() => {
-    if (!L || !map || !units || units.length === 0) return;
-
-    try {
-      const validCoords: [number, number][] = units
-        .filter((unit) => unit.latitude && unit.longitude)
-        .map((unit) => [Number(unit.latitude), Number(unit.longitude)]);
-
-      if (validCoords.length === 0) {
-        map.setView([14.5995, 120.9842], 12);
-        return;
-      }
-
-      if (validCoords.length === 1) {
-        map.setView(validCoords[0], 15);
-      } else {
-        const bounds = L.latLngBounds(validCoords);
-        if (bounds.isValid()) {
-          map.fitBounds(bounds, {
-            padding: [60, 60],
-            maxZoom: 16,
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error updating map bounds:", error);
-    }
-  }, [map, units, L]);
-
-  return null;
+// Types for grouped markers
+interface MarkerGroup {
+  id: string;
+  lat: number;
+  lng: number;
+  units: Unit[];
+  isCluster: boolean;
 }
 
-export default function MapView({ filteredUnits, onUnitClick }: MapViewProps) {
-  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
-  const [customIcon, setCustomIcon] = useState<any>(null);
-  const [isClient, setIsClient] = useState(false);
-  const [showStats, setShowStats] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [showListView, setShowListView] = useState(false);
+// Mercator projection helper
+function project(latLng: { lat: number; lng: number }) {
+  const TILE_SIZE = 256;
+  let siny = Math.sin((latLng.lat * Math.PI) / 180);
+  siny = Math.min(Math.max(siny, -0.9999), 0.9999);
+  return {
+    x: TILE_SIZE * (0.5 + latLng.lng / 360),
+    y: TILE_SIZE * (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI)),
+  };
+}
 
-  useEffect(() => {
-    setIsClient(true);
+// Group overlapping markers by proximity
+function groupOverlappingMarkers(
+  units: Unit[],
+  zoom: number,
+  mapWidth: number,
+  mapHeight: number,
+  center: { lat: number; lng: number }
+): MarkerGroup[] {
+  const unitsWithCoords = units.filter((u) => u.latitude && u.longitude);
+  if (unitsWithCoords.length === 0) return [];
 
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+  const scale = Math.pow(2, zoom);
+  const getPixelPos = (lat: number, lng: number) => {
+    const worldCoord = project({ lat, lng });
+    const centerWorldCoord = project(center);
+    return {
+      x: (worldCoord.x - centerWorldCoord.x) * scale + mapWidth / 2,
+      y: (worldCoord.y - centerWorldCoord.y) * scale + mapHeight / 2,
     };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  };
 
-  const unitsWithLocation = useMemo(() => {
-    return filteredUnits.filter((unit) => {
-      if (!unit.latitude || !unit.longitude) return false;
+  const groups: MarkerGroup[] = [];
+  const processed = new Set<string>();
 
-      const lat = Number(unit.latitude);
-      const lng = Number(unit.longitude);
+  for (const unit of unitsWithCoords) {
+    if (processed.has(unit.unit_id)) continue;
 
-      return (
-        !isNaN(lat) &&
-        !isNaN(lng) &&
-        isFinite(lat) &&
-        isFinite(lng) &&
-        lat >= -90 &&
-        lat <= 90 &&
-        lng >= -180 &&
-        lng <= 180 &&
-        lat !== 0 &&
-        lng !== 0
+    const unitLat = Number(unit.latitude);
+    const unitLng = Number(unit.longitude);
+    const unitPos = getPixelPos(unitLat, unitLng);
+
+    const nearbyUnits: Unit[] = [unit];
+    processed.add(unit.unit_id);
+
+    for (const otherUnit of unitsWithCoords) {
+      if (processed.has(otherUnit.unit_id)) continue;
+
+      const otherLat = Number(otherUnit.latitude);
+      const otherLng = Number(otherUnit.longitude);
+      const otherPos = getPixelPos(otherLat, otherLng);
+
+      const distance = Math.sqrt(
+        Math.pow(unitPos.x - otherPos.x, 2) +
+          Math.pow(unitPos.y - otherPos.y, 2)
       );
-    });
-  }, [filteredUnits]);
 
-  // Group units by location for overlapping markers
-  const groupedUnits = useMemo(() => {
-    const groups = new Map<string, Unit[]>();
-
-    unitsWithLocation.forEach((unit) => {
-      const lat = Number(unit.latitude).toFixed(5);
-      const lng = Number(unit.longitude).toFixed(5);
-      const key = `${lat},${lng}`;
-
-      if (!groups.has(key)) {
-        groups.set(key, []);
+      if (distance < CLUSTER_CONFIG.overlapThreshold) {
+        nearbyUnits.push(otherUnit);
+        processed.add(otherUnit.unit_id);
       }
-      groups.get(key)!.push(unit);
-    });
-
-    return Array.from(groups.values());
-  }, [unitsWithLocation]);
-
-  const initialCenter: [number, number] = useMemo(() => {
-    if (unitsWithLocation.length > 0) {
-      const latSum = unitsWithLocation.reduce(
-        (sum, unit) => sum + Number(unit.latitude),
-        0
-      );
-      const lngSum = unitsWithLocation.reduce(
-        (sum, unit) => sum + Number(unit.longitude),
-        0
-      );
-      return [
-        latSum / unitsWithLocation.length,
-        lngSum / unitsWithLocation.length,
-      ];
     }
-    return [14.5995, 120.9842]; // Manila default
-  }, [unitsWithLocation]);
 
-  // Create custom marker icon
-  useEffect(() => {
-    if (typeof window !== "undefined" && isClient) {
-      import("leaflet").then((L) => {
-        const leaflet = L.default || L;
+    const avgLat =
+      nearbyUnits.reduce((sum, u) => sum + Number(u.latitude), 0) /
+      nearbyUnits.length;
+    const avgLng =
+      nearbyUnits.reduce((sum, u) => sum + Number(u.longitude), 0) /
+      nearbyUnits.length;
 
-        delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
-        leaflet.Icon.Default.mergeOptions({
-          iconRetinaUrl:
-            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-          iconUrl:
-            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-          shadowUrl:
-            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-        });
+    groups.push({
+      id: nearbyUnits.map((u) => u.unit_id).join("-"),
+      lat: avgLat,
+      lng: avgLng,
+      units: nearbyUnits,
+      isCluster: nearbyUnits.length > 1,
+    });
+  }
 
-        const icon = leaflet.divIcon({
-          html: `
-            <div class="upkyp-marker">
-              <div class="upkyp-marker-pulse"></div>
-              <div class="upkyp-marker-pin">
-                <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="pinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
-                      <stop offset="100%" style="stop-color:#10B981;stop-opacity:1" />
-                    </linearGradient>
-                    <filter id="pinShadow" x="-50%" y="-50%" width="200%" height="200%">
-                      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.25"/>
-                    </filter>
-                  </defs>
-                  <path d="M18 0C8.059 0 0 8.059 0 18c0 14 18 26 18 26s18-12 18-26C36 8.059 27.941 0 18 0z" 
-                        fill="url(#pinGradient)" filter="url(#pinShadow)"/>
-                  <circle cx="18" cy="16" r="7" fill="white"/>
-                  <circle cx="18" cy="16" r="4" fill="#10B981"/>
-                </svg>
-              </div>
-            </div>
-          `,
-          className: "upkyp-marker-container",
-          iconSize: [36, 44],
-          iconAnchor: [18, 44],
-          popupAnchor: [0, -44],
-        });
-        setCustomIcon(icon);
+  return groups;
+}
+
+// Calculate spiderfy positions
+function getSpiderfyPositions(
+  count: number,
+  centerX: number,
+  centerY: number
+): { x: number; y: number }[] {
+  const positions: { x: number; y: number }[] = [];
+  const radius = CLUSTER_CONFIG.spiderfyRadius;
+
+  if (count === 2) {
+    positions.push({ x: centerX - radius / 2, y: centerY });
+    positions.push({ x: centerX + radius / 2, y: centerY });
+  } else if (count <= CLUSTER_CONFIG.maxSpiderfyItems) {
+    const angleStep = (2 * Math.PI) / count;
+    for (let i = 0; i < count; i++) {
+      const angle = angleStep * i - Math.PI / 2;
+      positions.push({
+        x: centerX + radius * Math.cos(angle),
+        y: centerY + radius * Math.sin(angle),
       });
     }
-  }, [isClient]);
-
-  const propertiesCount = useMemo(() => {
-    const uniqueProperties = new Set(
-      unitsWithLocation.map((u) => u.property_id)
-    );
-    return uniqueProperties.size;
-  }, [unitsWithLocation]);
-
-  const handleClosePanel = useCallback(() => {
-    setSelectedUnit(null);
-  }, []);
-
-  if (!isClient) {
-    return (
-      <div className="flex-1 h-full bg-gray-50 flex items-center justify-center">
-        <div className="text-center p-8">
-          <div className="relative w-16 h-16 mx-auto mb-4">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full animate-pulse" />
-            <div className="absolute inset-2 bg-white rounded-full flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-emerald-600 animate-bounce" />
-            </div>
-          </div>
-          <p className="text-gray-600 font-medium">Loading map...</p>
-        </div>
-      </div>
-    );
   }
+
+  return positions;
+}
+
+// Cluster Marker Component
+function ClusterMarker({
+  group,
+  isSelected,
+  isHovered,
+  isExpanded,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+  style,
+}: {
+  group: MarkerGroup;
+  isSelected: boolean;
+  isHovered: boolean;
+  isExpanded: boolean;
+  onClick: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  style: React.CSSProperties;
+}) {
+  const count = group.units.length;
+  const lowestPrice = Math.min(
+    ...group.units.map((u) => Number(u.rent_amount))
+  );
 
   return (
-    <div className="flex-1 relative flex h-full">
-      {/* Global Styles */}
-      <style jsx global>{`
-        .upkyp-marker {
-          position: relative;
-        }
+    <div
+      className="absolute cursor-pointer"
+      style={{
+        ...style,
+        transform: `translate(-50%, -100%) ${
+          isSelected || isExpanded
+            ? "scale(1.15)"
+            : isHovered
+            ? "scale(1.1)"
+            : "scale(1)"
+        }`,
+        transition: `transform 0.3s ${SPRING.snappy}`,
+        zIndex: isSelected || isExpanded ? 100 : isHovered ? 50 : 10,
+      }}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {count > 1 && !isExpanded && (
+        <>
+          <div
+            className="absolute inset-0 bg-slate-200 rounded-full"
+            style={{
+              transform: "translate(4px, 4px) rotate(6deg)",
+              opacity: 0.6,
+            }}
+          />
+          <div
+            className="absolute inset-0 bg-slate-300 rounded-full"
+            style={{
+              transform: "translate(2px, 2px) rotate(3deg)",
+              opacity: 0.8,
+            }}
+          />
+        </>
+      )}
 
-        .upkyp-marker-pulse {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 50px;
-          height: 50px;
-          border-radius: 50%;
-          background: linear-gradient(
-            135deg,
-            rgba(59, 130, 246, 0.2),
-            rgba(16, 185, 129, 0.2)
-          );
-          animation: markerPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        .upkyp-marker-pin {
-          position: relative;
-          animation: markerFloat 4s ease-in-out infinite;
-        }
-
-        @keyframes markerPulse {
-          0%,
-          100% {
-            transform: translate(-50%, -50%) scale(0.5);
-            opacity: 0.8;
+      <div
+        className={`
+          relative px-3 py-2 rounded-full font-bold text-sm whitespace-nowrap
+          shadow-lg transition-all duration-300
+          ${
+            isSelected || isExpanded
+              ? "bg-emerald-600 text-white shadow-emerald-600/40"
+              : isHovered
+              ? "bg-slate-900 text-white shadow-slate-900/30"
+              : "bg-white text-slate-900 shadow-slate-900/10 border border-slate-200"
           }
-          50% {
-            transform: translate(-50%, -50%) scale(1.5);
-            opacity: 0;
+        `}
+      >
+        <span className="flex items-center gap-1.5">
+          {formatCurrency(lowestPrice)}
+          {count > 1 && (
+            <span
+              className={`
+                flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold
+                ${
+                  isSelected || isExpanded || isHovered
+                    ? "bg-white/20"
+                    : "bg-emerald-500 text-white"
+                }
+              `}
+            >
+              {count}
+            </span>
+          )}
+        </span>
+      </div>
+
+      <div
+        className={`
+          absolute left-1/2 -translate-x-1/2 w-0 h-0
+          border-l-[8px] border-r-[8px] border-t-[10px]
+          border-l-transparent border-r-transparent
+          transition-colors duration-300
+          ${
+            isSelected || isExpanded
+              ? "border-t-emerald-600"
+              : isHovered
+              ? "border-t-slate-900"
+              : "border-t-white"
           }
-        }
+        `}
+        style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }}
+      />
 
-        @keyframes markerFloat {
-          0%,
-          100% {
-            transform: translateY(0);
+      {(isSelected || isExpanded) && (
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-30" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Single Marker Component
+function SingleMarker({
+  unit,
+  isSelected,
+  isHovered,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+  style,
+}: {
+  unit: Unit;
+  isSelected: boolean;
+  isHovered: boolean;
+  onClick: () => void;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  style: React.CSSProperties;
+}) {
+  const price = formatCurrency(Number(unit.rent_amount));
+
+  return (
+    <div
+      className="absolute cursor-pointer"
+      style={{
+        ...style,
+        transform: `translate(-50%, -100%) ${
+          isSelected ? "scale(1.15)" : isHovered ? "scale(1.1)" : "scale(1)"
+        }`,
+        transition: `all 0.3s ${SPRING.snappy}`,
+        zIndex: isSelected ? 100 : isHovered ? 50 : 10,
+      }}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <div
+        className={`
+          relative px-3 py-2 rounded-full font-bold text-sm whitespace-nowrap
+          shadow-lg transition-all duration-300
+          ${
+            isSelected
+              ? "bg-emerald-600 text-white shadow-emerald-600/40"
+              : isHovered
+              ? "bg-slate-900 text-white shadow-slate-900/30"
+              : "bg-white text-slate-900 shadow-slate-900/10 border border-slate-200"
           }
-          50% {
-            transform: translateY(-4px);
+        `}
+      >
+        {price}
+        {unit.is_verified && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
+            <BadgeCheck className="w-2.5 h-2.5 text-white" />
+          </span>
+        )}
+      </div>
+
+      <div
+        className={`
+          absolute left-1/2 -translate-x-1/2 w-0 h-0
+          border-l-[8px] border-r-[8px] border-t-[10px]
+          border-l-transparent border-r-transparent
+          transition-colors duration-300
+          ${
+            isSelected
+              ? "border-t-emerald-600"
+              : isHovered
+              ? "border-t-slate-900"
+              : "border-t-white"
           }
-        }
+        `}
+        style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }}
+      />
 
-        .upkyp-marker-container:hover .upkyp-marker-pin {
-          animation: markerBounce 0.4s ease-out;
-        }
+      {isSelected && (
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-30" />
+        </div>
+      )}
+    </div>
+  );
+}
 
-        @keyframes markerBounce {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-8px);
-          }
-        }
+// Multi-Property Panel
+function MultiPropertyPanel({
+  units,
+  selectedUnit,
+  onSelectUnit,
+  onViewDetails,
+  onClose,
+}: {
+  units: Unit[];
+  selectedUnit: Unit | null;
+  onSelectUnit: (unit: Unit) => void;
+  onViewDetails: (unit: Unit) => void;
+  onClose: () => void;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const lastY = useRef(0);
 
-        .leaflet-popup-content-wrapper {
-          border-radius: 16px;
-          padding: 0;
-          box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2);
-          border: 1px solid rgba(0, 0, 0, 0.05);
-        }
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    lastY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  }, []);
 
-        .leaflet-popup-content {
-          margin: 0;
-          min-width: 220px;
-        }
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging) return;
+      const delta = e.touches[0].clientY - lastY.current;
+      if (delta > 0) setDragOffset(Math.pow(delta, 0.7));
+    },
+    [isDragging]
+  );
 
-        .leaflet-popup-tip {
-          display: none;
-        }
-      `}</style>
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+    if (dragOffset > 80) onClose();
+    setDragOffset(0);
+  }, [dragOffset, onClose]);
 
-      {/* Desktop List Sidebar */}
-      {showListView && !isMobile && (
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-emerald-50/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <List className="w-4 h-4 text-emerald-600" />
-                <span className="font-semibold text-gray-900 text-sm">
-                  {unitsWithLocation.length} Properties
-                </span>
-              </div>
-              <button
-                onClick={() => setShowListView(false)}
-                className="p-1.5 rounded-lg hover:bg-white/80 transition-colors"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
+  return (
+    <div
+      className="bg-white rounded-t-3xl lg:rounded-3xl shadow-2xl overflow-hidden will-change-transform"
+      style={{
+        transform: `translateY(${dragOffset}px)`,
+        transition: isDragging
+          ? "none"
+          : "transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)",
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="flex lg:hidden justify-center pt-3 pb-1">
+        <div className="w-10 h-1 bg-slate-300 rounded-full" />
+      </div>
+
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+            <Layers className="w-5 h-5 text-white" />
           </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-2">
-            {unitsWithLocation.map((unit) => (
-              <button
-                key={unit.unit_id}
-                onClick={() => setSelectedUnit(unit)}
-                className={`
-                  w-full p-3 rounded-xl text-left transition-all duration-200
-                  ${
-                    selectedUnit?.unit_id === unit.unit_id
-                      ? "bg-gradient-to-r from-blue-50 to-emerald-50 border-2 border-emerald-200 shadow-sm"
-                      : "bg-gray-50 hover:bg-gray-100 border border-gray-100"
-                  }
-                `}
-              >
-                <p className="font-semibold text-sm text-gray-900 line-clamp-1">
+          <div>
+            <h3 className="font-bold text-slate-900">
+              {units.length} Units at this Location
+            </h3>
+            <p className="text-sm text-slate-500">Select one to view details</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+        >
+          <X className="w-5 h-5 text-slate-500" />
+        </button>
+      </div>
+
+      <div className="max-h-[50vh] lg:max-h-[400px] overflow-y-auto">
+        {units.map((unit, index) => {
+          const isSelected = selectedUnit?.unit_id === unit.unit_id;
+          const images = unit.photos?.length > 0 ? unit.photos : [];
+
+          return (
+            <div
+              key={unit.unit_id}
+              className={`
+                relative flex items-center gap-4 p-4 cursor-pointer transition-all
+                ${isSelected ? "bg-emerald-50" : "hover:bg-slate-50"}
+                ${index !== units.length - 1 ? "border-b border-slate-100" : ""}
+              `}
+              onClick={() => onSelectUnit(unit)}
+            >
+              {isSelected && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-emerald-500 rounded-r-full" />
+              )}
+
+              <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+                {images[0] ? (
+                  <Image
+                    src={images[0]}
+                    alt={unit.unit_name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-slate-300" />
+                  </div>
+                )}
+                {unit.is_verified && (
+                  <div className="absolute top-1 left-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                    <BadgeCheck className="w-3 h-3 text-white" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-slate-900 truncate">
+                  {unit.unit_name}
+                </h4>
+                <p className="text-sm text-slate-500 truncate mb-1">
                   {unit.property_name}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Unit {unit.unit_name}
+                <div className="flex items-center gap-3 text-xs text-slate-500">
+                  {unit.unit_size > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Maximize2 className="w-3 h-3" />
+                      {unit.unit_size} sqm
+                    </span>
+                  )}
+                  {unit.furnish && (
+                    <span className="flex items-center gap-1">
+                      <Sofa className="w-3 h-3" />
+                      {unit.furnish.replace(/_/g, " ")}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                <p className="font-bold text-emerald-600">
+                  {formatCurrency(Number(unit.rent_amount))}
                 </p>
-                <p className="text-sm font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent mt-2">
-                  {formatCurrency(Number(unit.rent_amount))}/mo
-                </p>
-              </button>
-            ))}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewDetails(unit);
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors"
+                >
+                  <Eye className="w-3 h-3" />
+                  View
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Unit Quick View
+function UnitQuickView({
+  unit,
+  onClose,
+  onViewDetails,
+}: {
+  unit: Unit;
+  onClose: () => void;
+  onViewDetails: () => void;
+}) {
+  const [currentImage, setCurrentImage] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const lastY = useRef(0);
+
+  const images = unit.photos?.length > 0 ? unit.photos : [];
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    lastY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  }, []);
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging) return;
+      const delta = e.touches[0].clientY - lastY.current;
+      if (delta > 0) setDragOffset(Math.pow(delta, 0.7));
+    },
+    [isDragging]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+    if (dragOffset > 80) onClose();
+    setDragOffset(0);
+  }, [dragOffset, onClose]);
+
+  return (
+    <div
+      className="bg-white rounded-t-3xl lg:rounded-3xl shadow-2xl overflow-hidden will-change-transform"
+      style={{
+        transform: `translateY(${dragOffset}px)`,
+        transition: isDragging
+          ? "none"
+          : "transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1)",
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="flex lg:hidden justify-center pt-3 pb-1">
+        <div className="w-10 h-1 bg-slate-300 rounded-full" />
+      </div>
+
+      <div className="relative aspect-[16/10] bg-slate-100">
+        {images.length > 0 ? (
+          <>
+            <Image
+              src={images[currentImage]}
+              alt={unit.unit_name}
+              fill
+              className="object-cover"
+            />
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentImage((i) =>
+                      i === 0 ? images.length - 1 : i - 1
+                    )
+                  }
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentImage((i) => (i + 1) % images.length)
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+                  {images.slice(0, 5).map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setCurrentImage(idx)}
+                      className={`rounded-full transition-all ${
+                        idx === currentImage
+                          ? "w-5 h-1.5 bg-white"
+                          : "w-1.5 h-1.5 bg-white/60"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <MapPin className="w-12 h-12 text-slate-300" />
           </div>
+        )}
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        {unit.is_verified && (
+          <span className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full">
+            <BadgeCheck className="w-3 h-3" />
+            Verified
+          </span>
+        )}
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-center gap-1.5 text-slate-500 text-sm mb-2">
+          <MapPin className="w-4 h-4 text-emerald-500" />
+          <span className="truncate">
+            {formatLocation(unit.city, unit.province)}
+          </span>
+        </div>
+
+        <h3 className="font-bold text-lg text-slate-900 mb-1 truncate">
+          {unit.unit_name}
+        </h3>
+        <p className="text-sm text-slate-500 mb-3 truncate">
+          {unit.property_name}
+        </p>
+
+        <div className="flex items-center gap-4 mb-4 text-sm text-slate-600">
+          {unit.unit_size > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Maximize2 className="w-4 h-4" />
+              <span>{unit.unit_size} sqm</span>
+            </div>
+          )}
+          {unit.furnish && (
+            <div className="flex items-center gap-1.5">
+              <Sofa className="w-4 h-4" />
+              <span className="capitalize">
+                {unit.furnish.replace(/_/g, " ")}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+          <div>
+            <p className="text-xl font-bold text-emerald-600">
+              {formatCurrency(Number(unit.rent_amount))}
+            </p>
+            <p className="text-xs text-slate-400">per month</p>
+          </div>
+          <button
+            type="button"
+            onClick={onViewDetails}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-600/20"
+          >
+            <Eye className="w-4 h-4" />
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main MapView Component
+export default function MapView({
+  units,
+  onUnitClick,
+  selectedUnitId,
+  onSelectUnit,
+}: MapViewProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [zoom, setZoom] = useState(12);
+  const [center, setCenter] = useState({ lat: 14.5995, lng: 120.9842 });
+  const [mapDimensions, setMapDimensions] = useState({
+    width: 800,
+    height: 600,
+  });
+
+  const [hoveredGroupId, setHoveredGroupId] = useState<string | null>(null);
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
+  const [showMultiPanel, setShowMultiPanel] = useState(false);
+  const [multiPanelUnits, setMultiPanelUnits] = useState<Unit[]>([]);
+
+  const markerGroups = useMemo(() => {
+    return groupOverlappingMarkers(
+      units,
+      zoom,
+      mapDimensions.width,
+      mapDimensions.height,
+      center
+    );
+  }, [units, zoom, mapDimensions, center]);
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapRef.current || isMapLoaded) return;
+    if (typeof google === "undefined" || !google.maps) {
+      console.warn("Google Maps not loaded");
+      return;
+    }
+
+    const map = new google.maps.Map(mapRef.current, {
+      center: { lat: 14.5995, lng: 120.9842 },
+      zoom: 12,
+      disableDefaultUI: true,
+      gestureHandling: "greedy",
+      styles: [
+        { featureType: "poi", stylers: [{ visibility: "off" }] },
+        { featureType: "transit", stylers: [{ visibility: "off" }] },
+        {
+          featureType: "water",
+          elementType: "geometry",
+          stylers: [{ color: "#e0f2fe" }],
+        },
+        {
+          featureType: "landscape",
+          elementType: "geometry",
+          stylers: [{ color: "#f8fafc" }],
+        },
+        {
+          featureType: "road",
+          elementType: "geometry",
+          stylers: [{ color: "#ffffff" }],
+        },
+        {
+          featureType: "road.arterial",
+          elementType: "geometry",
+          stylers: [{ color: "#e2e8f0" }],
+        },
+      ],
+    });
+
+    map.addListener("zoom_changed", () => setZoom(map.getZoom() || 12));
+    map.addListener("center_changed", () => {
+      const c = map.getCenter();
+      if (c) setCenter({ lat: c.lat(), lng: c.lng() });
+    });
+    map.addListener("click", () => {
+      setExpandedGroupId(null);
+      setSelectedUnit(null);
+      setShowMultiPanel(false);
+      onSelectUnit?.(null);
+    });
+
+    setMapInstance(map);
+    setIsMapLoaded(true);
+
+    const unitsWithCoords = units.filter((u) => u.latitude && u.longitude);
+    if (unitsWithCoords.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      unitsWithCoords.forEach((u) => {
+        bounds.extend({ lat: Number(u.latitude), lng: Number(u.longitude) });
+      });
+      map.fitBounds(bounds, 50);
+    }
+  }, [units, isMapLoaded, onSelectUnit]);
+
+  // Track map dimensions
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setMapDimensions({ width, height });
+    });
+    observer.observe(mapRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const getPixelPosition = useCallback(
+    (lat: number, lng: number) => {
+      if (!mapRef.current) return { x: -1000, y: -1000 };
+      const scale = Math.pow(2, zoom);
+      const worldCoord = project({ lat, lng });
+      const centerWorldCoord = project(center);
+      return {
+        x:
+          (worldCoord.x - centerWorldCoord.x) * scale + mapDimensions.width / 2,
+        y:
+          (worldCoord.y - centerWorldCoord.y) * scale +
+          mapDimensions.height / 2,
+      };
+    },
+    [zoom, center, mapDimensions]
+  );
+
+  const handleGroupClick = useCallback(
+    (group: MarkerGroup) => {
+      if (group.units.length === 1) {
+        setSelectedUnit(group.units[0]);
+        setShowMultiPanel(false);
+        onSelectUnit?.(group.units[0]);
+        if (mapInstance) mapInstance.panTo({ lat: group.lat, lng: group.lng });
+      } else if (group.units.length <= CLUSTER_CONFIG.maxSpiderfyItems) {
+        if (expandedGroupId === group.id) {
+          setExpandedGroupId(null);
+        } else {
+          setExpandedGroupId(group.id);
+          setSelectedUnit(null);
+          setShowMultiPanel(false);
+        }
+        if (mapInstance) mapInstance.panTo({ lat: group.lat, lng: group.lng });
+      } else {
+        setMultiPanelUnits(group.units);
+        setShowMultiPanel(true);
+        setExpandedGroupId(null);
+        if (mapInstance) mapInstance.panTo({ lat: group.lat, lng: group.lng });
+      }
+    },
+    [expandedGroupId, mapInstance, onSelectUnit]
+  );
+
+  const handleUnitSelect = useCallback(
+    (unit: Unit) => {
+      setSelectedUnit(unit);
+      onSelectUnit?.(unit);
+    },
+    [onSelectUnit]
+  );
+
+  const handleZoomIn = useCallback(() => {
+    mapInstance?.setZoom((mapInstance.getZoom() || 12) + 1);
+  }, [mapInstance]);
+
+  const handleZoomOut = useCallback(() => {
+    mapInstance?.setZoom((mapInstance.getZoom() || 12) - 1);
+  }, [mapInstance]);
+
+  const handleRecenter = useCallback(() => {
+    if (!mapInstance) return;
+    const unitsWithCoords = units.filter((u) => u.latitude && u.longitude);
+    if (unitsWithCoords.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      unitsWithCoords.forEach((u) => {
+        bounds.extend({ lat: Number(u.latitude), lng: Number(u.longitude) });
+      });
+      mapInstance.fitBounds(bounds, 50);
+    }
+  }, [mapInstance, units]);
+
+  return (
+    <div className="relative w-full h-full bg-slate-100 rounded-2xl overflow-hidden">
+      <div ref={mapRef} className="w-full h-full" />
+
+      {isMapLoaded && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {markerGroups.map((group) => {
+            const pos = getPixelPosition(group.lat, group.lng);
+            const isExpanded = expandedGroupId === group.id;
+            const isHovered = hoveredGroupId === group.id;
+
+            if (
+              pos.x < -100 ||
+              pos.y < -100 ||
+              pos.x > mapDimensions.width + 100 ||
+              pos.y > mapDimensions.height + 100
+            ) {
+              return null;
+            }
+
+            if (isExpanded && group.units.length > 1) {
+              const spiderfyPositions = getSpiderfyPositions(
+                group.units.length,
+                pos.x,
+                pos.y
+              );
+
+              return (
+                <div key={group.id} className="pointer-events-auto">
+                  <ClusterMarker
+                    group={group}
+                    isSelected={false}
+                    isHovered={false}
+                    isExpanded={true}
+                    onClick={() => setExpandedGroupId(null)}
+                    onMouseEnter={() => {}}
+                    onMouseLeave={() => {}}
+                    style={{ left: pos.x, top: pos.y }}
+                  />
+                  {group.units.map((unit, idx) => {
+                    const spiderPos = spiderfyPositions[idx];
+                    if (!spiderPos) return null;
+                    return (
+                      <SingleMarker
+                        key={unit.unit_id}
+                        unit={unit}
+                        isSelected={selectedUnit?.unit_id === unit.unit_id}
+                        isHovered={false}
+                        onClick={() => handleUnitSelect(unit)}
+                        onMouseEnter={() => {}}
+                        onMouseLeave={() => {}}
+                        style={{ left: spiderPos.x, top: spiderPos.y }}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            }
+
+            return (
+              <div key={group.id} className="pointer-events-auto">
+                <ClusterMarker
+                  group={group}
+                  isSelected={
+                    group.units.length === 1 &&
+                    selectedUnit?.unit_id === group.units[0].unit_id
+                  }
+                  isHovered={isHovered}
+                  isExpanded={false}
+                  onClick={() => handleGroupClick(group)}
+                  onMouseEnter={() => setHoveredGroupId(group.id)}
+                  onMouseLeave={() => setHoveredGroupId(null)}
+                  style={{ left: pos.x, top: pos.y }}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Map Container */}
-      <div className="flex-1 relative">
-        {customIcon && (
-          <MapContainer
-            center={initialCenter}
-            zoom={13}
-            scrollWheelZoom={true}
-            style={{ height: "100%", width: "100%", zIndex: 0 }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maxZoom={19}
-            />
-
-            <MapBoundsUpdater units={unitsWithLocation} />
-
-            {groupedUnits.map((group, groupIndex) => {
-              const firstUnit = group[0];
-              const hasMultiple = group.length > 1;
-
-              return (
-                <Marker
-                  key={`${firstUnit.unit_id}-${groupIndex}`}
-                  position={[
-                    Number(firstUnit.latitude),
-                    Number(firstUnit.longitude),
-                  ]}
-                  icon={customIcon}
-                >
-                  <Popup maxWidth={280} closeButton={false}>
-                    <div className="p-3">
-                      {hasMultiple ? (
-                        <>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white font-bold text-sm">
-                              {group.length}
-                            </div>
-                            <div>
-                              <p className="font-bold text-gray-900 text-sm">
-                                {group.length} Units Available
-                              </p>
-                              <p className="text-xs text-gray-500 line-clamp-1">
-                                {firstUnit.property_name}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                            {group.map((unit) => (
-                              <button
-                                key={unit.unit_id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedUnit(unit);
-                                }}
-                                className="w-full p-2.5 text-left rounded-lg hover:bg-gray-50 border border-gray-100 transition-colors"
-                              >
-                                <p className="font-medium text-xs text-gray-900">
-                                  Unit {unit.unit_name}
-                                </p>
-                                <p className="text-xs font-bold text-emerald-600 mt-0.5">
-                                  {formatCurrency(Number(unit.rent_amount))}/mo
-                                </p>
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <p className="font-bold text-gray-900 text-sm line-clamp-1">
-                            {firstUnit.property_name}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            Unit {firstUnit.unit_name}
-                          </p>
-                          <p className="text-base font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent mt-2">
-                            {formatCurrency(Number(firstUnit.rent_amount))}/mo
-                          </p>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedUnit(firstUnit);
-                            }}
-                            className="w-full mt-3 py-2 bg-gradient-to-r from-blue-500 to-emerald-500 text-white rounded-lg text-xs font-semibold hover:shadow-lg transition-all"
-                          >
-                            View Details
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-          </MapContainer>
-        )}
-
-        {/* Desktop List Toggle Button */}
-        {!isMobile && (
-          <button
-            onClick={() => setShowListView(!showListView)}
-            className="absolute top-4 left-4 z-[35] flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all text-sm font-medium text-gray-700"
-          >
-            {showListView ? (
-              <>
-                <MapIcon className="w-4 h-4 text-emerald-600" />
-                Map Only
-              </>
-            ) : (
-              <>
-                <List className="w-4 h-4 text-emerald-600" />
-                Show List
-              </>
-            )}
-          </button>
-        )}
-
-        {/* Stats Panel */}
-        {showStats && (
-          <div
-            className={`absolute ${
-              isMobile ? "top-2 right-2" : "top-4 right-4"
-            } z-[35]`}
-          >
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/60 overflow-hidden min-w-[160px]">
-              <div className="p-3 bg-gradient-to-r from-blue-50/80 to-emerald-50/80 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-600" />
-                  <span className="font-bold text-sm text-gray-900">Stats</span>
-                </div>
-                <button
-                  onClick={() => setShowStats(false)}
-                  className="p-1 hover:bg-white/60 rounded-lg transition-colors"
-                >
-                  <Minimize2 className="w-3.5 h-3.5 text-gray-500" />
-                </button>
-              </div>
-              <div className="p-3 space-y-2">
-                <div className="bg-gradient-to-br from-blue-500 to-emerald-600 rounded-xl p-3 text-white">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">
-                    Available
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {unitsWithLocation.length}
-                  </p>
-                  <p className="text-xs opacity-70">Units</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                    Properties
-                  </p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {propertiesCount}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Collapsed Stats Button */}
-        {!showStats && (
-          <button
-            onClick={() => setShowStats(true)}
-            className={`absolute ${
-              isMobile ? "top-2 right-2" : "top-4 right-4"
-            } z-[35] w-10 h-10 bg-white rounded-xl shadow-lg border border-gray-200 flex items-center justify-center hover:scale-105 transition-all`}
-          >
-            <Maximize2 className="w-4 h-4 text-gray-600" />
-          </button>
-        )}
-
-        {/* Selected Unit Panel */}
-        {selectedUnit && (
-          <div
-            className={`fixed z-[500] ${
-              isMobile
-                ? "inset-x-0 bottom-0"
-                : "bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md"
-            }`}
-          >
-            <div
-              className={`bg-white ${
-                isMobile ? "rounded-t-3xl" : "rounded-2xl mx-4"
-              } shadow-2xl border border-gray-200/50 overflow-hidden`}
-            >
-              {/* Mobile Drag Handle */}
-              {isMobile && (
-                <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 bg-gray-300 rounded-full" />
-                </div>
-              )}
-
-              <div className="p-4 sm:p-5">
-                {/* Close Button */}
-                <button
-                  onClick={handleClosePanel}
-                  className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-xl hover:bg-gray-100 transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
-
-                <div className={`${isMobile ? "space-y-4" : "flex gap-4"}`}>
-                  {/* Image */}
-                  <div
-                    className={`${
-                      isMobile ? "w-full h-36" : "w-28 h-28"
-                    } rounded-xl overflow-hidden bg-gray-100 relative flex-shrink-0`}
-                  >
-                    {selectedUnit.photos?.[0] ? (
-                      <Image
-                        src={selectedUnit.photos[0]}
-                        alt={`Unit ${selectedUnit.unit_name}`}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-gray-300" />
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <div className="p-1.5 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg">
-                        <BadgeCheck className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 min-w-0">
-                    {/* Unit Badge */}
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-xs font-bold rounded-full mb-2">
-                      <Sparkles className="w-3 h-3" />
-                      Unit {selectedUnit.unit_name}
-                    </div>
-
-                    {/* Property Name */}
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900 text-base line-clamp-1">
-                        {selectedUnit.property_name}
-                      </h3>
-                    </div>
-
-                    {/* Property Type */}
-                    <p className="text-xs text-gray-500 flex items-center gap-1.5 mb-3">
-                      <Building2 className="w-3.5 h-3.5" />
-                      {selectedUnit.property_type.replace(/_/g, " ")}
-                    </p>
-
-                    {/* Verified Badge */}
-                    <div className="mb-3 px-3 py-2 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-lg border border-blue-100/50">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5 text-blue-600" />
-                        <p className="text-xs text-gray-700 font-medium">
-                          <span className="font-bold text-blue-600">
-                            Verified
-                          </span>{" "}
-                          · Background checked
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Price */}
-                    <div className="bg-gray-50 rounded-xl p-3 mb-4">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-0.5">
-                        Monthly Rent
-                      </p>
-                      <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                        {formatCurrency(Number(selectedUnit.rent_amount))}
-                      </p>
-                    </div>
-
-                    {/* CTA Button */}
-                    <button
-                      onClick={() =>
-                        onUnitClick(
-                          selectedUnit.unit_id,
-                          selectedUnit.property_id
-                        )
-                      }
-                      className="w-full py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 text-sm"
-                    >
-                      View Full Details
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {unitsWithLocation.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center z-[40] bg-white/95 backdrop-blur-sm">
-            <div className="text-center p-8 max-w-sm">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
-                <MapPin className="w-8 h-8 text-gray-300" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                No map locations
-              </h3>
-              <p className="text-gray-500 text-sm leading-relaxed">
-                No properties with valid locations match your current filters.
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Map Controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={handleZoomIn}
+          className="w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all"
+        >
+          <Plus className="w-5 h-5 text-slate-700" />
+        </button>
+        <button
+          type="button"
+          onClick={handleZoomOut}
+          className="w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all"
+        >
+          <Minus className="w-5 h-5 text-slate-700" />
+        </button>
+        <button
+          type="button"
+          onClick={handleRecenter}
+          className="w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all"
+        >
+          <Navigation className="w-5 h-5 text-slate-700" />
+        </button>
       </div>
+
+      {/* Property Count */}
+      <div className="absolute top-4 left-4 px-4 py-2 bg-white/95 backdrop-blur-sm rounded-full shadow-lg">
+        <span className="text-sm font-semibold text-slate-700">
+          <span className="text-emerald-600">
+            {units.filter((u) => u.latitude && u.longitude).length}
+          </span>{" "}
+          on map
+        </span>
+      </div>
+
+      {/* Single Unit Quick View */}
+      {selectedUnit && !showMultiPanel && (
+        <div className="absolute inset-x-0 bottom-0 lg:left-4 lg:right-auto lg:bottom-4 lg:w-[380px]">
+          <UnitQuickView
+            unit={selectedUnit}
+            onClose={() => {
+              setSelectedUnit(null);
+              onSelectUnit?.(null);
+            }}
+            onViewDetails={() =>
+              onUnitClick(selectedUnit.unit_id, selectedUnit.property_id)
+            }
+          />
+        </div>
+      )}
+
+      {/* Multi-Property Panel */}
+      {showMultiPanel && multiPanelUnits.length > 0 && (
+        <div className="absolute inset-x-0 bottom-0 lg:left-4 lg:right-auto lg:bottom-4 lg:w-[420px]">
+          <MultiPropertyPanel
+            units={multiPanelUnits}
+            selectedUnit={selectedUnit}
+            onSelectUnit={handleUnitSelect}
+            onViewDetails={(unit) =>
+              onUnitClick(unit.unit_id, unit.property_id)
+            }
+            onClose={() => {
+              setShowMultiPanel(false);
+              setSelectedUnit(null);
+              onSelectUnit?.(null);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

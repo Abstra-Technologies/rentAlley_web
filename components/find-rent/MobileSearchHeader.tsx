@@ -1,20 +1,25 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, X, MapPin, LayoutGrid, SlidersHorizontal } from "lucide-react";
-import { FilterState, Unit } from "../../types/types";
-import { createPortal } from "react-dom";
+import {
+  Search,
+  X,
+  MapPin,
+  LayoutGrid,
+  Map,
+  SlidersHorizontal,
+  TrendingUp,
+} from "lucide-react";
+import { FilterState } from "@/types/types";
+import { LOCATIONS } from "./utils";
 
 interface MobileSearchHeaderProps {
   filters: FilterState;
   setFilters: (filters: FilterState) => void;
-  viewMode: "grid" | "map";
-  setViewMode: (mode: "grid" | "map") => void;
-  filteredUnits: Unit[];
-  showMobileFilters: boolean;
-  setShowMobileFilters: (show: boolean) => void;
+  viewMode: "grid" | "map" | "split";
+  setViewMode: (mode: "grid" | "map" | "split") => void;
+  totalResults: number;
   activeFilterCount: number;
-  MobileFiltersPanel: React.FC<any>;
-  ActiveFilters: React.FC<any>;
+  onOpenFilters: () => void;
 }
 
 export default function MobileSearchHeader({
@@ -22,332 +27,307 @@ export default function MobileSearchHeader({
   setFilters,
   viewMode,
   setViewMode,
-  filteredUnits,
-  showMobileFilters,
-  setShowMobileFilters,
+  totalResults,
   activeFilterCount,
-  MobileFiltersPanel,
-  ActiveFilters,
+  onOpenFilters,
 }: MobileSearchHeaderProps) {
-  const [localSearchQuery, setLocalSearchQuery] = useState(
-    filters?.searchQuery || ""
-  );
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Swipe-to-close state
-  const [touchStart, setTouchStart] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState(0);
-  const filterPanelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [localSearch, setLocalSearch] = useState(filters.searchQuery || "");
+  const [isFocused, setIsFocused] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (localSearchQuery !== filters.searchQuery) {
-        setFilters({ ...filters, searchQuery: localSearchQuery });
+      if (localSearch !== filters.searchQuery) {
+        setFilters({ ...filters, searchQuery: localSearch });
       }
-    }, 350);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [localSearchQuery]);
+  }, [localSearch, filters, setFilters]);
 
-  // Sync local state with URL params
+  // Sync with URL params
   useEffect(() => {
-    setLocalSearchQuery(filters.searchQuery || "");
+    setLocalSearch(filters.searchQuery || "");
   }, [filters.searchQuery]);
 
-  // Prevent body scroll when filter panel is open
+  // Close suggestions on outside click
   useEffect(() => {
-    if (showMobileFilters) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        !inputRef.current?.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
     };
-  }, [showMobileFilters]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const handleSearchClear = useCallback(() => {
-    setLocalSearchQuery("");
+  const handleClear = useCallback(() => {
+    setLocalSearch("");
     setFilters({ ...filters, searchQuery: "" });
+    inputRef.current?.focus();
   }, [filters, setFilters]);
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value.slice(0, 100);
-      setLocalSearchQuery(value);
+  const handleSuggestionClick = useCallback(
+    (location: string) => {
+      setLocalSearch(location);
+      setFilters({ ...filters, searchQuery: location });
+      setShowSuggestions(false);
     },
-    []
+    [filters, setFilters]
   );
 
-  const handleCloseFilters = useCallback(() => {
-    setShowMobileFilters(false);
-    setDragOffset(0);
-    setIsDragging(false);
-  }, [setShowMobileFilters]);
+  const suggestions = LOCATIONS.filter(
+    (loc) =>
+      localSearch.length > 0 &&
+      loc.label.toLowerCase().includes(localSearch.toLowerCase())
+  ).slice(0, 5);
 
-  // Touch handlers for swipe-to-close
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientY);
-    setIsDragging(true);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const diff = e.touches[0].clientY - touchStart;
-    if (diff > 0) {
-      setDragOffset(diff);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    if (dragOffset > 120) {
-      handleCloseFilters();
-    } else {
-      setDragOffset(0);
-    }
-  };
-
-  const hasActiveFilters = activeFilterCount > 0;
+  const popularLocations = LOCATIONS.filter((loc) => loc.popular);
 
   return (
-    <>
-      {/* Header Container */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-200/80 shadow-sm">
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-          {/* Main Search Row */}
-          <div className="flex items-center gap-3 py-3 lg:py-4">
-            {/* Search Input */}
-            <div className="flex-1 relative group">
-              <div
-                className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                  isSearchFocused ? "text-emerald-600" : "text-gray-400"
-                }`}
-              >
-                <Search className="w-[18px] h-[18px]" strokeWidth={2.5} />
-              </div>
-              <input
-                type="text"
-                placeholder="Search location, property..."
-                value={localSearchQuery}
-                onChange={handleSearchChange}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                className={`
-                  w-full h-11 lg:h-12 pl-11 pr-10 
-                  bg-gray-50 border-2 rounded-xl
-                  text-sm text-gray-900 placeholder:text-gray-400
-                  transition-all duration-200 ease-out
-                  ${
-                    isSearchFocused
-                      ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10 ring-4 ring-emerald-500/5"
-                      : "border-transparent hover:border-gray-200 hover:bg-gray-100/80"
-                  }
-                  focus:outline-none
-                `}
-              />
-              {localSearchQuery && (
-                <button
-                  type="button"
-                  onClick={handleSearchClear}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-                  aria-label="Clear search"
-                >
-                  <X className="w-3 h-3 text-gray-600" strokeWidth={2.5} />
-                </button>
-              )}
-            </div>
-
-            {/* View Mode Toggle - Pill Style */}
-            <div className="hidden sm:flex items-center gap-1 p-1 bg-gray-100 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                  transition-all duration-200
-                  ${
-                    viewMode === "grid"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }
-                `}
-              >
-                <LayoutGrid className="w-4 h-4" />
-                <span className="hidden lg:inline">Grid</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("map")}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                  transition-all duration-200
-                  ${
-                    viewMode === "map"
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }
-                `}
-              >
-                <MapPin className="w-4 h-4" />
-                <span className="hidden lg:inline">Map</span>
-              </button>
-            </div>
-
-            {/* Mobile View Toggle */}
-            <div className="flex sm:hidden items-center gap-1 p-1 bg-gray-100 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`p-2.5 rounded-lg transition-all ${
-                  viewMode === "grid"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500"
-                }`}
-                aria-label="Grid view"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("map")}
-                className={`p-2.5 rounded-lg transition-all ${
-                  viewMode === "map"
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500"
-                }`}
-                aria-label="Map view"
-              >
-                <MapPin className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Filter Button */}
-            <button
-              type="button"
-              onClick={() => setShowMobileFilters(!showMobileFilters)}
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-sm shadow-slate-200/50">
+      <div className="max-w-[1800px] mx-auto">
+        {/* Main Header Row */}
+        <div className="flex items-center gap-3 px-4 py-3 lg:px-6 lg:py-4">
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <div
               className={`
-                lg:hidden relative flex items-center justify-center
-                h-11 px-4 rounded-xl border-2
-                font-medium text-sm
-                transition-all duration-200 active:scale-95
+                relative flex items-center bg-slate-50 rounded-2xl
+                border-2 transition-all duration-300
                 ${
-                  showMobileFilters || hasActiveFilters
-                    ? "bg-gradient-to-r from-blue-600 to-emerald-600 border-transparent text-white shadow-lg shadow-emerald-600/25"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:shadow-md"
+                  isFocused
+                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10 ring-4 ring-emerald-500/5"
+                    : "border-transparent hover:border-slate-200"
                 }
               `}
             >
-              <SlidersHorizontal className="w-4 h-4" />
-              {hasActiveFilters && (
-                <span className="ml-2 flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-white/20 rounded-full text-xs font-bold">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Desktop Info Bar */}
-          <div className="hidden lg:flex items-center justify-between gap-4 pb-4">
-            <div className="flex items-center gap-3">
-              {/* Results Count */}
-              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-full border border-emerald-100/60">
-                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 animate-pulse" />
-                <span className="text-sm text-gray-700">
-                  <span className="font-bold text-gray-900">
-                    {filteredUnits.length}
-                  </span>{" "}
-                  {filteredUnits.length === 1 ? "property" : "properties"}{" "}
-                  available
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Filters Row */}
-          {hasActiveFilters && (
-            <div className="pb-3 lg:pb-4 -mt-1">
-              <ActiveFilters filters={filters} setFilters={setFilters} />
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Mobile Filter Panel Portal */}
-      {mounted &&
-        showMobileFilters &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] lg:hidden"
-            onClick={handleCloseFilters}
-          >
-            {/* Backdrop with blur */}
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
-              style={{ opacity: isDragging ? 1 - dragOffset / 300 : 1 }}
-            />
-
-            {/* Filter Panel */}
-            <div
-              ref={filterPanelRef}
-              className="absolute inset-x-0 bottom-0 bg-white rounded-t-[28px] shadow-2xl flex flex-col"
-              style={{
-                maxHeight: "85vh",
-                transform: `translateY(${dragOffset}px)`,
-                transition: isDragging
-                  ? "none"
-                  : "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
-              {/* Drag Handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div
-                  className={`h-1.5 rounded-full transition-all duration-200 ${
-                    isDragging ? "w-16 bg-emerald-400" : "w-10 bg-gray-300"
+              <div className="absolute left-4 pointer-events-none">
+                <Search
+                  className={`w-5 h-5 transition-colors duration-200 ${
+                    isFocused ? "text-emerald-600" : "text-slate-400"
                   }`}
                 />
               </div>
 
-              {/* Panel Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Refine your search results
-                  </p>
-                </div>
+              <input
+                ref={inputRef}
+                type="text"
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                onFocus={() => {
+                  setIsFocused(true);
+                  setShowSuggestions(true);
+                }}
+                onBlur={() => setIsFocused(false)}
+                placeholder="Search by location, property name..."
+                className="w-full h-12 lg:h-14 pl-12 pr-12 bg-transparent text-slate-900 placeholder-slate-400 text-base lg:text-lg font-medium focus:outline-none"
+                maxLength={100}
+              />
+
+              {localSearch && (
                 <button
                   type="button"
-                  onClick={handleCloseFilters}
-                  className="p-2.5 -mr-2 rounded-xl hover:bg-gray-100 transition-colors"
-                  aria-label="Close filters"
+                  onClick={handleClear}
+                  className="absolute right-3 p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300 active:scale-90 transition-all duration-150"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className="w-4 h-4 text-slate-600" />
                 </button>
-              </div>
-
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto overscroll-contain">
-                <MobileFiltersPanel
-                  filters={filters}
-                  setFilters={setFilters}
-                  onClose={handleCloseFilters}
-                />
-              </div>
+              )}
             </div>
-          </div>,
-          document.body
-        )}
-    </>
+
+            {/* Search Suggestions Dropdown */}
+            {showSuggestions && isFocused && (
+              <div
+                ref={suggestionsRef}
+                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden z-50 animate-fade-in-down"
+              >
+                {suggestions.length > 0 ? (
+                  <div className="p-2">
+                    {suggestions.map((loc) => (
+                      <button
+                        key={loc.value}
+                        type="button"
+                        onMouseDown={() => handleSuggestionClick(loc.label)}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors text-left group"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <MapPin className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            {loc.label}
+                          </p>
+                          <p className="text-sm text-slate-500">Philippines</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : localSearch.length === 0 ? (
+                  <div className="p-4">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      Popular Locations
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {popularLocations.map((loc) => (
+                        <button
+                          key={loc.value}
+                          type="button"
+                          onMouseDown={() => handleSuggestionClick(loc.label)}
+                          className="px-4 py-2 rounded-full bg-gradient-to-r from-slate-50 to-slate-100 hover:from-emerald-50 hover:to-teal-50 text-sm font-medium text-slate-700 hover:text-emerald-700 transition-all duration-200 border border-slate-200 hover:border-emerald-200"
+                        >
+                          {loc.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                      <Search className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <p className="text-slate-500 text-sm">
+                      No locations found for "{localSearch}"
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* View Mode Toggle - Desktop */}
+          <div className="hidden lg:flex items-center gap-1 p-1.5 bg-slate-100 rounded-2xl">
+            {[
+              { mode: "grid" as const, icon: LayoutGrid, label: "Grid" },
+              { mode: "split" as const, icon: Map, label: "Split" },
+              { mode: "map" as const, icon: MapPin, label: "Map" },
+            ].map(({ mode, icon: Icon, label }) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setViewMode(mode)}
+                className={`
+                  flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+                  transition-all duration-300
+                  ${
+                    viewMode === mode
+                      ? "bg-white text-slate-900 shadow-md"
+                      : "text-slate-500 hover:text-slate-700"
+                  }
+                `}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile View Toggle */}
+          <div className="flex lg:hidden items-center gap-1 p-1 bg-slate-100 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`p-2.5 rounded-lg transition-all duration-200 ${
+                viewMode === "grid"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500"
+              }`}
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("map")}
+              className={`p-2.5 rounded-lg transition-all duration-200 ${
+                viewMode === "map"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500"
+              }`}
+            >
+              <MapPin className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Filter Button */}
+          <button
+            type="button"
+            onClick={onOpenFilters}
+            className={`
+              relative flex items-center justify-center gap-2
+              h-12 lg:h-14 px-4 lg:px-5 rounded-2xl
+              font-semibold text-sm lg:text-base
+              transition-all duration-300 active:scale-95
+              ${
+                activeFilterCount > 0
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/25"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }
+            `}
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+            <span className="hidden sm:inline">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1.5 bg-white/20 rounded-full text-xs font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Results Bar */}
+        <div className="flex items-center justify-between gap-4 px-4 pb-3 lg:px-6 lg:pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-full border border-emerald-100">
+              <div className="relative flex items-center justify-center w-2 h-2">
+                <span className="absolute w-full h-full rounded-full bg-emerald-500 animate-ping opacity-75" />
+                <span className="relative w-2 h-2 rounded-full bg-emerald-500" />
+              </div>
+              <span className="text-sm font-semibold text-slate-700">
+                <span className="text-emerald-700 tabular-nums">
+                  {totalResults}
+                </span>{" "}
+                units available
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Filter Pills - Desktop */}
+          <div className="hidden lg:flex items-center gap-2">
+            {LOCATIONS.filter((l) => l.popular)
+              .slice(0, 3)
+              .map((loc) => (
+                <button
+                  key={loc.value}
+                  type="button"
+                  onClick={() =>
+                    setFilters({
+                      ...filters,
+                      location: filters.location === loc.value ? "" : loc.value,
+                    })
+                  }
+                  className={`
+                    px-4 py-2 rounded-full text-sm font-medium
+                    transition-all duration-200
+                    ${
+                      filters.location === loc.value
+                        ? "bg-emerald-600 text-white shadow-md"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }
+                  `}
+                >
+                  {loc.label}
+                </button>
+              ))}
+          </div>
+        </div>
+      </div>
+    </header>
   );
 }

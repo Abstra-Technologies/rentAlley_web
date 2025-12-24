@@ -1,18 +1,27 @@
 "use client";
-import { FilterState } from "../../types/types";
+import { useState, useCallback } from "react";
 import {
   MapPin,
-  DollarSign,
-  Home,
   Building2,
+  Bed,
+  Banknote,
   Sofa,
-  Maximize,
+  Ruler,
+  RotateCcw,
   ChevronDown,
   ChevronUp,
-  RotateCcw,
   SlidersHorizontal,
 } from "lucide-react";
-import { useState } from "react";
+import { FilterState } from "@/types/types";
+import {
+  LOCATIONS,
+  PROPERTY_TYPES,
+  UNIT_STYLES,
+  FURNISHING_OPTIONS,
+  PRICE_RANGES,
+  SIZE_PRESETS,
+  PESO,
+} from "./utils";
 
 interface DesktopFiltersPanelProps {
   filters: FilterState;
@@ -24,10 +33,10 @@ export default function DesktopFiltersPanel({
   setFilters,
 }: DesktopFiltersPanelProps) {
   const [expandedSections, setExpandedSections] = useState({
-    price: true,
     location: true,
+    price: true,
     propertyType: true,
-    unitStyle: true,
+    unitStyle: false,
     furnishing: false,
     size: false,
   });
@@ -36,67 +45,27 @@ export default function DesktopFiltersPanel({
     setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const propertyTypes = [
-    { label: "Apartment", value: "apartment", icon: "🏢" },
-    { label: "Condo", value: "condo", icon: "🏘️" },
-    { label: "House", value: "house", icon: "🏠" },
-    { label: "Duplex", value: "duplex", icon: "🏚️" },
-    { label: "Dormitory", value: "dormitory", icon: "🏫" },
-  ];
+  const updateFilter = useCallback(
+    <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
+      setFilters({ ...filters, [key]: value });
+    },
+    [filters, setFilters]
+  );
 
-  const furnishingTypes = [
-    { label: "Fully Furnished", value: "fully_furnished" },
-    { label: "Semi Furnished", value: "semi_furnished" },
-    { label: "Unfurnished", value: "unfurnished" },
-  ];
+  const toggleFilter = useCallback(
+    <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
+      setFilters({
+        ...filters,
+        [key]:
+          filters[key] === value ? (typeof value === "number" ? 0 : "") : value,
+      });
+    },
+    [filters, setFilters]
+  );
 
-  const locations = [
-    { label: "Metro Manila", value: "Metro Manila", popular: true },
-    { label: "Cebu", value: "Cebu", popular: true },
-    { label: "Davao", value: "Davao", popular: true },
-    { label: "Ilocos", value: "Ilocos" },
-    { label: "Cagayan Valley", value: "Cagayan_Valley" },
-    { label: "Central Luzon", value: "Central_Luzon" },
-    { label: "Calabarzon", value: "Calabarzon" },
-    { label: "Mimaropa", value: "Mimaropa" },
-    { label: "Bicol", value: "Bicol" },
-    { label: "Western Visayas", value: "Western_Visayas" },
-    { label: "Central Visayas", value: "Central_Visayas" },
-    { label: "Eastern Visayas", value: "Eastern_Visayas" },
-    { label: "Zamboanga Peninsula", value: "Zamboanga_Peninsula" },
-    { label: "Northern Mindanao", value: "Northern_Mindanao" },
-    { label: "Davao Region", value: "Davao_Region" },
-    { label: "Soccsksargen", value: "Soccsksargen" },
-    { label: "Caraga", value: "Caraga" },
-    { label: "Bangsamoro", value: "Bangsamoro" },
-  ];
-
-  const unitStyles = [
-    { label: "Studio", value: "studio", icon: "🛏️" },
-    { label: "1 Bedroom", value: "1-bedroom", icon: "🚪" },
-    { label: "2 Bedroom", value: "2-bedroom", icon: "🚪🚪" },
-    { label: "3 Bedroom", value: "3-bedroom", icon: "🏡" },
-    { label: "Loft", value: "loft", icon: "🪜" },
-    { label: "Duplex", value: "duplex", icon: "🏚️" },
-    { label: "Penthouse", value: "penthouse", icon: "🌆" },
-    { label: "Dorm", value: "dorm", icon: "🛌" },
-  ];
-
-  const priceRanges = [
-    { label: "Under ₱5k", min: 0, max: 5000 },
-    { label: "₱5k - ₱10k", min: 5000, max: 10000 },
-    { label: "₱10k - ₱15k", min: 10000, max: 15000 },
-    { label: "₱15k - ₱20k", min: 15000, max: 20000 },
-    { label: "Above ₱20k", min: 20000, max: 0 },
-  ];
-
-  const handleQuickPrice = (min: number, max: number) => {
-    setFilters({ ...filters, minPrice: min, maxPrice: max });
-  };
-
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
-      searchQuery: filters.searchQuery || "",
+      searchQuery: filters.searchQuery,
       propertyType: "",
       furnishing: "",
       minPrice: 0,
@@ -105,177 +74,148 @@ export default function DesktopFiltersPanel({
       location: "",
       unitStyle: "",
     });
-  };
+  }, [filters.searchQuery, setFilters]);
 
-  const activeFilterCount = Object.entries(filters).filter(([key, value]) => {
+  const activeCount = Object.entries(filters).filter(([key, value]) => {
     if (key === "searchQuery") return false;
-    if (typeof value === "number") return value > 0;
-    return value !== "";
+    return typeof value === "number" ? value > 0 : value !== "";
   }).length;
 
-  const FilterSection = ({
-    title,
-    icon: Icon,
-    isExpanded,
-    onToggle,
-    children,
-  }: {
-    title: string;
-    icon: React.ElementType;
-    isExpanded: boolean;
-    onToggle: () => void;
-    children: React.ReactNode;
-  }) => (
-    <div className="border-b border-gray-100 last:border-b-0">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between py-4 px-1 hover:bg-gray-50/50 transition-colors rounded-lg -mx-1"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-50 to-emerald-50 flex items-center justify-center">
-            <Icon className="w-4 h-4 text-emerald-600" />
-          </div>
-          <span className="text-sm font-semibold text-gray-900">{title}</span>
-        </div>
-        {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-gray-400" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        )}
-      </button>
-      <div
-        className={`overflow-hidden transition-all duration-200 ${
-          isExpanded ? "max-h-[800px] opacity-100 pb-4" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="px-1">{children}</div>
-      </div>
-    </div>
-  );
-
-  const SelectableButton = ({
-    isSelected,
-    onClick,
-    children,
-    className = "",
-  }: {
-    isSelected: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`
-        transition-all duration-200 font-medium text-sm
-        ${
-          isSelected
-            ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md shadow-emerald-600/20"
-            : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 hover:border-gray-300"
-        }
-        ${className}
-      `}
-    >
-      {children}
-    </button>
-  );
-
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50/80 to-emerald-50/80 px-5 py-4 border-b border-gray-100">
+      <div className="px-6 py-5 bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/20">
-              <SlidersHorizontal className="w-4 h-4 text-white" />
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+              <SlidersHorizontal className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-gray-900">Filters</h3>
-              {activeFilterCount > 0 && (
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {activeFilterCount}{" "}
-                  {activeFilterCount === 1 ? "filter" : "filters"} applied
-                </p>
+              <h3 className="text-lg font-bold text-slate-900">Filters</h3>
+              {activeCount > 0 && (
+                <p className="text-sm text-slate-500">{activeCount} active</p>
               )}
             </div>
           </div>
-          {activeFilterCount > 0 && (
+          {activeCount > 0 && (
             <button
               type="button"
               onClick={handleClearFilters}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-600 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-rose-600 font-medium px-3 py-2 rounded-xl hover:bg-rose-50 transition-all"
             >
-              <RotateCcw className="w-3 h-3" />
+              <RotateCcw className="w-4 h-4" />
               Clear
             </button>
           )}
         </div>
       </div>
 
-      {/* Scrollable Filters */}
-      <div className="max-h-[calc(100vh-280px)] overflow-y-auto px-5 py-2">
+      {/* Scrollable Content */}
+      <div className="max-h-[calc(100vh-300px)] overflow-y-auto px-6 py-4">
+        {/* Location */}
+        <FilterSection
+          title="Location"
+          icon={<MapPin className="w-5 h-5 text-emerald-600" />}
+          isExpanded={expandedSections.location}
+          onToggle={() => toggleSection("location")}
+        >
+          <div className="space-y-1.5">
+            {LOCATIONS.filter((l) => l.popular).map((loc) => (
+              <FilterButton
+                key={loc.value}
+                label={loc.label}
+                isSelected={filters.location === loc.value}
+                onClick={() => toggleFilter("location", loc.value)}
+                badge="Popular"
+              />
+            ))}
+            <details className="group">
+              <summary className="flex items-center gap-1 px-3 py-2 text-sm text-emerald-600 font-semibold cursor-pointer list-none hover:bg-emerald-50 rounded-xl transition-colors">
+                <ChevronDown className="w-4 h-4 group-open:rotate-180 transition-transform" />
+                More locations
+              </summary>
+              <div className="mt-1.5 space-y-1.5">
+                {LOCATIONS.filter((l) => !l.popular).map((loc) => (
+                  <FilterButton
+                    key={loc.value}
+                    label={loc.label}
+                    isSelected={filters.location === loc.value}
+                    onClick={() => toggleFilter("location", loc.value)}
+                  />
+                ))}
+              </div>
+            </details>
+          </div>
+        </FilterSection>
+
         {/* Price Range */}
         <FilterSection
           title="Price Range"
-          icon={DollarSign}
+          icon={<Banknote className="w-5 h-5 text-amber-600" />}
           isExpanded={expandedSections.price}
           onToggle={() => toggleSection("price")}
         >
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2">
-              {priceRanges.map((range) => (
-                <SelectableButton
-                  key={range.label}
+              {PRICE_RANGES.map((range, idx) => (
+                <FilterButton
+                  key={idx}
+                  label={range.label}
                   isSelected={
                     filters.minPrice === range.min &&
                     filters.maxPrice === range.max
                   }
-                  onClick={() => handleQuickPrice(range.min, range.max)}
-                  className="px-3 py-2.5 rounded-xl text-xs"
-                >
-                  {range.label}
-                </SelectableButton>
+                  onClick={() => {
+                    if (
+                      filters.minPrice === range.min &&
+                      filters.maxPrice === range.max
+                    ) {
+                      updateFilter("minPrice", 0);
+                      updateFilter("maxPrice", 0);
+                    } else {
+                      setFilters({
+                        ...filters,
+                        minPrice: range.min,
+                        maxPrice: range.max,
+                      });
+                    }
+                  }}
+                  compact
+                />
               ))}
             </div>
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-2 font-medium">
+
+            <div className="pt-3 border-t border-slate-100">
+              <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">
                 Custom Range
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                    ₱
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
+                    {PESO}
                   </span>
                   <input
                     type="number"
                     placeholder="Min"
                     value={filters.minPrice || ""}
                     onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        minPrice: Number(e.target.value),
-                      })
+                      updateFilter("minPrice", Number(e.target.value) || 0)
                     }
-                    className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
+                    className="w-full h-11 pl-8 pr-3 bg-slate-50 border-2 border-transparent rounded-xl text-sm font-medium focus:border-emerald-500 focus:bg-white focus:outline-none transition-all"
                   />
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                    ₱
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
+                    {PESO}
                   </span>
                   <input
                     type="number"
                     placeholder="Max"
                     value={filters.maxPrice || ""}
                     onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        maxPrice: Number(e.target.value),
-                      })
+                      updateFilter("maxPrice", Number(e.target.value) || 0)
                     }
-                    className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
+                    className="w-full h-11 pl-8 pr-3 bg-slate-50 border-2 border-transparent rounded-xl text-sm font-medium focus:border-emerald-500 focus:bg-white focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -283,96 +223,22 @@ export default function DesktopFiltersPanel({
           </div>
         </FilterSection>
 
-        {/* Location */}
-        <FilterSection
-          title="Location"
-          icon={MapPin}
-          isExpanded={expandedSections.location}
-          onToggle={() => toggleSection("location")}
-        >
-          <div className="space-y-1.5">
-            <SelectableButton
-              isSelected={!filters.location}
-              onClick={() => setFilters({ ...filters, location: "" })}
-              className="w-full text-left px-3 py-2.5 rounded-xl"
-            >
-              All Locations
-            </SelectableButton>
-
-            {/* Popular locations */}
-            {locations
-              .filter((loc) => loc.popular)
-              .map((loc) => (
-                <SelectableButton
-                  key={loc.value}
-                  isSelected={filters.location === loc.value}
-                  onClick={() =>
-                    setFilters({ ...filters, location: loc.value })
-                  }
-                  className="w-full text-left px-3 py-2.5 rounded-xl"
-                >
-                  <span className="flex items-center gap-2">
-                    {loc.label}
-                    <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-medium">
-                      Popular
-                    </span>
-                  </span>
-                </SelectableButton>
-              ))}
-
-            {/* Other locations in details */}
-            <details className="group mt-2">
-              <summary className="px-3 py-2 text-xs text-blue-600 hover:text-blue-700 font-semibold cursor-pointer list-none flex items-center gap-1">
-                <ChevronDown className="w-3 h-3 group-open:rotate-180 transition-transform" />
-                Show more locations
-              </summary>
-              <div className="mt-2 space-y-1.5">
-                {locations
-                  .filter((loc) => !loc.popular)
-                  .map((loc) => (
-                    <SelectableButton
-                      key={loc.value}
-                      isSelected={filters.location === loc.value}
-                      onClick={() =>
-                        setFilters({ ...filters, location: loc.value })
-                      }
-                      className="w-full text-left px-3 py-2.5 rounded-xl"
-                    >
-                      {loc.label}
-                    </SelectableButton>
-                  ))}
-              </div>
-            </details>
-          </div>
-        </FilterSection>
-
         {/* Property Type */}
         <FilterSection
           title="Property Type"
-          icon={Building2}
+          icon={<Building2 className="w-5 h-5 text-blue-600" />}
           isExpanded={expandedSections.propertyType}
           onToggle={() => toggleSection("propertyType")}
         >
           <div className="grid grid-cols-2 gap-2">
-            <SelectableButton
-              isSelected={!filters.propertyType}
-              onClick={() => setFilters({ ...filters, propertyType: "" })}
-              className="p-3 rounded-xl text-xs"
-            >
-              All Types
-            </SelectableButton>
-            {propertyTypes.map((type) => (
-              <SelectableButton
+            {PROPERTY_TYPES.map((type) => (
+              <FilterButton
                 key={type.value}
+                label={type.label}
                 isSelected={filters.propertyType === type.value}
-                onClick={() =>
-                  setFilters({ ...filters, propertyType: type.value })
-                }
-                className="p-3 rounded-xl text-xs flex flex-col items-center gap-1.5"
-              >
-                <span className="text-lg">{type.icon}</span>
-                {type.label}
-              </SelectableButton>
+                onClick={() => toggleFilter("propertyType", type.value)}
+                compact
+              />
             ))}
           </div>
         </FilterSection>
@@ -380,30 +246,19 @@ export default function DesktopFiltersPanel({
         {/* Unit Style */}
         <FilterSection
           title="Unit Style"
-          icon={Home}
+          icon={<Bed className="w-5 h-5 text-purple-600" />}
           isExpanded={expandedSections.unitStyle}
           onToggle={() => toggleSection("unitStyle")}
         >
           <div className="grid grid-cols-2 gap-2">
-            <SelectableButton
-              isSelected={!filters.unitStyle}
-              onClick={() => setFilters({ ...filters, unitStyle: "" })}
-              className="p-3 rounded-xl text-xs"
-            >
-              All Styles
-            </SelectableButton>
-            {unitStyles.map((style) => (
-              <SelectableButton
+            {UNIT_STYLES.map((style) => (
+              <FilterButton
                 key={style.value}
+                label={style.label}
                 isSelected={filters.unitStyle === style.value}
-                onClick={() =>
-                  setFilters({ ...filters, unitStyle: style.value })
-                }
-                className="p-3 rounded-xl text-xs flex flex-col items-center gap-1.5"
-              >
-                <span className="text-lg">{style.icon}</span>
-                {style.label}
-              </SelectableButton>
+                onClick={() => toggleFilter("unitStyle", style.value)}
+                compact
+              />
             ))}
           </div>
         </FilterSection>
@@ -411,29 +266,18 @@ export default function DesktopFiltersPanel({
         {/* Furnishing */}
         <FilterSection
           title="Furnishing"
-          icon={Sofa}
+          icon={<Sofa className="w-5 h-5 text-teal-600" />}
           isExpanded={expandedSections.furnishing}
           onToggle={() => toggleSection("furnishing")}
         >
           <div className="space-y-1.5">
-            <SelectableButton
-              isSelected={!filters.furnishing}
-              onClick={() => setFilters({ ...filters, furnishing: "" })}
-              className="w-full text-left px-3 py-2.5 rounded-xl"
-            >
-              All
-            </SelectableButton>
-            {furnishingTypes.map((type) => (
-              <SelectableButton
-                key={type.value}
-                isSelected={filters.furnishing === type.value}
-                onClick={() =>
-                  setFilters({ ...filters, furnishing: type.value })
-                }
-                className="w-full text-left px-3 py-2.5 rounded-xl"
-              >
-                {type.label}
-              </SelectableButton>
+            {FURNISHING_OPTIONS.map((opt) => (
+              <FilterButton
+                key={opt.value}
+                label={opt.label}
+                isSelected={filters.furnishing === opt.value}
+                onClick={() => toggleFilter("furnishing", opt.value)}
+              />
             ))}
           </div>
         </FilterSection>
@@ -441,26 +285,103 @@ export default function DesktopFiltersPanel({
         {/* Minimum Size */}
         <FilterSection
           title="Minimum Size"
-          icon={Maximize}
+          icon={<Ruler className="w-5 h-5 text-indigo-600" />}
           isExpanded={expandedSections.size}
           onToggle={() => toggleSection("size")}
         >
-          <div className="relative">
-            <input
-              type="number"
-              placeholder="Enter minimum size"
-              value={filters.minSize || ""}
-              onChange={(e) =>
-                setFilters({ ...filters, minSize: Number(e.target.value) })
-              }
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none pr-12"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">
-              sqm
-            </span>
+          <div className="flex flex-wrap gap-2">
+            {SIZE_PRESETS.map((size) => (
+              <FilterButton
+                key={size}
+                label={`${size}+ sqm`}
+                isSelected={filters.minSize === size}
+                onClick={() => toggleFilter("minSize", size)}
+                compact
+              />
+            ))}
           </div>
         </FilterSection>
       </div>
     </div>
+  );
+}
+
+function FilterSection({
+  title,
+  icon,
+  isExpanded,
+  onToggle,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  isExpanded: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-b border-slate-100 last:border-b-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between py-4 hover:bg-slate-50/50 transition-colors rounded-xl -mx-2 px-2"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+            {icon}
+          </div>
+          <span className="font-semibold text-slate-900">{title}</span>
+        </div>
+        {isExpanded ? (
+          <ChevronUp className="w-5 h-5 text-slate-400" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-slate-400" />
+        )}
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-300 ${
+          isExpanded ? "max-h-[600px] opacity-100 pb-4" : "max-h-0 opacity-0"
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FilterButton({
+  label,
+  isSelected,
+  onClick,
+  badge,
+  compact = false,
+}: {
+  label: string;
+  isSelected: boolean;
+  onClick: () => void;
+  badge?: string;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`
+        relative w-full text-left font-medium text-sm rounded-xl transition-all duration-200 active:scale-[0.98]
+        ${compact ? "px-3 py-2.5" : "px-4 py-3"}
+        ${
+          isSelected
+            ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20"
+            : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 hover:border-slate-300"
+        }
+      `}
+    >
+      {label}
+      {badge && !isSelected && (
+        <span className="absolute top-1 right-1 px-1.5 py-0.5 text-[10px] font-bold bg-emerald-500 text-white rounded-full">
+          {badge}
+        </span>
+      )}
+    </button>
   );
 }

@@ -1,102 +1,174 @@
 "use client";
-import { FilterState } from "../../types/types";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
+  X,
   MapPin,
-  DollarSign,
-  Home,
-  ChevronRight,
-  ChevronLeft,
+  Building2,
+  Bed,
+  Banknote,
+  Sofa,
+  Ruler,
   RotateCcw,
   Check,
-  Sofa,
-  Maximize,
+  Sparkles,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { FilterState } from "@/types/types";
+import {
+  LOCATIONS,
+  PROPERTY_TYPES,
+  UNIT_STYLES,
+  FURNISHING_OPTIONS,
+  PRICE_RANGES,
+  SIZE_PRESETS,
+  PESO,
+  GESTURE,
+  SPRING,
+} from "./utils";
 
 interface MobileFiltersPanelProps {
+  isOpen: boolean;
+  onClose: () => void;
   filters: FilterState;
   setFilters: (filters: FilterState) => void;
-  onClose?: () => void;
 }
 
-type ActiveStep = "main" | "price" | "location" | "propertyType" | "unitStyle";
-
 export default function MobileFiltersPanel({
+  isOpen,
+  onClose,
   filters,
   setFilters,
-  onClose,
 }: MobileFiltersPanelProps) {
-  const [activeStep, setActiveStep] = useState<ActiveStep>("main");
+  const [mounted, setMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const [localFilters, setLocalFilters] = useState<FilterState>(filters);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const propertyTypes = [
-    { label: "Apartment", value: "apartment", icon: "🏢" },
-    { label: "Condo", value: "condo", icon: "🏘️" },
-    { label: "House", value: "house", icon: "🏠" },
-    { label: "Duplex", value: "duplex", icon: "🏚️" },
-    { label: "Dormitory", value: "dormitory", icon: "🏫" },
-  ];
+  // Gesture state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [velocity, setVelocity] = useState(0);
+  const lastY = useRef(0);
+  const lastTime = useRef(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  const furnishingTypes = [
-    { label: "All", value: "" },
-    { label: "Fully Furnished", value: "fully_furnished" },
-    { label: "Semi Furnished", value: "semi_furnished" },
-    { label: "Unfurnished", value: "unfurnished" },
-  ];
-
-  const locations = [
-    { label: "Metro Manila", value: "Metro Manila", popular: true },
-    { label: "Cebu", value: "Cebu", popular: true },
-    { label: "Davao", value: "Davao", popular: true },
-    { label: "Ilocos", value: "Ilocos" },
-    { label: "Cagayan Valley", value: "Cagayan_Valley" },
-    { label: "Central Luzon", value: "Central_Luzon" },
-    { label: "Calabarzon", value: "Calabarzon" },
-    { label: "Mimaropa", value: "Mimaropa" },
-    { label: "Bicol", value: "Bicol" },
-    { label: "Western Visayas", value: "Western_Visayas" },
-    { label: "Central Visayas", value: "Central_Visayas" },
-    { label: "Eastern Visayas", value: "Eastern_Visayas" },
-    { label: "Zamboanga Peninsula", value: "Zamboanga_Peninsula" },
-    { label: "Northern Mindanao", value: "Northern_Mindanao" },
-    { label: "Davao Region", value: "Davao_Region" },
-    { label: "Soccsksargen", value: "Soccsksargen" },
-    { label: "Caraga", value: "Caraga" },
-    { label: "Bangsamoro", value: "Bangsamoro" },
-  ];
-
-  const unitStyles = [
-    { label: "Studio", value: "studio", icon: "🛏️" },
-    { label: "1 Bedroom", value: "1-bedroom", icon: "🚪" },
-    { label: "2 Bedroom", value: "2-bedroom", icon: "🚪🚪" },
-    { label: "3 Bedroom", value: "3-bedroom", icon: "🏡" },
-    { label: "Loft", value: "loft", icon: "🪜" },
-    { label: "Duplex", value: "duplex", icon: "🏚️" },
-    { label: "Penthouse", value: "penthouse", icon: "🌆" },
-    { label: "Dorm", value: "dorm", icon: "🛌" },
-    { label: "Others", value: "others", icon: "🏘️" },
-  ];
-
-  const priceRanges = [
-    { label: "Under ₱5k", min: 0, max: 5000 },
-    { label: "₱5k - ₱10k", min: 5000, max: 10000 },
-    { label: "₱10k - ₱15k", min: 10000, max: 15000 },
-    { label: "₱15k - ₱20k", min: 15000, max: 20000 },
-    { label: "Above ₱20k", min: 20000, max: 0 },
-  ];
-
-  // Sync local filters when parent filters change
   useEffect(() => {
-    setLocalFilters(filters);
-  }, [filters]);
+    setMounted(true);
+  }, []);
 
-  const handleQuickPrice = (min: number, max: number) => {
-    setLocalFilters({ ...localFilters, minPrice: min, maxPrice: max });
-  };
+  useEffect(() => {
+    if (isOpen) {
+      setLocalFilters(filters);
+      setIsVisible(true);
+      setIsAnimatingOut(false);
+      document.body.style.overflow = "hidden";
+      requestAnimationFrame(() => {
+        setDragOffset(0);
+      });
+    }
+  }, [isOpen, filters]);
 
-  const handleClearFilters = () => {
-    const clearedFilters = {
-      searchQuery: filters.searchQuery || "",
+  useEffect(() => {
+    setHasChanges(JSON.stringify(localFilters) !== JSON.stringify(filters));
+  }, [localFilters, filters]);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setIsAnimatingOut(true);
+    document.body.style.overflow = "";
+    setTimeout(() => {
+      onClose();
+      setIsVisible(false);
+      setDragOffset(0);
+      setIsAnimatingOut(false);
+    }, 350);
+  }, [onClose]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    lastY.current = touch.clientY;
+    lastTime.current = Date.now();
+    setIsDragging(true);
+    setVelocity(0);
+  }, []);
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging) return;
+
+      const touch = e.touches[0];
+      const currentY = touch.clientY;
+      const now = Date.now();
+      const deltaY = currentY - lastY.current;
+      const deltaTime = now - lastTime.current;
+
+      if (deltaTime > 0) {
+        setVelocity(deltaY / deltaTime);
+      }
+
+      lastY.current = currentY;
+      lastTime.current = now;
+
+      const rawOffset = dragOffset + deltaY;
+      if (rawOffset > 0) {
+        const resistance = GESTURE.resistance;
+        const dampedOffset = Math.pow(rawOffset, resistance) * 2;
+        setDragOffset(Math.min(dampedOffset, GESTURE.maxStretch));
+      } else {
+        setDragOffset(Math.max(rawOffset * 0.1, -30));
+      }
+    },
+    [isDragging, dragOffset]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+
+    const shouldClose =
+      dragOffset > GESTURE.dismissDistance ||
+      (velocity > GESTURE.dismissVelocity && dragOffset > 50);
+
+    if (shouldClose) {
+      handleClose();
+    } else {
+      setDragOffset(0);
+    }
+
+    setVelocity(0);
+  }, [dragOffset, velocity, handleClose]);
+
+  const updateFilter = useCallback(
+    <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
+      setLocalFilters((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
+  const toggleFilter = useCallback(
+    <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
+      setLocalFilters((prev) => ({
+        ...prev,
+        [key]:
+          prev[key] === value ? (typeof value === "number" ? 0 : "") : value,
+      }));
+    },
+    []
+  );
+
+  const handleApply = useCallback(() => {
+    setFilters(localFilters);
+    handleClose();
+  }, [localFilters, setFilters, handleClose]);
+
+  const handleReset = useCallback(() => {
+    setLocalFilters({
+      searchQuery: filters.searchQuery,
       propertyType: "",
       furnishing: "",
       minPrice: 0,
@@ -104,458 +176,378 @@ export default function MobileFiltersPanel({
       minSize: 0,
       location: "",
       unitStyle: "",
-    };
-    setLocalFilters(clearedFilters);
+    });
+  }, [filters.searchQuery]);
+
+  const activeCount = Object.entries(localFilters).filter(([key, value]) => {
+    if (key === "searchQuery") return false;
+    return typeof value === "number" ? value > 0 : value !== "";
+  }).length;
+
+  const getTransform = () => {
+    if (isAnimatingOut) return "translateY(100%)";
+    if (!isVisible) return "translateY(100%)";
+    return `translateY(${Math.max(0, dragOffset)}px)`;
   };
 
-  const handleApply = () => {
-    setFilters(localFilters);
-    onClose?.();
+  const getBackdropOpacity = () => {
+    if (isAnimatingOut) return 0;
+    if (!isVisible) return 0;
+    if (isDragging) return Math.max(0, 1 - dragOffset / 400);
+    return 1;
   };
 
-  const getFilterValue = (key: string) => {
-    if (key === "location" && localFilters.location) {
-      return (
-        locations.find((l) => l.value === localFilters.location)?.label || ""
-      );
-    }
-    if (key === "propertyType" && localFilters.propertyType) {
-      return (
-        propertyTypes.find((p) => p.value === localFilters.propertyType)
-          ?.label || ""
-      );
-    }
-    if (key === "unitStyle" && localFilters.unitStyle) {
-      return (
-        unitStyles.find((u) => u.value === localFilters.unitStyle)?.label || ""
-      );
-    }
-    if (key === "price") {
-      if (localFilters.minPrice && localFilters.maxPrice) {
-        return `₱${localFilters.minPrice.toLocaleString()} - ₱${localFilters.maxPrice.toLocaleString()}`;
-      }
-      if (localFilters.minPrice)
-        return `From ₱${localFilters.minPrice.toLocaleString()}`;
-      if (localFilters.maxPrice)
-        return `Up to ₱${localFilters.maxPrice.toLocaleString()}`;
-      return "";
-    }
-    return "";
-  };
+  if (!mounted || !isVisible) return null;
 
-  const activeFilterCount = Object.entries(localFilters).filter(
-    ([key, value]) => {
-      if (key === "searchQuery") return false;
-      if (typeof value === "number") return value > 0;
-      return value !== "";
-    }
-  ).length;
+  const content = (
+    <div className="fixed inset-0 z-[300]">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+        style={{ opacity: getBackdropOpacity() }}
+        onClick={handleClose}
+      />
 
-  // Reusable selection button
-  const SelectionButton = ({
-    isSelected,
-    onClick,
-    children,
-    icon,
-    showCheck = true,
-  }: {
-    isSelected: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-    icon?: string;
-    showCheck?: boolean;
-  }) => (
+      <div
+        ref={sheetRef}
+        className="absolute inset-x-0 bottom-0 bg-white rounded-t-[32px] shadow-2xl flex flex-col will-change-transform"
+        style={{
+          maxHeight: "92vh",
+          transform: getTransform(),
+          transition: isDragging ? "none" : `transform 0.4s ${SPRING.apple}`,
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Drag Handle */}
+        <div className="flex justify-center pt-3 pb-2">
+          <div
+            className={`rounded-full transition-all duration-200 ${
+              isDragging
+                ? "w-16 h-1.5 bg-emerald-400"
+                : "w-12 h-1.5 bg-slate-300"
+            }`}
+          />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Filters</h2>
+              <p className="text-sm text-slate-500">Refine your search</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="p-3 rounded-2xl hover:bg-slate-100 active:scale-95 transition-all"
+          >
+            <X className="w-6 h-6 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-6"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          {/* Location */}
+          <FilterSection
+            title="Location"
+            icon={<MapPin className="w-5 h-5 text-emerald-600" />}
+            delay={0}
+          >
+            <div className="flex flex-wrap gap-2">
+              {LOCATIONS.map((loc) => (
+                <FilterChip
+                  key={loc.value}
+                  label={loc.label}
+                  isSelected={localFilters.location === loc.value}
+                  onClick={() => toggleFilter("location", loc.value)}
+                  badge={loc.popular ? "Popular" : undefined}
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Property Type */}
+          <FilterSection
+            title="Property Type"
+            icon={<Building2 className="w-5 h-5 text-blue-600" />}
+            delay={50}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {PROPERTY_TYPES.map((type) => (
+                <FilterChip
+                  key={type.value}
+                  label={type.label}
+                  isSelected={localFilters.propertyType === type.value}
+                  onClick={() => toggleFilter("propertyType", type.value)}
+                  fullWidth
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Unit Style */}
+          <FilterSection
+            title="Unit Style"
+            icon={<Bed className="w-5 h-5 text-purple-600" />}
+            delay={100}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {UNIT_STYLES.map((style) => (
+                <FilterChip
+                  key={style.value}
+                  label={style.label}
+                  isSelected={localFilters.unitStyle === style.value}
+                  onClick={() => toggleFilter("unitStyle", style.value)}
+                  fullWidth
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Price Range */}
+          <FilterSection
+            title="Price Range"
+            icon={<Banknote className="w-5 h-5 text-amber-600" />}
+            delay={150}
+          >
+            <div className="flex flex-wrap gap-2 mb-4">
+              {PRICE_RANGES.map((range, idx) => (
+                <FilterChip
+                  key={idx}
+                  label={range.label}
+                  isSelected={
+                    localFilters.minPrice === range.min &&
+                    localFilters.maxPrice === range.max
+                  }
+                  onClick={() => {
+                    if (
+                      localFilters.minPrice === range.min &&
+                      localFilters.maxPrice === range.max
+                    ) {
+                      updateFilter("minPrice", 0);
+                      updateFilter("maxPrice", 0);
+                    } else {
+                      updateFilter("minPrice", range.min);
+                      updateFilter("maxPrice", range.max);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <label className="text-xs font-medium text-slate-500 mb-1.5 block">
+                  Min
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                    {PESO}
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={localFilters.minPrice || ""}
+                    onChange={(e) =>
+                      updateFilter("minPrice", Number(e.target.value) || 0)
+                    }
+                    className="w-full h-12 pl-9 pr-4 bg-slate-50 border-2 border-transparent rounded-xl font-medium focus:border-emerald-500 focus:bg-white focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+              <span className="text-slate-300 font-medium mt-6">-</span>
+              <div className="flex-1">
+                <label className="text-xs font-medium text-slate-500 mb-1.5 block">
+                  Max
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                    {PESO}
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="Any"
+                    value={localFilters.maxPrice || ""}
+                    onChange={(e) =>
+                      updateFilter("maxPrice", Number(e.target.value) || 0)
+                    }
+                    className="w-full h-12 pl-9 pr-4 bg-slate-50 border-2 border-transparent rounded-xl font-medium focus:border-emerald-500 focus:bg-white focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+          </FilterSection>
+
+          {/* Furnishing */}
+          <FilterSection
+            title="Furnishing"
+            icon={<Sofa className="w-5 h-5 text-teal-600" />}
+            delay={200}
+          >
+            <div className="flex flex-wrap gap-2">
+              {FURNISHING_OPTIONS.map((opt) => (
+                <FilterChip
+                  key={opt.value}
+                  label={opt.label}
+                  isSelected={localFilters.furnishing === opt.value}
+                  onClick={() => toggleFilter("furnishing", opt.value)}
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          {/* Minimum Size */}
+          <FilterSection
+            title="Minimum Size"
+            icon={<Ruler className="w-5 h-5 text-indigo-600" />}
+            delay={250}
+          >
+            <div className="flex flex-wrap gap-2">
+              {SIZE_PRESETS.map((size) => (
+                <FilterChip
+                  key={size}
+                  label={`${size}+ sqm`}
+                  isSelected={localFilters.minSize === size}
+                  onClick={() => toggleFilter("minSize", size)}
+                />
+              ))}
+            </div>
+          </FilterSection>
+
+          <div className="h-32" />
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="sticky bottom-0 p-4 bg-white border-t border-slate-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={activeCount === 0}
+              className={`flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-semibold transition-all active:scale-95 ${
+                activeCount === 0
+                  ? "bg-slate-100 text-slate-400"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              <RotateCcw className="w-5 h-5" />
+              Reset
+            </button>
+
+            <button
+              type="button"
+              onClick={handleApply}
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-semibold shadow-lg shadow-emerald-600/25 hover:shadow-xl transition-all active:scale-[0.98]"
+            >
+              {hasChanges ? (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Apply Filters
+                </>
+              ) : (
+                <>
+                  <Check className="w-5 h-5" />
+                  Done
+                </>
+              )}
+              {activeCount > 0 && (
+                <span className="ml-1 px-2.5 py-0.5 bg-white/20 rounded-full text-sm">
+                  {activeCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(content, document.body);
+}
+
+function FilterSection({
+  title,
+  icon,
+  children,
+  delay = 0,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  delay?: number;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), delay);
+    return () => clearTimeout(timer);
+  }, [delay]);
+
+  return (
+    <div
+      className={`py-5 border-b border-slate-100 last:border-b-0 transition-all duration-300 ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      }`}
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+          {icon}
+        </div>
+        <h3 className="font-bold text-slate-900">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function FilterChip({
+  label,
+  isSelected,
+  onClick,
+  badge,
+  fullWidth = false,
+}: {
+  label: string;
+  isSelected: boolean;
+  onClick: () => void;
+  badge?: string;
+  fullWidth?: boolean;
+}) {
+  return (
     <button
       type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
+      onClick={onClick}
       className={`
-        w-full p-4 text-left rounded-2xl transition-all duration-200 flex items-center gap-3
+        relative px-4 py-3 rounded-xl font-medium text-sm
+        transition-all duration-200 active:scale-95
+        ${fullWidth ? "w-full" : ""}
         ${
           isSelected
-            ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+            ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/20"
+            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
         }
       `}
     >
-      {icon && <span className="text-2xl">{icon}</span>}
-      <span className="font-semibold flex-1">{children}</span>
-      {showCheck && isSelected && <Check className="w-5 h-5" />}
+      {label}
+      {badge && (
+        <span
+          className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
+            isSelected
+              ? "bg-white text-emerald-600"
+              : "bg-emerald-500 text-white"
+          }`}
+        >
+          {badge}
+        </span>
+      )}
     </button>
-  );
-
-  // Back button component
-  const BackButton = () => (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        setActiveStep("main");
-      }}
-      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold text-sm mb-4"
-    >
-      <ChevronLeft className="w-4 h-4" />
-      Back
-    </button>
-  );
-
-  // Main menu view
-  const MainMenu = () => (
-    <div className="space-y-3 pb-4">
-      {/* Filter Navigation Cards */}
-      {[
-        {
-          key: "price",
-          icon: DollarSign,
-          label: "Price Range",
-          value: getFilterValue("price") || "Any price",
-        },
-        {
-          key: "location",
-          icon: MapPin,
-          label: "Location",
-          value: getFilterValue("location") || "All locations",
-        },
-        {
-          key: "propertyType",
-          icon: null,
-          emoji: "🏢",
-          label: "Property Type",
-          value: getFilterValue("propertyType") || "All types",
-        },
-        {
-          key: "unitStyle",
-          icon: Home,
-          label: "Unit Style",
-          value: getFilterValue("unitStyle") || "All styles",
-        },
-      ].map((item) => (
-        <button
-          key={item.key}
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setActiveStep(item.key as ActiveStep);
-          }}
-          className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 rounded-2xl border border-gray-200 transition-all active:scale-[0.98]"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-50 to-emerald-50 flex items-center justify-center">
-              {item.emoji ? (
-                <span className="text-xl">{item.emoji}</span>
-              ) : item.icon ? (
-                <item.icon className="w-5 h-5 text-emerald-600" />
-              ) : null}
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-bold text-gray-900">{item.label}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{item.value}</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-gray-400" />
-        </button>
-      ))}
-
-      {/* Quick Filters Section */}
-      <div className="pt-4 mt-2 border-t border-gray-100">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">
-          Quick Filters
-        </p>
-
-        {/* Furnishing */}
-        <div className="mb-4">
-          <label className="text-sm font-semibold text-gray-700 mb-2 block px-1">
-            Furnishing
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {furnishingTypes.map((type) => (
-              <button
-                key={type.value}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setLocalFilters({ ...localFilters, furnishing: type.value });
-                }}
-                className={`
-                  p-3 rounded-xl text-sm font-semibold transition-all
-                  ${
-                    localFilters.furnishing === type.value
-                      ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md"
-                      : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                  }
-                `}
-              >
-                {type.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Minimum Size */}
-        <div>
-          <label className="text-sm font-semibold text-gray-700 mb-2 block px-1">
-            Minimum Size (sqm)
-          </label>
-          <div className="relative">
-            <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="number"
-              placeholder="Enter minimum size"
-              value={localFilters.minSize || ""}
-              onClick={(e) => e.stopPropagation()}
-              onChange={(e) => {
-                e.stopPropagation();
-                setLocalFilters({
-                  ...localFilters,
-                  minSize: Number(e.target.value),
-                });
-              }}
-              className="w-full pl-10 pr-12 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">
-              sqm
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Price submenu
-  const PriceMenu = () => (
-    <div className="space-y-3 pb-4">
-      <BackButton />
-
-      <div className="space-y-2">
-        <p className="text-base font-bold text-gray-900 mb-3">
-          Select a price range
-        </p>
-        {priceRanges.map((range) => (
-          <SelectionButton
-            key={range.label}
-            isSelected={
-              localFilters.minPrice === range.min &&
-              localFilters.maxPrice === range.max
-            }
-            onClick={() => handleQuickPrice(range.min, range.max)}
-          >
-            {range.label}
-          </SelectionButton>
-        ))}
-      </div>
-
-      <div className="pt-4 mt-2 border-t border-gray-100">
-        <p className="text-base font-bold text-gray-900 mb-3">
-          Or enter custom range
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1.5 block">
-              Min Price
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                ₱
-              </span>
-              <input
-                type="number"
-                placeholder="0"
-                value={localFilters.minPrice || ""}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  setLocalFilters({
-                    ...localFilters,
-                    minPrice: Number(e.target.value),
-                  });
-                }}
-                className="w-full pl-8 pr-3 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-500 mb-1.5 block">
-              Max Price
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                ₱
-              </span>
-              <input
-                type="number"
-                placeholder="Any"
-                value={localFilters.maxPrice || ""}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  setLocalFilters({
-                    ...localFilters,
-                    maxPrice: Number(e.target.value),
-                  });
-                }}
-                className="w-full pl-8 pr-3 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Location submenu
-  const LocationMenu = () => (
-    <div className="space-y-3 pb-4">
-      <BackButton />
-
-      <p className="text-base font-bold text-gray-900 mb-3">Select location</p>
-
-      <SelectionButton
-        isSelected={!localFilters.location}
-        onClick={() => setLocalFilters({ ...localFilters, location: "" })}
-      >
-        All Locations
-      </SelectionButton>
-
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-4 mb-2 px-1">
-        Popular
-      </p>
-      {locations
-        .filter((loc) => loc.popular)
-        .map((loc) => (
-          <SelectionButton
-            key={loc.value}
-            isSelected={localFilters.location === loc.value}
-            onClick={() =>
-              setLocalFilters({ ...localFilters, location: loc.value })
-            }
-          >
-            {loc.label}
-          </SelectionButton>
-        ))}
-
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-4 mb-2 px-1">
-        Other Regions
-      </p>
-      {locations
-        .filter((loc) => !loc.popular)
-        .map((loc) => (
-          <SelectionButton
-            key={loc.value}
-            isSelected={localFilters.location === loc.value}
-            onClick={() =>
-              setLocalFilters({ ...localFilters, location: loc.value })
-            }
-          >
-            {loc.label}
-          </SelectionButton>
-        ))}
-    </div>
-  );
-
-  // Property Type submenu
-  const PropertyTypeMenu = () => (
-    <div className="space-y-3 pb-4">
-      <BackButton />
-
-      <p className="text-base font-bold text-gray-900 mb-3">
-        Select property type
-      </p>
-
-      <SelectionButton
-        isSelected={!localFilters.propertyType}
-        onClick={() => setLocalFilters({ ...localFilters, propertyType: "" })}
-      >
-        All Types
-      </SelectionButton>
-
-      {propertyTypes.map((type) => (
-        <SelectionButton
-          key={type.value}
-          isSelected={localFilters.propertyType === type.value}
-          onClick={() =>
-            setLocalFilters({ ...localFilters, propertyType: type.value })
-          }
-          icon={type.icon}
-        >
-          {type.label}
-        </SelectionButton>
-      ))}
-    </div>
-  );
-
-  // Unit Style submenu
-  const UnitStyleMenu = () => (
-    <div className="space-y-3 pb-4">
-      <BackButton />
-
-      <p className="text-base font-bold text-gray-900 mb-3">
-        Select unit style
-      </p>
-
-      <SelectionButton
-        isSelected={!localFilters.unitStyle}
-        onClick={() => setLocalFilters({ ...localFilters, unitStyle: "" })}
-      >
-        All Styles
-      </SelectionButton>
-
-      {unitStyles.map((style) => (
-        <SelectionButton
-          key={style.value}
-          isSelected={localFilters.unitStyle === style.value}
-          onClick={() =>
-            setLocalFilters({ ...localFilters, unitStyle: style.value })
-          }
-          icon={style.icon}
-        >
-          {style.label}
-        </SelectionButton>
-      ))}
-    </div>
-  );
-
-  return (
-    <div className="h-full flex flex-col">
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 overscroll-contain">
-        {activeStep === "main" && <MainMenu />}
-        {activeStep === "price" && <PriceMenu />}
-        {activeStep === "location" && <LocationMenu />}
-        {activeStep === "propertyType" && <PropertyTypeMenu />}
-        {activeStep === "unitStyle" && <UnitStyleMenu />}
-      </div>
-
-      {/* Fixed Bottom Actions */}
-      <div className="sticky bottom-0 border-t border-gray-100 bg-white p-4 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClearFilters();
-            }}
-            className="flex items-center justify-center gap-2 px-4 py-3.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleApply();
-            }}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:shadow-xl transition-all active:scale-[0.98]"
-          >
-            <Check className="w-4 h-4" />
-            {activeFilterCount > 0
-              ? `Apply ${activeFilterCount} Filters`
-              : "Show Results"}
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }

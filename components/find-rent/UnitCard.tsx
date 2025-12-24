@@ -1,442 +1,435 @@
 "use client";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Image from "next/image";
-import { useState, useCallback } from "react";
 import {
-  MapPin,
-  Ruler,
-  Sofa,
+  Heart,
   Share2,
-  X,
-  Bed,
-  BadgeCheck,
-  ImageIcon,
+  MapPin,
+  Maximize2,
+  Sofa,
   ChevronLeft,
   ChevronRight,
-  Link2,
+  Eye,
+  BadgeCheck,
+  X,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Unit } from "@/types/types";
-import { formatCurrency, formatLocation } from "./utils";
-
-// Social icons as simple SVGs for consistency
-const FacebookIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-  </svg>
-);
-
-const TwitterIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
-const WhatsAppIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-  </svg>
-);
+import { formatCurrency, formatLocation, formatUnitStyle } from "./utils";
 
 interface UnitCardProps {
   unit: Unit;
   onClick: () => void;
+  index?: number;
+  variant?: "default" | "compact" | "horizontal";
 }
 
-export default function UnitCard({ unit, onClick }: UnitCardProps) {
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+export default function UnitCard({
+  unit,
+  onClick,
+  index = 0,
+  variant = "default",
+}: UnitCardProps) {
+  const [currentImage, setCurrentImage] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchDelta, setTouchDelta] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const BASE_URL = "https://rent-alley-web.vercel.app";
   const images = unit.photos?.length > 0 ? unit.photos : [];
   const hasMultipleImages = images.length > 1;
 
-  const formatUnitStyle = (style: string) => {
-    if (!style) return null;
-    return style
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
+  // Preload next image
+  useEffect(() => {
+    if (hasMultipleImages && images.length > 1) {
+      const nextIndex = (currentImage + 1) % images.length;
+      const img = new window.Image();
+      img.src = images[nextIndex];
+    }
+  }, [currentImage, images, hasMultipleImages]);
 
-  const showToast = useCallback((message: string) => {
-    if (typeof window === "undefined" || typeof document === "undefined")
-      return;
+  // Touch handlers for image carousel
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!hasMultipleImages) return;
+      setTouchStart(e.touches[0].clientX);
+      setIsSwiping(true);
+    },
+    [hasMultipleImages]
+  );
 
-    const existing = document.querySelector(".share-toast");
-    existing?.remove();
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isSwiping) return;
+      const delta = e.touches[0].clientX - touchStart;
+      const maxDelta = 100;
+      setTouchDelta(Math.max(-maxDelta, Math.min(maxDelta, delta)));
+    },
+    [isSwiping, touchStart]
+  );
 
-    const toast = document.createElement("div");
-    toast.textContent = message;
-    toast.className =
-      "share-toast fixed top-20 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl shadow-lg z-[9999] text-sm font-medium bg-gray-900 text-white animate-in fade-in slide-in-from-top-2 duration-200";
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.classList.add("animate-out", "fade-out", "slide-out-to-top-2");
-      setTimeout(() => toast.remove(), 150);
-    }, 2000);
+  const handleTouchEnd = useCallback(() => {
+    if (!isSwiping) return;
+    if (touchDelta < -40) {
+      setCurrentImage((prev) => (prev + 1) % images.length);
+    } else if (touchDelta > 40) {
+      setCurrentImage((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    }
+    setIsSwiping(false);
+    setTouchDelta(0);
+  }, [isSwiping, touchDelta, images.length]);
+
+  const handlePrevImage = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setCurrentImage((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    },
+    [images.length]
+  );
+
+  const handleNextImage = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setCurrentImage((prev) => (prev + 1) % images.length);
+    },
+    [images.length]
+  );
+
+  const handleFavorite = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorite((prev) => !prev);
   }, []);
 
-  const handleShare = async (platform: string) => {
-    const shareUrl = `${BASE_URL}/pages/find-rent/${unit.property_id}/${unit.unit_id}`;
-    const shareText = `Check out this ${
-      formatUnitStyle(unit.unit_style) || "unit"
-    } for rent! 🏠\n\n${unit.property_name} - Unit ${
-      unit.unit_name
-    }\n💰 ${formatCurrency(
-      Number(unit.rent_amount)
-    )}/month\n📍 ${formatLocation(unit.city, unit.province)}`;
-
-    let finalUrl = "";
-
-    switch (platform) {
-      case "facebook":
-        finalUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-          shareUrl
-        )}`;
-        break;
-      case "twitter":
-        finalUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          shareText
-        )}&url=${encodeURIComponent(shareUrl)}`;
-        break;
-      case "whatsapp":
-        finalUrl = `https://wa.me/?text=${encodeURIComponent(
-          shareText + `\n\n${shareUrl}`
-        )}`;
-        break;
-      case "link":
-        await navigator.clipboard.writeText(shareUrl);
-        showToast("Link copied to clipboard!");
-        setIsShareModalOpen(false);
-        return;
-    }
-
-    window.open(finalUrl, "_blank", "width=600,height=400");
-    setIsShareModalOpen(false);
-  };
-
-  const handleShareClick = (e: React.MouseEvent) => {
+  const handleShare = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsShareModalOpen(true);
-  };
+    setShowShare(true);
+  }, []);
 
-  const handlePrevImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
+  const handleCopyLink = useCallback(async () => {
+    const url = `${window.location.origin}/pages/find-rent/${unit.property_id}/${unit.unit_id}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+      setShowShare(false);
+    }, 1500);
+  }, [unit]);
 
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
+  const unitStyle = formatUnitStyle(unit.unit_style);
+
+  // Compact variant for list views
+  if (variant === "compact") {
+    return (
+      <article
+        onClick={onClick}
+        className="flex items-center gap-4 p-3 bg-white rounded-2xl border border-slate-200 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-500/5 cursor-pointer transition-all duration-300"
+      >
+        <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
+          {images[0] ? (
+            <Image
+              src={images[0]}
+              alt={unit.unit_name}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-slate-300" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-slate-900 truncate">
+            {unit.unit_name}
+          </h3>
+          <p className="text-sm text-slate-500 truncate">
+            {unit.property_name}
+          </p>
+          <p className="font-bold text-emerald-600 mt-1">
+            {formatCurrency(Number(unit.rent_amount))}
+            <span className="text-xs font-normal text-slate-400">/mo</span>
+          </p>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <>
       <article
+        ref={containerRef}
         onClick={onClick}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        className="group relative bg-white rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-xl border border-gray-200 hover:border-emerald-200 flex flex-col h-full"
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setIsPressed(false);
+        }}
+        onMouseDown={() => setIsPressed(true)}
+        onMouseUp={() => setIsPressed(false)}
+        className="group relative bg-white rounded-3xl overflow-hidden cursor-pointer flex flex-col h-full"
+        style={{
+          boxShadow: isHovered
+            ? "0 25px 50px -12px rgba(0,0,0,0.12), 0 0 0 1px rgba(16,185,129,0.1)"
+            : "0 4px 6px -1px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.03)",
+          transform: isPressed
+            ? "scale(0.98)"
+            : isHovered
+            ? "scale(1.02) translateY(-4px)"
+            : "scale(1)",
+          transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        }}
       >
-        {/* Image Container */}
-        <div className="relative w-full aspect-[16/10] overflow-hidden bg-gray-100">
-          {images.length > 0 && !imageError ? (
-            <Image
-              src={images[currentImageIndex]}
-              alt={`${unit.property_name} - Unit ${unit.unit_name}`}
-              fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className={`object-cover transition-transform duration-500 ${
-                isHovered ? "scale-105" : "scale-100"
-              }`}
-              onError={() => setImageError(true)}
-            />
+        {/* Image Carousel */}
+        <div
+          className="relative aspect-[4/3] overflow-hidden bg-slate-100"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {images.length > 0 ? (
+            <div
+              className="relative w-full h-full"
+              style={{
+                transform: isSwiping
+                  ? `translateX(${touchDelta}px)`
+                  : undefined,
+                transition: isSwiping
+                  ? "none"
+                  : "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
+              <Image
+                src={images[currentImage]}
+                alt={`${unit.unit_name} - Image ${currentImage + 1}`}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className={`object-cover transition-all duration-700 ${
+                  isHovered ? "scale-110" : "scale-100"
+                } ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+                onLoad={() => setImageLoaded(true)}
+                priority={index < 6}
+              />
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 animate-pulse" />
+              )}
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-              <ImageIcon className="w-12 h-12 text-gray-300" />
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+              <div className="text-center">
+                <MapPin className="w-12 h-12 text-slate-300 mx-auto" />
+                <p className="text-sm text-slate-400 mt-2">No image</p>
+              </div>
             </div>
           )}
 
-          {/* Hover Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-          {/* Image Navigation Arrows */}
-          {hasMultipleImages && isHovered && (
-            <>
-              <button
-                onClick={handlePrevImage}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-white transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="w-4 h-4 text-gray-700" />
-              </button>
-              <button
-                onClick={handleNextImage}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-white transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95"
-                aria-label="Next image"
-              >
-                <ChevronRight className="w-4 h-4 text-gray-700" />
-              </button>
-            </>
-          )}
-
-          {/* Image Dots Indicator */}
-          {hasMultipleImages && (
-            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2 py-1 bg-black/30 backdrop-blur-sm rounded-full">
-              {images.slice(0, 5).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentImageIndex(index);
-                  }}
-                  className={`rounded-full transition-all ${
-                    currentImageIndex === index
-                      ? "w-2 h-2 bg-white"
-                      : "w-1.5 h-1.5 bg-white/50 hover:bg-white/70"
-                  }`}
-                  aria-label={`Go to image ${index + 1}`}
-                />
-              ))}
-              {images.length > 5 && (
-                <span className="text-[10px] text-white/70 ml-0.5">
-                  +{images.length - 5}
+          {/* Top Actions */}
+          <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+            <div className="flex flex-col gap-2">
+              {unit.is_verified && (
+                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-full shadow-lg">
+                  <BadgeCheck className="w-3.5 h-3.5" />
+                  Verified
+                </span>
+              )}
+              {unitStyle && (
+                <span className="px-3 py-1.5 bg-white/95 backdrop-blur-sm text-slate-700 text-xs font-semibold rounded-full shadow-lg">
+                  {unitStyle}
                 </span>
               )}
             </div>
-          )}
 
-          {/* Top Right - Share Button Only */}
-          <div className="absolute top-2.5 right-2.5 z-10">
-            <button
-              onClick={handleShareClick}
-              className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all hover:scale-110 active:scale-95 shadow-sm"
-              aria-label="Share"
+            <div
+              className={`flex items-center gap-2 transition-all duration-300 ${
+                isHovered
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 -translate-y-2"
+              }`}
             >
-              <Share2 className="w-4 h-4 text-gray-600" />
-            </button>
+              <button
+                type="button"
+                onClick={handleFavorite}
+                className={`p-2.5 rounded-full backdrop-blur-sm transition-all duration-200 active:scale-90 ${
+                  isFavorite
+                    ? "bg-rose-500 text-white"
+                    : "bg-white/90 text-slate-600 hover:bg-white"
+                }`}
+              >
+                <Heart
+                  className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="p-2.5 rounded-full bg-white/90 backdrop-blur-sm text-slate-600 hover:bg-white transition-all duration-200 active:scale-90"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Top Left - Unit Style Badge */}
-          {unit.unit_style && (
-            <div className="absolute top-2.5 left-2.5 z-10">
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/95 backdrop-blur-sm rounded-lg shadow-sm">
-                <Bed className="w-3.5 h-3.5 text-gray-700" />
-                <span className="text-xs font-semibold text-gray-900">
-                  {formatUnitStyle(unit.unit_style)}
-                </span>
+          {/* Image Navigation */}
+          {hasMultipleImages && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                className={`absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 backdrop-blur-sm shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 ${
+                  isHovered
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 -translate-x-4"
+                }`}
+              >
+                <ChevronLeft className="w-5 h-5 text-slate-700" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextImage}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 backdrop-blur-sm shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 ${
+                  isHovered
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 translate-x-4"
+                }`}
+              >
+                <ChevronRight className="w-5 h-5 text-slate-700" />
+              </button>
+
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-2 bg-black/40 backdrop-blur-md rounded-full">
+                {images.slice(0, 5).map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImage(idx);
+                    }}
+                    className={`transition-all duration-300 rounded-full ${
+                      idx === currentImage
+                        ? "w-6 h-2 bg-white"
+                        : "w-2 h-2 bg-white/50 hover:bg-white/75"
+                    }`}
+                  />
+                ))}
+                {images.length > 5 && (
+                  <span className="text-white/80 text-xs font-medium ml-1">
+                    +{images.length - 5}
+                  </span>
+                )}
               </div>
-            </div>
+            </>
           )}
-
-          {/* Bottom Left - Verified Badge */}
-          <div className="absolute bottom-2.5 left-2.5">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg shadow-md">
-              <BadgeCheck className="w-3.5 h-3.5 text-white" />
-              <span className="text-xs font-semibold text-white">Verified</span>
-            </div>
-          </div>
         </div>
 
         {/* Content */}
-        <div className="p-4 flex flex-col flex-grow">
-          {/* Location */}
-          <div className="flex items-start gap-2 mb-2">
-            <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-gray-500 line-clamp-1">
+        <div className="flex-1 flex flex-col p-5">
+          <div className="flex items-center gap-2 text-slate-500 mb-2">
+            <MapPin className="w-4 h-4 text-emerald-500" />
+            <span className="text-sm font-medium truncate">
               {formatLocation(unit.city, unit.province)}
-            </p>
-          </div>
-
-          {/* Unit Name as Title */}
-          <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-emerald-600 transition-colors">
-            {unit.unit_name}
-          </h3>
-
-          {/* Property Name & Type */}
-          <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">
-            <span className="line-clamp-1">{unit.property_name}</span>
-            <span className="text-gray-300">•</span>
-            <span className="capitalize flex-shrink-0">
-              {unit.property_type.replace(/_/g, " ")}
             </span>
           </div>
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="flex items-center gap-2.5 p-2.5 bg-blue-50/70 rounded-xl">
-              <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                <Ruler className="w-4 h-4 text-blue-600" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] text-gray-500 uppercase tracking-wide">
-                  Size
-                </p>
-                <p className="text-sm font-bold text-gray-900">
-                  {unit.unit_size} sqm
-                </p>
-              </div>
-            </div>
+          <h3 className="font-bold text-lg text-slate-900 mb-1 line-clamp-1 group-hover:text-emerald-700 transition-colors">
+            {unit.unit_name}
+          </h3>
+          <p className="text-sm text-slate-500 mb-4 truncate">
+            {unit.property_name}
+          </p>
 
-            <div className="flex items-center gap-2.5 p-2.5 bg-emerald-50/70 rounded-xl">
-              <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                <Sofa className="w-4 h-4 text-emerald-600" />
+          <div className="flex items-center gap-4 mb-4">
+            {unit.unit_size > 0 && (
+              <div className="flex items-center gap-1.5 text-slate-600">
+                <Maximize2 className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {unit.unit_size} sqm
+                </span>
               </div>
-              <div className="min-w-0">
-                <p className="text-[11px] text-gray-500 uppercase tracking-wide">
-                  Furnish
-                </p>
-                <p className="text-sm font-bold text-gray-900 capitalize truncate">
-                  {unit.furnish.replace(/_/g, " ").replace("furnished", "")}
-                </p>
+            )}
+            {unit.furnish && (
+              <div className="flex items-center gap-1.5 text-slate-600">
+                <Sofa className="w-4 h-4" />
+                <span className="text-sm font-medium capitalize">
+                  {unit.furnish.replace(/_/g, " ")}
+                </span>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Spacer */}
-          <div className="flex-grow" />
+          <div className="flex-1" />
 
-          {/* Price & CTA */}
-          <div className="pt-4 border-t border-gray-100">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-                  {formatCurrency(Number(unit.rent_amount))}
-                </p>
-                <p className="text-xs text-gray-500">per month</p>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onClick();
-                }}
-                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95"
-              >
-                View
-              </button>
+          <div className="flex items-end justify-between pt-4 border-t border-slate-100">
+            <div>
+              <p className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                {formatCurrency(Number(unit.rent_amount))}
+              </p>
+              <p className="text-sm text-slate-400 font-medium">per month</p>
             </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick();
+              }}
+              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:shadow-emerald-600/30 hover:scale-105 active:scale-95 transition-all duration-300"
+            >
+              <Eye className="w-4 h-4" />
+              View
+            </button>
           </div>
         </div>
-
-        {/* Hover Border Glow */}
-        <div className="absolute inset-0 rounded-2xl ring-2 ring-transparent group-hover:ring-emerald-400/20 transition-all duration-300 pointer-events-none" />
       </article>
 
       {/* Share Modal */}
-      {isShareModalOpen && (
+      {showShare && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={() => setIsShareModalOpen(false)}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowShare(false)}
         >
           <div
-            className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+            className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  Share Listing
-                </h3>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Share this property with others
-                </p>
-              </div>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-slate-900">Share</h3>
               <button
-                onClick={() => setIsShareModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                type="button"
+                onClick={() => setShowShare(false)}
+                className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-5 h-5 text-slate-500" />
               </button>
             </div>
-
-            {/* Share Options */}
-            <div className="p-5">
-              <div className="grid grid-cols-4 gap-3">
-                {/* Facebook */}
-                <button
-                  onClick={() => handleShare("facebook")}
-                  className="flex flex-col items-center gap-2.5 p-3 hover:bg-blue-50 rounded-xl transition-colors group"
-                >
-                  <div className="w-12 h-12 bg-[#1877F2] rounded-full flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/20">
-                    <FacebookIcon />
-                  </div>
-                  <span className="text-xs font-medium text-gray-600">
-                    Facebook
-                  </span>
-                </button>
-
-                {/* Twitter/X */}
-                <button
-                  onClick={() => handleShare("twitter")}
-                  className="flex flex-col items-center gap-2.5 p-3 hover:bg-gray-100 rounded-xl transition-colors group"
-                >
-                  <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-gray-500/20">
-                    <TwitterIcon />
-                  </div>
-                  <span className="text-xs font-medium text-gray-600">X</span>
-                </button>
-
-                {/* WhatsApp */}
-                <button
-                  onClick={() => handleShare("whatsapp")}
-                  className="flex flex-col items-center gap-2.5 p-3 hover:bg-green-50 rounded-xl transition-colors group"
-                >
-                  <div className="w-12 h-12 bg-[#25D366] rounded-full flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-green-500/20">
-                    <WhatsAppIcon />
-                  </div>
-                  <span className="text-xs font-medium text-gray-600">
-                    WhatsApp
-                  </span>
-                </button>
-
-                {/* Copy Link */}
-                <button
-                  onClick={() => handleShare("link")}
-                  className="flex flex-col items-center gap-2.5 p-3 hover:bg-gray-100 rounded-xl transition-colors group"
-                >
-                  <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-gray-500/20">
-                    <Link2 className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-medium text-gray-600">
-                    Copy
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            {/* Preview Card */}
-            <div className="mx-5 mb-5 p-3 bg-gray-50 rounded-xl border border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0">
-                  {unit.photos?.[0] ? (
-                    <Image
-                      src={unit.photos[0]}
-                      alt=""
-                      width={48}
-                      height={48}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-5 h-5 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
-                    {unit.unit_name}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {unit.property_name}
-                  </p>
-                  <p className="text-xs font-bold text-emerald-600 mt-0.5">
-                    {formatCurrency(Number(unit.rent_amount))}/mo
-                  </p>
-                </div>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className={`w-full flex items-center justify-center gap-3 p-4 rounded-2xl font-semibold transition-all duration-300 ${
+                copied
+                  ? "bg-emerald-500 text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-5 h-5" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-5 h-5" />
+                  Copy Link
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
