@@ -137,10 +137,14 @@ export async function POST(req: NextRequest) {
         if (existing.length) {
             await connection.rollback();
             return NextResponse.json(
-                { error: "Verification already submitted" },
+                {
+                    code: "VERIFICATION_EXISTS",
+                    message: "Verification already uploaded and under review",
+                },
                 { status: 409 }
             );
         }
+
 
         /* ------------------------------------------------------------
            UPLOAD DOCUMENT

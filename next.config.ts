@@ -10,12 +10,12 @@ const baseConfig: NextConfig = {
         ignoreBuildErrors: true,
     },
 
-    experimental: {
-        allowedDevOrigins: [
-            "http://localhost:3000",
-            "https://appealing-rolland-nonprohibitorily.ngrok-free.dev",
-        ],
-    },
+    // experimental: {
+    //     allowedDevOrigins: [
+    //         "http://localhost:3000",
+    //         "https://appealing-rolland-nonprohibitorily.ngrok-free.dev",
+    //     ],
+    // },
 
     bundler: "webpack",
 

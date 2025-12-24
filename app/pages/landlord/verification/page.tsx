@@ -61,17 +61,9 @@ export default function LandlordVerificationPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentStep]);
 
-    /* ------------------------------------------------------------
-       AUTO SUBMIT AFTER STEP 4
-    ------------------------------------------------------------ */
-    useEffect(() => {
-        if (currentStep === 4 && canProceed()) {
-            handleSubmit();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentStep]);
-
-    if (dataLoading) return <LoadingScreen message="please wait..." />;
+    if (dataLoading) {
+        return <LoadingScreen message="please wait..." />;
+    }
 
     return (
         <VerificationLayout

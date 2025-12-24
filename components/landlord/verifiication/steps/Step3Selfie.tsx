@@ -1,7 +1,12 @@
 "use client";
 
 import Webcam from "react-webcam";
-import { FiCamera, FiAlertCircle, FiInfo, FiCheckCircle } from "react-icons/fi";
+import {
+    FiCamera,
+    FiAlertCircle,
+    FiInfo,
+    FiCheckCircle,
+} from "react-icons/fi";
 
 export default function StepSelfie(props: any) {
     const {
@@ -15,6 +20,8 @@ export default function StepSelfie(props: any) {
         detectCameraDevices,
         requestCameraPermission,
         captureSelfie,
+        canProceed,
+        handleSubmit,
     } = props;
 
     return (
@@ -26,17 +33,17 @@ export default function StepSelfie(props: any) {
                 </h2>
             </div>
 
-            {/* 🔐 Selfie Description */}
+            {/* Info */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start">
                 <FiInfo className="w-5 h-5 text-amber-600 mr-3 mt-0.5 flex-shrink-0" />
                 <p className="text-amber-800 text-sm">
                     Please take a clear selfie of yourself. Your face must be
-                    clearly visible and should <strong>match the identity
-                    document</strong> you uploaded earlier. Avoid wearing hats,
-                    sunglasses, or face coverings, and ensure good lighting.
+                    clearly visible and should{" "}
+                    <strong>match the identity document</strong> you uploaded.
                 </p>
             </div>
 
+            {/* CAMERA / PREVIEW */}
             {isCameraOpen ? (
                 <>
                     {cameraError ? (
@@ -88,11 +95,25 @@ export default function StepSelfie(props: any) {
                         alt="Selfie preview"
                         className="w-48 h-64 mx-auto rounded-xl border"
                     />
+
                     <button
                         onClick={() => setIsCameraOpen(true)}
                         className="w-full bg-gray-100 py-3 rounded-xl"
                     >
                         Retake Selfie
+                    </button>
+
+                    {/* ✅ SUBMIT BUTTON (FINAL ACTION) */}
+                    <button
+                        disabled={!canProceed()}
+                        onClick={handleSubmit}
+                        className={`w-full py-3 rounded-xl font-semibold transition-all ${
+                            canProceed()
+                                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        }`}
+                    >
+                        Submit Verification
                     </button>
                 </div>
             ) : (

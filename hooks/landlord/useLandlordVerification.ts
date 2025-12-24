@@ -278,12 +278,41 @@ export default function useLandlordVerification() {
                 body: form,
             });
 
-            if (!res.ok) throw new Error("Upload failed");
+            const data = await res.json().catch(() => null);
 
-            Swal.fire("Success", "Verification submitted.", "success");
+            /* ---------------- HANDLE 409 CLEANLY ---------------- */
+            if (res.status === 409) {
+                Swal.fire({
+                    icon: "info",
+                    title: "Already Submitted",
+                    text:
+                        data?.message ||
+                        "Your verification has already been uploaded and is currently under review.",
+                });
+                return;
+            }
+
+            /* ---------------- OTHER ERRORS ---------------- */
+            if (!res.ok) {
+                throw new Error(
+                    data?.message || "Verification upload failed. Please try again."
+                );
+            }
+
+            /* ---------------- SUCCESS ---------------- */
+            Swal.fire({
+                icon: "success",
+                title: "Submitted",
+                text: "Your verification has been submitted successfully.",
+            });
+
             router.push("/pages/landlord/dashboard");
         } catch (err: any) {
-            Swal.fire("Error", err.message, "error");
+            Swal.fire({
+                icon: "error",
+                title: "Upload Failed",
+                text: err.message || "Something went wrong. Please try again.",
+            });
         }
     };
 
