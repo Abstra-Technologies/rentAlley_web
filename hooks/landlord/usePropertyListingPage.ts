@@ -55,6 +55,7 @@ export default function usePropertyListingPage() {
                 setVerificationStatus(
                     (res.data.verification_status || "not verified").toLowerCase()
                 );
+                console.log('verification status', res.data.verification_status);
             })
             .catch(() => {
                 setVerificationStatus("not verified");
@@ -197,6 +198,9 @@ export default function usePropertyListingPage() {
         filteredProperties,
         totalPropertyCount,
         maxProperties,
+
+        verificationStatus,
+        isFetchingVerification,
 
         // flags
         loading,

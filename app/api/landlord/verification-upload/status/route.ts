@@ -5,6 +5,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const user_id = searchParams.get("user_id");
 
+  console.log('user verification status: ', user_id);
+
   if (!user_id) {
     return NextResponse.json({ message: "Missing user_id" }, { status: 400 });
   }
