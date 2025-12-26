@@ -159,7 +159,7 @@ export default function LandlordLayout({
                     <div className="px-4 py-4 border-b bg-gray-50">
                         <div className="flex items-center gap-3">
                             <Image
-                                src={user.profilePicture || "/avatar.png"}
+                                src={user.profilePicture || "https://res.cloudinary.com/dptmeluy0/image/upload/v1766715365/profile-icon-design-free-vector_la6rgj.jpg"}
                                 alt="Profile"
                                 width={40}
                                 height={40}

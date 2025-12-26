@@ -3,13 +3,14 @@
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 
 /* ======================================================
-   ENV VALIDATION
+   FORCE DYNAMIC (CRITICAL)
 ====================================================== */
+export const dynamic = "force-dynamic";
+
 const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET;
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -17,7 +18,7 @@ if (!ENCRYPTION_SECRET) throw new Error("ENCRYPTION_SECRET is required");
 if (!JWT_SECRET) throw new Error("JWT_SECRET is required");
 
 /* ======================================================
-   SAFE DECRYPT (DB → PLAIN STRING)
+   SAFE DECRYPT
 ====================================================== */
 const safeDecrypt = (value?: string | null): string | null => {
     if (!value) return null;
@@ -29,8 +30,7 @@ const safeDecrypt = (value?: string | null): string | null => {
 };
 
 /* ======================================================
-   SAFE ADMIN PERMISSIONS PARSER
-   (CSV now, JSON later)
+   ADMIN PERMISSIONS PARSER
 ====================================================== */
 const parseAdminPermissions = (value?: string | null): string[] | null => {
     if (!value) return null;
@@ -38,12 +38,10 @@ const parseAdminPermissions = (value?: string | null): string[] | null => {
     try {
         const trimmed = value.trim();
 
-        // future-proof: JSON array
         if (trimmed.startsWith("[")) {
             return JSON.parse(trimmed);
         }
 
-        // current DB format: CSV
         return trimmed
             .split(",")
             .map(p => p.trim())
@@ -54,80 +52,72 @@ const parseAdminPermissions = (value?: string | null): string[] | null => {
 };
 
 /* ======================================================
-   CACHED USER QUERY
+   USER QUERY (NO CACHE)
 ====================================================== */
-const getCachedUser = unstable_cache(
-    async (userId: string) => {
-        const [rows]: any[] = await db.execute(
-            `
-            SELECT
-                u.user_id,
-                u.firstName,
-                u.lastName,
-                u.companyName,
-                u.email,
-                u.profilePicture,
-                u.phoneNumber,
-                u.birthDate,
-                u.civil_status,
-                u.occupation,
-                u.citizenship,
-                u.address,
-                u.userType,
-                u.is_2fa_enabled,
-                u.points,
-                u.status,
-                u.google_id,
-                u.createdAt,
-                u.updatedAt,
-                t.tenant_id,
-                l.landlord_id,
-                l.is_verified,
-                l.is_trial_used
-            FROM rentalley_db.User u
-            LEFT JOIN rentalley_db.Tenant t ON u.user_id = t.user_id
-            LEFT JOIN rentalley_db.Landlord l ON u.user_id = l.user_id
-            WHERE u.user_id = ?
-            LIMIT 1
-            `,
-            [userId]
-        );
+const getUser = async (userId: string) => {
+    const [rows]: any[] = await db.execute(
+        `
+    SELECT
+      u.user_id,
+      u.firstName,
+      u.lastName,
+      u.companyName,
+      u.email,
+      u.profilePicture,
+      u.phoneNumber,
+      u.birthDate,
+      u.civil_status,
+      u.occupation,
+      u.citizenship,
+      u.address,
+      u.userType,
+      u.is_2fa_enabled,
+      u.points,
+      u.status,
+      u.google_id,
+      u.createdAt,
+      u.updatedAt,
+      t.tenant_id,
+      l.landlord_id,
+      l.is_verified,
+      l.is_trial_used
+    FROM rentalley_db.User u
+    LEFT JOIN rentalley_db.Tenant t ON u.user_id = t.user_id
+    LEFT JOIN rentalley_db.Landlord l ON u.user_id = l.user_id
+    WHERE u.user_id = ?
+    LIMIT 1
+    `,
+        [userId]
+    );
 
-        return rows?.[0] || null;
-    },
-    ["auth-user"],
-    { revalidate: 60 }
-);
+    return rows?.[0] || null;
+};
 
 /* ======================================================
-   CACHED ADMIN QUERY
+   ADMIN QUERY (NO CACHE)
 ====================================================== */
-const getCachedAdmin = unstable_cache(
-    async (adminId: string) => {
-        const [rows]: any[] = await db.execute(
-            `
-            SELECT
-                admin_id,
-                username,
-                first_name,
-                last_name,
-                email,
-                role,
-                status,
-                profile_picture,
-                permissions
-            FROM rentalley_db.Admin
-            WHERE admin_id = ?
-            LIMIT 1
-            `,
-            [adminId]
-        );
+const getAdmin = async (adminId: string) => {
+    const [rows]: any[] = await db.execute(
+        `
+    SELECT
+      admin_id,
+      username,
+      first_name,
+      last_name,
+      email,
+      role,
+      status,
+      profile_picture,
+      permissions
+    FROM rentalley_db.Admin
+    WHERE admin_id = ?
+    LIMIT 1
+    `,
+        [adminId]
+    );
 
-        return rows?.[0] || null;
-    },
-    ["auth-admin"],
-    { revalidate: 60 }
-);
+    return rows?.[0] || null;
+};
 
 /* ======================================================
    ROUTE HANDLER
@@ -160,7 +150,7 @@ export async function GET() {
 
         /* ================= USER SESSION ================= */
         if (payload?.user_id) {
-            const rawUser = await getCachedUser(payload.user_id);
+            const rawUser = await getUser(payload.user_id);
 
             if (!rawUser) {
                 return NextResponse.json(
@@ -202,23 +192,22 @@ export async function GET() {
                 is_trial_used: rawUser.landlord_id ? !!rawUser.is_trial_used : null,
             };
 
-            /* ===== SUBSCRIPTION (LANDLORD ONLY) ===== */
             if (user.landlord_id) {
                 const [subs]: any[] = await db.execute(
                     `
-                    SELECT
-                        subscription_id,
-                        plan_name,
-                        start_date,
-                        end_date,
-                        payment_status,
-                        is_trial,
-                        is_active
-                    FROM rentalley_db.Subscription
-                    WHERE landlord_id = ?
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                    `,
+          SELECT
+            subscription_id,
+            plan_name,
+            start_date,
+            end_date,
+            payment_status,
+            is_trial,
+            is_active
+          FROM rentalley_db.Subscription
+          WHERE landlord_id = ?
+          ORDER BY created_at DESC
+          LIMIT 1
+          `,
                     [user.landlord_id]
                 );
 
@@ -228,9 +217,9 @@ export async function GET() {
             return NextResponse.json(user, { status: 200 });
         }
 
-        /* ================= SYSTEM ADMIN SESSION ================= */
+        /* ================= ADMIN SESSION ================= */
         if (payload?.admin_id) {
-            const rawAdmin = await getCachedAdmin(payload.admin_id);
+            const rawAdmin = await getAdmin(payload.admin_id);
 
             if (!rawAdmin) {
                 return NextResponse.json(
@@ -261,11 +250,11 @@ export async function GET() {
             return NextResponse.json(admin, { status: 200 });
         }
 
-        /* ================= INVALID SESSION ================= */
         return NextResponse.json(
             { error: "Invalid session payload" },
             { status: 401 }
         );
+
     } catch (error) {
         console.error("[AUTH /me] ERROR:", error);
         return NextResponse.json(

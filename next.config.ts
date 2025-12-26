@@ -54,6 +54,12 @@ const baseConfig: NextConfig = {
                 pathname: "/**",
             },
             { protocol: "https", hostname: "photos.app.goo.gl" },
+            { protocol: "https", hostname: "res.cloudinary.com" },
+            {
+                protocol: "https",
+                hostname: "res.cloudinary.com",
+            },
+
         ],
     },
 };

@@ -1,26 +1,52 @@
-import { NextRequest, NextResponse } from "next/server";
-import { parse } from "cookie";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { db } from "@/lib/db";
 
-export async function GET(req: NextRequest) {
-  try {
-    const cookieHeader = req.headers.get("cookie") || "";
-    const cookies = parse(cookieHeader);
-    const token = cookies.token;
+export const dynamic = "force-dynamic";
 
-    if (!token) {
-      return NextResponse.json({ isLoggedIn: false }, { status: 200 });
+export async function GET() {
+    try {
+        // ✅ cookies() IS ASYNC
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+
+        if (!token) {
+            return NextResponse.json(
+                { error: "Unauthenticated" },
+                { status: 401 }
+            );
+        }
+
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const { payload }: any = await jwtVerify(token, secret);
+
+        // ✅ STRICT ADMIN CHECK
+        if (!payload.admin_id || payload.role !== "system_admin") {
+            return NextResponse.json(
+                { error: "Forbidden" },
+                { status: 403 }
+            );
+        }
+
+        const [rows]: any = await db.query(
+            "SELECT admin_id, username, email, role, status FROM Admin WHERE admin_id = ?",
+            [payload.admin_id]
+        );
+
+        if (!rows || rows.length === 0) {
+            return NextResponse.json(
+                { error: "Admin not found" },
+                { status: 401 }
+            );
+        }
+
+        return NextResponse.json({ admin: rows[0] });
+    } catch (err) {
+        console.error("[systemadmin/session]", err);
+        return NextResponse.json(
+            { error: "Invalid session" },
+            { status: 401 }
+        );
     }
-
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-
-    if (payload.userType === "system_admin" || payload.role === "admin") {
-      return NextResponse.json({ isLoggedIn: true }, { status: 200 });
-    }
-
-    return NextResponse.json({ isLoggedIn: false }, { status: 200 });
-  } catch (err) {
-    return NextResponse.json({ isLoggedIn: false }, { status: 200 });
-  }
 }

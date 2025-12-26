@@ -6,7 +6,6 @@ import Page_footer from "../../../../components/navigation/page_footer";
 import LoadingScreen from "@/components/loadingScreen";
 import LoginForm from "@/components/authentication/loginForm";
 import MobileLoginForm from "@/components/authentication/mobileLoginForm";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 export default function LoginPage() {
     return (
