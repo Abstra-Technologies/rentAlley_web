@@ -1,7 +1,17 @@
 "use client";
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Bell,
+  RefreshCw,
+  Check,
+  CheckCheck,
+  Trash2,
+  X,
+  Inbox,
+} from "lucide-react";
 
 /* =====================================================
    🔹 Custom Hook: useNotifications
@@ -23,7 +33,6 @@ const useNotifications = (user, admin) => {
         const userId = user?.user_id || admin?.admin_id;
         if (!userId) return;
 
-        // Prevent spam-fetching (cooldown)
         const now = Date.now();
         if (now - lastFetchRef.current < 5000) return;
         lastFetchRef.current = now;
@@ -38,7 +47,6 @@ const useNotifications = (user, admin) => {
           throw new Error(`Failed to fetch notifications (${res.status})`);
         const data = await res.json();
 
-        // Sort newest first
         const sorted = data.sort(
           (a, b) =>
             new Date(b.created_at || b.timestamp).getTime() -
@@ -56,7 +64,6 @@ const useNotifications = (user, admin) => {
     [user, admin]
   );
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     fetchNotifications();
     intervalRef.current = setInterval(() => fetchNotifications(false), 30000);
@@ -106,8 +113,13 @@ const useNotifications = (user, admin) => {
         method: "DELETE",
       });
       if (res.ok) {
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        setNotifications((prev) => {
+          const notification = prev.find((n) => n.id === id);
+          if (notification && !notification.is_read) {
+            setUnreadCount((count) => Math.max(0, count - 1));
+          }
+          return prev.filter((n) => n.id !== id);
+        });
       }
     } catch (err) {
       console.error("Error deleting notification:", err);
@@ -127,23 +139,26 @@ const useNotifications = (user, admin) => {
 };
 
 /* =====================================================
+   🔹 Format Time Helper
+   ===================================================== */
+const formatTimeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return date.toLocaleDateString();
+};
+
+/* =====================================================
    🔹 Notification Item
    ===================================================== */
-const NotificationItem = ({ notification, onMarkRead, onDelete }) => {
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const diff = Math.floor((Date.now() - date.getTime()) / 1000);
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
-  };
-
+const NotificationItem = ({ notification, onMarkRead, onDelete, index }) => {
   const handleClick = async () => {
     if (!notification.is_read) {
       await onMarkRead(notification.id);
     }
-
     if (notification.url) {
       const base = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
       const fullUrl = `${base}${
@@ -156,22 +171,26 @@ const NotificationItem = ({ notification, onMarkRead, onDelete }) => {
   };
 
   return (
-    <div
-      className={`relative group hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20, height: 0 }}
+      transition={{ duration: 0.2, delay: index * 0.03 }}
+      className={`group relative cursor-pointer transition-all duration-200 ${
         !notification.is_read
-          ? "bg-gradient-to-r from-blue-50 to-emerald-50"
-          : ""
+          ? "bg-gradient-to-r from-blue-50/80 to-emerald-50/80"
+          : "hover:bg-gray-50"
       }`}
       onClick={handleClick}
     >
       <div className="px-4 py-3 flex items-start gap-3">
-        {/* Unread indicator */}
-        <div className="pt-1">
+        {/* Unread Indicator */}
+        <div className="pt-1.5 flex-shrink-0">
           <div
-            className={`w-2 h-2 rounded-full transition-all duration-200 ${
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${
               notification.is_read
                 ? "bg-gray-300"
-                : "bg-gradient-to-r from-blue-600 to-emerald-600 animate-pulse"
+                : "bg-gradient-to-r from-blue-500 to-emerald-500 shadow-lg shadow-blue-500/30"
             }`}
           />
         </div>
@@ -179,7 +198,7 @@ const NotificationItem = ({ notification, onMarkRead, onDelete }) => {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <p
-            className={`text-sm leading-tight mb-1 ${
+            className={`text-sm leading-snug mb-1 ${
               !notification.is_read
                 ? "font-semibold text-gray-900"
                 : "font-medium text-gray-700"
@@ -187,44 +206,97 @@ const NotificationItem = ({ notification, onMarkRead, onDelete }) => {
           >
             {notification.title}
           </p>
-          <p className="text-xs text-gray-600 leading-relaxed mb-1">
+          <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
             {notification.body}
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
             {formatTimeAgo(notification.created_at || notification.timestamp)}
           </p>
         </div>
 
-        {/* Delete button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(notification.id);
-          }}
-          className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-100 rounded-lg transition-all duration-200 flex-shrink-0"
-          title="Delete notification"
-        >
-          <svg
-            className="w-4 h-4 text-red-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {/* Actions */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          {!notification.is_read && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkRead(notification.id);
+              }}
+              className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors"
+              title="Mark as read"
+            >
+              <Check className="w-4 h-4 text-blue-600" />
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(notification.id);
+            }}
+            className="p-1.5 hover:bg-red-100 rounded-lg transition-colors"
+            title="Delete"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-        </button>
+            <Trash2 className="w-4 h-4 text-red-500" />
+          </button>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
 /* =====================================================
-   🔹 Desktop Dropdown
+   🔹 Empty State
+   ===================================================== */
+const EmptyState = ({ filter }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="py-12 px-4 text-center"
+  >
+    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-100 to-emerald-100 flex items-center justify-center">
+      <Inbox className="w-8 h-8 text-blue-500" />
+    </div>
+    <p className="text-sm font-medium text-gray-700">
+      {filter === "all" ? "No notifications yet" : `No ${filter} notifications`}
+    </p>
+    <p className="text-xs text-gray-500 mt-1">
+      {filter === "all"
+        ? "We'll notify you when something arrives"
+        : "Check back later"}
+    </p>
+  </motion.div>
+);
+
+/* =====================================================
+   🔹 Loading State
+   ===================================================== */
+const LoadingState = () => (
+  <div className="py-12 px-4 text-center">
+    <div className="w-10 h-10 mx-auto mb-4 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+    <p className="text-sm text-gray-500">Loading notifications...</p>
+  </div>
+);
+
+/* =====================================================
+   🔹 Error State
+   ===================================================== */
+const ErrorState = ({ error, onRetry }) => (
+  <div className="py-12 px-4 text-center">
+    <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+      <X className="w-6 h-6 text-red-600" />
+    </div>
+    <p className="text-sm font-medium text-red-600 mb-3">{error}</p>
+    <button
+      onClick={onRetry}
+      className="text-xs font-medium text-blue-600 hover:text-blue-700"
+    >
+      Try again
+    </button>
+  </div>
+);
+
+/* =====================================================
+   🔹 Notification Dropdown
    ===================================================== */
 const NotificationDropdown = ({
   notifications,
@@ -235,71 +307,81 @@ const NotificationDropdown = ({
   onMarkAllAsRead,
   onDelete,
   onRefresh,
+  onClose,
   user,
   buttonRef,
+  isMobile = false,
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
-  const [isPositioned, setIsPositioned] = useState(false); // Add this
-
-  useEffect(() => {
-    if (buttonRef.current && dropdownRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const dropdownWidth = 384; // w-96 = 24rem = 384px
-      const viewportWidth = window.innerWidth;
-      const spacing = 8; // Gap from edge
-
-      // Calculate if dropdown fits to the right of button
-      const fitsRight = buttonRect.left + dropdownWidth + spacing <= viewportWidth;
-      
-      // Calculate if dropdown fits to the left of button
-      const fitsLeft = buttonRect.right - dropdownWidth >= spacing;
-
-      let leftPosition;
-      
-      if (fitsRight) {
-        // Position to the right (preferred for sidebar)
-        leftPosition = buttonRect.left;
-      } else if (fitsLeft) {
-        // Position to the left (fallback for navbar on smaller screens)
-        leftPosition = buttonRect.right - dropdownWidth;
-      } else {
-        // Center with padding if neither fits perfectly
-        leftPosition = Math.max(spacing, Math.min(
-          buttonRect.left,
-          viewportWidth - dropdownWidth - spacing
-        ));
-      }
-
-      setPosition({
-        top: buttonRect.bottom + 8,
-        left: leftPosition,
-      });
-      setIsPositioned(true); // Mark as positioned
-    }
-  }, [buttonRef]);
-
+  const [isPositioned, setIsPositioned] = useState(false);
   const [filter, setFilter] = useState("all");
+
+  // Position calculation for desktop
+  useEffect(() => {
+    if (isMobile || !buttonRef?.current) {
+      setIsPositioned(true);
+      return;
+    }
+
+    const buttonRect = buttonRef.current.getBoundingClientRect();
+    const dropdownWidth = 380;
+    const viewportWidth = window.innerWidth;
+    const spacing = 12;
+
+    let leftPosition = buttonRect.right - dropdownWidth;
+    if (leftPosition < spacing) {
+      leftPosition = spacing;
+    }
+    if (leftPosition + dropdownWidth > viewportWidth - spacing) {
+      leftPosition = viewportWidth - dropdownWidth - spacing;
+    }
+
+    setPosition({
+      top: buttonRect.bottom + 8,
+      left: leftPosition,
+    });
+    setIsPositioned(true);
+  }, [buttonRef, isMobile]);
+
   const filtered = notifications.filter((n) =>
     filter === "all" ? true : filter === "unread" ? !n.is_read : n.is_read
   );
 
+  const containerClasses = isMobile
+    ? "fixed inset-x-0 top-14 bottom-0 bg-white z-[100] flex flex-col"
+    : `fixed w-[380px] max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-2xl border border-gray-200 z-[9999] flex flex-col overflow-hidden transition-opacity duration-150 ${
+        isPositioned ? "opacity-100" : "opacity-0"
+      }`;
+
+  const containerStyle = isMobile
+    ? {}
+    : {
+        top: `${position.top}px`,
+        left: `${position.left}px`,
+        maxHeight: "min(600px, 80vh)",
+      };
+
   return (
-    <div
+    <motion.div
       ref={dropdownRef}
-      className={`fixed w-96 max-w-[calc(100vw-16px)] bg-white text-black rounded-xl shadow-2xl border border-gray-200 z-[9999] flex flex-col overflow-hidden transition-opacity duration-150 ${
-        isPositioned ? 'opacity-100' : 'opacity-0'
-      }`}
-      style={{ top: `${position.top}px`, left: `${position.left}px` }}
+      initial={{
+        opacity: 0,
+        y: isMobile ? -10 : 8,
+        scale: isMobile ? 1 : 0.96,
+      }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: isMobile ? -10 : 8, scale: isMobile ? 1 : 0.96 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className={containerClasses}
+      style={containerStyle}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-emerald-50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-emerald-50 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-            Notifications
-          </h3>
+          <h3 className="font-semibold text-gray-900">Notifications</h3>
           {unreadCount > 0 && (
-            <span className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+            <span className="px-2 py-0.5 text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full">
               {unreadCount}
             </span>
           )}
@@ -307,32 +389,31 @@ const NotificationDropdown = ({
         <div className="flex items-center gap-1">
           <button
             onClick={onRefresh}
-            className="p-1.5 hover:bg-white rounded-lg transition-colors shadow-sm hover:shadow-md"
-            title="Refresh"
             disabled={loading}
+            className="p-2 hover:bg-white rounded-lg transition-colors disabled:opacity-50"
+            title="Refresh"
           >
-            <svg
+            <RefreshCw
               className={`w-4 h-4 text-gray-600 ${
                 loading ? "animate-spin" : ""
               }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            />
           </button>
           {unreadCount > 0 && (
             <button
               onClick={onMarkAllAsRead}
-              className="text-xs font-medium bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-emerald-700 px-2 py-1.5 rounded-lg hover:bg-blue-50 transition-all"
+              className="p-2 hover:bg-white rounded-lg transition-colors"
+              title="Mark all as read"
             >
-              Mark all read
+              <CheckCheck className="w-4 h-4 text-blue-600" />
+            </button>
+          )}
+          {isMobile && (
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-600" />
             </button>
           )}
         </div>
@@ -340,7 +421,7 @@ const NotificationDropdown = ({
 
       {/* Filter Tabs */}
       {notifications.length > 0 && (
-        <div className="flex border-b border-gray-200 bg-white">
+        <div className="flex border-b border-gray-100 flex-shrink-0">
           {[
             { key: "all", label: "All" },
             { key: "unread", label: "Unread" },
@@ -349,227 +430,69 @@ const NotificationDropdown = ({
             <button
               key={key}
               onClick={() => setFilter(key)}
-              className={`flex-1 py-2.5 text-sm font-medium transition-all ${
+              className={`flex-1 py-2.5 text-sm font-medium transition-all relative ${
                 filter === key
-                  ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  ? "text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {label}
+              {filter === key && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-600 to-emerald-600"
+                />
+              )}
             </button>
           ))}
         </div>
       )}
 
       {/* Content */}
-      <div className="overflow-y-auto max-h-96">
+      <div className="flex-1 overflow-y-auto">
         {error ? (
-          <div className="p-8 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-3">
-              <svg
-                className="w-6 h-6 text-red-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <p className="text-sm text-red-600 font-medium">{error}</p>
-          </div>
-        ) : loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block w-8 h-8 border-3 border-gray-200 border-t-transparent rounded-full animate-spin mb-3 border-t-blue-600"></div>
-            <p className="text-sm text-gray-500">Loading notifications...</p>
-          </div>
+          <ErrorState error={error} onRetry={() => onRefresh()} />
+        ) : loading && notifications.length === 0 ? (
+          <LoadingState />
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-blue-100 to-emerald-100 mb-3">
-              <Bell className="w-6 h-6 text-blue-600" />
-            </div>
-            <p className="text-sm text-gray-500 font-medium">
-              No {filter !== "all" && filter} notifications
-            </p>
-            <p className="text-xs text-gray-400 mt-1">You're all caught up!</p>
-          </div>
+          <EmptyState filter={filter} />
         ) : (
-          <div className="divide-y divide-gray-100">
-            {filtered.map((n) => (
-              <NotificationItem
-                key={n.id}
-                notification={n}
-                onMarkRead={onMarkAsRead}
-                onDelete={onDelete}
-              />
-            ))}
-          </div>
+          <AnimatePresence mode="popLayout">
+            <div className="divide-y divide-gray-100">
+              {filtered.map((notification, index) => (
+                <NotificationItem
+                  key={notification.id}
+                  notification={notification}
+                  onMarkRead={onMarkAsRead}
+                  onDelete={onDelete}
+                  index={index}
+                />
+              ))}
+            </div>
+          </AnimatePresence>
         )}
       </div>
 
       {/* Footer */}
       {notifications.length > 0 && (
-        <div className="border-t border-gray-200 p-3 text-center bg-gradient-to-r from-gray-50 to-gray-50">
+        <div className="border-t border-gray-100 p-3 text-center bg-gray-50/50 flex-shrink-0">
           <Link
-            href={`/pages/${user?.userType}/inbox`}
-            className="text-sm font-medium bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-emerald-700 transition-colors"
+            href={`/pages/${user?.userType || "tenant"}/inbox`}
+            onClick={onClose}
+            className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
           >
             View all notifications →
           </Link>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 
 /* =====================================================
-   🔹 Mobile Dropdown
+   🔹 Main Component: NotificationSection
    ===================================================== */
-const MobileNotificationDropdown = ({
-  notifications,
-  unreadCount,
-  loading,
-  error,
-  onMarkAsRead,
-  onMarkAllAsRead,
-  onDelete,
-  onRefresh,
-  onClose,
-  user,
-}) => (
-  <div className="md:hidden fixed top-14 left-0 right-0 bg-white shadow-2xl z-[100] border-b border-gray-200 flex flex-col max-h-[80vh]">
-    {/* Header */}
-    <div className="flex justify-between items-center border-b border-gray-200 px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50">
-      <div className="flex items-center gap-2">
-        <h3 className="font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-          Notifications
-        </h3>
-        {unreadCount > 0 && (
-          <span className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
-            {unreadCount}
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={onRefresh}
-          className="p-2 hover:bg-white rounded-lg transition-colors shadow-sm hover:shadow-md"
-          disabled={loading}
-        >
-          <svg
-            className={`w-5 h-5 text-gray-600 ${loading ? "animate-spin" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-        </button>
-        {unreadCount > 0 && (
-          <button
-            onClick={onMarkAllAsRead}
-            className="text-xs font-medium bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent px-2 py-1.5 rounded-lg hover:bg-blue-50"
-          >
-            Mark all
-          </button>
-        )}
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-white rounded-lg transition-colors shadow-sm hover:shadow-md"
-        >
-          <svg
-            className="w-5 h-5 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    {/* Content */}
-    <div className="flex-1 overflow-y-auto">
-      {error ? (
-        <div className="p-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-3">
-            <svg
-              className="w-6 h-6 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <p className="text-sm text-red-600 font-medium">{error}</p>
-        </div>
-      ) : loading ? (
-        <div className="p-8 text-center">
-          <div className="inline-block w-8 h-8 border-3 border-gray-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-          <p className="text-sm text-gray-500">Loading...</p>
-        </div>
-      ) : notifications.length === 0 ? (
-        <div className="p-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-blue-100 to-emerald-100 mb-3">
-            <Bell className="w-6 h-6 text-blue-600" />
-          </div>
-          <p className="text-sm text-gray-500 font-medium">No notifications</p>
-          <p className="text-xs text-gray-400 mt-1">You're all caught up!</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-100">
-          {notifications.map((n) => (
-            <NotificationItem
-              key={n.id}
-              notification={n}
-              onMarkRead={onMarkAsRead}
-              onDelete={onDelete}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-
-    {/* Footer */}
-    {notifications.length > 0 && (
-      <div className="border-t border-gray-200 p-3 text-center bg-gradient-to-r from-gray-50 to-gray-50">
-        <Link
-          href={`/pages/${user?.userType}/inbox`}
-          onClick={onClose}
-          className="text-sm font-medium bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-emerald-700"
-        >
-          View all notifications →
-        </Link>
-      </div>
-    )}
-  </div>
-);
-
-/* =====================================================
-   🔹 Exported Main Component: NotificationSection
-   ===================================================== */
-const NotificationSection = ({ user, admin }) => {
+const NotificationSection = ({ user, admin, variant = "default" }) => {
   const {
     notifications,
     unreadCount,
@@ -581,87 +504,145 @@ const NotificationSection = ({ user, admin }) => {
     deleteNotification,
   } = useNotifications(user, admin);
 
-  const [notifOpen, setNotifOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click (desktop only)
+  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node))
-        setNotifOpen(false);
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
     };
-    if (notifOpen) {
+    if (isOpen) {
       document.addEventListener("mousedown", handler);
     }
     return () => document.removeEventListener("mousedown", handler);
-  }, [notifOpen]);
+  }, [isOpen]);
+
+  // Determine button styling based on variant
+  const getButtonClasses = () => {
+    const base = "relative p-2 rounded-xl transition-all duration-200 group";
+    switch (variant) {
+      case "sidebar":
+        return `${base} hover:bg-gray-100 text-gray-600`;
+      case "light":
+        return `${base} hover:bg-gray-100 text-gray-700`;
+      default:
+        return `${base} hover:bg-white/10 text-white border border-white/20 hover:border-white/40`;
+    }
+  };
+
+  const getIconClasses = () => {
+    switch (variant) {
+      case "sidebar":
+      case "light":
+        return "w-5 h-5 group-hover:scale-110 transition-transform";
+      default:
+        return "w-5 h-5 group-hover:scale-110 transition-transform";
+    }
+  };
 
   return (
-    <>
+    <div ref={wrapperRef}>
       {/* Desktop */}
-      <div className="hidden md:block" ref={wrapperRef}>
+      <div className="hidden md:block">
         <button
           ref={buttonRef}
-          onClick={() => setNotifOpen((p) => !p)}
-          className="relative p-2 hover:bg-white/10 rounded-lg group transition-all duration-200 border border-white/20 hover:border-white/40"
+          onClick={() => setIsOpen(!isOpen)}
+          className={getButtonClasses()}
           aria-label="Notifications"
         >
-          <Bell className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-emerald-500 to-blue-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 animate-pulse shadow-lg">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
+          <Bell className={getIconClasses()} />
+          <AnimatePresence>
+            {unreadCount > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -top-1 -right-1 min-w-[20px] h-5 flex items-center justify-center px-1 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-full shadow-lg"
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </motion.span>
+            )}
+          </AnimatePresence>
         </button>
-        {notifOpen && (
-          <NotificationDropdown
-            notifications={notifications}
-            unreadCount={unreadCount}
-            loading={loading}
-            error={error}
-            onMarkAsRead={markAsRead}
-            onMarkAllAsRead={markAllAsRead}
-            onDelete={deleteNotification}
-            onRefresh={() => fetchNotifications(true)}
-            user={user}
-            buttonRef={buttonRef}
-          />
-        )}
+
+        <AnimatePresence>
+          {isOpen && (
+            <NotificationDropdown
+              notifications={notifications}
+              unreadCount={unreadCount}
+              loading={loading}
+              error={error}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              onDelete={deleteNotification}
+              onRefresh={() => fetchNotifications(true)}
+              onClose={() => setIsOpen(false)}
+              user={user}
+              buttonRef={buttonRef}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Mobile */}
-      <div className="md:hidden relative">
+      <div className="md:hidden">
         <button
-          onClick={() => setNotifOpen((p) => !p)}
-          className="relative p-2 hover:bg-white/10 rounded-lg border border-white/20 hover:border-white/40 transition-all duration-200"
+          onClick={() => setIsOpen(!isOpen)}
+          className={getButtonClasses()}
           aria-label="Notifications"
         >
-          <Bell className="w-5 h-5 text-white" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-emerald-500 to-blue-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 shadow-lg">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
+          <Bell className={getIconClasses()} />
+          <AnimatePresence>
+            {unreadCount > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-[10px] font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 rounded-full shadow-lg"
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </motion.span>
+            )}
+          </AnimatePresence>
         </button>
-      </div>
 
-      {/* Mobile Dropdown */}
-      {notifOpen && (
-        <MobileNotificationDropdown
-          notifications={notifications}
-          unreadCount={unreadCount}
-          loading={loading}
-          error={error}
-          onMarkAsRead={markAsRead}
-          onMarkAllAsRead={markAllAsRead}
-          onDelete={deleteNotification}
-          onRefresh={() => fetchNotifications(true)}
-          onClose={() => setNotifOpen(false)}
-          user={user}
-        />
-      )}
-    </>
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99]"
+                onClick={() => setIsOpen(false)}
+              />
+              <NotificationDropdown
+                notifications={notifications}
+                unreadCount={unreadCount}
+                loading={loading}
+                error={error}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+                onDelete={deleteNotification}
+                onRefresh={() => fetchNotifications(true)}
+                onClose={() => setIsOpen(false)}
+                user={user}
+                buttonRef={buttonRef}
+                isMobile
+              />
+            </>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 };
 
