@@ -1,12 +1,12 @@
 "use client";
-import useAuth from "../../../../hooks/useSession";
+import useAuthStore from "@/zustand/authStore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import PropertyAnalytics from "../../../../components/analytics/PropertyAnalytics";
 import LoadingScreen from "../../../../components/loadingScreen";
 
 export default function AdminDashboard() {
-  const { admin, loading } = useAuth();
+  const { admin, loading } = useAuthStore();
   const [isDeleting, setIsDeleting] = useState(false);
   const [notification, setNotification] = useState(null);
 

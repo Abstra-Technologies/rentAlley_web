@@ -43,12 +43,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             ],
         },
-
+        {
+            title: "System Administration",
+            items: [
+                { label: "Add Co-admin", href: "/pages/system_admin/co_admin/list", icon: Users2 },
+            ],
+        },
         {
             title: "Property Management",
             items: [
                 { label: "Property Verification", href: "/pages/system_admin/propertyManagement/list", icon: Building2 },
-                { label: "Add Co-admin", href: "/pages/system_admin/co_admin/list", icon: Users2 },
                 { label: "Content Management", href: "/pages/system_admin/cms", icon: Users2 },
             ],
         },

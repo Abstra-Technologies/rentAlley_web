@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:131535207864:android:06a9cf584d0ab9ec3a234d",
+        "mobilesdk_app_id": "1:131535207864:android:d76fdbd5ba603a7f3a234d",
         "android_client_info": {
-          "package_name": "com.abstra.upkyp"
+          "package_name": "com.upkyp.app"
         }
       },
       "oauth_client": [],
