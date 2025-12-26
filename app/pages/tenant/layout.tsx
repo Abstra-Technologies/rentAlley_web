@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "motion/react";
 import useAuthStore from "@/zustand/authStore";
+import axios from "axios";
+import LoadingScreen from "@/components/loadingScreen";
 
-// Icons
 import {
   Menu,
   X,
@@ -16,26 +19,19 @@ import {
   User,
   Search,
   MessageCircle,
+  Home,
+  FileText,
+  Clock,
+  Building2,
+  Rss,
+  ChevronRight,
+  Sparkles,
+  CreditCard,
+  Bell,
+  Wrench,
+  Megaphone,
+  MessageSquare,
 } from "lucide-react";
-import { MdOutlineRssFeed } from "react-icons/md";
-import { RiCommunityFill } from "react-icons/ri";
-import { FaFile } from "react-icons/fa";
-import {
-  ClockIcon,
-  ChatBubbleLeftRightIcon,
-  Bars3Icon,
-  XMarkIcon,
-  HomeIcon,
-  BellIcon,
-  WrenchScrewdriverIcon,
-  CreditCardIcon,
-  DocumentTextIcon,
-  BuildingOfficeIcon,
-} from "@heroicons/react/24/outline";
-
-import Image from "next/image";
-import LoadingScreen from "@/components/loadingScreen";
-import axios from "axios";
 
 export default function TenantLayout({ children }) {
   const router = useRouter();
@@ -51,25 +47,15 @@ export default function TenantLayout({ children }) {
   const [isInPortalMode, setIsInPortalMode] = useState(false);
   const [portalAgreementId, setPortalAgreementId] = useState(null);
   const [portalPropertyInfo, setPortalPropertyInfo] = useState(null);
+  const [portalValidated, setPortalValidated] = useState(false);
 
-  // Draggable button state
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [showHint, setShowHint] = useState(false);
-  const buttonRef = useRef(null);
-
-    const [portalValidated, setPortalValidated] = useState(false);
-
-
-    useEffect(() => {
+  useEffect(() => {
     async function checkAuth() {
       if (!user) {
         await fetchSession();
       }
       setIsAuthChecking(false);
     }
-
     checkAuth();
   }, [user, fetchSession]);
 
@@ -79,64 +65,99 @@ export default function TenantLayout({ children }) {
     }
   }, [user, isAuthChecking, router]);
 
-// Check portal context - VALIDATED VERSION
-    useEffect(() => {
-        const isPortalRoute = pathname.startsWith(
-            "/pages/tenant/rentalPortal"
-        );
+  // Shared pages that should PRESERVE the current sidebar context
+  const sharedPages = ["/pages/tenant/chat", "/pages/commons/profile"];
 
-        // 🚪 If NOT in portal route, force-exit portal mode
-        if (!isPortalRoute) {
-            setIsInPortalMode(false);
-            setPortalAgreementId(null);
-            setPortalPropertyInfo(null);
-            setPortalValidated(false);
-            return;
+  // Initialize portal state from localStorage on mount (for shared pages)
+  useEffect(() => {
+    const isSharedPage = sharedPages.some((page) => pathname.startsWith(page));
+
+    if (isSharedPage && !isInPortalMode) {
+      const storedAgreementId = localStorage.getItem("portalAgreementId");
+
+      if (storedAgreementId) {
+        // Restore portal context from localStorage
+        async function restorePortalContext() {
+          try {
+            await axios.get(
+              `/api/tenant/validate-agreement/${storedAgreementId}`
+            );
+            const res = await axios.get(
+              "/api/tenant/activeRent/propertyUnitInfo",
+              {
+                params: { agreement_id: storedAgreementId },
+              }
+            );
+
+            setIsInPortalMode(true);
+            setPortalAgreementId(storedAgreementId);
+            setPortalPropertyInfo(res.data);
+            setPortalValidated(true);
+          } catch {
+            // Invalid stored agreement, clear it
+            localStorage.removeItem("portalAgreementId");
+          }
         }
+        restorePortalContext();
+      }
+    }
+  }, []); // Only run on mount
 
-        const agreementId = localStorage.getItem("portalAgreementId");
+  // Check portal context on route changes
+  useEffect(() => {
+    const isPortalRoute = pathname.startsWith("/pages/tenant/rentalPortal");
+    const isSharedPage = sharedPages.some((page) => pathname.startsWith(page));
 
-        if (!agreementId) {
-            setIsInPortalMode(false);
-            setPortalAgreementId(null);
-            setPortalPropertyInfo(null);
-            setPortalValidated(false);
-            return;
-        }
+    // If on a shared page, keep the current portal state (don't change anything)
+    if (isSharedPage) {
+      return;
+    }
 
-        async function validatePortal() {
-            try {
-                await axios.get(
-                    `/api/tenant/validate-agreement/${agreementId}`
-                );
+    // If NOT on a portal route and NOT on a shared page, exit portal mode
+    if (!isPortalRoute) {
+      setIsInPortalMode(false);
+      setPortalAgreementId(null);
+      setPortalPropertyInfo(null);
+      setPortalValidated(false);
+      return;
+    }
 
-                const res = await axios.get(
-                    "/api/tenant/activeRent/propertyUnitInfo",
-                    {
-                        params: { agreement_id: agreementId },
-                    }
-                );
+    // On a portal route - validate the agreement
+    const agreementId = localStorage.getItem("portalAgreementId");
 
-                setIsInPortalMode(true);
-                setPortalAgreementId(agreementId);
-                setPortalPropertyInfo(res.data);
-                setPortalValidated(true);
-            } catch {
-                localStorage.removeItem("portalAgreementId");
+    if (!agreementId) {
+      setIsInPortalMode(false);
+      setPortalAgreementId(null);
+      setPortalPropertyInfo(null);
+      setPortalValidated(false);
+      return;
+    }
 
-                setIsInPortalMode(false);
-                setPortalAgreementId(null);
-                setPortalPropertyInfo(null);
-                setPortalValidated(false);
+    async function validatePortal() {
+      try {
+        await axios.get(`/api/tenant/validate-agreement/${agreementId}`);
+        const res = await axios.get("/api/tenant/activeRent/propertyUnitInfo", {
+          params: { agreement_id: agreementId },
+        });
 
-                router.replace("/pages/tenant/my-unit");
-            }
-        }
+        setIsInPortalMode(true);
+        setPortalAgreementId(agreementId);
+        setPortalPropertyInfo(res.data);
+        setPortalValidated(true);
+      } catch {
+        localStorage.removeItem("portalAgreementId");
+        setIsInPortalMode(false);
+        setPortalAgreementId(null);
+        setPortalPropertyInfo(null);
+        setPortalValidated(false);
+        router.replace("/pages/tenant/my-unit");
+      }
+    }
 
-        validatePortal();
-    }, [pathname]);
+    validatePortal();
+  }, [pathname]);
 
-  // Fetch pending applications count
+  // Fetch pending applications
   useEffect(() => {
     if (!user?.tenant_id) return;
 
@@ -155,152 +176,40 @@ export default function TenantLayout({ children }) {
     loadPending();
   }, [user?.tenant_id]);
 
+  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Initialize button position from localStorage or default
+  // Lock body scroll when mobile menu is open
   useEffect(() => {
-    const positionKey = isInPortalMode
-      ? "portalBurgerMenuPosition"
-      : "burgerMenuPosition";
-    const savedPosition = localStorage.getItem(positionKey);
-    const hasSeenHint = localStorage.getItem("burgerMenuHintSeen");
-
-    if (savedPosition) {
-      setPosition(JSON.parse(savedPosition));
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
     } else {
-      // Default position: bottom-right
-      setPosition({ x: window.innerWidth - 80, y: window.innerHeight - 160 });
+      document.body.style.overflow = "unset";
     }
-
-    // Show hint for first-time users
-    if (!hasSeenHint && !isInPortalMode) {
-      setShowHint(true);
-      setTimeout(() => {
-        setShowHint(false);
-        localStorage.setItem("burgerMenuHintSeen", "true");
-      }, 3000);
-    }
-  }, [isInPortalMode]);
-
-  // Handle touch/mouse start
-  const handleDragStart = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-    setShowHint(false);
-
-    const clientX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
-    const clientY = e.type === "touchstart" ? e.touches[0].clientY : e.clientY;
-
-    setDragStart({
-      x: clientX - position.x,
-      y: clientY - position.y,
-    });
-  };
-
-  // Handle touch/mouse move
-  const handleDragMove = (e) => {
-    if (!isDragging) return;
-
-    const clientX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
-    const clientY = e.type === "touchmove" ? e.touches[0].clientY : e.clientY;
-
-    const newX = clientX - dragStart.x;
-    const newY = clientY - dragStart.y;
-
-    // Constrain to viewport
-    const buttonSize = 56;
-    const maxX = window.innerWidth - buttonSize;
-    const maxY = window.innerHeight - buttonSize;
-
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY)),
-    });
-  };
-
-  // Handle touch/mouse end
-  const handleDragEnd = () => {
-    if (isDragging) {
-      setIsDragging(false);
-      const positionKey = isInPortalMode
-        ? "portalBurgerMenuPosition"
-        : "burgerMenuPosition";
-      localStorage.setItem(positionKey, JSON.stringify(position));
-    }
-  };
-
-  // Add event listeners for drag
-  useEffect(() => {
-    if (isDragging) {
-      const handleMove = (e) => handleDragMove(e);
-      const handleEnd = () => handleDragEnd();
-
-      window.addEventListener("mousemove", handleMove);
-      window.addEventListener("mouseup", handleEnd);
-      window.addEventListener("touchmove", handleMove);
-      window.addEventListener("touchend", handleEnd);
-
-      return () => {
-        window.removeEventListener("mousemove", handleMove);
-        window.removeEventListener("mouseup", handleEnd);
-        window.removeEventListener("touchmove", handleMove);
-        window.removeEventListener("touchend", handleEnd);
-      };
-    }
-  }, [isDragging, dragStart, position]);
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [mobileMenuOpen]);
 
   // Regular navigation items
   const navItems = [
-    {
-      name: "Feeds",
-      href: "/pages/tenant/feeds",
-      path: "/pages/tenant/feeds",
-      icon: MdOutlineRssFeed,
-      badge: null,
-    },
-    {
-      name: "Find Rent",
-      href: "/pages/find-rent",
-      path: "/pages/find-rent",
-      icon: Search,
-      badge: null,
-    },
-    {
-      name: "Chats",
-      href: "/pages/tenant/chat",
-      path: "/pages/tenant/chat",
-      icon: MessageCircle,
-      badge: null,
-    },
-    {
-      name: "My Units",
-      href: "/pages/tenant/my-unit",
-      path: "/pages/tenant/my-unit",
-      icon: RiCommunityFill,
-      badge: null,
-    },
+    { name: "Feeds", href: "/pages/tenant/feeds", icon: Rss },
+    { name: "Find Rent", href: "/pages/find-rent", icon: Search },
+    { name: "Chats", href: "/pages/tenant/chat", icon: MessageCircle },
+    { name: "My Units", href: "/pages/tenant/my-unit", icon: Building2 },
     {
       name: "My Applications",
       href: "/pages/tenant/myApplications",
-      path: "/pages/tenant/myApplications",
-      icon: FaFile,
+      icon: FileText,
       badge: undecidedApplications > 0 ? undecidedApplications : null,
     },
-    {
-      name: "Unit History",
-      href: "/pages/tenant/unitHistory",
-      path: "/pages/tenant/unitHistory",
-      icon: ClockIcon,
-      badge: null,
-    },
+    { name: "Unit History", href: "/pages/tenant/unitHistory", icon: Clock },
     {
       name: "Visit History",
       href: "/pages/tenant/visit-history",
-      path: "/pages/tenant/visit-history",
       icon: MapPin,
-      badge: null,
     },
   ];
 
@@ -309,88 +218,114 @@ export default function TenantLayout({ children }) {
     {
       name: "Dashboard",
       href: `/pages/tenant/rentalPortal/${portalAgreementId}`,
-      icon: HomeIcon,
+      icon: Home,
     },
     {
       name: "Billing Statement",
       href: `/pages/tenant/rentalPortal/${portalAgreementId}/billing`,
-      icon: CreditCardIcon,
+      icon: CreditCard,
     },
     {
       name: "Payment History",
       href: `/pages/tenant/rentalPortal/${portalAgreementId}/paymentHistory`,
-      icon: DocumentTextIcon,
+      icon: FileText,
     },
     {
       name: "Announcements",
       href: `/pages/tenant/rentalPortal/${portalAgreementId}/announcement`,
-      icon: BellIcon,
+      icon: Megaphone,
     },
     {
       name: "Maintenance",
       href: `/pages/tenant/rentalPortal/${portalAgreementId}/maintenance`,
-      icon: WrenchScrewdriverIcon,
+      icon: Wrench,
     },
     {
       name: "Chats",
       href: `/pages/tenant/chat`,
-      icon: ChatBubbleLeftRightIcon,
+      icon: MessageSquare,
     },
   ];
 
-  const isActive = (path) => pathname === path;
+  const isActive = (href) => {
+    // For portal routes, use exact matching to prevent Dashboard from matching all routes
+    if (isInPortalMode && href.includes("/rentalPortal/")) {
+      return pathname === href;
+    }
+    // For other routes, allow startsWith for nested routes
+    return pathname === href || pathname.startsWith(href + "/");
+  };
 
-  const logoutNow = async () => {
+  const handleLogout = async () => {
+    setShowLogoutConfirm(false);
     await signOut();
     router.push("/pages/auth/login");
   };
 
-  const confirmLogout = () => {
-    setShowLogoutConfirm(false);
-    logoutNow();
-  };
-
   const handleExitPortal = () => {
-    // Clear ONLY the agreement ID
     localStorage.removeItem("portalAgreementId");
-
-    // Update state
     setIsInPortalMode(false);
     setPortalAgreementId(null);
     setPortalPropertyInfo(null);
-
-    // Navigate away
     router.push("/pages/tenant/my-unit");
     setMobileMenuOpen(false);
   };
 
-  // Show loading screen during auth check
   if (isAuthChecking) {
     return <LoadingScreen message="Verifying your session..." />;
   }
 
-  // Show loading screen if user is not authenticated or wrong user type
   if (!user || user.userType !== "tenant") {
     return <LoadingScreen message="Redirecting to login..." />;
   }
 
-  // Regular Sidebar Content
-  const RegularSidebarContent = () => (
-    <>
-      {/* Logo/Brand */}
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-          Upkyp
-        </h1>
-        <p className="text-xs text-gray-500 mt-1">Tenant Dashboard</p>
-      </div>
+  // Sidebar Content Component
+  const SidebarContent = ({ isPortal = false }) => {
+    const items = isPortal ? portalNavItems : navItems;
 
-      {/* User Profile Card */}
-      {user && (
-        <div className="p-4 border-b border-gray-200">
-          <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg p-4 border border-blue-100">
-            <div className="flex items-start gap-3">
-              <div className="relative w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden">
+    return (
+      <>
+        {/* Logo */}
+        <div className="p-5 border-b border-gray-100">
+          <Link href="/pages/tenant/feeds" className="flex items-center gap-2">
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+              Upkyp
+            </span>
+            {isPortal && (
+              <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                Portal
+              </span>
+            )}
+          </Link>
+          <p className="text-xs text-gray-500 mt-1">
+            {isPortal ? "Rental Management" : "Tenant Dashboard"}
+          </p>
+        </div>
+
+        {/* User/Property Card */}
+        <div className="p-4 border-b border-gray-100">
+          {isPortal && portalPropertyInfo ? (
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center flex-shrink-0">
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-sm font-bold text-gray-900 line-clamp-2">
+                    {portalPropertyInfo.property_name}
+                  </h2>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Unit{" "}
+                    <span className="font-semibold">
+                      {portalPropertyInfo.unit_name}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
+              <div className="flex items-start gap-3">
                 <Image
                   src={
                     user.profilePicture ||
@@ -398,311 +333,211 @@ export default function TenantLayout({ children }) {
                   }
                   width={40}
                   height={40}
-                  className="w-full h-full object-cover"
+                  className="w-10 h-10 rounded-xl object-cover"
                   alt="profile"
                 />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-gray-900 line-clamp-1 leading-tight">
-                  {user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.email}
-                </h2>
-                <p className="text-xs text-gray-600 mt-1">Tenant Account</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-sm font-bold text-gray-900 truncate">
+                    {user.firstName && user.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.email}
+                  </h2>
+                  <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Tenant Account
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4">
-        <ul className="space-y-1">
-          {navItems.map(({ href, name, icon: Icon, badge, path }) => {
-            const active = isActive(path);
-
-            return (
-              <li key={href}>
-                <button
-                  onClick={() => {
-                    router.push(href);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`
-                    flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium
-                    ${
-                      active
-                        ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700 shadow-sm"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }
-                  `}
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto p-3">
+          <ul className="space-y-1">
+            {items.map(({ href, name, icon: Icon, badge }, index) => {
+              const active = isActive(href);
+              return (
+                <motion.li
+                  key={href}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.03 }}
                 >
-                  <Icon
-                    className={`w-5 h-5 mr-3 ${
-                      active ? "text-blue-600" : "text-gray-400"
+                  <Link
+                    href={href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
+                      active
+                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/25"
+                        : "text-gray-700 hover:bg-gray-100"
                     }`}
-                  />
-                  <span className="flex-1 text-left">{name}</span>
+                  >
+                    <Icon
+                      className={`w-5 h-5 ${
+                        active ? "" : "text-gray-400 group-hover:text-blue-600"
+                      }`}
+                    />
+                    <span className="flex-1 text-sm font-medium">{name}</span>
+                    {badge && (
+                      <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
+                        {badge}
+                      </span>
+                    )}
+                    {active && <ChevronRight className="w-4 h-4" />}
+                  </Link>
+                </motion.li>
+              );
+            })}
 
-                  {badge && (
-                    <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2 font-semibold">
-                      {badge}
-                    </span>
-                  )}
-
-                  {active && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                  )}
+            {/* Exit Portal Button */}
+            {isPortal && (
+              <li className="pt-3 mt-3 border-t border-gray-200">
+                <button
+                  onClick={handleExitPortal}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
+                >
+                  <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
+                  <span className="flex-1 text-sm font-medium text-left">
+                    Exit Portal
+                  </span>
                 </button>
               </li>
-            );
-          })}
-        </ul>
-      </nav>
+            )}
+          </ul>
+        </nav>
 
-      {/* Bottom Section - Settings & Logout */}
-      <div className="p-4 border-t border-gray-200 space-y-2">
-        <Link
-          href="/pages/commons/profile"
-          onClick={() => setMobileMenuOpen(false)}
-          className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          <Settings className="w-5 h-5 mr-3 text-gray-400" />
-          <span className="flex-1 text-left">Account Settings</span>
-        </Link>
+        {/* Bottom Section */}
+        {!isPortal && (
+          <div className="p-3 border-t border-gray-100 space-y-1">
+            <Link
+              href="/pages/commons/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-700 hover:bg-gray-100 transition-all duration-200 group"
+            >
+              <Settings className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
+              <span className="flex-1 text-sm font-medium">
+                Account Settings
+              </span>
+            </Link>
 
-        <button
-          onClick={() => {
-            setMobileMenuOpen(false);
-            setShowLogoutConfirm(true);
-          }}
-          className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 group"
-        >
-          <LogOut className="w-5 h-5 mr-3 text-gray-400 group-hover:text-red-600" />
-          <span className="flex-1 text-left">Logout</span>
-        </button>
-      </div>
-    </>
-  );
-
-  // Portal Sidebar Content
-  const PortalSidebarContent = () => (
-    <>
-      {/* Logo/Brand */}
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-          Upkyp Portal
-        </h1>
-        <p className="text-xs text-gray-500 mt-1">Rental Management</p>
-      </div>
-
-      {/* Property Info Card */}
-      <div className="p-4 border-b border-gray-200">
-        {portalPropertyInfo ? (
-          <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg p-4 border border-blue-100">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
-                <BuildingOfficeIcon className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-gray-900 line-clamp-2 leading-tight">
-                  {portalPropertyInfo.property_name}
-                </h2>
-                <p className="text-xs text-gray-600 mt-1">
-                  Unit{" "}
-                  <span className="font-semibold">
-                    {portalPropertyInfo.unit_name}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg p-4 border border-blue-100 animate-pulse">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gray-200"></div>
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            </div>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setShowLogoutConfirm(true);
+              }}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
+            >
+              <LogOut className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
+              <span className="flex-1 text-sm font-medium text-left">
+                Logout
+              </span>
+            </button>
           </div>
         )}
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4">
-        <ul className="space-y-1">
-          {portalNavItems.map(({ href, name, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href);
-
-            return (
-              <li key={href}>
-                <button
-                  onClick={() => {
-                    router.push(href);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`
-                    flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium
-                    ${
-                      active
-                        ? "bg-gradient-to-r from-blue-50 to-emerald-50 text-blue-700 shadow-sm"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }
-                  `}
-                >
-                  <Icon
-                    className={`w-5 h-5 mr-3 flex-shrink-0 ${
-                      active ? "text-blue-600" : "text-gray-400"
-                    }`}
-                  />
-                  <span className="flex-1 text-left">{name}</span>
-                  {active && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 flex-shrink-0" />
-                  )}
-                </button>
-              </li>
-            );
-          })}
-
-          {/* Exit Portal */}
-          <li className="pt-2 border-t border-gray-200 mt-2">
-            <button
-              onClick={handleExitPortal}
-              className="flex items-center w-full px-3 py-2.5 rounded-lg transition-all text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 group"
-            >
-              <LogOut className="w-5 h-5 mr-3 flex-shrink-0 text-gray-400 group-hover:text-red-600" />
-              <span className="flex-1 text-left">Exit Portal</span>
-            </button>
-          </li>
-        </ul>
-      </nav>
-    </>
-  );
+      </>
+    );
+  };
 
   return (
     <>
-      {/* Draggable Mobile Menu Button */}
-      <div className="md:hidden">
-        <button
-          ref={buttonRef}
-          onMouseDown={handleDragStart}
-          onTouchStart={handleDragStart}
-          onClick={(e) => {
-            if (!isDragging) {
-              setMobileMenuOpen(true);
-            }
-          }}
-          className="fixed z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow touch-none"
-          style={{
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-            cursor: isDragging ? "grabbing" : "grab",
-            transition: isDragging ? "none" : "box-shadow 0.2s",
-          }}
-          aria-label="Open menu"
-        >
-          <Bars3Icon className="w-6 h-6 pointer-events-none" />
+      {/* Mobile Menu Button - positioned on LEFT to avoid FeedbackWidget on right */}
+      <button
+        onClick={() => setMobileMenuOpen(true)}
+        className="lg:hidden fixed bottom-6 left-6 z-40 w-14 h-14 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center text-white hover:shadow-xl hover:scale-105 transition-all duration-200"
+        aria-label="Open menu"
+      >
+        <Menu className="w-6 h-6" />
+      </button>
 
-          {!isDragging && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-sm flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-            </div>
-          )}
-        </button>
-
-        {/* Hint Tooltip */}
-        {showHint && !isDragging && !isInPortalMode && (
-          <div
-            className="fixed z-50 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg animate-bounce"
-            style={{
-              left: `${position.x - 80}px`,
-              top: `${position.y - 40}px`,
-            }}
-          >
-            Drag me anywhere! 👋
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          <aside
-            className="fixed left-0 top-0 w-72 bg-white h-full shadow-xl flex flex-col pt-14"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <button
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
               onClick={() => setMobileMenuOpen(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Close menu"
-            >
-              <XMarkIcon className="w-6 h-6 text-gray-600" />
-            </button>
+            />
 
-            {/* Conditional Sidebar Content */}
-            {isInPortalMode ? (
-              <PortalSidebarContent />
-            ) : (
-              <RegularSidebarContent />
-            )}
-          </aside>
-        </div>
-      )}
+            {/* Sidebar */}
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-72 bg-white shadow-2xl z-50 flex flex-col"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+
+              <SidebarContent isPortal={isInPortalMode} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Logout Confirmation Modal */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-6 h-6 text-red-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-center text-gray-900 mb-2">
-              Confirm Logout
-            </h3>
-            <p className="text-sm text-gray-600 text-center mb-6">
-              Are you sure you want to sign out? You'll need to log in again to
-              access your account.
-            </p>
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+            >
+              <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-7 h-7 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+                Confirm Logout
+              </h3>
+              <p className="text-sm text-gray-600 text-center mb-6">
+                Are you sure you want to sign out? You'll need to log in again
+                to access your account.
+              </p>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
-              >
-                Cancel
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              <button
-                onClick={confirmLogout}
-                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/30">
-        {/* Desktop Sidebar - Shows portal or regular content based on context */}
-        <aside className="hidden lg:flex lg:flex-col fixed left-0 top-14 w-72 bg-white border-r border-gray-200 h-[calc(100vh-3.5rem)] z-20">
-          {isInPortalMode ? (
-            <PortalSidebarContent />
-          ) : (
-            <RegularSidebarContent />
-          )}
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
+        {/* Desktop Sidebar - positioned below navbar (h-16 = 4rem) */}
+        <aside className="hidden lg:flex lg:flex-col fixed left-0 top-16 w-72 bg-white border-r border-gray-200 h-[calc(100vh-4rem)] z-20 shadow-sm">
+          <SidebarContent isPortal={isInPortalMode} />
         </aside>
 
-        {/* MAIN CONTENT */}
-        <main className="flex-1 lg:pl-72 pt-14 lg:pt-0 bg-gradient-to-br from-gray-50 via-indigo-50/20 to-purple-50/20">
-          {children}
-        </main>
+        {/* Main Content - no top padding needed, navbar spacer handles it */}
+        <main className="flex-1 lg:pl-72">{children}</main>
       </div>
     </>
   );
