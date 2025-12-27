@@ -7,13 +7,13 @@ import axios from "axios";
 import { Wrench, Clock } from "lucide-react";
 
 /* --------------------------------------------------
-   Fetcher (stable)
+   Fetcher
 -------------------------------------------------- */
 const fetcher = (url: string) =>
-    axios.get(url).then(res => res.data);
+    axios.get(url).then((res) => res.data);
 
 /* --------------------------------------------------
-   Constants (OUTSIDE component = faster)
+   Constants
 -------------------------------------------------- */
 const STATUS_LABELS: Record<string, string> = {
     Pending: "Pending",
@@ -47,7 +47,7 @@ export default function PendingMaintenanceDonut({
                                                 }: {
     landlordId?: string;
 }) {
-    /* ---------------- Primary data (FAST) ---------------- */
+    /* ---------------- Primary data ---------------- */
     const { data: statusData } = useSWR(
         landlordId
             ? `/api/analytics/landlord/getMaintenanceStatuses?landlord_id=${landlordId}`
@@ -60,7 +60,7 @@ export default function PendingMaintenanceDonut({
         }
     );
 
-    /* ---------------- Secondary data (DEFERRED) ---------------- */
+    /* ---------------- Secondary data ---------------- */
     const { data: todayWorkOrders } = useSWR(
         landlordId
             ? `/api/analytics/landlord/getTodayMaintenance?landlord_id=${landlordId}`
@@ -72,7 +72,7 @@ export default function PendingMaintenanceDonut({
         }
     );
 
-    /* ---------------- Derived (MEMOIZED) ---------------- */
+    /* ---------------- Derived ---------------- */
     const donutData = useMemo(
         () =>
             ORDERED_STATUSES.map((status) => ({
@@ -94,8 +94,13 @@ export default function PendingMaintenanceDonut({
        UI
     -------------------------------------------------- */
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-5 flex flex-col h-[500px] hover:shadow-md transition">
-
+        <div
+            className="bg-white rounded-xl border border-gray-200 p-4 md:p-5 h-[500px]
+      flex flex-col
+      shadow-sm ring-1 ring-gray-100
+      transition-all duration-300
+      hover:-translate-y-[2px] hover:shadow-xl hover:ring-blue-200"
+        >
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -108,8 +113,7 @@ export default function PendingMaintenanceDonut({
             </div>
 
             {/* Chart + Legend */}
-            <div className="flex items-center justify-center gap-6 mb-4 min-h-[130px]">
-
+            <div className="flex items-center justify-center gap-6 mb-4 min-h-[140px]">
                 {/* Chart */}
                 {!isAllZero ? (
                     <PieChart width={120} height={120}>
@@ -121,13 +125,13 @@ export default function PendingMaintenanceDonut({
                             paddingAngle={2}
                             stroke="none"
                         >
-                            {donutData.map((d, i) => (
+                            {donutData.map((d) => (
                                 <Cell key={d.key} fill={STATUS_COLORS[d.key]} />
                             ))}
                         </Pie>
                     </PieChart>
                 ) : (
-                    <div className="w-[120px] h-[120px] rounded-full border-4 border-gray-200 flex items-center justify-center">
+                    <div className="w-[120px] h-[120px] rounded-full border-4 border-gray-200 flex items-center justify-center shadow-inner">
                         <Wrench className="w-6 h-6 text-gray-400" />
                     </div>
                 )}
@@ -147,7 +151,9 @@ export default function PendingMaintenanceDonut({
                             </div>
                         ))
                     ) : (
-                        <p className="text-xs text-gray-500">No maintenance requests</p>
+                        <p className="text-xs text-gray-500">
+                            No maintenance requests
+                        </p>
                     )}
                 </div>
             </div>
@@ -157,7 +163,7 @@ export default function PendingMaintenanceDonut({
                 <div className="flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 text-blue-600" />
                     <h3 className="text-sm font-semibold text-gray-900">
-                        Today's Scheduled Work
+                        Today’s Scheduled Work
                     </h3>
                 </div>
 
@@ -170,7 +176,10 @@ export default function PendingMaintenanceDonut({
                         {todayWorkOrders.map((work: any, idx: number) => (
                             <div
                                 key={idx}
-                                className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition"
+                                className="p-2.5 bg-gray-50 border border-gray-200 rounded-lg
+                shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]
+                transition-all duration-200
+                hover:bg-blue-50 hover:border-blue-200 hover:shadow-md"
                             >
                                 <p className="font-medium text-xs text-gray-900">
                                     {work.subject}
