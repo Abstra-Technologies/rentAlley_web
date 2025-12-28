@@ -127,7 +127,7 @@ export default function PropertyLeasesPage() {
     const handleEndLease = async (lease: any) => {
         if (!confirm("Are you sure you want to permanently end this lease?")) return;
 
-        await axios.post("/api/landlord/lease/end", {
+        await axios.post("/api/landlord/activeLease/endLease", {
             agreement_id: lease.lease_id,
         });
 

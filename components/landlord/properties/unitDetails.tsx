@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Home, Activity, Gauge } from "lucide-react";
 import MeterReadings from "@/components/landlord/properties/units/MeterReadings";
 import UnitAnalytics from "@/components/landlord/properties/units/UnitAnalytics";
+import UnitLeaseHistory from "@/components/landlord/properties/units/UnitLeaseHistory";
 
 export default function UnitDetails({ unitId }) {
   const router = useRouter();
@@ -160,6 +161,18 @@ export default function UnitDetails({ unitId }) {
                 <Activity className="h-4 w-4" />
                 <span>Analytics</span>
               </button>
+
+                <button
+                    onClick={() => setActiveTab("history")}
+                    className={`flex items-center gap-2 px-6 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                        activeTab === "history"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                    }`}
+                >
+                    <Activity className="h-4 w-4" />
+                    <span>Lease History</span>
+                </button>
             </div>
           </div>
 
@@ -167,6 +180,7 @@ export default function UnitDetails({ unitId }) {
           <div className="p-4 md:p-6">
             {activeTab === "meter" && <MeterReadings unitId={unitId} />}
             {activeTab === "analytics" && <UnitAnalytics unitId={unitId} />}
+              {activeTab === "history" && <UnitLeaseHistory unitId={unitId} />}
           </div>
         </div>
       </div>
