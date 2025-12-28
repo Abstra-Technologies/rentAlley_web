@@ -91,7 +91,12 @@ export default function MobileSearchHeader({
   const popularLocations = LOCATIONS.filter((loc) => loc.popular);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-sm shadow-slate-200/50">
+    <header className="sticky top-14 md:top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-sm shadow-slate-200/50">
+      {/* 
+        CHANGED: 
+        - top-14 md:top-16 (below navbar)
+        - z-40 instead of z-50 (navbar is z-50)
+      */}
       <div className="max-w-[1800px] mx-auto">
         {/* Main Header Row */}
         <div className="flex items-center gap-3 px-4 py-3 lg:px-6 lg:py-4">
@@ -103,7 +108,7 @@ export default function MobileSearchHeader({
                 border-2 transition-all duration-300
                 ${
                   isFocused
-                    ? "border-emerald-500 bg-white shadow-lg shadow-emerald-500/10 ring-4 ring-emerald-500/5"
+                    ? "border-blue-500 bg-white shadow-lg shadow-blue-500/10 ring-4 ring-blue-500/5"
                     : "border-transparent hover:border-slate-200"
                 }
               `}
@@ -111,7 +116,7 @@ export default function MobileSearchHeader({
               <div className="absolute left-4 pointer-events-none">
                 <Search
                   className={`w-5 h-5 transition-colors duration-200 ${
-                    isFocused ? "text-emerald-600" : "text-slate-400"
+                    isFocused ? "text-blue-600" : "text-slate-400"
                   }`}
                 />
               </div>
@@ -157,8 +162,8 @@ export default function MobileSearchHeader({
                         onMouseDown={() => handleSuggestionClick(loc.label)}
                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors text-left group"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <MapPin className="w-5 h-5 text-emerald-600" />
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-emerald-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <MapPin className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
                           <p className="font-semibold text-slate-900">
@@ -181,7 +186,7 @@ export default function MobileSearchHeader({
                           key={loc.value}
                           type="button"
                           onMouseDown={() => handleSuggestionClick(loc.label)}
-                          className="px-4 py-2 rounded-full bg-gradient-to-r from-slate-50 to-slate-100 hover:from-emerald-50 hover:to-teal-50 text-sm font-medium text-slate-700 hover:text-emerald-700 transition-all duration-200 border border-slate-200 hover:border-emerald-200"
+                          className="px-4 py-2 rounded-full bg-gradient-to-r from-slate-50 to-slate-100 hover:from-blue-50 hover:to-emerald-50 text-sm font-medium text-slate-700 hover:text-blue-700 transition-all duration-200 border border-slate-200 hover:border-blue-200"
                         >
                           {loc.label}
                         </button>
@@ -266,7 +271,7 @@ export default function MobileSearchHeader({
               transition-all duration-300 active:scale-95
               ${
                 activeFilterCount > 0
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-600/25"
+                  ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-600/25"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }
             `}
@@ -284,13 +289,13 @@ export default function MobileSearchHeader({
         {/* Results Bar */}
         <div className="flex items-center justify-between gap-4 px-4 pb-3 lg:px-6 lg:pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-full border border-emerald-100">
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-full border border-blue-100">
               <div className="relative flex items-center justify-center w-2 h-2">
-                <span className="absolute w-full h-full rounded-full bg-emerald-500 animate-ping opacity-75" />
-                <span className="relative w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="absolute w-full h-full rounded-full bg-blue-500 animate-ping opacity-75" />
+                <span className="relative w-2 h-2 rounded-full bg-blue-500" />
               </div>
               <span className="text-sm font-semibold text-slate-700">
-                <span className="text-emerald-700 tabular-nums">
+                <span className="text-blue-700 tabular-nums">
                   {totalResults}
                 </span>{" "}
                 units available
@@ -317,7 +322,7 @@ export default function MobileSearchHeader({
                     transition-all duration-200
                     ${
                       filters.location === loc.value
-                        ? "bg-emerald-600 text-white shadow-md"
+                        ? "bg-blue-600 text-white shadow-md"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }
                   `}
