@@ -1,67 +1,128 @@
-// components/FeedbackWidget.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { MessageSquare, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { MessageSquare, X, ExternalLink } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const HIDDEN_ROUTES = [
+  "/pages/tenant/chat",
+  "/pages/landlord/chat",
+  "/pages/landlord/messages",
+  "/pages/admin/chat",
+  "/pages/tenant/rentalPortal",
+];
 
 export default function FeedbackWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const pathname = usePathname();
+
+  // Check if widget should be hidden on current route
+  useEffect(() => {
+    const shouldHide = HIDDEN_ROUTES.some((route) =>
+      pathname?.startsWith(route)
+    );
+    setIsVisible(!shouldHide);
+
+    // Close popup when navigating
+    setIsOpen(false);
+  }, [pathname]);
 
   const handleOpenFeedback = () => {
-    window.open('https://tally.so/r/ODldbg', '_blank', 'noopener,noreferrer');
-    // Optional: Close the widget after redirect (or keep it open)
+    window.open("https://tally.so/r/ODldbg", "_blank", "noopener,noreferrer");
     setIsOpen(false);
   };
 
+  // Don't render on hidden routes
+  if (!isVisible) return null;
+
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-6 right-6 z-[100]">
       {/* Toggle Button */}
-      <button
+      <motion.button
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="relative bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-2xl p-4 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         aria-label="Give feedback"
       >
-        <MessageSquare className="h-6 w-6" />
-      </button>
+        <AnimatePresence mode="wait">
+          {isOpen ? (
+            <motion.div
+              key="close"
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <X className="h-6 w-6" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="open"
+              initial={{ rotate: 90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: -90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <MessageSquare className="h-6 w-6" />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Widget Tooltip / Preview (optional) */}
-      {isOpen && (
-        <div className="absolute bottom-20 right-0 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-80 sm:w-96 overflow-hidden border border-gray-200 dark:border-gray-700 p-5 animate-fadeIn">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="font-semibold text-lg">We’d love your feedback!</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Help us improve Upkyp Beta — your thoughts matter!
+        {/* Pulse indicator when closed */}
+        {!isOpen && (
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white">
+            <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-75" />
+          </span>
+        )}
+      </motion.button>
+
+      {/* Popup Panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-emerald-600 px-5 py-4">
+              <h3 className="font-bold text-lg text-white">
+                We'd love your feedback!
+              </h3>
+              <p className="text-sm text-white/80 mt-1">
+                Help us improve Upkyp Beta
               </p>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              aria-label="Close"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
 
-          <p className="text-sm mb-4">
-            Click below to open our quick feedback form. It takes less than a minute!
-          </p>
+            {/* Content */}
+            <div className="p-5">
+              <p className="text-sm text-gray-600 mb-5">
+                Your thoughts matter! Click below to open our quick feedback
+                form. It takes less than a minute.
+              </p>
 
-          <button
-            onClick={handleOpenFeedback}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
-          >
-            Open Feedback Form
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </button>
+              <button
+                onClick={handleOpenFeedback}
+                className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 text-white py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center justify-center gap-2 group"
+              >
+                Open Feedback Form
+                <ExternalLink className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </button>
 
-          <p className="text-xs text-center mt-3 text-gray-500 dark:text-gray-400">
-            Powered by Tally
-          </p>
-        </div>
-      )}
+              <p className="text-xs text-center mt-4 text-gray-400">
+                Powered by Tally
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

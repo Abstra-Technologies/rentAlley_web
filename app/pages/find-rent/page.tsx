@@ -193,7 +193,7 @@ function UnitSearchContent() {
         }}
       />
 
-      {/* Header */}
+      {/* Header - Now positioned below navbar */}
       <MobileSearchHeader
         filters={filters}
         setFilters={handleFiltersChange}
@@ -223,16 +223,21 @@ function UnitSearchContent() {
             />
           )}
 
-          {/* Map View */}
+          {/* Map View - Adjusted height for navbar + search header */}
           {viewMode === "map" && (
-            <div className="h-[calc(100vh-140px)] lg:h-[calc(100vh-160px)]">
+            <div className="h-[calc(100vh-200px)] md:h-[calc(100vh-220px)]">
+              {/* 
+                Height calculation:
+                - Mobile: 100vh - 56px navbar - ~144px header = ~200px total
+                - Desktop: 100vh - 64px navbar - ~156px header = ~220px total
+              */}
               <MapView units={filteredUnits} onUnitClick={handleUnitClick} />
             </div>
           )}
 
           {/* Split View - Desktop Only */}
           {viewMode === "split" && (
-            <div className="hidden lg:flex h-[calc(100vh-160px)]">
+            <div className="hidden lg:flex h-[calc(100vh-220px)]">
               {/* Map */}
               <div className="flex-1 p-4">
                 <MapView units={filteredUnits} onUnitClick={handleUnitClick} />
