@@ -33,6 +33,19 @@ const getStatus = (lease: any) =>
     (lease.status ?? lease.lease_status)?.toLowerCase();
 
 /* ===============================
+   SIGNATURE GUARDS
+================================ */
+const requiresLandlordSignature = (lease: any) => {
+    const status = getStatus(lease);
+    return ["pending", "sent", "pending_signature"].includes(status);
+};
+
+const canModifyLease = (lease: any) => {
+    const status = getStatus(lease);
+    return ["active", "expired", "completed"].includes(status);
+};
+
+/* ===============================
    STATUS BADGE
 ================================ */
 const StatusBadge = ({ lease }: { lease: any }) => {
@@ -96,6 +109,9 @@ export default function PropertyLeasesPage() {
         );
     }, [leases, search]);
 
+    /* ===============================
+       ACTION HANDLERS
+    ================================ */
     const handlePrimaryAction = (lease: any) => {
         getStatus(lease) === "draft"
             ? setSetupModalLease(lease)
@@ -108,6 +124,8 @@ export default function PropertyLeasesPage() {
         );
     };
 
+
+
     const handleEndLease = async (lease: any) => {
         if (!confirm("Are you sure you want to permanently end this lease?")) return;
 
@@ -116,6 +134,12 @@ export default function PropertyLeasesPage() {
         });
 
         window.location.reload();
+    };
+
+    const handleAuthenticateLease = (lease: any) => {
+        router.push(
+            `/pages/landlord/properties/${id}/activeLease/authenticate/${lease?.lease_id}`
+        );
     };
 
     if (isLoading) {
@@ -185,7 +209,14 @@ export default function PropertyLeasesPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    {status === "expired" ? (
+                                    {requiresLandlordSignature(lease) ? (
+                                        <button
+                                            onClick={() => handleAuthenticateLease(lease)}
+                                            className="w-full py-2 bg-indigo-600 text-white rounded-lg"
+                                        >
+                                            Authenticate & Sign Lease
+                                        </button>
+                                    ) : status === "expired" && canModifyLease(lease) ? (
                                         <>
                                             <button
                                                 onClick={() => handleExtendLease(lease)}
@@ -246,7 +277,7 @@ export default function PropertyLeasesPage() {
                             return (
                                 <tr key={lease.agreement_id}>
                                     <td className="px-6 py-4">{lease.unit_name}</td>
-                                    <td className="px-6 py-4">{lease.tenant_name || "—"}</td>
+                                    <td className="px-6 py-4">{lease.tenant_name || "—"} </td>
                                     <td className="px-6 py-4">
                                         {lease.start_date
                                             ? new Date(lease.start_date).toLocaleDateString()
@@ -261,7 +292,14 @@ export default function PropertyLeasesPage() {
                                         <StatusBadge lease={lease} />
                                     </td>
                                     <td className="px-6 py-4 text-right space-x-2">
-                                        {status === "expired" ? (
+                                        {requiresLandlordSignature(lease) ? (
+                                            <button
+                                                onClick={() => handleAuthenticateLease(lease)}
+                                                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg"
+                                            >
+                                                Authenticate
+                                            </button>
+                                        ) : status === "expired" && canModifyLease(lease) ? (
                                             <>
                                                 <button
                                                     onClick={() => handleExtendLease(lease)}

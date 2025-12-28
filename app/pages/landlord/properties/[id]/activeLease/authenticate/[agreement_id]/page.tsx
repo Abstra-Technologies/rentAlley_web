@@ -10,7 +10,14 @@ import useAuthStore from "@/zustand/authStore";
 
 export default function AuthenticateLeasePage() {
     const router = useRouter();
-    const { id, agreement_id } = useParams();
+    const params = useParams() as {
+        id?: string;
+        agreement_id?: string;
+    };
+
+    const id = params.id;
+    const agreement_id = params.agreement_id;
+
     const [leaseDetails, setLeaseDetails] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const { user, fetchSession } = useAuthStore();
