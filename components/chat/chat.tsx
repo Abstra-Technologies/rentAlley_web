@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import axios from "axios";
 import useAuthStore from "@/zustand/authStore";
@@ -13,6 +13,8 @@ import {
   Check,
   CheckCheck,
   X,
+  MessageCircle,
+  MoreVertical,
 } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 
@@ -46,11 +48,13 @@ interface Message {
 interface ChatComponentProps {
   userId: string;
   preselectedChat?: Chat;
+  variant?: "tenant" | "landlord";
 }
 
 export default function ChatComponent({
   userId,
   preselectedChat,
+  variant = "tenant",
 }: ChatComponentProps) {
   const [chatList, setChatList] = useState<Chat[]>([]);
   const [filteredChats, setFilteredChats] = useState<Chat[]>([]);
@@ -62,24 +66,31 @@ export default function ChatComponent({
   const [error, setError] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const { user } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
-  /** Scroll to bottom when new messages arrive */
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Height: tenant has navbar, landlord doesn't on desktop
+  const heightClass =
+    variant === "tenant"
+      ? "h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)]"
+      : "h-[calc(100vh-3.5rem)] lg:h-screen";
 
-  /** Handle emoji selection */
+  const scrollToBottom = useCallback((smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+    });
+  }, []);
+
   const handleEmojiSelect = (emoji: any) => {
     setMessage((prev) => prev + emoji.emoji);
     inputRef.current?.focus();
   };
 
-  /** Close emoji picker when clicking outside */
+  // Close emoji picker on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -89,19 +100,15 @@ export default function ChatComponent({
         setShowEmojiPicker(false);
       }
     };
-
     if (showEmojiPicker) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showEmojiPicker]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   useEffect(() => {
     if (preselectedChat) {
@@ -109,7 +116,7 @@ export default function ChatComponent({
     }
   }, [preselectedChat]);
 
-  /** Search filter */
+  // Search filter
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredChats(chatList);
@@ -121,21 +128,18 @@ export default function ChatComponent({
     }
   }, [searchQuery, chatList]);
 
-  /** Fetch chat list */
+  // Fetch chat list
   useEffect(() => {
     if (!userId) return;
-
     let isMounted = true;
 
     const fetchChats = async () => {
       setLoading(true);
       setError(null);
-
       try {
         const { data } = await axios.get(`/api/chats/getListofChats`, {
           params: { userId },
         });
-
         if (isMounted) {
           const chats = Array.isArray(data) ? data : [];
           setChatList(chats);
@@ -150,13 +154,12 @@ export default function ChatComponent({
     };
 
     fetchChats();
-
     return () => {
       isMounted = false;
     };
   }, [userId]);
 
-  /** WebSocket listener */
+  // WebSocket
   useEffect(() => {
     if (!selectedChat || !selectedChat.chat_room) return;
 
@@ -164,6 +167,7 @@ export default function ChatComponent({
 
     const handleLoadMessages = (loadedMessages: Message[]) => {
       setMessages(loadedMessages);
+      setTimeout(() => scrollToBottom(false), 100);
     };
 
     const handleReceiveMessage = (newMessage: Message) => {
@@ -185,12 +189,14 @@ export default function ChatComponent({
       socket.off("receiveMessage", handleReceiveMessage);
       socket.off("typing", handleTyping);
     };
-  }, [selectedChat]);
+  }, [selectedChat, scrollToBottom]);
 
-  /** Send message */
-  const sendMessage = () => {
-    if (!message.trim() || !selectedChat) return;
+  // Send message
+  const sendMessage = async () => {
+    if (!message.trim() || !selectedChat || isSending) return;
     if (!user) return;
+
+    setIsSending(true);
 
     const senderType = user.tenant_id ? "tenant" : "landlord";
     const senderId =
@@ -212,6 +218,7 @@ export default function ChatComponent({
 
     socket.emit("sendMessage", newMessage);
     setMessage("");
+    setIsSending(false);
     inputRef.current?.focus();
   };
 
@@ -222,7 +229,7 @@ export default function ChatComponent({
     }
   };
 
-  /** Formatters */
+  // Formatters
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -236,11 +243,26 @@ export default function ChatComponent({
 
     if (date.toDateString() === today.toDateString()) return "Today";
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-
-    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    return date.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
-  /** Group messages by date */
+  const formatLastSeen = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+    return formatDate(timestamp);
+  };
+
+  // Group messages by date
   const groupedMessages = messages.reduce(
     (groups: Record<string, Message[]>, msg) => {
       const date = formatDate(msg.timestamp);
@@ -251,47 +273,34 @@ export default function ChatComponent({
     {}
   );
 
-  // Loading Skeleton
+  // Loading
   if (loading) {
     return (
-      <div className="flex w-full bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 overflow-hidden h-screen">
-        {/* Sidebar Skeleton */}
-        <div className="w-full md:w-[320px] lg:w-[380px] xl:w-[420px] bg-white/95 border-r border-slate-200/60 flex flex-col animate-pulse">
-          <div className="flex-shrink-0 px-4 lg:px-5 py-4 border-b border-slate-100">
-            <div className="h-7 bg-gradient-to-r from-gray-200 to-gray-300 rounded w-32 mb-4"></div>
-            <div className="h-10 bg-gray-200 rounded-xl"></div>
+      <div className={`flex w-full bg-gray-50 overflow-hidden ${heightClass}`}>
+        <div className="w-full md:w-80 lg:w-96 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+          <div className="p-4 border-b border-gray-100">
+            <div className="h-8 bg-gray-200 rounded-lg w-32 mb-4 animate-pulse" />
+            <div className="h-11 bg-gray-100 rounded-xl animate-pulse" />
           </div>
-
-          <div className="flex-1 overflow-hidden py-2">
+          <div className="flex-1 p-2">
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 px-4 lg:px-5 py-3"
+                className="flex items-center gap-3 p-3 animate-pulse"
               >
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0"></div>
+                <div className="w-12 h-12 bg-gray-200 rounded-full" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
                 </div>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Main Chat Skeleton - Hidden on Mobile */}
-        <div className="hidden md:flex flex-1 flex-col bg-white/40">
-          <div className="px-6 py-3 bg-white/95 border-b">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-gray-200 rounded-full"></div>
-              <div className="h-5 bg-gray-200 rounded w-32"></div>
-            </div>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
-              <div className="h-6 bg-gray-200 rounded w-48 mx-auto"></div>
-            </div>
+        <div className="hidden md:flex flex-1 items-center justify-center bg-gray-50">
+          <div className="text-center animate-pulse">
+            <div className="w-20 h-20 bg-gray-200 rounded-2xl mx-auto mb-4" />
+            <div className="h-6 bg-gray-200 rounded w-48 mx-auto" />
           </div>
         </div>
       </div>
@@ -299,36 +308,27 @@ export default function ChatComponent({
   }
 
   return (
-    <div className="flex w-full bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 overflow-hidden h-screen">
-      {/* Sidebar */}
+    <div className={`flex w-full bg-gray-50 overflow-hidden ${heightClass}`}>
+      {/* ========== CHAT LIST SIDEBAR ========== */}
       <div
         className={`
-                    absolute md:relative inset-0 md:inset-auto
-                    w-full md:w-[320px] lg:w-[380px] xl:w-[420px]
-                    bg-white/95 backdrop-blur-xl border-r border-slate-200/60
-                    flex flex-col z-30 md:z-auto transition-transform duration-300 h-full
-                    ${
-                      selectedChat
-                        ? "-translate-x-full md:translate-x-0"
-                        : "translate-x-0"
-                    }
-                `}
+          ${selectedChat ? "hidden md:flex" : "flex"}
+          w-full md:w-80 lg:w-96
+          bg-white border-r border-gray-200
+          flex-col flex-shrink-0
+        `}
       >
-        <div className="flex-shrink-0 px-4 lg:px-5 py-4 border-b border-slate-100 bg-white/90">
-          <h1 className="text-xl lg:text-2xl font-semibold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-            Messages
-          </h1>
-
-          <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        {/* Header */}
+        <div className="flex-shrink-0 p-4 bg-white border-b border-gray-100">
+          <h1 className="text-xl font-bold text-gray-900 mb-4">Messages</h1>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl
-                                text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20
-                            "
+              className="w-full pl-11 pr-4 py-3 bg-gray-100 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
             />
           </div>
         </div>
@@ -337,167 +337,152 @@ export default function ChatComponent({
         <div className="flex-1 overflow-y-auto">
           {error ? (
             <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-              <p className="text-slate-600 mb-4">{error}</p>
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <X className="w-8 h-8 text-red-500" />
+              </div>
+              <p className="text-gray-600 mb-4">{error}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
+                className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors"
               >
                 Retry
               </button>
             </div>
           ) : filteredChats.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                <svg
-                  className="w-8 h-8 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-4">
+                <MessageCircle className="w-10 h-10 text-blue-600" />
               </div>
-              <h3 className="text-base font-semibold text-gray-800 mb-2">
-                No conversations yet
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                {searchQuery ? "No results found" : "No conversations yet"}
               </h3>
               <p className="text-sm text-gray-500">
-                Your messages will appear here when someone contacts you
+                {searchQuery
+                  ? "Try a different search term"
+                  : "Messages will appear here"}
               </p>
             </div>
           ) : (
-            <ul className="py-2">
+            <div className="py-2">
               {filteredChats.map((chat) => (
-                <li
+                <button
                   key={chat.chat_room}
                   onClick={() => setSelectedChat(chat)}
                   className={`
-                                        flex items-center gap-3 px-4 lg:px-5 py-3 cursor-pointer
-                                        ${
-                                          selectedChat?.chat_room ===
-                                          chat.chat_room
-                                            ? "bg-gradient-to-r from-blue-50 to-emerald-50 border-l-4 border-blue-500"
-                                            : "hover:bg-slate-50"
-                                        }
-                                    `}
+                    w-full flex items-center gap-3 px-4 py-3 text-left transition-all
+                    ${
+                      selectedChat?.chat_room === chat.chat_room
+                        ? "bg-blue-50 border-l-4 border-blue-600"
+                        : "hover:bg-gray-50 border-l-4 border-transparent"
+                    }
+                  `}
                 >
                   <img
                     src={chat.profilePicture || "/default-avatar.png"}
-                    alt={`${chat.name}'s profile picture`}
-                    className="w-12 h-12 rounded-full object-cover"
+                    alt={chat.name}
+                    className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                   />
-
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between">
-                      <p className="font-medium truncate">{chat.name}</p>
-                      <span className="text-xs text-slate-400">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {chat.name}
+                      </h3>
+                      <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
                         {chat.lastMessageTime
-                          ? formatTime(chat.lastMessageTime)
+                          ? formatLastSeen(chat.lastMessageTime)
                           : ""}
                       </span>
                     </div>
-
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-slate-500 truncate pr-2">
-                        {chat.lastMessage || "Start a conversation"}
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-500 truncate pr-2">
+                        {chat.lastMessage || "No messages yet"}
                       </p>
-
                       {chat.unreadCount! > 0 && (
-                        <span className="w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
-                          {chat.unreadCount}
+                        <span className="flex-shrink-0 min-w-[20px] h-5 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center px-1.5">
+                          {chat.unreadCount! > 99 ? "99+" : chat.unreadCount}
                         </span>
                       )}
                     </div>
                   </div>
-                </li>
+                </button>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       </div>
 
-      {/* CHAT WINDOW */}
+      {/* ========== CHAT WINDOW ========== */}
       <div
         className={`
-                    flex-1 flex flex-col bg-white/40 backdrop-blur-sm h-full transition-transform duration-300
-                    ${
-                      selectedChat
-                        ? "translate-x-0"
-                        : "translate-x-full md:translate-x-0"
-                    }
-                `}
+          ${selectedChat ? "flex" : "hidden md:flex"}
+          flex-1 flex-col bg-white
+        `}
       >
         {selectedChat ? (
           <>
-            {/* Header */}
-            <div className="flex items-center gap-3 px-4 lg:px-6 py-3 bg-white/95 border-b shadow-sm">
+            {/* Chat Header */}
+            <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
               <button
                 onClick={() => setSelectedChat(null)}
-                className="md:hidden p-2 hover:bg-slate-100 rounded-full"
+                className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-slate-700" />
+                <ArrowLeft className="w-5 h-5 text-gray-700" />
               </button>
 
               <img
                 src={selectedChat.profilePicture || "/default-avatar.png"}
-                alt={`${selectedChat.name}'s profile picture`}
-                className="w-10 h-10 lg:w-11 lg:h-11 rounded-full object-cover"
+                alt={selectedChat.name}
+                className="w-10 h-10 rounded-full object-cover"
               />
 
-              <div>
-                <h2 className="font-semibold text-slate-800">
+              <div className="flex-1 min-w-0">
+                <h2 className="font-semibold text-gray-900 truncate">
                   {selectedChat.name}
                 </h2>
-                {isTyping && (
-                  <p className="text-xs text-emerald-600">Typing...</p>
+                {isTyping ? (
+                  <p className="text-xs text-emerald-600 font-medium">
+                    Typing...
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500">Tap for info</p>
                 )}
               </div>
+
+              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <MoreVertical className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 bg-gradient-to-b from-gray-50 to-white">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                    <svg
-                      className="w-10 h-10 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-                      />
-                    </svg>
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-4">
+                    <MessageCircle className="w-10 h-10 text-blue-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    No messages yet
+                    Start the conversation
                   </h3>
                   <p className="text-sm text-gray-500">
-                    Send a message to start the conversation with{" "}
-                    {selectedChat.name}
+                    Send a message to {selectedChat.name}
                   </p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 max-w-3xl mx-auto">
                   {Object.entries(groupedMessages).map(([date, msgs]) => (
                     <div key={date}>
-                      <div className="flex justify-center mb-3">
-                        <span className="px-3 py-1 bg-slate-100 text-slate-500 text-xs rounded-full">
+                      {/* Date Separator */}
+                      <div className="flex justify-center my-4">
+                        <span className="px-4 py-1.5 bg-white text-gray-500 text-xs font-medium rounded-full shadow-sm border border-gray-100">
                           {date}
                         </span>
                       </div>
 
-                      <div className="space-y-3">
+                      {/* Messages */}
+                      <div className="space-y-2">
                         {msgs.map((msg, i) => {
                           const isOwn = msg.sender_id === userId;
+
                           return (
                             <div
                               key={i}
@@ -507,28 +492,30 @@ export default function ChatComponent({
                             >
                               <div
                                 className={`
-                                                                    max-w-[80%] px-4 py-2 rounded-2xl
-                                                                    ${
-                                                                      isOwn
-                                                                        ? "bg-blue-600 text-white rounded-br-md"
-                                                                        : "bg-white text-slate-800 border shadow-sm rounded-bl-md"
-                                                                    }
-                                                                `}
+                                  max-w-[80%] px-4 py-2.5 rounded-2xl
+                                  ${
+                                    isOwn
+                                      ? "bg-blue-600 text-white rounded-br-md"
+                                      : "bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-md"
+                                  }
+                                `}
                               >
-                                <p className="text-sm break-words">
+                                <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap">
                                   {msg.message}
                                 </p>
-
                                 <div
-                                  className={`flex justify-end items-center gap-1 mt-1 text-xs opacity-75`}
+                                  className={`flex items-center justify-end gap-1.5 mt-1 ${
+                                    isOwn ? "text-blue-200" : "text-gray-400"
+                                  }`}
                                 >
-                                  {formatTime(msg.timestamp)}
-
+                                  <span className="text-[11px]">
+                                    {formatTime(msg.timestamp)}
+                                  </span>
                                   {isOwn &&
                                     (msg.status === "read" ? (
-                                      <CheckCheck className="w-3 h-3" />
+                                      <CheckCheck className="w-4 h-4" />
                                     ) : (
-                                      <Check className="w-3 h-3" />
+                                      <Check className="w-4 h-4" />
                                     ))}
                                 </div>
                               </div>
@@ -539,55 +526,74 @@ export default function ChatComponent({
                     </div>
                   ))}
 
-                  <div ref={messagesEndRef} />
+                  {/* Typing Indicator */}
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-md shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-1">
+                          <div
+                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "0ms" }}
+                          />
+                          <div
+                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "150ms" }}
+                          />
+                          <div
+                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                            style={{ animationDelay: "300ms" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div ref={messagesEndRef} className="h-4" />
                 </div>
               )}
             </div>
 
-            {/* Input */}
-            <div className="px-4 lg:px-6 py-3 bg-white/95 border-t">
+            {/* Input Area - Extra padding on mobile for FAB buttons */}
+            <div className="flex-shrink-0 p-3 bg-white border-t border-gray-200 pb-24 md:pb-4">
+              {/* Emoji Picker */}
               {showEmojiPicker && (
                 <div
                   ref={emojiPickerRef}
-                  className="absolute bottom-20 right-4 lg:right-6 bg-white shadow-xl rounded-xl overflow-hidden z-50"
+                  className="absolute bottom-32 md:bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-[350px] bg-white shadow-2xl rounded-2xl overflow-hidden z-50 border border-gray-200"
                 >
                   <EmojiPicker
                     onEmojiClick={handleEmojiSelect}
                     theme="light"
                     emojiStyle="native"
                     lazyLoadEmojis={true}
+                    width="100%"
+                    height={300}
                   />
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-full hover:bg-slate-200 hidden sm:flex">
-                  <Paperclip className="w-5 h-5 text-slate-500" />
+              <div className="flex items-center gap-2 max-w-3xl mx-auto">
+                <button className="p-2.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 hidden sm:flex">
+                  <Paperclip className="w-5 h-5 text-gray-500" />
                 </button>
 
-                <div className="flex-1 relative">
+                <div className="flex-1 relative bg-gray-100 rounded-full flex items-center">
                   <input
                     ref={inputRef}
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Type your message..."
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full
-                                            text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400
-                                        "
+                    placeholder="Type a message..."
+                    className="w-full px-5 py-3 bg-transparent text-[15px] placeholder:text-gray-400 focus:outline-none"
                   />
-
                   <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className={`
-                                            absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hidden sm:flex
-                                            ${
-                                              showEmojiPicker
-                                                ? "bg-blue-100 text-blue-600"
-                                                : "hover:bg-slate-200 text-slate-400"
-                                            }
-                                        `}
+                    className={`p-2 mr-1 rounded-full transition-colors flex-shrink-0 ${
+                      showEmojiPicker
+                        ? "bg-blue-100 text-blue-600"
+                        : "hover:bg-gray-200 text-gray-500"
+                    }`}
                   >
                     {showEmojiPicker ? (
                       <X className="w-5 h-5" />
@@ -599,15 +605,15 @@ export default function ChatComponent({
 
                 <button
                   onClick={sendMessage}
-                  disabled={!message.trim()}
+                  disabled={!message.trim() || isSending}
                   className={`
-                                        p-3 rounded-full shadow-md transition-all
-                                        ${
-                                          message.trim()
-                                            ? "bg-blue-600 text-white hover:scale-105"
-                                            : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                                        }
-                                    `}
+                    p-3 rounded-full transition-all flex-shrink-0
+                    ${
+                      message.trim()
+                        ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }
+                  `}
                 >
                   <Send className="w-5 h-5" />
                 </button>
@@ -615,43 +621,24 @@ export default function ChatComponent({
             </div>
           </>
         ) : (
-          <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/30 p-8">
+          /* Empty State */
+          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-8">
             <div className="max-w-md text-center">
-              {/* Icon */}
-              <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center shadow-sm">
-                <svg
-                  className="w-12 h-12 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
+              <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center">
+                <MessageCircle className="w-12 h-12 text-blue-600" />
               </div>
-
-              {/* Text */}
-              <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                Select a conversation
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Your Messages
               </h2>
-              <p className="text-sm text-gray-500 leading-relaxed mb-6">
-                Choose a conversation from the left to view messages and start
-                chatting with your tenants or landlord.
+              <p className="text-gray-500 mb-6">
+                Select a conversation to start chatting
               </p>
-
-              {/* Stats or Tips */}
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-center gap-6 pt-6 border-t border-gray-200">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
                     {filteredChats.length}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Conversations
-                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Chats</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-emerald-600">
@@ -661,12 +648,6 @@ export default function ChatComponent({
                     )}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">Unread</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-700">
-                    <Check className="w-6 h-6 mx-auto" />
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">Active</div>
                 </div>
               </div>
             </div>
