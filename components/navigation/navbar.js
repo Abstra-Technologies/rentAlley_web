@@ -9,23 +9,26 @@ import { useRouter, usePathname } from "next/navigation";
 import NotificationSection from "@/components/notification/notifCenter";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Home,
-  Search,
   Menu,
   X,
   User,
-  LayoutDashboard,
   ChevronDown,
   LogOut,
-  CreditCard,
   Star,
-  ExternalLink,
   Sparkles,
   Building2,
   BookOpen,
   Download,
   HelpCircle,
   ArrowRight,
+  Search,
+  CreditCard,
+  Rss,
+  MessageCircle,
+  FileText,
+  Clock,
+  MapPin,
+  ChevronRight,
 } from "lucide-react";
 
 const Navbar = () => {
@@ -33,11 +36,14 @@ const Navbar = () => {
     useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [hasLease, setHasLease] = useState(null);
   const [scrolled, setScrolled] = useState(false);
+  const [undecidedApplications, setUndecidedApplications] = useState(0);
   const router = useRouter();
   const pathname = usePathname();
   const dropdownRef = useRef(null);
+
+  // Check if we're in portal mode (portal has its own navigation)
+  const isInPortalMode = pathname?.includes("/rentalPortal/");
 
   // Handle scroll effect
   useEffect(() => {
@@ -54,20 +60,21 @@ const Navbar = () => {
     }
   }, [user, admin]);
 
+  // Fetch pending applications for badge
   useEffect(() => {
-    if (user?.userType === "tenant" && user?.tenant_id) {
-      const fetchLeaseStatus = async () => {
+    if (user?.tenant_id) {
+      const loadPending = async () => {
         try {
-          const res = await axios.get(
-            `/api/leaseAgreement/checkCurrentLease?tenant_id=${user?.tenant_id}`
+          const res = await fetch(
+            `/api/tenant/applications/pendingApplications?tenant_id=${user.tenant_id}`
           );
-          setHasLease(res?.data?.hasLease);
-        } catch (error) {
-          console.error("Error fetching lease status:", error);
-          setHasLease(false);
+          const data = await res.json();
+          setUndecidedApplications(data.count || 0);
+        } catch (err) {
+          console.error("Pending fetch failed:", err);
         }
       };
-      fetchLeaseStatus();
+      loadPending();
     }
   }, [user?.tenant_id]);
 
@@ -84,6 +91,7 @@ const Navbar = () => {
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setDropdownOpen(false);
   }, [pathname]);
 
   // Prevent body scroll when mobile menu is open
@@ -112,13 +120,38 @@ const Navbar = () => {
     setMobileMenuOpen(false);
   };
 
-  const getNavigationLinks = () => {
+  // Main navbar links (shown in header)
+  const getMainNavLinks = () => {
+    if (admin) {
+      return [{ href: "/pages/system_admin/dashboard", label: "Dashboard" }];
+    }
+
+    if (!user) {
+      return [
+        { href: "/pages/public/how-it-works", label: "How It Works" },
+        { href: "/pages/find-rent", label: "Find Rent" },
+        { href: "/pages/public/pricing", label: "Pricing" },
+      ];
+    } else if (user?.userType === "tenant") {
+      return [
+        { href: "/pages/tenant/feeds", label: "Feeds" },
+        { href: "/pages/find-rent", label: "Find Rent" },
+        { href: "/pages/tenant/my-unit", label: "My Units" },
+        { href: "/pages/tenant/chat", label: "Chats" },
+      ];
+    }
+
+    return [];
+  };
+
+  // All navigation links for mobile menu
+  const getAllNavLinks = () => {
     if (admin) {
       return [
         {
           href: "/pages/system_admin/dashboard",
           label: "Dashboard",
-          icon: <LayoutDashboard className="w-4 h-4" />,
+          icon: Building2,
         },
       ];
     }
@@ -128,45 +161,38 @@ const Navbar = () => {
         {
           href: "/pages/public/how-it-works",
           label: "How It Works",
-          icon: <HelpCircle className="w-4 h-4" />,
+          icon: HelpCircle,
         },
-        {
-          href: "/pages/find-rent",
-          label: "Find Rent",
-          icon: <Search className="w-4 h-4" />,
-        },
+        { href: "/pages/find-rent", label: "Find Rent", icon: Search },
         {
           href: "/pages/public/download",
           label: "Download App",
-          icon: <Download className="w-4 h-4" />,
+          icon: Download,
         },
-        {
-          href: "/pages/public/blogs",
-          label: "Blogs",
-          icon: <BookOpen className="w-4 h-4" />,
-        },
-        {
-          href: "/pages/public/pricing",
-          label: "Pricing",
-          icon: <CreditCard className="w-4 h-4" />,
-        },
+        { href: "/pages/public/blogs", label: "Blogs", icon: BookOpen },
+        { href: "/pages/public/pricing", label: "Pricing", icon: CreditCard },
       ];
     } else if (user?.userType === "tenant") {
       return [
+        { href: "/pages/tenant/feeds", label: "Feeds", icon: Rss },
+        { href: "/pages/find-rent", label: "Find Rent", icon: Search },
+        { href: "/pages/tenant/my-unit", label: "My Units", icon: Building2 },
+        { href: "/pages/tenant/chat", label: "Chats", icon: MessageCircle },
         {
-          href: "/pages/find-rent",
-          label: "Find Rent",
-          icon: <Search className="w-4 h-4" />,
-        },
-        {
-          href: "/pages/tenant/my-unit",
-          label: "My Units",
-          icon: <Building2 className="w-4 h-4" />,
+          href: "/pages/tenant/myApplications",
+          label: "My Applications",
+          icon: FileText,
+          badge: undecidedApplications > 0 ? undecidedApplications : null,
         },
         {
           href: "/pages/tenant/visit-history",
-          label: "My Bookings",
-          icon: <BookOpen className="w-4 h-4" />,
+          label: "Visit History",
+          icon: MapPin,
+        },
+        {
+          href: "/pages/tenant/unitHistory",
+          label: "Unit History",
+          icon: Clock,
         },
       ];
     }
@@ -174,14 +200,48 @@ const Navbar = () => {
     return [];
   };
 
-  const navigationLinks = getNavigationLinks();
+  // Dropdown menu items (quick access in profile dropdown)
+  const getDropdownLinks = () => {
+    if (user?.userType === "tenant") {
+      return [
+        { href: "/pages/tenant/my-unit", label: "My Units", icon: Building2 },
+        {
+          href: "/pages/tenant/myApplications",
+          label: "My Applications",
+          icon: FileText,
+          badge: undecidedApplications > 0 ? undecidedApplications : null,
+        },
+        {
+          href: "/pages/tenant/visit-history",
+          label: "Visit History",
+          icon: MapPin,
+        },
+        {
+          href: "/pages/tenant/unitHistory",
+          label: "Unit History",
+          icon: Clock,
+        },
+      ];
+    }
+    return [];
+  };
+
+  const mainNavLinks = getMainNavLinks();
+  const allNavLinks = getAllNavLinks();
+  const dropdownLinks = getDropdownLinks();
 
   // Don't render navbar for landlords
   if (user?.userType === "landlord") {
     return null;
   }
 
-  const isActiveLink = (href) => pathname === href;
+  // Don't render navbar in portal mode (portal has its own navigation)
+  if (isInPortalMode) {
+    return null;
+  }
+
+  const isActiveLink = (href) =>
+    pathname === href || pathname?.startsWith(href + "/");
 
   return (
     <>
@@ -215,7 +275,7 @@ const Navbar = () => {
             <div className="flex items-center space-x-3">
               {/* Navigation Links */}
               <div className="hidden lg:flex items-center space-x-1">
-                {navigationLinks.map((link) => (
+                {mainNavLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -331,7 +391,7 @@ const Navbar = () => {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 8, scale: 0.96 }}
                           transition={{ duration: 0.15, ease: "easeOut" }}
-                          className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden"
+                          className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden z-[60]"
                         >
                           {/* User Info Header */}
                           <div className="px-4 py-4 bg-gradient-to-br from-blue-50 via-white to-emerald-50 border-b border-gray-100">
@@ -389,48 +449,47 @@ const Navbar = () => {
                             </div>
                           )}
 
-                          {/* Menu Items */}
-                          <div className="py-2">
-                            {user?.userType === "tenant" && !hasLease ? (
-                              <div className="px-4 py-3 flex items-center gap-3 text-gray-400 cursor-not-allowed">
-                                <div className="p-2 bg-gray-100 rounded-lg">
-                                  <LayoutDashboard className="w-4 h-4" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium">
-                                    Dashboard
-                                  </p>
-                                  <p className="text-xs">
-                                    Requires active lease
-                                  </p>
-                                </div>
-                              </div>
-                            ) : (
-                              <Link
-                                href={
-                                  user?.userType === "tenant"
-                                    ? "/pages/tenant/my-unit"
-                                    : "/pages/tenant/feeds"
-                                }
-                                onClick={() => setDropdownOpen(false)}
-                                className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
-                              >
-                                <div className="p-2 bg-gray-100 group-hover:bg-blue-100 rounded-lg transition-colors">
-                                  <LayoutDashboard className="w-4 h-4 text-gray-500 group-hover:text-blue-600" />
-                                </div>
-                                <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                                  Dashboard
-                                </span>
-                              </Link>
-                            )}
+                          {/* Quick Navigation */}
+                          {dropdownLinks.length > 0 && (
+                            <div className="py-2 border-b border-gray-100">
+                              <p className="px-4 py-1 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                Quick Access
+                              </p>
+                              {dropdownLinks.map(
+                                ({ href, label, icon: Icon, badge }) => (
+                                  <Link
+                                    key={href}
+                                    href={href}
+                                    onClick={() => setDropdownOpen(false)}
+                                    className="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
+                                  >
+                                    <div className="p-1.5 bg-gray-100 group-hover:bg-blue-100 rounded-lg transition-colors">
+                                      <Icon className="w-4 h-4 text-gray-500 group-hover:text-blue-600" />
+                                    </div>
+                                    <span className="flex-1 text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                                      {label}
+                                    </span>
+                                    {badge && (
+                                      <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
+                                        {badge}
+                                      </span>
+                                    )}
+                                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500" />
+                                  </Link>
+                                )
+                              )}
+                            </div>
+                          )}
 
+                          {/* Account Links */}
+                          <div className="py-2">
                             {user && (
                               <Link
                                 href="/pages/commons/profile"
                                 onClick={() => setDropdownOpen(false)}
-                                className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
+                                className="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
                               >
-                                <div className="p-2 bg-gray-100 group-hover:bg-blue-100 rounded-lg transition-colors">
+                                <div className="p-1.5 bg-gray-100 group-hover:bg-blue-100 rounded-lg transition-colors">
                                   <User className="w-4 h-4 text-gray-500 group-hover:text-blue-600" />
                                 </div>
                                 <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
@@ -443,28 +502,13 @@ const Navbar = () => {
                               <Link
                                 href={`/pages/system_admin/profile/${admin.admin_id}`}
                                 onClick={() => setDropdownOpen(false)}
-                                className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
+                                className="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
                               >
-                                <div className="p-2 bg-gray-100 group-hover:bg-blue-100 rounded-lg transition-colors">
+                                <div className="p-1.5 bg-gray-100 group-hover:bg-blue-100 rounded-lg transition-colors">
                                   <User className="w-4 h-4 text-gray-500 group-hover:text-blue-600" />
                                 </div>
                                 <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
                                   View Profile
-                                </span>
-                              </Link>
-                            )}
-
-                            {user?.userType === "tenant" && (
-                              <Link
-                                href="/pages/tenant/digital-passport"
-                                onClick={() => setDropdownOpen(false)}
-                                className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors group"
-                              >
-                                <div className="p-2 bg-gray-100 group-hover:bg-blue-100 rounded-lg transition-colors">
-                                  <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-blue-600" />
-                                </div>
-                                <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                                  Digital Passport
                                 </span>
                               </Link>
                             )}
@@ -474,9 +518,9 @@ const Navbar = () => {
                           <div className="border-t border-gray-100 p-2">
                             <button
                               onClick={handleLogout}
-                              className="w-full px-4 py-3 flex items-center gap-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                              className="w-full px-4 py-2.5 flex items-center gap-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                             >
-                              <div className="p-2 bg-red-100 rounded-lg">
+                              <div className="p-1.5 bg-red-100 rounded-lg">
                                 <LogOut className="w-4 h-4" />
                               </div>
                               <span className="text-sm font-medium">
@@ -624,53 +668,49 @@ const Navbar = () => {
 
                 {/* Navigation Links */}
                 <div className="py-2">
-                  {navigationLinks.map((link, index) => (
-                    <motion.div
-                      key={link.href}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <Link
-                        href={link.href}
-                        className={`flex items-center gap-3 px-4 py-3.5 transition-colors ${
-                          isActiveLink(link.href)
-                            ? "bg-blue-50 text-blue-600 border-l-4 border-blue-600"
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
+                  {allNavLinks.map((link, index) => {
+                    const Icon = link.icon;
+                    return (
+                      <motion.div
+                        key={link.href}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.03 }}
                       >
-                        <div
-                          className={`p-2 rounded-lg ${
+                        <Link
+                          href={link.href}
+                          className={`flex items-center gap-3 px-4 py-3.5 transition-colors ${
                             isActiveLink(link.href)
-                              ? "bg-blue-100"
-                              : "bg-gray-100"
+                              ? "bg-blue-50 text-blue-600 border-l-4 border-blue-600"
+                              : "text-gray-700 hover:bg-gray-50"
                           }`}
                         >
-                          {link.icon}
-                        </div>
-                        <span className="text-sm font-medium">
-                          {link.label}
-                        </span>
-                      </Link>
-                    </motion.div>
-                  ))}
+                          <div
+                            className={`p-2 rounded-lg ${
+                              isActiveLink(link.href)
+                                ? "bg-blue-100"
+                                : "bg-gray-100"
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className="flex-1 text-sm font-medium">
+                            {link.label}
+                          </span>
+                          {link.badge && (
+                            <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
+                              {link.badge}
+                            </span>
+                          )}
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 {/* User Actions (if logged in) */}
                 {(user || admin) && (
                   <div className="border-t border-gray-100 py-2">
-                    {user?.userType === "tenant" && hasLease && (
-                      <Link
-                        href="/pages/tenant/my-unit"
-                        className="flex items-center gap-3 px-4 py-3.5 text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="p-2 bg-gray-100 rounded-lg">
-                          <LayoutDashboard className="w-4 h-4" />
-                        </div>
-                        <span className="text-sm font-medium">Dashboard</span>
-                      </Link>
-                    )}
-
                     <Link
                       href={
                         user
@@ -684,20 +724,6 @@ const Navbar = () => {
                       </div>
                       <span className="text-sm font-medium">View Profile</span>
                     </Link>
-
-                    {user?.userType === "tenant" && (
-                      <Link
-                        href="/pages/tenant/digital-passport"
-                        className="flex items-center gap-3 px-4 py-3.5 text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="p-2 bg-gray-100 rounded-lg">
-                          <CreditCard className="w-4 h-4" />
-                        </div>
-                        <span className="text-sm font-medium">
-                          Digital Passport
-                        </span>
-                      </Link>
-                    )}
 
                     <button
                       onClick={handleLogout}
