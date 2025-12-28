@@ -11,9 +11,8 @@ export default function TenantPortalLayout({
   const params = useParams();
   const agreement_id = params?.agreement_id as string | undefined;
 
-  /* ================== SET PORTAL CONTEXT ================== */
+  // Store agreement ID when on portal pages
   useEffect(() => {
-    // Store agreement ID when on portal pages
     if (agreement_id) {
       localStorage.setItem("portalAgreementId", agreement_id);
     }
@@ -30,6 +29,6 @@ export default function TenantPortalLayout({
     );
   }
 
-  // Just render children - TenantLayout handles all the UI
+  // TenantLayout handles all the UI (sidebar, bottom nav, etc.)
   return <>{children}</>;
 }
