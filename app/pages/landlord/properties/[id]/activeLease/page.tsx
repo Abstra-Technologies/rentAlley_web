@@ -120,17 +120,15 @@ export default function PropertyLeasesPage() {
 
     const handleExtendLease = (lease: any) => {
         router.push(
-            `/pages/landlord/properties/${id}/activeLease/extend/${lease.agreement_id}`
+            `/pages/landlord/properties/${id}/activeLease/extend/${lease.lease_id}`
         );
     };
-
-
 
     const handleEndLease = async (lease: any) => {
         if (!confirm("Are you sure you want to permanently end this lease?")) return;
 
         await axios.post("/api/landlord/lease/end", {
-            agreement_id: lease.agreement_id,
+            agreement_id: lease.lease_id,
         });
 
         window.location.reload();
