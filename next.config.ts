@@ -10,19 +10,51 @@ const baseConfig: NextConfig = {
         ignoreBuildErrors: true,
     },
 
-    // experimental: {
-    //     allowedDevOrigins: [
-    //         "http://localhost:3000",
-    //         "https://appealing-rolland-nonprohibitorily.ngrok-free.dev",
-    //     ],
-    // },
-
     bundler: "webpack",
 
     /**
      * Silence turbopack auto-detection
      */
     turbopack: {},
+
+    /**
+     * 🔐 Security Headers (GLOBAL)
+     */
+    async headers() {
+        return [
+            {
+                source: "/(.*)",
+                headers: [
+                    {
+                        key: "X-Content-Type-Options",
+                        value: "nosniff",
+                    },
+                    {
+                        key: "X-Frame-Options",
+                        value: "SAMEORIGIN",
+                    },
+                    {
+                        key: "X-XSS-Protection",
+                        value: "1; mode=block",
+                    },
+
+                    // ✅ Recommended modern headers
+                    {
+                        key: "Referrer-Policy",
+                        value: "strict-origin-when-cross-origin",
+                    },
+                    {
+                        key: "Permissions-Policy",
+                        value: "camera=(), microphone=(), geolocation=()",
+                    },
+                    {
+                        key: "Strict-Transport-Security",
+                        value: "max-age=63072000; includeSubDomains; preload",
+                    },
+                ],
+            },
+        ];
+    },
 
     images: {
         remotePatterns: [
@@ -55,11 +87,6 @@ const baseConfig: NextConfig = {
             },
             { protocol: "https", hostname: "photos.app.goo.gl" },
             { protocol: "https", hostname: "res.cloudinary.com" },
-            {
-                protocol: "https",
-                hostname: "res.cloudinary.com",
-            },
-
         ],
     },
 };
