@@ -5,91 +5,149 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const property_id = searchParams.get("property_id");
+        const yearParam = searchParams.get("year");
 
         if (!property_id) {
-            return NextResponse.json({ error: "Missing property_id" }, { status: 400 });
+            return NextResponse.json(
+                { error: "Missing property_id" },
+                { status: 400 }
+            );
         }
 
+        const year = Number(yearParam || new Date().getFullYear());
+
         /* ======================================================
-            GROSS REVENUE — Confirmed Billing Payments
+           1️⃣ POTENTIAL GROSS INCOME (PGI)
+           Sum expected rent per month for ACTIVE leases
         ====================================================== */
-        const [revenueRows] = await db.query(
+        const [pgiRows]: any = await db.query(
+            `
+            SELECT
+                DATE_FORMAT(la.start_date, '%Y-%m') AS ym,
+                SUM(u.rent_amount) AS pgi
+            FROM LeaseAgreement la
+            JOIN Unit u ON la.unit_id = u.unit_id
+            WHERE u.property_id = ?
+              AND la.status IN ('active', 'completed')
+              AND YEAR(la.start_date) <= ?
+              AND (la.end_date IS NULL OR YEAR(la.end_date) >= ?)
+            GROUP BY ym
+            `,
+            [property_id, year, year]
+        );
+
+        /* ======================================================
+           2️⃣ ACTUAL COLLECTED RENT
+        ====================================================== */
+        const [revenueRows]: any = await db.query(
             `
             SELECT
                 DATE_FORMAT(b.billing_period, '%Y-%m') AS ym,
-                DATE_FORMAT(b.billing_period, '%b %Y') AS month_label,
-                SUM(p.amount_paid) AS totalRevenue
-            FROM rentalley_db.Payment p
-            JOIN rentalley_db.Billing b 
-                ON p.bill_id = b.billing_id
-            JOIN rentalley_db.Unit u
-                ON b.unit_id = u.unit_id
+                SUM(p.amount_paid) AS collected
+            FROM Payment p
+            JOIN Billing b ON p.bill_id = b.billing_id
+            JOIN Unit u ON b.unit_id = u.unit_id
             WHERE u.property_id = ?
+              AND YEAR(b.billing_period) = ?
               AND p.payment_status = 'confirmed'
-              AND p.payment_type = 'billing'
-            GROUP BY ym, month_label
-            ORDER BY ym ASC
-        `,
-            [property_id]
+              AND p.payment_type in ('billing', 'rent', 'advance_payment', 'security_deposit')
+            GROUP BY ym
+            `,
+            [property_id, year]
         );
 
         /* ======================================================
-           ⃣ PROPERTY EXPENSES — ConcessionaireBilling
-           Group by period_start month
+           3️⃣ OPERATING EXPENSES (Utilities)
         ====================================================== */
-        const [expenseRows] = await db.query(
+        const [expenseRows]: any = await db.query(
             `
             SELECT
                 DATE_FORMAT(cb.period_start, '%Y-%m') AS ym,
-                DATE_FORMAT(cb.period_start, '%b %Y') AS month_label,
                 SUM(
                     COALESCE(cb.water_total, 0) +
                     COALESCE(cb.electricity_total, 0)
-                ) AS totalExpense
-            FROM rentalley_db.ConcessionaireBilling cb
+                ) AS opex
+            FROM ConcessionaireBilling cb
             WHERE cb.property_id = ?
-            GROUP BY ym, month_label
-            ORDER BY ym ASC
-        `,
-            [property_id]
+              AND YEAR(cb.period_start) = ?
+            GROUP BY ym
+            `,
+            [property_id, year]
         );
 
         /* ======================================================
-           3Normalize month keys
+           4️⃣ NORMALIZE MONTHS
         ====================================================== */
         const monthKeys = Array.from(
             new Set([
+                ...pgiRows.map((r: any) => r.ym),
                 ...revenueRows.map((r: any) => r.ym),
-                ...expenseRows.map((e: any) => e.ym),
+                ...expenseRows.map((r: any) => r.ym),
             ])
         ).sort();
 
-        const revenueMap = new Map(
-            revenueRows.map((row: any) => [row.ym, Number(row.totalRevenue || 0)])
-        );
-
-        const expenseMap = new Map(
-            expenseRows.map((row: any) => [row.ym, Number(row.totalExpense || 0)])
-        );
-
-        const labelMap = new Map(
-            [...revenueRows, ...expenseRows].map((row: any) => [row.ym, row.month_label])
-        );
+        const pgiMap = new Map(pgiRows.map((r: any) => [r.ym, Number(r.pgi || 0)]));
+        const collectedMap = new Map(revenueRows.map((r: any) => [r.ym, Number(r.collected || 0)]));
+        const opexMap = new Map(expenseRows.map((r: any) => [r.ym, Number(r.opex || 0)]));
 
         /* ======================================================
-           4️Final Response (Property-Specific)
+           5️⃣ CALCULATIONS
         ====================================================== */
-        return NextResponse.json({
-            months: monthKeys.map((ym) => labelMap.get(ym)),
-            revenue: monthKeys.map((ym) => revenueMap.get(ym) || 0),
-            expenses: monthKeys.map((ym) => expenseMap.get(ym) || 0),
-            noi: monthKeys.map(
-                (ym) => (revenueMap.get(ym) || 0) - (expenseMap.get(ym) || 0)
+        const metrics = {
+            monthNames: monthKeys.map((ym) =>
+                new Date(`${ym}-01`).toLocaleString("default", {
+                    month: "short",
+                    year: "numeric",
+                })
             ),
+
+            grossRentTrend: [],
+            noiTrend: [],
+
+            grossRent: {},
+            noi: {},
+        };
+
+        let totalGOI = 0;
+        let totalNOI = 0;
+
+        monthKeys.forEach((ym) => {
+            const pgi = pgiMap.get(ym) || 0;
+            const collected = collectedMap.get(ym) || 0;
+            const vacancyLoss = Math.max(pgi - collected, 0);
+            const otherIncome = 0; // Future-ready
+            const goi = (pgi - vacancyLoss) + otherIncome;
+            const opex = opexMap.get(ym) || 0;
+            const noi = goi - opex;
+
+            metrics.grossRentTrend.push(goi);
+            metrics.noiTrend.push(noi);
+
+            totalGOI += goi;
+            totalNOI += noi;
         });
 
+        /* ======================================================
+           6️⃣ SUMMARY METRICS (YTD)
+        ====================================================== */
+        metrics.grossRent.ytd = {
+            current: totalGOI,
+            last: 0,
+            variance: 0,
+        };
+
+        metrics.noi.ytd = {
+            current: totalNOI,
+            last: 0,
+            variance: 0,
+        };
+
+        return NextResponse.json({
+            year,
+            metrics,
+        });
     } catch (error: any) {
-        console.error("Error fetching revenue-expense trend:", error);
+        console.error("❌ NOI Analytics Error:", error);
         return NextResponse.json(
             { error: "Internal server error", details: error.message },
             { status: 500 }
