@@ -96,18 +96,19 @@ export default function InstallPrompt() {
               </div>
 
               {/* Features */}
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Faster access</span>
+                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Faster access</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Smooth navigation</span>
+                    </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Works offline</span>
-                </div>
-              </div>
 
-              {/* Actions */}
+
+                {/* Actions */}
               <div className="flex items-center gap-2 mt-4">
                 <button
                   onClick={handleDismiss}
