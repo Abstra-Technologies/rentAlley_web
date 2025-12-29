@@ -28,9 +28,12 @@ export default function PropertyListingPage() {
         handleAddProperty,
         itemsPerPage,
 
-        // flags from hook
+        // ✅ FROM HOOK
+        verificationStatus,
+        isFetchingVerification,
         hasReachedLimit,
         isAddDisabled,
+        maxProperties,
     } = usePropertyListingPage();
 
     /* =========================
@@ -50,18 +53,12 @@ export default function PropertyListingPage() {
     }
 
     /* =========================
-       UI STATES (INDEPENDENT)
+       DERIVED UI FLAGS (PURE UI)
     ========================== */
+
     const isNotSubscribed = !subscription;
-
-    // 🔥 VERIFICATION IS ITS OWN AXIS
-    // UI communicates requirement, hook enforces truth
-    const isNotVerified = true;
-
-    const maxProperties =
-        subscription?.limits?.maxProperties ??
-        subscription?.listingLimits?.maxProperties ??
-        null;
+    const isNotVerified =
+        !isFetchingVerification && verificationStatus !== "approved";
 
     const totalCount = properties.length;
 
@@ -97,70 +94,22 @@ export default function PropertyListingPage() {
                     {/* Counter + CTA */}
                     <div className="flex items-center gap-3">
                         <div className="bg-gray-50 rounded-lg border border-gray-200 px-4 py-2">
-              <span className="text-sm font-bold text-gray-900">
-                {totalCount} /{" "}
-                  {subscription
-                      ? maxProperties === null
-                          ? "∞"
-                          : maxProperties
-                      : "—"}
-              </span>
+                            <span className="text-sm font-bold text-gray-900">
+                                {totalCount} /{" "}
+                                {subscription
+                                    ? maxProperties === null
+                                        ? "∞"
+                                        : maxProperties
+                                    : "—"}
+                            </span>
                         </div>
 
                         <button
                             aria-disabled={isAddDisabled}
-                            onClick={() => {
-                                if (isNotSubscribed) {
-                                    return Swal.fire({
-                                        title: "Subscription required",
-                                        text:
-                                            "You need an active subscription to add properties.",
-                                        icon: "info",
-                                        confirmButtonText: "View plans",
-                                    }).then((r) => {
-                                        if (r.isConfirmed) {
-                                            router.push(
-                                                "/pages/landlord/subsciption_plan/pricing"
-                                            );
-                                        }
-                                    });
-                                }
-
-                                if (hasReachedLimit) {
-                                    return Swal.fire({
-                                        title: "Property limit reached",
-                                        text:
-                                            "Upgrade your plan to add more properties.",
-                                        icon: "error",
-                                        confirmButtonText: "Upgrade plan",
-                                    }).then((r) => {
-                                        if (r.isConfirmed) {
-                                            router.push(
-                                                "/pages/landlord/subsciption_plan/pricing"
-                                            );
-                                        }
-                                    });
-                                }
-
-                                // 🔥 VERIFICATION CHECK (SEPARATE)
-                                if (isNotVerified) {
-                                    return Swal.fire({
-                                        title: "Verification required",
-                                        text:
-                                            "Your landlord account must be verified before adding properties.",
-                                        icon: "warning",
-                                        confirmButtonText: "Verify now",
-                                    }).then((r) => {
-                                        if (r.isConfirmed) {
-                                            router.push("/pages/landlord/verification");
-                                        }
-                                    });
-                                }
-
-                                handleAddProperty();
-                            }}
+                            disabled={isAddDisabled}
+                            onClick={handleAddProperty}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all
-                ${
+                                ${
                                 isAddDisabled
                                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                     : "bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:from-blue-700 hover:to-emerald-700"
@@ -172,14 +121,14 @@ export default function PropertyListingPage() {
                     </div>
                 </div>
 
-                {/* ================= WARNINGS (INDEPENDENT & COEXISTING) ================= */}
+                {/* ================= WARNINGS ================= */}
                 <div className="mt-3 space-y-2">
                     {isNotSubscribed && (
                         <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                             <span className="font-semibold">⚠</span>
                             <span className="flex-1">
-                An active subscription is required to add properties.
-              </span>
+                                An active subscription is required to add properties.
+                            </span>
                             <button
                                 onClick={() =>
                                     router.push(
@@ -197,8 +146,8 @@ export default function PropertyListingPage() {
                         <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                             <span className="font-semibold">⚠</span>
                             <span className="flex-1">
-                Your landlord account must be verified to list properties.
-              </span>
+                                Your landlord account must be verified to list properties.
+                            </span>
                             <button
                                 onClick={() =>
                                     router.push("/pages/landlord/verification")
@@ -224,7 +173,7 @@ export default function PropertyListingPage() {
                         }}
                         placeholder="Search properties by name, address, or ID..."
                         className="w-full pl-10 pr-4 py-2.5 border rounded-lg
-                       focus:ring-2 focus:ring-blue-500 text-sm"
+                        focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                 </div>
             </div>

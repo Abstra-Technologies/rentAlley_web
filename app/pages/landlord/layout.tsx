@@ -159,24 +159,39 @@ export default function LandlordLayout({
                     <div className="px-4 py-4 border-b bg-gray-50">
                         <div className="flex items-center gap-3">
                             <Image
-                                src={user.profilePicture || "https://res.cloudinary.com/dptmeluy0/image/upload/v1766715365/profile-icon-design-free-vector_la6rgj.jpg"}
+                                src={
+                                    user.profilePicture ||
+                                    "https://res.cloudinary.com/dptmeluy0/image/upload/v1766715365/profile-icon-design-free-vector_la6rgj.jpg"
+                                }
                                 alt="Profile"
                                 width={40}
                                 height={40}
                                 className="rounded-full"
                             />
-                            <div className="flex-1">
+
+                            <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm truncate">
                                     {user.firstName && user.lastName
                                         ? `${user.firstName} ${user.lastName}`
                                         : user.companyName || user.email}
                                 </p>
+
+                                {/* Role */}
                                 <p className="text-xs text-gray-500">Landlord</p>
+
+                                {/* Landlord ID */}
+                                {user.landlord_id && (
+                                    <p className="text-[11px] text-gray-400 truncate">
+                                        ID: {user.landlord_id}
+                                    </p>
+                                )}
                             </div>
+
                             <Link href="/pages/commons/profile">
                                 <Settings className="w-5 h-5 text-gray-500 hover:text-blue-600" />
                             </Link>
                         </div>
+
                     </div>
 
                     {/* NAV */}
