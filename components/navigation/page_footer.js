@@ -15,7 +15,8 @@ const Page_footer = () => {
     },
     { icon: FaTwitter, href: "https://twitter.com/upkyp" },
     { icon: FaInstagram, href: "https://www.instagram.com/upkypp/" },
-    { icon: FaLinkedinIn, href: "https://www.linkedin.com/company/upkyp" },
+    { icon: FaLinkedinIn, href: "https://www.linkedin.com/company/\n" +
+            "abstra-technologies-corporation\n" },
   ];
 
   return (
