@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { Download, Smartphone } from "lucide-react";
+import Image from "next/image";
 
 export default function DownloadPage() {
     const [isPWAInstalled, setIsPWAInstalled] = useState(false);
@@ -14,7 +14,6 @@ export default function DownloadPage() {
             setIsPWAInstalled(true);
         }
 
-        // Capture beforeinstallprompt event
         const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
@@ -23,52 +22,78 @@ export default function DownloadPage() {
         window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
         return () => {
-            window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+            window.removeEventListener(
+                "beforeinstallprompt",
+                handleBeforeInstallPrompt
+            );
         };
     }, []);
 
     const handleInstall = async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const choiceResult = await deferredPrompt.userChoice;
-            if (choiceResult.outcome === "accepted") {
-                console.log("PWA installed");
-                setIsPWAInstalled(true);
-            }
-            setDeferredPrompt(null);
+        if (!deferredPrompt) return;
+
+        deferredPrompt.prompt();
+        const choiceResult = await deferredPrompt.userChoice;
+
+        if (choiceResult.outcome === "accepted") {
+            setIsPWAInstalled(true);
         }
+
+        setDeferredPrompt(null);
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-800 via-teal-700 to-emerald-600 text-white p-6">
+        <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-6">
+            {/* FULL IMAGE BACKGROUND */}
+            <Image
+                src="https://res.cloudinary.com/dpukdla69/image/upload/v1765966152/Whisk_mtnhzwyxajzmdtyw0yn2mtotijzhrtllbjzh1sn_wpw850.jpg"
+                alt="UpKyp background"
+                fill
+                className="object-cover"
+                priority
+            />
 
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-lg p-10 max-w-md text-center items-center justify-center">
-                <Smartphone className="w-16 h-16 mx-auto mb-4 text-emerald-300" />
-                <h1 className="text-2xl font-bold mb-2">Download UpKyp</h1>
-                <p className="text-sm text-gray-200 mb-6">
-                    Install our app to manage your rentals anytime, anywhere. Works on mobile and desktop!
-                </p>
+            {/* CONTENT */}
+            <div className="relative z-10 w-full max-w-md text-center">
+                <div
+                    className="rounded-2xl p-10 shadow-2xl
+                               bg-white/10 backdrop-blur-lg
+                               border border-white/20"
+                >
+                    <Smartphone className="w-16 h-16 mx-auto mb-4 text-white" />
 
-                {isPWAInstalled ? (
-                    <p className="text-emerald-300 font-semibold">✅ App already installed</p>
-                ) : deferredPrompt ? (
-                    <div className="flex justify-center">
+                    <h1 className="text-2xl font-bold text-white mb-2">
+                        Download UpKyp
+                    </h1>
+
+                    <p className="text-sm text-white/90 mb-6">
+                        Install the UpKyp app to manage your rentals anytime,
+                        anywhere. Works on mobile and desktop.
+                    </p>
+
+                    {isPWAInstalled ? (
+                        <p className="text-emerald-300 font-semibold">
+                            ✅ App already installed
+                        </p>
+                    ) : deferredPrompt ? (
                         <button
                             onClick={handleInstall}
-                            className="flex items-center gap-2 px-6 py-3 bg-emerald-500 justify-center text-white rounded-lg shadow-lg
-                 hover:bg-emerald-600 transition-transform duration-300
-                 animate-bounce hover:scale-105 active:scale-95"
+                            className="mx-auto flex items-center justify-center gap-2
+                                       px-6 py-3 rounded-lg
+                                       bg-emerald-500 text-white font-medium
+                                       shadow-lg transition-all
+                                       hover:bg-emerald-600 hover:scale-105
+                                       active:scale-95"
                         >
                             <Download className="w-5 h-5" />
                             Install App
                         </button>
-                    </div>
-                ) : (
-                    <p className="text-gray-300 text-sm">
-                        Open this site in your mobile/desktop browser to install the app.
-                    </p>
-                )}
-
+                    ) : (
+                        <p className="text-white/80 text-sm">
+                            Open this site in your browser to install the app.
+                        </p>
+                    )}
+                </div>
             </div>
         </div>
     );
