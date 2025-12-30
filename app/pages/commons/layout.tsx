@@ -19,6 +19,7 @@ import {
   ChevronRight,
   AlertCircle,
   Home,
+  ArrowLeft,
 } from "lucide-react";
 
 import useAuthStore from "@/zustand/authStore";
@@ -31,24 +32,28 @@ const profileNavLinks = [
   {
     href: "/pages/commons/profile",
     label: "Profile",
+    shortLabel: "Profile",
     icon: UserIcon,
     roles: ["tenant", "landlord", "admin"],
   },
   {
     href: "/pages/commons/profile/security",
     label: "Security & Privacy",
+    shortLabel: "Security",
     icon: ShieldCheckIcon,
     roles: ["tenant", "landlord", "admin"],
   },
   {
     href: "/pages/commons/landlord/payoutDetails",
     label: "Payout Account",
+    shortLabel: "Payout",
     icon: CreditCardIcon,
     roles: ["landlord"],
   },
   {
     href: "/pages/commons/landlord/subscription",
     label: "View Subscription",
+    shortLabel: "Subscription",
     icon: CreditCardIcon,
     roles: ["landlord"],
   },
@@ -90,8 +95,6 @@ export default function SideNavProfile({
     router.push("/pages/auth/login");
   };
 
-  const hasNavbar = user?.userType === "tenant";
-
   const mainPageUrl =
     user?.userType === "landlord"
       ? "/pages/landlord/dashboard"
@@ -117,30 +120,122 @@ export default function SideNavProfile({
     return <LoadingScreen message="Redirecting to login..." />;
   }
 
+  // =====================================================
+  // TENANT VIEW - Simple inline tabs (Navbar handles main nav)
+  // =====================================================
+  if (user?.userType === "tenant") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
+        {/* Sticky Tab Navigation */}
+        <div className="sticky top-14 md:top-16 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200">
+          <div className="max-w-4xl mx-auto px-4">
+            {/* Header Row */}
+            <div className="flex items-center gap-3 py-3">
+              <button
+                onClick={() => router.push(mainPageUrl)}
+                className="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors group"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-gray-900" />
+              </button>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg font-bold text-gray-900">
+                  Account Settings
+                </h1>
+              </div>
+            </div>
+
+            {/* Tab Pills */}
+            <div className="flex items-center gap-2 pb-3 overflow-x-auto scrollbar-hide">
+              {filteredLinks.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap
+                      font-medium text-sm transition-all duration-200
+                      ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md shadow-blue-500/25"
+                          : "text-gray-600 hover:bg-gray-100 bg-gray-50"
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{item.label}</span>
+                    <span className="sm:hidden">{item.shortLabel}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content - Full width, no sidebar offset */}
+        <main className="max-w-4xl mx-auto">{children}</main>
+
+        {/* Logout Confirmation Modal */}
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-7 h-7 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+                Confirm Logout
+              </h3>
+              <p className="text-sm text-gray-600 text-center mb-6">
+                Are you sure you want to sign out?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // =====================================================
+  // LANDLORD VIEW - Full Sidebar Layout
+  // =====================================================
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
       {/*---------------------------------------------*/}
       {/* DESKTOP SIDEBAR */}
       {/*---------------------------------------------*/}
-      <aside
-        className={`hidden md:flex md:flex-col md:fixed md:bottom-0 md:z-40 md:w-72 md:bg-white md:shadow-xl ${
-          hasNavbar ? "md:top-16" : "md:top-0"
-        }`}
-      >
+      <aside className="hidden md:flex md:flex-col md:fixed md:top-0 md:bottom-0 md:z-40 md:w-72 md:bg-white md:shadow-xl">
         <div className="flex flex-col h-full">
           {/* HEADER */}
           <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm">
-            <h1 className="text-lg font-bold text-white">Account Settings</h1>
-            <p className="text-xs text-white/80 mt-1">
-              Manage your personal information
-            </p>
+            <Link
+              href="/pages/landlord/dashboard"
+              className="text-2xl font-bold text-white"
+            >
+              Upkyp
+            </Link>
+            <p className="text-xs text-white/80 mt-1">Account Settings</p>
           </div>
 
           {/* Back Button */}
           <div className="px-4 pt-4 pb-2">
             <button
               onClick={() => router.push(mainPageUrl)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 rounded-lg hover:from-blue-100 hover:to-emerald-100 transition-all duration-200"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 rounded-xl hover:from-blue-100 hover:to-emerald-100 transition-all duration-200"
             >
               <ChevronLeft className="w-5 h-5 text-blue-600" />
               {mainPageLabel}
@@ -148,115 +243,130 @@ export default function SideNavProfile({
           </div>
 
           {/* PROFILE HEADER */}
-          <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
-            <div className="flex items-center gap-3 p-2">
+          <div className="px-4 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
               <Image
                 src={
                   user.profilePicture ||
                   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
                 }
                 alt="Profile"
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                width={44}
+                height={44}
+                className="w-11 h-11 rounded-xl object-cover border-2 border-white shadow-sm"
               />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">
                   {user.firstName
                     ? `${user.firstName} ${user.lastName}`
                     : user.companyName || user.email}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {user.userType === "landlord"
-                    ? "Landlord Account"
-                    : user.userType === "tenant"
-                    ? "Tenant Account"
-                    : "Admin Account"}
-                </p>
+                <p className="text-xs text-gray-600">Landlord Account</p>
               </div>
             </div>
           </div>
 
           {/* NAVIGATION LIST */}
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
-            {filteredLinks.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+            <div className="space-y-1">
+              {filteredLinks.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${
-                    isActive
-                      ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg"
-                      : "text-gray-700 hover:bg-gray-100 hover:shadow-md"
-                  }`}
-                >
-                  {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/40 rounded-r-full" />
-                  )}
-                  <Icon className="w-5 h-5" />
-                  <span className="text-sm">{item.label}</span>
-                  {isActive && (
-                    <div className="ml-auto w-2 h-2 rounded-full bg-white animate-pulse" />
-                  )}
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                      isActive
+                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/25"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                    {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                  </Link>
+                );
+              })}
 
-            {/* LOGOUT */}
-            <button
-              onClick={() => setShowLogoutConfirm(true)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 hover:shadow-md w-full mt-2"
-            >
-              <ArrowRightOnRectangleIcon className="w-5 h-5" />
-              <span className="text-sm">Logout</span>
-            </button>
+              {/* LOGOUT */}
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-600 hover:bg-red-50 w-full mt-2 transition-colors"
+              >
+                <ArrowRightOnRectangleIcon className="w-5 h-5" />
+                <span className="text-sm font-medium">Logout</span>
+              </button>
+            </div>
           </nav>
+
+          {/* Help Section */}
+          <div className="px-4 py-4 border-t border-gray-100">
+            <div className="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-xl p-4 text-white">
+              <div className="text-sm font-medium mb-1">Need Help?</div>
+              <div className="text-xs opacity-90 mb-3">Contact support</div>
+              <button className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
+                Get Support
+              </button>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-500">
+                © {new Date().getFullYear()} Upkyp
+              </p>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-gray-500">Connected</span>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
 
       {/*---------------------------------------------*/}
-      {/* MOBILE MENU BUTTON */}
+      {/* MOBILE MENU BUTTON - Bottom LEFT to avoid FeedbackWidget */}
       {/*---------------------------------------------*/}
       <button
         onClick={() => setIsSidebarOpen(true)}
-        className="md:hidden fixed bottom-24 right-6 z-50 p-4 rounded-full shadow-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-2xl transition-shadow"
+        className="md:hidden fixed bottom-6 left-6 z-50 p-4 rounded-2xl shadow-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-xl hover:scale-105 transition-all"
       >
         <Menu className="w-6 h-6" />
       </button>
 
       {/*---------------------------------------------*/}
-      {/* MOBILE SIDEBAR */}
+      {/* MOBILE SIDEBAR - Bottom Sheet */}
       {/*---------------------------------------------*/}
       {isSidebarOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
             onClick={() => setIsSidebarOpen(false)}
           />
 
-          <aside className="fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
-            {/* Header */}
-            <div className="px-4 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 text-white flex justify-between items-center shadow-sm">
-              <h2 className="text-lg font-bold">Account Settings</h2>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+          <aside className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
             </div>
 
-            {/* PROMINENT BACK TO DASHBOARD BUTTON - AT THE TOP */}
-            <div className="px-4 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b-2 border-blue-100 shadow-sm">
+            {/* Header */}
+            <div className="px-5 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
+              <h2 className="text-lg font-bold">Account Settings</h2>
+              <p className="text-sm text-white/80">Manage your profile</p>
+            </div>
+
+            {/* Back Button */}
+            <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
               <button
                 onClick={() => {
                   setIsSidebarOpen(false);
                   router.push(mainPageUrl);
                 }}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02]"
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
                 <Home className="w-5 h-5" />
                 {mainPageLabel}
@@ -264,7 +374,7 @@ export default function SideNavProfile({
             </div>
 
             {/* Mobile Profile */}
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+            <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <Image
                   src={
@@ -274,7 +384,7 @@ export default function SideNavProfile({
                   alt="Profile"
                   width={48}
                   height={48}
-                  className="w-12 h-12 rounded-full border-2 border-white shadow-md object-cover"
+                  className="w-12 h-12 rounded-xl border-2 border-white shadow-md object-cover"
                 />
                 <div>
                   <p className="font-semibold text-gray-900 text-sm">
@@ -282,9 +392,7 @@ export default function SideNavProfile({
                       ? `${user.firstName} ${user.lastName}`
                       : user.companyName || user.email}
                   </p>
-                  <p className="text-xs text-gray-600 capitalize">
-                    {user.userType} Account
-                  </p>
+                  <p className="text-xs text-gray-600">Landlord Account</p>
                 </div>
               </div>
             </div>
@@ -300,25 +408,31 @@ export default function SideNavProfile({
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsSidebarOpen(false)}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
+                    className={`flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 border-2 ${
                       isActive
-                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg"
-                        : "bg-white border border-gray-100 hover:border-gray-200 hover:shadow-md text-gray-700"
+                        ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200 text-blue-700"
+                        : "bg-white border-gray-100 hover:border-gray-200 text-gray-700"
                     }`}
                   >
                     <div
-                      className={`p-2 rounded-lg ${
-                        isActive ? "bg-white/20" : "bg-gray-50"
+                      className={`p-2.5 rounded-xl ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-100 to-emerald-100"
+                          : "bg-gray-100"
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon
+                        className={`w-5 h-5 ${
+                          isActive ? "text-blue-700" : "text-gray-500"
+                        }`}
+                      />
                     </div>
                     <span className="flex-1 font-medium text-sm">
                       {item.label}
                     </span>
                     <ChevronRight
                       className={`w-5 h-5 ${
-                        isActive ? "text-white/70" : "text-gray-400"
+                        isActive ? "text-blue-700" : "text-gray-400"
                       }`}
                     />
                   </Link>
@@ -331,13 +445,29 @@ export default function SideNavProfile({
                   setIsSidebarOpen(false);
                   setShowLogoutConfirm(true);
                 }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition-colors mt-4"
+                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors mt-2"
               >
-                <div className="p-2 rounded-lg bg-red-100">
+                <div className="p-2.5 rounded-xl bg-red-100">
                   <ArrowRightOnRectangleIcon className="w-5 h-5" />
                 </div>
-                <span className="font-medium text-sm">Logout</span>
+                <span className="flex-1 font-medium text-sm text-left">
+                  Logout
+                </span>
+                <ChevronRight className="w-5 h-5 text-red-400" />
               </button>
+
+              {/* Help */}
+              <div className="mt-4">
+                <div className="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-xl p-4 text-white">
+                  <div className="text-sm font-medium mb-1">Need Help?</div>
+                  <div className="text-xs opacity-90 mb-3">Contact support</div>
+                  <button className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
+                    Get Support
+                  </button>
+                </div>
+              </div>
+
+              <div className="h-6"></div>
             </nav>
           </aside>
         </>
@@ -348,29 +478,26 @@ export default function SideNavProfile({
       {/*---------------------------------------------*/}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-6 h-6 text-red-600" />
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-7 h-7 text-red-600" />
             </div>
-            <h3 className="text-lg font-semibold text-center text-gray-900 mb-2">
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
               Confirm Logout
             </h3>
             <p className="text-sm text-gray-600 text-center mb-6">
-              Are you sure you want to sign out? You'll need to log in again to
-              access your account.
+              Are you sure you want to sign out?
             </p>
-
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
               >
                 Cancel
               </button>
-
               <button
                 onClick={handleLogout}
-                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors"
               >
                 Logout
               </button>
@@ -380,11 +507,9 @@ export default function SideNavProfile({
       )}
 
       {/*---------------------------------------------*/}
-      {/* MAIN CONTENT */}
+      {/* MAIN CONTENT - With sidebar offset for landlord */}
       {/*---------------------------------------------*/}
-      <main className="flex-1 md:pl-72 pt-14 md:pt-0 bg-gradient-to-br from-gray-50 via-blue-50/20 to-emerald-50/20">
-        {children}
-      </main>
+      <main className="flex-1 md:pl-72">{children}</main>
     </div>
   );
 }
