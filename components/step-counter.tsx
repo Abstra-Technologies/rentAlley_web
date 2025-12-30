@@ -3,7 +3,6 @@ import React from "react";
 const steps = [
   { id: 1, label: "Property Details", shortLabel: "Details" },
   { id: 2, label: "Property Documents", shortLabel: "documents" },
-
 ];
 
 const StepCounter = ({ currentStep }) => {

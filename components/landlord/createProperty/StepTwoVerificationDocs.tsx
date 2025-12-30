@@ -137,6 +137,7 @@ export default function StepTwoVerificationDocs() {
         {/* Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button
+            type="button"
             className="bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition"
             onClick={() => openCamera("indoor")}
           >
@@ -144,6 +145,7 @@ export default function StepTwoVerificationDocs() {
           </button>
 
           <button
+            type="button"
             className="bg-emerald-600 text-white py-3 rounded-xl hover:bg-emerald-700 transition"
             onClick={() => openCamera("outdoor")}
           >
@@ -162,6 +164,7 @@ export default function StepTwoVerificationDocs() {
               <CameraWeb onCapture={handleCapture} />
 
               <button
+                type="button"
                 onClick={() => setShowCamera(false)}
                 className="mt-4 w-full bg-gray-700 text-white py-2 rounded-lg"
               >
