@@ -322,7 +322,7 @@ export default function MobileRegisterForm() {
         >
           Sign in
         </Link>
-      </p>
+    </p>
     </div>
   );
 }
