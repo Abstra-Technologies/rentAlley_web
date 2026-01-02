@@ -11,6 +11,7 @@ import {
   ArrowRightOnRectangleIcon,
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
+import { BellRing } from 'lucide-react';
 
 import {
   Menu,
@@ -43,6 +44,13 @@ const profileNavLinks = [
     icon: ShieldCheckIcon,
     roles: ["tenant", "landlord", "admin"],
   },
+    {
+        href: "/pages/commons/settings",
+        label: "Notification",
+        shortLabel: "Notification",
+        icon: BellRing,
+        roles: ["landlord", "tenant", "admin"],
+    },
   {
     href: "/pages/commons/landlord/payoutDetails",
     label: "Payout Account",

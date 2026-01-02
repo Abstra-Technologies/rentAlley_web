@@ -271,6 +271,24 @@ export default function LandlordLayout({
                                 <SendTenantInviteModal landlord_id={user.landlord_id} />
                             </div>
                         )}
+
+                        {/* MOBILE LOGOUT */}
+                        <div className="p-4 border-t">
+                            <button
+                                onClick={() => {
+                                    setIsSidebarOpen(false);
+                                    setShowLogoutConfirm(true);
+                                }}
+                                className="w-full flex items-center justify-center gap-2
+               px-4 py-2 rounded-lg border
+               text-red-600 border-red-200
+               hover:bg-red-50 transition-colors"
+                            >
+                                <LogOut className="w-5 h-5" />
+                                Logout
+                            </button>
+                        </div>
+
                     </aside>
                 </div>
             )}

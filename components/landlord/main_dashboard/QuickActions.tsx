@@ -12,8 +12,8 @@ import {
     MessageSquareMore,
     Calendar,
     Construction,
-    ReceiptText
-
+    ReceiptText,
+    UserPen
 } from "lucide-react";
 
 export default function QuickActions({
@@ -83,6 +83,11 @@ export default function QuickActions({
             label: "Income",
             href: "/pages/landlord/payouts",
             icon: Wallet ,
+        },
+        {
+            label: "My Profile",
+            href: "/pages/commons/profile",
+            icon: UserPen  ,
         },
         {
             label: "Properties",
