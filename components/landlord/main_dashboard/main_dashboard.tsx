@@ -153,7 +153,13 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
                         </Suspense>
 
                         <Suspense fallback={<CardSkeleton />}>
-                            <PendingMaintenanceDonut landlordId={landlordId} />
+                            <div
+                                role="button"
+                                onClick={() => router.push("/pages/landlord/maintenance-request")}
+                                className="cursor-pointer transition hover:scale-[1.02] active:scale-95"
+                            >
+                                <PendingMaintenanceDonut landlordId={landlordId} />
+                            </div>
                         </Suspense>
 
                         <Suspense fallback={<CardSkeleton />}>

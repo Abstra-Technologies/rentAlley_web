@@ -12,6 +12,8 @@ import {
     MessageSquareMore,
     Calendar,
     Construction,
+    ReceiptText
+
 } from "lucide-react";
 
 export default function QuickActions({
@@ -78,6 +80,11 @@ export default function QuickActions({
     ================================= */
     const mobileActions = [
         {
+            label: "Income",
+            href: "/pages/landlord/payouts",
+            icon: Wallet ,
+        },
+        {
             label: "Properties",
             href: "/pages/landlord/property-listing",
             icon: Building,
@@ -103,9 +110,10 @@ export default function QuickActions({
             icon: Calendar,
         },
         {
-            label: "Payments",
+            label: "Transactions",
             href: "/pages/landlord/payments",
-            icon: Wallet,
+            icon:     ReceiptText
+            ,
         },
         {
             label: "Work Orders",
