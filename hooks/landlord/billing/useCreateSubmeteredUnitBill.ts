@@ -70,6 +70,7 @@ export function useCreateSubmeteredUnitBill() {
     const round2 = (n: number) =>
         Math.round((n + Number.EPSILON) * 100) / 100;
 
+    // GET billing Data for the month
     async function fetchUnitData() {
         try {
             const res = await axios.get(
@@ -432,7 +433,6 @@ export function useCreateSubmeteredUnitBill() {
             });
         }
     };
-
 
     /* ------------------ SUBMIT ------------------ */
     const handleSubmit = async () => {
