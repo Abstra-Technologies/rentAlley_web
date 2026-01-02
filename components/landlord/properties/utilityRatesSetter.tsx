@@ -9,7 +9,10 @@ import {
     Droplet,
     HelpCircle,
 } from "lucide-react";
-import { formatCurrency } from "@/utils/formatter/formatters";
+import {
+    formatCurrency,
+    formatDate,
+} from "@/utils/formatter/formatters";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { propertyRatesModalSteps } from "@/lib/onboarding/propertyBilling";
 
@@ -45,6 +48,25 @@ export default function PropertyRatesModal({
         autoStart: false,
     });
 
+    /* ---------------- SYNC DATES WHEN MODAL OPENS ---------------- */
+    useEffect(() => {
+        if (!isOpen || !billingData) return;
+
+        handleInputChange({
+            target: {
+                name: "periodStart",
+                value: formatDate(billingData.period_start),
+            },
+        } as any);
+
+        handleInputChange({
+            target: {
+                name: "periodEnd",
+                value: formatDate(billingData.period_end),
+            },
+        } as any);
+    }, [isOpen, billingData]);
+
     /* ---------------- RATE COMPUTATION (DISPLAY ONLY) ---------------- */
     const computedRates = useMemo(() => {
         const eTotal = Number(billingForm.electricityTotal);
@@ -53,10 +75,8 @@ export default function PropertyRatesModal({
         const wCons = Number(billingForm.waterConsumption);
 
         return {
-            electricityRate:
-                eTotal > 0 && eCons > 0 ? eTotal / eCons : 0,
-            waterRate:
-                wTotal > 0 && wCons > 0 ? wTotal / wCons : 0,
+            electricityRate: eTotal > 0 && eCons > 0 ? eTotal / eCons : 0,
+            waterRate: wTotal > 0 && wCons > 0 ? wTotal / wCons : 0,
         };
     }, [
         billingForm.electricityTotal,
@@ -146,7 +166,7 @@ export default function PropertyRatesModal({
                                     <input
                                         type="date"
                                         name="periodStart"
-                                        value={billingForm.periodStart || ""}
+                                        value={formatDate(billingForm.periodStart)}
                                         onChange={handleInputChange}
                                         className="border rounded-lg p-3 text-sm w-full"
                                     />
@@ -157,7 +177,7 @@ export default function PropertyRatesModal({
                                     <input
                                         type="date"
                                         name="periodEnd"
-                                        value={billingForm.periodEnd || ""}
+                                        value={formatDate(billingForm.periodEnd)}
                                         onChange={handleInputChange}
                                         className="border rounded-lg p-3 text-sm w-full"
                                     />
@@ -173,9 +193,7 @@ export default function PropertyRatesModal({
                             >
                                 <div className="flex items-center gap-2 mb-4">
                                     <Zap className="text-amber-600" />
-                                    <h3 className="font-semibold text-gray-800">
-                                        Electricity
-                                    </h3>
+                                    <h3 className="font-semibold text-gray-800">Electricity</h3>
                                 </div>
 
                                 <div className="grid sm:grid-cols-2 gap-4">
@@ -228,9 +246,7 @@ export default function PropertyRatesModal({
                             >
                                 <div className="flex items-center gap-2 mb-4">
                                     <Droplet className="text-blue-600" />
-                                    <h3 className="font-semibold text-gray-800">
-                                        Water
-                                    </h3>
+                                    <h3 className="font-semibold text-gray-800">Water</h3>
                                 </div>
 
                                 <div className="grid sm:grid-cols-2 gap-4">

@@ -20,14 +20,22 @@
 }
 
 @font-face {
-  font-family: "Typographica";
+    font-family: "League Spartan";
   src: url("../public/fonts/typographica.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
 
+
 .typographica {
   font-family: "Typographica", sans-serif;
+}
+
+@font-face {
+    font-family: "Typographica";
+    src: url("../public/fonts/league-spartan.bold.otf") format("opentype");
+    font-weight: 300;
+    font-style: normal;
 }
 
 body {

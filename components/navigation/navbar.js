@@ -30,6 +30,7 @@ import {
   MapPin,
   ChevronRight,
 } from "lucide-react";
+import { upkypFont } from "../../app/fonts";
 
 const Navbar = () => {
   const { user, admin, loading, signOut, signOutAdmin, fetchSession } =
@@ -261,7 +262,7 @@ const Navbar = () => {
               className="flex items-center space-x-2 transition-opacity hover:opacity-80"
             >
               <span
-                className={`text-2xl font-bold tracking-tight ${
+                className={`text-2xl typographica font-bold tracking-tight ${
                   scrolled
                     ? "bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent"
                     : "text-white"

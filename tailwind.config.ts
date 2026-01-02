@@ -22,6 +22,9 @@ export default {
         'pulse-slow': 'pulse 2s infinite ease-in-out',
         'wiggle': 'wiggle 0.6s ease-in-out infinite',
       },
+        fontFamily: {
+            league: ["'League Spartan'", "sans-serif"],
+        },
       keyframes: {
         wiggle: {
           '0%, 100%': { transform: 'rotate(-1deg)' },
