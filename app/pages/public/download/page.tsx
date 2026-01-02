@@ -4,13 +4,36 @@ import { useEffect, useState } from "react";
 import { Download, Smartphone } from "lucide-react";
 import Image from "next/image";
 
+/* ===============================
+   PLATFORM HELPERS
+================================ */
+const isIOS = () => {
+    if (typeof window === "undefined") return false;
+    return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+};
+
+const isStandalone = () => {
+    if (typeof window === "undefined") return false;
+
+    return (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        // iOS standalone
+        (window.navigator as any).standalone === true
+    );
+};
+
+/* ===============================
+   PAGE
+================================ */
 export default function DownloadPage() {
     const [isPWAInstalled, setIsPWAInstalled] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
+    /* -------------------------------
+       INSTALL PROMPT HANDLING
+    -------------------------------- */
     useEffect(() => {
-        // Detect if app is already installed
-        if (window.matchMedia("(display-mode: standalone)").matches) {
+        if (isStandalone()) {
             setIsPWAInstalled(true);
         }
 
@@ -19,7 +42,10 @@ export default function DownloadPage() {
             setDeferredPrompt(e);
         };
 
-        window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+        window.addEventListener(
+            "beforeinstallprompt",
+            handleBeforeInstallPrompt
+        );
 
         return () => {
             window.removeEventListener(
@@ -29,7 +55,13 @@ export default function DownloadPage() {
         };
     }, []);
 
+    /* -------------------------------
+       INSTALL HANDLER
+    -------------------------------- */
     const handleInstall = async () => {
+        // iOS: installation is manual (instructions shown)
+        if (isIOS()) return;
+
         if (!deferredPrompt) return;
 
         deferredPrompt.prompt();
@@ -42,9 +74,12 @@ export default function DownloadPage() {
         setDeferredPrompt(null);
     };
 
+    /* ===============================
+       RENDER
+================================ */
     return (
         <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-6">
-            {/* FULL IMAGE BACKGROUND */}
+            {/* BACKGROUND IMAGE */}
             <Image
                 src="https://res.cloudinary.com/dpukdla69/image/upload/v1765966152/Whisk_mtnhzwyxajzmdtyw0yn2mtotijzhrtllbjzh1sn_wpw850.jpg"
                 alt="UpKyp background"
@@ -71,27 +106,45 @@ export default function DownloadPage() {
                         anywhere. Works on mobile and desktop.
                     </p>
 
+                    {/* INSTALL STATE */}
                     {isPWAInstalled ? (
                         <p className="text-emerald-300 font-semibold">
                             ✅ App already installed
                         </p>
-                    ) : deferredPrompt ? (
-                        <button
-                            onClick={handleInstall}
-                            className="mx-auto flex items-center justify-center gap-2
-                                       px-6 py-3 rounded-lg
-                                       bg-emerald-500 text-white font-medium
-                                       shadow-lg transition-all
-                                       hover:bg-emerald-600 hover:scale-105
-                                       active:scale-95"
-                        >
-                            <Download className="w-5 h-5" />
-                            Install App
-                        </button>
                     ) : (
-                        <p className="text-white/80 text-sm">
-                            Open this site in your browser to install the app.
-                        </p>
+                        <>
+                            <button
+                                onClick={handleInstall}
+                                className="mx-auto flex items-center justify-center gap-2
+                                           px-6 py-3 rounded-lg
+                                           bg-emerald-500 text-white font-medium
+                                           shadow-lg transition-all
+                                           hover:bg-emerald-600 hover:scale-105
+                                           active:scale-95"
+                            >
+                                <Download className="w-5 h-5" />
+                                Download App Now
+                            </button>
+
+                            {/* iOS INSTRUCTIONS */}
+                            {isIOS() && (
+                                <div className="mt-4 text-sm text-white/90 space-y-1">
+                                    <p className="font-medium">
+                                        How to install on iPhone:
+                                    </p>
+                                    <p>
+                                        Tap{" "}
+                                        <span className="underline">
+                                            Share
+                                        </span>{" "}
+                                        →{" "}
+                                        <span className="underline">
+                                            Add to Home Screen
+                                        </span>
+                                    </p>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
