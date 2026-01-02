@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
 import { NextResponse, NextRequest } from "next/server";
 
-//  getting the property rates inside billing page/
-
+// Get property rates for CURRENT MONTH only
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const property_id = searchParams.get("property_id");
@@ -17,23 +16,25 @@ export async function GET(req: NextRequest) {
     try {
         const [rows]: any = await db.query(
             `
-            SELECT 
-                bill_id,
-                period_start,
-                period_end,
+      SELECT 
+        bill_id,
+        period_start,
+        period_end,
 
-                electricity_total,
-                electricity_consumption,
-                electricity_rate,
+        electricity_total,
+        electricity_consumption,
+        electricity_rate,
 
-                water_total,
-                water_consumption,
-                water_rate
-            FROM ConcessionaireBilling
-            WHERE property_id = ?
-            ORDER BY period_start DESC
-            LIMIT 1
-            `,
+        water_total,
+        water_consumption,
+        water_rate
+      FROM ConcessionaireBilling
+      WHERE property_id = ?
+        AND period_start <= LAST_DAY(CURDATE())
+        AND period_end >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+      ORDER BY period_start DESC
+      LIMIT 1
+      `,
             [property_id]
         );
 
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
                 period_start: row.period_start,
                 period_end: row.period_end,
 
-                electricity: row.electricity_total
+                electricity: row.electricity_total !== null
                     ? {
                         total: Number(row.electricity_total),
                         consumption: Number(row.electricity_consumption),
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
                     }
                     : null,
 
-                water: row.water_total
+                water: row.water_total !== null
                     ? {
                         total: Number(row.water_total),
                         consumption: Number(row.water_consumption),

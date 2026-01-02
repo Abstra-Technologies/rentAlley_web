@@ -68,6 +68,7 @@ export function usePropertyBilling(property_id: string) {
     }, [property_id]);
 
     /* ================= HELPERS ================= */
+    //  this is for the property configurtation only
     const checkPropertyConfig = async () => {
         try {
             const res = await axios.get("/api/properties/configuration", {

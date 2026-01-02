@@ -19,16 +19,11 @@ import BillingUnitTableDesktop from "@/components/landlord/property-billing/Bill
 import BillingSkeleton from "@/components/landlord/property-billing/BillingSkeleton";
 
 export default function PropertyBillingPage() {
-    /* ✅ GET PROPERTY ID FROM ROUTE */
     const { id } = useParams();
     const property_id = id as string;
 
-    /* ✅ PASS PROPERTY ID INTO HOOK */
     const billing = usePropertyBilling(property_id);
 
-    /* =============================
-       SKELETON
-    ============================== */
     if (billing.isInitialLoad) {
         return <BillingSkeleton />;
     }
@@ -37,7 +32,6 @@ export default function PropertyBillingPage() {
         <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
             <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
 
-                {/* CONFIG REQUIRED MODAL */}
                 <ConfigRequiredModal
                     configModal={billing.configModal}
                     setConfigModal={billing.setConfigModal}
@@ -45,7 +39,6 @@ export default function PropertyBillingPage() {
                     property_id={billing.property_id}
                 />
 
-                {/* HEADER (UNCHANGED) */}
                 <div className="mb-5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                         <div className="flex items-start gap-3">
