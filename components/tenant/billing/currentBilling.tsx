@@ -5,8 +5,7 @@ import { useTenantBilling } from "@/hooks/tenant/useTenantBilling";
 import { computeLateFee } from "@/utils/tenants/billing/computeLateFee";
 import { calculateTotals } from "@/utils/tenants/billing/calculateTotals";
 import { getBillingDueDate } from "@/utils/tenants/billing/formatDueDate";
-
-import { formatDate } from "@/utils/formatter/formatters"; // ✅ ADDED
+import { formatDate } from "@/utils/formatter/formatters";
 
 import LoadingScreen from "@/components/loadingScreen";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
@@ -25,13 +24,15 @@ export default function TenantBilling({ agreement_id, user_id }) {
         error,
     } = useTenantBilling(agreement_id, user_id);
 
-
-    console.log('CURRENT AGREEMENT agreement id: ', agreement_id);
-    console.log('user id: ', user_id);
-
     if (loading) return <LoadingScreen />;
+
     if (error)
-        return <ErrorBoundary error={error} onRetry={() => location.reload()} />;
+        return (
+            <ErrorBoundary
+                error={error}
+                onRetry={() => location.reload()}
+            />
+        );
 
     if (!billingData.length)
         return (
@@ -52,12 +53,30 @@ export default function TenantBilling({ agreement_id, user_id }) {
                 const totals = calculateTotals(bill, lateFee);
                 const dueDate = getBillingDueDate(bill);
 
+                /* --------------------------------------------------
+                   🔑 FIX: scope meter readings PER BILLING PERIOD
+                -------------------------------------------------- */
+                const billDate = new Date(bill.billing_period);
+                const billMonth = billDate.getMonth();
+                const billYear = billDate.getFullYear();
+
+                const scopedMeterReadings = (meterReadings || []).filter(
+                    (r) => {
+                        if (!r?.reading_date) return false;
+                        const d = new Date(r.reading_date);
+                        return (
+                            d.getMonth() === billMonth &&
+                            d.getFullYear() === billYear
+                        );
+                    }
+                );
+
                 return (
                     <div
                         key={bill.billing_id}
                         className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
                     >
-                        {/* HEADER */}
+                        {/* ================= HEADER ================= */}
                         <div className="px-4 py-3 border-b bg-gray-50">
                             <p className="text-sm font-semibold text-gray-900">
                                 {formatDate(bill.billing_period)}
@@ -67,40 +86,40 @@ export default function TenantBilling({ agreement_id, user_id }) {
                             </p>
                         </div>
 
-                        {/* TOTAL */}
+                        {/* ================= TOTAL ================= */}
                         <div className="px-4 py-3 flex justify-between items-center">
-              <span className="text-xs text-gray-500 font-medium">
-                Total Amount Due
-              </span>
+                            <span className="text-xs text-gray-500 font-medium">
+                                Total Amount Due
+                            </span>
                             <span className="text-lg font-bold text-emerald-600">
-                ₱{totals.totalDue.toFixed(2)}
-              </span>
+                                ₱{totals.totalDue.toFixed(2)}
+                            </span>
                         </div>
 
-                        {/* DETAILS */}
+                        {/* ================= DETAILS ================= */}
                         <div className="px-4 pb-4 space-y-4">
                             <RentBreakdown
                                 bill={bill}
                                 totals={totals}
                                 lateFee={lateFee}
                                 setBillingData={setBillingData}
-                                compact
                             />
 
                             <UtilityBreakdown
                                 bill={bill}
                                 totals={totals}
-                                meterReadings={meterReadings}
+                                meterReadings={scopedMeterReadings}
                                 setBillingData={setBillingData}
-                                compact
                             />
 
                             {bill.postDatedChecks?.length > 0 && (
-                                <PDCSection pdcs={bill.postDatedChecks} compact />
+                                <PDCSection
+                                    pdcs={bill.postDatedChecks}
+                                />
                             )}
                         </div>
 
-                        {/* PAYMENT */}
+                        {/* ================= PAYMENT ================= */}
                         <div className="px-4 py-3 border-t bg-gray-50">
                             <PaymentSection
                                 bill={bill}

@@ -1,16 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+/* ------------------ HELPERS ------------------ */
+const log = (...args: any[]) =>
+    console.log("[TENANT BILLING]", ...args);
+
+function monthRange(date = new Date()) {
+    const d = new Date(date);
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+
+    const ymd = (x: Date) =>
+        `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(
+            x.getDate()
+        ).padStart(2, "0")}`;
+
+    return { start: ymd(start), end: ymd(end) };
+}
+
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     let agreementId = searchParams.get("agreement_id");
     const userId = searchParams.get("user_id");
 
-    console.log('API CURRENT BILLING AGREEMENRT: ', agreementId);
-    console.log('API CURRENT BILLING USER: ', userId);
+    log("Request params:", { agreementId, userId });
 
     try {
-
+        /* -----------------------------------------------------
+           Resolve tenant → agreement
+        ----------------------------------------------------- */
         let tenantId: number | null = null;
 
         if (userId) {
@@ -20,7 +38,6 @@ export async function GET(req: NextRequest) {
             );
             tenantId = tenant[0]?.tenant_id || null;
         }
-
 
         if (!agreementId && tenantId) {
             const [agreements]: any = await db.query(
@@ -44,9 +61,9 @@ export async function GET(req: NextRequest) {
         }
 
         /* -----------------------------------------------------
-          ⃣ Fetch Lease + Unit + Property
+           Lease + Unit + Property
         ----------------------------------------------------- */
-        const [leaseInfo]: any = await db.query(
+        const [leaseRows]: any = await db.query(
             `
             SELECT
                 l.agreement_id,
@@ -66,44 +83,42 @@ export async function GET(req: NextRequest) {
             [agreementId]
         );
 
-        if (!leaseInfo.length) {
-            return NextResponse.json({ message: "Lease not found." }, { status: 404 });
+        if (!leaseRows.length) {
+            return NextResponse.json(
+                { message: "Lease not found." },
+                { status: 404 }
+            );
         }
 
-        const {
-            unit_id,
-            property_id,
-            unit_name,
-            lease_rent_amount,
-            unit_rent_amount,
-            water_billing_type,
-            electricity_billing_type
-        } = leaseInfo[0];
+        const lease = leaseRows[0];
+        const { unit_id, property_id } = lease;
 
         /* -----------------------------------------------------
-           Compute Base Rent
+           Base Rent Resolution
         ----------------------------------------------------- */
-        let baseRent = Number(lease_rent_amount || 0);
-        if (!baseRent || baseRent <= 0)
-            baseRent = Number(unit_rent_amount || 0);
+        let baseRent = Number(lease.lease_rent_amount || 0);
+        if (!baseRent || baseRent <= 0) {
+            baseRent = Number(lease.unit_rent_amount || 0);
+        }
 
         /* -----------------------------------------------------
-          ⃣ Property Configuration
+           Property Configuration
         ----------------------------------------------------- */
         const [cfg]: any = await db.query(
             `
-            SELECT billingReminderDay, billingDueDay, lateFeeType,
-                   lateFeeAmount, gracePeriodDays
+            SELECT billingReminderDay, billingDueDay,
+                   lateFeeType, lateFeeAmount, gracePeriodDays
             FROM PropertyConfiguration
             WHERE property_id = ?
             LIMIT 1
             `,
             [property_id]
         );
+
         const propertyConfig = cfg[0] || null;
 
         /* -----------------------------------------------------
-           Fetch LATEST concessionaire billing cycle
+           Concessionaire (rates only)
         ----------------------------------------------------- */
         const [conRows]: any = await db.query(
             `
@@ -126,56 +141,91 @@ export async function GET(req: NextRequest) {
             ? concessionaire.electricity_total / concessionaire.electricity_consumption
             : 0;
 
-        const cycle_start = concessionaire?.period_start || null;
-        const cycle_end = concessionaire?.period_end || null;
+        /* -----------------------------------------------------
+           Current Month Context
+        ----------------------------------------------------- */
+        const { start: periodStart, end: periodEnd } = monthRange();
+        log("Billing period:", { periodStart, periodEnd });
 
         /* -----------------------------------------------------
-           Fetch Billing for current MONTH
+           Billing (current month)
         ----------------------------------------------------- */
         const [billingRows]: any = await db.query(
             `
             SELECT *
             FROM Billing
             WHERE unit_id = ?
-              AND MONTH(billing_period) = MONTH(CURRENT_DATE())
-              AND YEAR(billing_period) = YEAR(CURRENT_DATE())
-            ORDER BY created_at DESC
+              AND billing_period = ?
             LIMIT 1
             `,
-            [unit_id]
+            [unit_id, periodStart]
         );
+
         const billing = billingRows[0] || null;
 
         /* -----------------------------------------------------
-           Fetch Water Reading for latest concessionaire period
+           Meter Readings (MONTH-BASED)
         ----------------------------------------------------- */
-        const [waterReading]: any = await db.query(
+        const [waterRows]: any = await db.query(
             `
             SELECT *
             FROM WaterMeterReading
             WHERE unit_id = ?
-              AND concessionaire_bill_id = ?
+              AND period_start = ?
+              AND period_end   = ?
             LIMIT 1
             `,
-            [unit_id, concessionaire?.bill_id || 0]
+            [unit_id, periodStart, periodEnd]
         );
 
-        /* -----------------------------------------------------
-           Fetch Electric Reading for latest concessionaire period
-        ----------------------------------------------------- */
-        const [electricReading]: any = await db.query(
+        const [electricRows]: any = await db.query(
             `
             SELECT *
             FROM ElectricMeterReading
             WHERE unit_id = ?
-              AND concessionaire_bill_id = ?
+              AND period_start = ?
+              AND period_end   = ?
             LIMIT 1
             `,
-            [unit_id, concessionaire?.bill_id || 0]
+            [unit_id, periodStart, periodEnd]
         );
 
+        const waterReading = waterRows[0] || null;
+        const electricReading = electricRows[0] || null;
+
         /* -----------------------------------------------------
-            Additional Billing Charges
+           Build Meter Readings Array (FOR UI)
+        ----------------------------------------------------- */
+        const meterReadings: any[] = [];
+
+        if (waterReading) {
+            meterReadings.push({
+                type: "water",
+                prev: waterReading.previous_reading,
+                curr: waterReading.current_reading,
+                consumption: waterReading.consumption,
+                reading_date: waterReading.reading_date,
+                rate: waterRate,
+                total: billing?.total_water_amount || 0,
+            });
+        }
+
+        if (electricReading) {
+            meterReadings.push({
+                type: "electricity",
+                prev: electricReading.previous_reading,
+                curr: electricReading.current_reading,
+                consumption: electricReading.consumption,
+                reading_date: electricReading.reading_date,
+                rate: electricityRate,
+                total: billing?.total_electricity_amount || 0,
+            });
+        }
+
+        log("Meter readings:", meterReadings);
+
+        /* -----------------------------------------------------
+           Additional Charges
         ----------------------------------------------------- */
         let billingAdditionalCharges: any[] = [];
         if (billing) {
@@ -187,7 +237,7 @@ export async function GET(req: NextRequest) {
         }
 
         /* -----------------------------------------------------
-           1PDC for current month
+           PDC (current month)
         ----------------------------------------------------- */
         const [pdcRows]: any = await db.query(
             `
@@ -206,63 +256,62 @@ export async function GET(req: NextRequest) {
         );
 
         /* -----------------------------------------------------
-        Final Response
+           FINAL RESPONSE
         ----------------------------------------------------- */
+        return NextResponse.json(
+            {
+                billing: billing
+                    ? {
+                        ...billing,
+                        unit_name: lease.unit_name,
+                        total_amount_due: Number(billing.total_amount_due || 0),
+                        payment_status: billing.payment_status || "unpaid",
+                    }
+                    : null,
 
-        const response = {
-            billing: billing
-                ? {
-                    ...billing,
-                    unit_name,
-                    total_amount_due: Number(billing.total_amount_due || 0),
-                    payment_status: billing.payment_status || "unpaid",
-                }
-                : null,
-
-            utilities: {
-                water: {
-                    enabled: water_billing_type === "submetered",
-                    prev: waterReading?.previous_reading || null,
-                    curr: waterReading?.current_reading || null,
-                    consumption: waterReading?.consumption || null,
-                    reading_date: waterReading?.reading_date || null,
-                    rate: waterRate,
-                    total: billing?.total_water_amount || 0,
-                    cycle_start,
-                    cycle_end
+                utilities: {
+                    water: {
+                        enabled: lease.water_billing_type === "submetered",
+                        prev: waterReading?.previous_reading || null,
+                        curr: waterReading?.current_reading || null,
+                        consumption: waterReading?.consumption || null,
+                        reading_date: waterReading?.reading_date || null,
+                        rate: waterRate,
+                        total: billing?.total_water_amount || 0,
+                    },
+                    electricity: {
+                        enabled: lease.electricity_billing_type === "submetered",
+                        prev: electricReading?.previous_reading || null,
+                        curr: electricReading?.current_reading || null,
+                        consumption: electricReading?.consumption || null,
+                        reading_date: electricReading?.reading_date || null,
+                        rate: electricityRate,
+                        total: billing?.total_electricity_amount || 0,
+                    },
                 },
-                electricity: {
-                    enabled: electricity_billing_type === "submetered",
-                    prev: electricReading?.previous_reading || null,
-                    curr: electricReading?.current_reading || null,
-                    consumption: electricReading?.consumption || null,
-                    reading_date: electricReading?.reading_date || null,
-                    rate: electricityRate,
-                    total: billing?.total_electricity_amount || 0,
-                    cycle_start,
-                    cycle_end
-                }
+
+                // 🔑 THIS FIXES "No meter readings this month"
+                meterReadings,
+
+                billingAdditionalCharges,
+                postDatedChecks: pdcRows,
+                paymentProcessing,
+
+                breakdown: {
+                    base_rent: baseRent,
+                    water_total: billing?.total_water_amount || 0,
+                    electricity_total: billing?.total_electricity_amount || 0,
+                    total_before_late_fee: billing?.total_amount_due || baseRent,
+                },
+
+                propertyConfig,
+                concessionaire_period: {
+                    period_start: concessionaire?.period_start || null,
+                    period_end: concessionaire?.period_end || null,
+                },
             },
-
-            billingAdditionalCharges,
-            postDatedChecks: pdcRows,
-            paymentProcessing,
-
-            breakdown: {
-                base_rent: baseRent,
-                water_total: billing?.total_water_amount || 0,
-                electricity_total: billing?.total_electricity_amount || 0,
-                total_before_late_fee: billing?.total_amount_due || baseRent,
-            },
-
-            propertyConfig,
-            concessionaire_period: {
-                period_start: cycle_start,
-                period_end: cycle_end
-            }
-        };
-
-        return NextResponse.json(response, { status: 200 });
+            { status: 200 }
+        );
 
     } catch (error: any) {
         console.error("❌ Tenant Billing Fetch Error:", error);

@@ -14,11 +14,6 @@ function BillingContent() {
     const params = useParams();
     const agreementId = params?.agreement_id as string | undefined;
 
-    console.log("main billing page agreementId:", agreementId);
-
-
-    console.log("main billing page: ", agreementId);
-
   useEffect(() => {
     async function init() {
       if (!user) {

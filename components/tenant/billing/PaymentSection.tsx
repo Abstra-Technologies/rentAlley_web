@@ -1,16 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
     CreditCardIcon,
     DocumentArrowDownIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-import {useXenditPayment} from "@/hooks/payments/useXenditPayment";
+import { useXenditPayment } from "@/hooks/payments/useXenditPayment";
 
 export default function PaymentSection({ bill, totalDue, agreement_id }) {
     const router = useRouter();
     const { payWithXendit, loadingPayment } = useXenditPayment();
+
+    const [downloading, setDownloading] = useState(false);
 
     /* -------------------- PROOF OF PAYMENT -------------------- */
     const handleUploadProof = () => {
@@ -19,9 +21,39 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
         );
     };
 
+    /* -------------------- DOWNLOAD BILLING PDF -------------------- */
+    const handleDownloadPdf = async () => {
+        try {
+            setDownloading(true);
+
+            const res = await fetch(
+                `/api/tenant/billing/${bill.billing_id}`
+            );
+
+            if (!res.ok) throw new Error("Failed to generate PDF");
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `billing-${bill.billing_id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to download billing PDF.");
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     return (
         <div className="p-4 border-t space-y-3">
-            {/* Payment Buttons Only if Unpaid */}
+            {/* ================= PAYMENTS ================= */}
             {bill.status !== "paid" && (
                 <>
                     {/* Pay with Xendit */}
@@ -34,11 +66,11 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
                         }
                         disabled={loadingPayment}
                         className="w-full flex items-center justify-center gap-2 px-4 py-3
-              bg-gradient-to-r from-blue-600 to-emerald-600
-              hover:from-blue-700 hover:to-emerald-700
-              text-white rounded-xl font-bold shadow-md
-              hover:shadow-lg transition-all duration-200
-              disabled:opacity-50"
+                        bg-gradient-to-r from-blue-600 to-emerald-600
+                        hover:from-blue-700 hover:to-emerald-700
+                        text-white rounded-xl font-bold shadow-md
+                        hover:shadow-lg transition-all duration-200
+                        disabled:opacity-50"
                     >
                         {loadingPayment ? (
                             <>
@@ -57,9 +89,9 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
                     <button
                         onClick={handleUploadProof}
                         className="w-full flex items-center justify-center gap-2 px-4 py-3
-              bg-white border-2 border-gray-200
-              hover:border-blue-300 hover:bg-blue-50
-              text-gray-700 rounded-xl font-bold shadow-sm transition-all"
+                        bg-white border-2 border-gray-200
+                        hover:border-blue-300 hover:bg-blue-50
+                        text-gray-700 rounded-xl font-bold shadow-sm transition-all"
                     >
                         <DocumentArrowDownIcon className="w-5 h-5" />
                         <span>Upload Proof of Payment</span>
@@ -67,20 +99,53 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
                 </>
             )}
 
-            {/* Download Statement */}
+            {/* ================= DOWNLOAD BILLING ================= */}
             {!bill.isDefaultBilling && (
                 <button
-                    onClick={() =>
-                        window.open(`/api/tenant/billing/${bill.billing_id}`)
+                    onClick={handleDownloadPdf}
+                    disabled={downloading}
+                    className={`
+        w-full flex items-center justify-center gap-2 px-4 py-3
+        rounded-xl font-bold shadow-sm transition-all
+        ${
+                        downloading
+                            ? "bg-emerald-50 text-emerald-600 cursor-not-allowed"
+                            : "bg-white border-2 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 text-gray-700"
                     }
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3
-            bg-white border-2 border-gray-200
-            hover:border-emerald-300 hover:bg-emerald-50
-            text-gray-700 rounded-xl font-bold shadow-sm"
+    `}
                 >
-                    <DocumentArrowDownIcon className="w-5 h-5" />
-                    <span>Download Billing PDF</span>
+                    {downloading ? (
+                        <>
+                            <svg
+                                className="w-5 h-5 animate-spin text-emerald-600"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                />
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                />
+                            </svg>
+                            <span className="animate-pulse">Preparing document…</span>
+                        </>
+                    ) : (
+                        <>
+                            <DocumentArrowDownIcon className="w-5 h-5" />
+                            <span>Download Billing PDF</span>
+                        </>
+                    )}
                 </button>
+
             )}
         </div>
     );
