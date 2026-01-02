@@ -44,13 +44,13 @@ const profileNavLinks = [
     icon: ShieldCheckIcon,
     roles: ["tenant", "landlord", "admin"],
   },
-    {
-        href: "/pages/commons/settings",
-        label: "Notification",
-        shortLabel: "Notification",
-        icon: BellRing,
-        roles: ["landlord", "tenant", "admin"],
-    },
+    // {
+    //     href: "/pages/commons/settings",
+    //     label: "Notification",
+    //     shortLabel: "Notification",
+    //     icon: BellRing,
+    //     roles: ["landlord", "tenant", "admin"],
+    // },
   {
     href: "/pages/commons/landlord/payoutDetails",
     label: "Payout Account",

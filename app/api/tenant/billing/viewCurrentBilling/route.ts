@@ -18,6 +18,7 @@ function monthRange(date = new Date()) {
     return { start: ymd(start), end: ymd(end) };
 }
 
+/* ------------------ GET ------------------ */
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     let agreementId = searchParams.get("agreement_id");
@@ -118,7 +119,7 @@ export async function GET(req: NextRequest) {
         const propertyConfig = cfg[0] || null;
 
         /* -----------------------------------------------------
-           Concessionaire (rates only)
+           Concessionaire Rates
         ----------------------------------------------------- */
         const [conRows]: any = await db.query(
             `
@@ -138,14 +139,14 @@ export async function GET(req: NextRequest) {
             : 0;
 
         const electricityRate = concessionaire?.electricity_consumption
-            ? concessionaire.electricity_total / concessionaire.electricity_consumption
+            ? concessionaire.electricity_total /
+            concessionaire.electricity_consumption
             : 0;
 
         /* -----------------------------------------------------
            Current Month Context
         ----------------------------------------------------- */
         const { start: periodStart, end: periodEnd } = monthRange();
-        log("Billing period:", { periodStart, periodEnd });
 
         /* -----------------------------------------------------
            Billing (current month)
@@ -164,7 +165,7 @@ export async function GET(req: NextRequest) {
         const billing = billingRows[0] || null;
 
         /* -----------------------------------------------------
-           Meter Readings (MONTH-BASED)
+           Meter Readings
         ----------------------------------------------------- */
         const [waterRows]: any = await db.query(
             `
@@ -194,7 +195,7 @@ export async function GET(req: NextRequest) {
         const electricReading = electricRows[0] || null;
 
         /* -----------------------------------------------------
-           Build Meter Readings Array (FOR UI)
+           Meter Readings Array (UI)
         ----------------------------------------------------- */
         const meterReadings: any[] = [];
 
@@ -222,8 +223,6 @@ export async function GET(req: NextRequest) {
             });
         }
 
-        log("Meter readings:", meterReadings);
-
         /* -----------------------------------------------------
            Additional Charges
         ----------------------------------------------------- */
@@ -237,7 +236,7 @@ export async function GET(req: NextRequest) {
         }
 
         /* -----------------------------------------------------
-           PDC (current month)
+           Post-dated checks
         ----------------------------------------------------- */
         const [pdcRows]: any = await db.query(
             `
@@ -256,7 +255,7 @@ export async function GET(req: NextRequest) {
         );
 
         /* -----------------------------------------------------
-           FINAL RESPONSE
+           FINAL RESPONSE (CLEAN & CONSISTENT)
         ----------------------------------------------------- */
         return NextResponse.json(
             {
@@ -264,8 +263,14 @@ export async function GET(req: NextRequest) {
                     ? {
                         ...billing,
                         unit_name: lease.unit_name,
-                        total_amount_due: Number(billing.total_amount_due || 0),
-                        payment_status: billing.payment_status || "unpaid",
+                        total_amount_due: Number(
+                            billing.total_amount_due || 0
+                        ),
+
+                        // ✅ SINGLE SOURCE OF TRUTH
+                        billing_status: billing.status,
+                        is_paid: billing.status === "paid",
+                        paid_at: billing.paid_at || null,
                     }
                     : null,
 
@@ -280,7 +285,8 @@ export async function GET(req: NextRequest) {
                         total: billing?.total_water_amount || 0,
                     },
                     electricity: {
-                        enabled: lease.electricity_billing_type === "submetered",
+                        enabled:
+                            lease.electricity_billing_type === "submetered",
                         prev: electricReading?.previous_reading || null,
                         curr: electricReading?.current_reading || null,
                         consumption: electricReading?.consumption || null,
@@ -290,9 +296,7 @@ export async function GET(req: NextRequest) {
                     },
                 },
 
-                // 🔑 THIS FIXES "No meter readings this month"
                 meterReadings,
-
                 billingAdditionalCharges,
                 postDatedChecks: pdcRows,
                 paymentProcessing,
@@ -300,8 +304,10 @@ export async function GET(req: NextRequest) {
                 breakdown: {
                     base_rent: baseRent,
                     water_total: billing?.total_water_amount || 0,
-                    electricity_total: billing?.total_electricity_amount || 0,
-                    total_before_late_fee: billing?.total_amount_due || baseRent,
+                    electricity_total:
+                        billing?.total_electricity_amount || 0,
+                    total_before_late_fee:
+                        billing?.total_amount_due || baseRent,
                 },
 
                 propertyConfig,
@@ -312,7 +318,6 @@ export async function GET(req: NextRequest) {
             },
             { status: 200 }
         );
-
     } catch (error: any) {
         console.error("❌ Tenant Billing Fetch Error:", error);
         return NextResponse.json(

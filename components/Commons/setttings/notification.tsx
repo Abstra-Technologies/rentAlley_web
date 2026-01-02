@@ -1,88 +1,162 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getToken } from "firebase/messaging";
-// @ts-ignore
-import { messaging } from "@/lib/firebase";
 import { Capacitor } from "@capacitor/core";
+
+/* ===============================
+   HELPERS
+================================ */
+function urlBase64ToUint8Array(base64String: string) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
 
 interface NotificationManagerProps {
     user_id: string;
 }
 
 export default function NotificationManager({ user_id }: NotificationManagerProps) {
-    const [active, setActive] = useState<boolean>(false);
-    const [token, setToken] = useState<string | null>(null);
-    const [platform, setPlatform] = useState<"web" | "android" | "ios">("web");
+    const [active, setActive] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [platform, setPlatform] = useState<"web" | "android" | "ios">("web");
 
-    // Detect platform
+    /* ===============================
+       PLATFORM DETECTION
+    ================================ */
     useEffect(() => {
-        const capPlatform = Capacitor.getPlatform();
-        if (capPlatform === "android") setPlatform("android");
-        else if (capPlatform === "ios") setPlatform("ios");
+        const p = Capacitor.getPlatform();
+        if (p === "android") setPlatform("android");
+        else if (p === "ios") setPlatform("ios");
         else setPlatform("web");
     }, []);
 
-    // Get existing notification status + token
+    /* ===============================
+       LOAD CURRENT STATUS
+    ================================ */
     useEffect(() => {
         if (!user_id || !platform) return;
 
-        fetch(`/api/auth/save-fcm-token/notification-status?user_id=${user_id}&platform=${platform}`)
+        fetch(`/api/push/notification-status?user_id=${user_id}&platform=${platform}`)
             .then((res) => res.json())
             .then((data) => {
-                if (typeof data.status === "boolean") setActive(data.status);
-                if (data.token) setToken(data.token);
+                if (typeof data.active === "boolean") {
+                    setActive(data.active);
+                }
             })
-            .catch((err) => console.log("Error fetching FCM status:", err))
+            .catch((err) =>
+                console.error("Error loading notification status:", err)
+            )
             .finally(() => setLoading(false));
     }, [user_id, platform]);
 
-    // Toggle push notifications
-    const handleToggle = async () => {
-        const newActive = !active;
-
-        if (newActive && !token) {
-            // Only generate token when enabling notifications and none exists
-            const permission = await Notification.requestPermission();
-            if (permission === "granted") {
-                // @ts-ignore
-                const newToken = await getToken(messaging, {
-                    vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-                });
-                if (newToken) {
-                    setToken(newToken);
-                } else {
-                    console.error("Failed to get FCM token");
-                    return;
-                }
-            } else {
-                console.warn("Notification permission denied");
-                return;
-            }
+    /* ===============================
+       ENABLE WEB PUSH
+    ================================ */
+    const enableWebPush = async () => {
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+            alert("Push notifications are not supported on this browser.");
+            return false;
         }
 
-        setActive(newActive); // Optimistic UI update
+        // iOS Web Push works ONLY in PWA-installed Safari
+        if (
+            platform === "ios" &&
+            !(window.matchMedia("(display-mode: standalone)").matches)
+        ) {
+            alert("Please add this app to your Home Screen to enable notifications.");
+            return false;
+        }
+
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return false;
+
+        const registration = await navigator.serviceWorker.register("/sw.js");
+
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
+        const appServerKey = urlBase64ToUint8Array(vapidKey);
+
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: appServerKey,
+            });
+        }
+
+        await fetch("/api/push/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId: user_id,
+                subscription,
+                userAgent: navigator.userAgent,
+                platform,
+            }),
+        });
+
+        return true;
+    };
+
+    /* ===============================
+       DISABLE WEB PUSH
+    ================================ */
+    const disableWebPush = async () => {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager.getSubscription();
+        await sub?.unsubscribe();
+
+        await fetch("/api/push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user_id, platform }),
+        });
+    };
+
+    /* ===============================
+       TOGGLE HANDLER
+    ================================ */
+    const handleToggle = async () => {
+        const newActive = !active;
+        setActive(newActive); // optimistic
 
         try {
-            await fetch("/api/auth/save-fcm-token/toggle-notifications", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId: user_id,
-                    token,
-                    platform,
-                    active: newActive,
-                }),
-            });
+            if (newActive) {
+                if (platform === "android") {
+                    // Android handled globally in ClientLayout
+                    await fetch("/api/push/toggle", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId: user_id, platform, active: true }),
+                    });
+                    return;
+                }
+
+                const success = await enableWebPush();
+                if (!success) throw new Error("Enable failed");
+            } else {
+                if (platform !== "android") {
+                    await disableWebPush();
+                }
+
+                await fetch("/api/push/toggle", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId: user_id, platform, active: false }),
+                });
+            }
         } catch (err) {
-            console.error("Error updating notification status:", err);
-            setActive(!newActive); // revert if failed
+            console.error("Toggle failed:", err);
+            setActive(!newActive);
         }
     };
 
     if (loading) {
-        return <p className="text-gray-500">Loading notification settings...</p>;
+        return <p className="text-gray-500 text-sm">Loading notification settings…</p>;
     }
 
     return (
@@ -95,18 +169,19 @@ export default function NotificationManager({ user_id }: NotificationManagerProp
                     className="sr-only"
                 />
                 <div
-                    className={`w-12 h-6 rounded-full transition-colors duration-300 ${
-                        active ? "bg-blue-600" : "bg-gray-300"
+                    className={`w-12 h-6 rounded-full transition-colors ${
+                        active ? "bg-emerald-600" : "bg-gray-300"
                     }`}
-                ></div>
+                />
                 <div
-                    className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow transform transition-transform duration-300 ${
+                    className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
                         active ? "translate-x-6" : "translate-x-0"
                     }`}
-                ></div>
+                />
             </div>
+
             <span className="text-gray-700 font-medium">
-                Push Notifications ({platform}) {active ? "ON" : "OFF"}
+                Push Notifications ({platform.toUpperCase()}) {active ? "ON" : "OFF"}
             </span>
         </label>
     );

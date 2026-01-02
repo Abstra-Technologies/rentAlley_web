@@ -32,7 +32,7 @@ export function useXenditPayment() {
                                      redirectUrl,
                                  }: UseXenditPaymentParams) => {
         const confirm = await Swal.fire({
-            title: "Pay via Xendit?",
+            title: "Pay Billing Now?",
             text: "You will be redirected to Xendit's secure checkout page.",
             icon: "warning",
             showCancelButton: true,
@@ -53,9 +53,6 @@ export function useXenditPayment() {
                 billing_id,
                 tenant_id: user?.tenant_id,
 
-                /**
-                 * ✅ Pass user identity for customer lib
-                 */
                 firstName: user?.firstName ?? null,
                 lastName: user?.lastName ?? null,
                 emailAddress: user?.email ?? null,
