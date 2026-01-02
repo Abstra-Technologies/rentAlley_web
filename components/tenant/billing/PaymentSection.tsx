@@ -4,15 +4,28 @@ import React, { useState } from "react";
 import {
     CreditCardIcon,
     DocumentArrowDownIcon,
+    CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useXenditPayment } from "@/hooks/payments/useXenditPayment";
 
-export default function PaymentSection({ bill, totalDue, agreement_id }) {
+interface PaymentSectionProps {
+    bill: any;
+    totalDue: number;
+    agreement_id: number;
+}
+
+export default function PaymentSection({
+                                           bill,
+                                           totalDue,
+                                           agreement_id,
+                                       }: PaymentSectionProps) {
     const router = useRouter();
     const { payWithXendit, loadingPayment } = useXenditPayment();
 
     const [downloading, setDownloading] = useState(false);
+
+    const isPaid = bill?.status === "paid";
 
     /* -------------------- PROOF OF PAYMENT -------------------- */
     const handleUploadProof = () => {
@@ -53,8 +66,23 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
 
     return (
         <div className="p-4 border-t space-y-3">
-            {/* ================= PAYMENTS ================= */}
-            {bill.status !== "paid" && (
+            {/* ================= PAID STATE ================= */}
+            {isPaid && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 border border-green-200">
+                    <CheckCircleIcon className="w-6 h-6 text-green-600" />
+                    <div>
+                        <p className="font-semibold text-green-700">
+                            This bill has been fully paid
+                        </p>
+                        <p className="text-sm text-green-600">
+                            No further action is required.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* ================= PAYMENT ACTIONS ================= */}
+            {!isPaid && (
                 <>
                     {/* Pay with Xendit */}
                     <button
@@ -85,7 +113,7 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
                         )}
                     </button>
 
-                    {/* Upload Proof */}
+                    {/* Upload Proof of Payment */}
                     <button
                         onClick={handleUploadProof}
                         className="w-full flex items-center justify-center gap-2 px-4 py-3
@@ -100,19 +128,19 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
             )}
 
             {/* ================= DOWNLOAD BILLING ================= */}
-            {!bill.isDefaultBilling && (
+            {!bill?.isDefaultBilling && (
                 <button
                     onClick={handleDownloadPdf}
                     disabled={downloading}
                     className={`
-        w-full flex items-center justify-center gap-2 px-4 py-3
-        rounded-xl font-bold shadow-sm transition-all
-        ${
+                        w-full flex items-center justify-center gap-2 px-4 py-3
+                        rounded-xl font-bold shadow-sm transition-all
+                        ${
                         downloading
                             ? "bg-emerald-50 text-emerald-600 cursor-not-allowed"
                             : "bg-white border-2 border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 text-gray-700"
                     }
-    `}
+                    `}
                 >
                     {downloading ? (
                         <>
@@ -136,7 +164,9 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
                                     d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                                 />
                             </svg>
-                            <span className="animate-pulse">Preparing document…</span>
+                            <span className="animate-pulse">
+                                Preparing document…
+                            </span>
                         </>
                     ) : (
                         <>
@@ -145,7 +175,6 @@ export default function PaymentSection({ bill, totalDue, agreement_id }) {
                         </>
                     )}
                 </button>
-
             )}
         </div>
     );

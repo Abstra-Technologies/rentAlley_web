@@ -15,7 +15,61 @@ import UtilityBreakdown from "./UtilityBreakdown";
 import PDCSection from "./PDCSection";
 import PaymentSection from "./PaymentSection";
 
-export default function TenantBilling({ agreement_id, user_id }) {
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                     */
+/* -------------------------------------------------------------------------- */
+function StatusBadge({
+                         status,
+                     }: {
+    status: "paid" | "unpaid" | "overdue" | "draft" | "finalized";
+}) {
+    const map: Record<
+        typeof status,
+        { label: string; cls: string }
+    > = {
+        paid: {
+            label: "Paid",
+            cls: "bg-green-100 text-green-700 border-green-200",
+        },
+        unpaid: {
+            label: "Unpaid",
+            cls: "bg-yellow-100 text-yellow-700 border-yellow-200",
+        },
+        overdue: {
+            label: "Overdue",
+            cls: "bg-red-100 text-red-700 border-red-200",
+        },
+        draft: {
+            label: "Draft",
+            cls: "bg-gray-100 text-gray-700 border-gray-200",
+        },
+        finalized: {
+            label: "Finalized",
+            cls: "bg-blue-100 text-blue-700 border-blue-200",
+        },
+    };
+
+    const cfg = map[status] ?? map.unpaid;
+
+    return (
+        <span
+            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.cls}`}
+        >
+      {cfg.label}
+    </span>
+    );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
+export default function TenantBilling({
+                                          agreement_id,
+                                          user_id,
+                                      }: {
+    agreement_id?: string;
+    user_id?: string;
+}) {
     const {
         billingData,
         setBillingData,
@@ -28,13 +82,10 @@ export default function TenantBilling({ agreement_id, user_id }) {
 
     if (error)
         return (
-            <ErrorBoundary
-                error={error}
-                onRetry={() => location.reload()}
-            />
+            <ErrorBoundary error={error} onRetry={() => location.reload()} />
         );
 
-    if (!billingData.length)
+    if (!billingData?.length)
         return (
             <div className="text-center py-16">
                 <h2 className="text-xl font-bold text-gray-700">
@@ -48,20 +99,23 @@ export default function TenantBilling({ agreement_id, user_id }) {
 
     return (
         <div className="space-y-4">
-            {billingData.map((bill) => {
+            {billingData.map((bill: any) => {
                 const { lateFee } = computeLateFee(bill);
                 const totals = calculateTotals(bill, lateFee);
                 const dueDate = getBillingDueDate(bill);
 
+                const billingStatus =
+                    bill.billing_status ?? bill.status ?? "unpaid";
+
                 /* --------------------------------------------------
-                   🔑 FIX: scope meter readings PER BILLING PERIOD
+                   Scope meter readings per billing period
                 -------------------------------------------------- */
                 const billDate = new Date(bill.billing_period);
                 const billMonth = billDate.getMonth();
                 const billYear = billDate.getFullYear();
 
                 const scopedMeterReadings = (meterReadings || []).filter(
-                    (r) => {
+                    (r: any) => {
                         if (!r?.reading_date) return false;
                         const d = new Date(r.reading_date);
                         return (
@@ -76,24 +130,43 @@ export default function TenantBilling({ agreement_id, user_id }) {
                         key={bill.billing_id}
                         className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
                     >
-                        {/* ================= HEADER ================= */}
+                        {/* ================= HEADER (RESPONSIVE 3-COLUMN) ================= */}
                         <div className="px-4 py-3 border-b bg-gray-50">
-                            <p className="text-sm font-semibold text-gray-900">
-                                {formatDate(bill.billing_period)}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                Due {formatDate(dueDate)}
-                            </p>
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 items-center">
+                                {/* Billing Period */}
+                                <div>
+                                    <p className="text-xs text-gray-500">Billing Period</p>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                        {formatDate(bill.billing_period)}
+                                    </p>
+                                </div>
+
+                                {/* Due Date */}
+                                <div className="sm:text-right md:text-left">
+                                    <p className="text-xs text-gray-500">Due Date</p>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                        {formatDate(dueDate)}
+                                    </p>
+                                </div>
+
+                                {/* Payment Status */}
+                                <div className="sm:col-span-2 md:col-span-1 md:text-right">
+                                    <p className="text-xs text-gray-500 mb-1">
+                                        Payment Status
+                                    </p>
+                                    <StatusBadge status={billingStatus} />
+                                </div>
+                            </div>
                         </div>
 
                         {/* ================= TOTAL ================= */}
                         <div className="px-4 py-3 flex justify-between items-center">
-                            <span className="text-xs text-gray-500 font-medium">
-                                Total Amount Due
-                            </span>
+              <span className="text-xs text-gray-500 font-medium">
+                Total Amount Due
+              </span>
                             <span className="text-lg font-bold text-emerald-600">
-                                ₱{totals.totalDue.toFixed(2)}
-                            </span>
+                ₱{totals.totalDue.toFixed(2)}
+              </span>
                         </div>
 
                         {/* ================= DETAILS ================= */}
@@ -113,9 +186,7 @@ export default function TenantBilling({ agreement_id, user_id }) {
                             />
 
                             {bill.postDatedChecks?.length > 0 && (
-                                <PDCSection
-                                    pdcs={bill.postDatedChecks}
-                                />
+                                <PDCSection pdcs={bill.postDatedChecks} />
                             )}
                         </div>
 
@@ -125,7 +196,6 @@ export default function TenantBilling({ agreement_id, user_id }) {
                                 bill={bill}
                                 totalDue={totals.totalDue}
                                 agreement_id={agreement_id}
-                                compact
                             />
                         </div>
                     </div>

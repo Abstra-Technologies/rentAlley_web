@@ -13,7 +13,6 @@ import {
     DollarSign,
     Calendar,
     BarChart3,
-    MinusCircle,
     PlusCircle,
 } from "lucide-react";
 
@@ -45,41 +44,57 @@ const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function FinancialsPage() {
     const { id } = useParams();
-    const propertyId = id;
     const router = useRouter();
     const { user } = useAuthStore();
 
     const landlordId = user?.landlord_id;
-    const { subscription, loadingSubscription } = useSubscription(landlordId);
+    const { subscription, loadingSubscription } =
+        useSubscription(landlordId);
 
-    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const currentYear = new Date().getFullYear();
+    const BASE_HISTORY_YEARS = 3;
+
+    const [selectedYear, setSelectedYear] = useState(currentYear);
     const [showNOIChart, setShowNOIChart] = useState(false);
     const [showGrossChart, setShowGrossChart] = useState(false);
 
+    const planName =
+        subscription?.plan_name as keyof typeof subscriptionConfig;
+    const planConfig = planName
+        ? subscriptionConfig[planName]
+        : null;
+
+    const canUseFinancials =
+        planConfig?.features?.financialInsights === true;
+    const allowedHistoryYears =
+        planConfig?.limits?.financialHistoryYears;
+
+    /**
+     * Always show current year + previous 3 years,
+     * but trim based on subscription limits
+     */
+    const baseYears = Array.from(
+        { length: BASE_HISTORY_YEARS + 1 },
+        (_, i) => currentYear - i
+    );
+
+    const allowedYears =
+        allowedHistoryYears === null
+            ? baseYears
+            : baseYears.filter(
+                (year) => currentYear - year < allowedHistoryYears
+            );
+
     const { data, isLoading } = useSWR(
-        propertyId
-            ? `/api/analytics/landlord/revenue-expense-trend?property_id=${propertyId}&year=${selectedYear}`
+        id
+            ? `/api/analytics/landlord/revenue-expense-trend?property_id=${id}&year=${selectedYear}`
             : null,
         fetcher
     );
 
     const metrics = data?.metrics || {};
 
-    const planName = subscription?.plan_name as keyof typeof subscriptionConfig;
-    const planConfig = planName ? subscriptionConfig[planName] : null;
-
-    const canUseFinancials = planConfig?.features?.financialInsights === true;
-    const allowedHistoryYears = planConfig?.limits?.financialHistoryYears;
-
-    const currentYear = new Date().getFullYear();
-    const allowedYears =
-        allowedHistoryYears === null
-            ? Array.from({ length: 5 }, (_, i) => currentYear - i)
-            : Array.from({ length: allowedHistoryYears }, (_, i) => currentYear - i);
-
-    if (isLoading) {
-        return <SkeletonLoader />;
-    }
+    if (isLoading) return <SkeletonLoader />;
 
     if (!loadingSubscription && !canUseFinancials) {
         return <UpgradeRequired router={router} />;
@@ -138,7 +153,7 @@ export default function FinancialsPage() {
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center">
                         <BarChart3 className="w-5 h-5 text-white" />
                     </div>
-                    <div className="flex-1">
+                    <div>
                         <h1 className="text-xl md:text-2xl font-bold">
                             Financial Performance
                         </h1>
@@ -154,28 +169,37 @@ export default function FinancialsPage() {
                     <select
                         value={selectedYear}
                         onChange={(e) => {
-                            const y = Number(e.target.value);
+                            const year = Number(e.target.value);
+
                             if (
                                 allowedHistoryYears !== null &&
-                                currentYear - y >= allowedHistoryYears
+                                currentYear - year >= allowedHistoryYears
                             ) {
-                                Swal.fire("Upgrade Required", "Limited financial history.", "warning");
+                                Swal.fire(
+                                    "Upgrade Required",
+                                    "Your plan limits how far back you can view financial data.",
+                                    "warning"
+                                );
                                 return;
                             }
-                            setSelectedYear(y);
+
+                            setSelectedYear(year);
                         }}
                         className="px-3 py-1.5 text-sm border rounded-lg"
                     >
-                        {allowedYears.map((y) => (
-                            <option key={y} value={y}>
-                                {y}
+                        {allowedYears.map((year) => (
+                            <option key={year} value={year}>
+                                {year}
                             </option>
                         ))}
                     </select>
                 </div>
 
-                {/* GOI SECTION */}
-                <Section title="Gross Operating Income (GOI)" icon={<PlusCircle className="w-5 h-5 text-emerald-600" />}>
+                {/* GOI */}
+                <Section
+                    title="Gross Operating Income (GOI)"
+                    icon={<PlusCircle className="w-5 h-5 text-emerald-600" />}
+                >
                     <MetricGrid metrics={metrics.grossRent} />
                     <ChartToggle
                         title="GOI Monthly Trend"
@@ -186,8 +210,11 @@ export default function FinancialsPage() {
                     </ChartToggle>
                 </Section>
 
-                {/* NOI SECTION */}
-                <Section title="Net Operating Income (NOI)" icon={<DollarSign className="w-5 h-5 text-blue-600" />}>
+                {/* NOI */}
+                <Section
+                    title="Net Operating Income (NOI)"
+                    icon={<DollarSign className="w-5 h-5 text-blue-600" />}
+                >
                     <MetricGrid metrics={metrics.noi} />
                     <ChartToggle
                         title="NOI Monthly Trend"
@@ -203,10 +230,10 @@ export default function FinancialsPage() {
 }
 
 /* ==============================
-   REUSABLE UI PARTS
+   REUSABLE COMPONENTS
 ============================== */
 
-function Section({ title, icon, children }) {
+function Section({ title, icon, children }: any) {
     return (
         <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
@@ -218,7 +245,7 @@ function Section({ title, icon, children }) {
     );
 }
 
-function MetricGrid({ metrics }) {
+function MetricGrid({ metrics }: any) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {["mtm", "ytd", "yoy"].map((k) => (
@@ -234,20 +261,29 @@ function MetricGrid({ metrics }) {
     );
 }
 
-function MetricCard({ label, current, last, variance }) {
+function MetricCard({ label, current, last, variance }: any) {
     const positive = variance >= 0;
+
     return (
         <div className="bg-white border rounded-lg p-4">
             <p className="text-xs text-gray-500 mb-1">{label}</p>
-            <p className="text-2xl font-bold">{formatCurrency(current)}</p>
-            <p className="text-xs text-gray-400">Last: {formatCurrency(last)}</p>
+            <p className="text-2xl font-bold">
+                {formatCurrency(current)}
+            </p>
+            <p className="text-xs text-gray-400">
+                Last: {formatCurrency(last)}
+            </p>
             <div className="flex items-center gap-1 mt-2">
                 {positive ? (
                     <TrendingUp className="w-4 h-4 text-emerald-600" />
                 ) : (
                     <TrendingDown className="w-4 h-4 text-red-600" />
                 )}
-                <span className={`text-sm ${positive ? "text-emerald-600" : "text-red-600"}`}>
+                <span
+                    className={`text-sm ${
+                        positive ? "text-emerald-600" : "text-red-600"
+                    }`}
+                >
           {variance?.toFixed(2)}%
         </span>
             </div>
@@ -255,12 +291,19 @@ function MetricCard({ label, current, last, variance }) {
     );
 }
 
-function ChartToggle({ title, open, toggle, children }) {
+function ChartToggle({ title, open, toggle, children }: any) {
     return (
         <div className="bg-white border rounded-lg">
-            <button onClick={toggle} className="w-full p-4 flex justify-between">
+            <button
+                onClick={toggle}
+                className="w-full p-4 flex justify-between items-center"
+            >
                 <span className="font-semibold">{title}</span>
-                <ChevronDown className={`transition ${open ? "rotate-180" : ""}`} />
+                <ChevronDown
+                    className={`transition ${
+                        open ? "rotate-180" : ""
+                    }`}
+                />
             </button>
             {open && <div className="p-4 h-[320px]">{children}</div>}
         </div>
@@ -272,14 +315,18 @@ function ChartToggle({ title, open, toggle, children }) {
 ============================== */
 
 function SkeletonLoader() {
-    return <div className="h-[60vh] animate-pulse bg-gray-100 rounded-lg" />;
+    return (
+        <div className="h-[60vh] animate-pulse bg-gray-100 rounded-lg" />
+    );
 }
 
-function UpgradeRequired({ router }) {
+function UpgradeRequired({ router }: any) {
     return (
         <div className="min-h-screen flex items-center justify-center">
             <button
-                onClick={() => router.push("/pages/landlord/subsciption_plan/pricing")}
+                onClick={() =>
+                    router.push("/pages/landlord/subsciption_plan/pricing")
+                }
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white"
             >
                 Upgrade to View Financials

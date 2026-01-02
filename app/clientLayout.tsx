@@ -50,8 +50,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         loadAndroidPush();
     }, [user_id]);
 
-
-
     useEffect(() => {
         if ((user || admin) && !sessionChecked) {
             fetchSession()
