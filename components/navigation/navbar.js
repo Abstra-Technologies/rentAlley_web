@@ -45,6 +45,9 @@ const Navbar = () => {
   // Check if we're in portal mode (portal has its own navigation)
   const isInPortalMode = pathname?.includes("/rentalPortal/");
 
+  // Check if we're on profile/settings pages (hide navbar on mobile for tenants)
+  const isProfilePage = pathname?.includes("/pages/commons/");
+
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
@@ -539,230 +542,240 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Navbar */}
-      <nav className="md:hidden fixed top-0 left-0 right-0 z-50">
-        {/* Top Bar */}
-        <div
-          className={`transition-all duration-300 ${
-            scrolled || mobileMenuOpen
-              ? "bg-white/90 backdrop-blur-xl shadow-lg border-b border-gray-200/50"
-              : "bg-gradient-to-r from-blue-600 to-emerald-600"
-          }`}
-        >
-          <div className="flex justify-between items-center h-14 px-4">
-            {/* Logo */}
-            <Link
-              href={user?.userType === "tenant" ? "/pages/tenant/feeds" : "/"}
-              className="flex items-center"
-            >
-              <span
-                className={`text-xl font-bold ${
-                  scrolled || mobileMenuOpen
-                    ? "bg-gradient-to-r from-blue-600 typographica to-emerald-600 bg-clip-text text-transparent"
-                    : "text-white"
-                }`}
+      {/* Mobile Navbar - Hidden on profile pages for logged-in tenants */}
+      {!(isProfilePage && user?.userType === "tenant") && (
+        <nav className="md:hidden fixed top-0 left-0 right-0 z-50">
+          {/* Top Bar */}
+          <div
+            className={`transition-all duration-300 ${
+              scrolled || mobileMenuOpen
+                ? "bg-white/90 backdrop-blur-xl shadow-lg border-b border-gray-200/50"
+                : "bg-gradient-to-r from-blue-600 to-emerald-600"
+            }`}
+          >
+            <div className="flex justify-between items-center h-14 px-4">
+              {/* Logo */}
+              <Link
+                href={user?.userType === "tenant" ? "/pages/tenant/feeds" : "/"}
+                className="flex items-center"
               >
-                Upkyp
-              </span>
-            </Link>
+                <span
+                  className={`text-xl font-bold ${
+                    scrolled || mobileMenuOpen
+                      ? "bg-gradient-to-r from-blue-600 typographica to-emerald-600 bg-clip-text text-transparent"
+                      : "text-white"
+                  }`}
+                >
+                  Upkyp
+                </span>
+              </Link>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-2">
-              {loading ? (
-                <div className="w-8 h-8 flex items-center justify-center">
-                  <div
-                    className={`animate-spin rounded-full h-5 w-5 border-2 ${
-                      scrolled || mobileMenuOpen
-                        ? "border-blue-200 border-t-blue-600"
-                        : "border-white/30 border-t-white"
-                    }`}
-                  ></div>
-                </div>
-              ) : (
-                <>
-                  {(user || admin) && (
-                    <NotificationSection user={user} admin={admin} />
-                  )}
-
-                  {/* Hamburger Menu Button */}
-                  <button
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      scrolled || mobileMenuOpen
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-white hover:bg-white/10"
-                    }`}
-                  >
-                    {mobileMenuOpen ? (
-                      <X className="w-6 h-6" />
-                    ) : (
-                      <Menu className="w-6 h-6" />
+              {/* Right Actions */}
+              <div className="flex items-center gap-2">
+                {loading ? (
+                  <div className="w-8 h-8 flex items-center justify-center">
+                    <div
+                      className={`animate-spin rounded-full h-5 w-5 border-2 ${
+                        scrolled || mobileMenuOpen
+                          ? "border-blue-200 border-t-blue-600"
+                          : "border-white/30 border-t-white"
+                      }`}
+                    ></div>
+                  </div>
+                ) : (
+                  <>
+                    {(user || admin) && (
+                      <NotificationSection user={user} admin={admin} />
                     )}
-                  </button>
-                </>
-              )}
+
+                    {/* Hamburger Menu Button */}
+                    <button
+                      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        scrolled || mobileMenuOpen
+                          ? "text-gray-700 hover:bg-gray-100"
+                          : "text-white hover:bg-white/10"
+                      }`}
+                    >
+                      {mobileMenuOpen ? (
+                        <X className="w-6 h-6" />
+                      ) : (
+                        <Menu className="w-6 h-6" />
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Mobile Menu Overlay */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-black/20 backdrop-blur-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              />
+          {/* Mobile Menu Overlay */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                />
 
-              {/* Menu Panel */}
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="absolute top-14 left-0 right-0 bg-white border-b border-gray-200 shadow-xl max-h-[calc(100vh-3.5rem)] overflow-y-auto"
-              >
-                {/* User Info (if logged in) */}
-                {(user || admin) && (
-                  <div className="px-4 py-4 bg-gradient-to-br from-blue-50 via-white to-emerald-50 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={
-                          user?.profilePicture ||
-                          admin?.profile_picture ||
-                          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                        }
-                        alt="Profile"
-                        width={48}
-                        height={48}
-                        className="w-12 h-12 object-cover rounded-xl border-2 border-white shadow-sm"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {user?.firstName
-                            ? `${user.firstName} ${user.lastName || ""}`
-                            : admin?.first_name
-                            ? `${admin.first_name} ${admin.last_name || ""}`
-                            : "User"}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user?.email || admin?.email}
-                        </p>
-                      </div>
-                      {user?.points !== undefined && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 rounded-full">
-                          <Star className="w-4 h-4 text-amber-600" />
-                          <span className="text-sm font-bold text-amber-700">
-                            {user.points}
-                          </span>
+                {/* Menu Panel */}
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="absolute top-14 left-0 right-0 bg-white border-b border-gray-200 shadow-xl max-h-[calc(100vh-3.5rem)] overflow-y-auto"
+                >
+                  {/* User Info (if logged in) */}
+                  {(user || admin) && (
+                    <div className="px-4 py-4 bg-gradient-to-br from-blue-50 via-white to-emerald-50 border-b border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={
+                            user?.profilePicture ||
+                            admin?.profile_picture ||
+                            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                          }
+                          alt="Profile"
+                          width={48}
+                          height={48}
+                          className="w-12 h-12 object-cover rounded-xl border-2 border-white shadow-sm"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {user?.firstName
+                              ? `${user.firstName} ${user.lastName || ""}`
+                              : admin?.first_name
+                              ? `${admin.first_name} ${admin.last_name || ""}`
+                              : "User"}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user?.email || admin?.email}
+                          </p>
                         </div>
-                      )}
+                        {user?.points !== undefined && (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 rounded-full">
+                            <Star className="w-4 h-4 text-amber-600" />
+                            <span className="text-sm font-bold text-amber-700">
+                              {user.points}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Navigation Links */}
-                <div className="py-2">
-                  {allNavLinks.map((link, index) => {
-                    const Icon = link.icon;
-                    return (
-                      <motion.div
-                        key={link.href}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.03 }}
-                      >
-                        <Link
-                          href={link.href}
-                          className={`flex items-center gap-3 px-4 py-3.5 transition-colors ${
-                            isActiveLink(link.href)
-                              ? "bg-blue-50 text-blue-600 border-l-4 border-blue-600"
-                              : "text-gray-700 hover:bg-gray-50"
-                          }`}
+                  {/* Navigation Links */}
+                  <div className="py-2">
+                    {allNavLinks.map((link, index) => {
+                      const Icon = link.icon;
+                      return (
+                        <motion.div
+                          key={link.href}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.03 }}
                         >
-                          <div
-                            className={`p-2 rounded-lg ${
+                          <Link
+                            href={link.href}
+                            className={`flex items-center gap-3 px-4 py-3.5 transition-colors ${
                               isActiveLink(link.href)
-                                ? "bg-blue-100"
-                                : "bg-gray-100"
+                                ? "bg-blue-50 text-blue-600 border-l-4 border-blue-600"
+                                : "text-gray-700 hover:bg-gray-50"
                             }`}
                           >
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <span className="flex-1 text-sm font-medium">
-                            {link.label}
-                          </span>
-                          {link.badge && (
-                            <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
-                              {link.badge}
+                            <div
+                              className={`p-2 rounded-lg ${
+                                isActiveLink(link.href)
+                                  ? "bg-blue-100"
+                                  : "bg-gray-100"
+                              }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <span className="flex-1 text-sm font-medium">
+                              {link.label}
                             </span>
-                          )}
-                        </Link>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-
-                {/* User Actions (if logged in) */}
-                {(user || admin) && (
-                  <div className="border-t border-gray-100 py-2">
-                    <Link
-                      href={
-                        user
-                          ? "/pages/commons/profile"
-                          : `/pages/system_admin/profile/${admin?.admin_id}`
-                      }
-                      className="flex items-center gap-3 px-4 py-3.5 text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="p-2 bg-gray-100 rounded-lg">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <span className="text-sm font-medium">View Profile</span>
-                    </Link>
-
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <div className="p-2 bg-red-100 rounded-lg">
-                        <LogOut className="w-4 h-4" />
-                      </div>
-                      <span className="text-sm font-medium">Logout</span>
-                    </button>
+                            {link.badge && (
+                              <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">
+                                {link.badge}
+                              </span>
+                            )}
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
                   </div>
-                )}
 
-                {/* Auth Buttons (if not logged in) */}
-                {!user && !admin && !loading && (
-                  <div className="border-t border-gray-100 p-4 space-y-3">
-                    <Link
-                      href="/pages/auth/login"
-                      className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      href="/pages/auth/selectRole"
-                      className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:shadow-lg hover:shadow-blue-500/25 rounded-xl transition-all"
-                    >
-                      Get Started Free
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </div>
-                )}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      </nav>
+                  {/* User Actions (if logged in) */}
+                  {(user || admin) && (
+                    <div className="border-t border-gray-100 py-2">
+                      <Link
+                        href={
+                          user
+                            ? "/pages/commons/profile"
+                            : `/pages/system_admin/profile/${admin?.admin_id}`
+                        }
+                        className="flex items-center gap-3 px-4 py-3.5 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <User className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-medium">
+                          View Profile
+                        </span>
+                      </Link>
 
-      {/* Spacer for fixed navbar */}
-      <div className="h-14 md:h-16" />
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3.5 text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <div className="p-2 bg-red-100 rounded-lg">
+                          <LogOut className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-medium">Logout</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Auth Buttons (if not logged in) */}
+                  {!user && !admin && !loading && (
+                    <div className="border-t border-gray-100 p-4 space-y-3">
+                      <Link
+                        href="/pages/auth/login"
+                        className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/pages/auth/selectRole"
+                        className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-emerald-600 hover:shadow-lg hover:shadow-blue-500/25 rounded-xl transition-all"
+                      >
+                        Get Started Free
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  )}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </nav>
+      )}
+
+      {/* Spacer for fixed navbar - adjust based on profile page */}
+      {!(isProfilePage && user?.userType === "tenant") && (
+        <div className="h-14 md:h-16" />
+      )}
+      {/* Desktop only spacer for profile pages */}
+      {isProfilePage && user?.userType === "tenant" && (
+        <div className="hidden md:block h-16" />
+      )}
     </>
   );
 };
