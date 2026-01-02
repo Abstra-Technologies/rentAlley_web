@@ -30,7 +30,6 @@ import {
   MapPin,
   ChevronRight,
 } from "lucide-react";
-import { upkypFont } from "../../app/fonts";
 
 const Navbar = () => {
   const { user, admin, loading, signOut, signOutAdmin, fetchSession } =
@@ -559,7 +558,7 @@ const Navbar = () => {
               <span
                 className={`text-xl font-bold ${
                   scrolled || mobileMenuOpen
-                    ? "bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent"
+                    ? "bg-gradient-to-r from-blue-600 typographica to-emerald-600 bg-clip-text text-transparent"
                     : "text-white"
                 }`}
               >
