@@ -16,6 +16,7 @@ import { RefreshCw, XCircle, Clock } from "lucide-react";
 import { Unit } from "@/types/units";
 import { formatCurrency, formatDate } from "@/utils/formatter/formatters";
 import PendingDocumentsWidget from "../../analytics-insights/PendingDocumentsWidget";
+import TenantLeaseModal from "../../analytics-insights/PendingDocumentsWidget";
 
 /* ----------------------- CONSTANTS ----------------------- */
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
@@ -191,7 +192,10 @@ export default function UnitCardDesktop({
                 {/* ACTIONS (UNCHANGED) */}
                 <div className="space-y-2 pt-2">
                     {isSignaturePending && !isFullySigned && (
-                        <PendingDocumentsWidget agreement_id={unit.agreement_id} />
+                        <TenantLeaseModal
+                            agreement_id={unit.agreement_id}
+                            showPendingLeaseInfo={false}
+                        />
                     )}
 
                     <button
