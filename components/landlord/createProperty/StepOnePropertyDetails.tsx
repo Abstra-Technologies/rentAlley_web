@@ -299,7 +299,7 @@ Address: ${p.street}, ${p.brgyDistrict}, ${p.city}, ${p.zipCode}, ${p.province}
                             </div>
                         </div>
 
-                        <div className="relative w-full h-[260px] min-h-[260px] rounded-lg overflow-hidden border">
+                        <div className="relative w-full h-[260px] min-h-[260px] rounded-lg overflow-hidden border z-0">
                             <PropertyMap
                                 setFields={mapSetFields}
                                 coordinates={[coords.lat, coords.lng]}
