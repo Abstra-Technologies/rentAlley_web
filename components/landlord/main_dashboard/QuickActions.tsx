@@ -1,6 +1,18 @@
 "use client";
 
-import { Home, UserPlus, Megaphone, List, Wallet } from "lucide-react";
+import Link from "next/link";
+import {
+    Home,
+    UserPlus,
+    Megaphone,
+    List,
+    Wallet,
+    Building,
+    Users,
+    MessageSquareMore,
+    Calendar,
+    Construction,
+} from "lucide-react";
 
 export default function QuickActions({
                                          onAddProperty,
@@ -8,8 +20,17 @@ export default function QuickActions({
                                          onAnnouncement,
                                          onWorkOrder,
                                          onIncome,
-                                     }) {
-    const actions = [
+                                     }: {
+    onAddProperty: () => void;
+    onInviteTenant: () => void;
+    onAnnouncement: () => void;
+    onWorkOrder: () => void;
+    onIncome: () => void;
+}) {
+    /* ================================
+       DESKTOP QUICK ACTIONS (Original)
+    ================================= */
+    const desktopActions = [
         {
             id: "addProperty",
             label: "Add Property",
@@ -52,47 +73,104 @@ export default function QuickActions({
         },
     ];
 
+    /* ================================
+       MOBILE MENU (GCash-style)
+    ================================= */
+    const mobileActions = [
+        {
+            label: "Properties",
+            href: "/pages/landlord/property-listing",
+            icon: Building,
+        },
+        {
+            label: "My Tenants",
+            href: "/pages/landlord/list_of_tenants",
+            icon: Users,
+        },
+        {
+            label: "Announcements",
+            href: "/pages/landlord/announcement",
+            icon: Megaphone,
+        },
+        {
+            label: "Messages",
+            href: "/pages/landlord/chat",
+            icon: MessageSquareMore,
+        },
+        {
+            label: "Calendar",
+            href: "/pages/landlord/booking-appointment",
+            icon: Calendar,
+        },
+        {
+            label: "Payments",
+            href: "/pages/landlord/payments",
+            icon: Wallet,
+        },
+        {
+            label: "Work Orders",
+            href: "/pages/landlord/maintenance-request",
+            icon: Construction,
+        },
+    ];
+
     return (
-        <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 md:gap-4">
-            {actions.map(
-                ({ id, label, icon: Icon, onClick, gradientFrom, gradientTo }) => (
-                    <button
-                        key={id}
-                        onClick={onClick}
-                        className="group flex flex-col items-center w-16 md:w-20"
+        <>
+            {/* ================= MOBILE (GCash style) ================= */}
+            <div className="grid grid-cols-4 gap-4 md:hidden">
+                {mobileActions.map(({ label, href, icon: Icon }) => (
+                    <Link
+                        key={label}
+                        href={href}
+                        className="flex flex-col items-center gap-1 active:scale-95 transition"
                     >
-                        {/* Icon Circle */}
-                        <div
-                            className="
-                w-12 h-12 md:w-14 md:h-14
-                rounded-full
-                flex items-center justify-center
-                bg-white border border-gray-200
-                shadow-sm
-                transition-all duration-200
-                group-hover:shadow-lg group-hover:scale-110 group-hover:border-transparent
-                relative overflow-hidden
-              "
-                        >
-                            {/* Gradient Overlay */}
-                            <div
-                                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                style={{
-                                    background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})`,
-                                }}
-                            />
-
-                            {/* Icon */}
-                            <Icon className="w-5 h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-white transition-colors duration-200 relative z-10" />
+                        <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center">
+                            <Icon className="w-5 h-5 text-blue-600" />
                         </div>
-
-                        {/* Label — no wrapping */}
-                        <span className="mt-1.5 text-[10px] md:text-xs font-medium text-gray-700 text-center leading-tight whitespace-nowrap">
+                        <span className="text-[10px] text-gray-700 font-medium text-center leading-tight">
               {label}
             </span>
-                    </button>
-                )
-            )}
-        </div>
+                    </Link>
+                ))}
+            </div>
+
+            {/* ================= DESKTOP (Original) ================= */}
+            <div className="hidden md:flex flex-wrap justify-start items-center gap-4">
+                {desktopActions.map(
+                    ({ id, label, icon: Icon, onClick, gradientFrom, gradientTo }) => (
+                        <button
+                            key={id}
+                            onClick={onClick}
+                            className="group flex flex-col items-center w-20"
+                        >
+                            <div
+                                className="
+                  w-14 h-14 rounded-full
+                  flex items-center justify-center
+                  bg-white border border-gray-200
+                  shadow-sm
+                  transition-all duration-200
+                  group-hover:shadow-lg group-hover:scale-110
+                  relative overflow-hidden
+                "
+                            >
+                                <div
+                                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    style={{
+                                        background: `linear-gradient(to bottom right, ${gradientFrom}, ${gradientTo})`,
+                                    }}
+                                />
+
+                                <Icon className="w-6 h-6 text-gray-700 group-hover:text-white relative z-10 transition-colors" />
+                            </div>
+
+                            <span className="mt-2 text-xs font-medium text-gray-700 whitespace-nowrap">
+                {label}
+              </span>
+                        </button>
+                    )
+                )}
+            </div>
+        </>
     );
 }
