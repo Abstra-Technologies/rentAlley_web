@@ -23,7 +23,7 @@ function Login() {
             }}
         >
             {/* VERY light black overlay */}
-            <div className="absolute inset-0 bg-black/50" />
+            <div className="absolute inset-0 bg-black/30" />
 
             <div className="relative z-10 flex flex-col min-h-screen">
                 <main className="flex-1 flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 py-12 gap-12 lg:gap-20">
@@ -39,14 +39,15 @@ function Login() {
                         >
                             Your Property Journey, Simplified.
                             <span
-                                className="block mt-2 typographica font-extrabold bg-clip-text text-transparent"
+                                className="block mt-2 typographica font-extrabold"
                                 style={{
-                                    backgroundImage: "linear-gradient(90deg, #fff95b, #fff95b)",
+                                    color: "#FFF95B",
                                     textShadow: "0 1px 4px rgba(0,0,0,0.35)",
                                 }}
                             >
-                              Upkyp
-                            </span>
+                          Upkyp
+                        </span>
+
 
                         </h1>
 

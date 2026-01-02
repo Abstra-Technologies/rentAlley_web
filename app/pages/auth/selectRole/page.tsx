@@ -22,78 +22,97 @@ export default function RegisterAs() {
     };
 
     return (
-        <div className="relative flex items-center justify-center min-h-screen bg-white px-4 py-6 sm:px-6 sm:py-10 overflow-hidden">
-            {/* Background Image (VISIBLE) */}
+        <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-4 py-6 sm:px-6 sm:py-10">
+            {/* Background Image */}
             <Image
                 src="https://res.cloudinary.com/dpukdla69/image/upload/v1765966152/Whisk_mtnhzwyxajzmdtyw0yn2mtotijzhrtllbjzh1sn_wpw850.jpg"
                 alt="City background"
                 fill
-                className="absolute inset-0 object-cover opacity-30"
                 priority
+                className="absolute inset-0 object-cover opacity-30"
             />
 
-            {/* Soft white wash (top → bottom) */}
-
             {/* Main Card */}
-            <div className="relative z-10 w-full max-w-sm sm:max-w-lg bg-white border border-gray-200 rounded-3xl shadow-xl p-6 sm:p-10">
+            <div
+                className="
+          relative z-10 w-full
+          max-w-sm
+          sm:max-w-md
+          bg-white
+          border border-gray-200
+          rounded-3xl
+          shadow-lg
+          p-6 sm:p-8
+        "
+            >
                 {/* Logo */}
-                <div className="text-center mb-6 sm:mb-8">
-                    <div className="text-3xl sm:text-5xl font-extrabold text-gray-900">
+                <div className="mb-6 text-center sm:mb-8">
+                    <div
+                        className="typographica text-3xl sm:text-4xl font-extrabold bg-clip-text text-transparent"
+                        style={{
+                            backgroundImage: "linear-gradient(90deg, #60A5FA, #34D399)",
+                            textShadow: "0 1px 3px rgba(0,0,0,0.25)",
+                        }}
+                    >
                         Upkyp
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2 tracking-wide">
+                    <p className="mt-1 sm:mt-2 text-xs sm:text-sm tracking-wide text-gray-500">
                         Connect more. Manage less.
                     </p>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-center text-xl sm:text-3xl font-semibold text-gray-800 mb-6 sm:mb-10">
+                <h2 className="mb-6 sm:mb-8 text-center text-xl sm:text-2xl font-semibold text-gray-800">
                     Register As
                 </h2>
 
                 {/* Role Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
                     {/* Tenant */}
                     <button
                         onClick={() => handleSelectRole("tenant")}
-                        className="group flex-1 relative overflow-hidden rounded-2xl
-                                   bg-blue-600 text-white
-                                   py-3 sm:py-5 shadow-md
-                                   transition-all hover:shadow-lg hover:scale-[1.03]"
+                        className="
+              group relative flex-1 overflow-hidden
+              rounded-2xl bg-blue-600 py-3 sm:py-4
+              text-white shadow-md
+              transition-all hover:scale-[1.03] hover:shadow-lg
+            "
                     >
-                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-20 transition-opacity" />
+                        <div className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-20" />
                         <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
-                            <UserIcon className="w-6 h-6 sm:w-8 sm:h-8" />
-                            <span className="text-sm sm:text-lg font-medium">
-                                Tenant
-                            </span>
+                            <UserIcon className="h-6 w-6 sm:h-7 sm:w-7" />
+                            <span className="text-sm sm:text-base font-medium">
+                Tenant
+              </span>
                         </div>
                     </button>
 
                     {/* Landlord */}
                     <button
                         onClick={() => handleSelectRole("landlord")}
-                        className="group flex-1 relative overflow-hidden rounded-2xl
-                                   bg-emerald-600 text-white
-                                   py-3 sm:py-5 shadow-md
-                                   transition-all hover:shadow-lg hover:scale-[1.03]"
+                        className="
+              group relative flex-1 overflow-hidden
+              rounded-2xl bg-emerald-600 py-3 sm:py-4
+              text-white shadow-md
+              transition-all hover:scale-[1.03] hover:shadow-lg
+            "
                     >
-                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-20 transition-opacity" />
+                        <div className="absolute inset-0 bg-white/10 opacity-0 transition-opacity group-hover:opacity-20" />
                         <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-3">
-                            <HomeIcon className="w-6 h-6 sm:w-8 sm:h-8" />
-                            <span className="text-sm sm:text-lg font-medium">
-                                Landlord
-                            </span>
+                            <HomeIcon className="h-6 w-6 sm:h-7 sm:w-7" />
+                            <span className="text-sm sm:text-base font-medium">
+                Landlord
+              </span>
                         </div>
                     </button>
                 </div>
 
                 {/* Footer */}
-                <p className="text-center text-xs sm:text-sm text-gray-600 mt-4 sm:mt-6">
+                <p className="mt-5 sm:mt-6 text-center text-xs sm:text-sm text-gray-600">
                     Already have an account?{" "}
                     <button
                         onClick={() => router.push("/pages/auth/login")}
-                        className="text-gray-900 font-medium hover:underline underline-offset-4 transition"
+                        className="font-medium text-gray-900 underline-offset-4 transition hover:underline"
                     >
                         Sign in here
                     </button>
