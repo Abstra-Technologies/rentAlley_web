@@ -232,7 +232,7 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                 src={lease.agreement_url}
                                 className="w-full h-[420px] rounded-lg border"
                             />
-
+                            {lease.agreement_url}
                             {/* 🔑 AUTH SECTION ONLY WHEN NEEDED */}
                             {needsTenantSignature && (
                                 <div className="space-y-4">
