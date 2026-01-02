@@ -21,17 +21,24 @@ console.log('tenant id active rent: ' + tenantId);
         --------------------------------------------------------- */
         const [leaseRecords]: any = await db.query(
             `
-            SELECT 
-                agreement_id, start_date, end_date,
-                security_deposit_amount, advance_payment_amount,
-                tenant_id, unit_id, status
-            FROM LeaseAgreement
-            WHERE tenant_id = ?
-              AND status NOT IN ('draft','cancelled')
-            ORDER BY updated_at DESC
+                SELECT
+                    agreement_id,
+                    start_date,
+                    end_date,
+                    updated_at AS lease_ended_at,
+                    security_deposit_amount,
+                    advance_payment_amount,
+                    tenant_id,
+                    unit_id,
+                    status
+                FROM LeaseAgreement
+                WHERE tenant_id = ?
+                  AND status NOT IN ('draft','cancelled')
+                ORDER BY updated_at DESC
             `,
             [tenantId]
         );
+
 
         if (!leaseRecords?.length) {
             return NextResponse.json(
@@ -233,6 +240,11 @@ console.log('tenant id active rent: ' + tenantId);
                 leaseSignature, // ⭐ REAL SIGNATURE STATUS
 
                 has_pending_proof: hasPendingProof,
+
+                lease_ended_at:
+                    lease.status === "completed"
+                        ? lease.lease_ended_at
+                        : null,
 
                 street: unit.street,
                 brgy_district: unit.brgy_district,

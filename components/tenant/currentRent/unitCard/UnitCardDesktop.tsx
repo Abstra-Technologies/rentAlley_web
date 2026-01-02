@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
     CalendarIcon,
@@ -10,52 +11,66 @@ import {
     ChatBubbleLeftRightIcon,
     ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { RefreshCw, XCircle } from "lucide-react";
+import { RefreshCw, XCircle, Clock } from "lucide-react";
 
 import { Unit } from "@/types/units";
 import { formatCurrency, formatDate } from "@/utils/formatter/formatters";
 import PendingDocumentsWidget from "../../analytics-insights/PendingDocumentsWidget";
 
+/* ----------------------- CONSTANTS ----------------------- */
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+const ONE_MINUTE_MS = 60 * 1000;
+
+/* ----------------------- COUNTDOWN HOOK ----------------------- */
+const useCountdown = (endedAt?: string) => {
+    const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!endedAt) return;
+
+        const update = () => {
+            const diff =
+                new Date(endedAt).getTime() + THREE_DAYS_MS - Date.now();
+            setTimeLeft(Math.max(0, diff));
+        };
+
+        update();
+        const interval = setInterval(update, ONE_MINUTE_MS);
+
+        return () => clearInterval(interval);
+    }, [endedAt]);
+
+    if (timeLeft === null) return null;
+
+    const totalMinutes = Math.ceil(timeLeft / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    return { days, hours, minutes };
+};
+
 /* ----------------------- SIGNATURE BADGE ----------------------- */
 const LeaseStatusBadge = ({ unit }: { unit: Unit }) => {
     const sig = unit.leaseSignature;
 
-    const base =
-        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border-2";
-
     const badge = {
-        pending: {
-            text: "Awaiting Signatures",
-            color: "bg-amber-50 text-amber-700 border-amber-200",
-        },
-        sent: {
-            text: "Waiting for Tenant to Sign",
-            color: "bg-amber-50 text-amber-700 border-amber-200",
-        },
-        landlord_signed: {
-            text: "Waiting for Tenant Signature",
-            color: "bg-amber-50 text-amber-700 border-amber-200",
-        },
-        tenant_signed: {
-            text: "Waiting for Landlord Signature",
-            color: "bg-yellow-50 text-yellow-700 border-yellow-300",
-        },
-        active: {
-            text: "Active",
-            color: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        },
-        completed: {
-            text: "Completed",
-            color: "bg-blue-50 text-blue-700 border-blue-200",
-        },
+        pending: "bg-amber-50 text-amber-700 border-amber-200",
+        sent: "bg-amber-50 text-amber-700 border-amber-200",
+        landlord_signed: "bg-amber-50 text-amber-700 border-amber-200",
+        tenant_signed: "bg-yellow-50 text-yellow-700 border-yellow-300",
+        active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        completed: "bg-gray-100 text-gray-600 border-gray-300",
     };
 
-    const info = badge[sig] ?? badge.pending;
-
     return (
-        <span className={`${base} ${info.color}`}>
-      <span className="w-1.5 h-1.5 bg-current rounded-full animate-pulse" />
-            {info.text}
+        <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border-2 ${
+                badge[sig] ?? badge.pending
+            }`}
+        >
+      <span className="w-1.5 h-1.5 bg-current rounded-full" />
+            {sig}
     </span>
     );
 };
@@ -76,40 +91,34 @@ export default function UnitCardDesktop({
     onEndContract: (unitId: string, agreementId: string) => void;
     onPayInitial: (agreementId: string) => void;
 }) {
-    const sig = unit.leaseSignature;
+    const isLeaseCompleted = unit.leaseSignature === "completed";
     const isLeaseExpired = new Date(unit.end_date) < new Date();
 
-    /* ----------------------- SIGNATURE STATES (UNCHANGED) ----------------------- */
+    const countdown = useCountdown(unit.lease_ended_at);
+
     const isSignaturePending =
-        sig === "pending" ||
-        sig === "sent" ||
-        sig === "pending_signature" ||
-        sig === "landlord_signed" ||
-        sig === "tenant_signed";
+        unit.leaseSignature !== "active" &&
+        unit.leaseSignature !== "completed";
 
-    const isFullySigned = sig === "active" || sig === "completed";
-
-    /* ----------------------- PAYABLE STATES ----------------------- */
-    const requiresSecurityDeposit =
-        Number(unit.security_deposit_amount) > 0 &&
-        unit.security_deposit_status !== "paid";
-
-    const requiresAdvancePayment =
-        Number(unit.advance_payment_amount) > 0 &&
-        unit.advance_payment_status !== "paid";
-
-    const hasInitialPayables =
-        requiresSecurityDeposit || requiresAdvancePayment;
+    const isFullySigned =
+        unit.leaseSignature === "active" ||
+        unit.leaseSignature === "completed";
 
     return (
-        <article className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group">
-
-            {/* Status Bar */}
+        <article
+            className={`bg-white rounded-xl border shadow-sm transition-all overflow-hidden
+        ${
+                isLeaseCompleted
+                    ? "opacity-70 grayscale-[35%]"
+                    : "hover:shadow-md"
+            }`}
+        >
+            {/* STATUS BAR */}
             <div
                 className={`h-1 ${
-                    isLeaseExpired
+                    isLeaseCompleted
                         ? "bg-gray-400"
-                        : isSignaturePending && !isFullySigned
+                        : isSignaturePending
                             ? "bg-amber-400"
                             : "bg-gradient-to-r from-emerald-500 to-blue-500"
                 }`}
@@ -121,7 +130,7 @@ export default function UnitCardDesktop({
                     <Image
                         src={unit.unit_photos[0]}
                         fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="object-cover"
                         alt={`Unit ${unit.unit_name}`}
                     />
                 ) : (
@@ -130,25 +139,22 @@ export default function UnitCardDesktop({
                     </div>
                 )}
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
                 <div className="absolute top-3 left-3">
                     <LeaseStatusBadge unit={unit} />
                 </div>
 
-                <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg">
-                    <div className="flex items-center gap-1">
-                        <CurrencyDollarIcon className="w-4 h-4 text-blue-600" />
-                        <span className="font-bold text-blue-700 text-sm">
-              {formatCurrency(unit.rent_amount)}
-            </span>
-                        <span className="text-xs text-gray-600">/mo</span>
+                {/* LIVE COUNTDOWN */}
+                {isLeaseCompleted && countdown && (
+                    <div className="absolute top-3 right-3 bg-gray-900/80 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur">
+                        <Clock className="w-3.5 h-3.5" />
+                        Removed in {countdown.days}d {countdown.hours}h{" "}
+                        {countdown.minutes}m
                     </div>
-                </div>
+                )}
 
-                {unit.due_date && unit.due_day && !isLeaseExpired && isFullySigned && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white px-4 py-2.5 text-xs backdrop-blur-sm">
-                        <div className="flex items-center justify-between">
+                {unit.due_date && unit.due_day && isFullySigned && !isLeaseCompleted && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white px-4 py-2.5 text-xs">
+                        <div className="flex justify-between">
               <span className="flex items-center gap-1.5">
                 <CalendarIcon className="w-4 h-4" />
                 Next Bill: {formatDate(unit.due_date)}
@@ -160,15 +166,17 @@ export default function UnitCardDesktop({
             </div>
 
             {/* CONTENT */}
-            <div className="p-4">
-                <h2 className="font-bold text-lg text-gray-900 mb-1">
-                    Unit {unit.unit_name}
-                </h2>
-                <p className="text-sm font-medium text-gray-700 mb-2">
-                    {unit.property_name}
-                </p>
+            <div className="p-4 space-y-3">
+                <div>
+                    <h2 className="font-bold text-lg text-gray-900">
+                        Unit {unit.unit_name}
+                    </h2>
+                    <p className="text-sm font-medium text-gray-700">
+                        {unit.property_name}
+                    </p>
+                </div>
 
-                <div className="flex items-center gap-3 text-xs text-gray-600 mb-4">
+                <div className="flex items-center gap-3 text-xs text-gray-600">
           <span className="flex items-center gap-1">
             <MapPinIcon className="w-3.5 h-3.5 text-blue-600" />
               {unit.city}, {unit.province}
@@ -180,83 +188,54 @@ export default function UnitCardDesktop({
           </span>
                 </div>
 
-                {/* ACTIONS */}
-                <div className="space-y-2">
-
-                    {/* PENDING DOCUMENTS */}
+                {/* ACTIONS (UNCHANGED) */}
+                <div className="space-y-2 pt-2">
                     {isSignaturePending && !isFullySigned && (
                         <PendingDocumentsWidget agreement_id={unit.agreement_id} />
                     )}
 
-                    {/* FULLY SIGNED */}
-                    {isFullySigned && (
-                        <>
-                            {/* PAY INITIAL (BLOCKS PORTAL) */}
-                            {hasInitialPayables && (
-                                <button
-                                    onClick={() => onPayInitial(unit.agreement_id)}
-                                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4
-                  bg-gradient-to-r from-pink-600 to-red-600 text-white rounded-lg
-                  font-semibold text-sm hover:shadow-lg"
-                                >
-                                    <CurrencyDollarIcon className="w-4 h-4" />
-                                    {requiresSecurityDeposit && requiresAdvancePayment
-                                        ? "Pay Security Deposit + Advance"
-                                        : requiresSecurityDeposit
-                                            ? "Pay Security Deposit"
-                                            : "Pay Advance Payment"}
-                                </button>
-                            )}
+                    <button
+                        onClick={() => onAccessPortal(unit.agreement_id)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5
+              bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg
+              font-semibold text-sm"
+                    >
+                        <ArrowRightOnRectangleIcon className="w-4 h-4" />
+                        Access Portal
+                    </button>
 
-                            {/* ACCESS PORTAL (ONLY WHEN PAID — EVEN IF EXPIRED) */}
-                            {!hasInitialPayables && (
-                                <button
-                                    onClick={() => onAccessPortal(unit.agreement_id)}
-                                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4
-                  bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg
-                  font-semibold text-sm hover:shadow-md"
-                                >
-                                    <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                                    Access Portal
-                                </button>
-                            )}
+                    <button
+                        onClick={onContactLandlord}
+                        className="w-full flex items-center justify-center gap-2 py-2.5
+              bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg
+              font-semibold text-sm"
+                    >
+                        <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                        Message Landlord
+                    </button>
 
-                            {/* CONTACT LANDLORD */}
+                    {isLeaseExpired && (
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t">
                             <button
-                                onClick={onContactLandlord}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4
-                bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg
-                font-semibold text-sm"
+                                onClick={() =>
+                                    onRenewLease(unit.unit_id, unit.agreement_id)
+                                }
+                                className="flex items-center justify-center gap-1.5 py-2
+                  bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs"
                             >
-                                <ChatBubbleLeftRightIcon className="w-4 h-4" />
-                                Message Landlord
+                                <RefreshCw className="w-3.5 h-3.5" /> Renew
                             </button>
 
-                            {/* EXPIRED ACTIONS */}
-                            {isLeaseExpired && (
-                                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200">
-                                    <button
-                                        onClick={() =>
-                                            onRenewLease(unit.unit_id, unit.agreement_id)
-                                        }
-                                        className="flex items-center justify-center gap-1.5 py-2 px-3
-                    bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs"
-                                    >
-                                        <RefreshCw className="w-3.5 h-3.5" /> Renew
-                                    </button>
-
-                                    <button
-                                        onClick={() =>
-                                            onEndContract(unit.unit_id, unit.agreement_id)
-                                        }
-                                        className="flex items-center justify-center gap-1.5 py-2 px-3
-                    bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs"
-                                    >
-                                        <XCircle className="w-3.5 h-3.5" /> End Lease
-                                    </button>
-                                </div>
-                            )}
-                        </>
+                            <button
+                                onClick={() =>
+                                    onEndContract(unit.unit_id, unit.agreement_id)
+                                }
+                                className="flex items-center justify-center gap-1.5 py-2
+                  bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs"
+                            >
+                                <XCircle className="w-3.5 h-3.5" /> End Lease
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>

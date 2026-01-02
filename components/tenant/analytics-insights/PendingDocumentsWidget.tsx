@@ -9,11 +9,9 @@ import {
     CheckCircleIcon,
     ClockIcon,
     ShieldCheckIcon,
-    CalendarIcon,
-    CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 import useAuthStore from "@/zustand/authStore";
-import { formatDate, formatCurrency } from "@/utils/formatter/formatters";
+import { formatCurrency } from "@/utils/formatter/formatters";
 
 interface Props {
     agreement_id: string;
@@ -53,12 +51,7 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                 );
 
                 const data = res.data;
-
-                // 🔑 Normalize API response for UI
-                setLease({
-                    ...data,
-                    ...data.lease,
-                });
+                setLease({ ...data, ...data.lease });
             } catch {
                 Swal.fire("Error", "Failed to load lease information.", "error");
             } finally {
@@ -79,6 +72,10 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
     const hasLeaseAgreement = Boolean(lease.agreement_url);
     const sig = lease.tenant_signature;
     const alreadySigned = sig?.status === "signed";
+
+    // 🔑 SINGLE FLAG
+    const needsTenantSignature =
+        hasLeaseAgreement && sig && sig.status !== "signed";
 
     /* ================= OTP ACTIONS ================= */
     const sendOtp = async () => {
@@ -119,12 +116,6 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
         }
     };
 
-    const resendOtp = async () => {
-        if (cooldown > 0) return;
-        await sendOtp();
-        setCooldown(60);
-    };
-
     /* ========================================================= */
     /* ======================== UI ============================== */
     /* ========================================================= */
@@ -132,14 +123,13 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
     return (
         <>
             <div className="space-y-4">
-
                 {/* HEADER */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <DocumentTextIcon className="w-5 h-5 text-gray-600" />
                         <span className="text-sm font-bold text-gray-900">
-                            Lease Information
-                        </span>
+              Lease Information
+            </span>
                     </div>
 
                     <span
@@ -151,41 +141,31 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                     : "bg-amber-100 text-amber-700 border-amber-200"
                         }`}
                     >
-                        {!hasLeaseAgreement
-                            ? "No Document"
-                            : alreadySigned
-                                ? "Signed"
-                                : "Pending"}
-                    </span>
+            {!hasLeaseAgreement
+                ? "No Document"
+                : alreadySigned
+                    ? "Signed"
+                    : "Pending Signature"}
+          </span>
                 </div>
 
                 {/* ================= NO LEASE DOCUMENT ================= */}
                 {!hasLeaseAgreement && (
                     <div className="space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-
-                        <p className="text-sm font-semibold text-gray-800">
-                            Lease Details
-                        </p>
-
                         <LeaseRow
-                            icon={<CurrencyDollarIcon className="w-4 h-4" />}
                             label="Monthly Rent"
                             value={formatCurrency(lease.rent_amount || 0)}
                         />
-
                         <LeaseRow
                             label="Security Deposit"
                             value={formatCurrency(lease.security_deposit_amount || 0)}
                         />
-
                         <LeaseRow
                             label="Advance Payment"
                             value={formatCurrency(lease.advance_payment_amount || 0)}
                         />
-
                         <p className="text-xs text-gray-600">
                             Your landlord has not uploaded the lease document yet.
-                            You will be notified once it becomes available.
                         </p>
                     </div>
                 )}
@@ -198,22 +178,25 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                             className="flex items-center gap-2 p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition text-sm font-semibold text-blue-600 w-full"
                         >
                             <DocumentTextIcon className="w-4 h-4" />
-                            {alreadySigned ? "View Signed Lease" : "View Lease & Sign"}
+                            {alreadySigned ? "View Signed Lease" : "View Lease"}
                         </button>
 
-                        {!alreadySigned ? (
+                        {/* 🔑 ONLY SHOW IF SIGNATURE IS REQUIRED */}
+                        {needsTenantSignature && (
                             <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                                 <ClockIcon className="w-4 h-4 text-amber-600 mt-0.5" />
                                 <div>
                                     <p className="text-sm font-semibold text-amber-900">
-                                        Action Required
+                                        Signature Required
                                     </p>
                                     <p className="text-xs text-amber-700">
-                                        Please review and sign your lease agreement
+                                        Please authenticate to sign your lease agreement.
                                     </p>
                                 </div>
                             </div>
-                        ) : (
+                        )}
+
+                        {!needsTenantSignature && alreadySigned && (
                             <div className="flex items-start gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                                 <CheckCircleIcon className="w-4 h-4 text-emerald-600 mt-0.5" />
                                 <div>
@@ -221,7 +204,7 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                         Lease Signed
                                     </p>
                                     <p className="text-xs text-emerald-700">
-                                        Your lease agreement is fully signed
+                                        Your lease agreement is fully signed.
                                     </p>
                                 </div>
                             </div>
@@ -234,7 +217,6 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
             {openModal && hasLeaseAgreement && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-2">
                     <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-xl shadow-lg overflow-hidden flex flex-col">
-
                         <div className="flex items-center justify-between p-4 border-b">
                             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                 <ShieldCheckIcon className="w-5 h-5 text-blue-600" />
@@ -251,7 +233,8 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                 className="w-full h-[420px] rounded-lg border"
                             />
 
-                            {!alreadySigned && (
+                            {/* 🔑 AUTH SECTION ONLY WHEN NEEDED */}
+                            {needsTenantSignature && (
                                 <div className="space-y-4">
                                     {!otpSent ? (
                                         <button
@@ -279,7 +262,7 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                             </button>
 
                                             <button
-                                                onClick={resendOtp}
+                                                onClick={sendOtp}
                                                 disabled={cooldown > 0}
                                                 className="text-sm text-blue-600"
                                             >
@@ -300,14 +283,10 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
 }
 
 /* ================= SMALL UI ================= */
-
-function LeaseRow({ icon, label, value }: any) {
+function LeaseRow({ label, value }: any) {
     return (
         <div className="flex items-center justify-between text-sm text-gray-700">
-            <div className="flex items-center gap-2 text-gray-600">
-                {icon}
-                <span>{label}</span>
-            </div>
+            <span className="text-gray-600">{label}</span>
             <span className="font-semibold text-gray-900">{value}</span>
         </div>
     );
