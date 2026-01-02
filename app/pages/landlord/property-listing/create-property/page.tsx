@@ -22,9 +22,9 @@ import {
   verificationDocsSteps,
 } from "@/lib/onboarding/createProperty";
 
-import StepOneMerged from "@/components/landlord/createProperty/StepOnePropertyDetails";
 import StepTwoVerificationDocs from "@/components/landlord/createProperty/StepTwoVerificationDocs";
 import StepCounter from "@/components/step-counter";
+import StepOneCreateProperty from "@/components/landlord/createProperty/StepOnePropertyDetails";
 
 export default function AddNewProperty() {
   const router = useRouter();
@@ -235,7 +235,7 @@ export default function AddNewProperty() {
 
       {/* CONTENT */}
       <div className="bg-white rounded-xl shadow-md border p-5 mb-6">
-        {step === 1 && <StepOneMerged />}
+        {step === 1 && <StepOneCreateProperty />}
         {step === 2 && <StepTwoVerificationDocs />}
       </div>
 
