@@ -67,17 +67,13 @@ export default function ChatComponent({
   const [isTyping, setIsTyping] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const { user } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
-
-  // Height: tenant has navbar, landlord doesn't on desktop
-  const heightClass =
-    variant === "tenant"
-      ? "h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)]"
-      : "h-[calc(100vh-3.5rem)] lg:h-screen";
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback((smooth = true) => {
     messagesEndRef.current?.scrollIntoView({
@@ -191,6 +187,19 @@ export default function ChatComponent({
     };
   }, [selectedChat, scrollToBottom]);
 
+  // Handle input focus - scroll to bottom and adjust for keyboard
+  const handleInputFocus = () => {
+    setIsInputFocused(true);
+    // Small delay to let keyboard appear, then scroll
+    setTimeout(() => {
+      scrollToBottom(true);
+    }, 300);
+  };
+
+  const handleInputBlur = () => {
+    setIsInputFocused(false);
+  };
+
   // Send message
   const sendMessage = async () => {
     if (!message.trim() || !selectedChat || isSending) return;
@@ -276,7 +285,15 @@ export default function ChatComponent({
   // Loading
   if (loading) {
     return (
-      <div className={`flex w-full bg-gray-50 overflow-hidden ${heightClass}`}>
+      <div
+        className="flex w-full bg-gray-50 overflow-hidden"
+        style={{
+          height:
+            variant === "tenant"
+              ? "calc(100dvh - 3.5rem)"
+              : "calc(100dvh - 3.5rem)",
+        }}
+      >
         <div className="w-full md:w-80 lg:w-96 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
           <div className="p-4 border-b border-gray-100">
             <div className="h-8 bg-gray-200 rounded-lg w-32 mb-4 animate-pulse" />
@@ -308,7 +325,15 @@ export default function ChatComponent({
   }
 
   return (
-    <div className={`flex w-full bg-gray-50 overflow-hidden ${heightClass}`}>
+    <div
+      className="flex w-full bg-gray-50 overflow-hidden touch-manipulation"
+      style={{
+        height:
+          variant === "tenant"
+            ? "calc(100dvh - 3.5rem)"
+            : "calc(100dvh - 3.5rem)",
+      }}
+    >
       {/* ========== CHAT LIST SIDEBAR ========== */}
       <div
         className={`
@@ -328,13 +353,14 @@ export default function ChatComponent({
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-gray-100 rounded-xl text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
+              className="w-full pl-11 pr-4 py-3 bg-gray-100 rounded-xl text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
+              style={{ fontSize: "16px" }} /* Prevent iOS zoom */
             />
           </div>
         </div>
 
         {/* Chat List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           {error ? (
             <div className="flex flex-col items-center justify-center h-full px-6 text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -369,7 +395,7 @@ export default function ChatComponent({
                   key={chat.chat_room}
                   onClick={() => setSelectedChat(chat)}
                   className={`
-                    w-full flex items-center gap-3 px-4 py-3 text-left transition-all
+                    w-full flex items-center gap-3 px-4 py-3 text-left transition-all active:bg-gray-100
                     ${
                       selectedChat?.chat_room === chat.chat_room
                         ? "bg-blue-50 border-l-4 border-blue-600"
@@ -413,18 +439,19 @@ export default function ChatComponent({
 
       {/* ========== CHAT WINDOW ========== */}
       <div
+        ref={chatContainerRef}
         className={`
           ${selectedChat ? "flex" : "hidden md:flex"}
-          flex-1 flex-col bg-white
+          flex-1 flex-col bg-white relative
         `}
       >
         {selectedChat ? (
           <>
-            {/* Chat Header */}
-            <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 shadow-sm">
+            {/* Chat Header - Fixed */}
+            <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 z-10">
               <button
                 onClick={() => setSelectedChat(null)}
-                className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="md:hidden p-2 -ml-2 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-700" />
               </button>
@@ -448,13 +475,13 @@ export default function ChatComponent({
                 )}
               </div>
 
-              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+              <button className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors">
                 <MoreVertical className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 bg-gradient-to-b from-gray-50 to-white">
+            {/* Messages Area - Scrollable */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 bg-gradient-to-b from-gray-50 to-white">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-4">
@@ -553,13 +580,13 @@ export default function ChatComponent({
               )}
             </div>
 
-            {/* Input Area - Extra padding on mobile for FAB buttons */}
-            <div className="flex-shrink-0 p-3 bg-white border-t border-gray-200 pb-24 md:pb-4">
+            {/* Input Area - Sticky at bottom */}
+            <div className="flex-shrink-0 bg-white border-t border-gray-200 safe-area-bottom">
               {/* Emoji Picker */}
               {showEmojiPicker && (
                 <div
                   ref={emojiPickerRef}
-                  className="absolute bottom-32 md:bottom-20 left-4 right-4 md:left-auto md:right-4 md:w-[350px] bg-white shadow-2xl rounded-2xl overflow-hidden z-50 border border-gray-200"
+                  className="absolute bottom-20 left-2 right-2 md:left-auto md:right-4 md:w-[350px] bg-white shadow-2xl rounded-2xl overflow-hidden z-50 border border-gray-200"
                 >
                   <EmojiPicker
                     onEmojiClick={handleEmojiSelect}
@@ -567,32 +594,41 @@ export default function ChatComponent({
                     emojiStyle="native"
                     lazyLoadEmojis={true}
                     width="100%"
-                    height={300}
+                    height={280}
                   />
                 </div>
               )}
 
-              <div className="flex items-center gap-2 max-w-3xl mx-auto">
-                <button className="p-2.5 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 hidden sm:flex">
+              <div className="flex items-center gap-2 p-3 max-w-3xl mx-auto">
+                <button className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors flex-shrink-0 hidden sm:flex">
                   <Paperclip className="w-5 h-5 text-gray-500" />
                 </button>
 
-                <div className="flex-1 relative bg-gray-100 rounded-full flex items-center">
+                <div className="flex-1 relative bg-gray-100 rounded-full flex items-center min-w-0">
                   <input
                     ref={inputRef}
                     type="text"
+                    inputMode="text"
+                    autoComplete="off"
+                    autoCorrect="on"
+                    autoCapitalize="sentences"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
                     placeholder="Type a message..."
-                    className="w-full px-5 py-3 bg-transparent text-[15px] placeholder:text-gray-400 focus:outline-none"
+                    className="w-full px-4 py-3 bg-transparent placeholder:text-gray-400 focus:outline-none min-w-0"
+                    style={{
+                      fontSize: "16px",
+                    }} /* Prevent iOS zoom - CRITICAL */
                   />
                   <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     className={`p-2 mr-1 rounded-full transition-colors flex-shrink-0 ${
                       showEmojiPicker
                         ? "bg-blue-100 text-blue-600"
-                        : "hover:bg-gray-200 text-gray-500"
+                        : "hover:bg-gray-200 active:bg-gray-300 text-gray-500"
                     }`}
                   >
                     {showEmojiPicker ? (
@@ -607,7 +643,7 @@ export default function ChatComponent({
                   onClick={sendMessage}
                   disabled={!message.trim() || isSending}
                   className={`
-                    p-3 rounded-full transition-all flex-shrink-0
+                    p-3 rounded-full transition-all flex-shrink-0 active:scale-95
                     ${
                       message.trim()
                         ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
@@ -618,6 +654,9 @@ export default function ChatComponent({
                   <Send className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Safe area spacer for iOS home indicator */}
+              <div className="h-safe-area-bottom" />
             </div>
           </>
         ) : (
@@ -654,6 +693,42 @@ export default function ChatComponent({
           </div>
         )}
       </div>
+
+      {/* Global styles for safe areas */}
+      <style jsx global>{`
+        /* Prevent iOS Safari zoom on input focus */
+        input[type="text"],
+        input[type="search"],
+        textarea {
+          font-size: 16px !important;
+        }
+
+        /* Safe area for bottom (iOS home indicator) */
+        .safe-area-bottom {
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .h-safe-area-bottom {
+          height: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* Prevent pull-to-refresh on chat */
+        .overscroll-contain {
+          overscroll-behavior: contain;
+        }
+
+        /* Smooth scrolling on iOS */
+        .overflow-y-auto {
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* Prevent text selection on buttons */
+        button {
+          -webkit-tap-highlight-color: transparent;
+          -webkit-touch-callout: none;
+          user-select: none;
+        }
+      `}</style>
     </div>
   );
 }
