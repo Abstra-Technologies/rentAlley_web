@@ -25,9 +25,9 @@ const customIcon = L.icon({
 const DEFAULT_POS: [number, number] = [14.5995, 120.9842];
 
 /* -----------------------------------------
-   API REVERSE GEOCODE
+   REVERSE GEOCODE (API)
 ----------------------------------------- */
-const reverseGeocode = async (lat: number, lng: number) => {
+async function reverseGeocode(lat: number, lng: number) {
     try {
         const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
         if (!res.ok) return null;
@@ -36,33 +36,47 @@ const reverseGeocode = async (lat: number, lng: number) => {
     } catch {
         return null;
     }
-};
+}
 
 /* -----------------------------------------
-   RECENTER (SAFE)
+   MAP RESIZE FIX
 ----------------------------------------- */
-const RecenterMap = ({ coords }: { coords: [number, number] }) => {
+function FixMapResize() {
     const map = useMap();
-    const ready = useRef(false);
 
     useEffect(() => {
-        if (!map) return;
+        setTimeout(() => map.invalidateSize(), 0);
+    }, [map]);
 
-        if (!ready.current) {
-            ready.current = true;
+    return null;
+}
+
+/* -----------------------------------------
+   RECENTER MAP
+----------------------------------------- */
+function RecenterMap({ coords }: { coords: [number, number] }) {
+    const map = useMap();
+    const initialized = useRef(false);
+
+    useEffect(() => {
+        if (!initialized.current) {
+            initialized.current = true;
             return;
         }
-
         map.flyTo(coords, map.getZoom(), { animate: true });
     }, [coords, map]);
 
     return null;
-};
+}
 
 /* -----------------------------------------
    SEARCH CONTROL
 ----------------------------------------- */
-const SearchControl = ({ onSelect }: any) => {
+function SearchControl({
+                           onSelect,
+                       }: {
+    onSelect: (data: { lat: number; lng: number; address?: any }) => void;
+}) {
     const map = useMap();
     const controlRef = useRef<any>(null);
 
@@ -80,14 +94,12 @@ const SearchControl = ({ onSelect }: any) => {
         controlRef.current = control;
         map.addControl(control);
 
-        map.on("geosearch/showlocation", async (result: any) => {
-            const { location } = result;
-            const address = await reverseGeocode(location.y, location.x);
-            onSelect?.({
-                lat: location.y,
-                lng: location.x,
-                address,
-            });
+        map.on("geosearch/showlocation", async (e: any) => {
+            const lat = e.location.y;
+            const lng = e.location.x;
+            const address = await reverseGeocode(lat, lng);
+
+            onSelect({ lat, lng, address });
         });
 
         return () => {
@@ -99,44 +111,44 @@ const SearchControl = ({ onSelect }: any) => {
     }, [map, onSelect]);
 
     return null;
-};
+}
 
 /* -----------------------------------------
-   DRAGGABLE MARKER (GUARDED)
+   DRAGGABLE MARKER
 ----------------------------------------- */
-const DraggableMarker = ({
+function DraggableMarker({
                              coords,
                              onMove,
                          }: {
     coords: [number, number];
-    onMove: (c: [number, number]) => void;
-}) => {
+    onMove: (lat: number, lng: number) => void;
+}) {
     const markerRef = useRef<L.Marker | null>(null);
 
     useMapEvents({
         click(e) {
-            onMove([e.latlng.lat, e.latlng.lng]);
+            onMove(e.latlng.lat, e.latlng.lng);
         },
     });
 
     return (
         <Marker
             position={coords}
-            icon={customIcon}
             draggable
+            icon={customIcon}
             ref={(ref) => {
                 if (ref) markerRef.current = ref;
             }}
             eventHandlers={{
                 dragend: () => {
                     if (!markerRef.current) return;
-                    const latlng = markerRef.current.getLatLng();
-                    onMove([latlng.lat, latlng.lng]);
+                    const { lat, lng } = markerRef.current.getLatLng();
+                    onMove(lat, lng);
                 },
             }}
         />
     );
-};
+}
 
 /* -----------------------------------------
    MAIN MAP
@@ -156,30 +168,35 @@ export default function PropertyMap({
         if (coordinates) setCoords(coordinates);
     }, [coordinates]);
 
-    const handleMove = async ([lat, lng]: [number, number]) => {
+    async function handleMove(lat: number, lng: number, address?: any) {
         setCoords([lat, lng]);
 
-        const address = await reverseGeocode(lat, lng);
-        if (!address) return;
+        const resolvedAddress = address ?? (await reverseGeocode(lat, lng));
+        if (!resolvedAddress) return;
 
         setFields({
             latitude: lat,
             longitude: lng,
-            street: address.road || address.pedestrian || "",
-            brgyDistrict: address.suburb || address.neighbourhood || "",
-            city: address.city || address.town || address.village || "",
-            province:
-                address.state ||
-                address.region ||
-                address.province ||
-                address.county ||
+            street: resolvedAddress.road || resolvedAddress.pedestrian || "",
+            brgyDistrict:
+                resolvedAddress.suburb || resolvedAddress.neighbourhood || "",
+            city:
+                resolvedAddress.city ||
+                resolvedAddress.town ||
+                resolvedAddress.village ||
                 "",
-            zipCode: address.postcode || "",
+            province:
+                resolvedAddress.state ||
+                resolvedAddress.region ||
+                resolvedAddress.province ||
+                resolvedAddress.county ||
+                "",
+            zipCode: resolvedAddress.postcode || "",
         });
-    };
+    }
 
     return (
-        <div className="h-full w-full">
+        <div className="w-full h-[220px] sm:h-[260px] lg:h-full min-h-[220px]">
             <MapContainer
                 center={coords}
                 zoom={15}
@@ -189,11 +206,22 @@ export default function PropertyMap({
                 <TileLayer
                     attribution="© OpenStreetMap contributors"
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    subdomains={["a", "b", "c"]}
                 />
 
+                <FixMapResize />
                 <RecenterMap coords={coords} />
-                <SearchControl onSelect={handleMove} />
-                <DraggableMarker coords={coords} onMove={handleMove} />
+
+                <SearchControl
+                    onSelect={({ lat, lng, address }) =>
+                        handleMove(lat, lng, address)
+                    }
+                />
+
+                <DraggableMarker
+                    coords={coords}
+                    onMove={(lat, lng) => handleMove(lat, lng)}
+                />
             </MapContainer>
         </div>
     );

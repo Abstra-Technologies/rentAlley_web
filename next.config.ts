@@ -55,21 +55,29 @@ const baseConfig: NextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
 
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://www.google.com https://connect.facebook.net https://www.gstatic.com",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com https://lh3.googleusercontent.com https://upload.wikimedia.org https://encrypted-tbn0.gstatic.com https://mir-s3-cdn-cf.behance.net https://cdn-icons-png.flaticon.com https://rentalley-bucket.s3.ap-southeast-1.amazonaws.com https://rentahanbucket.s3.us-east-1.amazonaws.com https://www.google-analytics.com https://www.googletagmanager.com",
-              "font-src 'self' data:",
-              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.supabase.co wss://*.supabase.co",
-              "frame-src 'self' https://www.google.com https://www.youtube.com",
-              "frame-ancestors 'self'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join("; "),
-          },
+            {
+                key: "Content-Security-Policy",
+                value: [
+                    "default-src 'self'",
+
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://www.google.com https://connect.facebook.net https://www.gstatic.com",
+
+                    "style-src 'self' 'unsafe-inline'",
+
+                    // ✅ ONE img-src (includes OSM tiles)
+                    "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.openstreetmap.org https://res.cloudinary.com https://*.cloudinary.com https://lh3.googleusercontent.com https://upload.wikimedia.org https://encrypted-tbn0.gstatic.com https://mir-s3-cdn-cf.behance.net https://cdn-icons-png.flaticon.com https://rentalley-bucket.s3.ap-southeast-1.amazonaws.com https://rentahanbucket.s3.us-east-1.amazonaws.com https://www.google-analytics.com https://www.googletagmanager.com",
+
+                    // ✅ ONE connect-src (includes OSM APIs)
+                    "connect-src 'self' https://*.openstreetmap.org https://*.tile.openstreetmap.org https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.supabase.co wss://*.supabase.co",
+
+                    "font-src 'self' data:",
+                    "frame-src 'self' https://www.google.com https://www.youtube.com",
+                    "frame-ancestors 'self'",
+                    "base-uri 'self'",
+                    "form-action 'self'",
+                ].join("; "),
+            }
+
         ],
       },
 
@@ -125,10 +133,21 @@ const baseConfig: NextConfig = {
 };
 
 const withPWA = nextPwa({
-  dest: "public",
-  register: true,
-  sw: "sw.js",
-  disable: process.env.NODE_ENV === "development",
+    dest: "public",
+    register: true,
+    sw: "sw.js",
+    disable: process.env.NODE_ENV === "development",
+
+    runtimeCaching: [
+        {
+            urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/i,
+            handler: "NetworkOnly",
+            options: {
+                cacheName: "osm-tiles",
+            },
+        },
+    ],
 });
+
 
 export default withPWA(baseConfig);

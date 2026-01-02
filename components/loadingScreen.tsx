@@ -72,7 +72,7 @@ const LoadingScreen = ({ message = "Loading…" }) => {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="text-2xl sm:text-2xl font-semibold text-gray-900 tracking-tight mb-4"
+                    className="text-2xl sm:text-2xl typographica font-semibold text-gray-900 tracking-tight mb-4"
                 >
                     Upkyp
                     <span className="block mt-1 text-sm sm:text-base font-medium text-gray-500">

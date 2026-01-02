@@ -58,34 +58,6 @@ export default function StepOneCreateProperty() {
         return () => clearTimeout(timeout);
     }, [addressQuery]);
 
-
-    /* -----------------------------------------
-       ADDRESS AUTOCOMPLETE SEARCH
-    ----------------------------------------- */
-    useEffect(() => {
-        const timeout = setTimeout(async () => {
-            if (addressQuery.length < 4) {
-                setAddressResults([]);
-                return;
-            }
-            try {
-                const res = await fetch(
-                    `/api/geocode?q=${encodeURIComponent(addressQuery)}`
-                );
-                if (!res.ok) {
-                    setAddressResults([]);
-                    return;
-                }
-                const data = await res.json();
-                setAddressResults(data);
-            } catch (err) {
-                console.error("Search failed:", err);
-            }
-        }, 400);
-
-        return () => clearTimeout(timeout);
-    }, [addressQuery]);
-
     /* -----------------------------------------
        SELECT ADDRESS
     ----------------------------------------- */
@@ -327,7 +299,7 @@ Address: ${p.street}, ${p.brgyDistrict}, ${p.city}, ${p.zipCode}, ${p.province}
                             </div>
                         </div>
 
-                        <div className="h-[220px] rounded-lg overflow-hidden border">
+                        <div className="relative w-full h-[260px] min-h-[260px] rounded-lg overflow-hidden border">
                             <PropertyMap
                                 setFields={mapSetFields}
                                 coordinates={[coords.lat, coords.lng]}

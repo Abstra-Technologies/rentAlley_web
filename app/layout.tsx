@@ -8,6 +8,8 @@ import Head from "next/head";
 import CookiesPermission from "@/components/Commons/setttings/cookiesPermission";
 import PushInit from "@/components/notification/pushNotifMobile";
 import GoogleTranslateProvider from "@/components/GoogleTranslateProvider";
+import "leaflet/dist/leaflet.css";
+import "leaflet-geosearch/dist/geosearch.css";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
