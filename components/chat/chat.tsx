@@ -580,13 +580,13 @@ export default function ChatComponent({
               )}
             </div>
 
-            {/* Input Area - Sticky at bottom */}
-            <div className="flex-shrink-0 bg-white border-t border-gray-200 safe-area-bottom">
+            {/* Input Area - Sticky at bottom with proper spacing */}
+            <div className="flex-shrink-0 bg-white border-t border-gray-100">
               {/* Emoji Picker */}
               {showEmojiPicker && (
                 <div
                   ref={emojiPickerRef}
-                  className="absolute bottom-20 left-2 right-2 md:left-auto md:right-4 md:w-[350px] bg-white shadow-2xl rounded-2xl overflow-hidden z-50 border border-gray-200"
+                  className="absolute bottom-28 left-2 right-2 md:left-auto md:right-4 md:w-[350px] bg-white shadow-2xl rounded-2xl overflow-hidden z-50 border border-gray-200"
                 >
                   <EmojiPicker
                     onEmojiClick={handleEmojiSelect}
@@ -599,64 +599,72 @@ export default function ChatComponent({
                 </div>
               )}
 
-              <div className="flex items-center gap-2 p-3 max-w-3xl mx-auto">
-                <button className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors flex-shrink-0 hidden sm:flex">
-                  <Paperclip className="w-5 h-5 text-gray-500" />
-                </button>
+              {/* Input container with proper padding */}
+              <div className="px-3 pt-2 pb-2 md:pb-3">
+                <div className="flex items-center gap-2 max-w-3xl mx-auto">
+                  <button className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors flex-shrink-0 hidden sm:flex">
+                    <Paperclip className="w-5 h-5 text-gray-500" />
+                  </button>
 
-                <div className="flex-1 relative bg-gray-100 rounded-full flex items-center min-w-0">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    inputMode="text"
-                    autoComplete="off"
-                    autoCorrect="on"
-                    autoCapitalize="sentences"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    onFocus={handleInputFocus}
-                    onBlur={handleInputBlur}
-                    placeholder="Type a message..."
-                    className="w-full px-4 py-3 bg-transparent placeholder:text-gray-400 focus:outline-none min-w-0"
-                    style={{
-                      fontSize: "16px",
-                    }} /* Prevent iOS zoom - CRITICAL */
-                  />
+                  <div className="flex-1 relative bg-gray-100 rounded-full flex items-center min-w-0">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      inputMode="text"
+                      autoComplete="off"
+                      autoCorrect="on"
+                      autoCapitalize="sentences"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      onFocus={handleInputFocus}
+                      onBlur={handleInputBlur}
+                      placeholder="Type a message..."
+                      className="w-full px-4 py-3 bg-transparent placeholder:text-gray-400 focus:outline-none min-w-0"
+                      style={{
+                        fontSize: "16px",
+                      }} /* Prevent iOS zoom - CRITICAL */
+                    />
+                    <button
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className={`p-2 mr-1 rounded-full transition-colors flex-shrink-0 ${
+                        showEmojiPicker
+                          ? "bg-blue-100 text-blue-600"
+                          : "hover:bg-gray-200 active:bg-gray-300 text-gray-500"
+                      }`}
+                    >
+                      {showEmojiPicker ? (
+                        <X className="w-5 h-5" />
+                      ) : (
+                        <Smile className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className={`p-2 mr-1 rounded-full transition-colors flex-shrink-0 ${
-                      showEmojiPicker
-                        ? "bg-blue-100 text-blue-600"
-                        : "hover:bg-gray-200 active:bg-gray-300 text-gray-500"
-                    }`}
+                    onClick={sendMessage}
+                    disabled={!message.trim() || isSending}
+                    className={`
+                      p-3 rounded-full transition-all flex-shrink-0 active:scale-95
+                      ${
+                        message.trim()
+                          ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/25"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      }
+                    `}
                   >
-                    {showEmojiPicker ? (
-                      <X className="w-5 h-5" />
-                    ) : (
-                      <Smile className="w-5 h-5" />
-                    )}
+                    <Send className="w-5 h-5" />
                   </button>
                 </div>
-
-                <button
-                  onClick={sendMessage}
-                  disabled={!message.trim() || isSending}
-                  className={`
-                    p-3 rounded-full transition-all flex-shrink-0 active:scale-95
-                    ${
-                      message.trim()
-                        ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    }
-                  `}
-                >
-                  <Send className="w-5 h-5" />
-                </button>
               </div>
 
-              {/* Safe area spacer for iOS home indicator */}
-              <div className="h-safe-area-bottom" />
+              {/* Safe area spacer for iOS home indicator - generous padding */}
+              <div
+                className="bg-white"
+                style={{
+                  paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)",
+                }}
+              />
             </div>
           </>
         ) : (
@@ -703,15 +711,6 @@ export default function ChatComponent({
           font-size: 16px !important;
         }
 
-        /* Safe area for bottom (iOS home indicator) */
-        .safe-area-bottom {
-          padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-
-        .h-safe-area-bottom {
-          height: env(safe-area-inset-bottom, 0px);
-        }
-
         /* Prevent pull-to-refresh on chat */
         .overscroll-contain {
           overscroll-behavior: contain;
@@ -727,6 +726,11 @@ export default function ChatComponent({
           -webkit-tap-highlight-color: transparent;
           -webkit-touch-callout: none;
           user-select: none;
+        }
+
+        /* Ensure touch-manipulation works */
+        .touch-manipulation {
+          touch-action: manipulation;
         }
       `}</style>
     </div>
