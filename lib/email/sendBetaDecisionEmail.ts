@@ -26,7 +26,6 @@ export async function sendBetaDecisionEmail({
         ? "🎉 You’re Approved for the Upkyp Beta Program"
         : "Update on Your Upkyp Beta Application";
 
-    // ✅ React-safe date formatting
     const formattedStartDate = startDate
         ? startDate.toLocaleDateString("en-US", { dateStyle: "medium" })
         : undefined;

@@ -31,7 +31,6 @@ const getTenantActiveLeases = unstable_cache(
             [tenantId]
         );
 
-
         if (!leases?.length) return [];
 
         const results = [];

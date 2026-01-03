@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import nodemailer from "nodemailer";
 import crypto from "crypto";
+import { sendInviteTenantEmail } from "@/lib/email/sendInviteTenantEmail";
+
+//  api to send ivbite current occupied tenant. not hrough application process.
 
 export async function POST(req: NextRequest) {
     try {
@@ -55,11 +57,11 @@ export async function POST(req: NextRequest) {
             =============================== */
             const [unitRows]: any = await conn.query(
                 `
-        SELECT property_id, status
-        FROM Unit
-        WHERE unit_id = ?
-        FOR UPDATE
-        `,
+                SELECT property_id, status
+                FROM Unit
+                WHERE unit_id = ?
+                FOR UPDATE
+                `,
                 [unitId]
             );
 
@@ -76,7 +78,9 @@ export async function POST(req: NextRequest) {
             if (unitStatus !== "unoccupied") {
                 await conn.rollback();
                 return NextResponse.json(
-                    { error: `Unit is not available (current status: ${unitStatus}).` },
+                    {
+                        error: `Unit is not available (current status: ${unitStatus}).`,
+                    },
                     { status: 409 }
                 );
             }
@@ -86,17 +90,17 @@ export async function POST(req: NextRequest) {
             =============================== */
             await conn.query(
                 `
-        INSERT INTO InviteCode (
-          code,
-          email,
-          unitId,
-          start_date,
-          end_date,
-          status,
-          expiresAt
-        )
-        VALUES (?, ?, ?, ?, ?, 'PENDING', DATE_ADD(NOW(), INTERVAL 7 DAY))
-        `,
+                INSERT INTO InviteCode (
+                    code,
+                    email,
+                    unitId,
+                    start_date,
+                    end_date,
+                    status,
+                    expiresAt
+                )
+                VALUES (?, ?, ?, ?, ?, 'PENDING', DATE_ADD(NOW(), INTERVAL 7 DAY))
+                `,
                 [
                     inviteCode,
                     email,
@@ -132,47 +136,21 @@ export async function POST(req: NextRequest) {
                Reserve unit
             =============================== */
             await conn.query(
-                `
-        UPDATE Unit
-        SET status = 'reserved'
-        WHERE unit_id = ?
-        `,
+                `UPDATE Unit SET status = 'reserved' WHERE unit_id = ?`,
                 [unitId]
             );
 
             await conn.commit();
 
             /* ===============================
-               Send email
+               Send email (Resend)
             =============================== */
-            const transporter = nodemailer.createTransport({
-                service: "gmail",
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASS,
-                },
-            });
-
-            const registrationUrl = `${process.env.BASE_URL}/pages/InviteRegister?invite=${inviteCode}`;
-
-            await transporter.sendMail({
-                from: `[Upkyp] "${propertyName}" <${process.env.EMAIL_USER}>`,
-                to: email,
-                subject: `You're invited to join ${propertyName}`,
-                html: `
-          <p>You’ve been invited to join <strong>${propertyName}</strong>.</p>
-          <p>Unit: <strong>${unitName}</strong></p>
-          <p>
-            <a href="${registrationUrl}">
-              Accept Invitation
-            </a>
-          </p>
-          ${
-                    datesDeferred
-                        ? `<p><em>Lease dates will be finalized after acceptance.</em></p>`
-                        : ""
-                }
-        `,
+            await sendInviteTenantEmail({
+                email,
+                propertyName,
+                unitName,
+                inviteCode,
+                datesDeferred,
             });
 
             return NextResponse.json({
