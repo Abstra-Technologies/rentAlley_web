@@ -233,20 +233,6 @@ export default function RentPortalPage() {
 
         {/* Tenancy Overview */}
         <section>
-          <div className="flex items-center gap-2.5 md:gap-3 mb-4 md:mb-5">
-            <div className="p-1.5 md:p-2 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg shadow-sm">
-              <ChartBarIcon className="w-4 h-4 md:w-5 md:h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-base md:text-lg font-bold text-gray-900">
-                Tenancy Overview
-              </h2>
-              <p className="text-xs md:text-sm text-gray-600">
-                Your lease and payment summary
-              </p>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
               <div className="p-4 md:p-5">
@@ -276,7 +262,7 @@ export default function RentPortalPage() {
             </div>
             <div>
               <h2 className="text-base md:text-lg font-bold text-gray-900">
-                Property Updates
+                Property Announcements
               </h2>
               <p className="text-xs md:text-sm text-gray-600">
                 Latest announcements and notices

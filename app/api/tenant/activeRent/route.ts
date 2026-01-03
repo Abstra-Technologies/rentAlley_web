@@ -15,21 +15,22 @@ const getTenantActiveLeases = unstable_cache(
         ------------------------------------------------- */
         const [leases]: any = await db.query(
             `
-            SELECT
-                agreement_id,
-                tenant_id,
-                unit_id,
-                start_date,
-                end_date,
-                status,
-                updated_at
-            FROM LeaseAgreement
-            WHERE tenant_id = ?
-              AND status NOT IN ('cancelled', 'completed')
-            ORDER BY updated_at DESC
+                SELECT
+                    agreement_id,
+                    tenant_id,
+                    unit_id,
+                    start_date,
+                    end_date,
+                    status,
+                    updated_at
+                FROM LeaseAgreement
+                WHERE tenant_id = ?
+                  AND status IN ('draft', 'active', 'expired')
+                ORDER BY updated_at DESC
             `,
             [tenantId]
         );
+
 
         if (!leases?.length) return [];
 
