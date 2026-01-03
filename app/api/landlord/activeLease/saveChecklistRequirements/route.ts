@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
             agreement_id,
             lease_agreement = false,
             move_in_checklist = false,
-            move_out_checklist = false, // ✅ NEW
+            move_out_checklist = false,
             security_deposit = false,
             advance_payment = false,
             other_essential = false,
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
         const hasChecklist =
             lease_agreement ||
             move_in_checklist ||
-            move_out_checklist || // ✅ NEW
+            move_out_checklist ||
             security_deposit ||
             advance_payment ||
             other_essential;

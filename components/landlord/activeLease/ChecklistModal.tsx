@@ -10,7 +10,6 @@ import {
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { formatDate } from "@/utils/formatter/formatters";
 
 interface Props {
     lease: any;
@@ -35,12 +34,12 @@ export default function ChecklistSetupModal({
     const [form, setForm] = useState({
         lease_agreement: false,
 
-        /* ✅ NEW – independent */
         move_in_checklist: false,
         move_out_checklist: false,
 
         security_deposit: false,
         advance_payment: false,
+
         set_lease_dates: false,
         lease_start_date: "",
         lease_end_date: "",
@@ -54,7 +53,7 @@ export default function ChecklistSetupModal({
 
     const leaseIncludesOthers = form.lease_agreement;
 
-    /* ================= LOAD EXISTING ================= */
+    /* ================= LOAD EXISTING CONFIG. ================= */
     useEffect(() => {
         axios
             .get(
@@ -66,12 +65,12 @@ export default function ChecklistSetupModal({
                 const loadedForm = {
                     lease_agreement: r.lease_agreement === 1,
 
-                    /* ✅ NEW */
                     move_in_checklist: r.move_in_checklist === 1,
                     move_out_checklist: r.move_out_checklist === 1,
 
                     security_deposit: r.security_deposit === 1,
                     advance_payment: r.advance_payment === 1,
+
                     set_lease_dates: !!(
                         res.data?.lease_start_date || res.data?.lease_end_date
                     ),
@@ -81,7 +80,6 @@ export default function ChecklistSetupModal({
 
                 setForm(loadedForm);
 
-                // 👇 decision screen rule (UNCHANGED)
                 if (
                     loadedForm.lease_agreement ||
                     loadedForm.security_deposit ||
@@ -105,7 +103,6 @@ export default function ChecklistSetupModal({
                 icon: "warning",
                 title: "Invalid lease dates",
                 text: "End date cannot be earlier than the start date.",
-                confirmButtonColor: "#ef4444",
             });
             setLoading(false);
             return;
@@ -123,7 +120,6 @@ export default function ChecklistSetupModal({
 
                 lease_agreement: form.lease_agreement,
 
-                /* ✅ NEW */
                 move_in_checklist: form.move_in_checklist,
                 move_out_checklist: form.move_out_checklist,
 
@@ -150,14 +146,12 @@ export default function ChecklistSetupModal({
                     icon: "success",
                     title: "Lease setup saved",
                     text: "Continue setting up the lease.",
-                    confirmButtonColor: "#2563eb",
                 }).then(() => onContinue(payload));
             } else {
                 Swal.fire({
                     icon: "success",
                     title: "Checklist saved",
                     text: "Requirements updated successfully.",
-                    confirmButtonColor: "#10b981",
                 }).then(() => onClose());
             }
         } catch {
@@ -176,10 +170,10 @@ export default function ChecklistSetupModal({
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-
-                <h2 className="text-lg font-bold mb-1">Lease Setup</h2>
-                <p className="text-sm text-gray-600 mb-4">
-                    Configure requirements for this lease.
+                <h2 className="text-lg font-bold">Lease Setup</h2>
+                <p className="text-sm text-gray-600 mt-1 mb-4">
+                    Choose which requirements apply to this lease.
+                    Lease dates, payments, and checklists can be configured independently.
                 </p>
 
                 {errorMessage && (
@@ -199,7 +193,7 @@ export default function ChecklistSetupModal({
                                 onClick={() => onContinue(form)}
                                 className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm"
                             >
-                                Continue Setting Up
+                                Continue Setup
                             </button>
                             <button
                                 onClick={() => setShowDecision(false)}
@@ -211,7 +205,6 @@ export default function ChecklistSetupModal({
                     </div>
                 ) : (
                     <div className="space-y-4">
-
                         <Option
                             checked={form.lease_agreement}
                             onChange={() =>
@@ -232,7 +225,6 @@ export default function ChecklistSetupModal({
                             }
                         />
 
-                        {/* ✅ NEW – NOT INCLUDED IN LEASE AGREEMENT */}
                         <Option
                             checked={form.move_in_checklist}
                             onChange={() =>
@@ -256,7 +248,7 @@ export default function ChecklistSetupModal({
                             }
                             icon={<ClipboardList className="w-4 h-4 text-rose-600" />}
                             disabled={loading}
-                            label="Move-Out Checklist (End of Lease)"
+                            label="Move-Out Checklist"
                         />
 
                         <Option
@@ -304,28 +296,48 @@ export default function ChecklistSetupModal({
                             icon={<CalendarRange className="w-4 h-4 text-indigo-600" />}
                             disabled={loading || leaseIncludesOthers}
                             label={
-                                leaseIncludesOthers
-                                    ? "Lease Dates (included)"
-                                    : "Set Lease Dates Only"
+                                <div>
+                                    <div className="font-medium">
+                                        {leaseIncludesOthers
+                                            ? "Lease Dates (included)"
+                                            : "Set Lease Dates"}
+                                    </div>
+                                    {!leaseIncludesOthers && (
+                                        <div className="text-xs text-gray-500">
+                                            Start date required. End date optional (open-ended lease).
+                                        </div>
+                                    )}
+                                </div>
                             }
                         />
 
                         {form.set_lease_dates && (
                             <div className="ml-7 space-y-3">
                                 <DateField
-                                    label="Start Date"
+                                    label="Lease Start Date (required)"
                                     value={form.lease_start_date}
                                     onChange={(v) =>
-                                        setForm((p) => ({ ...p, lease_start_date: v }))
+                                        setForm((p) => ({
+                                            ...p,
+                                            lease_start_date: v,
+                                        }))
                                     }
                                 />
+
                                 <DateField
-                                    label="End Date"
+                                    label="Lease End Date (optional)"
                                     value={form.lease_end_date}
                                     onChange={(v) =>
-                                        setForm((p) => ({ ...p, lease_end_date: v }))
+                                        setForm((p) => ({
+                                            ...p,
+                                            lease_end_date: v,
+                                        }))
                                     }
                                 />
+
+                                <p className="text-xs text-gray-500">
+                                    Leave the end date empty to create an open-ended lease.
+                                </p>
                             </div>
                         )}
 
@@ -347,9 +359,9 @@ export default function ChecklistSetupModal({
                             <button
                                 onClick={handleSave}
                                 disabled={loading || hasInvalidDates}
-                                className={`px-4 py-2 rounded-lg text-white transition ${
+                                className={`px-4 py-2 rounded-lg text-white ${
                                     loading || hasInvalidDates
-                                        ? "bg-gray-400 cursor-not-allowed"
+                                        ? "bg-gray-400"
                                         : "bg-gradient-to-r from-blue-600 to-emerald-600"
                                 }`}
                             >
