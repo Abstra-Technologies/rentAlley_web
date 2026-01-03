@@ -334,7 +334,11 @@ const Navbar = () => {
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <NotificationSection user={user} admin={admin} />
+                  <NotificationSection
+                    user={user}
+                    admin={admin}
+                    variant={scrolled ? "light" : "default"}
+                  />
 
                   {/* Profile Dropdown */}
                   <div className="relative" ref={dropdownRef}>
@@ -585,7 +589,13 @@ const Navbar = () => {
                 ) : (
                   <>
                     {(user || admin) && (
-                      <NotificationSection user={user} admin={admin} />
+                      <NotificationSection
+                        user={user}
+                        admin={admin}
+                        variant={
+                          scrolled || mobileMenuOpen ? "light" : "default"
+                        }
+                      />
                     )}
 
                     {/* Hamburger Menu Button */}
