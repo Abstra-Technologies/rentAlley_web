@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { sendBetaDecisionEmail } from "@/lib/email/sendBetaDecisionEmail";
+import {safeDecrypt} from "@/utils/decrypt/safeDecrypt";
 
-/**
- * @route PATCH /api/systemadmin/beta-program/approve
- * @desc  Approve beta applicant + create 60-day BETA subscription
- */
 export async function PATCH(req: NextRequest) {
     const { beta_id, landlord_id, admin_id } = await req.json();
-
-    console.log('BETA ID: ', beta_id);
-    console.log('LANDLORD: ', landlord_id);
-    console.log('admin_id: ', admin_id);
 
     if (!beta_id || !landlord_id || !admin_id) {
         return NextResponse.json(
@@ -26,7 +20,6 @@ export async function PATCH(req: NextRequest) {
 
         /* =====================================
            1. Approve Beta User
-           - approved_at = NOW()
         ===================================== */
         const [betaResult]: any = await connection.query(
             `
@@ -66,8 +59,6 @@ export async function PATCH(req: NextRequest) {
 
         /* =====================================
            3. Insert BETA Subscription
-           - start_date = DATE(approved_at)
-           - end_date   = approved_at + 60 days
         ===================================== */
         await connection.query(
             `
@@ -100,11 +91,48 @@ export async function PATCH(req: NextRequest) {
             [beta_id]
         );
 
+        /* =====================================
+           4. Fetch landlord info for email
+        ===================================== */
+        const [[landlord]]: any = await connection.query(
+            `
+            SELECT 
+                u.email,
+                u.firstName,
+                b.approved_at
+            FROM Landlord l
+            JOIN User u ON u.user_id = l.user_id
+            JOIN BetaUsers b ON b.landlord_id = l.landlord_id
+            WHERE l.landlord_id = ?
+            `,
+            [landlord_id]
+        );
+
         await connection.commit();
+
+        /* =====================================
+           5. Send Beta Approval Email (POST-COMMIT)
+        ===================================== */
+        const decryptedEmail = safeDecrypt(landlord?.email);
+        const decryptedFirstName = safeDecrypt(landlord?.firstName);
+
+        if (decryptedEmail) {
+            const startDate = new Date(landlord.approved_at);
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + 60);
+
+            await sendBetaDecisionEmail({
+                email: decryptedEmail,
+                firstName: decryptedFirstName || undefined,
+                decision: "approved",
+                startDate,
+                endDate,
+            });
+        }
 
         return NextResponse.json({
             success: true,
-            message: "Beta approved and 60-day BETA subscription activated",
+            message: "Beta approved, subscription activated, and landlord notified",
         });
     } catch (error: any) {
         await connection.rollback();

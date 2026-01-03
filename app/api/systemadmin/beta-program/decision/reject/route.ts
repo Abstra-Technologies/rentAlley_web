@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { sendBetaDecisionEmail } from "@/lib/email/sendBetaDecisionEmail";
+import {safeDecrypt} from "@/utils/decrypt/safeDecrypt";
 
 /**
  * @route PATCH /api/systemadmin/beta-program/reject
@@ -43,11 +45,42 @@ export async function PATCH(req: NextRequest) {
             );
         }
 
+        /* =====================================
+           2. Fetch landlord info for email
+        ===================================== */
+        const [[landlord]]: any = await connection.query(
+            `
+            SELECT
+                u.email,
+                u.firstName
+            FROM BetaUsers b
+            JOIN Landlord l ON l.landlord_id = b.landlord_id
+            JOIN User u ON u.user_id = l.user_id
+            WHERE b.beta_id = ?
+            `,
+            [beta_id]
+        );
+
         await connection.commit();
+
+        /* =====================================
+           3. Send Beta Rejection Email (POST-COMMIT)
+        ===================================== */
+        const decryptedEmail = safeDecrypt(landlord?.email);
+        const decryptedFirstName = safeDecrypt(landlord?.firstName);
+
+        if (decryptedEmail) {
+            await sendBetaDecisionEmail({
+                email: decryptedEmail,
+                firstName: decryptedFirstName || undefined,
+                decision: "rejected",
+                rejectionReason: rejection_reason,
+            });
+        }
 
         return NextResponse.json({
             success: true,
-            message: "Beta application rejected successfully",
+            message: "Beta application rejected and applicant notified",
         });
     } catch (error: any) {
         await connection.rollback();
