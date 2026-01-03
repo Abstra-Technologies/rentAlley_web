@@ -30,18 +30,17 @@ export default function UnitCardDesktop({
         <article className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-all overflow-hidden">
             {/* IMAGE */}
             <div className="relative h-48 overflow-hidden bg-gray-100">
-                {unit.unit_photos?.[0] ? (
-                    <Image
-                        src={unit.unit_photos[0]}
-                        fill
-                        className="object-cover"
-                        alt={`Unit ${unit.unit_name}`}
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <PhotoIcon className="w-16 h-16 text-gray-300" />
-                    </div>
-                )}
+
+                <Image
+                    src={
+                        unit.unit_photos?.[0] ||
+                        process.env.NEXT_PUBLIC_UNIT_PLACEHOLDER!
+                    }
+                    fill
+                    className="object-cover"
+                    alt={`Unit ${unit.unit_name}`}
+                />
+
 
                 {/* BILLING DUE DATE BANNER */}
                 {showBillingBanner && (

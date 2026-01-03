@@ -86,14 +86,17 @@ export default function UnitCardMobile({
             <div className="flex gap-3 p-3">
                 {/* IMAGE */}
                 <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                    {unit.unit_photos?.[0] ? (
-                        <Image src={unit.unit_photos[0]} fill className="object-cover" alt={unit.unit_name} />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                            <PhotoIcon className="w-7 h-7 text-gray-300" />
-                        </div>
-                    )}
+                    <Image
+                        src={
+                            unit.unit_photos?.[0] ||
+                            process.env.NEXT_PUBLIC_UNIT_PLACEHOLDER!
+                        }
+                        fill
+                        className="object-cover"
+                        alt={unit.unit_name}
+                    />
                 </div>
+
 
                 {/* CORE INFO */}
                 <div className="flex-1 min-w-0">
