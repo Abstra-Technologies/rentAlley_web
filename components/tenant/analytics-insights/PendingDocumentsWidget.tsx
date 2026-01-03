@@ -6,22 +6,23 @@ import Swal from "sweetalert2";
 import {
     XMarkIcon,
     DocumentTextIcon,
-    CheckCircleIcon,
     ClockIcon,
     ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import useAuthStore from "@/zustand/authStore";
 import { formatCurrency } from "@/utils/formatter/formatters";
 
+/* =====================================================
+   PROPS
+===================================================== */
 interface Props {
     agreement_id: string;
-    showPendingLeaseInfo?: boolean; // 🔑 NEW FLAG
 }
 
-export default function TenantLeaseModal({
-                                             agreement_id,
-                                             showPendingLeaseInfo = true, // default ON
-                                         }: Props) {
+/* =====================================================
+   COMPONENT
+===================================================== */
+export default function TenantLeaseModal({ agreement_id }: Props) {
     const { user, fetchSession } = useAuthStore();
 
     const [lease, setLease] = useState<any>(null);
@@ -30,7 +31,6 @@ export default function TenantLeaseModal({
     const [openModal, setOpenModal] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [otpCode, setOtpCode] = useState("");
-    const [cooldown, setCooldown] = useState(0);
     const [verifying, setVerifying] = useState(false);
 
     /* ================= AUTH ================= */
@@ -38,19 +38,12 @@ export default function TenantLeaseModal({
         if (!user) fetchSession();
     }, [user, fetchSession]);
 
-    /* ================= OTP COOLDOWN ================= */
-    useEffect(() => {
-        if (cooldown <= 0) return;
-        const timer = setInterval(() => setCooldown((c) => c - 1), 1000);
-        return () => clearInterval(timer);
-    }, [cooldown]);
-
     /* ================= LOAD LEASE ================= */
     useEffect(() => {
         async function loadLease() {
             try {
                 const res = await axios.get(
-                    `/api/tenant/activeRent/leaseAgreement/signatureStatus`,
+                    "/api/tenant/activeRent/leaseAgreement/signatureStatus",
                     { params: { agreement_id } }
                 );
 
@@ -62,6 +55,7 @@ export default function TenantLeaseModal({
                 setLoading(false);
             }
         }
+
         loadLease();
     }, [agreement_id]);
 
@@ -73,27 +67,31 @@ export default function TenantLeaseModal({
         return <p className="text-sm text-gray-500">Lease not found.</p>;
     }
 
-    const hasLeaseAgreement = Boolean(lease.agreement_url);
-    const sig = lease.tenant_signature;
-    const alreadySigned = sig?.status === "signed";
+    /* =====================================================
+       🔑 CANONICAL STATE (SOURCE OF TRUTH)
+    ===================================================== */
 
-    const needsTenantSignature =
-        hasLeaseAgreement && sig && sig.status !== "signed";
+    const signature = lease.tenant_signature ?? null; // null if no record
+
+    const hasSignatureRecord = Boolean(signature);
+    const isSigned = signature?.status === "signed";
+    const needsSignature = hasSignatureRecord && !isSigned;
+
+    const showAuthenticateUI = needsSignature;                 // Rule 1
+    const showLeaseInfo = !hasSignatureRecord || isSigned;     // Rule 2 & 3
+    const showDocumentButton = isSigned && Boolean(lease.agreement_url); // Rule 3
 
     /* ================= OTP ACTIONS ================= */
     const sendOtp = async () => {
         try {
-            await axios.post(`/api/tenant/activeRent/leaseAgreement/sendOtp`, {
+            await axios.post("/api/tenant/activeRent/leaseAgreement/sendOtp", {
                 agreement_id,
-                email: sig?.email,
+                email: signature?.email,
                 role: "tenant",
             });
+
             setOtpSent(true);
-            Swal.fire(
-                "OTP Sent",
-                "Check your email for the verification code.",
-                "success"
-            );
+            Swal.fire("OTP Sent", "Check your email for the code.", "success");
         } catch (err: any) {
             Swal.fire(
                 "Error",
@@ -106,11 +104,12 @@ export default function TenantLeaseModal({
     const verifyOtp = async () => {
         try {
             setVerifying(true);
+
             const res = await axios.post(
-                `/api/tenant/activeRent/leaseAgreement/verifyOtp`,
+                "/api/tenant/activeRent/leaseAgreement/verifyOtp",
                 {
                     agreement_id,
-                    email: sig?.email,
+                    email: signature?.email,
                     otp_code: otpCode,
                     role: "tenant",
                 }
@@ -127,39 +126,48 @@ export default function TenantLeaseModal({
         }
     };
 
-    /* ======================== UI ============================== */
+    /* =====================================================
+       ======================== UI =========================
+    ===================================================== */
 
     return (
         <>
             <div className="space-y-4">
                 {/* HEADER */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <DocumentTextIcon className="w-5 h-5 text-gray-600" />
-                        <span className="text-sm font-bold text-gray-900">
-                            Lease Information
-                        </span>
-                    </div>
-
-                    <span
-                        className={`px-2 py-1 text-xs rounded-full font-semibold border ${
-                            !hasLeaseAgreement
-                                ? "bg-gray-100 text-gray-600 border-gray-200"
-                                : alreadySigned
-                                    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                                    : "bg-amber-100 text-amber-700 border-amber-200"
-                        }`}
-                    >
-                        {!hasLeaseAgreement
-                            ? "No Document"
-                            : alreadySigned
-                                ? "Signed"
-                                : "Pending Signature"}
+                <div className="flex items-center gap-2">
+                    <DocumentTextIcon className="w-5 h-5 text-gray-600" />
+                    <span className="text-sm font-bold text-gray-900">
+                        Lease Information
                     </span>
                 </div>
 
-                {/* 🔑 CONTROLLED BLOCK */}
-                {showPendingLeaseInfo && !hasLeaseAgreement && (
+                {/* ================= RULE 1 ================= */}
+                {showAuthenticateUI && (
+                    <>
+                        <button
+                            onClick={() => setOpenModal(true)}
+                            className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm font-semibold text-blue-600 w-full"
+                        >
+                            <DocumentTextIcon className="w-4 h-4" />
+                            Authenticate & Sign Lease
+                        </button>
+
+                        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <ClockIcon className="w-4 h-4 text-amber-600 mt-0.5" />
+                            <div>
+                                <p className="text-sm font-semibold text-amber-900">
+                                    Signature Pending
+                                </p>
+                                <p className="text-xs text-amber-700">
+                                    Awaiting {signature?.role}'s signature
+                                </p>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* ================= RULE 2 & 3 ================= */}
+                {showLeaseInfo && (
                     <div className="space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                         <LeaseRow
                             label="Monthly Rent"
@@ -177,59 +185,23 @@ export default function TenantLeaseModal({
                                 lease.advance_payment_amount || 0
                             )}
                         />
-                        <p className="text-xs text-gray-600">
-                            Your landlord has not uploaded the lease document yet.
-                        </p>
                     </div>
                 )}
 
-                {/* ================= LEASE DOCUMENT EXISTS ================= */}
-                {hasLeaseAgreement && (
-                    <>
-                        <button
-                            onClick={() => setOpenModal(true)}
-                            className="flex items-center gap-2 p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition text-sm font-semibold text-blue-600 w-full"
-                        >
-                            <DocumentTextIcon className="w-4 h-4" />
-                            {alreadySigned
-                                ? "View Signed Lease"
-                                : "View Lease"}
-                        </button>
-
-                        {needsTenantSignature && (
-                            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                <ClockIcon className="w-4 h-4 text-amber-600 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-semibold text-amber-900">
-                                        Signature Required
-                                    </p>
-                                    <p className="text-xs text-amber-700">
-                                        Please authenticate to sign your lease
-                                        agreement.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {!needsTenantSignature && alreadySigned && (
-                            <div className="flex items-start gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                                <CheckCircleIcon className="w-4 h-4 text-emerald-600 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-semibold text-emerald-900">
-                                        Lease Signed
-                                    </p>
-                                    <p className="text-xs text-emerald-700">
-                                        Your lease agreement is fully signed.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </>
+                {/* ================= RULE 3 ================= */}
+                {showDocumentButton && (
+                    <button
+                        onClick={() => setOpenModal(true)}
+                        className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm font-semibold text-blue-600 w-full"
+                    >
+                        <DocumentTextIcon className="w-4 h-4" />
+                        View Signed Lease
+                    </button>
                 )}
             </div>
 
             {/* ================= MODAL ================= */}
-            {openModal && hasLeaseAgreement && (
+            {openModal && Boolean(lease.agreement_url) && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-2">
                     <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-xl shadow-lg overflow-hidden flex flex-col">
                         <div className="flex items-center justify-between p-4 border-b">
@@ -242,13 +214,13 @@ export default function TenantLeaseModal({
                             </button>
                         </div>
 
-                        <div className="p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <iframe
                                 src={lease.agreement_url}
                                 className="w-full h-[420px] rounded-lg border"
                             />
 
-                            {needsTenantSignature && (
+                            {needsSignature && (
                                 <div className="space-y-4">
                                     {!otpSent ? (
                                         <button
@@ -278,16 +250,6 @@ export default function TenantLeaseModal({
                                                     ? "Verifying…"
                                                     : "Verify & Sign"}
                                             </button>
-
-                                            <button
-                                                onClick={sendOtp}
-                                                disabled={cooldown > 0}
-                                                className="text-sm text-blue-600"
-                                            >
-                                                {cooldown > 0
-                                                    ? `Resend in ${cooldown}s`
-                                                    : "Resend OTP"}
-                                            </button>
                                         </>
                                     )}
                                 </div>
@@ -300,8 +262,16 @@ export default function TenantLeaseModal({
     );
 }
 
-/* ================= SMALL UI ================= */
-function LeaseRow({ label, value }: { label: string; value: string }) {
+/* =====================================================
+   SMALL UI
+===================================================== */
+function LeaseRow({
+                      label,
+                      value,
+                  }: {
+    label: string;
+    value: string;
+}) {
     return (
         <div className="flex items-center justify-between text-sm text-gray-700">
             <span className="text-gray-600">{label}</span>
