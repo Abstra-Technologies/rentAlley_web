@@ -88,7 +88,7 @@ export async function GET(
             );
         }
 
-        if (leaseRows[0].status !== "active") {
+        if (leaseRows[0].status !== "active" || "expired") {
             return NextResponse.json(
                 { message: "Lease not active" },
                 { status: 403 }

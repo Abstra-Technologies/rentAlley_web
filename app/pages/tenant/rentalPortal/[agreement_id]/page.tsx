@@ -15,6 +15,7 @@ import {
   MegaphoneIcon,
 } from "@heroicons/react/24/outline";
 import QuickActionButtons from "@/components/tenant/currentRent/QuickActionButtons";
+import PortalAccessGate from "@/components/tenant/currentRent/PortalAccessGate/PortalAccessGate";
 
 export default function RentPortalPage() {
   const { user, fetchSession } = useAuthStore();
@@ -181,7 +182,9 @@ export default function RentPortalPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 mt-2">
-      {/* Header */}
+        <PortalAccessGate agreementId={agreementId} />
+
+        {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-0 py-4 md:py-6">
           <div className="flex items-center justify-between">

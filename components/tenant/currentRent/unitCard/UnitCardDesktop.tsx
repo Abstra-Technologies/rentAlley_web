@@ -66,6 +66,7 @@ export default function UnitCardDesktop({
                     <p className="text-sm font-medium text-gray-700">
                         {unit.property_name}
                     </p>
+                    <p className='text-sm'>Agrrement id: {unit?.agreement_id}</p>
                 </div>
 
                 <div className="flex items-center gap-3 text-xs text-gray-600">

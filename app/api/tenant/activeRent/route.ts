@@ -3,6 +3,9 @@ import { decryptData } from "@/crypto/encrypt";
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 
+//  Used in My Unit Page.
+//  to ve simplified.
+
 const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
 
 const getTenantActiveLeases = unstable_cache(
@@ -22,7 +25,7 @@ const getTenantActiveLeases = unstable_cache(
                 updated_at
             FROM LeaseAgreement
             WHERE tenant_id = ?
-              AND status NOT IN ('draft', 'cancelled')
+              AND status NOT IN ('cancelled', 'completed')
             ORDER BY updated_at DESC
             `,
             [tenantId]
