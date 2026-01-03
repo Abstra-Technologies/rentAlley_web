@@ -9,7 +9,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
         }
 
-        // ✅ 1. Verify lease belongs to the tenant
         const [leaseRows]: any = await db.query(
             `SELECT tenant_id, unit_id, status FROM LeaseAgreement WHERE agreement_id = ? LIMIT 1`,
             [agreement_id]
@@ -24,12 +23,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Unauthorized action." }, { status: 403 });
         }
 
-        // ✅ 2. Prevent duplicate ending of already-ended lease
         if (["cancelled", "expired"].includes(lease.status)) {
             return NextResponse.json({ error: "Lease is already inactive." }, { status: 409 });
         }
 
-        // ✅ 3. Check for unpaid or overdue billings
         const [unpaidRows]: any = await db.query(
             `
                 SELECT billing_id, status, total_amount_due
@@ -60,7 +57,7 @@ export async function POST(req: NextRequest) {
         // ✅ 4. Mark lease as expired
         await db.query(
             `UPDATE LeaseAgreement
-             SET status = 'expired', updated_at = NOW()
+             SET status = 'completed', updated_at = NOW()
              WHERE agreement_id = ?`,
             [agreement_id]
         );
