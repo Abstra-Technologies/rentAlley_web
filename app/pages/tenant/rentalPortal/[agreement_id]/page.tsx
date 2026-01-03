@@ -47,9 +47,6 @@ export default function RentPortalPage() {
         checkAuth();
     }, [user, fetchSession]);
 
-    console.log("inner page AGREREMENT ID: ", agreementId);
-
-
     useEffect(() => {
         if (!authReady || !agreementId) return;
 
