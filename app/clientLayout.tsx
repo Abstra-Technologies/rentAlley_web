@@ -5,6 +5,7 @@ import Script from "next/script";
 import Navbar from "../components/navigation/navbar";
 import useAuthStore from "../zustand/authStore";
 import Swal from "sweetalert2";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 function urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
