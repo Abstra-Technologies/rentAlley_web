@@ -48,8 +48,9 @@ export async function GET(
             [billing_id]
         );
 
-        if (!rows?.length)
+        if (!rows?.length) {
             return NextResponse.json({ error: "Billing not found" }, { status: 404 });
+        }
 
         const bill = rows[0];
         const billingDate = new Date(bill.billing_period);
@@ -58,8 +59,7 @@ export async function GET(
         /* ---------- TENANT ---------- */
         const [tenantRows]: any = await db.query(
             `
-            SELECT u.firstName, u.lastName, u.email, u.phoneNumber,
-                   la.agreement_id
+            SELECT u.firstName, u.lastName, u.email, u.phoneNumber
             FROM LeaseAgreement la
             JOIN Tenant t ON la.tenant_id = t.tenant_id
             JOIN User u ON t.user_id = u.user_id
@@ -80,13 +80,13 @@ export async function GET(
             }
             : null;
 
-        /* ---------- PROPERTY CONFIG (DUE DATE) ---------- */
-        const [cfg]: any = await db.query(
+        /* ---------- PROPERTY CONFIG ---------- */
+        const [[cfg]]: any = await db.query(
             `SELECT billingDueDay FROM PropertyConfiguration WHERE property_id = ? LIMIT 1`,
             [bill.property_id]
         );
 
-        const dueDay = Number(cfg?.[0]?.billingDueDay || 1);
+        const dueDay = Number(cfg?.billingDueDay || 1);
         const dueDate = new Date(
             billingDate.getFullYear(),
             billingDate.getMonth(),
@@ -118,78 +118,152 @@ export async function GET(
             [bill.unit_id, start, end]
         );
 
+        /* ---------- ADDITIONAL CHARGES ---------- */
+        const [charges]: any = await db.query(
+            `
+            SELECT charge_category, charge_type, amount
+            FROM BillingAdditionalCharge
+            WHERE billing_id = ?
+            `,
+            [billing_id]
+        );
+
+        let additions = 0;
+        let discounts = 0;
+
+        for (const c of charges) {
+            if (c.charge_category === "discount") {
+                discounts += toNum(c.amount);
+            } else {
+                additions += toNum(c.amount);
+            }
+        }
+
+        /* ---------- TOTALS ---------- */
         const utilitiesTotal =
             toNum(bill.total_water_amount) +
             toNum(bill.total_electricity_amount);
 
-        const totalDue =
-            toNum(bill.rent_amount) + utilitiesTotal;
+        const subtotal =
+            toNum(bill.rent_amount) +
+            utilitiesTotal +
+            additions;
+
+        const totalDue = subtotal - discounts;
 
         /* ---------- HTML ---------- */
         const html = `
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/>
+
 <style>
+@page {
+  size: A4;
+  margin: 0;
+}
+
 body {
-  font-family: Inter, Arial, sans-serif;
+  font-family: "Helvetica Neue", Arial, sans-serif;
   background: #ffffff;
   color: #111827;
   margin: 0;
-  padding: 40px;
+}
+
+/* ===== PAGE WRAPPER ===== */
+.page {
+  min-height: 297mm;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 48px;
+  background: linear-gradient(90deg, #696EFF, #F8ACFF);
+  color: #ffffff;
 }
 
 .brand {
   font-size: 28px;
   font-weight: 800;
-  color: #10b981;
 }
 
-.tagline {
-  font-size: 12px;
-  color: #6b7280;
+.subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+}
+
+.badge {
+  font-size: 13px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.22);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ===== CONTENT ===== */
+.content {
+  flex: 1;
+  padding: 36px 48px;
+}
+
+.statement-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 28px;
+}
+
+.section {
+  margin-top: 24px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  color: #374151;
 }
 
 .card {
   border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 20px;
-  margin-top: 20px;
+  border-radius: 12px;
+  padding: 18px;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.property-name {
+  font-size: 22px;
+  font-weight: 800;
 }
 
-.unit {
-  font-size: 20px;
-  font-weight: 700;
+.property-address {
+  font-size: 14px;
+  color: #374151;
   margin-top: 4px;
 }
 
-.badge {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #ecfdf5;
-  color: #047857;
+.label {
   font-weight: 600;
-  font-size: 12px;
+  color: #374151;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 12px;
   font-size: 13px;
 }
 
 th, td {
   border-bottom: 1px solid #e5e7eb;
   padding: 10px 6px;
-  text-align: left;
 }
 
 th {
@@ -197,94 +271,113 @@ th {
   font-weight: 600;
 }
 
-.total {
-  font-size: 22px;
-  font-weight: 800;
-  color: #10b981;
+.right {
   text-align: right;
 }
 
-.muted {
-  color: #6b7280;
-  font-size: 12px;
+.total {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  padding: 16px 48px;
+  background: linear-gradient(90deg, #696EFF, #F8ACFF);
+  color: rgba(255,255,255,0.9);
+  font-size: 11px;
+  text-align: center;
 }
 </style>
 </head>
 
 <body>
+<div class="page">
 
-<!-- BRAND -->
-<div class="header">
-  <div>
-    <div class="brand">UPKYP</div>
-    <div class="tagline">Connect More. Manage Less.</div>
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="brand">Upkyp</div>
+      <div class="subtitle">Billing Statement</div>
+    </div>
+    <div class="badge">Billing ID: ${billing_id}</div>
   </div>
-  <div class="badge">Billing ID: ${billing_id}</div>
-</div>
 
-<!-- PROPERTY / UNIT -->
-<div class="card">
-  <strong>${bill.property_name}</strong><br/>
-  <span class="muted">${bill.city}, ${bill.province}</span>
-  <div class="unit">Unit ${bill.unit_name}</div>
-</div>
+  <!-- CONTENT -->
+  <div class="content">
 
-<!-- TENANT -->
-<div class="card">
-  <strong>Tenant</strong><br/>
-  ${
+    <div class="statement-title">STATEMENT OF ACCOUNT</div>
+
+    <div class="section card">
+      <div class="property-name">${bill.property_name}</div>
+      <div class="property-address">${bill.city}, ${bill.province}</div>
+    </div>
+
+    <div class="section card">
+      <div class="section-title">Tenant Information</div>
+      ${
             decryptedTenant
-                ? `${decryptedTenant.firstName} ${decryptedTenant.lastName}<br/>
-         ${decryptedTenant.email}<br/>
-         ${decryptedTenant.phoneNumber}`
+                ? `
+          <div><span class="label">Name:</span> ${decryptedTenant.firstName} ${decryptedTenant.lastName}</div>
+          <div><span class="label">Email:</span> ${decryptedTenant.email}</div>
+          <div><span class="label">Phone:</span> ${decryptedTenant.phoneNumber}</div>
+          <div><span class="label">Unit Occupied:</span> ${bill.unit_name}</div>
+        `
                 : "—"
         }
-</div>
+    </div>
 
-<!-- SUMMARY -->
-<div class="card">
-  <table>
-    <tr>
-      <th>Billing Period</th>
-      <th>Due Date</th>
-      <th class="total">Total Due</th>
-    </tr>
-    <tr>
-      <td>${formatDate(billingDate)}</td>
-      <td>${dueDate.toLocaleDateString("en-CA")}</td>
-      <td class="total">₱${php(totalDue)}</td>
-    </tr>
-  </table>
-</div>
+    <div class="section card">
+      <table>
+        <tr>
+          <th>Billing Period</th>
+          <th>Due Date</th>
+          <th class="right">Total Due</th>
+        </tr>
+        <tr>
+          <td>${formatDate(billingDate)}</td>
+          <td>${dueDate.toLocaleDateString("en-CA")}</td>
+          <td class="right total">₱${php(totalDue)}</td>
+        </tr>
+      </table>
+    </div>
 
-<!-- UTILITIES -->
-<div class="card">
-  <strong>Meter Readings</strong>
-  <table>
-    <tr>
-      <th>Utility</th>
-      <th>Previous</th>
-      <th>Current</th>
-      <th>Consumption</th>
-      <th>Total</th>
-    </tr>
-    <tr>
-      <td>Water</td>
-      <td>${water?.previous_reading ?? "—"}</td>
-      <td>${water?.current_reading ?? "—"}</td>
-      <td>${water?.consumption ?? 0} m³</td>
-      <td>₱${php(bill.total_water_amount)}</td>
-    </tr>
-    <tr>
-      <td>Electricity</td>
-      <td>${elec?.previous_reading ?? "—"}</td>
-      <td>${elec?.current_reading ?? "—"}</td>
-      <td>${elec?.consumption ?? 0} kWh</td>
-      <td>₱${php(bill.total_electricity_amount)}</td>
-    </tr>
-  </table>
-</div>
+    <div class="section card">
+      <div class="section-title">Charges Breakdown</div>
+      <table>
+        <tr>
+          <td>Rent</td>
+          <td class="right">₱${php(bill.rent_amount)}</td>
+        </tr>
+        <tr>
+          <td>Utilities</td>
+          <td class="right">₱${php(utilitiesTotal)}</td>
+        </tr>
+        ${
+            charges.length
+                ? charges.map(
+                    (c: any) => `
+          <tr>
+            <td>${c.charge_type}</td>
+            <td class="right">
+              ${c.charge_category === "discount" ? "-" : ""}₱${php(c.amount)}
+            </td>
+          </tr>
+        `
+                ).join("")
+                : ""
+        }
+      </table>
+    </div>
 
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Upkyp · Property Rental Management Platform — ${bill.property_name}
+  </div>
+
+</div>
 </body>
 </html>
 `;
@@ -306,7 +399,7 @@ th {
                 "Content-Disposition": `attachment; filename="upkyp-billing-${billing_id}.pdf"`,
             },
         });
-    } catch (err: any) {
+    } catch (err) {
         console.error("PDF ERROR:", err);
         return NextResponse.json(
             { error: "Failed to generate PDF" },
