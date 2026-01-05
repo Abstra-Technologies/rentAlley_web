@@ -24,6 +24,8 @@ export async function sendLeaseOtpEmail({
                                             landlordName,
                                             tenantName,
                                         }: SendLeaseOtpEmailParams) {
+
+    console.log('email resend: ', email);
     await resend.emails.send({
         from: "UpKyp <noreply@upkyp.com>",
         to: [email],
