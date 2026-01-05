@@ -25,7 +25,7 @@ const getTenantActiveLeases = unstable_cache(
                     updated_at
                 FROM LeaseAgreement
                 WHERE tenant_id = ?
-                  AND status IN ('draft', 'active', 'expired')
+                  AND status IN ('draft', 'active', 'expired', 'pending_signature')
                 ORDER BY updated_at DESC
             `,
             [tenantId]

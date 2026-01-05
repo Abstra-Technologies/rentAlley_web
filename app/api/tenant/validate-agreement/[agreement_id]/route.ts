@@ -81,7 +81,7 @@ export async function GET(
             );
         }
 
-        const allowedStatuses = ["active", "draft", "expired"];
+        const allowedStatuses = ["active", "draft", "expired", "pending_signature"];
 
         if (!allowedStatuses.includes(leaseRows[0].status)) {
             return NextResponse.json(
