@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
             [agreement_id]
         );
 
-        console.log("🧠 Lease rows:", leaseRows);
 
         if (!leaseRows.length) {
             console.warn("❌ No lease found for agreement");
@@ -67,10 +66,8 @@ export async function GET(req: NextRequest) {
             [agreement_id]
         );
 
-        console.log("🚨 Matched overdue/pending bill:", billingRows);
 
         if (!billingRows.length) {
-            console.log("✅ No pending / overdue bills");
             return NextResponse.json({ billing: null });
         }
 

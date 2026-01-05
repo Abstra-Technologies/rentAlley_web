@@ -7,10 +7,6 @@ export async function GET(req: NextRequest) {
         let agreementId = searchParams.get("agreement_id");
         const userId = searchParams.get("user_id");
 
-        console.log("🔍 [Overdue API] user_id:", userId);
-        console.log("🔍 [Overdue API] agreement_id (initial):", agreementId);
-
-        /* ------------------ 1️⃣ USER VALIDATION ------------------ */
         if (!userId) {
             console.warn("❌ user_id missing");
             return NextResponse.json(
@@ -25,15 +21,11 @@ export async function GET(req: NextRequest) {
             [userId]
         );
 
-        console.log("🧠 Tenant rows:", tenantRows);
-
         const tenantId = tenantRows?.[0]?.tenant_id;
         if (!tenantId) {
             console.warn("⚠️ No tenant found for user");
             return NextResponse.json({ bills: [] }, { status: 200 });
         }
-
-        console.log("✅ tenant_id resolved:", tenantId);
 
         /* ------------------ 3️⃣ AGREEMENT FALLBACK ------------------ */
         if (!agreementId) {
@@ -49,12 +41,8 @@ export async function GET(req: NextRequest) {
                 [tenantId]
             );
 
-            console.log("🧠 Active lease rows:", leaseRows);
-
             agreementId = leaseRows?.[0]?.agreement_id || null;
         }
-
-        console.log("✅ agreement_id (resolved):", agreementId);
 
         if (!agreementId) {
             console.warn("⚠️ No active agreement found");
@@ -71,8 +59,6 @@ export async function GET(req: NextRequest) {
             `,
             [agreementId]
         );
-
-        console.log("📦 ALL bills for lease:", allBills);
 
         /* ------------------ 5️⃣ OVERDUE FILTER QUERY ------------------ */
         const [rows]: any = await db.query(
@@ -93,8 +79,6 @@ export async function GET(req: NextRequest) {
             `,
             [agreementId]
         );
-
-        console.log("🚨 OVERDUE bills result:", rows);
 
         return NextResponse.json(
             { bills: rows || [] },

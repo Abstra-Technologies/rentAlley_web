@@ -12,8 +12,6 @@ export async function POST(req: NextRequest) {
     try {
         const { agreement_id, role, otp_code } = await req.json();
 
-        console.log("🟦 Tenant Verify OTP →", { agreement_id, role, otp_code });
-
         // 🔹 Validate required fields
         if (!agreement_id || !role || !otp_code) {
             return NextResponse.json(
