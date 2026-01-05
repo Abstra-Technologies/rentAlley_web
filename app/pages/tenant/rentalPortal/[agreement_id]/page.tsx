@@ -16,6 +16,8 @@ import {
 } from "@heroicons/react/24/outline";
 import QuickActionButtons from "@/components/tenant/currentRent/QuickActionButtons";
 import PortalAccessGate from "@/components/tenant/currentRent/PortalAccessGate/PortalAccessGate";
+import { DocumentTextIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 
 export default function RentPortalPage() {
   const { user, fetchSession } = useAuthStore();
@@ -26,6 +28,7 @@ export default function RentPortalPage() {
     unit_name: string;
     property_name: string;
   } | null>(null);
+    const router = useRouter();
 
   const [showMoveInChecklist, setShowMoveInChecklist] = useState(false);
   const [loadingUnitInfo, setLoadingUnitInfo] = useState(true);
@@ -182,49 +185,75 @@ export default function RentPortalPage() {
         <PortalAccessGate agreementId={agreementId} />
 
         {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-0 py-4 md:py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 md:gap-4">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center shadow-lg">
-                <HomeIcon className="w-5 h-5 md:w-6 md:h-6 text-white" />
-              </div>
-              <div>
-                {loadingUnitInfo ? (
-                  <div className="animate-pulse">
-                    <div className="h-5 md:h-6 bg-gray-200 rounded w-36 md:w-48 mb-2"></div>
-                    <div className="h-3 md:h-4 bg-gray-200 rounded w-24 md:w-32"></div>
-                  </div>
-                ) : (
-                  <>
-                    <h1 className="text-lg md:text-2xl font-bold text-gray-900">
-                      {unitInfo?.property_name || "Property Portal"}
-                    </h1>
-                    <p className="text-xs md:text-sm text-gray-600 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      {unitInfo?.unit_name
-                        ? unitInfo.unit_name.toLowerCase().startsWith("unit")
-                          ? unitInfo.unit_name
-                          : `Unit ${unitInfo.unit_name}`
-                        : "Tenant Portal"}
-                    </p>
-                  </>
-                )}
-              </div>
+        <div className="bg-white border-b border-gray-200">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-0 py-4 md:py-6">
+                <div className="flex items-center justify-between gap-4">
+
+                    {/* LEFT: Property / Unit */}
+                    <div className="flex items-center gap-3 md:gap-4">
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl
+                        bg-gradient-to-br from-blue-500 to-emerald-500
+                        flex items-center justify-center shadow-lg">
+                            <HomeIcon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                        </div>
+
+                        <div>
+                            {loadingUnitInfo ? (
+                                <div className="animate-pulse">
+                                    <div className="h-5 md:h-6 bg-gray-200 rounded w-36 md:w-48 mb-2" />
+                                    <div className="h-3 md:h-4 bg-gray-200 rounded w-24 md:w-32" />
+                                </div>
+                            ) : (
+                                <>
+                                    <h1 className="text-lg md:text-2xl font-bold text-gray-900">
+                                        {unitInfo?.property_name || "Property Portal"}
+                                    </h1>
+                                    <p className="text-xs md:text-sm text-gray-600 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                        {unitInfo?.unit_name
+                                            ? unitInfo.unit_name.toLowerCase().startsWith("unit")
+                                                ? unitInfo.unit_name
+                                                : `Unit ${unitInfo.unit_name}`
+                                            : "Tenant Portal"}
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT: User + Action */}
+                    <div className="flex items-center gap-4">
+                        {user && (
+                            <div className="hidden lg:block text-right">
+                                <p className="text-sm text-gray-600">Welcome back,</p>
+                                <p className="text-base font-semibold text-gray-900">
+                                    {user.firstName} {user.lastName}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* HOUSE RULES BUTTON */}
+                        <button
+                            onClick={() =>
+                                router.push(
+                                    // "/pages/tenant/house-rules-policy"
+                                     `/pages/tenant/rentalPortal/${agreementId}/house-policy`
+                                )
+                            }
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg
+                     bg-gradient-to-r from-rose-500 to-red-600
+                     text-white text-sm font-semibold shadow
+                     hover:from-rose-600 hover:to-red-700
+                     transition"
+                        >
+                            <DocumentTextIcon className="w-4 h-4" />
+                            House Rules & Policy
+                        </button>
+                    </div>
+
+                </div>
             </div>
-
-            {user && (
-              <div className="hidden lg:block text-right">
-                <p className="text-sm text-gray-600">Welcome back,</p>
-                <p className="text-base font-semibold text-gray-900">
-                  {user.firstName} {user.lastName}
-                </p>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
-
       {/* Content */}
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6 space-y-4 md:space-y-6 pb-24 md:pb-8">
         {showMoveInChecklist && <MoveInChecklist agreement_id={agreementId} />}
