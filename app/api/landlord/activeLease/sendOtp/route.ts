@@ -1,50 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { decryptData } from "@/crypto/encrypt";
-import nodemailer from "nodemailer";
 import moment from "moment-timezone";
+import { sendLeaseOtpEmail } from "@/lib/email/sendLeaseOtpEmail";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-/**
- * Helper to send OTP via Gmail (with timezone formatting)
- */
-async function sendOtpEmail(
-    toEmail: string,
-    otp: string,
-    localExpiry: string,
-    timezone: string
-) {
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-        tls: { rejectUnauthorized: false },
-    });
-
-    await transporter.sendMail({
-        from: process.env.EMAIL_USER,
-        to: toEmail,
-        subject: "UpKyp Lease Verification Code",
-        html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2 style="color:#2563eb;">Your Lease Verification Code</h2>
-        <p>Please use the code below to verify your lease signing:</p>
-
-        <div style="font-size: 2rem; font-weight: bold; color:#059669; letter-spacing: 4px; margin:16px 0;">
-          ${otp}
-        </div>
-
-        <p>This code will expire at <strong>${localExpiry}</strong> (${timezone}).</p>
-
-        <p>If you did not request this, ignore this email.</p>
-
-        <hr />
-        <p style="font-size:0.9rem; color:#6b7280;">© ${new Date().getFullYear()} UpKyp.</p>
-      </div>
-    `,
-    });
-}
 
 /**
  * POST /api/landlord/activeLease/sendOtp
@@ -55,151 +15,197 @@ export async function POST(req: NextRequest) {
 
         if (!agreement_id || !role || !email) {
             return NextResponse.json(
-                { error: "Missing fields (agreement_id, role, email)." },
+                { error: "Missing required fields." },
                 { status: 400 }
             );
         }
 
-        // Get user timezone (fallback: Manila)
+        if (!["landlord", "tenant"].includes(role)) {
+            return NextResponse.json(
+                { error: "Invalid role." },
+                { status: 400 }
+            );
+        }
+
+        /* --------------------------------------------------
+         * 1️⃣ Resolve user timezone (plain email)
+         * -------------------------------------------------- */
         const [userRows]: any = await db.query(
             `
-      SELECT timezone 
-      FROM User 
-      WHERE JSON_UNQUOTE(JSON_EXTRACT(email, '$.ciphertext')) = ? OR email = ?
-      LIMIT 1
-      `,
-            [email, email]
+            SELECT timezone
+            FROM User
+            WHERE email = ?
+            LIMIT 1
+            `,
+            [email]
         );
 
         const timezone = userRows?.[0]?.timezone || "Asia/Manila";
 
-        // Create OTP + expiry
+        /* --------------------------------------------------
+         * 2️⃣ Generate OTP
+         * -------------------------------------------------- */
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiryUTC = moment.utc().add(10, "minutes").toDate();
-        const localExpiry = moment(expiryUTC).tz(timezone).format("MMMM D, YYYY h:mm A");
+        const expiryLocal = moment(expiryUTC)
+            .tz(timezone)
+            .format("MMMM D, YYYY h:mm A");
 
-        /* ---------------------------------------------------------
-           STEP 1 — LOOK FOR EXISTING SIGNATURE RECORD
-        --------------------------------------------------------- */
-        const [existing]: any = await db.query(
+        /* --------------------------------------------------
+         * 3️⃣ UPSERT LeaseSignature (REQUESTING PARTY)
+         * -------------------------------------------------- */
+        const [existingSig]: any = await db.query(
             `
-      SELECT id 
-      FROM LeaseSignature
-      WHERE agreement_id = ? AND role = ?
-      LIMIT 1
-      `,
+            SELECT id
+            FROM LeaseSignature
+            WHERE agreement_id = ? AND role = ?
+            LIMIT 1
+            `,
             [agreement_id, role]
         );
 
-        if (existing.length > 0) {
-            // UPDATE EXISTING SIGNATURE
+        if (existingSig.length > 0) {
+            // UPDATE ONLY
             await db.query(
                 `
-        UPDATE LeaseSignature
-        SET 
-          email = ?, 
-          otp_code = ?, 
-          otp_sent_at = UTC_TIMESTAMP(),
-          otp_expires_at = ?, 
-          status = 'pending'
-        WHERE agreement_id = ? AND role = ?
-        `,
+                UPDATE LeaseSignature
+                SET
+                    email = ?,
+                    otp_code = ?,
+                    otp_sent_at = UTC_TIMESTAMP(),
+                    otp_expires_at = ?,
+                    status = 'pending'
+                WHERE agreement_id = ? AND role = ?
+                `,
                 [email, otp, expiryUTC, agreement_id, role]
             );
         } else {
-            // INSERT ONLY IF NO RECORD EXISTS
+            // INSERT ONLY IF NOT EXISTS
             await db.query(
                 `
-        INSERT INTO LeaseSignature (
-          agreement_id, email, role, otp_code, otp_sent_at, otp_expires_at, status
-        )
-        VALUES (?, ?, ?, ?, UTC_TIMESTAMP(), ?, 'pending')
-        `,
+                INSERT INTO LeaseSignature (
+                    agreement_id,
+                    email,
+                    role,
+                    otp_code,
+                    otp_sent_at,
+                    otp_expires_at,
+                    status
+                )
+                VALUES (?, ?, ?, ?, UTC_TIMESTAMP(), ?, 'pending')
+                `,
                 [agreement_id, email, role, otp, expiryUTC]
             );
         }
 
-        /* ---------------------------------------------------------
-           STEP 2 — ENSURE TENANT SIGNATURE RECORD EXISTS (BACKUP)
-        --------------------------------------------------------- */
-        if (role === "landlord") {
-            const [tenantRows]: any = await db.query(
+        /* --------------------------------------------------
+         * 4️⃣ Fetch lease context (SCHEMA-CORRECT)
+         * -------------------------------------------------- */
+        const [leaseRows]: any = await db.query(
+            `
+            SELECT
+                la.agreement_id,
+
+                p.property_name,
+                u.unit_name,
+
+                ul.firstName AS landlord_first,
+                ul.lastName  AS landlord_last,
+                ul.email     AS landlord_email,
+
+                ut.firstName AS tenant_first,
+                ut.lastName  AS tenant_last,
+                ut.email     AS tenant_email
+
+            FROM LeaseAgreement la
+            JOIN Unit u ON la.unit_id = u.unit_id
+            JOIN Property p ON u.property_id = p.property_id
+            JOIN Landlord l ON p.landlord_id = l.landlord_id
+            JOIN User ul ON l.user_id = ul.user_id
+            JOIN Tenant t ON la.tenant_id = t.tenant_id
+            JOIN User ut ON t.user_id = ut.user_id
+
+            WHERE la.agreement_id = ?
+            LIMIT 1
+            `,
+            [agreement_id]
+        );
+
+        if (!leaseRows.length) {
+            return NextResponse.json(
+                { error: "Lease context not found." },
+                { status: 404 }
+            );
+        }
+
+        const lease = leaseRows[0];
+
+        const landlordName = `${lease.landlord_first} ${lease.landlord_last}`;
+        const tenantName = `${lease.tenant_first} ${lease.tenant_last}`;
+
+        /* --------------------------------------------------
+         * 5️⃣ Ensure TENANT signature exists (if landlord action)
+         * -------------------------------------------------- */
+        if (role === "landlord" && lease.tenant_email) {
+            const [tenantSig]: any = await db.query(
                 `
-        SELECT t.email AS tenant_email
-        FROM LeaseAgreement la
-        JOIN Tenant tn ON la.tenant_id = tn.tenant_id
-        JOIN User t ON tn.user_id = t.user_id
-        WHERE la.agreement_id = ?
-        LIMIT 1
-        `,
+                SELECT id
+                FROM LeaseSignature
+                WHERE agreement_id = ? AND role = 'tenant'
+                LIMIT 1
+                `,
                 [agreement_id]
             );
 
-            if (tenantRows.length > 0) {
-                let tenantEmail: string | null = null;
-                const enc = tenantRows[0].tenant_email;
-
-                try {
-                    if (enc?.startsWith("{") || enc?.startsWith("[")) {
-                        tenantEmail = decryptData(JSON.parse(enc), process.env.ENCRYPTION_SECRET!);
-                    } else {
-                        tenantEmail = enc; // plain text
-                    }
-                } catch (err) {
-                    console.warn("⚠️ Failed to decrypt tenant email:", err);
-                }
-
-                if (tenantEmail) {
-                    // Check if tenant signature exists
-                    const [tenantSig]: any = await db.query(
-                        `
-            SELECT id FROM LeaseSignature
-            WHERE agreement_id = ? AND role = 'tenant'
-            LIMIT 1
-            `,
-                        [agreement_id]
-                    );
-
-                    if (tenantSig.length > 0) {
-                        // UPDATE tenant signature
-                        await db.query(
-                            `
-              UPDATE LeaseSignature
-              SET email = ?, status = 'pending',
-                  otp_code = NULL,
-                  otp_expires_at = NULL,
-                  otp_sent_at = NULL
-              WHERE agreement_id = ? AND role = 'tenant'
-              `,
-                            [tenantEmail, agreement_id]
-                        );
-                    } else {
-                        // INSERT tenant signature
-                        await db.query(
-                            `
-              INSERT INTO LeaseSignature (agreement_id, email, role, status)
-              VALUES (?, ?, 'tenant', 'pending')
-              `,
-                            [agreement_id, tenantEmail]
-                        );
-                    }
-                }
+            if (tenantSig.length > 0) {
+                await db.query(
+                    `
+                    UPDATE LeaseSignature
+                    SET
+                        email = ?,
+                        status = 'pending',
+                        otp_code = NULL,
+                        otp_sent_at = NULL,
+                        otp_expires_at = NULL
+                    WHERE agreement_id = ? AND role = 'tenant'
+                    `,
+                    [lease.tenant_email, agreement_id]
+                );
+            } else {
+                await db.query(
+                    `
+                    INSERT INTO LeaseSignature (agreement_id, email, role, status)
+                    VALUES (?, ?, 'tenant', 'pending')
+                    `,
+                    [agreement_id, lease.tenant_email]
+                );
             }
         }
 
-        // Send email
-        await sendOtpEmail(email, otp, localExpiry, timezone);
+        /* --------------------------------------------------
+         * 6️⃣ Send OTP Email (RESEND + REACT TEMPLATE)
+         * -------------------------------------------------- */
+        await sendLeaseOtpEmail({
+            email,
+            otp,
+            expiryLocal,
+            timezone,
+            propertyName: lease.property_name,
+            unitName: lease.unit_name,
+            landlordName,
+            tenantName,
+        });
 
         return NextResponse.json({
             success: true,
             message: `OTP sent successfully to ${email}.`,
-            expiry_local: localExpiry,
+            expiry_local: expiryLocal,
             timezone,
         });
     } catch (error: any) {
         console.error("❌ sendOtp error:", error);
         return NextResponse.json(
-            { error: "Failed to send OTP. " + (error.message || "") },
+            { error: "Failed to send OTP." },
             { status: 500 }
         );
     }

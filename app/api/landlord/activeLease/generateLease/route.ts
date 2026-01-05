@@ -1,3 +1,5 @@
+// API used for system geenrated lease.
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import puppeteer from "puppeteer";
