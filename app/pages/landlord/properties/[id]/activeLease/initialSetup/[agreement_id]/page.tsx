@@ -15,8 +15,10 @@ import MoveInModal from "@/components/landlord/activeLease/MoveInModal";
 
 export default function LeaseSetupWizard() {
     const router = useRouter();
-    const { id, agreement_id } = useParams();
-    const property_id = id as string;
+    const params = useParams();
+
+    const property_id = params.id as string;
+    const agreement_id = params.agreement_id as string;
 
     const [requirements, setRequirements] = useState<any>(null);
     const [documentUploaded, setDocumentUploaded] = useState(false);
@@ -28,14 +30,12 @@ export default function LeaseSetupWizard() {
         advance_payment_amount: "",
         advance_payment_months: 1,
     });
-    const [paymentsSaved, setPaymentsSaved] = useState(false);
 
+    const [paymentsSaved, setPaymentsSaved] = useState(false);
     const [moveInModalOpen, setMoveInModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    /* --------------------------------------------------
-     * LOAD DATA
-     * -------------------------------------------------- */
+    /* ---------------- LOAD DATA ---------------- */
     useEffect(() => {
         const load = async () => {
             try {
@@ -79,14 +79,12 @@ export default function LeaseSetupWizard() {
     if (loading || !requirements) {
         return (
             <div className="min-h-screen flex items-center justify-center text-gray-500">
-                Loading lease setup...
+                Loading lease setup…
             </div>
         );
     }
 
-    /* --------------------------------------------------
-     * SAVE PAYMENTS
-     * -------------------------------------------------- */
+    /* ---------------- SAVE PAYMENTS ---------------- */
     const savePayments = async () => {
         try {
             await axios.post(`/api/landlord/activeLease/initialPayments`, {
@@ -99,15 +97,14 @@ export default function LeaseSetupWizard() {
         }
     };
 
-    /* --------------------------------------------------
-     * BUILD STEPS DYNAMICALLY
-     * -------------------------------------------------- */
+    /* ---------------- BUILD STEPS ---------------- */
     const steps: any[] = [];
 
     if (requirements.lease_agreement) {
         steps.push({
             key: "lease",
             title: "Lease Agreement",
+            icon: FileSignature,
             completed: documentUploaded,
             render: () =>
                 !documentUploaded && (
@@ -117,10 +114,22 @@ export default function LeaseSetupWizard() {
                                 `/pages/landlord/properties/${property_id}/activeLease/setup?agreement_id=${agreement_id}`
                             )
                         }
-                        className="primary-btn"
+                        className="
+    w-full mt-3 px-5 py-3
+    rounded-xl
+    bg-gradient-to-r from-blue-600 to-indigo-600
+    text-white font-semibold text-sm
+    shadow-md
+    hover:from-blue-700 hover:to-indigo-700
+    hover:shadow-lg
+    active:scale-[0.98]
+    transition-all duration-200
+    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+  "
                     >
-                        Start Lease Agreement
+                        Start Lease Setup
                     </button>
+
                 ),
         });
     }
@@ -129,6 +138,7 @@ export default function LeaseSetupWizard() {
         steps.push({
             key: "movein",
             title: "Move-In Date",
+            icon: ClipboardList,
             completed: !!moveInDate,
             render: () => (
                 <>
@@ -150,6 +160,7 @@ export default function LeaseSetupWizard() {
         steps.push({
             key: "payments",
             title: "Initial Payments",
+            icon: CreditCard,
             completed: paymentsSaved,
             render: () => (
                 <div className="space-y-4 mt-4">
@@ -195,7 +206,7 @@ export default function LeaseSetupWizard() {
 
                     <button
                         onClick={savePayments}
-                        className="w-full mt-3 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+                        className="w-full py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition"
                     >
                         Save Payments
                     </button>
@@ -204,9 +215,7 @@ export default function LeaseSetupWizard() {
         });
     }
 
-    /* --------------------------------------------------
-     * LOCK + COMPLETION LOGIC
-     * -------------------------------------------------- */
+    /* ---------------- LOCK FLOW ---------------- */
     let unlocked = true;
     const stepsWithState = steps.map((step) => {
         const locked = !unlocked;
@@ -216,20 +225,18 @@ export default function LeaseSetupWizard() {
 
     const allComplete = stepsWithState.every((s) => s.completed);
 
-    /* --------------------------------------------------
-     * RENDER
-     * -------------------------------------------------- */
+    /* ---------------- RENDER ---------------- */
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
-            <div className="w-full max-w-lg space-y-5">
-
+        <div className="min-h-screen bg-gray-50 flex justify-center px-4 py-12">
+            <div className="w-full max-w-xl space-y-6">
                 {/* HEADER */}
-                <div className="text-center mb-8">
+                <div className="text-center">
                     <h1 className="text-3xl font-bold text-gray-900">
-                        Lease Setup
+                        Lease Setup Wizard
                     </h1>
                     <p className="text-xs text-gray-500 mt-1">
-                        Agreement ID: {agreement_id}
+                        Agreement ID:{" "}
+                        <span className="font-mono">{agreement_id}</span>
                     </p>
                 </div>
 
@@ -239,6 +246,7 @@ export default function LeaseSetupWizard() {
                         key={step.key}
                         index={index + 1}
                         title={step.title}
+                        icon={step.icon}
                         completed={step.completed}
                         locked={step.locked}
                         onClick={!step.locked ? step.onClick : undefined}
@@ -249,9 +257,9 @@ export default function LeaseSetupWizard() {
 
                 {/* COMPLETE */}
                 {allComplete && (
-                    <div className="bg-green-50 p-5 rounded-2xl border border-green-400 text-center">
-                        <CheckCircle className="w-10 h-10 text-green-600 mx-auto mb-3" />
-                        <h2 className="font-semibold text-green-700 text-lg">
+                    <div className="bg-green-50 border border-green-300 rounded-2xl p-6 text-center">
+                        <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                        <h2 className="text-lg font-semibold text-green-800">
                             Lease Setup Complete
                         </h2>
 
@@ -261,7 +269,7 @@ export default function LeaseSetupWizard() {
                                     `/pages/landlord/properties/${property_id}/activeLease`
                                 )
                             }
-                            className="w-full mt-4 py-2.5 rounded-xl bg-green-600 text-white"
+                            className="w-full mt-5 py-2.5 rounded-xl bg-green-600 text-white hover:bg-green-700 transition"
                         >
                             Back to Active Leases
                         </button>
@@ -272,13 +280,12 @@ export default function LeaseSetupWizard() {
     );
 }
 
-/* --------------------------------------------------
- * COMPONENTS
- * -------------------------------------------------- */
+/* ---------------- COMPONENTS ---------------- */
 
 function StepCard({
                       index,
                       title,
+                      icon: Icon,
                       completed,
                       locked,
                       children,
@@ -287,28 +294,32 @@ function StepCard({
     return (
         <div
             onClick={onClick}
-            className={`bg-white p-5 rounded-2xl border shadow-sm transition ${
+            className={`relative bg-white rounded-2xl border p-5 transition
+        ${
                 completed
-                    ? "border-green-400"
+                    ? "border-green-400 bg-green-50"
                     : locked
                         ? "opacity-60"
-                        : "hover:shadow-md border-gray-200"
+                        : "hover:shadow-md border-gray-200 cursor-pointer"
             }`}
         >
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                    {completed ? (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                    ) : locked ? (
-                        <Lock className="w-5 h-5 text-gray-400" />
-                    ) : (
-                        <span className="font-bold">{index}</span>
-                    )}
+            <div className="flex items-center gap-3 mb-3">
+                <div
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center
+            ${
+                        completed
+                            ? "bg-green-600 text-white"
+                            : locked
+                                ? "bg-gray-300 text-gray-600"
+                                : "bg-blue-600 text-white"
+                    }`}
+                >
+                    {completed ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-4 h-4" />}
                 </div>
 
-                <div className="flex-1">
-                    <h2 className="font-semibold text-gray-900">{title}</h2>
-                </div>
+                <h2 className="font-semibold text-gray-900">{title}</h2>
+
+                {locked && <Lock className="ml-auto w-4 h-4 text-gray-400" />}
             </div>
 
             {children}

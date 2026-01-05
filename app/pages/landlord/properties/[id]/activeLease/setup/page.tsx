@@ -115,7 +115,7 @@ export default function SetupLeasePage() {
 
     const start_date = formData.get("start_date");
     const end_date = formData.get("end_date");
-    if (!start_date || !end_date) {
+    if (!start_date) {
       Swal.fire(
         "Incomplete",
         "Please provide lease start and end dates.",
@@ -322,7 +322,6 @@ export default function SetupLeasePage() {
               <input
                 type="date"
                 name="end_date"
-                required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
@@ -357,7 +356,6 @@ export default function SetupLeasePage() {
                 min="0"
                 step="0.01"
                 defaultValue={leaseDetails?.security_deposit || ""}
-                required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
@@ -372,7 +370,7 @@ export default function SetupLeasePage() {
                 min="0"
                 step="0.01"
                 defaultValue={leaseDetails?.advance_payment || ""}
-                required
+
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>

@@ -195,12 +195,13 @@ export default function PropertyLeasesPage() {
                         onClose={() => setSetupModalLease(null)}
                         onContinue={() => {
                             router.push(
-                                `/pages/landlord/properties/${id}/activeLease/initialSetup/${setupModalLease.agreement_id}`
+                                `/pages/landlord/properties/${id}/activeLease/initialSetup/${setupModalLease?.lease_id}`
                             );
                             setSetupModalLease(null);
                         }}
                     />
                 )}
+
             </div>
         </div>
     );

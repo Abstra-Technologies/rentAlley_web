@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 export async function GET(req: NextRequest) {
     const agreement_id = req.nextUrl.searchParams.get("agreement_id");
 
+    console.log('save lease requirement: ')
+
     if (!agreement_id) {
         return NextResponse.json(
             { error: "Missing agreement_id" },
