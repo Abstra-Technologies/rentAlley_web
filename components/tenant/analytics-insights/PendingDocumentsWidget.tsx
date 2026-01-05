@@ -71,15 +71,15 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
        🔑 CANONICAL STATE (SOURCE OF TRUTH)
     ===================================================== */
 
-    const signature = lease.tenant_signature ?? null; // null if no record
+    const signature = lease.tenant_signature ?? null;
 
     const hasSignatureRecord = Boolean(signature);
     const isSigned = signature?.status === "signed";
     const needsSignature = hasSignatureRecord && !isSigned;
 
-    const showAuthenticateUI = needsSignature;                 // Rule 1
-    const showLeaseInfo = !hasSignatureRecord || isSigned;     // Rule 2 & 3
-    const showDocumentButton = isSigned && Boolean(lease.agreement_url); // Rule 3
+    const showAuthenticateUI = needsSignature;
+    const showLeaseInfo = !hasSignatureRecord || isSigned;
+    const showDocumentButton = Boolean(lease.agreement_url); // ✅ ALWAYS if doc exists
 
     /* ================= OTP ACTIONS ================= */
     const sendOtp = async () => {
@@ -141,7 +141,7 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                     </span>
                 </div>
 
-                {/* ================= RULE 1 ================= */}
+                {/* ===== SIGNATURE REQUIRED ===== */}
                 {showAuthenticateUI && (
                     <>
                         <button
@@ -159,14 +159,14 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                     Signature Pending
                                 </p>
                                 <p className="text-xs text-amber-700">
-                                    Awaiting {signature?.role}'s signature
+                                    Awaiting tenant signature
                                 </p>
                             </div>
                         </div>
                     </>
                 )}
 
-                {/* ================= RULE 2 & 3 ================= */}
+                {/* ===== LEASE INFO ===== */}
                 {showLeaseInfo && (
                     <div className="space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                         <LeaseRow
@@ -188,14 +188,14 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                     </div>
                 )}
 
-                {/* ================= RULE 3 ================= */}
+                {/* ===== DOCUMENT ACCESS (ALWAYS IF EXISTS) ===== */}
                 {showDocumentButton && (
                     <button
                         onClick={() => setOpenModal(true)}
                         className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm font-semibold text-blue-600 w-full"
                     >
                         <DocumentTextIcon className="w-4 h-4" />
-                        View Signed Lease
+                        {isSigned ? "View Signed Lease" : "View Lease Document"}
                     </button>
                 )}
             </div>
