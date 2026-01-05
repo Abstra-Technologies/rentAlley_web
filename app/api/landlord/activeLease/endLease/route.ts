@@ -1,15 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import webpush from "web-push";
-
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
-
-webpush.setVapidDetails(
-    "mailto:support@upkyp.com",
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-);
+import { sendUserNotification } from "@/lib/notifications/sendUserNotification";
 
 /**
  * End Lease (ONLY after lease naturally ends)
@@ -18,6 +9,7 @@ webpush.setVapidDetails(
  */
 export async function POST(req: NextRequest) {
     let connection;
+
     try {
         const { agreement_id } = await req.json();
 
@@ -60,7 +52,7 @@ export async function POST(req: NextRequest) {
         }
 
         /* ===============================
-           ⛔ STRICT END-DATE CHECK
+           ⛔ STRICT END DATE CHECK
         ================================ */
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -90,7 +82,7 @@ export async function POST(req: NextRequest) {
         ================================ */
         await connection.beginTransaction();
 
-        // 1️⃣ Mark lease as COMPLETED (natural end)
+        // 1️⃣ Mark lease as COMPLETED
         await connection.query(
             `
             UPDATE LeaseAgreement
@@ -113,65 +105,19 @@ export async function POST(req: NextRequest) {
         );
 
         /* ===============================
-           🔔 NOTIFICATION
+           🔔 NOTIFICATION (DB + WEB PUSH)
         ================================ */
         const title = "📄 Lease Completed";
-        const bodyHtml = `
-            Your lease for <b>${lease.property_name}</b> – <b>${lease.unit_name}</b>
-            has officially ended and is now marked as completed.
-        `;
-        const redirectUrl = "/pages/tenant/leases";
+        const body = `Your lease for ${lease.property_name} – ${lease.unit_name} has officially ended and is now completed.`;
+        const redirectUrl = "/pages/tenant/my-unit";
 
-        await connection.query(
-            `
-            INSERT INTO Notification (user_id, title, body, url, is_read, created_at)
-            VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)
-            `,
-            [lease.tenant_user_id, title, bodyHtml, redirectUrl]
-        );
-
-        /* ===============================
-           WEB PUSH
-        ================================ */
-        const [subs]: any = await connection.query(
-            `
-            SELECT endpoint, p256dh, auth
-            FROM user_push_subscriptions
-            WHERE user_id = ?
-            `,
-            [lease.tenant_user_id]
-        );
-
-        if (subs.length > 0) {
-            const payload = JSON.stringify({
-                title,
-                body: bodyHtml.replace(/<[^>]*>/g, ""),
-                url: redirectUrl,
-                icon: `${process.env.NEXT_PUBLIC_BASE_URL}/icons/notification-icon.png`,
-            });
-
-            for (const sub of subs) {
-                try {
-                    await webpush.sendNotification(
-                        {
-                            endpoint: sub.endpoint,
-                            keys: {
-                                p256dh: sub.p256dh,
-                                auth: sub.auth,
-                            },
-                        },
-                        payload
-                    );
-                } catch (err: any) {
-                    if (err.statusCode === 410 || err.statusCode === 404) {
-                        await connection.query(
-                            `DELETE FROM user_push_subscriptions WHERE endpoint = ?`,
-                            [sub.endpoint]
-                        );
-                    }
-                }
-            }
-        }
+        await sendUserNotification({
+            userId: lease.tenant_user_id,
+            title,
+            body,
+            url: redirectUrl,
+            conn: connection,
+        });
 
         await connection.commit();
 
@@ -179,9 +125,11 @@ export async function POST(req: NextRequest) {
             success: true,
             message: "Lease completed successfully",
         });
-    } catch (error: any) {
+    } catch (error) {
         if (connection) await connection.rollback();
+
         console.error("END LEASE ERROR:", error);
+
         return NextResponse.json(
             { message: "Failed to complete lease" },
             { status: 500 }

@@ -11,6 +11,7 @@ import ChecklistSetupModal from "@/components/landlord/activeLease/ChecklistModa
 
 import LeaseTable from "@/components/landlord/activeLease/LeaseTable";
 import LeaseStack from "@/components/landlord/activeLease/LeaseStack";
+import Swal from "sweetalert2";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -91,14 +92,50 @@ export default function PropertyLeasesPage() {
     };
 
     const handleEndLease = async (lease: any) => {
-        if (!confirm("Are you sure you want to permanently end this lease?")) return;
-
-        await axios.post("/api/landlord/activeLease/endLease", {
-            agreement_id: lease.lease_id,
+        const result = await Swal.fire({
+            title: "End Lease?",
+            text: "This will permanently mark the lease as completed. This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, end lease",
+            cancelButtonText: "Cancel",
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#6b7280",
+            reverseButtons: true,
         });
 
-        window.location.reload();
+        if (!result.isConfirmed) return;
+
+        try {
+            Swal.fire({
+                title: "Ending lease...",
+                text: "Please wait while the lease is being completed.",
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading(),
+            });
+
+            await axios.post("/api/landlord/activeLease/endLease", {
+                agreement_id: lease.lease_id,
+            });
+
+            Swal.fire({
+                icon: "success",
+                title: "Lease Completed",
+                text: "The lease has been successfully ended.",
+            }).then(() => {
+                window.location.reload();
+            });
+        } catch (err: any) {
+            Swal.fire({
+                icon: "error",
+                title: "Failed to End Lease",
+                text:
+                    err?.response?.data?.message ||
+                    "Something went wrong. Please try again.",
+            });
+        }
     };
+
 
     const handleAuthenticateLease = (lease: any) => {
         router.push(
