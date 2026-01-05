@@ -33,6 +33,7 @@ import {
   HandCoins,
   ChevronRight,
   Wallet,
+    NotebookText
 } from "lucide-react";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
@@ -67,6 +68,12 @@ export default function PropertyLayout({
       href: `/pages/landlord/properties/${id}/editPropertyDetails?${id}`,
       icon: CopyMinus,
     },
+      {
+          id: "policy",
+          label: "House Policy",
+          href: `/pages/landlord/properties/${id}/house-policy?${id}`,
+          icon: NotebookText ,
+      },
     {
       id: "units",
       label: "Units",
