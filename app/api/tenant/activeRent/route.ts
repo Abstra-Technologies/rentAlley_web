@@ -178,7 +178,6 @@ const getTenantActiveLeases = unstable_cache(
 
         return results;
     },
-    // 🔑 CACHE KEY
     (tenantId: string) => [`tenant-active-leases`, tenantId],
     {
         revalidate: 60, // seconds

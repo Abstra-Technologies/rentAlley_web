@@ -204,6 +204,7 @@ function SecSuccess() {
                             </p>
                             <p>
                                 <strong>Billing ID:</strong> <span>{billing_id}</span>
+
                             </p>
                             <p>
                                 <strong>Date:</strong>{" "}
@@ -240,15 +241,14 @@ function SecSuccess() {
                     <button
                         onClick={() =>
                             router.replace(
-                                agreement_id
-                                    ? `/pages/tenant/billing?agreement_id=${agreement_id}`
-                                    : "/pages/tenant/dashboard"
+                                `/pages/tenant/rentalPortal/${agreement_id}/billing?agreement_id=${agreement_id}`
                             )
                         }
                         className="px-6 py-2.5 text-sm font-medium rounded-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow hover:from-blue-700 hover:to-emerald-700"
                     >
-                        Go to Dashboard
+                        Go Back
                     </button>
+
                 </div>
             </div>
         </div>

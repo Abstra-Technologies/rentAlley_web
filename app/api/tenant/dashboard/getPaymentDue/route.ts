@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
             FROM Billing
             WHERE lease_id = ?
               AND status IN ('unpaid', 'overdue')
-              AND due_date <= CURRENT_DATE()
+#               AND due_date <= CURRENT_DATE()
               AND total_amount_due > 0
             ORDER BY due_date ASC
             LIMIT 1

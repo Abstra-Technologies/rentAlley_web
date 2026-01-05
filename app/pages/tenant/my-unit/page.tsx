@@ -55,7 +55,7 @@ const sortActiveFirst = (a: Unit, b: Unit) => {
 };
 
 /* =====================================================
-   FETCH HOOK
+   FETCH UNIT DATA
 ===================================================== */
 const useUnits = (tenantId?: string) => {
     const [units, setUnits] = useState<Unit[]>([]);

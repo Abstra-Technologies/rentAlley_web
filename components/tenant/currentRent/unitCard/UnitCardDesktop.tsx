@@ -29,8 +29,8 @@ export default function UnitCardDesktop({
     return (
         <article className="bg-white rounded-xl border shadow-sm hover:shadow-md transition-all overflow-hidden">
             {/* IMAGE */}
-            <div className="relative h-48 overflow-hidden bg-gray-100">
 
+            <div className="relative h-48 overflow-hidden bg-gray-100">
                 <Image
                     src={
                         unit.unit_photos?.[0] ||
@@ -65,7 +65,8 @@ export default function UnitCardDesktop({
                     <p className="text-sm font-medium text-gray-700">
                         {unit.property_name}
                     </p>
-                    <p className='text-sm'>Agrrement id: {unit?.agreement_id}</p>
+
+                    <p className='text-sm text-gray-60'>Agrrement id: {unit?.agreement_id}</p>
                 </div>
 
                 <div className="flex items-center gap-3 text-xs text-gray-600">

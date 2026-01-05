@@ -116,7 +116,7 @@ export default function PaymentDueWidget({
 
                 <div className="flex-1">
                     <p className="text-sm font-bold text-red-900">
-                        Payment Overdue
+                        Pending Payments
                     </p>
                     <p className="text-xs text-red-700 mt-0.5">
                         Billing ID:{" "}
