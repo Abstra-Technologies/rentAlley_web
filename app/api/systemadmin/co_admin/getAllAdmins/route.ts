@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
     try {
         console.log("Fetching all admins except the logged-in user...");
 
+        /* ================= AUTH ================= */
         const cookieHeader = req.headers.get("cookie");
         const cookies = cookieHeader ? parse(cookieHeader) : null;
 
@@ -33,8 +34,18 @@ export async function GET(req: NextRequest) {
         const currentAdminId = payload.admin_id;
         const encryptionKey = process.env.ENCRYPTION_SECRET!;
 
+        /* ================= QUERY ================= */
         const [rows]: any = await db.query(
-            "SELECT admin_id, username, email, status FROM Admin WHERE admin_id != ?",
+            `
+            SELECT 
+                admin_id,
+                username,
+                email,
+                status,
+                permissions
+            FROM Admin
+            WHERE admin_id != ?
+            `,
             [currentAdminId]
         );
 
@@ -42,9 +53,9 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ admins: [] }, { status: 200 });
         }
 
+        /* ================= HELPERS ================= */
         const safeDecryptEmail = (value: any) => {
             if (!value) return null;
-
             try {
                 if (typeof value === "string" && value.trim().startsWith("{")) {
                     return decryptData(JSON.parse(value), encryptionKey);
@@ -55,11 +66,21 @@ export async function GET(req: NextRequest) {
             }
         };
 
+        const parsePermissions = (value: string | null): string[] => {
+            if (!value) return [];
+            return value
+                .split(",")
+                .map((p) => p.trim())
+                .filter(Boolean);
+        };
+
+        /* ================= RESPONSE ================= */
         const admins = rows.map((admin: any) => ({
             admin_id: admin.admin_id,
             username: admin.username,
             email: safeDecryptEmail(admin.email),
             status: admin.status,
+            permissions: parsePermissions(admin.permissions),
         }));
 
         return NextResponse.json({ admins }, { status: 200 });

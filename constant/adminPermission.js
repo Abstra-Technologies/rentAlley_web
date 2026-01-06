@@ -6,5 +6,6 @@ export const availablePermissions = [
     { id: "view_log", label: "View Activity Logs" },
     { id: "tenant_landlord_management", label: "Tenant landlord management" },
     { id: "deactivated_accounts", label: "Tenant landlord management" },
+    { id: "beta", label: "Beta Users Management" },
 
 ];

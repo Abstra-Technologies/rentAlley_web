@@ -97,7 +97,6 @@ export default function ProfilePageAdmin() {
     return (
         <div className="flex min-h-screen bg-gray-50">
             <div className="w-64 bg-white border-r border-gray-200 py-4 px-6">
-                <h2 className="text-2xl font-semibold text-blue-600 mb-6">Menu</h2>
                 <nav>
                     <ul>
                         <li className="py-2 hover:bg-gray-100 rounded-md transition-colors duration-200">

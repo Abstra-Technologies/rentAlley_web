@@ -33,6 +33,7 @@ const permissionMapping: Record<string, string> = {
     "/pages/system_admin/announcement": "manage_announcements",
     "/pages/system_admin/bug_report": "view_reports",
     "/pages/system_admin/activityLog": "view_log",
+    "/pages/system_admin/beta_programs": "beta",
     "/pages/system_admin/tenant_landlord": "tenant_landlord_management",
 };
 

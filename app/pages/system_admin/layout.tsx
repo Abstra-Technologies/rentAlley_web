@@ -38,8 +38,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 { label: "Landlord Management", href: "/pages/system_admin/tenant_landlord/landlord_mgt", icon: Users },
                 { label: "Suspended Accounts", href: "/pages/system_admin/tenant_landlord/suspendedAccounts", icon: Users },
                 { label: "Deactivated Accounts", href: "/pages/system_admin/deactivatedAccounts", icon: Users },
-                { label: "Support", href: "/pages/system_admin/supportIssues", icon: ScrollText },
                 { label: "Beta Program", href: "/pages/system_admin/beta_programs", icon: Users },
+
+            ],
+        },
+        {
+            title: "Beta Programs",
+            items: [
+                { label: "Beta Users List", href: "/pages/system_admin/beta_programs", icon: Users },
 
             ],
         },
