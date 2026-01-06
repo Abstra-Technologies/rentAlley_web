@@ -55,9 +55,8 @@ async function sendOtpEmail(
     expiry: Date,
     timezone: string
 ) {
-    const title = "Verify your Upkyp account";
+    const title = "[Upkyp Registration]: Verify your Upkyp account";
 
-    // ✅ FIX: Date → string (React-safe)
     const formattedExpiry = expiry.toLocaleString("en-US", {
         dateStyle: "medium",
         timeStyle: "short",

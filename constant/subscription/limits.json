@@ -89,7 +89,7 @@
       "maxUnits": null,
       "maxMaintenanceRequest": null,
       "maxBilling": null,
-      "maxProspect": 50,
+      "maxProspect": null,
       "maxStorage": 2,
       "maxAssetsPerProperty": 10,
       "financialHistoryYears": 1

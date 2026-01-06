@@ -41,7 +41,8 @@ export function EmailTemplate({
 
                 {otp && (
                     <>
-                        <p>Please use the verification code below:</p>
+                        <p>
+                            Use the verification code below to confirm your account registration.                        </p>
 
                         <div
                             style={{
