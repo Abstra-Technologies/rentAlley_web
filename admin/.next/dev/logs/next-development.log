@@ -7,3 +7,4 @@
 [00:00:15.813] Server  LOG       	- jsx was set to react-jsx (next.js uses the React automatic runtime)
 [00:00:15.814] Server  LOG     
 [00:00:16.732] Server  LOG     ✓ Ready in 15.6s
+[00:03:33.319] Server  LOG     ○ Compiling /login ...
