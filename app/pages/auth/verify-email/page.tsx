@@ -132,6 +132,11 @@ export default function VerifyOTP() {
                     Enter the 6-digit code sent to your email
                 </p>
 
+                <p className="text-center text-sm font-semibold text-gray-700 mb-6">
+                    Didn’t receive it? Please check your <span className="text-blue-600">Spam</span> or{" "}
+                    <span className="text-blue-600">Promotions</span> folder.
+                </p>
+
                 <input
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
