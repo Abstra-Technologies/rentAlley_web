@@ -7,6 +7,7 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx}",
     "./node_modules/flowbite-react/**/*.js",
     "./node_modules/flowbite/**/*.js",
+      "./admin/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
