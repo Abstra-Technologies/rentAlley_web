@@ -206,6 +206,26 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                 }}
             />
 
+            <Script
+                src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+                strategy="afterInteractive"
+            />
+
+            <Script id="onesignal-init" strategy="afterInteractive">
+                {`
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.init({
+                appId: "c769cbc6-d65e-4ad4-b981-04f58acc2cf7",
+                safari_web_id: "web.onesignal.auto.10e68f2c-7ec7-4c79-8552-0b1b9ea0a897",
+                notifyButton: {
+                  enable: true,
+                },
+              });
+            });
+          `}
+            </Script>
+
 
             {/*<Script src='https://cdn.jotfor.ms/agent/embedjs/019b0280f4fb7d588c91faf90b838470de4b/embed.js'>*/}
             {/*</Script>*/}
