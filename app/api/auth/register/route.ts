@@ -63,7 +63,7 @@ async function sendOtpEmail(
     });
 
     await resend.emails.send({
-        from: "Upkyp Registration <noreply@upkyp.com>",
+        from: "Upkyp Registration <hello@upkyp.com>",
         to: [email],
         subject: title,
 
