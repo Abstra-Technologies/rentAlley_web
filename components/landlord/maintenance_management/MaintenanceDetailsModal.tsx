@@ -1,296 +1,535 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import {
-    Calendar,
-    CheckCircle,
-    Clock,
-    Home,
-    Tag,
-    User,
-    Wrench,
-    Package,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Home,
+  Tag,
+  User,
+  Wrench,
+  Package,
+  X,
+  ChevronRight,
+  AlertCircle,
+  CalendarClock,
+  MapPin,
+  Mail,
+  ExternalLink,
+  Play,
+  RotateCcw,
 } from "lucide-react";
 
-import { getStatusConfig, getPriorityConfig } from "@/components/landlord/maintenance_management/getStatusConfig";
+import {
+  getStatusConfig,
+  getPriorityConfig,
+} from "@/components/landlord/maintenance_management/getStatusConfig";
 
+// ============================================
+// ANIMATION VARIANTS
+// ============================================
+const backdropVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const modalVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring", stiffness: 300, damping: 30 },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: { duration: 0.2 },
+  },
+};
+
+const desktopModalVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring", stiffness: 300, damping: 25 },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: { duration: 0.2 },
+  },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
+
+// ============================================
+// MAIN MODAL COMPONENT
+// ============================================
 export default function MaintenanceDetailsModal({
-                                                    selectedRequest,
-                                                    onClose,
-                                                    onStart,
-                                                    onComplete,
-                                                    onReschedule,
-                                                    updateStatus,
-                                                    isLocked,
-                                                }) {
-    const status = getStatusConfig(selectedRequest.status);
-    const priority = getPriorityConfig(selectedRequest.priority_level);
-    const StatusIcon = status.icon;
+  selectedRequest,
+  onClose,
+  onStart,
+  onComplete,
+  onReschedule,
+  updateStatus,
+  isLocked,
+}: {
+  selectedRequest: any;
+  onClose: () => void;
+  onStart: () => void;
+  onComplete: () => void;
+  onReschedule: () => void;
+  updateStatus: (id: number, status: string) => void;
+  isLocked?: boolean;
+}) {
+  const status = getStatusConfig(selectedRequest.status);
+  const priority = getPriorityConfig(selectedRequest.priority_level);
+  const StatusIcon = status.icon;
 
-    const formatDateTime = (dt) =>
-        new Date(dt).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-        });
+  const formatDateTime = (dt: string) =>
+    new Date(dt).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
 
-    return (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3">
-            <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl max-h-[92vh] overflow-y-auto">
+  const formatDate = (dt: string) =>
+    new Date(dt).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
 
-                {/* HEADER */}
-                <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-emerald-50 flex justify-between items-center">
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                            <Wrench className="w-5 h-5 text-blue-700" />
-                            Work Order Details
-                        </h2>
-                        <p className="text-xs text-gray-600">
-                            ID: #{selectedRequest.request_id}
-                        </p>
-                    </div>
+  return (
+    <AnimatePresence>
+      <motion.div
+        variants={backdropVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={onClose}
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      >
+        <motion.div
+          variants={modalVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        >
+          {/* Header */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-emerald-500 flex-shrink-0">
+            {/* Decorative Circles */}
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full" />
+            <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full" />
 
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 hover:bg-gray-200 rounded-lg"
-                    >
-                        <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                {/* STATUS BAR */}
-                <div className="p-4 border-b flex flex-wrap gap-2 items-center text-xs">
-                    {/* STATUS BADGE */}
-                    <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold 
-                        ${status.bg} ${status.text} border ${status.border}`}
-                    >
-                        <StatusIcon className="w-3.5 h-3.5" />
-                        {status.label}
+            <div className="relative p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs text-white/70 font-medium">
+                      #{selectedRequest.request_id}
                     </span>
-
-                    {/* PRIORITY BADGE */}
-                    <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold 
-                        ${priority.bg} ${priority.text} border ${priority.border}`}
-                    >
-                        ⚡ {priority.label}
+                    <span className="w-1 h-1 bg-white/50 rounded-full" />
+                    <span className="text-xs text-white/70">
+                      {formatDate(selectedRequest.created_at)}
                     </span>
+                  </div>
+                  <h2 className="text-xl font-bold text-white mb-3 leading-tight">
+                    {selectedRequest.subject}
+                  </h2>
+
+                  {/* Status & Priority Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/20 backdrop-blur-sm text-white">
+                      <StatusIcon className="w-3.5 h-3.5" />
+                      {status.label}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/20 backdrop-blur-sm text-white">
+                      {selectedRequest.priority_level?.toLowerCase() ===
+                        "urgent" && (
+                        <motion.span
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ repeat: Infinity, duration: 1 }}
+                          className="w-2 h-2 bg-red-400 rounded-full"
+                        />
+                      )}
+                      ⚡ {priority.label}
+                    </span>
+                  </div>
                 </div>
 
-                {/* MAIN CONTENT */}
-                <div className="p-4 space-y-4">
-
-                    {/* ISSUE SECTION */}
-                    <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                            Issue: {selectedRequest.subject}
-                        </h3>
-
-                        <p className="text-gray-700 text-sm">
-                            Description: {selectedRequest.description}
-                        </p>
-
-                        {/* TIMELINE */}
-                        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-
-                            <TimelineItem
-                                icon={<Calendar className="w-4 h-4 text-blue-600" />}
-                                label="Submitted"
-                                value={formatDateTime(selectedRequest.created_at)}
-                            />
-
-                            <TimelineItem
-                                icon={<Tag className="w-4 h-4 text-emerald-600" />}
-                                label="Category"
-                                value={selectedRequest.category}
-                            />
-
-                            {selectedRequest.schedule_date && (
-                                <TimelineItem
-                                    icon={<Clock className="w-4 h-4 text-purple-600" />}
-                                    label="Scheduled"
-                                    value={formatDateTime(selectedRequest.schedule_date)}
-                                />
-                            )}
-
-                            {selectedRequest.completion_date && (
-                                <TimelineItem
-                                    icon={<CheckCircle className="w-4 h-4 text-green-600" />}
-                                    label="Completed"
-                                    value={formatDateTime(selectedRequest.completion_date)}
-                                />
-                            )}
-                        </div>
-                    </div>
-
-                    {/* PHOTOS */}
-                    {selectedRequest.photo_urls?.length > 0 && (
-                        <div className="bg-white border rounded-lg p-4 shadow-sm">
-                            <h3 className="font-semibold text-gray-900 mb-2">Photos</h3>
-
-                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                {selectedRequest.photo_urls.map((photo, i) => (
-                                    <img
-                                        key={i}
-                                        src={photo}
-                                        onClick={() => window.open(photo, "_blank")}
-                                        className="w-full h-24 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition"
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* PROPERTY / TENANT / ASSET */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                        <CompactCard
-                            title="Property"
-                            icon={<Home className="w-4 h-4 text-blue-600" />}
-                            lines={[
-                                selectedRequest.property_name,
-                                selectedRequest.unit_name
-                                    ? `Unit: ${selectedRequest.unit_name}`
-                                    : "No Unit Assigned",
-                            ]}
-                        />
-
-                        <CompactCard
-                            title="Tenant"
-                            icon={<User className="w-4 h-4 text-blue-600" />}
-                            lines={
-                                selectedRequest.tenant_first_name
-                                    ? [
-                                        `${selectedRequest.tenant_first_name} ${selectedRequest.tenant_last_name}`,
-                                        selectedRequest.tenant_email,
-                                    ]
-                                    : ["No tenant linked"]
-                            }
-                        />
-
-                        <CompactCard
-                            title="Asset"
-                            icon={<Package className="w-4 h-4 text-emerald-600" />}
-                            lines={
-                                selectedRequest.asset
-                                    ? [
-                                        selectedRequest.asset.asset_name,
-                                        selectedRequest.asset.model &&
-                                        `Model: ${selectedRequest.asset.model}`,
-                                    ]
-                                    : ["No asset linked"]
-                            }
-                        />
-                    </div>
-
-                    {/* ACTION BUTTONS */}
-                    <div className="bg-white border rounded-lg p-4 shadow-sm">
-                        <h3 className="font-semibold text-gray-900 mb-3">Actions</h3>
-
-                        <div className="flex flex-col sm:flex-row gap-3">
-
-                            {/* PENDING */}
-                            {selectedRequest.status === "pending" && (
-                                <>
-                                    <button
-                                        onClick={() =>
-                                            updateStatus(selectedRequest.request_id, "approved")
-                                        }
-                                        className="btn-primary-green"
-                                    >
-                                        Approve
-                                    </button>
-
-                                    <button
-                                        onClick={() =>
-                                            updateStatus(selectedRequest.request_id, "rejected")
-                                        }
-                                        className="btn-primary-red"
-                                    >
-                                        Reject
-                                    </button>
-                                </>
-                            )}
-
-                            {/* APPROVED */}
-                            {selectedRequest.status === "approved" && (
-                                <button onClick={onStart} className="btn-primary-blue">
-                                    Assign & Schedule
-                                </button>
-                            )}
-
-                            {/* SCHEDULED */}
-                            {selectedRequest.status === "scheduled" && (
-                                <>
-                                    <button onClick={onStart} className="btn-primary-blue">
-                                        Start Work
-                                    </button>
-
-                                    <button onClick={onReschedule} className="btn-primary-amber">
-                                        Reschedule
-                                    </button>
-                                </>
-                            )}
-
-                            {/* IN PROGRESS */}
-                            {selectedRequest.status === "in-progress" && (
-                                <button onClick={onComplete} className="btn-primary-purple">
-                                    Mark Complete
-                                </button>
-                            )}
-
-                            {/* DONE */}
-                            {(selectedRequest.status === "completed" ||
-                                selectedRequest.status === "rejected") && (
-                                <button onClick={onClose} className="btn-gray">
-                                    Close
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
+                {/* Close Button */}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </motion.button>
+              </div>
             </div>
-        </div>
-    );
+          </div>
+
+          {/* Scrollable Content */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="flex-1 overflow-y-auto p-5 space-y-4"
+          >
+            {/* Description */}
+            <motion.div
+              variants={fadeInUp}
+              className="bg-gray-50 rounded-xl p-4"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Wrench className="w-4 h-4 text-blue-600" />
+                <h3 className="font-semibold text-gray-900 text-sm">
+                  Description
+                </h3>
+              </div>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                {selectedRequest.description || "No description provided."}
+              </p>
+            </motion.div>
+
+            {/* Timeline Cards */}
+            <motion.div variants={fadeInUp} className="grid grid-cols-2 gap-3">
+              <TimelineCard
+                icon={<Calendar className="w-4 h-4 text-blue-600" />}
+                label="Submitted"
+                value={formatDateTime(selectedRequest.created_at)}
+              />
+              <TimelineCard
+                icon={<Tag className="w-4 h-4 text-emerald-600" />}
+                label="Category"
+                value={selectedRequest.category}
+              />
+              {selectedRequest.schedule_date && (
+                <TimelineCard
+                  icon={<CalendarClock className="w-4 h-4 text-purple-600" />}
+                  label="Scheduled"
+                  value={formatDateTime(selectedRequest.schedule_date)}
+                />
+              )}
+              {selectedRequest.completion_date && (
+                <TimelineCard
+                  icon={<CheckCircle className="w-4 h-4 text-green-600" />}
+                  label="Completed"
+                  value={formatDateTime(selectedRequest.completion_date)}
+                />
+              )}
+            </motion.div>
+
+            {/* Photos */}
+            {selectedRequest.photo_urls?.length > 0 && (
+              <motion.div variants={fadeInUp}>
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">
+                    Photos
+                  </h3>
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-md text-xs text-gray-500">
+                    {selectedRequest.photo_urls.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {selectedRequest.photo_urls.map(
+                    (photo: string, i: number) => (
+                      <motion.div
+                        key={i}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => window.open(photo, "_blank")}
+                        className="relative group cursor-pointer"
+                      >
+                        <img
+                          src={photo}
+                          alt={`Photo ${i + 1}`}
+                          className="w-full h-20 object-cover rounded-xl border border-gray-200"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-xl transition-all flex items-center justify-center">
+                          <ExternalLink className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </motion.div>
+                    )
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Info Cards */}
+            <motion.div
+              variants={fadeInUp}
+              className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+            >
+              {/* Property */}
+              <InfoCard
+                icon={<Home className="w-4 h-4 text-blue-600" />}
+                title="Property"
+                lines={[
+                  selectedRequest.property_name || "Not specified",
+                  selectedRequest.unit_name
+                    ? `Unit: ${selectedRequest.unit_name}`
+                    : null,
+                ]}
+              />
+
+              {/* Tenant */}
+              <InfoCard
+                icon={<User className="w-4 h-4 text-purple-600" />}
+                title="Tenant"
+                lines={
+                  selectedRequest.tenant_first_name
+                    ? [
+                        `${selectedRequest.tenant_first_name} ${selectedRequest.tenant_last_name}`,
+                        selectedRequest.tenant_email,
+                      ]
+                    : ["No tenant linked"]
+                }
+              />
+
+              {/* Asset */}
+              <InfoCard
+                icon={<Package className="w-4 h-4 text-emerald-600" />}
+                title="Asset"
+                lines={
+                  selectedRequest.asset
+                    ? [
+                        selectedRequest.asset.asset_name,
+                        selectedRequest.asset.model
+                          ? `Model: ${selectedRequest.asset.model}`
+                          : null,
+                      ]
+                    : ["No asset linked"]
+                }
+              />
+            </motion.div>
+
+            {/* Assigned To */}
+            {selectedRequest.assigned_to && (
+              <motion.div
+                variants={fadeInUp}
+                className="bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                    <span className="text-white font-semibold">
+                      {selectedRequest.assigned_to.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Assigned To</p>
+                    <p className="font-semibold text-gray-900">
+                      {selectedRequest.assigned_to}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+
+          {/* Action Footer */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="p-5 border-t border-gray-100 bg-white"
+          >
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* PENDING */}
+              {selectedRequest.status === "pending" && (
+                <>
+                  <ActionButton
+                    onClick={() =>
+                      updateStatus(selectedRequest.request_id, "approved")
+                    }
+                    variant="success"
+                    icon={<CheckCircle className="w-4 h-4" />}
+                  >
+                    Approve
+                  </ActionButton>
+                  <ActionButton
+                    onClick={() =>
+                      updateStatus(selectedRequest.request_id, "rejected")
+                    }
+                    variant="danger"
+                    icon={<X className="w-4 h-4" />}
+                  >
+                    Reject
+                  </ActionButton>
+                </>
+              )}
+
+              {/* APPROVED */}
+              {selectedRequest.status === "approved" && (
+                <ActionButton
+                  onClick={onStart}
+                  variant="primary"
+                  icon={<CalendarClock className="w-4 h-4" />}
+                >
+                  Assign & Schedule
+                </ActionButton>
+              )}
+
+              {/* SCHEDULED */}
+              {selectedRequest.status === "scheduled" && (
+                <>
+                  <ActionButton
+                    onClick={() =>
+                      updateStatus(selectedRequest.request_id, "in-progress")
+                    }
+                    variant="primary"
+                    icon={<Play className="w-4 h-4" />}
+                  >
+                    Start Work
+                  </ActionButton>
+                  <ActionButton
+                    onClick={onReschedule}
+                    variant="secondary"
+                    icon={<RotateCcw className="w-4 h-4" />}
+                  >
+                    Reschedule
+                  </ActionButton>
+                </>
+              )}
+
+              {/* IN PROGRESS */}
+              {selectedRequest.status === "in-progress" && (
+                <ActionButton
+                  onClick={onComplete}
+                  variant="success"
+                  icon={<CheckCircle className="w-4 h-4" />}
+                >
+                  Mark Complete
+                </ActionButton>
+              )}
+
+              {/* DONE */}
+              {(selectedRequest.status === "completed" ||
+                selectedRequest.status === "rejected") && (
+                <ActionButton
+                  onClick={onClose}
+                  variant="secondary"
+                  icon={<X className="w-4 h-4" />}
+                >
+                  Close
+                </ActionButton>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
 }
 
-/* ───────────────────────────────
-   MINI COMPONENTS
-──────────────────────────────── */
+// ============================================
+// SUB-COMPONENTS
+// ============================================
 
-function TimelineItem({ icon, label, value }) {
-    return (
-        <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                {icon}
-            </div>
-            <div>
-                <p className="text-[11px] text-gray-600">{label}</p>
-                <p className="text-[13px] font-semibold">{value}</p>
-            </div>
+function TimelineCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-7 h-7 bg-gray-50 rounded-lg flex items-center justify-center">
+          {icon}
         </div>
-    );
+        <span className="text-[11px] text-gray-500 uppercase tracking-wide font-medium">
+          {label}
+        </span>
+      </div>
+      <p className="text-sm font-semibold text-gray-900 pl-9">{value}</p>
+    </div>
+  );
 }
 
-function CompactCard({ icon, title, lines }) {
-    return (
-        <div className="border bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-                {icon}
-                <h4 className="text-sm font-semibold">{title}</h4>
-            </div>
-
-            <div className="text-xs text-gray-700 space-y-1">
-                {lines.map((line, i) => (
-                    <p key={i}>{line}</p>
-                ))}
-            </div>
+function InfoCard({
+  icon,
+  title,
+  lines,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  lines: (string | null)[];
+}) {
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center">
+          {icon}
         </div>
-    );
+        <h4 className="text-sm font-semibold text-gray-900">{title}</h4>
+      </div>
+      <div className="text-xs text-gray-600 space-y-0.5 pl-10">
+        {lines.filter(Boolean).map((line, i) => (
+          <p key={i}>{line}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({
+  children,
+  onClick,
+  variant,
+  icon,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  variant: "primary" | "secondary" | "success" | "danger";
+  icon?: React.ReactNode;
+}) {
+  const variants = {
+    primary:
+      "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30",
+    secondary: "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50",
+    success:
+      "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25 hover:shadow-xl hover:shadow-green-500/30",
+    danger:
+      "bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30",
+  };
+
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02, y: -1 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${variants[variant]}`}
+    >
+      {icon}
+      {children}
+    </motion.button>
+  );
 }

@@ -1,151 +1,325 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import React, { useState } from "react";
 import Swal from "sweetalert2";
-import { X } from "lucide-react";
+import { X, DollarSign, Tag, FileText, Loader2 } from "lucide-react";
 
+// ============================================
+// ANIMATION VARIANTS
+// ============================================
+const backdropVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const modalVariants = {
+  hidden: { opacity: 0, scale: 0.95, y: 20 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 25 },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    y: 20,
+    transition: { duration: 0.2 },
+  },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+  },
+};
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 15 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
+
+// ============================================
+// EXPENSE CATEGORIES
+// ============================================
+const expenseCategories = [
+  {
+    value: "materials",
+    label: "Materials",
+    icon: "🔧",
+    color: "from-blue-500 to-cyan-500",
+  },
+  {
+    value: "labor",
+    label: "Labor",
+    icon: "👷",
+    color: "from-amber-500 to-orange-500",
+  },
+  {
+    value: "service",
+    label: "Service",
+    icon: "🛠️",
+    color: "from-purple-500 to-indigo-500",
+  },
+  {
+    value: "other",
+    label: "Other",
+    icon: "📦",
+    color: "from-gray-500 to-slate-500",
+  },
+];
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 export default function MaintenanceExpenseModal({
-    requestId,
-    onClose,
-    onSaved,
-    userId,
+  requestId,
+  onClose,
+  onSaved,
+  userId,
+}: {
+  requestId: number | null;
+  onClose: () => void;
+  onSaved: (expense: {
+    amount: string;
+    description: string;
+    category: string;
+  }) => void;
+  userId: number | string | undefined;
 }) {
-    const [amount, setAmount] = useState("");
-    const [description, setDescription] = useState("");
-    const [category, setCategory] = useState("materials");
-    const [loading, setLoading] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("materials");
+  const [loading, setLoading] = useState(false);
 
-    const expenseCategories = [
-        { value: "materials", label: "Materials" },
-        { value: "labor", label: "Labor" },
-        { value: "service", label: "Service" },
-        { value: "other", label: "Other" },
-    ];
+  const selectedCategory = expenseCategories.find((c) => c.value === category);
 
-    const handleSave = async () => {
-        if (!amount || Number(amount) <= 0) {
-            Swal.fire("Missing Amount", "Please input a valid expense amount.", "warning");
-            return;
-        }
+  const handleSave = async () => {
+    if (!amount || Number(amount) <= 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Missing Amount",
+        text: "Please enter a valid expense amount.",
+        confirmButtonColor: "#3b82f6",
+      });
+      return;
+    }
 
-        setLoading(true);
+    setLoading(true);
 
-        try {
-            await axios.post("/api/maintenance/updateStatus/addExpense", {
-                amount,
-                description,
-                category,
+    try {
+      await axios.post("/api/maintenance/updateStatus/addExpense", {
+        amount,
+        description,
+        category,
+        reference_type: "maintenance",
+        reference_id: requestId,
+        created_by: userId,
+        new_status: "completed",
+        completion_date: new Date().toISOString(),
+      });
 
-                reference_type: "maintenance",
-                reference_id: requestId,
+      Swal.fire({
+        icon: "success",
+        title: "Expense Recorded!",
+        text: "The maintenance expense has been saved.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
 
-                created_by: userId,
+      onSaved({ amount, description, category });
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to save expense. Please try again.",
+        confirmButtonColor: "#3b82f6",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                new_status: "completed",
-                completion_date: new Date().toISOString(),
-            });
+  return (
+    <AnimatePresence>
+      <motion.div
+        variants={backdropVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={onClose}
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      >
+        <motion.div
+          variants={modalVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
+        >
+          {/* Header */}
+          <div className="relative overflow-hidden">
+            <div
+              className={`absolute inset-0 bg-gradient-to-r ${
+                selectedCategory?.color || "from-blue-500 to-emerald-500"
+              }`}
+            />
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full" />
+            <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-white/10 rounded-full" />
 
-            Swal.fire({
-                icon: "success",
-                title: "Saved!",
-                text: "Maintenance expense recorded.",
-                timer: 1200,
-                showConfirmButton: false,
-            });
+            <div className="relative p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">
+                      Record Expense
+                    </h2>
+                    <p className="text-sm text-white/80">
+                      Add maintenance cost
+                    </p>
+                  </div>
+                </div>
 
-            // Return data to parent
-            onSaved({
-                amount,
-                description,
-                category,
-            });
-        } catch (error) {
-            console.error(error);
-            Swal.fire("Error", "Failed to save expense.", "error");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 animate-fadeIn">
-            <div className="bg-white w-full max-w-md rounded-xl shadow-xl p-6 animate-scaleIn relative">
-
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
                 >
-                    <X className="w-5 h-5" />
-                </button>
-
-                <h2 className="text-xl font-bold mb-5">Record Maintenance Expense</h2>
-
-                {/* Amount */}
-                <div className="mb-4">
-                    <label className="text-sm font-medium">Expense Amount (₱)</label>
-                    <input
-                        type="number"
-                        min="0"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg mt-1 focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00"
-                    />
-                </div>
-
-                {/* Category */}
-                <div className="mb-4">
-                    <label className="text-sm font-medium">Expense Category</label>
-                    <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg mt-1 focus:ring-2 focus:ring-blue-500"
-                    >
-                        {expenseCategories.map((item) => (
-                            <option key={item.value} value={item.value}>
-                                {item.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Description */}
-                <div className="mb-4">
-                    <label className="text-sm font-medium">Description (Optional)</label>
-                    <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg mt-1 focus:ring-2 focus:ring-blue-500"
-                        placeholder="Add optional notes about this expense..."
-                        rows={3}
-                    />
-                </div>
-
-                {/* Buttons */}
-                <div className="flex justify-end gap-2 mt-6">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
-                        disabled={loading}
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className={`px-5 py-2 rounded-lg text-white font-medium transition ${
-                            loading
-                                ? "bg-blue-400 cursor-not-allowed"
-                                : "bg-blue-600 hover:bg-blue-700"
-                        }`}
-                    >
-                        {loading ? "Saving..." : "Save Expense"}
-                    </button>
-                </div>
+                  <X className="w-5 h-5 text-white" />
+                </motion.button>
+              </div>
             </div>
-        </div>
-    );
+          </div>
+
+          {/* Body */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="p-5 space-y-5"
+          >
+            {/* Amount Input */}
+            <motion.div variants={fadeInUp}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Expense Amount
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">
+                  ₱
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-lg font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  placeholder="0.00"
+                />
+              </div>
+            </motion.div>
+
+            {/* Category Selection */}
+            <motion.div variants={fadeInUp}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Category
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {expenseCategories.map((cat) => (
+                  <motion.button
+                    key={cat.value}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setCategory(cat.value)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 ${
+                      category === cat.value
+                        ? `border-transparent bg-gradient-to-r ${cat.color} text-white shadow-lg`
+                        : "border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    <span className="text-lg">{cat.icon}</span>
+                    <span className="text-sm font-medium">{cat.label}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Description */}
+            <motion.div variants={fadeInUp}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Description
+                <span className="text-gray-400 font-normal ml-1">
+                  (Optional)
+                </span>
+              </label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                  placeholder="Add notes about this expense..."
+                  rows={3}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Footer */}
+          <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex flex-col-reverse sm:flex-row gap-3">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1 px-4 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition-all font-medium text-sm disabled:opacity-50"
+            >
+              Cancel
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSave}
+              disabled={loading}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
+                loading
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : `bg-gradient-to-r ${
+                      selectedCategory?.color || "from-blue-600 to-emerald-600"
+                    } hover:shadow-lg`
+              } text-white`}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <DollarSign className="w-4 h-4" />
+                  Save Expense
+                </>
+              )}
+            </motion.button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
 }
