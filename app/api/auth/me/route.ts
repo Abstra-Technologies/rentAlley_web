@@ -44,7 +44,7 @@ const parseAdminPermissions = (value?: string | null): string[] | null => {
 
         return trimmed
             .split(",")
-            .map(p => p.trim())
+            .map((p) => p.trim())
             .filter(Boolean);
     } catch {
         return null;
@@ -127,6 +127,8 @@ export async function GET() {
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
 
+        console.log("[AUTH /me] token exists:", !!token);
+
         if (!token) {
             return NextResponse.json(
                 { error: "No session token provided" },
@@ -136,12 +138,17 @@ export async function GET() {
 
         /* ================= JWT VERIFY ================= */
         let payload: any;
+
         try {
             ({ payload } = await jwtVerify(
                 token,
                 new TextEncoder().encode(JWT_SECRET)
             ));
-        } catch {
+
+            console.log("[AUTH /me] JWT payload:", payload);
+        } catch (err) {
+            console.error("[AUTH /me] JWT VERIFY FAILED:", err);
+
             return NextResponse.json(
                 { error: "Session expired or invalid token" },
                 { status: 401 }
@@ -152,6 +159,14 @@ export async function GET() {
         if (payload?.user_id) {
             const rawUser = await getUser(payload.user_id);
 
+            console.log("[AUTH /me] rawUser snapshot:", {
+                user_id: rawUser?.user_id,
+                userType: rawUser?.userType,
+                status: rawUser?.status,
+                tenant_id: rawUser?.tenant_id,
+                landlord_id: rawUser?.landlord_id,
+            });
+
             if (!rawUser) {
                 return NextResponse.json(
                     { error: "User not found" },
@@ -159,7 +174,9 @@ export async function GET() {
                 );
             }
 
-            if (["suspended", "deactivated", "archived"].includes(rawUser.status)) {
+            if (
+                ["suspended", "deactivated", "archived"].includes(rawUser.status)
+            ) {
                 return NextResponse.json(
                     { error: `Account is ${rawUser.status}` },
                     { status: 403 }
@@ -188,9 +205,20 @@ export async function GET() {
                 updatedAt: rawUser.updatedAt,
                 tenant_id: rawUser.tenant_id || null,
                 landlord_id: rawUser.landlord_id || null,
-                is_verified: rawUser.landlord_id ? !!rawUser.is_verified : null,
-                is_trial_used: rawUser.landlord_id ? !!rawUser.is_trial_used : null,
+                is_verified: rawUser.landlord_id
+                    ? !!rawUser.is_verified
+                    : null,
+                is_trial_used: rawUser.landlord_id
+                    ? !!rawUser.is_trial_used
+                    : null,
             };
+
+            console.log("[AUTH /me] response user:", {
+                user_id: user.user_id,
+                userType: user.userType,
+                tenant_id: user.tenant_id,
+                landlord_id: user.landlord_id,
+            });
 
             if (user.landlord_id) {
                 const [subs]: any[] = await db.execute(
@@ -221,6 +249,12 @@ export async function GET() {
         if (payload?.admin_id) {
             const rawAdmin = await getAdmin(payload.admin_id);
 
+            console.log("[AUTH /me] rawAdmin:", {
+                admin_id: rawAdmin?.admin_id,
+                role: rawAdmin?.role,
+                status: rawAdmin?.status,
+            });
+
             if (!rawAdmin) {
                 return NextResponse.json(
                     { error: "Admin not found" },
@@ -250,13 +284,15 @@ export async function GET() {
             return NextResponse.json(admin, { status: 200 });
         }
 
+        console.warn("[AUTH /me] INVALID PAYLOAD:", payload);
+
         return NextResponse.json(
             { error: "Invalid session payload" },
             { status: 401 }
         );
-
     } catch (error) {
-        console.error("[AUTH /me] ERROR:", error);
+        console.error("[AUTH /me] UNHANDLED ERROR:", error);
+
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

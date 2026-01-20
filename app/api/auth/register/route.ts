@@ -269,7 +269,6 @@ export async function POST(req: NextRequest) {
         return response;
     } catch (err) {
         await db.rollback();
-        console.error("❌ Registration Error:", err);
         return NextResponse.json(
             { error: "Database server error" },
             { status: 500 }

@@ -2,14 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-/* =====================================================
-   JWT VERIFY
-===================================================== */
 async function verifyToken(token: string) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
     try {
         const { payload } = await jwtVerify(token, secret);
+        console.log("landlord payload: ", payload);
         return payload;
     } catch {
         return null;

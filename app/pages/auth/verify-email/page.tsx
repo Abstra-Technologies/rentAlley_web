@@ -74,9 +74,7 @@ export default function VerifyOTP() {
                 { otp },
                 { withCredentials: true }
             );
-
             toast.success(res.data.message);
-
             setTimeout(() => {
                 if (res.data.userType === "tenant") {
                     router.push("/pages/tenant/feeds");

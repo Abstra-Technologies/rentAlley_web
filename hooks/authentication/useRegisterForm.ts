@@ -16,7 +16,8 @@ const registerSchema = z
             .string()
             .min(8, "Password must be at least 8 characters")
             .refine(
-                (value) => /^[\w!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(value),
+                (value) =>
+                    /^[\w!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(value),
                 "Password contains invalid characters"
             ),
         confirmPassword: z.string().min(8, "Confirm Password must match password"),
@@ -37,8 +38,8 @@ export const useRegisterForm = () => {
         email: "",
         password: "",
         confirmPassword: "",
-        role: role,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        role,
+        timezone: "", // ✅ set by component
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,13 +52,21 @@ export const useRegisterForm = () => {
 
     const error_2 = searchParams.get("error");
 
+    // ✅ Only sync role here
     useEffect(() => {
         setFormData((prev) => ({
             ...prev,
             role,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }));
     }, [role]);
+
+    // ✅ EXPOSED timezone setter
+    const setTimezone = (timezone: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            timezone,
+        }));
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -72,9 +81,17 @@ export const useRegisterForm = () => {
     };
 
     const handleGoogleSignup = () => {
-        logEvent("Login Attempt", "Google Sign-Up", "User Clicked Google Sign-Up", 1);
-        router.push(`/api/auth/googleSignUp?userType=${role}`);
+        logEvent(
+            "Login Attempt",
+            "Google Sign-Up",
+            "User Clicked Google Sign-Up",
+            1
+        );
+
+        // ✅ Full page redirect (required for OAuth)
+        window.location.href = `/api/auth/googleSignUp?userType=${role}`;
     };
+
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -88,7 +105,8 @@ export const useRegisterForm = () => {
                 Swal.fire({
                     icon: "error",
                     title: "Terms Not Accepted",
-                    text: "You must agree to the Terms of Service and Privacy Policy before registering.",
+                    text:
+                        "You must agree to the Terms of Service and Privacy Policy before registering.",
                     confirmButtonText: "OK",
                 });
                 return;
@@ -105,13 +123,17 @@ export const useRegisterForm = () => {
             const data = await res.json();
 
             if (res.ok) {
-                Swal.fire({
+                await Swal.fire({
                     title: "Success!",
                     text: "Account successfully registered! Redirecting...",
                     icon: "success",
                     confirmButtonText: "OK",
-                }).then(() => router.push("/pages/auth/verify-email"));
-            } else if (data.error?.includes("already")) {
+                });
+
+                window.location.href = "/pages/auth/verify-email";
+                return;
+            }
+            else if (data.error?.includes("already")) {
                 Swal.fire({
                     icon: "error",
                     title: "Error!",
@@ -160,5 +182,6 @@ export const useRegisterForm = () => {
         handleChange,
         handleGoogleSignup,
         handleSubmit,
+        setTimezone, // ✅ exposed to component
     };
 };
