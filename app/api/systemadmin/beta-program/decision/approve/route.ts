@@ -1,28 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendBetaDecisionEmail } from "@/lib/email/sendBetaDecisionEmail";
-import {safeDecrypt} from "@/utils/decrypt/safeDecrypt";
+import { safeDecrypt } from "@/utils/decrypt/safeDecrypt";
 
 export async function PATCH(req: NextRequest) {
-    const { beta_id, landlord_id, admin_id } = await req.json();
+  const { beta_id, landlord_id, admin_id } = await req.json();
 
-    if (!beta_id || !landlord_id || !admin_id) {
-        return NextResponse.json(
-            { error: "Missing required fields" },
-            { status: 400 }
-        );
-    }
+  if (!beta_id || !landlord_id || !admin_id) {
+    return NextResponse.json(
+      { error: "Missing required fields" },
+      { status: 400 }
+    );
+  }
 
-    const connection = await db.getConnection();
+  const connection = await db.getConnection();
 
-    try {
-        await connection.beginTransaction();
+  try {
+    await connection.beginTransaction();
 
-        /* =====================================
+    /* =====================================
            1. Approve Beta User
         ===================================== */
-        const [betaResult]: any = await connection.query(
-            `
+    const [betaResult]: any = await connection.query(
+      `
             UPDATE BetaUsers
             SET
                 status = 'approved',
@@ -32,36 +32,37 @@ export async function PATCH(req: NextRequest) {
             WHERE beta_id = ?
               AND status = 'pending'
             `,
-            [admin_id, beta_id]
-        );
+      [admin_id, beta_id]
+    );
 
-        if (betaResult.affectedRows === 0) {
-            throw new Error("Beta user not found or already processed");
-        }
+    if (betaResult.affectedRows === 0) {
+      throw new Error("Beta user not found or already processed");
+    }
 
-        /* =====================================
-           2. Prevent duplicate active subscription
+    /* =====================================
+           2. Check for existing BETA subscription only
         ===================================== */
-        const [existing]: any = await connection.query(
-            `
+    const [existingBeta]: any = await connection.query(
+      `
             SELECT subscription_id
             FROM Subscription
             WHERE landlord_id = ?
+              AND plan_code = 'BETA'
               AND is_active = 1
             LIMIT 1
             `,
-            [landlord_id]
-        );
+      [landlord_id]
+    );
 
-        if (existing.length > 0) {
-            throw new Error("Landlord already has an active subscription");
-        }
+    if (existingBeta.length > 0) {
+      throw new Error("Landlord already has an active BETA subscription");
+    }
 
-        /* =====================================
+    /* =====================================
            3. Insert BETA Subscription
         ===================================== */
-        await connection.query(
-            `
+    await connection.query(
+      `
             INSERT INTO Subscription (
                 landlord_id,
                 plan_name,
@@ -88,14 +89,14 @@ export async function PATCH(req: NextRequest) {
             FROM BetaUsers b
             WHERE b.beta_id = ?
             `,
-            [beta_id]
-        );
+      [beta_id]
+    );
 
-        /* =====================================
+    /* =====================================
            4. Fetch landlord info for email
         ===================================== */
-        const [[landlord]]: any = await connection.query(
-            `
+    const [landlordRows]: any = await connection.query(
+      `
             SELECT 
                 u.email,
                 u.firstName,
@@ -105,44 +106,46 @@ export async function PATCH(req: NextRequest) {
             JOIN BetaUsers b ON b.landlord_id = l.landlord_id
             WHERE l.landlord_id = ?
             `,
-            [landlord_id]
-        );
+      [landlord_id]
+    );
 
-        await connection.commit();
+    const landlord = landlordRows[0];
 
-        /* =====================================
+    await connection.commit();
+
+    /* =====================================
            5. Send Beta Approval Email (POST-COMMIT)
         ===================================== */
-        const decryptedEmail = safeDecrypt(landlord?.email);
-        const decryptedFirstName = safeDecrypt(landlord?.firstName);
+    const decryptedEmail = safeDecrypt(landlord?.email);
+    const decryptedFirstName = safeDecrypt(landlord?.firstName);
 
-        if (decryptedEmail) {
-            const startDate = new Date(landlord.approved_at);
-            const endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + 60);
+    if (decryptedEmail) {
+      const startDate = new Date(landlord.approved_at);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 60);
 
-            await sendBetaDecisionEmail({
-                email: decryptedEmail,
-                firstName: decryptedFirstName || undefined,
-                decision: "approved",
-                startDate,
-                endDate,
-            });
-        }
-
-        return NextResponse.json({
-            success: true,
-            message: "Beta approved, subscription activated, and landlord notified",
-        });
-    } catch (error: any) {
-        await connection.rollback();
-        console.error("[BETA_APPROVE_ERROR]", error);
-
-        return NextResponse.json(
-            { error: error.message || "Failed to approve beta user" },
-            { status: 500 }
-        );
-    } finally {
-        connection.release();
+      await sendBetaDecisionEmail({
+        email: decryptedEmail,
+        firstName: decryptedFirstName || undefined,
+        decision: "approved",
+        startDate,
+        endDate,
+      });
     }
+
+    return NextResponse.json({
+      success: true,
+      message: "Beta approved, subscription activated, and landlord notified",
+    });
+  } catch (error: any) {
+    await connection.rollback();
+    console.error("[BETA_APPROVE_ERROR]", error);
+
+    return NextResponse.json(
+      { error: error.message || "Failed to approve beta user" },
+      { status: 500 }
+    );
+  } finally {
+    connection.release();
+  }
 }
