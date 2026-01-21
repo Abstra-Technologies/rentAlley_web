@@ -22,32 +22,33 @@ export default function MobileRegisterForm() {
         handleChange,
         handleGoogleSignup,
         handleSubmit,
-        setTimezone, // ✅ timezone setter
+        setTimezone,
     } = useRegisterForm();
 
-    // ✅ Detect timezone AFTER hydration
+    /* ================= TIMEZONE ================= */
     useEffect(() => {
         let tz =
             Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
-        // Normalize common PH issue
-        if (tz === "Asia/Singapore") {
-            tz = "Asia/Manila";
-        }
+        if (tz === "Asia/Singapore") tz = "Asia/Manila";
 
         setTimezone(tz);
     }, [setTimezone]);
 
     const passwordValidation = validatePassword(formData.password);
     const passwordsMatch =
-        formData.password && formData.password === formData.confirmPassword;
+        formData.password &&
+        formData.password === formData.confirmPassword;
 
     return (
         <div className="w-full max-w-sm mx-auto px-4">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+
                 {/* Header */}
                 <div className="text-center mb-5">
-                    <h2 className="text-lg font-bold text-gray-900">Create Account</h2>
+                    <h2 className="text-lg font-bold text-gray-900">
+                        Create Account
+                    </h2>
                     <p className="text-sm text-gray-500 mt-0.5">
                         Register as{" "}
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 font-medium">
@@ -62,6 +63,7 @@ export default function MobileRegisterForm() {
                         <p className="text-xs text-red-700 text-center">{error}</p>
                     </div>
                 )}
+
                 {error_2 && (
                     <div className="mb-4 p-2.5 rounded-lg bg-red-50 border border-red-200">
                         <p className="text-xs text-red-700 text-center">
@@ -71,6 +73,7 @@ export default function MobileRegisterForm() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
+
                     {/* First Name */}
                     <input
                         id="firstName"
@@ -124,6 +127,27 @@ export default function MobileRegisterForm() {
                         </button>
                     </div>
 
+                    {/* Password Rules (Mobile-friendly) */}
+                    {formData.password && (
+                        <div className="space-y-0.5 text-xs p-2.5 bg-gray-50 rounded-lg">
+                            <p className={passwordValidation.length ? "text-emerald-600" : "text-red-500"}>
+                                {passwordValidation.length ? "✔" : "✖"} 8+ characters
+                            </p>
+                            <p className={passwordValidation.uppercase ? "text-emerald-600" : "text-red-500"}>
+                                {passwordValidation.uppercase ? "✔" : "✖"} Uppercase letter
+                            </p>
+                            <p className={passwordValidation.lowercase ? "text-emerald-600" : "text-red-500"}>
+                                {passwordValidation.lowercase ? "✔" : "✖"} Lowercase letter
+                            </p>
+                            <p className={passwordValidation.number ? "text-emerald-600" : "text-red-500"}>
+                                {passwordValidation.number ? "✔" : "✖"} Number
+                            </p>
+                            <p className={passwordValidation.special ? "text-emerald-600" : "text-red-500"}>
+                                {passwordValidation.special ? "✔" : "✖"} Special character
+                            </p>
+                        </div>
+                    )}
+
                     {/* Confirm Password */}
                     <div className="relative">
                         <input
@@ -151,7 +175,9 @@ export default function MobileRegisterForm() {
                     </div>
 
                     {formData.confirmPassword && !passwordsMatch && (
-                        <p className="text-red-500 text-xs">Passwords do not match</p>
+                        <p className="text-red-500 text-xs">
+                            Passwords do not match
+                        </p>
                     )}
 
                     {/* Terms */}
@@ -177,7 +203,8 @@ export default function MobileRegisterForm() {
                             !passwordValidation.isStrong ||
                             !passwordsMatch
                         }
-                        className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg text-sm"
+                        className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600
+              text-white rounded-lg text-sm disabled:opacity-50"
                     >
                         {isRegistering ? "Registering..." : "Create Account"}
                     </button>
