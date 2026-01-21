@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
             const pending2fa = NextResponse.redirect(
                 `${process.env.NEXT_PUBLIC_BASE_URL}/pages/auth/verify-2fa?user_id=${dbUser.user_id}`
             );
-            pending2fa.cookies.set("pending_2fa", "true", { path: "/", httpOnly: true, sameSite: "lax" });
+            pending2fa.cookies.set("pending_2fa", "true", { path: "/", httpOnly: true, sameSite: "none" });
             return pending2fa;
         }
 

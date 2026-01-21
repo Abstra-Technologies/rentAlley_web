@@ -79,6 +79,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^7.0.11",
     "pdf-extraction": "^1.0.2",
+    "ph-banks": "^1.0.0",
     "philippines": "^1.0.0",
     "postcss": "^8.0.0",
     "puppeteer": "^24.22.0",
