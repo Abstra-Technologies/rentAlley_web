@@ -8,10 +8,8 @@ import LandlordBetaBanner from "@/components/beta-release/LandlordBetaBanner";
 export default function LandlordDashboard() {
     const { user, loading, fetchSession } = useAuthStore();
 
-    // landlord_id is a string
     const landlordId = user?.landlord_id as string | undefined;
 
-    /* ==================== PROACTIVE SESSION CHECK ON MOUNT ==================== */
     useEffect(() => {
 
         if (!user) {
@@ -19,7 +17,6 @@ export default function LandlordDashboard() {
         }
     }, [user, fetchSession]);
 
-    /* ==================== AUTH LOADING STATE ==================== */
     if ((!user && !landlordId)) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -32,7 +29,6 @@ export default function LandlordDashboard() {
         );
     }
 
-    /* ==================== MISSING LANDLORD_ID (INCOMPLETE PROFILE) ==================== */
     if (!landlordId) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
