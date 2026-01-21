@@ -96,4 +96,26 @@ export const subscriptionConfig = {
 
         },
     },
+
+    "Beta_Program": {
+    "limits": {
+      "maxProperties": 5,
+      "maxUnits": null,          // Unlimited units
+      "maxMaintenanceRequest": null,
+      "maxBilling": null,
+      "maxProspect": null,
+      "maxStorage": 2,
+      "maxAssetsPerProperty": 10,
+      "financialHistoryYears": 1
+    },
+    "features": {
+      "reports": true,
+      "pdcManagement": true,
+      "aiUnitGenerator": true,
+      "bulkImport": true,
+      "announcements": true,
+      "assetManagement": true,
+      "financialInsights": true
+    }
+}
 } as const;
