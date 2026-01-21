@@ -4,23 +4,39 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
-import { AlertCircle, Clock, XCircle, CheckCircle } from "lucide-react";
+import {
+    AlertCircle,
+    Clock,
+    XCircle,
+    CheckCircle,
+} from "lucide-react";
 
-const fetcher = (url: string) => axios.get(url).then(res => res.data);
+const fetcher = (url: string) =>
+    axios.get(url).then((res) => res.data);
+
+type ProfileStatus =
+    | "incomplete"
+    | "pending"
+    | "rejected"
+    | "verified";
 
 interface Props {
     landlord_id: string;
 }
 
-interface ProfileStatusData {
-    status: "incomplete" | "pending" | "rejected" | "verified";
+interface ProfileStatusResponse {
+    status?: ProfileStatus;
 }
 
-export default function LandlordProfileStatus({ landlord_id }: Props) {
+export default function LandlordProfileStatus({
+                                                  landlord_id,
+                                              }: Props) {
     const router = useRouter();
 
-    const { data, error, isLoading } = useSWR<ProfileStatusData>(
-        `/api/landlord/${landlord_id}/profileStatus`,
+    const { data, error, isLoading } = useSWR<ProfileStatusResponse>(
+        landlord_id
+            ? `/api/landlord/${landlord_id}/profileStatus`
+            : null,
         fetcher,
         {
             revalidateOnFocus: false,
@@ -28,6 +44,28 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
         }
     );
 
+    /**
+     * 🧠 CORE RULE:
+     * - NO RECORD
+     * - NO DATA
+     * - API ERROR
+     * → ALL MEAN "INCOMPLETE"
+     */
+    const status: ProfileStatus =
+        data?.status ?? "incomplete";
+
+    const base =
+        "rounded-lg border p-2.5 shadow-sm transition-all";
+    const iconBox =
+        "p-1.5 rounded-md flex items-center justify-center";
+    const title =
+        "text-[13px] font-semibold";
+    const desc =
+        "text-[11px] mt-0.5";
+    const action =
+        "mt-1.5 text-[11px] font-medium underline hover:opacity-75";
+
+    /** ⏳ Loading skeleton (optional, keeps layout stable) */
     if (isLoading) {
         return (
             <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 animate-pulse">
@@ -42,25 +80,14 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
         );
     }
 
-    if (error || !data) return null;
+    /** ❌ Error → still show Verify (never hide) */
+    if (error) {
+        console.error("Profile status error:", error);
+    }
 
-    const { status } = data;
-
-    console.log('landlord vericication staus: ', status);
-
-    const base =
-        "rounded-lg border p-2.5 shadow-sm transition-all";
-    const iconBox =
-        "p-1.5 rounded-md flex items-center justify-center";
-    const title =
-        "text-[13px] font-semibold";
-    const desc =
-        "text-[11px] mt-0.5";
-    const action =
-        "mt-1.5 text-[11px] font-medium underline hover:opacity-75";
-
+    /** 🎯 FINAL RENDER */
     switch (status) {
-        /** ❌ NOT SUBMITTED OR INCOMPLETE */
+        /** ❌ NOT VERIFIED / NO RECORD */
         case "incomplete":
             return (
                 <div className={`${base} bg-orange-50 border-orange-200`}>
@@ -81,14 +108,14 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
                                 }
                                 className={`${action} text-orange-700`}
                             >
-                                Submit Documents →
+                                Verify Now→
                             </button>
                         </div>
                     </div>
                 </div>
             );
 
-        /** ⏳ SUBMITTED – WAITING */
+        /** ⏳ PENDING */
         case "pending":
             return (
                 <div className={`${base} bg-yellow-50 border-yellow-200`}>

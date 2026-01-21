@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -6,17 +5,19 @@ export async function GET(req: NextRequest) {
 
     if (!GOOGLE_CLIENT_ID || !REDIRECT_URI_SIGNIN) {
         return NextResponse.json(
-            { error: "Missing GOOGLE_CLIENT_ID or REDIRECT_URI_SIGNIN in environment variables" },
+            { error: "Missing GOOGLE_CLIENT_ID or REDIRECT_URI_SIGNIN" },
             { status: 500 }
         );
     }
 
-    const googleAuthURL =
-        `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${GOOGLE_CLIENT_ID}&` +
-        `redirect_uri=${REDIRECT_URI_SIGNIN}&` +
-        `response_type=code&` +
-        `scope=openid%20email%20profile`;
+    const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
 
-    return NextResponse.redirect(googleAuthURL);
+    googleAuthUrl.searchParams.set("client_id", GOOGLE_CLIENT_ID);
+    googleAuthUrl.searchParams.set("redirect_uri", REDIRECT_URI_SIGNIN);
+    googleAuthUrl.searchParams.set("response_type", "code");
+    googleAuthUrl.searchParams.set("scope", "openid email profile");
+    googleAuthUrl.searchParams.set("access_type", "offline");
+    googleAuthUrl.searchParams.set("prompt", "consent");
+
+    return NextResponse.redirect(googleAuthUrl);
 }
