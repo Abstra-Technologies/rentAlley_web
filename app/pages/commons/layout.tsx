@@ -11,7 +11,7 @@ import {
   ArrowRightOnRectangleIcon,
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
-import { BellRing } from 'lucide-react';
+import { BellRing } from "lucide-react";
 
 import {
   Menu,
@@ -44,13 +44,13 @@ const profileNavLinks = [
     icon: ShieldCheckIcon,
     roles: ["tenant", "landlord", "admin"],
   },
-    // {
-    //     href: "/pages/commons/settings",
-    //     label: "Notification",
-    //     shortLabel: "Notification",
-    //     icon: BellRing,
-    //     roles: ["landlord", "tenant", "admin"],
-    // },
+  // {
+  //     href: "/pages/commons/settings",
+  //     label: "Notification",
+  //     shortLabel: "Notification",
+  //     icon: BellRing,
+  //     roles: ["landlord", "tenant", "admin"],
+  // },
   {
     href: "/pages/commons/landlord/payoutDetails",
     label: "Payout Account",
@@ -115,7 +115,7 @@ export default function SideNavProfile({
          FILTER NAV LINKS BASED ON ROLE
     --------------------------------------------- */
   const filteredLinks = profileNavLinks.filter((link) =>
-    link.roles.includes(user?.userType || "guest")
+    link.roles.includes(user?.userType || "guest"),
   );
 
   // Show loading screen during auth check
@@ -250,19 +250,21 @@ export default function SideNavProfile({
             </button>
           </div>
 
-          {/* PROFILE HEADER */}
+          {/* PROFILE HEADER - UPDATED */}
           <div className="px-4 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
-              <Image
-                src={
-                  user.profilePicture ||
-                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                }
-                alt="Profile"
-                width={44}
-                height={44}
-                className="w-11 h-11 rounded-xl object-cover border-2 border-white shadow-sm"
-              />
+              <div className="relative w-11 h-11 flex-shrink-0">
+                <Image
+                  src={
+                    user.profilePicture ||
+                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                  }
+                  alt="Profile"
+                  width={44}
+                  height={44}
+                  className="w-full h-full rounded-xl object-cover border-2 border-white shadow-sm"
+                />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">
                   {user.firstName
@@ -381,19 +383,21 @@ export default function SideNavProfile({
               </button>
             </div>
 
-            {/* Mobile Profile */}
+            {/* Mobile Profile - UPDATED */}
             <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <Image
-                  src={
-                    user.profilePicture ||
-                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                  }
-                  alt="Profile"
-                  width={48}
-                  height={48}
-                  className="w-12 h-12 rounded-xl border-2 border-white shadow-md object-cover"
-                />
+                <div className="relative w-12 h-12 flex-shrink-0">
+                  <Image
+                    src={
+                      user.profilePicture ||
+                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                    }
+                    alt="Profile"
+                    width={48}
+                    height={48}
+                    className="w-full h-full rounded-xl border-2 border-white shadow-md object-cover"
+                  />
+                </div>
                 <div>
                   <p className="font-semibold text-gray-900 text-sm">
                     {user.firstName

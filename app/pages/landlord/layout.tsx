@@ -35,12 +35,12 @@ import {
 ================================ */
 const NotificationSection = dynamic(
   () => import("@/components/notification/notifCenter"),
-  { ssr: false }
+  { ssr: false },
 );
 
 const SendTenantInviteModal = dynamic(
   () => import("@/components/landlord/properties/sendInvite"),
-  { ssr: false }
+  { ssr: false },
 );
 
 /* ===============================
@@ -106,7 +106,7 @@ export default function LandlordLayout({
     () =>
       pathname.includes("/pages/landlord/properties/") &&
       !pathname.includes("/pages/commons/profile"),
-    [pathname]
+    [pathname],
   );
 
   /* ===============================
@@ -159,7 +159,7 @@ export default function LandlordLayout({
       },
       { label: "Help & Support", href: "/pages/public/help", icon: Handshake },
     ],
-    []
+    [],
   );
 
   const handleLogout = async () => {
@@ -204,16 +204,18 @@ export default function LandlordLayout({
           {/* PROFILE */}
           <div className="px-4 py-4 border-b bg-gray-50">
             <div className="flex items-center gap-3">
-              <Image
-                src={
-                  user.profilePicture ||
-                  "https://res.cloudinary.com/dptmeluy0/image/upload/v1766715365/profile-icon-design-free-vector_la6rgj.jpg"
-                }
-                alt="Profile"
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
+              <div className="relative w-11 h-11 flex-shrink-0">
+                <Image
+                  src={
+                    user.profilePicture ||
+                    "https://res.cloudinary.com/dptmeluy0/image/upload/v1766715365/profile-icon-design-free-vector_la6rgj.jpg"
+                  }
+                  alt="Profile"
+                  width={44}
+                  height={44}
+                  className="rounded-xl object-cover w-full h-full border-2 border-gray-200"
+                />
+              </div>
 
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate">
@@ -221,11 +223,7 @@ export default function LandlordLayout({
                     ? `${user.firstName} ${user.lastName}`
                     : user.companyName || user.email}
                 </p>
-
-                {/* Role */}
                 <p className="text-xs text-gray-500">Landlord</p>
-
-                {/* Landlord ID */}
                 {user.landlord_id && (
                   <p className="text-[11px] text-gray-400 truncate">
                     ID: {user.landlord_id}
