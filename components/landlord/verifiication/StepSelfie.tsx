@@ -107,18 +107,34 @@ export default function StepSelfie({ value, onChange }: StepSelfieProps) {
       return;
     }
 
-    // Convert base64 to File
-    fetch(imageSrc)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const file = new File([blob], `selfie-${Date.now()}.jpg`, {
-          type: "image/jpeg",
-        });
+    // Convert base64 to blob without using fetch
+    try {
+      const base64Data = imageSrc.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+      const file = new File([blob], `selfie-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
+
+      // Stop camera stream first
+      webcamRef.current?.stream?.getTracks().forEach((track) => track.stop());
+
+      // Use setTimeout to avoid setState during render
+      setTimeout(() => {
         onChange(file);
         setMode("idle");
-        // Stop camera stream
-        webcamRef.current?.stream?.getTracks().forEach((track) => track.stop());
-      });
+      }, 0);
+    } catch (error) {
+      setCameraError("Failed to process image. Please try again.");
+    }
   }, [onChange]);
 
   const startCountdown = () => {
@@ -127,7 +143,8 @@ export default function StepSelfie({ value, onChange }: StepSelfieProps) {
       setCountdown((prev) => {
         if (prev === 1) {
           clearInterval(interval);
-          handleCapture();
+          // Call handleCapture outside of setState using setTimeout
+          setTimeout(() => handleCapture(), 0);
           return null;
         }
         return prev ? prev - 1 : null;

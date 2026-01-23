@@ -23,25 +23,57 @@ export default function LandlordVerificationPage() {
 
     try {
       const formData = new FormData();
-      formData.append("id", idImage);
-      formData.append("selfie", selfieImage);
-      formData.append("idType", idType);
+
+      // API expects 'documentType' not 'idType'
+      formData.append("documentType", idType);
+
+      // API expects 'uploadedFile' for the ID image
+      formData.append("uploadedFile", idImage);
+
+      // API expects 'selfie' as base64 string
+      // Convert selfieImage (File) to base64
+      const selfieBase64 = await fileToBase64(selfieImage);
+      formData.append("selfie", selfieBase64);
+
+      // Add name fields (you may need to update your API to handle these)
       formData.append("firstName", firstName);
       formData.append("lastName", lastName);
 
-      const res = await fetch("/api/landlord/verification", {
+      const res = await fetch("/api/landlord/verification-upload", {
         method: "POST",
         body: formData,
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         setIsComplete(true);
+      } else {
+        // Handle specific error codes
+        if (data.code === "VERIFICATION_EXISTS") {
+          alert("You already have a verification pending or approved.");
+        } else {
+          alert(
+            data.error || "Failed to submit verification. Please try again.",
+          );
+        }
       }
     } catch (error) {
       console.error("Verification submission failed:", error);
+      alert("Failed to submit verification. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Helper function to convert File to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   const canProceed =

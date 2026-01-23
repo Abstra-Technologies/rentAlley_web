@@ -27,13 +27,13 @@ interface StepIDProps {
 }
 
 const ID_OPTIONS = [
-  { value: "passport", label: "Passport" },
-  { value: "drivers_license", label: "Driver's License" },
-  { value: "umid", label: "UMID" },
-  { value: "philsys", label: "PhilSys (National ID)" },
-  { value: "prc", label: "PRC ID" },
-  { value: "postal", label: "Postal ID" },
-  { value: "voters", label: "Voter's ID" },
+  { value: "passport", label: "Passport"},
+  { value: "drivers_license", label: "Driver's License"},
+  { value: "umid", label: "UMID", icon: "🏛️" },
+  { value: "philsys", label: "PhilSys (National ID)"},
+  { value: "prc", label: "PRC ID", icon: "📋" },
+  { value: "postal", label: "Postal ID",},
+  { value: "voters", label: "Voter's ID"},
 ];
 
 export default function StepID({
@@ -151,17 +151,30 @@ export default function StepID({
       return;
     }
 
-    fetch(imageSrc)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const file = new File([blob], `id-${idType}-${Date.now()}.jpg`, {
-          type: "image/jpeg",
-        });
-        onChange(file);
-        setMode("idle");
-        // Stop camera stream
-        webcamRef.current?.stream?.getTracks().forEach((track) => track.stop());
+    try {
+      const base64Data = imageSrc.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+      const file = new File([blob], `id-${idType}-${Date.now()}.jpg`, {
+        type: "image/jpeg",
       });
+
+      onChange(file);
+      setMode("idle");
+
+      // Stop camera stream
+      webcamRef.current?.stream?.getTracks().forEach((track) => track.stop());
+    } catch (error) {
+      setCameraError("Failed to process image. Please try again.");
+    }
   }, [onChange, idType]);
 
   const cancelCamera = () => {
