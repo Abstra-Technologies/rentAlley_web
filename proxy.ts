@@ -48,6 +48,10 @@ export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
     const token = req.cookies.get("token")?.value;
 
+    if (pathname.startsWith("/api/webhook")) {
+        return NextResponse.next();
+    }
+
     /* -----------------------------------------------
        NO TOKEN
     ------------------------------------------------ */
@@ -58,6 +62,8 @@ export async function proxy(req: NextRequest) {
                 new URL("/pages/admin_login", req.url)
             );
         }
+
+
 
         // Block protected app routes
         if (
@@ -181,5 +187,7 @@ export const config = {
         "/pages/landlord/:path*",
         "/pages/system_admin/:path*",
         "/pages/commons/:path*",
+        "/api/webhook/:path*",
+
     ],
 };
