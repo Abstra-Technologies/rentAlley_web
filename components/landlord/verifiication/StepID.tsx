@@ -14,10 +14,27 @@ type Mode = "idle" | "capture";
 
 interface StepIDProps {
     value: File | null;
+    idType: string;
     onChange: (file: File | null) => void;
+    onIdTypeChange: (type: string) => void;
 }
 
-export default function StepID({ value, onChange }: StepIDProps) {
+const ID_OPTIONS = [
+    "Passport",
+    "Driver’s License",
+    "UMID",
+    "PhilSys (National ID)",
+    "PRC ID",
+    "Postal ID",
+    "Voter’s ID",
+];
+
+export default function StepID({
+                                   value,
+                                   idType,
+                                   onChange,
+                                   onIdTypeChange,
+                               }: StepIDProps) {
     const [mode, setMode] = useState<Mode>("idle");
     const [cameraReady, setCameraReady] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
@@ -26,7 +43,7 @@ export default function StepID({ value, onChange }: StepIDProps) {
     const webcamRef = useRef<Webcam>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    /* ---------- PREVIEW HANDLING ---------- */
+    /* ---------- PREVIEW ---------- */
     useEffect(() => {
         if (!value) {
             setPreviewUrl(null);
@@ -50,6 +67,8 @@ export default function StepID({ value, onChange }: StepIDProps) {
 
     /* ---------- CAMERA ---------- */
     const requestCamera = async () => {
+        if (!idType) return;
+
         try {
             await navigator.mediaDevices.getUserMedia({ video: true });
             setCameraError(null);
@@ -73,13 +92,13 @@ export default function StepID({ value, onChange }: StepIDProps) {
             .then((blob) => {
                 const file = new File(
                     [blob],
-                    `id-${Date.now()}.jpg`,
+                    `id-${idType}-${Date.now()}.jpg`,
                     { type: "image/jpeg" }
                 );
                 onChange(file);
                 setMode("idle");
             });
-    }, [onChange]);
+    }, [onChange, idType]);
 
     /* ---------- FILE UPLOAD ---------- */
     const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,10 +126,29 @@ export default function StepID({ value, onChange }: StepIDProps) {
     return (
         <div className="space-y-6 max-w-md mx-auto px-2 pb-10">
             <div>
-                <h2 className="text-xl font-bold">Government ID</h2>
+                <h2 className="text-xl font-bold">Government ID Verification</h2>
                 <p className="text-sm text-gray-600">
-                    Upload or capture a clear photo of your ID
+                    Select your ID type and upload a clear photo
                 </p>
+            </div>
+
+            {/* ---------- ID TYPE SELECT ---------- */}
+            <div>
+                <label className="block text-sm font-medium mb-1">
+                    ID Type
+                </label>
+                <select
+                    value={idType}
+                    onChange={(e) => onIdTypeChange(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="">Select ID type</option>
+                    {ID_OPTIONS.map((id) => (
+                        <option key={id} value={id}>
+                            {id}
+                        </option>
+                    ))}
+                </select>
             </div>
 
             {/* ---------- PREVIEW ---------- */}
@@ -131,7 +169,7 @@ export default function StepID({ value, onChange }: StepIDProps) {
 
                     <div className="absolute bottom-3 left-3 bg-green-600 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
                         <FiCheckCircle />
-                        Ready
+                        {idType}
                     </div>
                 </div>
             )}
@@ -147,7 +185,11 @@ export default function StepID({ value, onChange }: StepIDProps) {
             {/* ---------- ACTIONS ---------- */}
             {!value && mode === "idle" && (
                 <div className="grid grid-cols-2 gap-4">
-                    <label className="border-dashed border-2 rounded-xl p-6 text-center cursor-pointer">
+                    <label
+                        className={`border-dashed border-2 rounded-xl p-6 text-center cursor-pointer ${
+                            !idType && "opacity-50 cursor-not-allowed"
+                        }`}
+                    >
                         <FiUpload className="mx-auto text-3xl mb-2" />
                         Upload
                         <input
@@ -155,13 +197,17 @@ export default function StepID({ value, onChange }: StepIDProps) {
                             type="file"
                             accept="image/*"
                             hidden
+                            disabled={!idType}
                             onChange={handleUpload}
                         />
                     </label>
 
                     <button
                         onClick={requestCamera}
-                        className="border-dashed border-2 rounded-xl p-6 text-center"
+                        disabled={!idType}
+                        className={`border-dashed border-2 rounded-xl p-6 text-center ${
+                            !idType && "opacity-50 cursor-not-allowed"
+                        }`}
                     >
                         <FiCamera className="mx-auto text-3xl mb-2" />
                         Take Photo
@@ -177,9 +223,7 @@ export default function StepID({ value, onChange }: StepIDProps) {
                             ref={webcamRef}
                             audio={false}
                             screenshotFormat="image/jpeg"
-                            videoConstraints={{
-                                facingMode: "environment",
-                            }}
+                            videoConstraints={{ facingMode: "environment" }}
                             onUserMedia={() => setCameraReady(true)}
                             onUserMediaError={() =>
                                 setCameraError("Unable to access camera.")

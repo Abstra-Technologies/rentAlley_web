@@ -11,6 +11,8 @@ export default function LandlordVerificationPage() {
 
     const [idImage, setIdImage] = useState<File | null>(null);
     const [selfieImage, setSelfieImage] = useState<File | null>(null);
+    const [idType, setIdType] = useState("");
+
 
     const handleSubmit = async () => {
         if (!idImage || !selfieImage) return;
@@ -38,13 +40,17 @@ export default function LandlordVerificationPage() {
                 }
             }}
             canProceed={
-                (step === 1 && !!idImage) ||
+                (step === 1 && !!idImage && !!idType) ||
                 (step === 2 && !!selfieImage)
             }
         >
             {step === 1 && (
-                <StepID value={idImage} onChange={setIdImage} />
-            )}
+                <StepID
+                    value={idImage}
+                    idType={idType}
+                    onChange={setIdImage}
+                    onIdTypeChange={setIdType}
+                />            )}
 
             {step === 2 && (
                 <StepSelfie value={selfieImage} onChange={setSelfieImage} />
