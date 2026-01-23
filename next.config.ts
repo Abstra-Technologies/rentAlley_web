@@ -48,7 +48,7 @@ const baseConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            value: "camera=(self), microphone=(self), geolocation=(self)",
           },
           {
             key: "Strict-Transport-Security",
