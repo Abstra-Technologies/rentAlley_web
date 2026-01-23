@@ -126,7 +126,6 @@ export default function StepID({
     return (
         <div className="space-y-6 max-w-md mx-auto px-2 pb-10">
             <div>
-                <h2 className="text-xl font-bold">Government ID Verification</h2>
                 <p className="text-sm text-gray-600">
                     Select your ID type and upload a clear photo
                 </p>
