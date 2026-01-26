@@ -3,6 +3,16 @@
 import useSWR from "swr";
 import axios from "axios";
 import { Calendar, Clock } from "lucide-react";
+import {
+  CARD_CONTAINER,
+  CARD_HOVER,
+  SECTION_HEADER,
+  GRADIENT_DOT,
+  SECTION_TITLE,
+  GRADIENT_TEXT,
+  GRADIENT_BG_LIGHT,
+  EMPTY_STATE_ICON,
+} from "@/constant/design-constants";
 
 export default function TodayCalendar({ landlordId }) {
   const fetcher = (url: string) => axios.get(url).then((res) => res.data);
@@ -11,7 +21,7 @@ export default function TodayCalendar({ landlordId }) {
     landlordId
       ? `/api/landlord/propertyVisits/today-events?landlord_id=${landlordId}`
       : null,
-    fetcher
+    fetcher,
   );
 
   const today = new Date();
@@ -46,19 +56,19 @@ export default function TodayCalendar({ landlordId }) {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 min-h-[480px] flex flex-col">
+    <div
+      className={`${CARD_CONTAINER} ${CARD_HOVER} min-h-[480px] flex flex-col`}
+    >
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full"></div>
-        <h2 className="text-sm md:text-base font-semibold text-gray-900">
-          Today's Schedule
-        </h2>
+      <div className={`${SECTION_HEADER} mb-4`}>
+        <div className={GRADIENT_DOT}></div>
+        <h2 className={SECTION_TITLE}>Today's Schedule</h2>
       </div>
 
       {/* Date Display */}
       <div className="text-center mb-6">
         <p className="text-sm text-gray-600 mb-1">{monthYear}</p>
-        <p className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent mb-1">
+        <p className={`text-4xl md:text-5xl font-bold ${GRADIENT_TEXT} mb-1`}>
           {dayNumber}
         </p>
         <p className="text-xs text-gray-500">{weekday}</p>
@@ -82,7 +92,7 @@ export default function TodayCalendar({ landlordId }) {
         {/* No events */}
         {!isLoading && events.length === 0 && (
           <div className="text-center py-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
+            <div className={EMPTY_STATE_ICON}>
               <Calendar className="w-6 h-6 text-blue-600" />
             </div>
             <p className="text-sm text-gray-600">No events scheduled today</p>
@@ -111,8 +121,8 @@ export default function TodayCalendar({ landlordId }) {
                     ev.status === "Confirmed"
                       ? "bg-emerald-100 text-emerald-700"
                       : ev.status === "Pending"
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-gray-100 text-gray-700"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-gray-100 text-gray-700"
                   }`}
                 >
                   {ev.status}
