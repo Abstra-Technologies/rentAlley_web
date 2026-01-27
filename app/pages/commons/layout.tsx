@@ -11,7 +11,6 @@ import {
   ArrowRightOnRectangleIcon,
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
-import { BellRing } from "lucide-react";
 
 import {
   Menu,
@@ -21,6 +20,8 @@ import {
   AlertCircle,
   Home,
   ArrowLeft,
+  Settings,
+  LogOut,
 } from "lucide-react";
 
 import useAuthStore from "@/zustand/authStore";
@@ -44,13 +45,6 @@ const profileNavLinks = [
     icon: ShieldCheckIcon,
     roles: ["tenant", "landlord", "admin"],
   },
-  // {
-  //     href: "/pages/commons/settings",
-  //     label: "Notification",
-  //     shortLabel: "Notification",
-  //     icon: BellRing,
-  //     roles: ["landlord", "tenant", "admin"],
-  // },
   {
     href: "/pages/commons/landlord/payoutDetails",
     label: "Payout Account",
@@ -97,6 +91,23 @@ export default function SideNavProfile({
     }
   }, [user, isAuthChecking, router]);
 
+  /* Reset mobile UI on route change */
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
+
+  /* Prevent body scroll when sidebar open */
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isSidebarOpen]);
+
   const handleLogout = () => {
     if (!user) return;
     user?.userType ? signOut() : signOutAdmin();
@@ -111,9 +122,7 @@ export default function SideNavProfile({
   const mainPageLabel =
     user?.userType === "landlord" ? "Back to Dashboard" : "Back to Feeds";
 
-  /* ---------------------------------------------
-         FILTER NAV LINKS BASED ON ROLE
-    --------------------------------------------- */
+  /* Filter nav links based on role */
   const filteredLinks = profileNavLinks.filter((link) =>
     link.roles.includes(user?.userType || "guest"),
   );
@@ -129,21 +138,21 @@ export default function SideNavProfile({
   }
 
   // =====================================================
-  // TENANT VIEW - Simple inline tabs (Navbar handles main nav)
+  // TENANT VIEW - Tab navigation below main Navbar
   // =====================================================
   if (user?.userType === "tenant") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
-        {/* Sticky Tab Navigation */}
-        <div className="sticky top-14 md:top-16 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200">
+        {/* Sticky Tab Navigation - positioned below main Navbar */}
+        <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-4xl mx-auto px-4">
             {/* Header Row */}
-            <div className="flex items-center gap-3 py-3">
+            <div className="flex items-center gap-3 pt-4 pb-2">
               <button
                 onClick={() => router.push(mainPageUrl)}
                 className="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors group"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-gray-900" />
+                <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
               </button>
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg font-bold text-gray-900">
@@ -167,46 +176,57 @@ export default function SideNavProfile({
                       ${
                         isActive
                           ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md shadow-blue-500/25"
-                          : "text-gray-600 hover:bg-gray-100 bg-gray-50"
+                          : "text-gray-600 hover:bg-gray-100 bg-gray-50 border border-gray-200"
                       }
                     `}
                   >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                    <span className="sm:hidden">{item.shortLabel}</span>
+                    <Icon
+                      className={`w-4 h-4 ${isActive ? "" : "text-gray-400"}`}
+                    />
+                    {item.shortLabel}
                   </Link>
                 );
               })}
             </div>
+
+            {/* Subtitle - below tabs */}
+            <p className="text-sm text-gray-500 pb-3">
+              Manage your account information
+            </p>
           </div>
         </div>
 
-        {/* Main Content - Full width, no sidebar offset */}
+        {/* Main Content */}
         <main className="max-w-4xl mx-auto">{children}</main>
 
         {/* Logout Confirmation Modal */}
         {showLogoutConfirm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-              <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-7 h-7 text-red-600" />
+            <div
+              className="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl transform transition-all duration-300 scale-100"
+              style={{ animation: "modalPop 0.3s ease-out" }}
+            >
+              <div className="text-center mb-4">
+                <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-7 h-7 text-red-600" />
+                </div>
+                <h3 className="font-bold text-lg text-gray-900">
+                  Confirm Logout
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Are you sure you want to sign out?
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
-                Confirm Logout
-              </h3>
-              <p className="text-sm text-gray-600 text-center mb-6">
-                Are you sure you want to sign out?
-              </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowLogoutConfirm(false)}
-                  className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                  className="flex-1 border border-gray-200 rounded-xl py-3 font-medium hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors"
+                  className="flex-1 bg-red-600 text-white rounded-xl py-3 font-medium hover:bg-red-700 transition-colors"
                 >
                   Logout
                 </button>
@@ -214,29 +234,40 @@ export default function SideNavProfile({
             </div>
           </div>
         )}
+
+        {/* Animation Keyframes */}
+        <style jsx global>{`
+          @keyframes modalPop {
+            0% {
+              opacity: 0;
+              transform: scale(0.9);
+            }
+            100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+        `}</style>
       </div>
     );
   }
 
   // =====================================================
-  // LANDLORD VIEW - Full Sidebar Layout
+  // LANDLORD VIEW - Full Sidebar Layout (Matching landlord sidebar)
   // =====================================================
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
       {/*---------------------------------------------*/}
       {/* DESKTOP SIDEBAR */}
       {/*---------------------------------------------*/}
-      <aside className="hidden md:flex md:flex-col md:fixed md:top-0 md:bottom-0 md:z-40 md:w-72 md:bg-white md:shadow-xl">
+      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-72 bg-white shadow-xl z-40">
         <div className="flex flex-col h-full">
           {/* HEADER */}
-          <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-emerald-600 shadow-sm">
-            <Link
-              href="/pages/landlord/dashboard"
-              className="text-2xl font-bold text-white"
-            >
-              Upkyp
+          <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
+            <Link href="/pages/landlord/dashboard">
+              <h1 className="text-2xl font-bold">Upkyp</h1>
             </Link>
-            <p className="text-xs text-white/80 mt-1">Account Settings</p>
+            <p className="text-xs text-white/80">Account Settings</p>
           </div>
 
           {/* Back Button */}
@@ -250,65 +281,54 @@ export default function SideNavProfile({
             </button>
           </div>
 
-          {/* PROFILE HEADER - UPDATED */}
-          <div className="px-4 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
+          {/* PROFILE SECTION */}
+          <div className="px-4 py-4 border-b bg-gray-50">
+            <div className="flex items-center gap-3">
               <div className="relative w-11 h-11 flex-shrink-0">
                 <Image
                   src={
                     user.profilePicture ||
-                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
+                    "https://res.cloudinary.com/dptmeluy0/image/upload/v1766715365/profile-icon-design-free-vector_la6rgj.jpg"
                   }
                   alt="Profile"
                   width={44}
                   height={44}
-                  className="w-full h-full rounded-xl object-cover border-2 border-white shadow-sm"
+                  className="rounded-xl object-cover w-full h-full border-2 border-gray-200"
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">
-                  {user.firstName
+                <p className="font-semibold text-sm truncate">
+                  {user.firstName && user.lastName
                     ? `${user.firstName} ${user.lastName}`
                     : user.companyName || user.email}
                 </p>
-                <p className="text-xs text-gray-600">Landlord Account</p>
+                <p className="text-xs text-gray-500">Landlord Account</p>
               </div>
             </div>
           </div>
 
           {/* NAVIGATION LIST */}
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
-            <div className="space-y-1">
-              {filteredLinks.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-lg shadow-blue-500/25"
+            {filteredLinks.map(({ label, href, icon: Icon }) => {
+              const active =
+                pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition
+                    ${
+                      active
+                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white"
                         : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-sm font-medium">{item.label}</span>
-                    {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
-                  </Link>
-                );
-              })}
-
-              {/* LOGOUT */}
-              <button
-                onClick={() => setShowLogoutConfirm(true)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-600 hover:bg-red-50 w-full mt-2 transition-colors"
-              >
-                <ArrowRightOnRectangleIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">Logout</span>
-              </button>
-            </div>
+                    }
+                  `}
+                >
+                  <Icon className="w-5 h-5" />
+                  {label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Help Section */}
@@ -322,194 +342,192 @@ export default function SideNavProfile({
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-500">
-                © {new Date().getFullYear()} Upkyp
-              </p>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-gray-500">Connected</span>
-              </div>
-            </div>
+          {/* FOOTER */}
+          <div className="p-4 border-t bg-gray-50">
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              Logout
+            </button>
           </div>
         </div>
       </aside>
 
       {/*---------------------------------------------*/}
-      {/* MOBILE MENU BUTTON - Bottom LEFT to avoid FeedbackWidget */}
+      {/* MOBILE HEADER - Matching landlord sidebar */}
       {/*---------------------------------------------*/}
-      <button
-        onClick={() => setIsSidebarOpen(true)}
-        className="md:hidden fixed bottom-6 left-6 z-50 p-4 rounded-2xl shadow-lg bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-xl hover:scale-105 transition-all"
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-gradient-to-r from-blue-600 to-emerald-600 flex items-center justify-between px-4 z-50">
+        <Link href="/pages/landlord/dashboard">
+          <h1 className="text-xl font-bold text-white">Upkyp</h1>
+        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          >
+            <Menu className="w-5 h-5 text-white" />
+          </button>
+        </div>
+      </div>
+
+      {/*---------------------------------------------*/}
+      {/* MOBILE SIDEBAR OVERLAY - Right slide panel */}
+      {/*---------------------------------------------*/}
+      <div
+        className={`lg:hidden fixed inset-0 z-50 transition-opacity duration-300 ease-in-out ${
+          isSidebarOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
       >
-        <Menu className="w-6 h-6" />
-      </button>
+        {/* Backdrop */}
+        <div
+          className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+            isSidebarOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setIsSidebarOpen(false)}
+        />
 
-      {/*---------------------------------------------*/}
-      {/* MOBILE SIDEBAR - Bottom Sheet */}
-      {/*---------------------------------------------*/}
-      {isSidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60]"
-            onClick={() => setIsSidebarOpen(false)}
-          />
+        {/* Sidebar Panel */}
+        <aside
+          className={`absolute right-0 top-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-out ${
+            isSidebarOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          {/* Header */}
+          <div className="p-4 flex justify-between items-center bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
+            <h2 className="font-bold text-lg">Account Settings</h2>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-          <aside className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
-            </div>
-
-            {/* Header */}
-            <div className="px-5 py-4 bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
-              <h2 className="text-lg font-bold">Account Settings</h2>
-              <p className="text-sm text-white/80">Manage your profile</p>
-            </div>
-
-            {/* Back Button */}
-            <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
-              <button
-                onClick={() => {
-                  setIsSidebarOpen(false);
-                  router.push(mainPageUrl);
-                }}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all"
-              >
-                <Home className="w-5 h-5" />
-                {mainPageLabel}
-              </button>
-            </div>
-
-            {/* Mobile Profile - UPDATED */}
-            <div className="px-5 py-4 bg-gray-50 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="relative w-12 h-12 flex-shrink-0">
-                  <Image
-                    src={
-                      user.profilePicture ||
-                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwgEJf3figiiLmSgtwKnEgEkRw1qUf2ke1Bg&s"
-                    }
-                    alt="Profile"
-                    width={48}
-                    height={48}
-                    className="w-full h-full rounded-xl border-2 border-white shadow-md object-cover"
-                  />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">
-                    {user.firstName
-                      ? `${user.firstName} ${user.lastName}`
-                      : user.companyName || user.email}
-                  </p>
-                  <p className="text-xs text-gray-600">Landlord Account</p>
-                </div>
+          {/* Profile Section */}
+          <div className="p-4 bg-gray-50 border-b">
+            <div className="flex items-center gap-3">
+              <Image
+                src={
+                  user.profilePicture ||
+                  "https://res.cloudinary.com/dptmeluy0/image/upload/v1766715365/profile-icon-design-free-vector_la6rgj.jpg"
+                }
+                alt="Profile"
+                width={44}
+                height={44}
+                className="rounded-full border-2 border-white shadow-md"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate text-gray-900">
+                  {user.firstName && user.lastName
+                    ? `${user.firstName} ${user.lastName}`
+                    : user.companyName || user.email}
+                </p>
+                <p className="text-xs text-gray-500">Landlord Account</p>
               </div>
             </div>
+          </div>
 
-            {/* Mobile Nav */}
-            <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-              {filteredLinks.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
+          {/* Back to Dashboard Button */}
+          <div className="p-4 border-b">
+            <button
+              onClick={() => {
+                setIsSidebarOpen(false);
+                router.push(mainPageUrl);
+              }}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-100 text-gray-700 font-medium rounded-xl hover:from-blue-100 hover:to-emerald-100 transition-all"
+            >
+              <Home className="w-5 h-5 text-blue-600" />
+              {mainPageLabel}
+            </button>
+          </div>
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsSidebarOpen(false)}
-                    className={`flex items-center gap-3 p-4 rounded-2xl transition-all duration-200 border-2 ${
-                      isActive
-                        ? "bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200 text-blue-700"
-                        : "bg-white border-gray-100 hover:border-gray-200 text-gray-700"
-                    }`}
-                  >
-                    <div
-                      className={`p-2.5 rounded-xl ${
-                        isActive
-                          ? "bg-gradient-to-r from-blue-100 to-emerald-100"
-                          : "bg-gray-100"
-                      }`}
-                    >
-                      <Icon
-                        className={`w-5 h-5 ${
-                          isActive ? "text-blue-700" : "text-gray-500"
-                        }`}
-                      />
-                    </div>
-                    <span className="flex-1 font-medium text-sm">
-                      {item.label}
-                    </span>
-                    <ChevronRight
-                      className={`w-5 h-5 ${
-                        isActive ? "text-blue-700" : "text-gray-400"
-                      }`}
-                    />
-                  </Link>
-                );
-              })}
+          {/* Nav Links */}
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-380px)]">
+            {filteredLinks.map(({ label, href, icon: Icon }, index) => {
+              const active =
+                pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    active
+                      ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                  style={{
+                    animationDelay: isSidebarOpen ? `${index * 30}ms` : "0ms",
+                  }}
+                >
+                  <Icon className="w-5 h-5" />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
 
-              {/* Logout */}
-              <button
-                onClick={() => {
-                  setIsSidebarOpen(false);
-                  setShowLogoutConfirm(true);
-                }}
-                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-white border-2 border-red-100 text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors mt-2"
-              >
-                <div className="p-2.5 rounded-xl bg-red-100">
-                  <ArrowRightOnRectangleIcon className="w-5 h-5" />
-                </div>
-                <span className="flex-1 font-medium text-sm text-left">
-                  Logout
-                </span>
-                <ChevronRight className="w-5 h-5 text-red-400" />
+          {/* Help Section */}
+          <div className="p-4 border-t">
+            <div className="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-xl p-4 text-white">
+              <div className="text-sm font-medium mb-1">Need Help?</div>
+              <div className="text-xs opacity-90 mb-3">Contact support</div>
+              <button className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
+                Get Support
               </button>
+            </div>
+          </div>
 
-              {/* Help */}
-              <div className="mt-4">
-                <div className="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-xl p-4 text-white">
-                  <div className="text-sm font-medium mb-1">Need Help?</div>
-                  <div className="text-xs opacity-90 mb-3">Contact support</div>
-                  <button className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
-                    Get Support
-                  </button>
-                </div>
-              </div>
-
-              <div className="h-6"></div>
-            </nav>
-          </aside>
-        </>
-      )}
+          {/* Logout */}
+          <div className="p-4 border-t">
+            <button
+              onClick={() => {
+                setIsSidebarOpen(false);
+                setShowLogoutConfirm(true);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
+            >
+              <LogOut className="w-5 h-5" />
+              Logout
+            </button>
+          </div>
+        </aside>
+      </div>
 
       {/*---------------------------------------------*/}
       {/* LOGOUT MODAL */}
       {/*---------------------------------------------*/}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-7 h-7 text-red-600" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div
+            className="bg-white p-6 rounded-2xl max-w-md w-full shadow-2xl transform transition-all duration-300 scale-100"
+            style={{ animation: "modalPop 0.3s ease-out" }}
+          >
+            <div className="text-center mb-4">
+              <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-7 h-7 text-red-600" />
+              </div>
+              <h3 className="font-bold text-lg text-gray-900">
+                Confirm Logout
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Are you sure you want to logout?
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
-              Confirm Logout
-            </h3>
-            <p className="text-sm text-gray-600 text-center mb-6">
-              Are you sure you want to sign out?
-            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                className="flex-1 border border-gray-200 rounded-xl py-3 font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors"
+                className="flex-1 bg-red-600 text-white rounded-xl py-3 font-medium hover:bg-red-700 transition-colors"
               >
                 Logout
               </button>
@@ -519,9 +537,23 @@ export default function SideNavProfile({
       )}
 
       {/*---------------------------------------------*/}
-      {/* MAIN CONTENT - With sidebar offset for landlord */}
+      {/* MAIN CONTENT */}
       {/*---------------------------------------------*/}
-      <main className="flex-1 md:pl-72">{children}</main>
+      <main className="flex-1 lg:pl-72 pt-14 lg:pt-0">{children}</main>
+
+      {/* Animation Keyframes */}
+      <style jsx global>{`
+        @keyframes modalPop {
+          0% {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }
