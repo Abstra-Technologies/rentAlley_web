@@ -37,6 +37,7 @@ const profileNavLinks = [
     shortLabel: "Profile",
     icon: UserIcon,
     roles: ["tenant", "landlord", "admin"],
+    exactMatch: true, // Only match exact path
   },
   {
     href: "/pages/commons/profile/security",
@@ -44,6 +45,7 @@ const profileNavLinks = [
     shortLabel: "Security",
     icon: ShieldCheckIcon,
     roles: ["tenant", "landlord", "admin"],
+    exactMatch: false,
   },
   {
     href: "/pages/commons/landlord/payoutDetails",
@@ -51,6 +53,7 @@ const profileNavLinks = [
     shortLabel: "Payout",
     icon: CreditCardIcon,
     roles: ["landlord"],
+    exactMatch: false,
   },
   {
     href: "/pages/commons/landlord/subscription",
@@ -58,8 +61,17 @@ const profileNavLinks = [
     shortLabel: "Subscription",
     icon: CreditCardIcon,
     roles: ["landlord"],
+    exactMatch: false,
   },
 ];
+
+/* Helper function to check if link is active */
+const isLinkActive = (pathname: string, href: string, exactMatch: boolean) => {
+  if (exactMatch) {
+    return pathname === href;
+  }
+  return pathname === href || pathname.startsWith(href + "/");
+};
 
 export default function SideNavProfile({
   children,
@@ -165,7 +177,11 @@ export default function SideNavProfile({
             <div className="flex items-center gap-2 pb-3 overflow-x-auto scrollbar-hide">
               {filteredLinks.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isActive = isLinkActive(
+                  pathname,
+                  item.href,
+                  item.exactMatch,
+                );
                 return (
                   <Link
                     key={item.href}
@@ -309,9 +325,8 @@ export default function SideNavProfile({
 
           {/* NAVIGATION LIST */}
           <nav className="flex-1 px-3 py-4 overflow-y-auto">
-            {filteredLinks.map(({ label, href, icon: Icon }) => {
-              const active =
-                pathname === href || pathname.startsWith(href + "/");
+            {filteredLinks.map(({ label, href, icon: Icon, exactMatch }) => {
+              const active = isLinkActive(pathname, href, exactMatch);
               return (
                 <Link
                   key={href}
@@ -447,28 +462,29 @@ export default function SideNavProfile({
 
           {/* Nav Links */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-380px)]">
-            {filteredLinks.map(({ label, href, icon: Icon }, index) => {
-              const active =
-                pathname === href || pathname.startsWith(href + "/");
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    active
-                      ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                  style={{
-                    animationDelay: isSidebarOpen ? `${index * 30}ms` : "0ms",
-                  }}
-                >
-                  <Icon className="w-5 h-5" />
-                  {label}
-                </Link>
-              );
-            })}
+            {filteredLinks.map(
+              ({ label, href, icon: Icon, exactMatch }, index) => {
+                const active = isLinkActive(pathname, href, exactMatch);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      active
+                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white shadow-md"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    style={{
+                      animationDelay: isSidebarOpen ? `${index * 30}ms` : "0ms",
+                    }}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {label}
+                  </Link>
+                );
+              },
+            )}
           </nav>
 
           {/* Help Section */}
