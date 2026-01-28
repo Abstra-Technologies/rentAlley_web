@@ -197,49 +197,30 @@ export default function QuickActions({
 
       {/* ================= DESKTOP VIEW ================= */}
       <div className="hidden md:block">
-        {/* Section Header */}
-        <div className={`${SECTION_HEADER} mb-4`}>
-          <span className={GRADIENT_DOT} />
-          <h2 className={SECTION_TITLE}>Quick Actions</h2>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4">
+        {/* Action Buttons - Icons only, no labels */}
+        <div className="flex flex-wrap gap-3">
           {desktopActions.map(
-            ({ id, label, icon: Icon, onClick, iconColor, hoverBg }) => (
+            ({ id, label, icon: Icon, onClick, gradient, iconColor }) => (
               <button
                 key={id}
                 onClick={onClick}
-                className="group flex flex-col items-center gap-2"
+                title={label}
+                className="group relative w-14 h-14 rounded-2xl transition-all duration-300 hover:scale-110 active:scale-95"
               >
-                {/* Icon Circle */}
+                {/* Default State */}
+                <div className="absolute inset-0 bg-white border border-gray-200 rounded-2xl shadow-sm ring-1 ring-gray-100 group-hover:opacity-0 transition-opacity duration-300" />
+
+                {/* Hover State */}
                 <div
-                  className={`
-                                    w-16 h-16 rounded-2xl
-                                    flex items-center justify-center
-                                    bg-white border border-gray-200
-                                    shadow-sm ring-1 ring-gray-100
-                                    transition-all duration-300
-                                    group-hover:shadow-lg group-hover:scale-110 group-hover:ring-blue-200
-                                    group-active:scale-95
-                                    ${hoverBg}
-                                `}
-                >
+                  className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                />
+
+                {/* Icon */}
+                <div className="relative w-full h-full flex items-center justify-center">
                   <Icon
-                    className={`w-7 h-7 ${iconColor} 
-                                        group-hover:text-white 
-                                        transition-colors duration-300`}
+                    className={`w-6 h-6 ${iconColor} group-hover:text-white transition-colors duration-300`}
                   />
                 </div>
-
-                {/* Label */}
-                <span
-                  className="text-sm font-semibold text-gray-700 
-                                    group-hover:text-gray-900
-                                    transition-colors duration-200"
-                >
-                  {label}
-                </span>
               </button>
             ),
           )}
