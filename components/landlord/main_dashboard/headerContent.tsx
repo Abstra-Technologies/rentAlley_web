@@ -34,14 +34,6 @@ export default function HeaderContent({
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         {/* LEFT: Greeting */}
         <div className="flex-1 min-w-0">
-          {/* Badge */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className={GRADIENT_DOT} />
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Dashboard Overview
-            </span>
-          </div>
-
           {/* Greeting */}
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-1">
             <span className={GRADIENT_TEXT}>{greeting}</span>
