@@ -7,13 +7,13 @@ import {
   Clock,
   Zap,
   XCircle,
+  X,
 } from "lucide-react";
 import useSWR, { mutate } from "swr";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import useAuthStore from "@/zustand/authStore";
-import { GRADIENT_PRIMARY } from "@/constant/design-constants";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -21,6 +21,7 @@ export default function LandlordBetaBanner() {
   const { user } = useAuthStore();
   const [activating, setActivating] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const statusKey = user?.user_id
     ? `/api/landlord/beta/status?user_id=${user.user_id}`
@@ -30,6 +31,21 @@ export default function LandlordBetaBanner() {
 
   const status = data?.status;
   const isActive = data?.is_active;
+
+  // Check if banner was dismissed (only for active status)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const wasDismissed = localStorage.getItem("beta_banner_dismissed");
+      if (wasDismissed === "true") {
+        setDismissed(true);
+      }
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem("beta_banner_dismissed", "true");
+  };
 
   /* ================= ACTIVATE ================= */
   const handleActivateBeta = async () => {
@@ -96,130 +112,144 @@ export default function LandlordBetaBanner() {
   /* ================= LOADING ================= */
   if (isLoading) return null;
 
-  /* ================= STATUS CONFIGS ================= */
+  /* ================= DETERMINE STATE ================= */
+  let currentState: "active" | "approved" | "pending" | "rejected" | "default";
+
+  if (user && status === "approved" && isActive) {
+    currentState = "active";
+  } else if (user && status === "approved" && !isActive) {
+    currentState = "approved";
+  } else if (status === "pending") {
+    currentState = "pending";
+  } else if (status === "rejected") {
+    currentState = "rejected";
+  } else {
+    currentState = "default";
+  }
+
+  // Don't show if active and dismissed
+  if (currentState === "active" && dismissed) {
+    return null;
+  }
+
+  /* ================= ACTIVE STATE - COMPACT STRIP ================= */
+  if (currentState === "active") {
+    return (
+      <div className="bg-gradient-to-r from-emerald-500 to-green-500 text-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              <p className="text-sm font-medium truncate">
+                <span className="font-semibold">Beta Access Active</span>
+                <span className="hidden sm:inline text-white/90">
+                  {" "}
+                  — Enjoy discounted transaction fees
+                </span>
+              </p>
+            </div>
+            <button
+              onClick={handleDismiss}
+              className="p-1 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ================= OTHER STATES - COMPACT CARD ================= */
   const configs = {
-    active: {
-      gradient: "from-emerald-500 via-green-500 to-emerald-600",
-      icon: CheckCircle,
-      iconBg: "bg-white/20",
-      title: "Beta Access Active 🎉",
-      description:
-        "You're enjoying full platform access with exclusive discounted transaction fees.",
-      showAction: false,
-    },
     approved: {
-      gradient: "from-blue-500 via-indigo-500 to-purple-600",
+      gradient: "from-blue-500 to-indigo-500",
       icon: Zap,
-      iconBg: "bg-white/20",
-      title: "Beta Access Approved 🎊",
-      description:
-        "Activate whenever you're ready — no automatic charges, full control.",
-      showAction: true,
-      actionLabel: "Activate Beta Now",
+      title: "Beta Access Approved! 🎊",
+      description: "Activate to unlock discounted fees",
+      actionLabel: "Activate Now",
       actionHandler: handleActivateBeta,
       actionLoading: activating,
     },
     pending: {
-      gradient: "from-blue-500 via-cyan-500 to-teal-500",
+      gradient: "from-blue-500 to-cyan-500",
       icon: Clock,
-      iconBg: "bg-white/20",
-      title: "Beta Review in Progress ⏳",
-      description:
-        "Your application is under review. We'll notify you once approved.",
-      showAction: false,
+      title: "Beta Review in Progress",
+      description: "We'll notify you once approved",
+      actionLabel: null,
+      actionHandler: null,
+      actionLoading: false,
     },
     rejected: {
-      gradient: "from-gray-600 via-gray-700 to-slate-700",
+      gradient: "from-gray-500 to-gray-600",
       icon: XCircle,
-      iconBg: "bg-white/20",
       title: "Beta Application Closed",
-      description:
-        "Thank you for your interest. We'll reach out if beta access reopens.",
-      showAction: false,
+      description: "We'll reach out if access reopens",
+      actionLabel: null,
+      actionHandler: null,
+      actionLoading: false,
     },
     default: {
-      gradient: "from-blue-500 via-emerald-500 to-cyan-500",
+      gradient: "from-blue-500 to-emerald-500",
       icon: Rocket,
-      iconBg: "bg-white/20",
       title: "Join the UpKyp Beta 🚀",
-      description:
-        "Get early access with exclusive benefits, discounted fees, and priority support.",
-      showAction: true,
-      actionLabel: "Apply for Beta",
+      description: "Get early access with exclusive benefits",
+      actionLabel: "Apply Now",
       actionHandler: handleApplyBeta,
       actionLoading: applying,
     },
   };
 
-  /* ================= DETERMINE CONFIG ================= */
-  let config;
-  if (user && status === "approved" && isActive) {
-    config = configs.active;
-  } else if (user && status === "approved" && !isActive) {
-    config = configs.approved;
-  } else if (status === "pending") {
-    config = configs.pending;
-  } else if (status === "rejected") {
-    config = configs.rejected;
-  } else {
-    config = configs.default;
-  }
-
+  const config = configs[currentState];
   const Icon = config.icon;
 
   return (
-    <div className="px-4 md:px-6 pt-4 md:pt-6">
+    <div className="px-4 md:px-6 pt-4 md:pt-5">
       <div
-        className={`max-w-7xl mx-auto rounded-2xl border border-white/20
-                    bg-gradient-to-r ${config.gradient}
-                    text-white shadow-lg hover:shadow-xl
-                    transition-all duration-300
-                    p-4 md:p-6`}
+        className={`max-w-7xl mx-auto rounded-xl bg-gradient-to-r ${config.gradient}
+                    text-white shadow-md p-3 md:p-4`}
       >
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          {/* Icon + Content */}
-          <div className="flex items-start gap-4 flex-1">
-            <div
-              className={`${config.iconBg} w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg`}
-            >
-              <Icon className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between gap-3">
+          {/* Left: Icon + Content */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Icon className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base md:text-lg font-bold mb-1">
+            <div className="min-w-0">
+              <h3 className="text-sm md:text-base font-bold truncate">
                 {config.title}
               </h3>
-              <p className="text-sm md:text-base text-white/90 leading-relaxed">
+              <p className="text-xs md:text-sm text-white/80 truncate">
                 {config.description}
               </p>
             </div>
           </div>
 
-          {/* Action Button */}
-          {config.showAction && (
+          {/* Right: Action Button */}
+          {config.actionLabel && (
             <button
-              onClick={config.actionHandler}
+              onClick={config.actionHandler!}
               disabled={config.actionLoading}
-              className={`flex-shrink-0 w-full md:w-auto
-                                inline-flex items-center justify-center gap-2
-                                text-sm md:text-base font-bold
-                                px-5 py-3 rounded-xl
-                                transition-all duration-300
-                                shadow-lg hover:shadow-xl
-                                ${
-                                  config.actionLoading
-                                    ? "bg-white/20 cursor-not-allowed opacity-50"
-                                    : "bg-white/90 hover:bg-white text-gray-900 hover:scale-105 active:scale-95"
-                                }`}
+              className={`flex-shrink-0 inline-flex items-center gap-1.5
+                          text-xs md:text-sm font-bold
+                          px-3 md:px-4 py-2 md:py-2.5 rounded-lg
+                          transition-all duration-200
+                          ${
+                            config.actionLoading
+                              ? "bg-white/20 cursor-not-allowed opacity-50"
+                              : "bg-white text-gray-900 hover:bg-white/90 hover:scale-105 active:scale-95"
+                          }`}
             >
               {config.actionLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-gray-900/20 border-t-gray-900 rounded-full animate-spin" />
-                  Processing...
+                  <div className="w-3.5 h-3.5 border-2 border-gray-900/20 border-t-gray-900 rounded-full animate-spin" />
+                  <span className="hidden sm:inline">Processing...</span>
                 </>
               ) : (
                 <>
                   {config.actionLabel}
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
