@@ -112,57 +112,64 @@ export default function LandlordLayout({
   /* ===============================
        NAVIGATION (MEMOIZED)
     ================================ */
-  const navLinks = useMemo(
-    () => [
-      { label: "Dashboard", href: "/pages/landlord/dashboard", icon: Home },
-      { label: "Inbox", href: "/pages/landlord/inbox", icon: Inbox },
-      {
-        label: "Properties",
-        href: "/pages/landlord/property-listing",
-        icon: Building,
-      },
-      {
-        label: "My Tenants",
-        href: "/pages/landlord/list_of_tenants",
-        icon: Users,
-      },
-      {
-        label: "Announcements",
-        href: "/pages/landlord/announcement",
-        icon: Megaphone,
-      },
-      {
-        label: "Messages",
-        href: "/pages/landlord/chat",
-        icon: MessageSquareMore,
-      },
-      {
-        label: "Calendar",
-        href: "/pages/landlord/booking-appointment",
-        icon: Calendar,
-      },
-      { label: "Payments", href: "/pages/landlord/payments", icon: Wallet },
-      {
-        label: "Work Orders",
-        href: "/pages/landlord/maintenance-request",
-        icon: Construction,
-      },
-      {
-        label: "Tax Compliance",
-        href: "/pages/landlord/taxManagement",
-        icon: Banknote,
-      },
-      {
-        label: "Analytics",
-        href: "/pages/landlord/analytics/performance",
-        icon: ChartArea,
-      },
-      { label: "Help & Support", href: "/pages/public/help", icon: Handshake },
-    ],
-    [],
-  );
+    const navLinks = useMemo(
+        () => [
+            // 🔥 Core
+            { label: "Dashboard", href: "/pages/landlord/dashboard", icon: Home },
+            { label: "Payments", href: "/pages/landlord/payments", icon: Wallet },
+            {
+                label: "Properties",
+                href: "/pages/landlord/property-listing",
+                icon: Building,
+            },
+            {
+                label: "My Tenants",
+                href: "/pages/landlord/list_of_tenants",
+                icon: Users,
+            },
+            {
+                label: "Messages",
+                href: "/pages/landlord/chat",
+                icon: MessageSquareMore,
+            },
 
-  const handleLogout = async () => {
+            // ⚙️ Operations
+            {
+                label: "Work Orders",
+                href: "/pages/landlord/maintenance-request",
+                icon: Construction,
+            },
+            {
+                label: "Calendar",
+                href: "/pages/landlord/booking-appointment",
+                icon: Calendar,
+            },
+            {
+                label: "Announcements",
+                href: "/pages/landlord/announcement",
+                icon: Megaphone,
+            },
+
+            // 📊 Strategy
+            {
+                label: "Analytics",
+                href: "/pages/landlord/analytics/performance",
+                icon: ChartArea,
+            },
+            {
+                label: "Tax Compliance",
+                href: "/pages/landlord/taxManagement",
+                icon: Banknote,
+            },
+
+            // 🆘 Support
+            { label: "Help & Support", href: "/pages/public/help", icon: Handshake },
+        ],
+        [],
+    );
+
+
+    const handleLogout = async () => {
     await signOut();
     router.push("/pages/auth/login");
   };
