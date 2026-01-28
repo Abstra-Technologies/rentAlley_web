@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-    console.log("🔵 Google OAuth INIT called");
 
     const { searchParams } = new URL(req.url);
     const userType = searchParams.get("userType");
 
-    console.log("➡️ userType from query:", userType);
 
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const REDIRECT_URI = process.env.REDIRECT_URI;
-
-    console.log("➡️ GOOGLE_CLIENT_ID exists:", !!GOOGLE_CLIENT_ID);
-    console.log("➡️ REDIRECT_URI:", REDIRECT_URI);
 
     if (!userType) {
         console.error("❌ Missing userType in query params");
@@ -32,7 +27,6 @@ export async function GET(req: NextRequest) {
 
     const state = JSON.stringify({ userType });
 
-    console.log("➡️ OAuth state payload:", state);
 
     const googleAuthURL =
         `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -42,8 +36,7 @@ export async function GET(req: NextRequest) {
         `scope=openid%20email%20profile&` +
         `state=${encodeURIComponent(state)}`;
 
-    console.log("🔁 Redirecting to Google OAuth URL:");
-    console.log(googleAuthURL);
+
 
     return NextResponse.redirect(googleAuthURL);
 }

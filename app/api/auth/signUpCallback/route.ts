@@ -6,6 +6,7 @@ import { Resend } from "resend";
 
 import { encryptData } from "@/crypto/encrypt";
 import { generateLandlordId, generateTenantId } from "@/utils/id_generator";
+import { generateNameHash, generateNameTokens } from "@/utils/nameHash";
 import { EmailTemplate } from "@/components/email-template";
 
 /* --------------------------------------------------
@@ -49,7 +50,6 @@ async function sendOtpEmail(
         from: "Upkyp Registration <hello@upkyp.com>",
         to: [email],
         subject: title,
-
         react: EmailTemplate({
             title,
             firstName: firstName || "there",
@@ -58,7 +58,6 @@ async function sendOtpEmail(
             timezone,
             registeredAt,
         }),
-
         tags: [
             { name: "type", value: "transactional" },
             { name: "category", value: "otp" },
@@ -67,7 +66,7 @@ async function sendOtpEmail(
 }
 
 /* --------------------------------------------------
-   OTP STORAGE (SAME AS REGISTER)
+   OTP STORAGE
 -------------------------------------------------- */
 async function storeOTP(db: mysql.Connection, user_id: string, otp: string) {
     await db.execute(
@@ -86,14 +85,14 @@ async function storeOTP(db: mysql.Connection, user_id: string, otp: string) {
 
     const [rows] = await db.execute<any[]>(
         `
-      SELECT
-        CONVERT_TZ(t.expires_at, '+00:00', u.timezone) AS local_expiry,
-        u.timezone
-      FROM UserToken t
-      JOIN User u ON u.user_id = t.user_id
-      WHERE t.user_id = ?
-      ORDER BY t.created_at DESC
-      LIMIT 1
+    SELECT
+      CONVERT_TZ(t.expires_at, '+00:00', u.timezone) AS local_expiry,
+      u.timezone
+    FROM UserToken t
+    JOIN User u ON u.user_id = t.user_id
+    WHERE t.user_id = ?
+    ORDER BY t.created_at DESC
+    LIMIT 1
     `,
         [user_id]
     );
@@ -105,7 +104,7 @@ async function storeOTP(db: mysql.Connection, user_id: string, otp: string) {
    ROLE IDS
 -------------------------------------------------- */
 async function generateUniqueTenantId(db: mysql.Connection) {
-    let id: string;
+    let id = "";
     let exists = true;
 
     while (exists) {
@@ -116,11 +115,11 @@ async function generateUniqueTenantId(db: mysql.Connection) {
         );
         exists = rows.length > 0;
     }
-    return id!;
+    return id;
 }
 
 async function generateUniqueLandlordId(db: mysql.Connection) {
-    let id: string;
+    let id = "";
     let exists = true;
 
     while (exists) {
@@ -131,7 +130,7 @@ async function generateUniqueLandlordId(db: mysql.Connection) {
         );
         exists = rows.length > 0;
     }
-    return id!;
+    return id;
 }
 
 /* --------------------------------------------------
@@ -207,6 +206,9 @@ export async function GET(req: NextRequest) {
             .update(email)
             .digest("hex");
 
+        const nameHashed = generateNameHash(firstName, lastName);
+        const nameTokens = generateNameTokens(firstName, lastName);
+
         /* ---------- USER UPSERT ---------- */
         const [existing] = await db.execute<any[]>(
             `SELECT user_id FROM User
@@ -219,6 +221,18 @@ export async function GET(req: NextRequest) {
 
         if (existing.length) {
             user_id = existing[0].user_id;
+
+            /* 🔁 BACKFILL HASHES IF MISSING */
+            await db.execute(
+                `
+        UPDATE User
+        SET
+          nameHashed = COALESCE(nameHashed, ?),
+          nameTokens = COALESCE(nameTokens, ?)
+        WHERE user_id = ?
+        `,
+                [nameHashed, nameTokens, user_id]
+            );
         } else {
             const [[{ uuid }]] = await db.execute<any[]>("SELECT UUID() AS uuid");
             user_id = uuid;
@@ -228,8 +242,9 @@ export async function GET(req: NextRequest) {
          (user_id, email, emailHashed, google_id, userType,
           emailVerified, timezone,
           firstName, lastName, profilePicture,
+          nameHashed, nameTokens,
           createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())`,
+         VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())`,
                 [
                     user_id,
                     JSON.stringify(await encryptData(email, ENCRYPTION_SECRET!)),
@@ -246,6 +261,8 @@ export async function GET(req: NextRequest) {
                     profilePicture
                         ? JSON.stringify(await encryptData(profilePicture, ENCRYPTION_SECRET!))
                         : null,
+                    nameHashed,
+                    nameTokens,
                 ]
             );
 
@@ -266,8 +283,7 @@ export async function GET(req: NextRequest) {
 
         /* ---------- OTP + SESSION ---------- */
         const otp = generateOTP();
-        const { local_expiry, timezone: tz } =
-            await storeOTP(db, user_id, otp);
+        const { local_expiry, timezone: tz } = await storeOTP(db, user_id, otp);
 
         const registeredAt = new Date().toLocaleString("en-US", {
             dateStyle: "medium",
@@ -284,7 +300,6 @@ export async function GET(req: NextRequest) {
             registeredAt
         );
 
-        /* ---------- ISSUE SESSION (SAME AS REGISTER) ---------- */
         const sessionToken = await new SignJWT({ user_id })
             .setProtectedHeader({ alg: "HS256" })
             .setExpirationTime("2h")

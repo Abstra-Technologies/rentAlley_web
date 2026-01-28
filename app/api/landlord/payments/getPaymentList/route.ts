@@ -2,17 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
 import { unstable_cache } from "next/cache";
+import crypto from "crypto";
 
 const SECRET = process.env.ENCRYPTION_SECRET!;
 
+const sha256 = (value: string) =>
+    crypto.createHash("sha256").update(value).digest("hex");
+
 /* -------------------------------------------------------
-   CACHED QUERY FUNCTION (FIXED)
+   CACHED QUERY FUNCTION (FINAL)
 ------------------------------------------------------- */
 const getPaymentsCached = unstable_cache(
     async (
         landlordId: string,
         propertyId?: string | null,
-        month?: string | null,
+        _month?: string | null,
         search?: string | null,
         paymentType?: string | null,
         dateRange?: string | null
@@ -29,7 +33,9 @@ const getPaymentsCached = unstable_cache(
         u.unit_name,
         pr.property_name,
         usr.firstName,
-        usr.lastName
+        usr.lastName,
+        usr.nameHashed,
+        usr.nameTokens
       FROM Payment p
         JOIN LeaseAgreement la ON p.agreement_id = la.agreement_id
         JOIN Tenant t ON la.tenant_id = t.tenant_id
@@ -64,29 +70,46 @@ const getPaymentsCached = unstable_cache(
         AND MONTH(p.payment_date) = MONTH(CURDATE())
         AND YEAR(p.payment_date) = YEAR(CURDATE())
       `;
-        } else if (dateRange === "year") {
-            query += ` AND YEAR(p.payment_date) = YEAR(CURDATE())`;
+        } else if (dateRange?.startsWith("year:")) {
+            query += ` AND YEAR(p.payment_date) = ?`;
+            params.push(Number(dateRange.split(":")[1]));
         }
 
-        /* ---------- SQL SEARCH (NON-ENCRYPTED ONLY) ---------- */
+        /* ---------- SEARCH ---------- */
         if (search) {
+            const clean = search.toLowerCase().trim();
+            const fullHash = sha256(clean);
+
+            const tokenHashes = clean
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(sha256);
+
             query += `
         AND (
           pr.property_name LIKE ?
           OR u.unit_name LIKE ?
           OR p.receipt_reference LIKE ?
+          OR usr.nameHashed = ?
+          OR JSON_CONTAINS(usr.nameTokens, ?)
         )
       `;
-            const like = `%${search}%`;
-            params.push(like, like, like);
+
+            params.push(
+                `%${search}%`,
+                `%${search}%`,
+                `%${search}%`,
+                fullHash,
+                JSON.stringify(tokenHashes)
+            );
         }
 
         query += ` ORDER BY p.created_at DESC`;
 
         const [rows]: any = await db.query(query, params);
 
-        /* ---------- DECRYPT + NAME SEARCH ---------- */
-        let decrypted = rows.map((row: any) => {
+        /* ---------- DECRYPT DISPLAY NAME ONLY ---------- */
+        return rows.map((row: any) => {
             let firstName = "";
             let lastName = "";
 
@@ -109,23 +132,13 @@ const getPaymentsCached = unstable_cache(
                 tenant_name: `${firstName} ${lastName}`.trim() || "Unknown Tenant",
             };
         });
-
-        /* ---------- TENANT NAME SEARCH (POST-DECRYPT) ---------- */
-        if (search) {
-            const lower = search.toLowerCase();
-            decrypted = decrypted.filter((p: any) =>
-                p.tenant_name.toLowerCase().includes(lower)
-            );
-        }
-
-        return decrypted;
     },
 
-    /* ---------- Cache Key ---------- */
+    /* ---------- CACHE KEY ---------- */
     (
         landlordId,
         propertyId,
-        month,
+        _month,
         search,
         paymentType,
         dateRange
