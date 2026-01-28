@@ -2,39 +2,118 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { logEvent } from "../../../utils/gtag";
 import Swal from "sweetalert2";
 import useAuthStore from "@/zustand/authStore";
 import ChangePasswordModal from "../setttings/changePassword";
 import TwoFactorToggle from "../setttings/TwoFactorToggle";
-import { Shield, Lock, ShieldCheck } from "lucide-react";
+import {
+  Shield,
+  Lock,
+  ShieldCheck,
+  KeyRound,
+  Fingerprint,
+  Info,
+} from "lucide-react";
+
+// ============================================
+// ANIMATION VARIANTS
+// ============================================
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+};
 
 export default function SecurityPage() {
   const { user, loading, error } = useAuthStore();
   const router = useRouter();
 
+  // ============================================
+  // LOADING STATE
+  // ============================================
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="relative w-10 h-10 mx-auto mb-3">
-            <div className="absolute inset-0 animate-spin rounded-full border-4 border-gray-200"></div>
-            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-blue-500"></div>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header Skeleton */}
+        <div className="bg-white border-b border-gray-200 px-4 md:px-6 lg:px-8 py-4 lg:py-6">
+          <div className="flex items-center gap-3 lg:gap-4">
+            <div className="w-12 h-12 lg:w-14 lg:h-14 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="flex-1">
+              <div className="h-6 lg:h-7 bg-gray-200 rounded-lg w-48 animate-pulse mb-2" />
+              <div className="h-4 bg-gray-200 rounded-lg w-64 animate-pulse" />
+            </div>
           </div>
-          <p className="text-sm text-gray-600 font-medium">
-            Loading security settings...
-          </p>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="px-4 md:px-6 lg:px-8 py-6">
+          {/* Info Alert Skeleton */}
+          <div className="bg-gray-100 rounded-2xl p-4 lg:p-5 mb-6 animate-pulse">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-gray-200 rounded-xl" />
+              <div className="flex-1">
+                <div className="h-4 bg-gray-200 rounded w-40 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-full" />
+              </div>
+            </div>
+          </div>
+
+          {/* Cards Grid Skeleton */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
+              >
+                <div className="px-4 lg:px-6 py-4 lg:py-5 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-200 rounded-xl animate-pulse" />
+                    <div className="flex-1">
+                      <div className="h-5 bg-gray-200 rounded w-32 animate-pulse mb-2" />
+                      <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 lg:p-6">
+                  <div className="h-12 bg-gray-200 rounded-xl animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
+  // ============================================
+  // NO USER STATE
+  // ============================================
   if (!user) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Shield className="w-6 h-6 text-gray-400" />
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-sm text-gray-600 font-medium">
             User not found. Please log in.
@@ -44,12 +123,15 @@ export default function SecurityPage() {
     );
   }
 
+  // ============================================
+  // ERROR STATE
+  // ============================================
   if (error) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Shield className="w-6 h-6 text-red-500" />
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-red-500" />
           </div>
           <p className="text-sm text-red-600 font-medium">Error: {error}</p>
         </div>
@@ -57,79 +139,190 @@ export default function SecurityPage() {
     );
   }
 
+  // ============================================
+  // MAIN RENDER
+  // ============================================
   return (
-    <div className="px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="flex items-center justify-between gap-3 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-md">
-            <ShieldCheck className="w-6 h-6 text-white" />
-          </div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="bg-white border-b border-gray-200 px-4 md:px-6 lg:px-8 py-4 lg:py-6"
+      >
+        <div className="flex items-center gap-3 lg:gap-4">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl lg:rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/25"
+          >
+            <ShieldCheck className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
+          </motion.div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
               Security & Privacy
             </h1>
-            <p className="text-xs sm:text-sm text-gray-600">
+            <p className="text-sm text-gray-500">
               Manage your account security settings
             </p>
           </div>
         </div>
-      </header>
+      </motion.div>
 
-      {/* Content */}
-      <div className="space-y-4 sm:space-y-6 mb-20 sm:mb-6">
-        {/* Password Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all">
-          {/* Status Bar */}
-          <div className="h-1 sm:h-1.5 bg-gradient-to-r from-blue-500 to-emerald-500" />
-
-          <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-br from-blue-50 to-emerald-50">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-gray-900">
-                  Password
-                </h2>
-                <p className="text-xs text-gray-600">
-                  Update your password regularly
-                </p>
-              </div>
+      {/* Main Content */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="px-4 md:px-6 lg:px-8 py-6 pb-24 lg:pb-8"
+      >
+        {/* Info Alert - Full Width */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-200 rounded-2xl p-4 lg:p-5 mb-6"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Info className="w-5 h-5 text-blue-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-blue-900 mb-1">
+                Keep Your Account Secure
+              </p>
+              <p className="text-xs lg:text-sm text-blue-700">
+                Use a strong password and enable two-factor authentication for
+                maximum protection. We recommend updating your password every
+                3-6 months.
+              </p>
             </div>
           </div>
+        </motion.div>
 
-          <div className="p-4 sm:p-6">
-            <ChangePasswordModal userId={user?.user_id} />
-          </div>
-        </div>
-
-        {/* Two-Factor Authentication Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all">
-          {/* Status Bar */}
-          <div className="h-1 sm:h-1.5 bg-gradient-to-r from-emerald-500 to-blue-500" />
-
-          <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-br from-emerald-50 to-blue-50">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-gray-900">
-                  Two-Factor Authentication
-                </h2>
-                <p className="text-xs text-gray-600">
-                  Add an extra layer of security
-                </p>
+        {/* Cards Grid - 2 columns on xl screens */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+          {/* Password Section */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+          >
+            {/* Card Header */}
+            <div className="px-4 lg:px-6 py-4 lg:py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center">
+                  <KeyRound className="w-5 h-5 lg:w-6 lg:h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-base lg:text-lg font-bold text-gray-900">
+                    Password
+                  </h2>
+                  <p className="text-xs lg:text-sm text-gray-500">
+                    Update your password regularly for better security
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="p-4 sm:p-6">
-            <TwoFactorToggle user_id={user?.user_id} />
-          </div>
+            {/* Card Content */}
+            <div className="p-4 lg:p-6">
+              <ChangePasswordModal userId={user?.user_id} />
+            </div>
+          </motion.div>
+
+          {/* Two-Factor Authentication Section */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+          >
+            {/* Card Header */}
+            <div className="px-4 lg:px-6 py-4 lg:py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center">
+                  <Fingerprint className="w-5 h-5 lg:w-6 lg:h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="text-base lg:text-lg font-bold text-gray-900">
+                    Two-Factor Authentication
+                  </h2>
+                  <p className="text-xs lg:text-sm text-gray-500">
+                    Add an extra layer of security to your account
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card Content */}
+            <div className="p-4 lg:p-6">
+              <TwoFactorToggle user_id={user?.user_id} />
+            </div>
+          </motion.div>
+
+          {/* Security Tips Card - Spans full width on xl */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden xl:col-span-2"
+          >
+            {/* Card Header */}
+            <div className="px-4 lg:px-6 py-4 lg:py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-amber-100 to-orange-100 rounded-xl flex items-center justify-center">
+                  <Shield className="w-5 h-5 lg:w-6 lg:h-6 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-base lg:text-lg font-bold text-gray-900">
+                    Security Tips
+                  </h2>
+                  <p className="text-xs lg:text-sm text-gray-500">
+                    Best practices to keep your account safe
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card Content */}
+            <div className="p-4 lg:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 lg:gap-4">
+                {[
+                  {
+                    color: "bg-blue-500",
+                    text: "Use a strong, unique password with at least 12 characters",
+                  },
+                  {
+                    color: "bg-emerald-500",
+                    text: "Enable two-factor authentication for added protection",
+                  },
+                  {
+                    color: "bg-purple-500",
+                    text: "Never share your password or authentication codes",
+                  },
+                  {
+                    color: "bg-amber-500",
+                    text: "Update your password every 3-6 months",
+                  },
+                  {
+                    color: "bg-rose-500",
+                    text: "Be cautious of phishing emails and suspicious links",
+                  },
+                  {
+                    color: "bg-cyan-500",
+                    text: "Log out from shared or public devices after use",
+                  },
+                ].map((tip, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl"
+                  >
+                    <span
+                      className={`w-2 h-2 ${tip.color} rounded-full mt-1.5 flex-shrink-0`}
+                    />
+                    <span className="text-sm text-gray-600">{tip.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
