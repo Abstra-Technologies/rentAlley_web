@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import usePropertyListingPage from "@/hooks/landlord/usePropertyListingPage";
 import PropertyCard from "@/components/landlord/properties/propertyCards";
 import ErrorBoundary from "@/components/Commons/ErrorBoundary";
+import LandlordProfileStatus from "@/components/landlord/profile/LandlordProfileStatus";
 
 // Animation variants
 const fadeInUp = {
@@ -196,25 +197,8 @@ export default function PropertyListingPage() {
             </motion.div>
           )}
 
-          {isNotVerified && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
-            >
-              <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
-              <span className="flex-1 text-sm text-amber-800">
-                Your landlord account must be verified to list properties.
-              </span>
-              <button
-                onClick={() => router.push("/pages/landlord/verification")}
-                className="text-amber-900 text-sm font-semibold underline hover:text-amber-700"
-              >
-                Verify now
-              </button>
-            </motion.div>
-          )}
+            <LandlordProfileStatus landlord_id={user.landlord_id} />
+
         </div>
 
         {/* Search */}
@@ -232,6 +216,7 @@ export default function PropertyListingPage() {
             className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-sm"
           />
         </div>
+
       </motion.div>
 
       {/* Content */}

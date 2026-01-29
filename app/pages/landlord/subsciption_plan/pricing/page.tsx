@@ -66,7 +66,7 @@ export default function SubscriptionPlans() {
         setActivating(true);
 
         try {
-            await axios.post("/api/landlord/subscription/activate", {
+            await axios.post("/api/landlord/subscription/freeTrialTest", {
                 landlord_id: user.landlord_id,
                 plan_name: selectedPlan.name,
             });

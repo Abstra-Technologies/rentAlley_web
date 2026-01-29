@@ -62,7 +62,7 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
             bg: "bg-blue-50 border-blue-200",
             icon: Clock,
             iconColor: "text-blue-600",
-            text: "Verification under review.",
+            text: "Landlord Verification under review.",
         },
         rejected: {
             bg: "bg-red-50 border-red-200",
@@ -78,15 +78,21 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
 
     return (
         <div
-            className={`flex items-center gap-2
-      px-3 py-2 rounded-lg border
-      ${cfg.bg}`}
+            className={`flex items-center gap-3
+    px-4 py-2 rounded-md
+    ${cfg.bg}
+    shadow-sm`}
         >
-            {/* Icon */}
-            <Icon className={`w-4 h-4 ${cfg.iconColor} flex-shrink-0`} />
+            {/* Status Badge */}
+            <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center
+      bg-white/70`}
+            >
+                <Icon className={`w-4 h-4 ${cfg.iconColor}`} />
+            </div>
 
-            {/* Text */}
-            <p className="text-xs text-gray-700 truncate flex-1">
+            {/* Message */}
+            <p className="text-xs sm:text-sm text-gray-700 truncate flex-1">
                 {cfg.text}
             </p>
 
@@ -94,15 +100,18 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
             {cfg.action && (
                 <button
                     onClick={() => router.push("/pages/landlord/verification")}
-                    className={`${GRADIENT_PRIMARY}
-          text-white text-[11px] font-semibold
-          px-3 py-1.5 rounded-md
-          flex items-center gap-1`}
+                    className="inline-flex items-center gap-1
+        text-[11px] sm:text-xs font-semibold
+        px-3 py-1.5 rounded-md
+        bg-white/80 text-gray-900
+        hover:bg-white
+        transition whitespace-nowrap"
                 >
                     {cfg.action}
-                    <ArrowRight className="w-3 h-3" />
+                    <ArrowRight className="w-3.5 h-3.5" />
                 </button>
             )}
         </div>
     );
+
 }

@@ -45,17 +45,21 @@ export default function usePropertyListingPage() {
 
     /* ================= VERIFICATION ================= */
     useEffect(() => {
-        if (user?.userType !== "landlord") return;
+        if (!user?.landlord_id) return;
 
         setIsFetchingVerification(true);
 
         axios
-            .get(`/api/landlord/verification-upload/status?user_id=${user.user_id}`)
+            .get(`/api/landlord/${user?.landlord_id}/profileStatus`)
             .then((res) => {
-                setVerificationStatus(
-                    (res.data.verification_status || "not verified").toLowerCase()
-                );
-                console.log('verification status', res.data.verification_status);
+                const status = res.data?.status;
+
+                // Map profileStatus → existing logic
+                if (status === "verified") {
+                    setVerificationStatus("approved");
+                } else {
+                    setVerificationStatus("not verified");
+                }
             })
             .catch(() => {
                 setVerificationStatus("not verified");
@@ -63,7 +67,8 @@ export default function usePropertyListingPage() {
             .finally(() => {
                 setIsFetchingVerification(false);
             });
-    }, [user]);
+    }, [user?.landlord_id]);
+
 
     /* ================= DERIVED (IMPORTANT) ================= */
 
