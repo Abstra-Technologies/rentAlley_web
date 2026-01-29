@@ -25,7 +25,7 @@ export async function GET(req: Request) {
         u.unit_name AS unit,
         usr.firstName,
         usr.lastName,
-        'New tenant inquiry' AS note,
+        'New tenant Prospect' AS note,
         NULL AS daysLeft
       FROM ProspectiveTenant pt
       JOIN Tenant t ON pt.tenant_id = t.tenant_id

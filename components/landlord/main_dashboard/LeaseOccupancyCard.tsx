@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Users } from "lucide-react";
+import { FileText, Users, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
@@ -34,65 +34,82 @@ export default function LeaseOccupancyCard({ landlord_id }: Props) {
         { revalidateOnFocus: false, dedupingInterval: 60_000 }
     );
 
-    /* ================= FILTER ================= */
     const prospective = leases.filter((l) => l.type === "prospective");
     const drafts = leases.filter((l) => l.type === "draft");
 
-    /* ================= ITEM ================= */
-    const Item = (lease: LeaseItem, idx: number) => {
-        const handleClick = () => {
-            if (lease.type === "prospective") {
-                router.push(
-                    `/pages/landlord/properties/${lease.property_id}/prospectives`
-                );
-            } else {
-                // draft
-                router.push(
-                    `/pages/landlord/properties/${lease.property_id}/activeLease`
-                );
-            }
-        };
-
-        return (
-            <div
-                key={`${lease.type}-${idx}`}
-                onClick={handleClick}
-                className="
-                flex items-center gap-3 px-4 py-3 cursor-pointer
-                hover:bg-gray-50 transition
-            "
-            >
-                {/* Icon */}
-                <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center
-                ${
-                        lease.type === "draft"
-                            ? "bg-indigo-50 text-indigo-600"
-                            : "bg-emerald-50 text-emerald-600"
-                    }`}
-                >
-                    {lease.type === "draft" ? (
-                        <FileText className="w-4 h-4" />
-                    ) : (
-                        <Users className="w-4 h-4" />
-                    )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                        {lease.unit}
-                    </p>
-                    <p className="text-xs text-gray-600 truncate">
-                        {lease.tenant}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate">
-                        {lease.note}
-                    </p>
-                </div>
-            </div>
-        );
+    /* ================= NAV ================= */
+    const goToLease = (lease: LeaseItem) => {
+        if (lease.type === "prospective") {
+            router.push(
+                `/pages/landlord/properties/${lease.property_id}/prospectives`
+            );
+        } else {
+            router.push(
+                `/pages/landlord/properties/${lease.property_id}/activeLease`
+            );
+        }
     };
+
+    /* ================= ITEM ================= */
+    const Item = (lease: LeaseItem, idx: number) => (
+        <div
+            key={`${lease.type}-${idx}`}
+            onClick={() => goToLease(lease)}
+            className="
+        group relative flex items-center gap-3 px-4 py-3 cursor-pointer
+        transition-all duration-200
+        hover:bg-gray-50 hover:shadow-sm hover:-translate-y-[1px]
+      "
+        >
+            {/* Icon */}
+            <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+          ${
+                    lease.type === "draft"
+                        ? "bg-indigo-50 text-indigo-600"
+                        : "bg-emerald-50 text-emerald-600"
+                }
+        `}
+            >
+                {lease.type === "draft" ? (
+                    <FileText className="w-4 h-4" />
+                ) : (
+                    <Users className="w-4 h-4" />
+                )}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                    {lease.unit}
+                </p>
+                <p className="text-xs text-gray-600 truncate">
+                    {lease.tenant}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                    {lease.note}
+                </p>
+            </div>
+
+            {/* View Icon */}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    goToLease(lease);
+                }}
+                className="
+          absolute right-3 opacity-0 translate-x-2
+          group-hover:opacity-100 group-hover:translate-x-0
+          transition-all duration-200
+          p-1.5 rounded-md
+          text-gray-500 hover:text-blue-600 hover:bg-blue-50
+        "
+                title="View"
+            >
+                <Eye className="w-4 h-4" />
+            </button>
+        </div>
+    );
 
     const Empty = (text: string) => (
         <div className="px-4 py-3 text-xs text-gray-400 italic">{text}</div>
@@ -100,13 +117,11 @@ export default function LeaseOccupancyCard({ landlord_id }: Props) {
 
     /* ================= RENDER ================= */
     return (
-        <div
-            className="
-        bg-white rounded-xl border shadow-sm
-        transition-all duration-300
-        hover:shadow-lg hover:-translate-y-0.5
-      "
-        >
+        <div className="
+      bg-white rounded-xl border shadow-sm
+      transition-all duration-300
+      hover:shadow-lg hover:-translate-y-0.5
+    ">
             {/* Header */}
             <div className="px-4 py-3 border-b">
                 <h3 className="text-sm font-semibold text-gray-900">
@@ -124,7 +139,6 @@ export default function LeaseOccupancyCard({ landlord_id }: Props) {
                 </div>
             ) : (
                 <>
-                    {/* ================= PROSPECTIVE ================= */}
                     <Section title="Prospective" count={prospective.length}>
                         <div className="max-h-[180px] overflow-y-auto divide-y">
                             {prospective.length
@@ -133,7 +147,6 @@ export default function LeaseOccupancyCard({ landlord_id }: Props) {
                         </div>
                     </Section>
 
-                    {/* ================= DRAFTS ================= */}
                     <Section title="Draft Leases" count={drafts.length}>
                         <div className="max-h-[180px] overflow-y-auto divide-y">
                             {drafts.length
