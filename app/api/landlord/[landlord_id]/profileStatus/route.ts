@@ -9,9 +9,9 @@ type ProfileStatus =
 
 export async function GET(
     req: Request,
-    context: { params: { landlord_id: string } }
+    { params }: { params: Promise<{ landlord_id: string }> }
 ) {
-    const { landlord_id } = context.params;
+    const { landlord_id } = await params;
 
     if (!landlord_id) {
         return NextResponse.json(
@@ -32,18 +32,16 @@ export async function GET(
             [landlord_id]
         );
 
-        /** ✅ NO RECORD → SHOW VERIFY LANDLORD */
+        /* ✅ No record = incomplete */
         if (!rows || rows.length === 0) {
-            return NextResponse.json<{
-                status: ProfileStatus;
-            }>({ status: "incomplete" });
+            return NextResponse.json<{ status: ProfileStatus }>({
+                status: "incomplete",
+            });
         }
 
         const dbStatus = rows[0].status;
 
-        /** ✅ NORMALIZE DB → UI STATUS */
         let status: ProfileStatus;
-
         switch (dbStatus) {
             case "pending":
                 status = "pending";

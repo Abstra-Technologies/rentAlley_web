@@ -4,13 +4,8 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
-import {
-    AlertCircle,
-    Clock,
-    XCircle,
-    ArrowRight,
-} from "lucide-react";
-import { CARD_BASE, GRADIENT_PRIMARY } from "@/constant/design-constants";
+import { AlertCircle, Clock, XCircle, ArrowRight } from "lucide-react";
+import { GRADIENT_PRIMARY } from "@/constant/design-constants";
 
 const fetcher = async (url: string) => {
     try {
@@ -33,14 +28,10 @@ interface Props {
     landlord_id: string;
 }
 
-interface ProfileStatusResponse {
-    status?: ProfileStatus;
-}
-
 export default function LandlordProfileStatus({ landlord_id }: Props) {
     const router = useRouter();
 
-    const { data, isLoading } = useSWR<ProfileStatusResponse>(
+    const { data, isLoading } = useSWR<{ status?: ProfileStatus }>(
         landlord_id ? `/api/landlord/${landlord_id}/profileStatus` : null,
         fetcher,
         { revalidateOnFocus: false, dedupingInterval: 60_000 }
@@ -51,15 +42,7 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
     /* ================= LOADING ================= */
     if (isLoading) {
         return (
-            <div className={`${CARD_BASE} p-3 animate-pulse`}>
-                <div className="flex gap-3 items-center">
-                    <div className="w-9 h-9 rounded-lg bg-gray-200" />
-                    <div className="flex-1 space-y-1.5">
-                        <div className="h-3 bg-gray-200 rounded w-36" />
-                        <div className="h-2.5 bg-gray-100 rounded w-full" />
-                    </div>
-                </div>
-            </div>
+            <div className="px-3 py-2 rounded-lg bg-gray-100 animate-pulse h-10" />
         );
     }
 
@@ -69,36 +52,24 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
     /* ================= CONFIG ================= */
     const configs = {
         incomplete: {
-            bg: "bg-gradient-to-r from-orange-50 to-amber-50",
-            border: "border-orange-200",
-            iconBg: "bg-orange-100",
-            iconColor: "text-orange-600",
+            bg: "bg-orange-50 border-orange-200",
             icon: AlertCircle,
-            title: "Verification Required",
-            desc:
-                "Complete verification to unlock all features.",
-            action: "Start Verification",
+            iconColor: "text-orange-600",
+            text: "Verification required to unlock all features.",
+            action: "Start",
         },
         pending: {
-            bg: "bg-gradient-to-r from-blue-50 to-cyan-50",
-            border: "border-blue-200",
-            iconBg: "bg-blue-100",
-            iconColor: "text-blue-600",
+            bg: "bg-blue-50 border-blue-200",
             icon: Clock,
-            title: "Verification Under Review",
-            desc:
-                "Your documents are currently being reviewed.",
+            iconColor: "text-blue-600",
+            text: "Verification under review.",
         },
         rejected: {
-            bg: "bg-gradient-to-r from-red-50 to-rose-50",
-            border: "border-red-200",
-            iconBg: "bg-red-100",
-            iconColor: "text-red-600",
+            bg: "bg-red-50 border-red-200",
             icon: XCircle,
-            title: "Verification Needs Attention",
-            desc:
-                "Please review feedback and resubmit documents.",
-            action: "Review & Resubmit",
+            iconColor: "text-red-600",
+            text: "Verification rejected. Please resubmit.",
+            action: "Fix",
         },
     };
 
@@ -107,32 +78,26 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
 
     return (
         <div
-            className={`${CARD_BASE} ${cfg.bg} ${cfg.border}
-    px-3 py-2 flex items-center gap-3`}
+            className={`flex items-center gap-2
+      px-3 py-2 rounded-lg border
+      ${cfg.bg}`}
         >
             {/* Icon */}
-            <div
-                className={`${cfg.iconBg} w-8 h-8 rounded-md
-      flex items-center justify-center flex-shrink-0`}
-            >
-                <Icon className={`w-4 h-4 ${cfg.iconColor}`} />
-            </div>
+            <Icon className={`w-4 h-4 ${cfg.iconColor} flex-shrink-0`} />
 
             {/* Text */}
-            <p className="text-xs text-gray-700 flex-1 truncate">
-                <span className="font-semibold">{cfg.title}:</span>{" "}
-                {cfg.desc}
+            <p className="text-xs text-gray-700 truncate flex-1">
+                {cfg.text}
             </p>
 
-            {/* Button */}
+            {/* Action */}
             {cfg.action && (
                 <button
                     onClick={() => router.push("/pages/landlord/verification")}
                     className={`${GRADIENT_PRIMARY}
-        text-white text-xs font-semibold
-        px-3 py-1.5 rounded-md
-        flex items-center gap-1
-        whitespace-nowrap`}
+          text-white text-[11px] font-semibold
+          px-3 py-1.5 rounded-md
+          flex items-center gap-1`}
                 >
                     {cfg.action}
                     <ArrowRight className="w-3 h-3" />
@@ -140,5 +105,4 @@ export default function LandlordProfileStatus({ landlord_id }: Props) {
             )}
         </div>
     );
-
 }

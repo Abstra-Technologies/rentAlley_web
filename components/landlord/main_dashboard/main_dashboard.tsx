@@ -15,6 +15,7 @@ import QuickActions from "./QuickActions";
 import HeaderContent from "./headerContent";
 import NewWorkOrderModal from "../maintenance_management/NewWorkOrderModal";
 import LandlordPropertyMarquee from "@/components/landlord/main_dashboard/LandlordPropertyQuickView";
+import LeaseOccupancyCard from "./LeaseOccupancyCard";
 
 const fetcher = (url: string) => axios.get(url).then((r) => r.data);
 
@@ -184,7 +185,7 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
             </Suspense>
 
             <Suspense fallback={<CardSkeleton />}>
-              <PaymentList landlord_id={landlordId} />
+                <LeaseOccupancyCard landlord_id={landlordId} />
             </Suspense>
           </div>
 
