@@ -7,7 +7,6 @@ async function verifyToken(token: string) {
 
     try {
         const { payload } = await jwtVerify(token, secret);
-        console.log("landlord payload: ", payload);
         return payload;
     } catch {
         return null;
@@ -32,7 +31,6 @@ const permissionMapping: Record<string, string> = {
     "/pages/system_admin/bug_report": "view_reports",
     "/pages/system_admin/activityLog": "view_log",
     "/pages/system_admin/beta_programs": "beta",
-    "/pages/system_admin/tenant_landlord": "tenant_landlord_management",
 };
 
 const excludePages = new Set([
@@ -45,7 +43,7 @@ const excludePages = new Set([
    PROXY (MIDDLEWARE)
 ===================================================== */
 export async function proxy(req: NextRequest) {
-    const { pathname } = req.nextUrl;
+    const { pathname, search } = req.nextUrl;
     const token = req.cookies.get("token")?.value;
 
     if (pathname.startsWith("/api/webhook")) {
@@ -56,14 +54,14 @@ export async function proxy(req: NextRequest) {
        NO TOKEN
     ------------------------------------------------ */
     if (!token) {
+        const callbackUrl = pathname + search;
+
         // Block system admin pages
         if (pathname.startsWith("/pages/system_admin")) {
-            return NextResponse.redirect(
-                new URL("/pages/admin_login", req.url)
-            );
+            const adminLogin = new URL("/pages/admin_login", req.url);
+            adminLogin.searchParams.set("callbackUrl", callbackUrl);
+            return NextResponse.redirect(adminLogin);
         }
-
-
 
         // Block protected app routes
         if (
@@ -71,9 +69,9 @@ export async function proxy(req: NextRequest) {
             pathname.startsWith("/pages/landlord") ||
             pathname.startsWith("/pages/commons")
         ) {
-            return NextResponse.redirect(
-                new URL("/pages/auth/login", req.url)
-            );
+            const loginUrl = new URL("/pages/auth/login", req.url);
+            loginUrl.searchParams.set("callbackUrl", callbackUrl);
+            return NextResponse.redirect(loginUrl);
         }
 
         return NextResponse.next();
@@ -85,21 +83,24 @@ export async function proxy(req: NextRequest) {
     const decoded: any = await verifyToken(token);
 
     if (!decoded) {
-        return NextResponse.redirect(
-            new URL("/pages/auth/login", req.url)
-        );
+        const loginUrl = new URL("/pages/auth/login", req.url);
+        loginUrl.searchParams.set("callbackUrl", pathname + search);
+        return NextResponse.redirect(loginUrl);
     }
 
     const { userType, role, permissions = [] } = decoded;
 
     /* -----------------------------------------------
        BLOCK AUTH PAGES WHEN LOGGED IN
+       (only if NO callbackUrl)
     ------------------------------------------------ */
     const isAuthPage = AUTH_PAGES.some(
         (page) => pathname === page || pathname.startsWith(`${page}/`)
     );
 
-    if (isAuthPage) {
+    const hasCallback = req.nextUrl.searchParams.has("callbackUrl");
+
+    if (isAuthPage && !hasCallback) {
         if (SYSTEM_ADMIN_ROLES.includes(role)) {
             return NextResponse.redirect(
                 new URL("/pages/system_admin/dashboard", req.url)
@@ -117,10 +118,6 @@ export async function proxy(req: NextRequest) {
                 new URL("/pages/tenant/feeds", req.url)
             );
         }
-
-        return NextResponse.redirect(
-            new URL("/pages/auth/login", req.url)
-        );
     }
 
     /* -----------------------------------------------
@@ -151,15 +148,12 @@ export async function proxy(req: NextRequest) {
             );
         }
 
-        // Allow excluded admin pages
         if (excludePages.has(pathname)) {
             return NextResponse.next();
         }
 
-        // Permission-based access
         const matchedEntry = Object.entries(permissionMapping).find(
-            ([route]) =>
-                pathname === route || pathname.startsWith(`${route}/`)
+            ([route]) => pathname === route || pathname.startsWith(`${route}/`)
         );
 
         if (matchedEntry) {
@@ -188,6 +182,5 @@ export const config = {
         "/pages/system_admin/:path*",
         "/pages/commons/:path*",
         "/api/webhook/:path*",
-
     ],
 };

@@ -12,214 +12,185 @@ import {
     FaCalendarAlt,
     FaClock,
     FaFileContract,
-    FaCheckCircle,
     FaComments,
-    FaInfoCircle,
+    FaLock,
 } from "react-icons/fa";
+
+type ViewType = "inquire" | "schedule" | "apply";
 
 export default function InquiryBooking({
                                            tenant_id,
                                            unit_id,
                                            rent_amount,
                                            landlord_id,
-                                       }) {
+                                       }: any) {
     const router = useRouter();
     const { user } = useAuth();
 
-    const [view, setView] = useState<"inquire" | "schedule" | "apply">("inquire");
+    const [view, setView] = useState<ViewType>("inquire");
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState("");
     const [bookedDates, setBookedDates] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(false);
 
-    const confirmButtonRef = useRef<HTMLDivElement | null>(null);
+    const confirmRef = useRef<HTMLDivElement | null>(null);
 
+    /* =====================================================
+       AUTH GUARD (GLOBAL STYLE)
+    ===================================================== */
+    const requireAuth = (action: () => void) => {
+        if (!user) {
+            const callbackUrl = encodeURIComponent(
+                window.location.pathname + window.location.search
+            );
+
+            Swal.fire({
+                icon: "info",
+                title: "Login required",
+                text: "Please log in to continue.",
+                confirmButtonText: "Login",
+                confirmButtonColor: "#3B82F6",
+            }).then(() => {
+                router.push(`/pages/auth/login?callbackUrl=${callbackUrl}`);
+            });
+
+            return;
+        }
+
+        action();
+    };
+
+    /* =====================================================
+       DATA
+    ===================================================== */
     useEffect(() => {
-        const fetchBookedDates = async () => {
-            try {
-                const response = await axios.get("/api/tenant/visits/booked-dates");
-                setBookedDates(response.data.bookedDates || {});
-            } catch (error) {
-                console.error("Error fetching booked dates:", error);
-            }
-        };
-        fetchBookedDates();
+        axios
+            .get("/api/tenant/visits/booked-dates")
+            .then((res) => setBookedDates(res.data.bookedDates || {}))
+            .catch(() => {});
     }, []);
 
     useEffect(() => {
-        if (
-            view === "schedule" &&
-            selectedDate &&
-            selectedTime &&
-            confirmButtonRef.current
-        ) {
-            confirmButtonRef.current.scrollIntoView({
-                behavior: "smooth",
-                block: "nearest",
-            });
+        if (view === "schedule" && selectedDate && selectedTime) {
+            confirmRef.current?.scrollIntoView({ behavior: "smooth" });
         }
     }, [selectedDate, selectedTime, view]);
 
-    const isTileDisabled = ({ date, view }) => {
+    /* =====================================================
+       HELPERS
+    ===================================================== */
+    const isTileDisabled = ({ date, view }: any) => {
         if (view !== "month") return false;
 
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const formatted = `${year}-${month}-${day}`;
-
-        const booked = bookedDates[formatted];
-        return (booked && booked.count >= 1) || date < new Date();
+        const key = date.toISOString().split("T")[0];
+        return bookedDates[key]?.count >= 1 || date < new Date();
     };
 
-    const handleTimeChange = (e) => {
-        const value = e.target.value;
-        const [hours] = value.split(":").map(Number);
+    const handleSchedule = async () => {
+        requireAuth(async () => {
+            if (!selectedDate || !selectedTime) {
+                Swal.fire("Missing info", "Select date & time", "error");
+                return;
+            }
 
-        if (hours < 8 || hours > 20) {
-            Swal.fire({
-                icon: "error",
-                title: "Invalid Time",
-                text: "Please select a time between 8 AM and 8 PM.",
-                confirmButtonColor: "#3B82F6",
-            });
-            return;
-        }
+            try {
+                setLoading(true);
 
-        setSelectedTime(value);
-    };
+                const visit_date = selectedDate.toISOString().split("T")[0];
 
-    const getCombinedDateTime = () => {
-        if (!selectedDate || !selectedTime) return "";
-        const [hours, minutes] = selectedTime.split(":");
-        const updated = new Date(selectedDate);
-        updated.setHours(parseInt(hours), parseInt(minutes));
-        return updated.toLocaleString("en-US", {
-            dateStyle: "full",
-            timeStyle: "short",
+                await axios.post(
+                    "/api/tenant/property-finder/schedVisitOnly",
+                    {
+                        tenant_id,
+                        unit_id,
+                        visit_date,
+                        visit_time: `${selectedTime}:00`,
+                    }
+                );
+
+                Swal.fire("Success", "Visit scheduled!", "success");
+                router.push("/pages/find-rent");
+            } catch {
+                Swal.fire("Error", "Failed to schedule visit", "error");
+            } finally {
+                setLoading(false);
+            }
         });
     };
 
-    const handleJustSchedule = async (e) => {
-        e.preventDefault();
-
-        if (!selectedDate || !selectedTime) {
-            Swal.fire({
-                icon: "error",
-                title: "Incomplete Selection",
-                text: "Please select both a date and a time.",
-                confirmButtonColor: "#3B82F6",
-            });
-            return;
-        }
-
-        try {
-            setLoading(true);
-
-            const year = selectedDate.getFullYear();
-            const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-            const day = String(selectedDate.getDate()).padStart(2, "0");
-            const formattedDate = `${year}-${month}-${day}`;
-
-            const response = await axios.post(
-                "/api/tenant/property-finder/schedVisitOnly",
-                {
-                    tenant_id,
-                    unit_id,
-                    visit_date: formattedDate,
-                    visit_time: `${selectedTime}:00`,
-                }
-            );
-
-            if (response.status === 200) {
-                await Swal.fire({
-                    icon: "success",
-                    title: "Visit Scheduled",
-                    text: "Visit scheduled successfully!",
-                    confirmButtonColor: "#3B82F6",
-                });
-                router.push("/pages/find-rent");
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: "error",
-                title: "Scheduling Error",
-                text: "Failed to schedule visit. Please try again.",
-                confirmButtonColor: "#3B82F6",
-            });
-        } finally {
-            setLoading(false);
-        }
+    const handleApply = () => {
+        requireAuth(() => {
+            router.push(`/pages/tenant/prospective/${unit_id}`);
+        });
     };
 
-    const handleApplyNow = () => {
-        router.push(
-            unit_id ? `/pages/tenant/prospective/${unit_id}` : "/pages/find-rent"
-        );
-    };
-
+    /* =====================================================
+       UI
+    ===================================================== */
     return (
         <>
             <style jsx global>{`
         .react-calendar {
-          width: 100% !important;
-          border: 2px solid #e5e7eb !important;
-          border-radius: 16px !important;
-          background: white !important;
+          width: 100%;
+          border-radius: 16px;
+          border: 2px solid #e5e7eb;
         }
       `}</style>
 
-            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-xl">
-                {/* HEADER */}
-                <div className="pb-6 border-b-2 border-gray-100 mb-6">
-          <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
-            ₱{rent_amount?.toLocaleString()}
-          </span>
-                    <span className="text-gray-600 font-medium ml-1">/ month</span>
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-6 space-y-6">
+                {/* PRICE */}
+                <div className="border-b pb-4">
+                    <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                        ₱{rent_amount?.toLocaleString()}
+                        <span className="text-gray-500 text-base font-medium ml-1">
+              / month
+            </span>
+                    </p>
                 </div>
 
                 {/* TABS */}
-                <div className="flex border-b-2 border-gray-100 mb-6 -mx-1">
+                <div className="flex border-b">
                     {[
                         { id: "inquire", label: "Ask", icon: FaComments },
                         { id: "schedule", label: "Visit", icon: FaCalendarAlt },
                         { id: "apply", label: "Apply", icon: FaFileContract },
-                    ].map((t) => {
-                        const Icon = t.icon;
-                        const active = view === t.id;
-                        return (
-                            <button
-                                key={t.id}
-                                onClick={() => setView(t.id)}
-                                className={`flex-1 pb-3 px-2 relative font-semibold ${
-                                    active ? "text-gray-900" : "text-gray-500"
-                                }`}
-                            >
-                                <div className="flex items-center justify-center gap-2">
-                                    <Icon className={`w-4 h-4`} />
-                                    <span>{t.label}</span>
-                                </div>
-                                {active && (
-                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-full" />
-                                )}
-                            </button>
-                        );
-                    })}
+                    ].map(({ id, label, icon: Icon }) => (
+                        <button
+                            key={id}
+                            onClick={() => setView(id as ViewType)}
+                            className={`flex-1 py-3 font-semibold flex items-center justify-center gap-2
+                ${
+                                view === id
+                                    ? "text-blue-600 border-b-4 border-blue-600"
+                                    : "text-gray-500"
+                            }`}
+                        >
+                            <Icon />
+                            {label}
+                        </button>
+                    ))}
                 </div>
 
-                {/* ASK */}
+                {/* INQUIRE */}
                 {view === "inquire" && (
                     <div className="space-y-4">
-                        <div className="bg-gradient-to-br from-blue-50 to-emerald-50 p-4 rounded-xl border border-blue-200">
-                            <p className="text-sm font-medium text-gray-900">
-                                Have questions?
-                            </p>
-                            <p className="text-xs text-gray-600">
-                                Send a message to the host for more details about this unit.
+                        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
+                            <p className="font-semibold">Have questions?</p>
+                            <p className="text-sm text-gray-600">
+                                Message the landlord directly.
                             </p>
                         </div>
 
-                        <ChatInquiry landlord_id={landlord_id} />
+                        {!user ? (
+                            <button
+                                onClick={() => requireAuth(() => {})}
+                                className="w-full py-3 rounded-xl bg-blue-600 text-white font-semibold flex items-center justify-center gap-2"
+                            >
+                                <FaLock /> Login to message
+                            </button>
+                        ) : (
+                            <ChatInquiry landlord_id={landlord_id} />
+                        )}
                     </div>
                 )}
 
@@ -227,72 +198,40 @@ export default function InquiryBooking({
                 {view === "schedule" && (
                     <div className="space-y-5">
                         <Calendar
-                            onChange={setSelectedDate}
                             value={selectedDate}
+                            onChange={setSelectedDate}
                             tileDisabled={isTileDisabled}
                             minDate={new Date()}
                         />
 
                         {selectedDate && (
-                            <div className="space-y-4 animate-fadeIn">
-                                <label className="block text-sm font-semibold mb-2">
-                                    <FaClock className="w-4 h-4 inline-block mr-1 text-emerald-600" />
-                                    Select time (8 AM - 8 PM)
-                                </label>
-
-                                <select
-                                    value={selectedTime}
-                                    onChange={handleTimeChange}
-                                    className="w-full p-3.5 border-2 border-gray-300 rounded-xl"
-                                >
-                                    <option value="">Choose a time</option>
-
-                                    {Array.from({ length: 25 })
-                                        .map((_, i) => {
-                                            const hour = Math.floor(i / 2) + 8;
-                                            if (hour > 20) return null;
-
-                                            const minute = i % 2 === 0 ? "00" : "30";
-                                            const time = `${hour.toString().padStart(2, "0")}:${minute}`;
-                                            const display = new Date(
-                                                `2024-01-01T${time}`
-                                            ).toLocaleTimeString("en-US", {
-                                                hour: "numeric",
-                                                minute: "2-digit",
-                                                hour12: true,
-                                            });
-
-                                            return (
-                                                <option key={time} value={time}>
-                                                    {display}
-                                                </option>
-                                            );
-                                        })
-                                        .filter((v) => v !== null)}
-                                </select>
-
-                                {selectedTime && (
-                                    <div className="p-4 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-xl border-2 border-emerald-200">
-                                        <p className="font-semibold text-sm">
-                                            Visit scheduled for:
-                                        </p>
-                                        <p className="text-sm text-gray-700 font-medium mt-1">
-                                            {getCombinedDateTime()}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
+                            <select
+                                value={selectedTime}
+                                onChange={(e) => setSelectedTime(e.target.value)}
+                                className="w-full p-3 border-2 rounded-xl"
+                            >
+                                <option value="">Select time (8AM – 8PM)</option>
+                                {Array.from({ length: 25 }).map((_, i) => {
+                                    const hour = Math.floor(i / 2) + 8;
+                                    if (hour > 20) return null;
+                                    const minute = i % 2 === 0 ? "00" : "30";
+                                    return (
+                                        <option
+                                            key={`${hour}:${minute}`}
+                                            value={`${hour.toString().padStart(2, "0")}:${minute}`}
+                                        >
+                                            {`${hour}:${minute}`}
+                                        </option>
+                                    );
+                                })}
+                            </select>
                         )}
 
-                        <div ref={confirmButtonRef}>
+                        <div ref={confirmRef}>
                             <button
-                                disabled={!selectedDate || !selectedTime || loading}
-                                onClick={handleJustSchedule}
-                                className={`w-full py-3.5 rounded-xl text-sm font-bold transition ${
-                                    selectedDate && selectedTime
-                                        ? "bg-gradient-to-r from-blue-600 to-emerald-600 text-white"
-                                        : "bg-gray-200 text-gray-400"
-                                }`}
+                                disabled={loading}
+                                onClick={handleSchedule}
+                                className="w-full py-3 rounded-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 text-white disabled:opacity-50"
                             >
                                 {loading ? "Scheduling..." : "Confirm visit"}
                             </button>
@@ -302,16 +241,16 @@ export default function InquiryBooking({
 
                 {/* APPLY */}
                 {view === "apply" && (
-                    <div className="space-y-5">
+                    <div className="space-y-4">
                         <button
-                            onClick={handleApplyNow}
-                            className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl font-bold shadow-lg"
+                            onClick={handleApply}
+                            className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-bold"
                         >
                             Start application
                         </button>
 
                         <p className="text-xs text-gray-500 text-center">
-                            By applying, you agree to provide accurate information.
+                            Accurate information is required to proceed.
                         </p>
                     </div>
                 )}

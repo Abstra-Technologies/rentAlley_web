@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import LoadingScreen from "@/components/loadingScreen";
 import LoginForm from "@/components/authentication/loginForm";
 import MobileLoginForm from "@/components/authentication/mobileLoginForm";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
     return (
@@ -14,6 +15,10 @@ export default function LoginPage() {
 }
 
 function Login() {
+
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl");
+
     return (
         <div
             className="relative min-h-screen bg-cover bg-center bg-no-repeat"
@@ -65,7 +70,7 @@ function Login() {
                     {/* Forms */}
                     <div className="w-full max-w-md">
                         <div className="hidden sm:block">
-                            <LoginForm />
+                            <LoginForm callbackUrl={callbackUrl} />
                         </div>
                         <div className="sm:hidden">
                             <MobileLoginForm />

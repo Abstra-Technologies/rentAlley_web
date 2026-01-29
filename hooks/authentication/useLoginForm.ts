@@ -11,7 +11,11 @@ const loginSchema = z.object({
     password: z.string().min(1, "Password is required"),
 });
 
-export function useLoginForm() {
+export function useLoginForm({
+                                 callbackUrl,
+                             }: {
+    callbackUrl?: string | null;
+} = {}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, fetchSession } = useAuthStore();
@@ -25,50 +29,47 @@ export function useLoginForm() {
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [rememberMe, setRememberMe] = useState(false);
 
-    // If already logged in → redirect
+    /* =====================================================
+       DO NOT FORCE REDIRECT ON MOUNT
+    ===================================================== */
     useEffect(() => {
-        if (user) {
-            if (user.userType === "tenant") router.replace("/pages/tenant/feeds");
-            else if (user.userType === "landlord") router.replace("/pages/landlord/dashboard");
-            else router.replace("/");
-        } else {
-            fetchSession();
-        }
-    }, [user]);
-
-    // Clean pending states
-    useEffect(() => {
-        sessionStorage.removeItem("pending2FA");
-        window.history.replaceState(null, "", "/pages/auth/login");
+        fetchSession();
     }, []);
 
+    /* =====================================================
+       ERROR FROM QUERY PARAM
+    ===================================================== */
     useEffect(() => {
-        if (errorParam) setErrorMessage("Authentication failed. Please try again.");
+        if (errorParam) {
+            setErrorMessage("Authentication failed. Please try again.");
+        }
     }, [errorParam]);
 
+    /* =====================================================
+       FORM HANDLERS
+    ===================================================== */
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
-        setFormData(prev => ({ ...prev, [id]: value }));
+        setFormData((prev) => ({ ...prev, [id]: value }));
         if (errorMessage) setErrorMessage("");
     };
 
-    const handleGoogleSignin = async () => {
-        setIsLoggingIn(true);
-        setErrorMessage("");
-        try {
-            logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1);
-            router.push("/api/auth/google-login");
-        } catch {
-            setErrorMessage("Google sign-in failed. Please try again.");
-        } finally {
-            setIsLoggingIn(false);
-        }
+    const handleGoogleSignin = () => {
+        logEvent("Login Attempt", "Google Sign-In", "User Clicked Google Login", 1);
+
+        const cb = callbackUrl
+            ? `?callbackUrl=${encodeURIComponent(callbackUrl)}`
+            : "";
+
+        window.location.href = `/api/auth/google-login${cb}`;
     };
 
+    /* =====================================================
+       SUBMIT LOGIN
+    ===================================================== */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validate fields
         try {
             loginSchema.parse(formData);
         } catch {
@@ -88,27 +89,38 @@ export function useLoginForm() {
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...formData, captchaToken, rememberMe }),
                 credentials: "include",
+                body: JSON.stringify({
+                    ...formData,
+                    captchaToken,
+                    rememberMe,
+                    callbackUrl, // ✅ THIS IS THE KEY
+                }),
             });
 
-            // 🔥 If server responds with redirect → immediately navigate
+            /* -----------------------------------------------
+               REDIRECT HANDLED BY SERVER
+            ------------------------------------------------ */
             if (res.redirected) {
                 window.location.href = res.url;
                 return;
             }
 
-            // For 2FA logic (API returns JSON + does NOT redirect)
             const data = await res.json();
 
-            if (res.ok) {
-                if (data.requires_otp) {
-                    router.push(`/pages/auth/verify-2fa?user_id=${data.user_id}`);
-                } else {
-                    await fetchSession(); // sync auth store
-                }
-            } else {
-                setErrorMessage(data.error || "Invalid credentials");
+            /* -----------------------------------------------
+               2FA FLOW
+            ------------------------------------------------ */
+            if (res.ok && data?.requires_otp) {
+                const twoFaUrl = `/pages/auth/verify-2fa?user_id=${data.user_id}${
+                    callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ""
+                }`;
+                router.push(twoFaUrl);
+                return;
+            }
+
+            if (!res.ok) {
+                setErrorMessage(data?.error || "Invalid credentials");
                 if (window.grecaptcha) window.grecaptcha.reset();
                 setCaptchaToken(null);
             }
@@ -134,6 +146,6 @@ export function useLoginForm() {
         setRememberMe,
         handleChange,
         handleGoogleSignin,
-        handleSubmit
+        handleSubmit,
     };
 }
