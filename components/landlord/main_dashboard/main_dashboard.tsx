@@ -169,10 +169,7 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
             </Suspense>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Suspense fallback={<CardSkeleton />}>
-              <LandlordPropertyMarquee landlordId={landlordId} />
-            </Suspense>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             <Suspense fallback={<CardSkeleton />}>
               <div
