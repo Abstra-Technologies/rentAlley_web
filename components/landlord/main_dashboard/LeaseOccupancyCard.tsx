@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Sparkles, Users } from "lucide-react";
+import { FileText, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
@@ -39,57 +39,60 @@ export default function LeaseOccupancyCard({ landlord_id }: Props) {
     const drafts = leases.filter((l) => l.type === "draft");
 
     /* ================= ITEM ================= */
-    const Item = (lease: LeaseItem, idx: number) => (
-        <div
-            key={`${lease.type}-${idx}`}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition"
-        >
-            {/* Icon */}
+    const Item = (lease: LeaseItem, idx: number) => {
+        const handleClick = () => {
+            if (lease.type === "prospective") {
+                router.push(
+                    `/pages/landlord/properties/${lease.property_id}/prospectives`
+                );
+            } else {
+                // draft
+                router.push(
+                    `/pages/landlord/properties/${lease.property_id}/activeLease`
+                );
+            }
+        };
+
+        return (
             <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center
-          ${
-                    lease.type === "draft"
-                        ? "bg-indigo-50 text-indigo-600"
-                        : "bg-emerald-50 text-emerald-600"
-                }`}
+                key={`${lease.type}-${idx}`}
+                onClick={handleClick}
+                className="
+                flex items-center gap-3 px-4 py-3 cursor-pointer
+                hover:bg-gray-50 transition
+            "
             >
-                {lease.type === "draft" ? (
-                    <FileText className="w-4 h-4" />
-                ) : (
-                    <Users className="w-4 h-4" />
-                )}
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                    {lease.unit}
-                </p>
-                <p className="text-xs text-gray-600 truncate">{lease.tenant}</p>
-                <p className="text-xs text-gray-400 truncate">{lease.note}</p>
-            </div>
-
-            {/* Actions */}
-            {lease.type === "draft" && (
-                <button
-                    onClick={() =>
-                        router.push(
-                            `/pages/landlord/${landlord_id}/leases/create${
-                                lease.lease_id ? `?from=${lease.lease_id}` : ""
-                            }`
-                        )
-                    }
-                    className="flex items-center gap-1 text-xs font-semibold
-            px-2.5 py-1 rounded-md
-            bg-gradient-to-r from-indigo-500 to-purple-500
-            text-white hover:opacity-90"
+                {/* Icon */}
+                <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center
+                ${
+                        lease.type === "draft"
+                            ? "bg-indigo-50 text-indigo-600"
+                            : "bg-emerald-50 text-emerald-600"
+                    }`}
                 >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Generate
-                </button>
-            )}
-        </div>
-    );
+                    {lease.type === "draft" ? (
+                        <FileText className="w-4 h-4" />
+                    ) : (
+                        <Users className="w-4 h-4" />
+                    )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                        {lease.unit}
+                    </p>
+                    <p className="text-xs text-gray-600 truncate">
+                        {lease.tenant}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                        {lease.note}
+                    </p>
+                </div>
+            </div>
+        );
+    };
 
     const Empty = (text: string) => (
         <div className="px-4 py-3 text-xs text-gray-400 italic">{text}</div>

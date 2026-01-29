@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { Clock, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
@@ -9,6 +9,7 @@ import axios from "axios";
 interface EndingLease {
     lease_id?: string;
     property_id: string;
+    property_name: string; // ✅ NEW
     type: "ending";
     unit: string;
     tenant: string;
@@ -41,13 +42,8 @@ export default function EndingLeaseCard({ landlord_id }: Props) {
     const LeaseRow = (lease: EndingLease, idx: number) => (
         <div
             key={`ending-${idx}`}
-            onClick={() =>
-                router.push(
-                    `/pages/landlord/properties/${lease.property_id}/activeLease`
-                )
-            }
             className="
-        flex items-center gap-3 px-4 py-3 cursor-pointer
+        flex items-center gap-3 px-4 py-3
         hover:bg-orange-50 transition
       "
         >
@@ -58,11 +54,23 @@ export default function EndingLeaseCard({ landlord_id }: Props) {
 
             {/* Info */}
             <div className="flex-1 min-w-0">
+                {/* Property */}
+                <p className="text-xs font-semibold text-gray-500 truncate">
+                    {lease.property_name}
+                </p>
+
+                {/* Unit */}
                 <p className="text-sm font-semibold text-gray-900 truncate">
                     {lease.unit}
                 </p>
-                <p className="text-xs text-gray-600 truncate">{lease.tenant}</p>
-                <p className="text-xs text-gray-400 truncate">{lease.note}</p>
+
+                {/* Tenant + note */}
+                <p className="text-xs text-gray-600 truncate">
+                    {lease.tenant}
+                </p>
+                <p className="text-[11px] text-gray-400 truncate">
+                    {lease.note}
+                </p>
             </div>
 
             {/* Days Left */}
@@ -78,6 +86,24 @@ export default function EndingLeaseCard({ landlord_id }: Props) {
           {lease.daysLeft}d
         </span>
             )}
+
+            {/* View Button */}
+            <button
+                onClick={() =>
+                    router.push(
+                        `/pages/landlord/properties/${lease.property_id}/activeLease`
+                    )
+                }
+                className="
+          ml-1 p-2 rounded-md
+          bg-blue-50 text-blue-600
+          hover:bg-blue-100
+          transition
+        "
+                title="View lease"
+            >
+                <Eye className="w-4 h-4" />
+            </button>
         </div>
     );
 
@@ -93,7 +119,7 @@ export default function EndingLeaseCard({ landlord_id }: Props) {
             {/* Header */}
             <div className="px-4 py-3 border-b flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-900">
-                    Leases Near Ending
+                    Ending Leases
                 </h3>
                 <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-orange-100 text-orange-700">
           {endingLeases.length}
@@ -113,8 +139,8 @@ export default function EndingLeaseCard({ landlord_id }: Props) {
                     No leases ending soon
                 </div>
             ) : (
-                <div className="max-h-[180px] overflow-y-auto divide-y">
-                    {endingLeases.slice(0, 3).map(LeaseRow)}
+                <div className="max-h-[320px] overflow-y-auto divide-y">
+                    {endingLeases.map(LeaseRow)}
                 </div>
             )}
         </div>

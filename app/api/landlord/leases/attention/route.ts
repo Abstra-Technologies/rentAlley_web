@@ -20,6 +20,7 @@ export async function GET(req: Request) {
       SELECT
         pt.id AS lease_id,
         pr.property_id,
+        pr.property_name,
         'prospective' AS type,
         u.unit_name AS unit,
         usr.firstName,
@@ -43,6 +44,7 @@ export async function GET(req: Request) {
       SELECT
         la.agreement_id AS lease_id,
         pr.property_id,
+        pr.property_name,
         'ending' AS type,
         u.unit_name AS unit,
         usr.firstName,
@@ -65,6 +67,7 @@ export async function GET(req: Request) {
           OR la.end_date < CURDATE()
         )
         AND DATEDIFF(la.end_date, CURDATE()) <= 30
+      ORDER BY daysLeft ASC
       `,
             [landlord_id]
         );
@@ -75,6 +78,7 @@ export async function GET(req: Request) {
       SELECT
         la.agreement_id AS lease_id,
         pr.property_id,
+        pr.property_name,
         'draft' AS type,
         u.unit_name AS unit,
         usr.firstName,
@@ -88,6 +92,7 @@ export async function GET(req: Request) {
       LEFT JOIN User usr ON t.user_id = usr.user_id
       WHERE pr.landlord_id = ?
         AND la.status = 'draft'
+      ORDER BY la.updated_at DESC
       `,
             [landlord_id]
         );
@@ -97,6 +102,7 @@ export async function GET(req: Request) {
             rows.map((r) => ({
                 lease_id: r.lease_id,
                 property_id: r.property_id,
+                property_name: r.property_name,
                 type: r.type,
                 unit: r.unit,
                 tenant:
