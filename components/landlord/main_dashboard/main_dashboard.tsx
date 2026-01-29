@@ -16,6 +16,7 @@ import HeaderContent from "./headerContent";
 import NewWorkOrderModal from "../maintenance_management/NewWorkOrderModal";
 import LandlordPropertyMarquee from "@/components/landlord/main_dashboard/LandlordPropertyQuickView";
 import LeaseOccupancyCard from "./LeaseOccupancyCard";
+import EndingLeaseCard from "@/components/landlord/main_dashboard/EndingLeaseCard";
 
 const fetcher = (url: string) => axios.get(url).then((r) => r.data);
 
@@ -170,7 +171,7 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
             </Suspense>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <Suspense fallback={<CardSkeleton />}>
               <div
@@ -187,6 +188,10 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
             <Suspense fallback={<CardSkeleton />}>
                 <LeaseOccupancyCard landlord_id={landlordId} />
             </Suspense>
+
+              <Suspense fallback={<CardSkeleton />}>
+                  <EndingLeaseCard landlord_id={landlordId} />
+              </Suspense>
           </div>
 
           {showRevenueChart && (

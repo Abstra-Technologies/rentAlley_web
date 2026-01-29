@@ -4,7 +4,7 @@ export const subscriptionConfig = {
     "Free Plan": {
         limits: {
             maxProperties: 5,
-            maxUnits: 2,
+            maxUnits: 20,
             maxMaintenanceRequest: 10,
             maxBilling: 2,
             maxProspect: 3,
