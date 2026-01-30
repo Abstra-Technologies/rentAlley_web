@@ -8,11 +8,12 @@ import { useMemo, useState } from "react";
 
 import LeaseDetailsPanel from "@/components/landlord/activeLease/LeaseDetailsPanel";
 import ChecklistSetupModal from "@/components/landlord/activeLease/ChecklistModal";
-
 import LeaseTable from "@/components/landlord/activeLease/LeaseTable";
 import LeaseStack from "@/components/landlord/activeLease/LeaseStack";
-import Swal from "sweetalert2";
+import LeaseScorecards from "@/components/landlord/activeLease/LeaseScorecards";
 import EKypModal from "@/components/landlord/activeLease/EKypModal";
+
+import Swal from "sweetalert2";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -38,18 +39,8 @@ const getStatus = (lease: any) =>
     (lease.status ?? lease.lease_status)?.toLowerCase();
 
 /* ===============================
-   SIGNATURE GUARDS
+   PAGE
 ================================ */
-const requiresLandlordSignature = (lease: any) => {
-    const status = getStatus(lease);
-    return ["pending", "sent", "pending_signature"].includes(status);
-};
-
-const canModifyLease = (lease: any) => {
-    const status = getStatus(lease);
-    return ["active", "expired", "completed"].includes(status);
-};
-
 export default function PropertyLeasesPage() {
     const { id } = useParams();
     const router = useRouter();
@@ -63,16 +54,24 @@ export default function PropertyLeasesPage() {
         }
     );
 
-
+    /* ===============================
+       LOCAL STATE
+    ================================ */
     const [search, setSearch] = useState("");
     const [selectedLease, setSelectedLease] = useState<any>(null);
     const [setupModalLease, setSetupModalLease] = useState<any>(null);
     const [selectedKypLease, setSelectedKypLease] = useState<any | null>(null);
     const [kypOpen, setKypOpen] = useState(false);
 
-
+    /* ===============================
+       DATA
+    ================================ */
     const leases = data?.leases || [];
+    const stats = data?.stats; // 👈 API stats (authoritative)
 
+    /* ===============================
+       FILTERED LEASES (UI ONLY)
+    ================================ */
     const filteredLeases = useMemo(() => {
         if (!search.trim()) return leases;
         const q = search.toLowerCase();
@@ -86,9 +85,38 @@ export default function PropertyLeasesPage() {
     }, [leases, search]);
 
     /* ===============================
+       SCORECARD COUNTS (UI-DERIVED)
+       ⚠️ TOTAL REMOVED – COMES FROM API
+    ================================ */
+    const scorecards = useMemo(() => {
+        const active = filteredLeases.filter(
+            (l: any) => getStatus(l) === "active"
+        ).length;
+
+        const expiringSoon = filteredLeases.filter(
+            (l: any) =>
+                getStatus(l) === "active" &&
+                isEndingWithin60Days(l.end_date)
+        ).length;
+
+        const pendingSignatures = filteredLeases.filter((l: any) =>
+            [
+                "pending_signature",
+                "landlord_pending_signature",
+                "tenant_pending_signature",
+            ].includes(getStatus(l))
+        ).length;
+
+        return {
+            active,
+            expiringSoon,
+            pendingSignatures,
+        };
+    }, [filteredLeases]);
+
+    /* ===============================
        ACTION HANDLERS
     ================================ */
-    // for draft status
     const handlePrimaryAction = (lease: any) => {
         getStatus(lease) === "draft"
             ? setSetupModalLease(lease)
@@ -104,14 +132,11 @@ export default function PropertyLeasesPage() {
     const handleEndLease = async (lease: any) => {
         const result = await Swal.fire({
             title: "End Lease?",
-            text: "This will permanently mark the lease as completed. This action cannot be undone.",
+            text: "This will permanently mark the lease as completed.",
             icon: "warning",
             showCancelButton: true,
             confirmButtonText: "Yes, end lease",
-            cancelButtonText: "Cancel",
             confirmButtonColor: "#d33",
-            cancelButtonColor: "#6b7280",
-            reverseButtons: true,
         });
 
         if (!result.isConfirmed) return;
@@ -119,7 +144,6 @@ export default function PropertyLeasesPage() {
         try {
             Swal.fire({
                 title: "Ending lease...",
-                text: "Please wait while the lease is being completed.",
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading(),
             });
@@ -128,21 +152,14 @@ export default function PropertyLeasesPage() {
                 agreement_id: lease.lease_id,
             });
 
-            Swal.fire({
-                icon: "success",
-                title: "Lease Completed",
-                text: "The lease has been successfully ended.",
-            }).then(() => {
-                window.location.reload();
-            });
+            Swal.fire("Success", "Lease completed.", "success");
         } catch (err: any) {
-            Swal.fire({
-                icon: "error",
-                title: "Failed to End Lease",
-                text:
-                    err?.response?.data?.message ||
-                    "Something went wrong. Please try again.",
-            });
+            Swal.fire(
+                "Error",
+                err?.response?.data?.message ||
+                "Something went wrong. Please try again.",
+                "error"
+            );
         }
     };
 
@@ -173,10 +190,12 @@ export default function PropertyLeasesPage() {
         );
     }
 
+    /* ===============================
+       RENDER
+    ================================ */
     return (
         <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
             <div className="px-4 md:px-6 pt-20 md:pt-6">
-
                 {/* HEADER */}
                 <div className="mb-6">
                     <div className="flex items-center gap-3 mb-4">
@@ -185,13 +204,23 @@ export default function PropertyLeasesPage() {
                         </div>
                         <div>
                             <h1 className="text-xl md:text-2xl font-bold">
-                                Current Leases
+                                Active Leases
                             </h1>
                             <p className="text-xs md:text-sm text-gray-600">
                                 {filteredLeases.length} records found
                             </p>
                         </div>
                     </div>
+
+                    {/* SCORECARDS (API-DRIVEN TOTAL) */}
+                    <LeaseScorecards
+                        total={stats?.total_leases || 0}
+                        delta={stats?.total_leases_change || 0}
+                        deltaPct={stats?.total_leases_change_pct || 0}
+                        active={scorecards.active}
+                        expiringSoon={scorecards.expiringSoon}
+                        pendingSignatures={scorecards.pendingSignatures}
+                    />
 
                     <input
                         value={search}
@@ -201,6 +230,8 @@ export default function PropertyLeasesPage() {
                                    focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
+
+                {/* MOBILE */}
                 <LeaseStack
                     leases={filteredLeases}
                     onPrimary={handlePrimaryAction}
@@ -212,8 +243,7 @@ export default function PropertyLeasesPage() {
                     }}
                 />
 
-
-                {/* DESKTOP TABLE */}
+                {/* DESKTOP */}
                 <LeaseTable
                     leases={filteredLeases}
                     onPrimary={handlePrimaryAction}
@@ -225,7 +255,6 @@ export default function PropertyLeasesPage() {
                         setKypOpen(true);
                     }}
                 />
-
 
                 {/* MODALS */}
                 {selectedLease && (
@@ -257,7 +286,6 @@ export default function PropertyLeasesPage() {
                         setSelectedKypLease(null);
                     }}
                 />
-
             </div>
         </div>
     );

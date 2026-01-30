@@ -16,7 +16,44 @@ export async function GET(req: NextRequest) {
 
     try {
         /* ========================================================
-           1️⃣ FETCH LEASE AGREEMENTS
+           1️⃣ SCORECARD STATS (AUTHORITATIVE)
+        ======================================================== */
+        const [[totalRow]]: any = await db.query(
+            `
+            SELECT COUNT(*) AS total
+            FROM LeaseAgreement la
+            JOIN Unit u ON la.unit_id = u.unit_id
+            WHERE u.property_id = ?
+              AND la.status != 'cancelled'
+            `,
+            [property_id]
+        );
+
+        const [[lastMonthRow]]: any = await db.query(
+            `
+            SELECT COUNT(*) AS total
+            FROM LeaseAgreement la
+            JOIN Unit u ON la.unit_id = u.unit_id
+            WHERE u.property_id = ?
+              AND la.status != 'cancelled'
+              AND la.created_at >= DATE_SUB(CURRENT_DATE, INTERVAL 1 MONTH)
+            `,
+            [property_id]
+        );
+
+        const totalLeases = totalRow?.total || 0;
+        const lastMonthTotal = lastMonthRow?.total || 0;
+
+        const delta = totalLeases - lastMonthTotal;
+        const deltaPct =
+            lastMonthTotal > 0
+                ? Math.round((delta / lastMonthTotal) * 100)
+                : totalLeases > 0
+                    ? 100
+                    : 0;
+
+        /* ========================================================
+           2️⃣ FETCH LEASE AGREEMENTS
         ======================================================== */
         const [leaseRows]: any = await db.query(
             `
@@ -68,7 +105,7 @@ export async function GET(req: NextRequest) {
         );
 
         /* ========================================================
-           2️⃣ FETCH SIGNATURES
+           3️⃣ FETCH SIGNATURES
         ======================================================== */
         const agreementIds = leaseRows.map((l: any) => l.lease_id);
 
@@ -104,7 +141,7 @@ export async function GET(req: NextRequest) {
         }
 
         /* ========================================================
-           3️⃣ MAP + DERIVE EFFECTIVE STATUS
+           4️⃣ MAP + DERIVE EFFECTIVE STATUS
         ======================================================== */
         const leases = leaseRows.map((lease: any) => {
             const safeDecrypt = (value: any) => {
@@ -131,8 +168,6 @@ export async function GET(req: NextRequest) {
                     effectiveStatus = "landlord_pending_signature";
                 } else if (landlordSig.signed && tenantSig.signed) {
                     effectiveStatus = "active";
-                } else {
-                    effectiveStatus = "pending_signature";
                 }
             }
 
@@ -183,8 +218,19 @@ export async function GET(req: NextRequest) {
             };
         });
 
+        /* ========================================================
+           5️⃣ RESPONSE
+        ======================================================== */
         return NextResponse.json(
-            { leases },
+            {
+                leases,
+                stats: {
+                    total_leases: totalLeases,
+                    total_leases_last_month: lastMonthTotal,
+                    total_leases_change: delta,
+                    total_leases_change_pct: deltaPct,
+                },
+            },
             { status: 200 }
         );
     } catch (err) {
