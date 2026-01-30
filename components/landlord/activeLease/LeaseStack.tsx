@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, User2 } from "lucide-react";
+import { Building2, User2, QrCode } from "lucide-react";
 import { StatusBadge } from "./LeaseStatusBadge";
 
 const getStatus = (lease: any) =>
@@ -8,9 +8,10 @@ const getStatus = (lease: any) =>
 
 interface Props {
     leases: any[];
-    onPrimary: (lease: any) => void; // setup / view
+    onPrimary: (lease: any) => void;
     onExtend: (lease: any) => void;
     onEnd: (lease: any) => void;
+    onKyp: (lease: any) => void;
 }
 
 export default function LeaseStack({
@@ -18,11 +19,13 @@ export default function LeaseStack({
                                        onPrimary,
                                        onExtend,
                                        onEnd,
+                                       onKyp,
                                    }: Props) {
     return (
         <div className="space-y-3 md:hidden">
             {leases.map((lease) => {
                 const status = getStatus(lease);
+                const isActive = status === "active";
 
                 return (
                     <div
@@ -61,7 +64,7 @@ export default function LeaseStack({
                             </span>
                         </div>
 
-                        {/* Actions (STRICT RULES) */}
+                        {/* Actions */}
                         <div className="space-y-1.5">
                             {/* Draft → Setup */}
                             {status === "draft" && (
@@ -92,12 +95,24 @@ export default function LeaseStack({
                             )}
 
                             {/* Active → View */}
-                            {status === "active" && (
+                            {isActive && (
                                 <button
                                     onClick={() => onPrimary(lease)}
                                     className="w-full py-2 text-sm bg-gray-800 text-white rounded-md"
                                 >
                                     View
+                                </button>
+                            )}
+
+                            {/* Active → eKYP */}
+                            {isActive && (
+                                <button
+                                    onClick={() => onKyp(lease)}
+                                    className="w-full py-2 text-sm flex items-center justify-center gap-2
+                                               bg-indigo-600 text-white rounded-md"
+                                >
+                                    <QrCode className="w-4 h-4" />
+                                    View eKYP ID
                                 </button>
                             )}
 

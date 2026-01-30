@@ -196,18 +196,17 @@ export default function PropertyLeasesPage() {
                                    focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
-
-                {/* MOBILE STACK */}
                 <LeaseStack
                     leases={filteredLeases}
                     onPrimary={handlePrimaryAction}
                     onExtend={handleExtendLease}
                     onEnd={handleEndLease}
-                    onAuthenticate={handleAuthenticateLease}
-                    requiresSignature={requiresLandlordSignature}
-                    canModify={canModifyLease}
-                    isEndingSoon={isEndingWithin60Days}
+                    onKyp={(lease) => {
+                        setSelectedKypLease(lease);
+                        setKypOpen(true);
+                    }}
                 />
+
 
                 {/* DESKTOP TABLE */}
                 <LeaseTable

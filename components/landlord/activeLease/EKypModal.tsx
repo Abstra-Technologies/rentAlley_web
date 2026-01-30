@@ -120,24 +120,34 @@ export default function EKypModal({ open, lease, onClose }: Props) {
     ================================ */
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-3 sm:px-0">
+            {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                 onClick={onClose}
             />
 
-            <div className="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl">
+            {/* Modal */}
+            <div
+                className="relative w-full max-w-md bg-white rounded-2xl shadow-xl
+                           max-h-[90vh] flex flex-col"
+            >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b">
-                    <h2 className="text-sm font-semibold">Tenant eKYP Identification</h2>
-                    <button onClick={onClose}>
+                <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white z-10">
+                    <h2 className="text-sm sm:text-base font-semibold">
+                        Tenant eKYP Identification
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 -m-2 rounded-md hover:bg-gray-100"
+                    >
                         <XMarkIcon className="w-5 h-5 text-gray-500" />
                     </button>
                 </div>
 
-                {/* Body */}
-                <div className="px-6 py-5 space-y-5">
-                    {/* QR from backend */}
+                {/* Scrollable Body */}
+                <div className="px-5 sm:px-6 py-5 space-y-5 overflow-y-auto">
+                    {/* QR */}
                     <div className="relative flex justify-center bg-gray-50 rounded-xl p-4">
                         <div
                             className={`transition-all duration-300
@@ -150,16 +160,16 @@ export default function EKypModal({ open, lease, onClose }: Props) {
                                 <img
                                     src={qrUrl}
                                     alt="Tenant eKYP QR"
-                                    className="w-[180px] h-[180px]"
+                                    className="w-40 h-40 sm:w-[180px] sm:h-[180px]"
                                 />
                             ) : (
-                                <div className="w-[180px] h-[180px] bg-gray-200 rounded-md" />
+                                <div className="w-40 h-40 sm:w-[180px] sm:h-[180px] bg-gray-200 rounded-md" />
                             )}
                         </div>
 
                         {(fetching || !isActive) && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="px-4 py-2 text-xs font-semibold bg-white border rounded-lg shadow">
+                            <div className="absolute inset-0 flex items-center justify-center px-4">
+                                <div className="px-3 py-2 text-xs font-semibold bg-white border rounded-lg shadow text-center">
                                     {fetching && "Checking ID status…"}
                                     {isDraft && "Activate ID to enable QR"}
                                     {isRevoked && "ID has been revoked"}
@@ -178,11 +188,12 @@ export default function EKypModal({ open, lease, onClose }: Props) {
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t flex gap-2">
+                <div className="px-5 sm:px-6 py-4 border-t flex flex-col sm:flex-row gap-2">
                     <button
                         disabled={loading || isActive}
                         onClick={activateId}
-                        className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-md disabled:bg-gray-200"
+                        className="w-full px-4 py-2.5 bg-emerald-600 text-white
+                                   rounded-md disabled:bg-gray-200 text-sm font-medium"
                     >
                         Activate ID
                     </button>
@@ -190,7 +201,8 @@ export default function EKypModal({ open, lease, onClose }: Props) {
                     <button
                         disabled={loading || !isActive}
                         onClick={revokeId}
-                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md disabled:bg-gray-200"
+                        className="w-full px-4 py-2.5 bg-red-600 text-white
+                                   rounded-md disabled:bg-gray-200 text-sm font-medium"
                     >
                         Revoke ID
                     </button>
@@ -205,9 +217,11 @@ export default function EKypModal({ open, lease, onClose }: Props) {
 ================================ */
 function Info({ label, value }: { label: string; value?: string }) {
     return (
-        <div className="flex justify-between">
+        <div className="flex justify-between gap-3">
             <span className="text-gray-500">{label}</span>
-            <span className="font-medium">{value || "—"}</span>
+            <span className="font-medium text-right break-words">
+                {value || "—"}
+            </span>
         </div>
     );
 }
