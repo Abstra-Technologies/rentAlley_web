@@ -6,18 +6,18 @@ import MobileFeedsPage from "@/components/tenant/feeds/MobileFeedsPage";
 import DesktopFeedsPage from "@/components/tenant/feeds/DesktopFeedsPage";
 
 export default function TenantFeedsPage() {
-  const { user, admin, fetchSession } = useAuthStore();
+  const { user, fetchSession } = useAuthStore();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     async function loadAuth() {
-      if (!user && !admin) {
+      if (!user) {
         await fetchSession();
       }
       setIsInitialLoad(false);
     }
     loadAuth();
-  }, [user, admin, fetchSession]);
+  }, [user, fetchSession]);
 
   if (isInitialLoad) {
     return (
