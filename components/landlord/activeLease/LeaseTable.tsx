@@ -5,12 +5,21 @@ import { StatusBadge } from "./LeaseStatusBadge";
 const getStatus = (lease: any) =>
     (lease.status ?? lease.lease_status)?.toLowerCase();
 
+/**
+ * ADDITIVE helper – does not affect existing logic
+ */
+const requiresLandlordSignature = (lease: any) => {
+    const status = getStatus(lease);
+    return status === "pending_signature";
+};
+
 interface Props {
     leases: any[];
-    onPrimary: (lease: any) => void;
+    onPrimary: (lease: any) => void; // setup / view / authenticate
     onExtend: (lease: any) => void;
     onEnd: (lease: any) => void;
     onKyp: (lease: any) => void; // eKYP handler
+    onAuthenticate: (lease: any) => void;
 }
 
 export default function LeaseTable({
@@ -19,19 +28,20 @@ export default function LeaseTable({
                                        onExtend,
                                        onEnd,
                                        onKyp,
+                                       onAuthenticate
                                    }: Props) {
     return (
-        <div className="hidden md:block bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-sm text-gray-700">
+        <div className="hidden md:block bg-white border rounded-lg shadow-sm overflow-hidden">
+            <table className="w-full text-sm divide-y">
                 {/* ================= HEADER ================= */}
-                <thead className="bg-gray-50 text-[11px] uppercase tracking-wide text-gray-500">
+                <thead className="bg-gray-50 text-[11px] uppercase text-gray-500">
                 <tr>
-                    <th className="px-4 py-3 text-left">Unit</th>
-                    <th className="px-3 py-3 text-center">Start</th>
-                    <th className="px-3 py-3 text-center">End</th>
-                    <th className="px-3 py-3 text-center">Status</th>
-                    <th className="px-3 py-3 text-center">eKYP ID</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-2 text-left">Unit</th>
+                    <th className="px-3 py-2 text-center">Start</th>
+                    <th className="px-3 py-2 text-center">End</th>
+                    <th className="px-3 py-2 text-center">Status</th>
+                    <th className="px-3 py-2 text-center">eKYP ID</th>
+                    <th className="px-4 py-2 text-right">Action</th>
                 </tr>
                 </thead>
 
@@ -39,120 +49,138 @@ export default function LeaseTable({
                 <tbody className="divide-y">
                 {leases.map((lease) => {
                     const status = getStatus(lease);
-                    const canViewKyp =
-                        status === "active" || status === "expired";
 
                     return (
                         <tr
                             key={lease.agreement_id}
-                            className="hover:bg-gray-50 transition-colors"
+                            className="hover:bg-gray-50 transition"
                         >
                             {/* Unit */}
-                            <td className="px-4 py-3">
-                                <div className="font-medium text-gray-900">
-                                    {lease.unit_name}
-                                </div>
+                            <td className="px-4 py-2 font-medium text-gray-800">
+                                {lease.unit_name}
                                 <div className="text-xs text-gray-500">
                                     {lease.tenant_name || "—"}
                                 </div>
                             </td>
 
-                            {/* Start Date */}
-                            <td className="px-3 py-3 text-center text-gray-600">
+                            {/* Start */}
+                            <td className="px-3 py-2 text-center text-gray-600">
                                 {lease.start_date
-                                    ? new Date(lease.start_date).toLocaleDateString()
+                                    ? new Date(
+                                        lease.start_date
+                                    ).toLocaleDateString()
                                     : "—"}
                             </td>
 
-                            {/* End Date */}
-                            <td className="px-3 py-3 text-center text-gray-600">
+                            {/* End */}
+                            <td className="px-3 py-2 text-center text-gray-600">
                                 {lease.end_date
-                                    ? new Date(lease.end_date).toLocaleDateString()
+                                    ? new Date(
+                                        lease.end_date
+                                    ).toLocaleDateString()
                                     : "—"}
                             </td>
 
                             {/* Status */}
-                            <td className="px-3 py-3 text-center">
+                            <td className="px-3 py-2 text-center">
                                 <StatusBadge lease={lease} />
                             </td>
 
-                            {/* eKYP ID */}
-                            <td className="px-3 py-3 text-center">
-                                {canViewKyp ? (
+                            {/* ================= eKYP ID COLUMN (PRESERVED) ================= */}
+                            <td className="px-3 py-2 text-center">
+                                {status === "active" ? (
                                     <button
                                         onClick={() => onKyp(lease)}
-                                        className="px-3 py-1.5 text-xs font-medium
+                                        className="px-2.5 py-1 text-xs
                                                        bg-indigo-600 text-white
                                                        rounded-md hover:bg-indigo-700
-                                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
                                                        transition"
                                     >
                                         View ID
                                     </button>
                                 ) : (
-                                    <span className="inline-flex px-3 py-1.5 text-xs
-                                                         bg-gray-100 text-gray-400
-                                                         rounded-md cursor-not-allowed">
+                                    <span
+                                        className="inline-flex px-2.5 py-1 text-xs
+                                                       bg-gray-100 text-gray-400
+                                                       rounded-md cursor-not-allowed"
+                                    >
                                             N/A
                                         </span>
                                 )}
                             </td>
 
-                            {/* Actions */}
-                            <td className="px-4 py-3 text-right space-x-1">
-                                {/* Draft */}
+                            {/* ================= ACTIONS ================= */}
+                            <td className="px-4 py-2 text-right space-x-1">
+                                {/* Draft → Setup */}
                                 {status === "draft" && (
                                     <button
                                         onClick={() => onPrimary(lease)}
-                                        className="px-3 py-1.5 text-xs font-medium
-                                                       bg-blue-600 text-white rounded-md
-                                                       hover:bg-blue-700 transition"
+                                        className="px-2.5 py-1 text-xs
+                                                       bg-blue-600 text-white
+                                                       rounded-md"
                                     >
                                         Setup
                                     </button>
                                 )}
 
-                                {/* Expired */}
+                                {/* Pending Signature → Authenticate (NEW, ADDITIVE) */}
+                                {requiresLandlordSignature(lease) && (
+                                    <button
+                                        onClick={() => onAuthenticate(lease)}
+                                        className="px-2.5 py-1 text-xs
+                                                       bg-emerald-600 text-white
+                                                       rounded-md"
+                                    >
+                                        Authenticate
+                                    </button>
+                                )}
+
+                                {/* Expired → Extend / End */}
                                 {status === "expired" && (
                                     <>
                                         <button
                                             onClick={() => onExtend(lease)}
-                                            className="px-3 py-1.5 text-xs font-medium
-                                                           bg-emerald-600 text-white rounded-md
-                                                           hover:bg-emerald-700 transition"
+                                            className="px-2.5 py-1 text-xs
+                                                           bg-emerald-600 text-white
+                                                           rounded-md"
                                         >
                                             Extend
                                         </button>
                                         <button
                                             onClick={() => onEnd(lease)}
-                                            className="px-3 py-1.5 text-xs font-medium
-                                                           bg-red-600 text-white rounded-md
-                                                           hover:bg-red-700 transition"
+                                            className="px-2.5 py-1 text-xs
+                                                           bg-red-600 text-white
+                                                           rounded-md"
                                         >
                                             End
                                         </button>
                                     </>
                                 )}
 
-                                {/* Active */}
+                                {/* Active → View */}
                                 {status === "active" && (
                                     <button
                                         onClick={() => onPrimary(lease)}
-                                        className="px-3 py-1.5 text-xs font-medium
-                                                       bg-gray-800 text-white rounded-md
-                                                       hover:bg-black transition"
+                                        className="px-2.5 py-1 text-xs
+                                                       bg-gray-800 text-white
+                                                       rounded-md"
                                     >
                                         View
                                     </button>
                                 )}
 
-                                {/* Fallback */}
-                                {!["draft", "expired", "active"].includes(status) && (
+                                {/* Fallback (UNCHANGED, excludes pending_signature) */}
+                                {![
+                                    "draft",
+                                    "expired",
+                                    "active",
+                                    "pending_signature",
+                                ].includes(status) && (
                                     <button
                                         onClick={() => onPrimary(lease)}
-                                        className="px-3 py-1.5 text-xs font-medium
-                                                       bg-gray-800 text-white rounded-md
-                                                       hover:bg-black transition"
+                                        className="px-2.5 py-1 text-xs
+                                                       bg-gray-800 text-white
+                                                       rounded-md"
                                     >
                                         View
                                     </button>

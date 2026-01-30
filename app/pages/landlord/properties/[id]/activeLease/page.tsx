@@ -218,6 +218,7 @@ export default function PropertyLeasesPage() {
                     leases={filteredLeases}
                     onPrimary={handlePrimaryAction}
                     onExtend={handleExtendLease}
+                    onAuthenticate={handleAuthenticateLease}
                     onEnd={handleEndLease}
                     onKyp={(lease) => {
                         setSelectedKypLease(lease);
