@@ -20,10 +20,10 @@ export async function sendInviteTenantEmail({
                                             }: InviteTenantEmailParams) {
     const registrationUrl = `${process.env.BASE_URL}/pages/InviteRegister?invite=${inviteCode}`;
 
-    const title = `You’re invited to join ${propertyName}`;
+    const title = `Upkyp: You’re invited to join ${propertyName}`;
 
     await resend.emails.send({
-        from: "Upkyp <noreply@upkyp.com>",
+        from: "Upkyp <hello@upkyp.com>",
         to: [email],
         subject: title,
 

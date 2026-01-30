@@ -13,6 +13,9 @@ export async function POST(req: Request) {
     try {
         const { inviteCode, userId } = await req.json();
 
+        console.log('invite code', inviteCode);
+        console.log('userId', userId);
+
         if (!inviteCode || !userId) {
             return NextResponse.json(
                 { error: "Missing invite code or user ID" },
