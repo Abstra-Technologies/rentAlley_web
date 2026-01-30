@@ -39,7 +39,8 @@ export default function LeaseTable({
                 <tbody className="divide-y">
                 {leases.map((lease) => {
                     const status = getStatus(lease);
-                    const isActive = status === "active";
+                    const canViewKyp =
+                        status === "active" || status === "expired";
 
                     return (
                         <tr
@@ -77,23 +78,23 @@ export default function LeaseTable({
 
                             {/* eKYP ID */}
                             <td className="px-3 py-3 text-center">
-                                {isActive ? (
+                                {canViewKyp ? (
                                     <button
                                         onClick={() => onKyp(lease)}
                                         className="px-3 py-1.5 text-xs font-medium
-                                                   bg-indigo-600 text-white
-                                                   rounded-md hover:bg-indigo-700
-                                                   focus:outline-none focus:ring-2 focus:ring-indigo-300
-                                                   transition"
+                                                       bg-indigo-600 text-white
+                                                       rounded-md hover:bg-indigo-700
+                                                       focus:outline-none focus:ring-2 focus:ring-indigo-300
+                                                       transition"
                                     >
                                         View ID
                                     </button>
                                 ) : (
                                     <span className="inline-flex px-3 py-1.5 text-xs
-                                                     bg-gray-100 text-gray-400
-                                                     rounded-md cursor-not-allowed">
-                                        N/A
-                                    </span>
+                                                         bg-gray-100 text-gray-400
+                                                         rounded-md cursor-not-allowed">
+                                            N/A
+                                        </span>
                                 )}
                             </td>
 
@@ -104,8 +105,8 @@ export default function LeaseTable({
                                     <button
                                         onClick={() => onPrimary(lease)}
                                         className="px-3 py-1.5 text-xs font-medium
-                                                   bg-blue-600 text-white rounded-md
-                                                   hover:bg-blue-700 transition"
+                                                       bg-blue-600 text-white rounded-md
+                                                       hover:bg-blue-700 transition"
                                     >
                                         Setup
                                     </button>
@@ -117,16 +118,16 @@ export default function LeaseTable({
                                         <button
                                             onClick={() => onExtend(lease)}
                                             className="px-3 py-1.5 text-xs font-medium
-                                                       bg-emerald-600 text-white rounded-md
-                                                       hover:bg-emerald-700 transition"
+                                                           bg-emerald-600 text-white rounded-md
+                                                           hover:bg-emerald-700 transition"
                                         >
                                             Extend
                                         </button>
                                         <button
                                             onClick={() => onEnd(lease)}
                                             className="px-3 py-1.5 text-xs font-medium
-                                                       bg-red-600 text-white rounded-md
-                                                       hover:bg-red-700 transition"
+                                                           bg-red-600 text-white rounded-md
+                                                           hover:bg-red-700 transition"
                                         >
                                             End
                                         </button>
@@ -138,8 +139,8 @@ export default function LeaseTable({
                                     <button
                                         onClick={() => onPrimary(lease)}
                                         className="px-3 py-1.5 text-xs font-medium
-                                                   bg-gray-800 text-white rounded-md
-                                                   hover:bg-black transition"
+                                                       bg-gray-800 text-white rounded-md
+                                                       hover:bg-black transition"
                                     >
                                         View
                                     </button>
@@ -150,8 +151,8 @@ export default function LeaseTable({
                                     <button
                                         onClick={() => onPrimary(lease)}
                                         className="px-3 py-1.5 text-xs font-medium
-                                                   bg-gray-800 text-white rounded-md
-                                                   hover:bg-black transition"
+                                                       bg-gray-800 text-white rounded-md
+                                                       hover:bg-black transition"
                                     >
                                         View
                                     </button>

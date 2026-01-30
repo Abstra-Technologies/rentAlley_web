@@ -76,16 +76,17 @@ export async function POST(req: Request) {
             );
         }
 
-        if (lease.status !== "active") {
+        if (!["active", "expired"].includes(lease.status)) {
             log("1-ERROR", `Invalid lease status: ${lease.status}`);
             return NextResponse.json(
                 {
-                    message: "Cannot activate eKYP: lease is not active",
+                    message: "Cannot activate eKYP: lease is not active or expired",
                     reason: "LEASE_NOT_ACTIVE",
                 },
                 { status: 400 }
             );
         }
+
 
         /* ===============================
            2. Build QR payload
