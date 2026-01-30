@@ -56,8 +56,13 @@ export default function PropertyLeasesPage() {
 
     const { data, error, isLoading } = useSWR(
         `/api/landlord/activeLease/getByProperty?property_id=${id}`,
-        fetcher
+        fetcher,
+        {
+            refreshInterval: 2000,
+            revalidateOnFocus: false,
+        }
     );
+
 
     const [search, setSearch] = useState("");
     const [selectedLease, setSelectedLease] = useState<any>(null);
