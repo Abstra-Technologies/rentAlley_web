@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
          * 6️⃣ NOTIFY TENANT (CORRECT USER ID)
         ---------------------------------------- */
         await sendUserNotification({
-            userId: tenant_user_id, // ✅ User.user_id (FK-safe)
+            userId: tenant_user_id,
             title: "Lease Activated",
             body: "Your lease agreement has been uploaded and is now active.",
             url: `/pages/tenant/rentalPortal/${agreement_id}`,

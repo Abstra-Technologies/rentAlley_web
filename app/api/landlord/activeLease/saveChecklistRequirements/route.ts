@@ -7,38 +7,37 @@ import { db } from "@/lib/db";
 export async function GET(req: NextRequest) {
     const agreement_id = req.nextUrl.searchParams.get("agreement_id");
 
-    console.log('save lease requirement: ')
-
     if (!agreement_id) {
-        return NextResponse.json(
-            { error: "Missing agreement_id" },
-            { status: 400 }
-        );
+        return NextResponse.json({ error: "Missing agreement_id" }, { status: 400 });
     }
 
     try {
         const [[requirements]]: any = await db.query(
             `
-                SELECT *
-                FROM rentalley_db.LeaseSetupRequirements
-                WHERE agreement_id = ?
-                LIMIT 1
+            SELECT *
+            FROM rentalley_db.LeaseSetupRequirements
+            WHERE agreement_id = ?
+            LIMIT 1
             `,
             [agreement_id]
         );
 
         const [[lease]]: any = await db.query(
             `
-                SELECT agreement_url, start_date, end_date, status
-                FROM rentalley_db.LeaseAgreement
-                WHERE agreement_id = ?
-                LIMIT 1
+            SELECT start_date, end_date, agreement_url, status
+            FROM rentalley_db.LeaseAgreement
+            WHERE agreement_id = ?
+            LIMIT 1
             `,
             [agreement_id]
         );
 
+        if (!lease) {
+            return NextResponse.json({ error: "Lease not found" }, { status: 404 });
+        }
+
         const document_uploaded =
-            !!lease?.agreement_url && lease.agreement_url !== "null";
+            !!lease.agreement_url && lease.agreement_url !== "null";
 
         const setup_completed = computeSetupCompleted(
             requirements,
@@ -50,89 +49,98 @@ export async function GET(req: NextRequest) {
             success: true,
             requirements: requirements || null,
             document_uploaded,
-            lease_start_date: lease?.start_date || null,
-            lease_end_date: lease?.end_date || null,
+            lease_start_date: lease.start_date,
+            lease_end_date: lease.end_date,
+            lease_status: lease.status,
             setup_completed,
-            lease_status: lease?.status,
         });
     } catch (error) {
-        console.error("❌ Error fetching checklist:", error);
+        console.error("❌ GET lease setup failed:", error);
         return NextResponse.json(
-            { error: "Failed to fetch checklist" },
+            { error: "Failed to fetch lease setup" },
             { status: 500 }
         );
     }
 }
 
 /* ======================================================
-   POST — Create checklist OR dates-only setup
+   POST — Safe create/update (idempotent)
+   - Dates-only = UPDATE ONLY
+   - Checklist = UPSERT
 ====================================================== */
 export async function POST(req: NextRequest) {
     try {
-        const {
-            agreement_id,
-            lease_agreement = false,
-            move_in_checklist = false,
-            move_out_checklist = false,
-            security_deposit = false,
-            advance_payment = false,
-            other_essential = false,
-            lease_start_date,
-            lease_end_date,
-        } = await req.json();
+        const body = await req.json();
+        const { agreement_id } = body;
 
         if (!agreement_id) {
-            return NextResponse.json(
-                { error: "Missing agreement_id" },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: "Missing agreement_id" }, { status: 400 });
         }
 
-        const hasChecklist =
-            lease_agreement ||
-            move_in_checklist ||
-            move_out_checklist ||
-            security_deposit ||
-            advance_payment ||
-            other_essential;
-
-        if (hasChecklist) {
+        /* -----------------------------------------------
+           1️⃣ Update lease dates (NO side effects)
+        ----------------------------------------------- */
+        if (body.lease_start_date || body.lease_end_date) {
             await db.query(
                 `
-                    INSERT INTO rentalley_db.LeaseSetupRequirements
-                    (
-                        agreement_id,
-                        lease_agreement,
-                        move_in_checklist,
-                        move_out_checklist,
-                        security_deposit,
-                        advance_payment,
-                        other_essential
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                UPDATE rentalley_db.LeaseAgreement
+                SET
+                    start_date = COALESCE(?, start_date),
+                    end_date   = COALESCE(?, end_date)
+                WHERE agreement_id = ?
                 `,
                 [
+                    body.lease_start_date ?? null,
+                    body.lease_end_date ?? null,
                     agreement_id,
-                    lease_agreement ? 1 : 0,
-                    move_in_checklist ? 1 : 0,
-                    move_out_checklist ? 1 : 0,
-                    security_deposit ? 1 : 0,
-                    advance_payment ? 1 : 0,
-                    other_essential ? 1 : 0,
                 ]
             );
         }
 
-        if (lease_start_date || lease_end_date) {
+        /* -----------------------------------------------
+           2️⃣ Checklist UPSERT (only if any flag exists)
+        ----------------------------------------------- */
+        const checklistKeys = [
+            "lease_agreement",
+            "move_in_checklist",
+            "move_out_checklist",
+            "security_deposit",
+            "advance_payment",
+            "other_essential",
+        ];
+
+        const hasChecklist = checklistKeys.some((key) => key in body);
+
+        if (hasChecklist) {
             await db.query(
                 `
-                    UPDATE rentalley_db.LeaseAgreement
-                    SET
-                        start_date = COALESCE(?, start_date),
-                        end_date   = COALESCE(?, end_date)
-                    WHERE agreement_id = ?
+                INSERT INTO rentalley_db.LeaseSetupRequirements (
+                    agreement_id,
+                    lease_agreement,
+                    move_in_checklist,
+                    move_out_checklist,
+                    security_deposit,
+                    advance_payment,
+                    other_essential
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    lease_agreement    = VALUES(lease_agreement),
+                    move_in_checklist  = VALUES(move_in_checklist),
+                    move_out_checklist = VALUES(move_out_checklist),
+                    security_deposit   = VALUES(security_deposit),
+                    advance_payment    = VALUES(advance_payment),
+                    other_essential    = VALUES(other_essential)
                 `,
-                [lease_start_date || null, lease_end_date || null, agreement_id]
+                [
+                    agreement_id,
+                    body.lease_agreement ? 1 : 0,
+                    body.move_in_checklist ? 1 : 0,
+                    body.move_out_checklist ? 1 : 0,
+                    body.security_deposit ? 1 : 0,
+                    body.advance_payment ? 1 : 0,
+                    body.other_essential ? 1 : 0,
+                ]
             );
         }
 
@@ -140,96 +148,40 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: "Checklist saved and lease evaluated",
+            message: "Lease setup saved successfully",
         });
     } catch (error) {
-        console.error("❌ Error creating checklist:", error);
+        console.error("❌ POST lease setup failed:", error);
         return NextResponse.json(
-            { error: "Failed to create checklist" },
+            { error: "Failed to save lease setup" },
             { status: 500 }
         );
     }
 }
 
 /* ======================================================
-   PUT — Update checklist + re-evaluate lease
+   PUT — Explicit update (alias of POST for safety)
 ====================================================== */
 export async function PUT(req: NextRequest) {
-    try {
-        const {
-            agreement_id,
-            lease_agreement,
-            move_in_checklist,
-            move_out_checklist, // ✅ NEW
-            security_deposit,
-            advance_payment,
-            other_essential,
-            lease_start_date,
-            lease_end_date,
-        } = await req.json();
-
-        if (!agreement_id) {
-            return NextResponse.json(
-                { error: "Missing agreement_id" },
-                { status: 400 }
-            );
-        }
-
-        await db.query(
-            `
-                UPDATE rentalley_db.LeaseSetupRequirements
-                SET
-                    lease_agreement     = COALESCE(?, lease_agreement),
-                    move_in_checklist   = COALESCE(?, move_in_checklist),
-                    move_out_checklist  = COALESCE(?, move_out_checklist),
-                    security_deposit    = COALESCE(?, security_deposit),
-                    advance_payment     = COALESCE(?, advance_payment),
-                    other_essential     = COALESCE(?, other_essential)
-                WHERE agreement_id = ?
-            `,
-            [
-                lease_agreement !== undefined ? (lease_agreement ? 1 : 0) : null,
-                move_in_checklist !== undefined ? (move_in_checklist ? 1 : 0) : null,
-                move_out_checklist !== undefined ? (move_out_checklist ? 1 : 0) : null,
-                security_deposit !== undefined ? (security_deposit ? 1 : 0) : null,
-                advance_payment !== undefined ? (advance_payment ? 1 : 0) : null,
-                other_essential !== undefined ? (other_essential ? 1 : 0) : null,
-                agreement_id,
-            ]
-        );
-
-        if (lease_start_date !== undefined || lease_end_date !== undefined) {
-            await db.query(
-                `
-                    UPDATE rentalley_db.LeaseAgreement
-                    SET
-                        start_date = COALESCE(?, start_date),
-                        end_date   = COALESCE(?, end_date)
-                    WHERE agreement_id = ?
-                `,
-                [lease_start_date || null, lease_end_date || null, agreement_id]
-            );
-        }
-
-        await maybeActivateLease(agreement_id);
-
-        return NextResponse.json({
-            success: true,
-            message: "Checklist updated and lease evaluated",
-        });
-    } catch (error) {
-        console.error("❌ Error updating checklist:", error);
-        return NextResponse.json(
-            { error: "Failed to update checklist" },
-            { status: 500 }
-        );
-    }
+    return POST(req);
 }
 
 /* ======================================================
-   HELPER — Decide if lease should be ACTIVE
+   HELPER — Activate lease safely (NO side effects)
 ====================================================== */
 async function maybeActivateLease(agreement_id: string) {
+    const [[lease]]: any = await db.query(
+        `
+        SELECT start_date, agreement_url, status
+        FROM rentalley_db.LeaseAgreement
+        WHERE agreement_id = ?
+        LIMIT 1
+        `,
+        [agreement_id]
+    );
+
+    if (!lease || lease.status === "active") return;
+
     const [[requirements]]: any = await db.query(
         `
         SELECT *
@@ -240,26 +192,12 @@ async function maybeActivateLease(agreement_id: string) {
         [agreement_id]
     );
 
-    const [[lease]]: any = await db.query(
-        `
-        SELECT agreement_url, start_date, status
-        FROM rentalley_db.LeaseAgreement
-        WHERE agreement_id = ?
-        LIMIT 1
-        `,
-        [agreement_id]
-    );
-
-    if (!lease) return;
-
     const document_uploaded =
         !!lease.agreement_url && lease.agreement_url !== "null";
 
-    /**
-     * 🟢 CASE 1: NO CHECKLIST → dates-only setup
-     */
+    /* Dates-only activation */
     if (!requirements) {
-        if (lease.start_date && lease.status !== "active") {
+        if (lease.start_date) {
             await db.query(
                 `
                 UPDATE rentalley_db.LeaseAgreement
@@ -272,16 +210,14 @@ async function maybeActivateLease(agreement_id: string) {
         return;
     }
 
-    /**
-     * 🟢 CASE 2: CHECKLIST EXISTS → validate
-     */
+    /* Checklist-based activation */
     const setup_completed =
         (!requirements.lease_agreement || document_uploaded) &&
         (!requirements.move_in_checklist || lease.start_date) &&
         (!requirements.security_deposit || true) &&
         (!requirements.advance_payment || true);
 
-    if (setup_completed && lease.status !== "active") {
+    if (setup_completed) {
         await db.query(
             `
             UPDATE rentalley_db.LeaseAgreement
@@ -294,7 +230,7 @@ async function maybeActivateLease(agreement_id: string) {
 }
 
 /* ======================================================
-   PURE FUNCTION — used by GET
+   PURE FUNCTION — Setup completion checker
 ====================================================== */
 function computeSetupCompleted(
     requirements: any,
@@ -303,7 +239,6 @@ function computeSetupCompleted(
 ) {
     if (!lease) return false;
 
-    // dates-only
     if (!requirements) {
         return !!lease.start_date;
     }
