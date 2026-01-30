@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendUserNotification } from "@/lib/notifications/sendUserNotification";
 
-/**
- * End Lease (ONLY after lease naturally ends)
- * Status → completed
- * POST /api/landlord/activeLease/endLease
- */
 export async function POST(req: NextRequest) {
     let connection;
 
@@ -104,11 +99,22 @@ export async function POST(req: NextRequest) {
             [lease.unit_id]
         );
 
+        // 3️⃣ 🔒 REVOKE eKYP ID
+        await connection.query(
+            `
+            UPDATE LeaseEKyp
+            SET status = 'revoked',
+                updated_at = NOW()
+            WHERE agreement_id = ?
+            `,
+            [agreement_id]
+        );
+
         /* ===============================
-           🔔 NOTIFICATION (DB + WEB PUSH)
+           🔔 NOTIFICATION
         ================================ */
         const title = "📄 Lease Completed";
-        const body = `Your lease for ${lease.property_name} – ${lease.unit_name} has officially ended and is now completed.`;
+        const body = `Your lease for ${lease.property_name} – ${lease.unit_name} has officially ended and your tenant ID has been revoked.`;
         const redirectUrl = "/pages/tenant/my-unit";
 
         await sendUserNotification({
@@ -123,7 +129,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: "Lease completed successfully",
+            message: "Lease completed and eKYP revoked successfully",
         });
     } catch (error) {
         if (connection) await connection.rollback();
