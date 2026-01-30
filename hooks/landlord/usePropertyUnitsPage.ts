@@ -135,6 +135,7 @@ export function usePropertyUnitsPage() {
     return {
         property_id,
         subscription,
+        units,              // 👈 ADD THIS (source of truth)
         error,
         isLoading,
 
@@ -159,4 +160,5 @@ export function usePropertyUnitsPage() {
         bulkImportModal,
         setBulkImportModal,
     };
+
 }

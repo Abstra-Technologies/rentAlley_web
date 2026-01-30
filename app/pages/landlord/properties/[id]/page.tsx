@@ -36,6 +36,7 @@ export default function ViewPropertyDetailedPage() {
         page,
         setPage,
         itemsPerPage,
+        units,
 
         searchQuery,
         setSearchQuery,
@@ -54,7 +55,7 @@ export default function ViewPropertyDetailedPage() {
         setBulkImportModal,
     } = usePropertyUnitsPage();
 
-    const currentUnitsCount = filteredUnits.length;
+    const currentUnitsCount = units.length;
     const maxUnits = subscription?.limits?.maxUnits ?? null;
 
     const reachedUnitLimit =
