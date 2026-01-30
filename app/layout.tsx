@@ -22,12 +22,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-    title: "Upkyp",
+    title: "Upkyp - Rental Property Management Platform",
     description: "Manage Less. Live More. Your Rental Management Partner",
     manifest: '/manifest.json',
     icons: {
-        icon: '/upkeep_blue.png',
-        apple: '/upkeep_blue.png'
+        icon: '/upkyp_white.png',
+        apple: '/upkyp_white.png'
     },
 };
 
