@@ -88,6 +88,7 @@ export default function PropertyLeasesPage() {
     /* ===============================
        ACTION HANDLERS
     ================================ */
+    // for draft status
     const handlePrimaryAction = (lease: any) => {
         getStatus(lease) === "draft"
             ? setSetupModalLease(lease)
@@ -144,7 +145,6 @@ export default function PropertyLeasesPage() {
             });
         }
     };
-
 
     const handleAuthenticateLease = (lease: any) => {
         router.push(
