@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import {
     FiCreditCard,
-    FiUser,
-    FiPhone,
-    FiBriefcase,
     FiInfo,
+    FiAlertTriangle,
 } from "react-icons/fi";
 import axios from "axios";
 
@@ -16,6 +14,7 @@ type Bank = {
 };
 
 type Props = {
+    landlordId: string;
     payoutMethod: string;
     setPayoutMethod: (v: string) => void;
     accountName: string;
@@ -24,9 +23,11 @@ type Props = {
     setAccountNumber: (v: string) => void;
     bankName: string;
     setBankName: (v: string) => void;
+    onSaved?: () => void; // ✅ optional callback
 };
 
 export default function StepPayoutInfo({
+                                           landlordId,
                                            payoutMethod,
                                            setPayoutMethod,
                                            accountName,
@@ -35,20 +36,78 @@ export default function StepPayoutInfo({
                                            setAccountNumber,
                                            bankName,
                                            setBankName,
+                                           onSaved,
                                        }: Props) {
     const [banks, setBanks] = useState<Bank[]>([]);
     const [showBanks, setShowBanks] = useState(false);
+    const [loadingExisting, setLoadingExisting] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    /* ================= LOAD BANKS (SERVER) ================= */
+    /* ================= LOAD EXISTING PAYOUT INFO ================= */
     useEffect(() => {
-        axios.get("/api/meta/ph-banks").then((res) => {
-            setBanks(res.data || []);
-        });
-    }, []);
+        if (!landlordId) return;
+
+        async function loadExistingPayout() {
+            try {
+                const res = await axios.get(
+                    `/api/landlord/payout/${landlordId}`
+                );
+
+                if (res.data) {
+                    const data = res.data;
+                    setPayoutMethod(data.payout_method || "");
+                    setAccountName(data.account_name || "");
+                    setAccountNumber(data.account_number || "");
+                    setBankName(data.bank_name || "");
+                }
+            } catch (err: any) {
+                if (err.response?.status !== 404) {
+                    console.error("Failed to load payout info:", err);
+                }
+            } finally {
+                setLoadingExisting(false);
+            }
+        }
+
+        loadExistingPayout();
+    }, [landlordId]);
 
     const filteredBanks = banks.filter((b) =>
         b.name.toLowerCase().includes(bankName.toLowerCase())
     );
+
+    /* ================= BASIC VALIDATION ================= */
+    const isValid =
+        payoutMethod &&
+        accountName &&
+        accountNumber &&
+        (payoutMethod !== "bank_transfer" || bankName);
+
+    /* ================= SAVE HANDLER ================= */
+    async function handleSave() {
+        if (!isValid || saving) return;
+
+        setSaving(true);
+        setError(null);
+
+        try {
+            await axios.post("/api/landlord/payout", {
+                landlord_id: landlordId,
+                payout_method: payoutMethod,
+                account_name: accountName,
+                account_number: accountNumber,
+                bank_name: payoutMethod === "bank_transfer" ? bankName : null,
+            });
+
+            onSaved?.();
+        } catch (err) {
+            console.error(err);
+            setError("Failed to save payout information. Please try again.");
+        } finally {
+            setSaving(false);
+        }
+    }
 
     return (
         <section className="space-y-6">
@@ -59,6 +118,12 @@ export default function StepPayoutInfo({
                     Payout Information
                 </h2>
             </div>
+
+            {loadingExisting && (
+                <p className="text-sm text-gray-500">
+                    Loading payout details…
+                </p>
+            )}
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Payout Method */}
@@ -141,8 +206,8 @@ export default function StepPayoutInfo({
                 )}
             </div>
 
-            {/* Info */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            {/* Info + Warning */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
                 <div className="flex items-start">
                     <FiInfo className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
                     <p className="text-blue-700 text-sm">
@@ -150,6 +215,34 @@ export default function StepPayoutInfo({
                         rental income.
                     </p>
                 </div>
+
+                <div className="flex items-start">
+                    <FiAlertTriangle className="w-5 h-5 text-orange-500 mr-3 mt-0.5" />
+                    <p className="text-orange-700 text-sm">
+                        Please double-check that all information is correct. Incorrect
+                        payout details may result in delayed or failed payments.
+                    </p>
+                </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+                <p className="text-sm text-red-600">{error}</p>
+            )}
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+                <button
+                    onClick={handleSave}
+                    disabled={!isValid || saving}
+                    className={`rounded-lg px-6 py-2 text-sm font-semibold text-white ${
+                        !isValid || saving
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                >
+                    {saving ? "Saving..." : "Save Payout Info"}
+                </button>
             </div>
         </section>
     );

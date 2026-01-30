@@ -3,9 +3,9 @@ import { db } from "@/lib/db";
 
 export async function GET(
     req: Request,
-    { params }: { params: { landlord_id: string } }
+    { params }: { params: Promise<{ landlord_id: string }> }
 ) {
-    const { landlord_id } = params;
+    const { landlord_id } = await params; // ✅ FIX
 
     if (!landlord_id) {
         return NextResponse.json(
