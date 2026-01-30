@@ -30,6 +30,7 @@ import {
   MapPin,
   ChevronRight,
 } from "lucide-react";
+import { IdCardLanyard } from 'lucide-react';
 
 const Navbar = () => {
   const { user, admin, loading, signOut, signOutAdmin, fetchSession } =
@@ -208,7 +209,8 @@ const Navbar = () => {
     if (user?.userType === "tenant") {
       return [
         { href: "/pages/tenant/my-unit", label: "My Units", icon: Building2 },
-        {
+          { href: "/pages/tenant/kypId", label: "My Kyp ID", icon: IdCardLanyard  },
+          {
           href: "/pages/tenant/myApplications",
           label: "My Applications",
           icon: FileText,

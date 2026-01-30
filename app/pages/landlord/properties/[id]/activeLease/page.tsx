@@ -12,6 +12,7 @@ import ChecklistSetupModal from "@/components/landlord/activeLease/ChecklistModa
 import LeaseTable from "@/components/landlord/activeLease/LeaseTable";
 import LeaseStack from "@/components/landlord/activeLease/LeaseStack";
 import Swal from "sweetalert2";
+import EKypModal from "@/components/landlord/activeLease/EKypModal";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -61,6 +62,9 @@ export default function PropertyLeasesPage() {
     const [search, setSearch] = useState("");
     const [selectedLease, setSelectedLease] = useState<any>(null);
     const [setupModalLease, setSetupModalLease] = useState<any>(null);
+    const [selectedKypLease, setSelectedKypLease] = useState<any | null>(null);
+    const [kypOpen, setKypOpen] = useState(false);
+
 
     const leases = data?.leases || [];
 
@@ -211,11 +215,12 @@ export default function PropertyLeasesPage() {
                     onPrimary={handlePrimaryAction}
                     onExtend={handleExtendLease}
                     onEnd={handleEndLease}
-                    onAuthenticate={handleAuthenticateLease}
-                    requiresSignature={requiresLandlordSignature}
-                    canModify={canModifyLease}
-                    isEndingSoon={isEndingWithin60Days}
+                    onKyp={(lease) => {
+                        setSelectedKypLease(lease);
+                        setKypOpen(true);
+                    }}
                 />
+
 
                 {/* MODALS */}
                 {selectedLease && (
@@ -238,6 +243,15 @@ export default function PropertyLeasesPage() {
                         }}
                     />
                 )}
+
+                <EKypModal
+                    open={kypOpen}
+                    lease={selectedKypLease}
+                    onClose={() => {
+                        setKypOpen(false);
+                        setSelectedKypLease(null);
+                    }}
+                />
 
             </div>
         </div>
