@@ -110,28 +110,62 @@ export default function PropertyConfiguration({
     }));
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await axios.post("/api/properties/configuration", {
-        property_id: propertyId,
-        ...configForm,
-      });
-      Swal.fire(
-        "Saved!",
-        "Property configuration updated successfully.",
-        "success"
-      ).then(() => {
-        if (onUpdate) onUpdate();
-      });
-    } catch (err) {
-      console.error("Failed to save config:", err);
-      Swal.fire("Error", "Could not save configuration", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+
+        try {
+            await axios.post("/api/properties/configuration", {
+                property_id: propertyId,
+                ...configForm,
+            });
+
+            Swal.fire(
+                "Saved!",
+                "Property configuration updated successfully.",
+                "success"
+            ).then(() => {
+                if (onUpdate) onUpdate();
+            });
+        } catch (error: any) {
+            console.error("Failed to save config:", error);
+
+            // Default message
+            let title = "Error";
+            let message = "Could not save configuration. Please try again.";
+
+            if (axios.isAxiosError(error)) {
+                const status = error.response?.status;
+                const apiMessage = error.response?.data?.error;
+
+                if (status === 409) {
+                    title = "Changes Locked";
+                    message =
+                        apiMessage ||
+                        "Configuration cannot be modified because billing has already been generated for the current month.";
+                } else if (status === 400) {
+                    title = "Invalid Data";
+                    message = apiMessage || "Some configuration values are invalid.";
+                } else if (status === 500) {
+                    title = "Server Error";
+                    message =
+                        apiMessage ||
+                        "Something went wrong on the server. Please try again later.";
+                } else if (apiMessage) {
+                    message = apiMessage;
+                }
+            }
+
+            Swal.fire({
+                icon: "error",
+                title,
+                text: message,
+                confirmButtonText: "OK",
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
   // Expose startTour to parent component
   useEffect(() => {
@@ -347,85 +381,111 @@ export default function PropertyConfiguration({
       </div>
 
       {/* Late Payment Section */}
-      <div
-        id="late-payment-section"
-        className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-      >
-        <div className="bg-gradient-to-r from-red-50 to-rose-50 px-5 py-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-rose-600 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-white" />
+        <div
+            id="late-payment-section"
+            className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+        >
+            <div className="bg-gradient-to-r from-red-50 to-rose-50 px-5 py-4 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-rose-600 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-base font-bold text-gray-900">
+                            Late Payment Penalty
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-0.5">
+                            Configure late fee penalties and grace periods
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-900">
-                Late Payment Penalty
-              </h3>
-              <p className="text-xs text-gray-600 mt-0.5">
-                Configure late fee penalties and grace periods
-              </p>
+
+            <div className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {/* Penalty Type */}
+                    <div id="penalty-type">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
+                            Penalty Type
+                        </label>
+                        <select
+                            name="lateFeeType"
+                            value={configForm.lateFeeType}
+                            onChange={handleChange}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                        >
+                            <option value="fixed">Fixed Amount</option>
+                            <option value="percentage">Percentage (% per day)</option>
+                        </select>
+                    </div>
+
+                    {/* NEW: Fixed Penalty Application */}
+                    {configForm.lateFeeType === "fixed" && (
+                        <div id="penalty-frequency">
+                            <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
+                                Penalty Application
+                            </label>
+                            <select
+                                name="lateFeeFrequency"
+                                value={configForm.lateFeeFrequency}
+                                onChange={handleChange}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                            >
+                                <option value="one_time">One-time penalty</option>
+                                <option value="per_day">Per day of delay</option>
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Penalty Amount */}
+                    <div id="penalty-amount">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
+                            {configForm.lateFeeType === "fixed"
+                                ? configForm.lateFeeFrequency === "one_time"
+                                    ? "Penalty Amount (₱ one-time)"
+                                    : "Penalty Amount (₱ per day)"
+                                : "Penalty Rate (% per day)"}
+                        </label>
+                        <input
+                            type="number"
+                            name="lateFeeAmount"
+                            min="0"
+                            step="0.01"
+                            value={configForm.lateFeeAmount}
+                            onChange={handleChange}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                        />
+                    </div>
+
+                    {/* Grace Period */}
+                    <div id="grace-period">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
+                            Grace Period (Days)
+                        </label>
+                        <input
+                            type="number"
+                            name="gracePeriodDays"
+                            min="0"
+                            value={configForm.gracePeriodDays}
+                            onChange={handleChange}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                        />
+                    </div>
+
+                    <div className="flex items-center">
+                        <p className="text-xs text-gray-600">
+                            Penalties apply after the grace period.
+                            Fixed penalties can be one-time or per day.
+                            Percentage penalties are always per day.
+                        </p>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
 
-        <div className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div id="penalty-type">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
-                Penalty Type
-              </label>
-              <select
-                name="lateFeeType"
-                value={configForm.lateFeeType}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
-              >
-                <option value="fixed">Fixed Amount (₱ per day)</option>
-                <option value="percentage">Percentage (% per day)</option>
-              </select>
-            </div>
 
-            <div id="penalty-amount">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
-                {configForm.lateFeeType === "fixed"
-                  ? "Penalty Amount (₱ per day)"
-                  : "Penalty Rate (% per day)"}
-              </label>
-              <input
-                type="number"
-                name="lateFeeAmount"
-                min="0"
-                step="0.01"
-                value={configForm.lateFeeAmount}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
-              />
-            </div>
-
-            <div id="grace-period">
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5 uppercase tracking-wider">
-                Grace Period (Days)
-              </label>
-              <input
-                type="number"
-                name="gracePeriodDays"
-                min="0"
-                value={configForm.gracePeriodDays}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
-              />
-            </div>
-
-            <div className="flex items-center">
-              <p className="text-xs text-gray-600">
-                Penalties apply <b>per day of delay</b> after grace period.
-                Example: ₱200/day or 5%/day.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Save Button */}
+        {/* Save Button */}
       <div id="save-button" className="flex justify-end pt-2">
         <button
           type="submit"
