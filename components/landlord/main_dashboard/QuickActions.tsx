@@ -195,37 +195,49 @@ export default function QuickActions({
         </div>
       </div>
 
-      {/* ================= DESKTOP VIEW ================= */}
-      <div className="hidden md:block">
-        {/* Action Buttons - Icons only, no labels */}
-        <div className="flex flex-wrap gap-3">
-          {desktopActions.map(
-            ({ id, label, icon: Icon, onClick, gradient, iconColor }) => (
-              <button
-                key={id}
-                onClick={onClick}
-                title={label}
-                className="group relative w-14 h-14 rounded-2xl transition-all duration-300 hover:scale-110 active:scale-95"
-              >
-                {/* Default State */}
-                <div className="absolute inset-0 bg-white border border-gray-200 rounded-2xl shadow-sm ring-1 ring-gray-100 group-hover:opacity-0 transition-opacity duration-300" />
+        {/* ================= DESKTOP VIEW ================= */}
+        <div className="hidden md:block">
+            <div className="flex flex-wrap gap-6">
+                {desktopActions.map(
+                    ({ id, label, icon: Icon, onClick, gradient, iconColor }) => (
+                        <button
+                            key={id}
+                            onClick={onClick}
+                            className="group flex flex-col items-center gap-2
+                     transition-all duration-300
+                     hover:scale-105 active:scale-95"
+                        >
+                            {/* Icon Button */}
+                            <div className="relative w-14 h-14 rounded-2xl">
+                                {/* Default */}
+                                <div className="absolute inset-0 bg-white border border-gray-200 rounded-2xl shadow-sm ring-1 ring-gray-100 group-hover:opacity-0 transition-opacity duration-300" />
 
-                {/* Hover State */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                />
+                                {/* Hover */}
+                                <div
+                                    className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-2xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                                />
 
-                {/* Icon */}
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <Icon
-                    className={`w-6 h-6 ${iconColor} group-hover:text-white transition-colors duration-300`}
-                  />
-                </div>
-              </button>
-            ),
-          )}
+                                {/* Icon */}
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                    <Icon
+                                        className={`w-6 h-6 ${iconColor} group-hover:text-white transition-colors duration-300`}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Label */}
+                            <span
+                                className="text-xs font-semibold text-gray-700
+                       group-hover:text-gray-900
+                       transition-colors duration-200"
+                            >
+            {label}
+          </span>
+                        </button>
+                    )
+                )}
+            </div>
         </div>
-      </div>
     </>
   );
 }
