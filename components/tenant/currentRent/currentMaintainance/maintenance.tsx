@@ -29,7 +29,7 @@ interface Request {
 }
 
 interface Props {
-  agreement_id: number;
+  agreement_id: string;
   user_id?: number;
 }
 
@@ -154,7 +154,7 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
               <Link
-                href={`/pages/tenant/rentalPortal/${agreement_id}/maintenance/add`}
+                href={`/pages/tenant/rentalPortal/${agreement_id}/maintenance/add?agreement_id=${agreement_id}`}
               >
                 <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white rounded-xl font-semibold shadow-sm hover:shadow-md transition-all text-sm">
                   <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />

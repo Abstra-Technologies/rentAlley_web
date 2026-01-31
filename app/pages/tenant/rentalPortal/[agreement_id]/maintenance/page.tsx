@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
 import useAuthStore from "@/zustand/authStore";
 import MaintenanceRequestList from "@/components/tenant/currentRent/currentMaintainance/maintenance";
 import {
@@ -12,8 +12,10 @@ import {
 
 function TenantMaintenanceContent() {
   const { user } = useAuthStore();
-  const searchParams = useSearchParams();
-  const agreementId = searchParams.get("agreement_id");
+    const params = useParams();
+    const agreementId = params?.agreement_id;
+
+  console.log('maintenance agreement id: ', agreementId);
 
   return (
     <MaintenanceRequestList
