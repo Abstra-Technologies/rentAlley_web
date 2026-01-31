@@ -237,144 +237,144 @@ export default function AnnouncementFeeds({
         MAIN FEED
   ===============================*/
 
-  return (
-    <>
-      {lightboxOpen && (
-        <ImageLightbox
-          images={selectedImages}
-          currentIndex={currentImageIndex}
-          onClose={() => setLightboxOpen(false)}
-          onNext={() =>
-            setCurrentImageIndex((i) => (i + 1) % selectedImages.length)
-          }
-          onPrev={() =>
-            setCurrentImageIndex(
-              (i) => (i - 1 + selectedImages.length) % selectedImages.length
-            )
-          }
-        />
-      )}
+    return (
+        <>
+            {lightboxOpen && (
+                <ImageLightbox
+                    images={selectedImages}
+                    currentIndex={currentImageIndex}
+                    onClose={() => setLightboxOpen(false)}
+                    onNext={() =>
+                        setCurrentImageIndex((i) => (i + 1) % selectedImages.length)
+                    }
+                    onPrev={() =>
+                        setCurrentImageIndex(
+                            (i) => (i - 1 + selectedImages.length) % selectedImages.length
+                        )
+                    }
+                />
+            )}
 
-      <div className="space-y-4">
-        {displayedAnnouncements.map((a) => (
-          <div
-            key={a.id}
-            className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden"
-          >
-            {/* Status Bar */}
-            <div className="h-1 bg-gradient-to-r from-blue-500 to-emerald-500" />
+            <div className="space-y-4">
+                {displayedAnnouncements.map((a) => (
+                    <div
+                        key={a.id}
+                        className="flex bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden"
+                    >
+                        {/* SIDE STATUS BAR */}
+                        <div className="w-1 bg-gradient-to-b from-blue-500 to-emerald-500" />
 
-            <div className="p-4">
-              {/* HEADER */}
-              <div className="flex items-start gap-3 mb-3">
-                {a.landlord?.profilePicture ? (
-                  <img
-                    src={a.landlord.profilePicture}
-                    alt="Landlord"
-                    className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover flex-shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <UserCircleIcon className="w-6 h-6 text-gray-400" />
-                  </div>
+                        {/* CONTENT */}
+                        <div className="flex-1 p-4">
+                            {/* HEADER */}
+                            <div className="flex items-start gap-3 mb-3">
+                                {a.landlord?.profilePicture ? (
+                                    <img
+                                        src={a.landlord.profilePicture}
+                                        alt="Landlord"
+                                        className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover flex-shrink-0"
+                                    />
+                                ) : (
+                                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <UserCircleIcon className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                )}
+
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900">
+                                        {a.landlord
+                                            ? `${a.landlord.firstName} ${a.landlord.lastName}`
+                                            : "Landlord"}
+                                    </p>
+
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        {a.property_name && (
+                                            <span className="text-xs font-medium text-blue-600">
+                      {a.property_name}
+                    </span>
+                                        )}
+                                        <span className="text-xs text-gray-400">•</span>
+                                        <span className="text-xs text-gray-500">
+                    {formatDate(a.created_at)}
+                  </span>
+                                    </div>
+                                </div>
+
+                                <div className="w-8 h-8 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <MegaphoneIcon className="w-4 h-4 text-blue-600" />
+                                </div>
+                            </div>
+
+                            {/* SUBJECT + BODY */}
+                            <div className="space-y-2">
+                                <h3 className="font-bold text-gray-900 text-base">
+                                    {a.subject}
+                                </h3>
+
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed line-clamp-3">
+                                    {a.description}
+                                </p>
+
+                                {/* IMAGES */}
+                                {a.photos?.length ? (
+                                    <div
+                                        className={`grid gap-2 mt-3 ${
+                                            a.photos.length === 1
+                                                ? "grid-cols-1"
+                                                : "grid-cols-2"
+                                        }`}
+                                    >
+                                        {a.photos.slice(0, 4).map((photo, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => openLightbox(a.photos!, index)}
+                                                className="relative overflow-hidden rounded-lg group"
+                                            >
+                                                <img
+                                                    src={photo}
+                                                    alt={`Photo ${index + 1}`}
+                                                    className="w-full h-40 sm:h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+                                                />
+
+                                                {index === 3 && a.photos.length > 4 && (
+                                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-xl">
+                                                        +{a.photos.length - 4}
+                                                    </div>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : null}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                {/* Show More / Less */}
+                {hasMore && !showAll && showViewAll && (
+                    <div className="flex justify-center pt-2">
+                        <button
+                            onClick={() => setShowAll(true)}
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-semibold text-sm hover:shadow-md transition-all"
+                        >
+                            Show More Announcements
+                            <ArrowRightIcon className="w-4 h-4" />
+                        </button>
+                    </div>
                 )}
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {a.landlord
-                      ? `${a.landlord.firstName} ${a.landlord.lastName}`
-                      : "Landlord"}
-                  </p>
-
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {a.property_name && (
-                      <span className="text-xs font-medium text-blue-600">
-                        {a.property_name}
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-500">•</span>
-                    <span className="text-xs text-gray-500">
-                      {formatDate(a.created_at)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MegaphoneIcon className="w-4 h-4 text-blue-600" />
-                </div>
-              </div>
-
-              {/* SUBJECT + BODY */}
-              <div className="space-y-2">
-                <h3 className="font-bold text-gray-900 text-base">
-                  {a.subject}
-                </h3>
-
-                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed line-clamp-3">
-                  {a.description}
-                </p>
-
-                {/* IMAGES */}
-                {a.photos?.length ? (
-                  <div
-                    className={`grid gap-2 mt-3 ${
-                      a.photos.length === 1
-                        ? "grid-cols-1"
-                        : a.photos.length === 2
-                        ? "grid-cols-2"
-                        : "grid-cols-2"
-                    }`}
-                  >
-                    {a.photos.slice(0, 4).map((photo, index) => (
-                      <button
-                        key={index}
-                        onClick={() => openLightbox(a.photos!, index)}
-                        className="relative overflow-hidden rounded-lg group"
-                      >
-                        <img
-                          src={photo}
-                          alt={`Photo ${index + 1}`}
-                          className="w-full h-40 sm:h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
-                        />
-
-                        {index === 3 && a.photos.length > 4 && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold text-xl">
-                            +{a.photos.length - 4}
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
+                {showAll && (
+                    <div className="flex justify-center pt-2">
+                        <button
+                            onClick={() => setShowAll(false)}
+                            className="text-sm font-semibold text-gray-600 hover:text-gray-900"
+                        >
+                            Show Less
+                        </button>
+                    </div>
+                )}
             </div>
-          </div>
-        ))}
+        </>
+    );
 
-        {/* Show More / View All Actions */}
-        {hasMore && !showAll && showViewAll && (
-          <div className="flex justify-center pt-2">
-            <button
-              onClick={() => setShowAll(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-lg font-semibold text-sm hover:shadow-md transition-all"
-            >
-              Show More Announcements
-              <ArrowRightIcon className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {showAll && (
-          <div className="flex justify-center pt-2">
-            <button
-              onClick={() => setShowAll(false)}
-              className="text-sm font-semibold text-gray-600 hover:text-gray-900"
-            >
-              Show Less
-            </button>
-          </div>
-        )}
-      </div>
-    </>
-  );
 }
