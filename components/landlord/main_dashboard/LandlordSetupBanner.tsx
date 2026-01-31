@@ -72,6 +72,7 @@ export default function LandlordSetupBanner({
 
                     <Connector active={verificationDone} />
 
+
                     {/* STEP 2 — PAYOUT */}
                     <Step
                         title="Payout Setup"

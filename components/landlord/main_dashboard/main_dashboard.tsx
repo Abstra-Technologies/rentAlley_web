@@ -143,6 +143,7 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
                 <LandlordSetupBanner
                     verificationStatus={verificationStatus}
                     payoutStatus={payoutStatus}
+                    landlordId={landlordId}
                 />
 
                 <div className="flex justify-center">

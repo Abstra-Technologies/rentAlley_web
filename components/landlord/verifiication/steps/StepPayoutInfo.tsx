@@ -92,7 +92,7 @@ export default function StepPayoutInfo({
         setError(null);
 
         try {
-            await axios.post("/api/landlord/payout", {
+            await axios.post("/api/landlord/payout/saveAccount", {
                 landlord_id: landlordId,
                 payout_method: payoutMethod,
                 account_name: accountName,
@@ -117,6 +117,7 @@ export default function StepPayoutInfo({
                 <h2 className="text-2xl font-bold text-gray-900">
                     Payout Information
                 </h2>
+               Landlord ID:  {landlordId}
             </div>
 
             {loadingExisting && (
