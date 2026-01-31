@@ -58,9 +58,6 @@ export default function LandlordLayout({
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [authReady, setAuthReady] = useState(false);
 
-    /* ===============================
-       AUTH
-    ================================ */
     useEffect(() => {
         if (!user) {
             fetchSession().finally(() => setAuthReady(true));
@@ -219,19 +216,41 @@ export default function LandlordLayout({
                                 height={44}
                                 className="rounded-xl object-cover border-2 border-gray-200"
                             />
+
                             <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm truncate">
                                     {user.firstName && user.lastName
                                         ? `${user.firstName} ${user.lastName}`
                                         : user.companyName || user.email}
                                 </p>
+
                                 <p className="text-xs text-gray-500">Landlord</p>
+
+                                {/* Subscription */}
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+        <span
+            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full
+            ${
+                user.subscription?.plan_name === "pro"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : user.subscription?.plan_name === "enterprise"
+                        ? "bg-purple-100 text-purple-700"
+                        : "bg-gray-200 text-gray-600"
+            }`}
+        >
+          {user.subscription?.plan_name
+              ? user?.subscription.plan_name.toUpperCase()
+              : "-"}
+        </span>
+                                </div>
+
                                 {user.landlord_id && (
-                                    <p className="text-[11px] text-gray-400 truncate">
+                                    <p className="text-[11px] text-gray-400 truncate mt-0.5">
                                         ID: {user.landlord_id}
                                     </p>
                                 )}
                             </div>
+
                             <Link href="/pages/commons/profile">
                                 <Settings className="w-5 h-5 text-gray-500 hover:text-blue-600" />
                             </Link>
