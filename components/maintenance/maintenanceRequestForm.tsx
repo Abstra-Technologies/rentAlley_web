@@ -115,7 +115,7 @@ export default function MaintenanceRequestForm() {
                 Swal.fire("Submitted!", "Maintenance request sent.", "success")
                     .then(() =>
                         router.push(
-                            `/pages/tenant/maintenance?agreement_id=${agreement_id}`
+                            `app/pages/tenant/rentalPortal/${agreement_id}/maintenance?agreement_id=${agreement_id}`
                         )
                     );
             }
