@@ -9,6 +9,7 @@ import {
     XCircle,
     X,
 } from "lucide-react";
+import { mutate } from "swr";
 import StepPayoutInfo from "@/components/landlord/verifiication/steps/StepPayoutInfo";
 
 type VerificationStatus =
@@ -29,12 +30,15 @@ export default function LandlordSetupBanner({
                                                 payoutStatus,
                                             }: Props) {
     const verificationDone = verificationStatus === "verified";
-    const payoutDone = payoutStatus === "completed";
+
+    /* ✅ LOCAL PAYOUT STATE (instant UI update after save) */
+    const [localPayoutDone, setLocalPayoutDone] = useState(
+        payoutStatus === "completed"
+    );
+    const payoutDone = localPayoutDone;
 
     /* ✅ HIDE ENTIRE BANNER IF SETUP IS COMPLETE */
-    if (verificationDone && payoutDone) {
-        return null;
-    }
+    if (verificationDone && payoutDone) return null;
 
     /* ---------------- Modal State ---------------- */
     const [showPayoutModal, setShowPayoutModal] = useState(false);
@@ -71,7 +75,6 @@ export default function LandlordSetupBanner({
                     />
 
                     <Connector active={verificationDone} />
-
 
                     {/* STEP 2 — PAYOUT */}
                     <Step
@@ -123,7 +126,11 @@ export default function LandlordSetupBanner({
                                 setAccountNumber={setAccountNumber}
                                 bankName={bankName}
                                 setBankName={setBankName}
-                                onSaved={() => setShowPayoutModal(false)}
+                                onSaved={() => {
+                                    setLocalPayoutDone(true);
+                                    mutate(`/api/landlord/payout/${landlordId}`);
+                                    setShowPayoutModal(false);
+                                }}
                             />
                         </div>
 

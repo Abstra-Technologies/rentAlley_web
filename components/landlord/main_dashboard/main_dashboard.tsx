@@ -100,11 +100,12 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
         { dedupingInterval: 60_000, revalidateOnFocus: false }
     );
 
-    const { data: wallet } = useSWR(
+    const { data: wallet, mutate } = useSWR(
         `/api/landlord/payout/${landlordId}`,
         fetcher,
-        { dedupingInterval: 60_000, revalidateOnFocus: false }
+        { revalidateOnFocus: false }
     );
+
 
     const verificationStatus = verification?.status ?? "incomplete";
 
