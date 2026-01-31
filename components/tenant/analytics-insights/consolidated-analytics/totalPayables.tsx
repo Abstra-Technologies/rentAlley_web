@@ -83,7 +83,7 @@ export default function TenantPayables({
         })}`;
 
     const handleBillingPay = (agreementId: string) => {
-        router.push(`/pages/tenant/rentalPortal/${agreementId}`);
+        router.push(`/pages/tenant/rentalPortal/${agreementId}/billing?agreement_id=${agreementId}`);
     };
 
 
