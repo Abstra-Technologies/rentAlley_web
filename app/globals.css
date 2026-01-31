@@ -1026,3 +1026,95 @@ body {
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0);
 }
+
+
+
+/* ===========================================
+   QR SCANNER STYLES (Html5QrcodeScanner)
+   =========================================== */
+
+.qr-scanner-container {
+    width: 100%;
+    min-height: 280px;
+}
+
+.qr-scanner-container video {
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 0.75rem;
+}
+
+.qr-scanner-container #qr-reader__scan_region {
+    background: transparent !important;
+}
+
+.qr-scanner-container #qr-reader__scan_region img {
+    display: none !important;
+}
+
+.qr-scanner-container #qr-reader__dashboard {
+    padding: 12px 0 0 0 !important;
+}
+
+.qr-scanner-container #qr-reader__dashboard_section_csr {
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.qr-scanner-container #qr-reader__dashboard_section_csr button {
+    padding: 10px 20px !important;
+    background: linear-gradient(to right, #2563eb, #10b981) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.qr-scanner-container #qr-reader__dashboard_section_csr button:hover {
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.25) !important;
+    transform: translateY(-1px) !important;
+}
+
+.qr-scanner-container #qr-reader__dashboard_section_swaplink {
+    display: none !important;
+}
+
+.qr-scanner-container #qr-reader__status_span {
+    background: #f3f4f6 !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    color: #374151 !important;
+    display: inline-block !important;
+    margin-top: 8px !important;
+}
+
+.qr-scanner-container select {
+    padding: 8px 12px !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    background: white !important;
+    margin: 8px 4px !important;
+    cursor: pointer !important;
+}
+
+.qr-scanner-container select:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* File input styling */
+.qr-scanner-container input[type="file"] {
+    padding: 8px !important;
+    font-size: 13px !important;
+}
+
+/* Hide the powered by text if present */
+.qr-scanner-container a[href*="scanapp"] {
+    display: none !important;
+}
