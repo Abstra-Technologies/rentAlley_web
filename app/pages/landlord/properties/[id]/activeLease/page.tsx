@@ -62,9 +62,11 @@ export default function PropertyLeasesPage() {
     return (
         <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
             <div className="px-4 md:px-6 pt-20 md:pt-6">
+
                 {/* HEADER */}
                 <div className="mb-6">
-                    <div className="flex items-center gap-3 mb-4">
+                    {/* Header title */}
+                    <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
                             <FileText className="w-5 h-5 text-white" />
                         </div>
@@ -78,6 +80,51 @@ export default function PropertyLeasesPage() {
                         </div>
                     </div>
 
+                    {/* 🔘 Action Buttons — BELOW header */}
+                    <div className="flex flex-col sm:flex-row gap-3 mb-5">
+                        {/* Go to Billing */}
+                        <button
+                            onClick={() =>
+                                router.push(`/pages/landlord/properties/${id}/billing`)
+                            }
+                            className="
+        w-full sm:w-auto
+        px-6 py-4 sm:px-5 sm:py-3
+        bg-gradient-to-r from-blue-600 to-emerald-600
+        hover:from-blue-700 hover:to-emerald-700
+        text-white text-base sm:text-sm font-semibold
+        rounded-2xl
+        shadow-md
+        transition-all
+        active:scale-95
+      "
+                        >
+                            Go to Billing
+                        </button>
+
+                        {/* View Payments */}
+                        <button
+                            onClick={() =>
+                                router.push(`/pages/landlord/properties/${id}/payments`)
+                            }
+                            className="
+        w-full sm:w-auto
+        px-6 py-4 sm:px-5 sm:py-3
+        bg-white
+        border border-gray-300
+        hover:bg-gray-50
+        text-gray-800 text-base sm:text-sm font-semibold
+        rounded-2xl
+        shadow-sm
+        transition-all
+        active:scale-95
+      "
+                        >
+                            View Payments
+                        </button>
+                    </div>
+
+                    {/* Scorecards */}
                     <LeaseScorecards
                         total={stats?.total_leases || 0}
                         delta={stats?.total_leases_change || 0}
@@ -87,6 +134,7 @@ export default function PropertyLeasesPage() {
                         pendingSignatures={scorecards.pendingSignatures}
                     />
 
+                    {/* Search */}
                     <input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
