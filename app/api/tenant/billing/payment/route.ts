@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         return httpError(400, "Missing redirect URLs.");
     }
 
-    const secretKey = process.env.XENDIT_TEXT_SECRET_KEY;
+    const secretKey = process.env.XENDIT_SECRET_KEY;
     if (!secretKey) {
         return httpError(500, "Xendit secret key not configured.");
     }
