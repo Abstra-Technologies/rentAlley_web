@@ -113,7 +113,7 @@ export async function POST(req: Request) {
             created_at,
             updated_at
           )
-          VALUES (?, ?, 'rent', ?, ?, 'confirmed', ?, ?, NOW(), NOW())
+          VALUES (?, ?, 'monthly_billing', ?, ?, 'confirmed', ?, ?, NOW(), NOW())
           `,
                     [
                         billing.billing_id,

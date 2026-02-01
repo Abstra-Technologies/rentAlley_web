@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { redis } from "@/lib/redis";
 import { decryptData } from "@/crypto/encrypt";
 
+//  used in work order page.
+
 const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
 
 export async function GET(req: NextRequest) {
