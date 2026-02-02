@@ -501,6 +501,18 @@ body {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
+/* ============================================
+   MAP MARKER STYLES
+   ============================================ */
+.upkyp-price-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-marker-icon:hover {
+  z-index: 1000 !important;
+}
+
 /* ===================================
    GOOGLE TRANSLATE FIXES (EXISTING)
    =================================== */
