@@ -4,97 +4,147 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+    console.log("🟢 [PAYMENT HISTORY] Request received");
+
     const { searchParams } = new URL(req.url);
     const agreementId = searchParams.get("agreement_id");
 
+    console.log("🔍 agreement_id:", agreementId);
 
     if (!agreementId || agreementId.trim() === "") {
+        console.warn("⚠️ agreement_id missing");
         return NextResponse.json(
-            { error: "Agreement ID is required" },
+            { error: "agreement_id is required" },
             { status: 400 }
         );
     }
 
     try {
-        const [leaseResult]: any = await db.query(
+        /* ======================================
+           1️⃣ Fetch base lease agreement
+        ====================================== */
+        console.log("📄 Fetching base lease");
+
+        const [leaseRows]: any = await db.query(
             `
-                SELECT agreement_id, tenant_id, unit_id, is_renewal_of, status
-                FROM LeaseAgreement
-                WHERE agreement_id = ?
-                LIMIT 1
+            SELECT
+                agreement_id,
+                is_renewal_of,
+                tenant_id,
+                unit_id,
+                status
+            FROM LeaseAgreement
+            WHERE agreement_id = ?
+            LIMIT 1
             `,
             [agreementId]
         );
 
-        const lease = leaseResult[0];
+        const lease = leaseRows[0];
 
         if (!lease) {
+            console.warn("❌ Lease not found:", agreementId);
             return NextResponse.json(
                 { error: "Lease not found" },
                 { status: 404 }
             );
         }
 
+        console.log("✅ Lease found:", lease);
+
+        /* ======================================
+           2️⃣ Resolve ALL related lease IDs
+        ====================================== */
         const leaseIds: string[] = [lease.agreement_id];
 
         if (lease.is_renewal_of) {
+            console.log("🔁 Lease is renewal of:", lease.is_renewal_of);
             leaseIds.push(lease.is_renewal_of);
         } else {
-            const [renewedLeases]: any = await db.query(
-                `SELECT agreement_id FROM LeaseAgreement WHERE is_renewal_of = ?`,
+            console.log("🔁 Checking renewals for:", lease.agreement_id);
+
+            const [renewedRows]: any = await db.query(
+                `
+                SELECT agreement_id
+                FROM LeaseAgreement
+                WHERE is_renewal_of = ?
+                `,
                 [lease.agreement_id]
             );
-            renewedLeases.forEach((r: any) => leaseIds.push(r.agreement_id));
+
+            renewedRows.forEach((r: any) => leaseIds.push(r.agreement_id));
         }
 
-        // 3️⃣ Fetch only confirmed, cancelled, or failed payments
-        const [paymentResult]: any = await db.query(
+        console.log("📌 Related lease IDs:", leaseIds);
+
+        /* ======================================
+           3️⃣ Fetch payments
+        ====================================== */
+        console.log("💳 Fetching payments");
+
+        const [payments]: any = await db.query(
             `
-                SELECT
-                    p.payment_id,
-                    p.agreement_id,
-                    p.bill_id,
-                    p.payment_type,
-                    p.amount_paid,
-                    p.payment_status,
-                    p.receipt_reference,
-                    p.payment_date,
-                    pm.method_name AS payment_method,
-                    la.status AS lease_status
-                FROM Payment p
-                         JOIN PaymentMethod pm ON p.payment_method_id = pm.method_id
-                         JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
-                WHERE p.agreement_id IN (?)
-                  AND p.payment_status IN ('confirmed', 'cancelled', 'failed')
-                ORDER BY p.payment_date DESC
+            SELECT
+                payment_id,
+                agreement_id,
+                bill_id,
+                payment_type,
+                amount_paid,
+                payment_method_id,
+                payment_status,
+                receipt_reference,
+                payment_date,
+                payout_status
+            FROM Payment
+            WHERE agreement_id IN (?)
+              AND payment_status IN ('confirmed', 'failed', 'cancelled')
+            ORDER BY payment_date DESC
             `,
             [leaseIds]
         );
 
-        if (paymentResult.length === 0) {
+        if (!payments || payments.length === 0) {
+            console.warn("⚠️ No payments found");
             return NextResponse.json(
-                { message: "No confirmed, cancelled, or failed payments found for this lease or its renewals" },
-                { status: 404 }
+                {
+                    leaseAgreement: lease,
+                    leaseIds,
+                    payments: [],
+                    groupedPayments: {},
+                    message: "No payment records found"
+                },
+                { status: 200 }
             );
         }
 
-        // 4️⃣ Group payments by lease ID
+        console.log(`✅ ${payments.length} payments found`);
+
+        /* ======================================
+           4️⃣ Group payments by agreement
+        ====================================== */
         const groupedPayments = leaseIds.reduce((acc, id) => {
-            acc[id] = paymentResult.filter((p: any) => p.agreement_id === id);
+            acc[id] = payments.filter(
+                (p: any) => p.agreement_id === id
+            );
             return acc;
         }, {} as Record<string, any[]>);
 
-        // 5️⃣ Return response
+        console.log("📦 Grouped payments ready");
+
+        /* ======================================
+           5️⃣ Response
+        ====================================== */
         return NextResponse.json({
             leaseAgreement: lease,
             leaseIds,
-            payments: paymentResult,
+            payments,
             groupedPayments,
         });
+
     } catch (error: any) {
-        console.error("❌ Error fetching filtered lease payments:", error);
+        console.error("🔥 PAYMENT HISTORY ERROR:", error);
         return NextResponse.json(
-            { error: `Database Error: ${error.message || error}` },
+            { error: error.message || "Internal Server Error" },
             { status: 500 }
         );
     }
