@@ -7,112 +7,73 @@ import Swal from "sweetalert2";
 import {
   X,
   Scan,
-  Upload,
   Home,
   Package,
-  Tag,
-  AlertCircle,
   User,
   FileText,
   Loader2,
   Camera,
-  Trash2,
   CheckCircle,
   ChevronDown,
+  Info,
 } from "lucide-react";
 import useAuthStore from "@/zustand/authStore";
 import { useAssetWithQR } from "@/hooks/workorders/useAssetWithQR";
 
-// ============================================
-// ANIMATION VARIANTS
-// ============================================
-const backdropVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-  exit: { opacity: 0 },
-};
+const CATEGORIES = [
+  { value: "Plumbing", icon: "🚿", gradient: "from-blue-500 to-cyan-500" },
+  { value: "Electrical", icon: "⚡", gradient: "from-amber-500 to-yellow-500" },
+  { value: "Aircon", icon: "❄️", gradient: "from-cyan-500 to-blue-500" },
+  { value: "Furniture", icon: "🪑", gradient: "from-amber-600 to-orange-500" },
+  { value: "Appliance", icon: "📺", gradient: "from-purple-500 to-indigo-500" },
+  { value: "General", icon: "🔧", gradient: "from-gray-500 to-slate-500" },
+] as const;
 
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { type: "spring", stiffness: 300, damping: 30 },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.95,
-    transition: { duration: 0.2 },
-  },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.1 },
-  },
-};
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 15 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 24 },
-  },
-};
-
-// ============================================
-// CATEGORY OPTIONS
-// ============================================
-const categories = [
-  { value: "Plumbing", icon: "🚿", color: "from-blue-500 to-cyan-500" },
-  { value: "Electrical", icon: "⚡", color: "from-amber-500 to-yellow-500" },
-  { value: "Aircon", icon: "❄️", color: "from-cyan-500 to-blue-500" },
-  { value: "Furniture", icon: "🪑", color: "from-amber-600 to-orange-500" },
-  { value: "Appliance", icon: "📺", color: "from-purple-500 to-indigo-500" },
-  { value: "General", icon: "🔧", color: "from-gray-500 to-slate-500" },
-];
-
-const priorities = [
+const PRIORITIES = [
   {
     value: "Low",
-    color: "bg-gray-100 text-gray-700 border-gray-200",
+    bg: "bg-gray-100 text-gray-700 border-gray-200",
     dot: "bg-gray-400",
   },
   {
     value: "Medium",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
+    bg: "bg-blue-50 text-blue-700 border-blue-200",
     dot: "bg-blue-500",
   },
   {
     value: "High",
-    color: "bg-orange-50 text-orange-700 border-orange-200",
+    bg: "bg-orange-50 text-orange-700 border-orange-200",
     dot: "bg-orange-500",
   },
   {
     value: "Urgent",
-    color: "bg-red-50 text-red-700 border-red-200",
+    bg: "bg-red-50 text-red-700 border-red-200",
     dot: "bg-red-500",
   },
-];
+] as const;
 
-// ============================================
-// MAIN COMPONENT
-// ============================================
+interface Property {
+  property_id: number | string;
+  property_name: string;
+}
+interface Unit {
+  unit_id: number | string;
+  unit_name: string;
+}
+
+interface Props {
+  landlordId: number | string | undefined;
+  onClose: () => void;
+  onCreated: (data: any) => void;
+}
+
 export default function NewWorkOrderModal({
   landlordId,
   onClose,
   onCreated,
-}: {
-  landlordId: number | string;
-  onClose: () => void;
-  onCreated: (data: any) => void;
-}) {
+}: Props) {
   const { user } = useAuthStore();
 
-  // Form state
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("General");
   const [priority, setPriority] = useState("Low");
@@ -121,7 +82,6 @@ export default function NewWorkOrderModal({
   const [photos, setPhotos] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Asset + QR
   const {
     assetId,
     assetDetails,
@@ -129,142 +89,123 @@ export default function NewWorkOrderModal({
     showScanner,
     setAssetId,
     setShowScanner,
-  } = useAssetWithQR({
-    userId: user?.user_id,
-  });
+  } = useAssetWithQR({ userId: user?.user_id });
 
-  // Property / Unit
-  const [properties, setProperties] = useState<any[]>([]);
-  const [units, setUnits] = useState<any[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [selectedProperty, setSelectedProperty] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [loadingProperties, setLoadingProperties] = useState(false);
+  const [loadingUnits, setLoadingUnits] = useState(false);
 
-  // Current step for mobile stepper
-  const [currentStep, setCurrentStep] = useState(0);
-  const steps = ["Details", "Location", "Photos"];
-
-  // Fetch properties
   useEffect(() => {
     if (!user?.landlord_id) return;
-
-    const fetchProperties = async () => {
-      try {
-        const res = await axios.get(
-          `/api/landlord/${user.landlord_id}/properties`
-        );
-        setProperties(res.data.data || []);
-      } catch (err) {
-        console.error("Error fetching properties", err);
-      }
-    };
-
-    fetchProperties();
+    setLoadingProperties(true);
+    axios
+      .get(`/api/landlord/${user.landlord_id}/properties`)
+      .then((res) => setProperties(res.data.data || []))
+      .catch(console.error)
+      .finally(() => setLoadingProperties(false));
   }, [user?.landlord_id]);
 
-  // Fetch units when property changes
   useEffect(() => {
     if (!selectedProperty) {
       setUnits([]);
       setSelectedUnit("");
       return;
     }
-
-    const fetchUnits = async () => {
-      try {
-        const res = await axios.get(
-          `/api/properties/${selectedProperty}/units`
-        );
-        setUnits(res.data.data || []);
-      } catch (err) {
-        console.error("Error fetching units", err);
-      }
-    };
-
-    fetchUnits();
+    setLoadingUnits(true);
+    axios
+      .get(`/api/properties/${selectedProperty}/units`)
+      .then((res) => setUnits(res.data.data || []))
+      .catch(console.error)
+      .finally(() => setLoadingUnits(false));
   }, [selectedProperty]);
 
-  // Photo handling
+  const getPropName = () =>
+    properties.find((p) => String(p.property_id) === String(selectedProperty))
+      ?.property_name || "";
+  const getUnitName = () =>
+    units.find((u) => String(u.unit_id) === String(selectedUnit))?.unit_name ||
+    "";
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const newPhotos = Array.from(e.target.files);
-    setPhotos((prev) => [...prev, ...newPhotos].slice(0, 6)); // Max 6 photos
+    if (e.target.files)
+      setPhotos((prev) =>
+        [...prev, ...Array.from(e.target.files!)].slice(0, 6),
+      );
   };
-
-  const removePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+  const removePhoto = (i: number) =>
+    setPhotos((prev) => prev.filter((_, idx) => idx !== i));
+  const toBase64 = (file: File): Promise<string> =>
+    new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = rej;
+      r.readAsDataURL(file);
     });
 
-  // Save handler
   const handleSave = async () => {
     if (!title.trim()) {
       Swal.fire({
         icon: "warning",
         title: "Missing Title",
-        text: "Please enter a work order title.",
         confirmButtonColor: "#3b82f6",
       });
       return;
     }
-
     if (!selectedProperty) {
       Swal.fire({
         icon: "warning",
         title: "Property Required",
-        text: "Please select a property.",
         confirmButtonColor: "#3b82f6",
       });
       return;
     }
 
     setLoading(true);
-
     try {
-      const encodedPhotos = await Promise.all(
-        photos.map((f) => fileToBase64(f))
-      );
-
+      const encoded = await Promise.all(photos.map(toBase64));
       const payload = {
-        subject: title,
+        subject: title.trim(),
         category,
         priority_level: priority,
-        assigned_to: assignedTo || null,
-        description,
+        assigned_to: assignedTo.trim() || null,
+        description: description.trim() || null,
         landlord_id: landlordId,
         property_id: selectedProperty,
         unit_id: selectedUnit || null,
         asset_id: assetId || null,
-        photo_urls: encodedPhotos,
+        photo_urls: encoded,
         user_id: user?.user_id,
       };
 
       const res = await axios.post(
-        `/api/maintenance/createMaintenance/workOrder`,
-        payload
+        "/api/maintenance/createMaintenance/workOrder",
+        payload,
       );
+      const data = res.data.data || res.data;
 
-      Swal.fire({
-        icon: "success",
-        title: "Work Order Created!",
-        text: "The work order has been submitted successfully.",
-        timer: 1500,
-        showConfirmButton: false,
+      onCreated({
+        request_id: data.request_id,
+        subject: title.trim(),
+        description: description.trim() || undefined,
+        category,
+        priority_level: priority,
+        status: data.status || "approved",
+        assigned_to: assignedTo.trim() || undefined,
+        property_id: selectedProperty,
+        property_name: data.property_name || getPropName(),
+        unit_id: selectedUnit || undefined,
+        unit_name: data.unit_name || getUnitName(),
+        created_at: data.created_at || new Date().toISOString(),
       });
-
-      onCreated(res.data.data);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Error creating:", err);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Failed to create work order. Please try again.",
+        text: err.response?.data?.message || "Failed to create",
         confirmButtonColor: "#3b82f6",
       });
     } finally {
@@ -272,73 +213,65 @@ export default function NewWorkOrderModal({
     }
   };
 
-  const selectedCategoryData = categories.find((c) => c.value === category);
+  const selCat = CATEGORIES.find((c) => c.value === category);
 
   return (
     <AnimatePresence>
       <motion.div
-        variants={backdropVariants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         onClick={onClose}
         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       >
         <motion.div
-          variants={modalVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
           onClick={(e) => e.stopPropagation()}
           className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
           <div
-            className={`relative overflow-hidden bg-gradient-to-r ${
-              selectedCategoryData?.color || "from-blue-600 to-emerald-600"
-            } flex-shrink-0`}
+            className={`relative overflow-hidden bg-gradient-to-r ${selCat?.gradient || "from-blue-600 to-emerald-600"} flex-shrink-0`}
           >
-            {/* Decorative circles */}
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full" />
             <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full" />
-
-            <div className="relative p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-white">
-                      New Work Order
-                    </h2>
-                    <p className="text-sm text-white/80">
-                      Create a maintenance request
-                    </p>
-                  </div>
+            <div className="relative p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-white" />
                 </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={onClose}
-                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                >
-                  <X className="w-5 h-5 text-white" />
-                </motion.button>
+                <div>
+                  <h2 className="text-lg font-bold text-white">
+                    New Work Order
+                  </h2>
+                  <p className="text-sm text-white/80">
+                    Create a maintenance task
+                  </p>
+                </div>
               </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={onClose}
+                className="p-2 hover:bg-white/20 rounded-xl"
+              >
+                <X className="w-5 h-5 text-white" />
+              </motion.button>
             </div>
           </div>
 
           {/* Body */}
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-            className="flex-1 overflow-y-auto p-5 space-y-5"
-          >
-            {/* Title Input */}
-            <motion.div variants={fadeInUp}>
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+              <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-700">
+                Work orders start as <strong>Approved</strong> and are ready to
+                be scheduled.
+              </p>
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Title <span className="text-red-500">*</span>
               </label>
@@ -346,16 +279,12 @@ export default function NewWorkOrderModal({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                placeholder="e.g., Leaking sink, AC not cooling..."
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                placeholder="e.g., Fix leaking faucet"
               />
-            </motion.div>
+            </div>
 
-            {/* Property & Unit */}
-            <motion.div
-              variants={fadeInUp}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-            >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Property <span className="text-red-500">*</span>
@@ -365,9 +294,12 @@ export default function NewWorkOrderModal({
                   <select
                     value={selectedProperty}
                     onChange={(e) => setSelectedProperty(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm bg-white"
+                    disabled={loadingProperties}
+                    className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl appearance-none text-sm bg-white disabled:bg-gray-50 outline-none"
                   >
-                    <option value="">Select property</option>
+                    <option value="">
+                      {loadingProperties ? "Loading..." : "Select property"}
+                    </option>
                     {properties.map((p) => (
                       <option key={p.property_id} value={p.property_id}>
                         {p.property_name}
@@ -377,7 +309,6 @@ export default function NewWorkOrderModal({
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Unit{" "}
@@ -387,10 +318,20 @@ export default function NewWorkOrderModal({
                   <select
                     value={selectedUnit}
                     onChange={(e) => setSelectedUnit(e.target.value)}
-                    disabled={!units.length}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl appearance-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400"
+                    disabled={
+                      !selectedProperty || loadingUnits || !units.length
+                    }
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl appearance-none text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400 outline-none"
                   >
-                    <option value="">No unit selected</option>
+                    <option value="">
+                      {loadingUnits
+                        ? "Loading..."
+                        : !selectedProperty
+                          ? "Select property first"
+                          : !units.length
+                            ? "No units"
+                            : "Select unit"}
+                    </option>
                     {units.map((u) => (
                       <option key={u.unit_id} value={u.unit_id}>
                         {u.unit_name}
@@ -400,60 +341,47 @@ export default function NewWorkOrderModal({
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Category Selection */}
-            <motion.div variants={fadeInUp}>
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Category
               </label>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {categories.map((cat) => (
-                  <motion.button
-                    key={cat.value}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCategory(cat.value)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 ${
-                      category === cat.value
-                        ? `border-transparent bg-gradient-to-r ${cat.color} text-white shadow-lg`
-                        : "border-gray-100 bg-gray-50 hover:bg-gray-100 text-gray-700"
-                    }`}
+                {CATEGORIES.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setCategory(c.value)}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${category === c.value ? `border-transparent bg-gradient-to-r ${c.gradient} text-white shadow-lg` : "border-gray-100 bg-gray-50 hover:bg-gray-100 text-gray-700"}`}
                   >
-                    <span className="text-xl">{cat.icon}</span>
-                    <span className="text-[10px] font-medium">{cat.value}</span>
-                  </motion.button>
+                    <span className="text-xl">{c.icon}</span>
+                    <span className="text-[10px] font-medium">{c.value}</span>
+                  </button>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
-            {/* Priority Selection */}
-            <motion.div variants={fadeInUp}>
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Priority
               </label>
               <div className="flex flex-wrap gap-2">
-                {priorities.map((p) => (
-                  <motion.button
+                {PRIORITIES.map((p) => (
+                  <button
                     key={p.value}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    type="button"
                     onClick={() => setPriority(p.value)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all duration-200 ${
-                      priority === p.value
-                        ? `${p.color} border-current shadow-sm`
-                        : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all ${priority === p.value ? `${p.bg} border-current` : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
                   >
                     <span className={`w-2 h-2 rounded-full ${p.dot}`} />
                     <span className="text-sm font-medium">{p.value}</span>
-                  </motion.button>
+                  </button>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
-            {/* Asset ID with QR Scanner */}
-            <motion.div variants={fadeInUp}>
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Asset ID{" "}
                 <span className="text-gray-400 font-normal">(Optional)</span>
@@ -465,38 +393,29 @@ export default function NewWorkOrderModal({
                     type="text"
                     value={assetId}
                     onChange={(e) => setAssetId(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                    placeholder="Scan QR or enter Asset ID"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm outline-none"
+                    placeholder="Scan or enter ID"
                   />
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
+                  type="button"
                   onClick={() => setShowScanner(true)}
-                  className="px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all flex items-center gap-2"
+                  className="px-4 py-3 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-xl flex items-center gap-2"
                 >
                   <Scan className="w-4 h-4" />
                   <span className="hidden sm:inline text-sm font-medium">
                     Scan
                   </span>
-                </motion.button>
+                </button>
               </div>
-
-              {/* Asset Loading */}
               {loadingAsset && (
                 <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Loading asset details...
+                  Loading...
                 </div>
               )}
-
-              {/* Asset Details */}
               {assetDetails && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl border border-blue-100"
-                >
+                <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     <span className="font-semibold text-gray-900">
@@ -506,15 +425,11 @@ export default function NewWorkOrderModal({
                   <p className="text-xs text-gray-600">
                     Serial: {assetDetails.serial_number}
                   </p>
-                  <p className="text-xs text-gray-600 capitalize">
-                    Status: {assetDetails.status}
-                  </p>
-                </motion.div>
+                </div>
               )}
-            </motion.div>
+            </div>
 
-            {/* Assigned To */}
-            <motion.div variants={fadeInUp}>
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Assign To{" "}
                 <span className="text-gray-400 font-normal">(Optional)</span>
@@ -525,65 +440,50 @@ export default function NewWorkOrderModal({
                   type="text"
                   value={assignedTo}
                   onChange={(e) => setAssignedTo(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                  placeholder="Technician or vendor name"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm outline-none"
+                  placeholder="Technician name"
                 />
               </div>
-            </motion.div>
+            </div>
 
-            {/* Description */}
-            <motion.div variants={fadeInUp}>
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Description
+                Description{" "}
+                <span className="text-gray-400 font-normal">(Optional)</span>
               </label>
               <textarea
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none text-sm"
-                placeholder="Describe the issue in detail..."
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none outline-none"
+                placeholder="Describe the issue..."
               />
-            </motion.div>
+            </div>
 
-            {/* Photo Upload */}
-            <motion.div variants={fadeInUp}>
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Photos{" "}
                 <span className="text-gray-400 font-normal">(Max 6)</span>
               </label>
-
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {/* Existing Photos */}
-                {photos.map((file, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="relative group"
-                  >
+                {photos.map((f, i) => (
+                  <div key={i} className="relative group">
                     <img
-                      src={URL.createObjectURL(file)}
-                      alt={`Upload ${idx + 1}`}
-                      className="w-full h-20 object-cover rounded-xl border border-gray-200"
+                      src={URL.createObjectURL(f)}
+                      alt=""
+                      className="w-full h-20 object-cover rounded-xl border"
                     />
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => removePhoto(idx)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100"
                     >
                       <X className="w-3 h-3" />
-                    </motion.button>
-                  </motion.div>
+                    </button>
+                  </div>
                 ))}
-
-                {/* Upload Button */}
                 {photos.length < 6 && (
-                  <motion.label
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all"
-                  >
+                  <label className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50">
                     <Camera className="w-5 h-5 text-gray-400 mb-1" />
                     <span className="text-[10px] text-gray-500">Add Photo</span>
                     <input
@@ -593,37 +493,27 @@ export default function NewWorkOrderModal({
                       onChange={handlePhotoUpload}
                       className="hidden"
                     />
-                  </motion.label>
+                  </label>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
           {/* Footer */}
           <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex flex-col-reverse sm:flex-row gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
+              type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition-all font-medium text-sm disabled:opacity-50"
+              className="flex-1 px-4 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl font-medium text-sm disabled:opacity-50"
             >
               Cancel
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02, y: -1 }}
-              whileTap={{ scale: 0.98 }}
+            </button>
+            <button
+              type="button"
               onClick={handleSave}
-              disabled={loading}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${
-                loading
-                  ? "bg-blue-400 cursor-not-allowed"
-                  : `bg-gradient-to-r ${
-                      selectedCategoryData?.color ||
-                      "from-blue-600 to-emerald-600"
-                    } hover:shadow-lg hover:shadow-blue-500/25`
-              } text-white`}
+              disabled={loading || !title.trim() || !selectedProperty}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all ${loading || !title.trim() || !selectedProperty ? "bg-gray-300 text-gray-500 cursor-not-allowed" : `bg-gradient-to-r ${selCat?.gradient || "from-blue-600 to-emerald-600"} text-white hover:shadow-lg`}`}
             >
               {loading ? (
                 <>
@@ -636,11 +526,11 @@ export default function NewWorkOrderModal({
                   Create Work Order
                 </>
               )}
-            </motion.button>
+            </button>
           </div>
         </motion.div>
 
-        {/* QR Scanner Modal */}
+        {/* QR Scanner */}
         <AnimatePresence>
           {showScanner && (
             <motion.div
@@ -651,9 +541,9 @@ export default function NewWorkOrderModal({
               onClick={() => setShowScanner(false)}
             >
               <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.9 }}
                 onClick={(e) => e.stopPropagation()}
                 className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-2xl"
               >
@@ -661,29 +551,24 @@ export default function NewWorkOrderModal({
                   <h3 className="text-lg font-bold text-gray-900">
                     Scan Asset QR
                   </h3>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                  <button
                     onClick={() => setShowScanner(false)}
                     className="p-1.5 hover:bg-gray-100 rounded-lg"
                   >
                     <X className="w-5 h-5 text-gray-500" />
-                  </motion.button>
+                  </button>
                 </div>
-
                 <div
                   id="qr-reader"
-                  className="w-full aspect-square bg-gray-100 rounded-xl overflow-hidden"
+                  className="w-full aspect-square bg-gray-100 rounded-xl"
                 />
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
+                  type="button"
                   onClick={() => setShowScanner(false)}
-                  className="mt-4 w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
+                  className="mt-4 w-full px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium"
                 >
                   Cancel
-                </motion.button>
+                </button>
               </motion.div>
             </motion.div>
           )}
