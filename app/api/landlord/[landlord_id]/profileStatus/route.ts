@@ -13,6 +13,9 @@ export async function GET(
 ) {
     const { landlord_id } = await params;
 
+    console.log('landlord_id ver: ', landlord_id);
+
+
     if (!landlord_id) {
         return NextResponse.json(
             { error: "Invalid landlord_id" },

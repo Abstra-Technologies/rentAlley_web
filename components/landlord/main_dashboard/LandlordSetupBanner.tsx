@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import useSWR from "swr";
 import {
     CheckCircle,
     AlertCircle,
@@ -9,7 +10,12 @@ import {
     XCircle,
     X,
 } from "lucide-react";
+
 import StepPayoutInfo from "@/components/landlord/verifiication/steps/StepPayoutInfo";
+
+/* -------------------------------------------------------------------------- */
+/*                                    Types                                   */
+/* -------------------------------------------------------------------------- */
 
 type VerificationStatus =
     | "incomplete"
@@ -17,25 +23,23 @@ type VerificationStatus =
     | "rejected"
     | "verified";
 
+type PayoutStatus = "pending" | "completed";
+
 interface Props {
     landlordId: string;
-    verificationStatus: VerificationStatus;
-    payoutStatus: "completed" | "pending";
 }
 
-export default function LandlordSetupBanner({
-                                                landlordId,
-                                                verificationStatus,
-                                                payoutStatus,
-                                            }: Props) {
-    const verificationDone = verificationStatus === "verified";
-    const payoutDone = payoutStatus === "completed";
+/* -------------------------------------------------------------------------- */
+/*                                   Utils                                    */
+/* -------------------------------------------------------------------------- */
 
-    /* ✅ HIDE ENTIRE BANNER IF SETUP IS COMPLETE */
-    if (verificationDone && payoutDone) {
-        return null;
-    }
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+/* -------------------------------------------------------------------------- */
+/*                              Main Component                                */
+/* -------------------------------------------------------------------------- */
+
+export default function LandlordSetupBanner({ landlordId }: Props) {
     /* ---------------- Modal State ---------------- */
     const [showPayoutModal, setShowPayoutModal] = useState(false);
 
@@ -44,6 +48,51 @@ export default function LandlordSetupBanner({
     const [accountName, setAccountName] = useState("");
     const [accountNumber, setAccountNumber] = useState("");
     const [bankName, setBankName] = useState("");
+
+    /* ---------------- Fetch Verification STATUS ---------------- */
+    const { data: verification } = useSWR(
+        landlordId ? `/api/landlord/${landlordId}/profileStatus` : null,
+        fetcher,
+        { revalidateOnFocus: false }
+    );
+
+    /* ---------------- Fetch Payout STATUS + setup_completed ---------------- */
+    const { data: payoutRes, mutate } = useSWR(
+        landlordId ? `/api/landlord/payout/${landlordId}` : null,
+        fetcher,
+        { revalidateOnFocus: false }
+    );
+
+    /* ---------------- Guard ---------------- */
+    if (!verification || !payoutRes) {
+        return null;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* 🔒 PERMANENT HIDE (HIGHEST PRIORITY)                                     */
+    /* ---------------------------------------------------------------------- */
+    if (payoutRes.setup_completed === 1) {
+        return null;
+    }
+
+    /* ---------------- Normalize Status ---------------- */
+    const verificationStatus: VerificationStatus =
+        verification.status ?? "incomplete";
+
+    const payoutStatus: PayoutStatus =
+        payoutRes.status === "completed" ? "completed" : "pending";
+
+    const verificationDone = verificationStatus === "verified";
+    const payoutDone = payoutStatus === "completed";
+
+    /* ---------------- Soft hide safety ---------------- */
+    if (verificationDone && payoutDone) {
+        return null;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /*                                Render                                  */
+    /* ---------------------------------------------------------------------- */
 
     return (
         <>
@@ -65,13 +114,17 @@ export default function LandlordSetupBanner({
                         description={getVerificationText(verificationStatus)}
                         status={verificationStatus}
                         icon={getVerificationIcon(verificationStatus)}
-                        onClick={() =>
-                            (window.location.href = "/pages/landlord/verification")
+                        disabled={verificationDone} // 🔥 NO CLICK WHEN VERIFIED
+                        onClick={
+                            verificationDone
+                                ? undefined
+                                : () =>
+                                    (window.location.href =
+                                        "/pages/landlord/verification")
                         }
                     />
 
                     <Connector active={verificationDone} />
-
 
                     {/* STEP 2 — PAYOUT */}
                     <Step
@@ -101,7 +154,6 @@ export default function LandlordSetupBanner({
             {showPayoutModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
                     <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-                        {/* Header */}
                         <div className="flex items-center justify-between border-b px-6 py-4">
                             <h3 className="text-lg font-bold text-gray-800">
                                 Set Up Payout Information
@@ -111,7 +163,6 @@ export default function LandlordSetupBanner({
                             </button>
                         </div>
 
-                        {/* Body */}
                         <div className="px-6 py-5">
                             <StepPayoutInfo
                                 landlordId={landlordId}
@@ -123,11 +174,13 @@ export default function LandlordSetupBanner({
                                 setAccountNumber={setAccountNumber}
                                 bankName={bankName}
                                 setBankName={setBankName}
-                                onSaved={() => setShowPayoutModal(false)}
+                                onSaved={() => {
+                                    setShowPayoutModal(false);
+                                    mutate(); // refresh payout status + setup_completed
+                                }}
                             />
                         </div>
 
-                        {/* Footer */}
                         <div className="flex justify-end border-t px-6 py-4">
                             <button
                                 onClick={() => setShowPayoutModal(false)}
@@ -144,7 +197,7 @@ export default function LandlordSetupBanner({
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               Helper UI Parts                               */
+/*                               Helper Components                             */
 /* -------------------------------------------------------------------------- */
 
 function Step({
@@ -182,7 +235,6 @@ function Step({
             type="button"
             disabled={disabled}
             onClick={onClick}
-            title={disabled ? "Complete verification first" : undefined}
             className={`flex-1 rounded-xl border p-4 text-left transition ${
                 styles[status]
             } ${
@@ -215,7 +267,7 @@ function Connector({ active }: { active: boolean }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                              Status Utilities                              */
+/*                              Status Utilities                               */
 /* -------------------------------------------------------------------------- */
 
 function getVerificationText(status: VerificationStatus) {

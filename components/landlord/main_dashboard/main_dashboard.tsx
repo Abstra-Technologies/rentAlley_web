@@ -140,10 +140,7 @@ export default function LandlordMainDashboard({ landlordId }: Props) {
                     landlordId={landlordId}
                 />
 
-                {/* ✅ Setup Banner replaces LandlordProfileStatus */}
                 <LandlordSetupBanner
-                    verificationStatus={verificationStatus}
-                    payoutStatus={payoutStatus}
                     landlordId={landlordId}
                 />
 

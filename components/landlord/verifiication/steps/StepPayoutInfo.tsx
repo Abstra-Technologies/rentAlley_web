@@ -23,7 +23,7 @@ type Props = {
     setAccountNumber: (v: string) => void;
     bankName: string;
     setBankName: (v: string) => void;
-    onSaved?: () => void; // ✅ optional callback
+    onSaved?: () => void;
 };
 
 export default function StepPayoutInfo({
