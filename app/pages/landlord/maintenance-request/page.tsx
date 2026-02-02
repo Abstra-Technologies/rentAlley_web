@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -10,21 +10,28 @@ import {
   Filter,
   Calendar,
   Home,
-  MoreHorizontal,
+  Clock,
+  CheckCircle,
+  Play,
+  CalendarClock,
+  XCircle,
+  RefreshCw,
+  ChevronRight,
+  GripVertical,
 } from "lucide-react";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 import useAuthStore from "@/zustand/authStore";
 import {
   getStatusConfig,
   getPriorityConfig,
+  normalizeStatus,
 } from "@/components/landlord/maintenance_management/getStatusConfig";
-
 import MaintenanceCalendarModal from "@/components/landlord/maintenance_management/MaintenanceCalendarModal";
 import MaintenanceDetailsModal from "@/components/landlord/maintenance_management/MaintenanceDetailsModal";
 import MaintenanceExpenseModal from "@/components/landlord/maintenance_management/MaintenanceExpenseModal";
 import NewWorkOrderModal from "@/components/landlord/maintenance_management/NewWorkOrderModal";
-import Swal from "sweetalert2";
 
 // ============================================
 // TYPES
@@ -43,94 +50,163 @@ interface MaintenanceRequest {
   tenant_id?: number;
   tenant_first_name?: string;
   tenant_last_name?: string;
+  property_id?: number;
   property_name?: string;
+  unit_id?: number;
   unit_name?: string;
+  photo_urls?: string[];
+}
+
+interface NextAction {
+  label: string;
+  status: string;
+  color: string;
+  needsDate?: boolean;
+}
+
+interface KanbanColumnConfig {
+  id: string;
+  title: string;
+  subtitle: string;
+  statuses: string[];
+  gradient: string;
+  bgLight: string;
+  dotColor: string;
+  textColor: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  acceptsFrom: string[];
+  nextActions: NextAction[];
 }
 
 // ============================================
-// KANBAN COLUMN CONFIGURATION
+// KANBAN COLUMNS CONFIG
 // ============================================
-const KANBAN_COLUMNS = [
+const KANBAN_COLUMNS: KanbanColumnConfig[] = [
   {
-    id: "new",
-    title: "New",
-    statuses: ["pending", "approved"],
+    id: "pending",
+    title: "Pending Review",
+    subtitle: "Awaiting approval",
+    statuses: ["pending"],
     gradient: "from-amber-500 to-orange-500",
     bgLight: "bg-amber-50",
-    borderColor: "border-amber-200",
     dotColor: "bg-amber-500",
+    textColor: "text-amber-600",
+    Icon: Clock,
+    acceptsFrom: [],
+    nextActions: [
+      {
+        label: "Approve",
+        status: "approved",
+        color: "bg-emerald-500 hover:bg-emerald-600",
+      },
+      {
+        label: "Reject",
+        status: "rejected",
+        color: "bg-red-500 hover:bg-red-600",
+      },
+    ],
+  },
+  {
+    id: "approved",
+    title: "Approved",
+    subtitle: "Ready to schedule",
+    statuses: ["approved"],
+    gradient: "from-emerald-500 to-green-500",
+    bgLight: "bg-emerald-50",
+    dotColor: "bg-emerald-500",
+    textColor: "text-emerald-600",
+    Icon: CheckCircle,
+    acceptsFrom: ["pending"],
+    nextActions: [
+      {
+        label: "Schedule",
+        status: "scheduled",
+        color: "bg-purple-500 hover:bg-purple-600",
+        needsDate: true,
+      },
+    ],
   },
   {
     id: "scheduled",
     title: "Scheduled",
+    subtitle: "Work date set",
     statuses: ["scheduled"],
     gradient: "from-purple-500 to-indigo-500",
     bgLight: "bg-purple-50",
-    borderColor: "border-purple-200",
     dotColor: "bg-purple-500",
+    textColor: "text-purple-600",
+    Icon: CalendarClock,
+    acceptsFrom: ["approved"],
+    nextActions: [
+      {
+        label: "Start Work",
+        status: "in-progress",
+        color: "bg-blue-500 hover:bg-blue-600",
+      },
+    ],
   },
   {
     id: "in-progress",
     title: "In Progress",
+    subtitle: "Work underway",
     statuses: ["in-progress"],
     gradient: "from-blue-500 to-cyan-500",
     bgLight: "bg-blue-50",
-    borderColor: "border-blue-200",
     dotColor: "bg-blue-500",
+    textColor: "text-blue-600",
+    Icon: Play,
+    acceptsFrom: ["scheduled"],
+    nextActions: [
+      {
+        label: "Complete",
+        status: "completed",
+        color: "bg-green-500 hover:bg-green-600",
+      },
+    ],
   },
   {
-    id: "completed",
+    id: "resolved",
     title: "Resolved",
+    subtitle: "Completed & rejected",
     statuses: ["completed", "rejected"],
-    gradient: "from-emerald-500 to-green-500",
-    bgLight: "bg-emerald-50",
-    borderColor: "border-emerald-200",
-    dotColor: "bg-emerald-500",
+    gradient: "from-gray-500 to-slate-600",
+    bgLight: "bg-gray-50",
+    dotColor: "bg-gray-500",
+    textColor: "text-gray-600",
+    Icon: CheckCircle,
+    acceptsFrom: ["in-progress", "pending"],
+    nextActions: [],
   },
 ];
 
-// ============================================
-// ANIMATION VARIANTS
-// ============================================
-const pageTransition = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { duration: 0.4, ease: "easeOut" },
-  },
+const getColumnForStatus = (status: string) => {
+  const normalized = normalizeStatus(status);
+  return KANBAN_COLUMNS.find((col) => col.statuses.includes(normalized));
 };
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring", stiffness: 300, damping: 24 },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.9,
-    transition: { duration: 0.2 },
-  },
-};
-
-const columnVariants = {
-  hidden: { opacity: 0, x: -20 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { type: "spring", stiffness: 200, damping: 20 },
-  },
-};
+// Transform API response (nested) to flat structure
+function transformApiResponse(data: any[]): MaintenanceRequest[] {
+  return data.map((item) => ({
+    request_id: item.request_id,
+    subject: item.subject,
+    description: item.description,
+    status: normalizeStatus(item.status),
+    priority_level: item.priority_level || "Low",
+    category: item.category || "General",
+    assigned_to: item.assigned_to,
+    schedule_date: item.schedule_date,
+    completion_date: item.completion_date,
+    created_at: item.created_at,
+    tenant_id: item.tenant?.tenant_id || null,
+    tenant_first_name: item.tenant?.first_name || null,
+    tenant_last_name: item.tenant?.last_name || null,
+    property_id: item.property?.property_id,
+    property_name: item.property?.property_name,
+    unit_id: item.unit?.unit_id || null,
+    unit_name: item.unit?.unit_name || null,
+    photo_urls: item.photo_urls || [],
+  }));
+}
 
 // ============================================
 // MAIN COMPONENT
@@ -139,338 +215,342 @@ export default function MaintenanceRequestPage() {
   const { user } = useAuthStore();
   const landlordId = user?.landlord_id;
 
-  // Data state
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Modal states
-  const [showModal, setShowModal] = useState(false);
   const [selectedRequest, setSelectedRequest] =
     useState<MaintenanceRequest | null>(null);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [currentRequestId, setCurrentRequestId] = useState<number | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
-  const [expenseFor, setExpenseFor] = useState<number | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    requestId: number;
+    status: string;
+  } | null>(null);
 
-  // Filter states
   const [search, setSearch] = useState("");
   const [filterPriority, setFilterPriority] = useState("");
+  const [filterSource, setFilterSource] = useState<
+    "all" | "tenant" | "landlord"
+  >("all");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Mobile column navigation
   const [activeColumnIndex, setActiveColumnIndex] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // ============================================
-  // DATA FETCHING
-  // ============================================
-  useEffect(() => {
-    if (!landlordId) return;
+  const [draggedItem, setDraggedItem] = useState<MaintenanceRequest | null>(
+    null,
+  );
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
-    const fetchRequests = async () => {
+  // Fetch
+  const fetchRequests = useCallback(
+    async (showRefresh = false) => {
+      if (!landlordId) return;
+      if (showRefresh) setRefreshing(true);
+
       try {
         const res = await axios.get(
           `/api/maintenance/getAllMaintenance?landlord_id=${landlordId}`,
         );
-        if (res.data.success) setRequests(res.data.data);
+        if (res.data.success) {
+          setRequests(transformApiResponse(res.data.data));
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching requests:", err);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
-    };
+    },
+    [landlordId],
+  );
 
+  useEffect(() => {
     fetchRequests();
-  }, [landlordId]);
+  }, [fetchRequests]);
 
-  // ============================================
-  // STATUS UPDATE LOGIC
-  // ============================================
-  const updateStatus = async (
-    request_id: number,
+  // Status update
+  const updateRequestStatus = async (
+    requestId: number,
     newStatus: string,
-    extra = {},
+    extraData: Record<string, any> = {},
   ) => {
-    newStatus = newStatus?.toLowerCase();
+    const normalized = normalizeStatus(newStatus);
+    const request = requests.find((r) => r.request_id === requestId);
+    if (!request) return;
 
-    const request = requests.find((r) => r.request_id === request_id);
-    const isLandlordCreated = !request?.tenant_id;
-
-    if (newStatus === "scheduled") {
-      setCurrentRequestId(request_id);
-      setShowCalendar(true);
+    if (normalized === "scheduled" && !extraData.schedule_date) {
+      setPendingStatusChange({ requestId, status: normalized });
+      setShowCalendarModal(true);
       return;
     }
 
-    if (newStatus === "completed") {
-      if (isLandlordCreated) {
-        try {
-          await axios.put("/api/maintenance/updateStatus", {
-            request_id,
-            status: "completed",
-            completion_date: new Date().toISOString(),
-            landlord_id: landlordId,
-            user_id: user?.user_id,
-          });
-
-          setRequests((prev) =>
-            prev.map((r) =>
-              r.request_id === request_id
-                ? {
-                    ...r,
-                    status: "completed",
-                    completion_date: new Date().toISOString(),
-                  }
-                : r,
-            ),
-          );
-        } catch (err) {
-          console.error(err);
-        }
-        return;
-      }
-
+    if (normalized === "completed" && request.tenant_id) {
       const result = await Swal.fire({
-        title: "Add Expense?",
-        text: "Do you want to record a maintenance expense?",
+        title: "Record Expense?",
+        text: "Would you like to add a maintenance expense?",
         icon: "question",
         showDenyButton: true,
         showCancelButton: true,
         confirmButtonText: "Yes, Add Expense",
-        denyButtonText: "No, Complete Only",
-        cancelButtonText: "Cancel",
+        denyButtonText: "No, Just Complete",
+        confirmButtonColor: "#3b82f6",
+        denyButtonColor: "#6b7280",
       });
-
       if (result.isDismissed) return;
-
       if (result.isConfirmed) {
-        setExpenseFor(request_id);
+        setPendingStatusChange({ requestId, status: normalized });
         setShowExpenseModal(true);
-        return;
-      }
-
-      if (result.isDenied) {
-        try {
-          await axios.put("/api/maintenance/updateStatus", {
-            request_id,
-            status: "completed",
-            completion_date: new Date().toISOString(),
-            landlord_id: landlordId,
-            user_id: user?.user_id,
-          });
-
-          setRequests((prev) =>
-            prev.map((r) =>
-              r.request_id === request_id
-                ? {
-                    ...r,
-                    status: "completed",
-                    completion_date: new Date().toISOString(),
-                  }
-                : r,
-            ),
-          );
-        } catch (err) {
-          console.error(err);
-        }
         return;
       }
     }
 
+    await performStatusUpdate(requestId, normalized, extraData);
+  };
+
+  const performStatusUpdate = async (
+    requestId: number,
+    status: string,
+    extraData: Record<string, any> = {},
+  ) => {
+    const prev = [...requests];
+    setRequests((r) =>
+      r.map((x) =>
+        x.request_id === requestId ? { ...x, status, ...extraData } : x,
+      ),
+    );
+
     try {
-      await axios.put("/api/maintenance/updateStatus", {
-        request_id,
-        status: newStatus,
-        ...extra,
+      const payload: any = {
+        request_id: requestId,
+        status,
         landlord_id: landlordId,
         user_id: user?.user_id,
-      });
+        ...extraData,
+      };
+      if (status === "completed" && !extraData.completion_date)
+        payload.completion_date = new Date().toISOString();
+      await axios.put("/api/maintenance/updateStatus", payload);
 
-      setRequests((prev) =>
-        prev.map((r) =>
-          r.request_id === request_id
-            ? { ...r, status: newStatus, ...extra }
-            : r,
-        ),
-      );
+      if (selectedRequest?.request_id === requestId) {
+        setShowDetailsModal(false);
+        setSelectedRequest(null);
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Updated",
+        text: `Status: ${status}`,
+        timer: 1500,
+        showConfirmButton: false,
+        position: "top-end",
+        toast: true,
+      });
     } catch (err) {
-      console.error(err);
+      console.error("Error updating:", err);
+      setRequests(prev);
+      Swal.fire({
+        icon: "error",
+        title: "Update Failed",
+        confirmButtonColor: "#3b82f6",
+      });
     }
   };
 
   const handleScheduleConfirm = async () => {
-    if (!currentRequestId) return;
-    const scheduleISO = selectedDate.toISOString();
+    if (!pendingStatusChange) return;
+    await performStatusUpdate(pendingStatusChange.requestId, "scheduled", {
+      schedule_date: selectedDate.toISOString(),
+    });
+    setShowCalendarModal(false);
+    setPendingStatusChange(null);
+  };
 
-    try {
-      await axios.put("/api/maintenance/updateStatus", {
-        request_id: currentRequestId,
-        status: "scheduled",
-        schedule_date: scheduleISO,
-        user_id: user?.user_id,
-        landlord_id: landlordId,
-      });
-
-      setRequests((prev) =>
-        prev.map((r) =>
-          r.request_id === currentRequestId
-            ? { ...r, status: "scheduled", schedule_date: scheduleISO }
-            : r,
+  const handleExpenseSaved = () => {
+    if (pendingStatusChange) {
+      setRequests((r) =>
+        r.map((x) =>
+          x.request_id === pendingStatusChange.requestId
+            ? {
+                ...x,
+                status: "completed",
+                completion_date: new Date().toISOString(),
+              }
+            : x,
         ),
       );
-    } catch (err) {
-      console.error(err);
     }
-
-    setShowCalendar(false);
-    setCurrentRequestId(null);
+    setShowExpenseModal(false);
+    setPendingStatusChange(null);
   };
 
-  // ============================================
-  // FILTERING
-  // ============================================
-  const filteredRequests = requests
-    .filter((req) => req.subject.toLowerCase().includes(search.toLowerCase()))
-    .filter((req) =>
+  const handleWorkOrderCreated = (newOrder: MaintenanceRequest) => {
+    setRequests((prev) => [
+      { ...newOrder, status: normalizeStatus(newOrder.status) },
+      ...prev,
+    ]);
+    setShowNewModal(false);
+    Swal.fire({
+      icon: "success",
+      title: "Created",
+      timer: 1500,
+      showConfirmButton: false,
+      position: "top-end",
+      toast: true,
+    });
+  };
+
+  // Drag handlers
+  const handleDragStart = (r: MaintenanceRequest) => setDraggedItem(r);
+  const handleDragOver = (e: React.DragEvent, colId: string) => {
+    e.preventDefault();
+    const col = KANBAN_COLUMNS.find((c) => c.id === colId);
+    if (!col || !draggedItem) return;
+    const curr = getColumnForStatus(draggedItem.status);
+    if (curr && col.acceptsFrom.includes(curr.id)) setDragOverColumn(colId);
+  };
+  const handleDragLeave = () => setDragOverColumn(null);
+  const handleDrop = async (e: React.DragEvent, colId: string) => {
+    e.preventDefault();
+    setDragOverColumn(null);
+    if (!draggedItem) return;
+    const target = KANBAN_COLUMNS.find((c) => c.id === colId);
+    const curr = getColumnForStatus(draggedItem.status);
+    if (!target || !curr || !target.acceptsFrom.includes(curr.id)) {
+      setDraggedItem(null);
+      return;
+    }
+    await updateRequestStatus(draggedItem.request_id, target.statuses[0]);
+    setDraggedItem(null);
+  };
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverColumn(null);
+  };
+
+  // Filtering
+  const filtered = requests
+    .filter((r) => {
+      const s = search.toLowerCase();
+      return (
+        r.subject?.toLowerCase().includes(s) ||
+        r.property_name?.toLowerCase().includes(s) ||
+        r.unit_name?.toLowerCase().includes(s)
+      );
+    })
+    .filter((r) =>
       filterPriority
-        ? req.priority_level?.toLowerCase() === filterPriority.toLowerCase()
+        ? r.priority_level?.toLowerCase() === filterPriority.toLowerCase()
         : true,
-    );
+    )
+    .filter((r) => {
+      if (filterSource === "tenant") return !!r.tenant_id;
+      if (filterSource === "landlord") return !r.tenant_id;
+      return true;
+    });
 
-  const getColumnRequests = (column: (typeof KANBAN_COLUMNS)[0]) => {
-    return filteredRequests.filter((req) =>
-      column.statuses.includes(req.status?.toLowerCase()),
-    );
+  const getColRequests = (col: KanbanColumnConfig) =>
+    filtered.filter((r) => col.statuses.includes(r.status));
+  const hasFilters = !!filterPriority || !!search || filterSource !== "all";
+  const pendingCount = filtered.filter((r) => r.status === "pending").length;
+
+  // Mobile nav
+  const scrollToCol = (i: number) => {
+    setActiveColumnIndex(i);
+    scrollRef.current?.scrollTo({
+      left: scrollRef.current.offsetWidth * i,
+      behavior: "smooth",
+    });
   };
-
-  const hasActiveFilters = filterPriority || search;
-
-  // ============================================
-  // MOBILE COLUMN NAVIGATION
-  // ============================================
-  const scrollToColumn = (index: number) => {
-    setActiveColumnIndex(index);
-    if (scrollContainerRef.current) {
-      const columnWidth = scrollContainerRef.current.offsetWidth;
-      scrollContainerRef.current.scrollTo({
-        left: columnWidth * index,
-        behavior: "smooth",
-      });
-    }
-  };
-
   const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      const scrollLeft = scrollContainerRef.current.scrollLeft;
-      const columnWidth = scrollContainerRef.current.offsetWidth;
-      const newIndex = Math.round(scrollLeft / columnWidth);
-      if (newIndex !== activeColumnIndex) {
-        setActiveColumnIndex(newIndex);
-      }
-    }
+    if (!scrollRef.current) return;
+    const i = Math.round(
+      scrollRef.current.scrollLeft / scrollRef.current.offsetWidth,
+    );
+    if (i !== activeColumnIndex) setActiveColumnIndex(i);
   };
 
-  // ============================================
-  // LOADING STATE
-  // ============================================
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Header Skeleton */}
-        <div className="bg-white border-b border-gray-200 px-4 py-4 lg:px-8 lg:py-6">
+        <div className="bg-white border-b px-4 py-4 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="w-10 h-10 bg-gray-200 rounded-xl animate-pulse" />
             <div>
-              <div className="h-5 lg:h-7 bg-gray-200 rounded-lg w-32 lg:w-40 animate-pulse mb-1.5" />
-              <div className="h-3 lg:h-4 bg-gray-200 rounded-lg w-24 lg:w-32 animate-pulse" />
+              <div className="h-6 bg-gray-200 rounded w-32 animate-pulse mb-1" />
+              <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
             </div>
           </div>
         </div>
-
-        {/* Kanban Skeleton */}
-        <div className="px-4 lg:px-8 py-4 lg:py-6">
-          {/* Mobile: Single column skeleton */}
-          <div className="lg:hidden space-y-3">
-            <div className="h-10 bg-gray-200 rounded-xl animate-pulse" />
-            {[1, 2, 3].map((j) => (
-              <div
-                key={j}
-                className="h-28 bg-gray-200 rounded-xl animate-pulse"
-                style={{ animationDelay: `${j * 100}ms` }}
-              />
-            ))}
-          </div>
-
-          {/* Desktop: Grid skeleton */}
-          <div className="hidden lg:grid lg:grid-cols-4 gap-5">
-            {[1, 2, 3, 4].map((i) => (
+        <div className="px-4 lg:px-8 py-6">
+          <div className="hidden lg:grid lg:grid-cols-5 gap-4">
+            {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="space-y-3">
-                <div className="h-10 bg-gray-200 rounded-xl animate-pulse" />
-                {[1, 2, 3].map((j) => (
-                  <div
-                    key={j}
-                    className="h-32 bg-gray-200 rounded-xl animate-pulse"
-                    style={{ animationDelay: `${j * 100}ms` }}
-                  />
-                ))}
+                <div className="h-14 bg-gray-200 rounded-xl animate-pulse" />
+                <div className="h-32 bg-gray-200 rounded-xl animate-pulse" />
               </div>
             ))}
           </div>
         </div>
       </div>
     );
-  }
 
-  // ============================================
-  // MAIN RENDER
-  // ============================================
   return (
     <motion.div
-      variants={pageTransition}
-      initial="hidden"
-      animate="visible"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30"
     >
-      {/* ==================== HEADER ==================== */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="bg-white border-b border-gray-200 px-4 py-4 lg:px-8 lg:py-5 sticky top-14 lg:top-0 z-30"
-      >
-        {/* Title Row */}
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-4 lg:px-8 sticky top-14 lg:top-0 z-30">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25 flex-shrink-0">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
               <Wrench className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
             </div>
             <div>
               <h1 className="text-lg lg:text-2xl font-bold text-gray-900">
                 Work Orders
               </h1>
-              <p className="text-gray-500 text-xs lg:text-sm">
-                {filteredRequests.length} total requests
-              </p>
+              <div className="flex items-center gap-2 text-xs lg:text-sm text-gray-500">
+                <span>{filtered.length} total</span>
+                {pendingCount > 0 && (
+                  <>
+                    <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                    <span className="text-amber-600 font-medium">
+                      {pendingCount} pending
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Desktop: New Work Order Button */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setShowNewModal(true)}
-            className="hidden sm:flex items-center gap-2 px-4 lg:px-5 py-2 lg:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold text-sm lg:text-base shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all"
-          >
-            <Plus className="w-4 h-4 lg:w-5 lg:h-5" />
-            <span>New Work Order</span>
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => fetchRequests(true)}
+              disabled={refreshing}
+              className="p-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowNewModal(true)}
+              className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-semibold text-sm shadow-lg"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Work Order</span>
+            </motion.button>
+          </div>
         </div>
-
-        {/* Search & Filter Row */}
         <div className="flex gap-2">
-          {/* Search */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -478,52 +558,43 @@ export default function MaintenanceRequestPage() {
               placeholder="Search..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-gray-100 rounded-full"
+                className="absolute right-3 top-1/2 -translate-y-1/2"
               >
                 <X className="w-4 h-4 text-gray-400" />
               </button>
             )}
           </div>
-
-          {/* Filter Button */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all ${
-              showFilters || hasActiveFilters
-                ? "bg-blue-50 border-blue-200 text-blue-700"
-                : "bg-white border-gray-200 text-gray-700"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all ${showFilters || hasFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-700"}`}
           >
             <Filter className="w-4 h-4" />
             <span className="text-sm font-medium hidden sm:inline">
               Filters
             </span>
-            {hasActiveFilters && (
+            {hasFilters && (
               <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
             )}
           </button>
         </div>
-
-        {/* Filter Panel */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
               <div className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-gray-100">
                 <select
                   value={filterPriority}
                   onChange={(e) => setFilterPriority(e.target.value)}
-                  className="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                  className="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm outline-none"
                 >
                   <option value="">All Priorities</option>
                   <option value="Low">Low</option>
@@ -531,14 +602,23 @@ export default function MaintenanceRequestPage() {
                   <option value="High">High</option>
                   <option value="Urgent">Urgent</option>
                 </select>
-
-                {hasActiveFilters && (
+                <select
+                  value={filterSource}
+                  onChange={(e) => setFilterSource(e.target.value as any)}
+                  className="px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm outline-none"
+                >
+                  <option value="all">All Sources</option>
+                  <option value="tenant">Tenant Requests</option>
+                  <option value="landlord">Work Orders</option>
+                </select>
+                {hasFilters && (
                   <button
                     onClick={() => {
                       setSearch("");
                       setFilterPriority("");
+                      setFilterSource("all");
                     }}
-                    className="px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center gap-1.5"
                   >
                     <X className="w-3.5 h-3.5" />
                     Clear
@@ -548,37 +628,28 @@ export default function MaintenanceRequestPage() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+        <p className="hidden lg:block text-xs text-gray-400 mt-3">
+          💡 Drag cards between columns or use action buttons to update status.
+        </p>
+      </div>
 
-      {/* ==================== MOBILE COLUMN TABS ==================== */}
+      {/* Mobile tabs */}
       <div className="lg:hidden sticky top-[130px] z-20 bg-white border-b border-gray-200 px-4 py-2.5">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
-          {KANBAN_COLUMNS.map((column, index) => {
-            const count = getColumnRequests(column).length;
-            const isActive = activeColumnIndex === index;
-
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {KANBAN_COLUMNS.map((col, idx) => {
+            const count = getColRequests(col).length;
+            const active = activeColumnIndex === idx;
+            const Icon = col.Icon;
             return (
               <button
-                key={column.id}
-                onClick={() => scrollToColumn(index)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap transition-all text-sm ${
-                  isActive
-                    ? `bg-gradient-to-r ${column.gradient} text-white`
-                    : "bg-gray-100 text-gray-600"
-                }`}
+                key={col.id}
+                onClick={() => scrollToCol(idx)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap text-sm transition-all ${active ? `bg-gradient-to-r ${col.gradient} text-white` : "bg-gray-100 text-gray-600"}`}
               >
+                <Icon className="w-3.5 h-3.5" />
+                <span className="font-medium">{col.title.split(" ")[0]}</span>
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    isActive ? "bg-white/80" : column.dotColor
-                  }`}
-                />
-                <span className="font-medium">{column.title}</span>
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded-md ${
-                    isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-gray-200 text-gray-600"
-                  }`}
+                  className={`text-xs px-1.5 py-0.5 rounded-md ${active ? "bg-white/20" : "bg-gray-200"}`}
                 >
                   {count}
                 </span>
@@ -588,154 +659,133 @@ export default function MaintenanceRequestPage() {
         </div>
       </div>
 
-      {/* ==================== KANBAN BOARD ==================== */}
-      <div className="px-4 lg:px-8 py-4 lg:py-5 pb-24 lg:pb-8">
-        {/* Desktop Grid */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="hidden lg:grid lg:grid-cols-4 gap-5"
-        >
-          {KANBAN_COLUMNS.map((column) => (
+      {/* Board */}
+      <div className="px-4 lg:px-6 py-4 pb-24 lg:pb-8">
+        <div className="hidden lg:grid lg:grid-cols-5 gap-4">
+          {KANBAN_COLUMNS.map((col) => (
             <KanbanColumn
-              key={column.id}
-              column={column}
-              requests={getColumnRequests(column)}
-              onCardClick={(req) => {
-                setSelectedRequest(req);
-                setShowModal(true);
+              key={col.id}
+              column={col}
+              requests={getColRequests(col)}
+              onCardClick={(r) => {
+                setSelectedRequest(r);
+                setShowDetailsModal(true);
               }}
-              onStatusChange={updateStatus}
+              onStatusChange={updateRequestStatus}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+              isDragOver={dragOverColumn === col.id}
+              draggedItem={draggedItem}
             />
           ))}
-        </motion.div>
-
-        {/* Mobile Horizontal Scroll */}
+        </div>
         <div
-          ref={scrollContainerRef}
+          ref={scrollRef}
           onScroll={handleScroll}
           className="lg:hidden flex overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 gap-4"
-          style={{ scrollSnapType: "x mandatory" }}
         >
-          {KANBAN_COLUMNS.map((column) => (
-            <div
-              key={column.id}
-              className="flex-shrink-0 w-full snap-center"
-              style={{ scrollSnapAlign: "start" }}
-            >
+          {KANBAN_COLUMNS.map((col) => (
+            <div key={col.id} className="flex-shrink-0 w-full snap-center">
               <KanbanColumn
-                column={column}
-                requests={getColumnRequests(column)}
-                onCardClick={(req) => {
-                  setSelectedRequest(req);
-                  setShowModal(true);
+                column={col}
+                requests={getColRequests(col)}
+                onCardClick={(r) => {
+                  setSelectedRequest(r);
+                  setShowDetailsModal(true);
                 }}
-                onStatusChange={updateStatus}
+                onStatusChange={updateRequestStatus}
                 isMobile
               />
             </div>
           ))}
         </div>
-
-        {/* Mobile Navigation Dots */}
         <div className="lg:hidden flex justify-center gap-1.5 mt-4">
-          {KANBAN_COLUMNS.map((_, index) => (
+          {KANBAN_COLUMNS.map((_, i) => (
             <button
-              key={index}
-              onClick={() => scrollToColumn(index)}
-              className={`h-1.5 rounded-full transition-all duration-200 ${
-                activeColumnIndex === index
-                  ? "bg-blue-500 w-6"
-                  : "bg-gray-300 w-1.5"
-              }`}
+              key={i}
+              onClick={() => scrollToCol(i)}
+              className={`h-1.5 rounded-full transition-all ${activeColumnIndex === i ? "bg-blue-500 w-6" : "bg-gray-300 w-1.5"}`}
             />
           ))}
         </div>
       </div>
 
-      {/* ==================== MOBILE FAB ==================== */}
+      {/* FAB */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setShowNewModal(true)}
-        className="sm:hidden fixed bottom-6 right-4 w-14 h-14 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-full shadow-lg shadow-blue-500/25 flex items-center justify-center z-40"
+        className="sm:hidden fixed bottom-6 right-4 w-14 h-14 bg-gradient-to-r from-blue-600 to-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center z-40"
       >
         <Plus className="w-6 h-6" />
       </motion.button>
 
-      {/* ==================== MODALS ==================== */}
+      {/* Modals */}
       <AnimatePresence>
-        {showCalendar && (
+        {showCalendarModal && (
           <MaintenanceCalendarModal
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             handleScheduleConfirm={handleScheduleConfirm}
-            onClose={() => setShowCalendar(false)}
+            onClose={() => {
+              setShowCalendarModal(false);
+              setPendingStatusChange(null);
+            }}
           />
         )}
       </AnimatePresence>
-
       <AnimatePresence>
-        {showModal && selectedRequest && (
+        {showDetailsModal && selectedRequest && (
           <MaintenanceDetailsModal
             selectedRequest={selectedRequest}
-            onClose={() => setShowModal(false)}
+            onClose={() => {
+              setShowDetailsModal(false);
+              setSelectedRequest(null);
+            }}
             onStart={() => {
-              setCurrentRequestId(selectedRequest.request_id);
-              setShowCalendar(true);
+              setPendingStatusChange({
+                requestId: selectedRequest.request_id,
+                status: "scheduled",
+              });
+              setShowCalendarModal(true);
             }}
             onComplete={() =>
-              updateStatus(selectedRequest.request_id, "completed")
+              updateRequestStatus(selectedRequest.request_id, "completed")
             }
             onReschedule={() => {
-              setCurrentRequestId(selectedRequest.request_id);
-              setShowCalendar(true);
+              setPendingStatusChange({
+                requestId: selectedRequest.request_id,
+                status: "scheduled",
+              });
+              setShowCalendarModal(true);
             }}
-            updateStatus={updateStatus}
+            updateStatus={updateRequestStatus}
           />
         )}
       </AnimatePresence>
-
       <AnimatePresence>
-        {showExpenseModal && (
+        {showExpenseModal && pendingStatusChange && (
           <MaintenanceExpenseModal
-            requestId={expenseFor}
+            requestId={pendingStatusChange.requestId}
             userId={user?.user_id}
             onClose={() => {
               setShowExpenseModal(false);
-              setExpenseFor(null);
+              setPendingStatusChange(null);
             }}
-            onSaved={(expense) => {
-              setShowExpenseModal(false);
-              setRequests((prev) =>
-                prev.map((r) =>
-                  r.request_id === expenseFor
-                    ? {
-                        ...r,
-                        status: "completed",
-                        completion_date: new Date().toISOString(),
-                        last_expense_amount: expense.amount,
-                      }
-                    : r,
-                ),
-              );
-              setExpenseFor(null);
-            }}
+            onSaved={handleExpenseSaved}
           />
         )}
       </AnimatePresence>
-
       <AnimatePresence>
         {showNewModal && (
           <NewWorkOrderModal
             landlordId={landlordId}
             onClose={() => setShowNewModal(false)}
-            onCreated={(newOrder) => {
-              setRequests((prev) => [newOrder, ...prev]);
-              setShowNewModal(false);
-            }}
+            onCreated={handleWorkOrderCreated}
           />
         )}
       </AnimatePresence>
@@ -744,212 +794,192 @@ export default function MaintenanceRequestPage() {
 }
 
 // ============================================
-// KANBAN COLUMN COMPONENT
+// KANBAN COLUMN
 // ============================================
-interface KanbanColumnProps {
-  column: (typeof KANBAN_COLUMNS)[0];
-  requests: MaintenanceRequest[];
-  onCardClick: (req: MaintenanceRequest) => void;
-  onStatusChange: (id: number, status: string) => void;
-  isMobile?: boolean;
-}
-
 function KanbanColumn({
   column,
   requests,
   onCardClick,
   onStatusChange,
-  isMobile = false,
-}: KanbanColumnProps) {
-  const [isDragOver, setIsDragOver] = useState(false);
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  isDragOver,
+  draggedItem,
+  isMobile,
+}: {
+  column: KanbanColumnConfig;
+  requests: MaintenanceRequest[];
+  onCardClick: (r: MaintenanceRequest) => void;
+  onStatusChange: (id: number, status: string, extra?: any) => void;
+  onDragStart?: (r: MaintenanceRequest) => void;
+  onDragOver?: (e: React.DragEvent, id: string) => void;
+  onDragLeave?: () => void;
+  onDrop?: (e: React.DragEvent, id: string) => void;
+  onDragEnd?: () => void;
+  isDragOver?: boolean;
+  draggedItem?: MaintenanceRequest | null;
+  isMobile?: boolean;
+}) {
+  const Icon = column.Icon;
+  const canAccept =
+    draggedItem &&
+    column.acceptsFrom.includes(
+      getColumnForStatus(draggedItem.status)?.id || "",
+    );
 
   return (
-    <motion.div
-      variants={columnVariants}
+    <div
       className={`flex flex-col ${isMobile ? "min-h-[50vh]" : "h-full"}`}
+      onDragOver={(e) => onDragOver?.(e, column.id)}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => onDrop?.(e, column.id)}
     >
-      {/* Column Header */}
       <div
-        className={`flex items-center justify-between p-2.5 lg:p-3 rounded-t-xl bg-gradient-to-r ${column.gradient}`}
+        className={`flex items-center justify-between p-3 rounded-t-xl bg-gradient-to-r ${column.gradient}`}
       >
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-white/80 rounded-full" />
-          <h3 className="font-semibold text-white text-sm">{column.title}</h3>
+          <Icon className="w-4 h-4 text-white/90" />
+          <div>
+            <h3 className="font-semibold text-white text-sm">{column.title}</h3>
+            {!isMobile && (
+              <p className="text-[10px] text-white/70">{column.subtitle}</p>
+            )}
+          </div>
         </div>
-        <span className="px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-semibold">
+        <span className="px-2 py-0.5 bg-white/20 rounded-lg text-white text-xs font-semibold">
           {requests.length}
         </span>
       </div>
-
-      {/* Column Body */}
       <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragOver(true);
-        }}
-        onDragLeave={() => setIsDragOver(false)}
-        onDrop={() => setIsDragOver(false)}
-        className={`flex-1 p-2.5 lg:p-3 rounded-b-xl border-2 border-t-0 transition-all duration-200 ${
-          isDragOver
-            ? `${column.bgLight} ${column.borderColor} border-dashed`
-            : "bg-gray-50/50 border-gray-100 border-solid"
-        }`}
+        className={`flex-1 p-2.5 rounded-b-xl border-2 border-t-0 transition-all ${isDragOver && canAccept ? `${column.bgLight} border-dashed ${column.dotColor.replace("bg-", "border-")}` : "bg-gray-50/50 border-gray-100"}`}
       >
-        <AnimatePresence mode="popLayout">
-          {requests.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-10 lg:py-12 text-gray-400"
+        {requests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+            <div
+              className={`w-10 h-10 rounded-xl ${column.bgLight} flex items-center justify-center mb-2`}
             >
-              <div
-                className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl ${column.bgLight} flex items-center justify-center mb-2`}
-              >
-                <Wrench
-                  className={`w-5 h-5 lg:w-6 lg:h-6 ${column.dotColor.replace(
-                    "bg-",
-                    "text-",
-                  )}`}
-                />
-              </div>
-              <p className="text-sm font-medium">No requests</p>
-            </motion.div>
-          ) : (
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-              className="space-y-2.5 lg:space-y-3"
-            >
-              {requests.map((request) => (
-                <RequestCard
-                  key={request.request_id}
-                  request={request}
-                  onClick={() => onCardClick(request)}
-                  onStatusChange={onStatusChange}
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <Icon className={`w-5 h-5 ${column.textColor}`} />
+            </div>
+            <p className="text-sm font-medium">No requests</p>
+            {canAccept && (
+              <p className="text-xs mt-1 text-blue-500">Drop here</p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {requests.map((r) => (
+              <RequestCard
+                key={r.request_id}
+                request={r}
+                column={column}
+                onClick={() => onCardClick(r)}
+                onStatusChange={onStatusChange}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                isMobile={isMobile}
+              />
+            ))}
+          </div>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 // ============================================
-// REQUEST CARD COMPONENT
+// REQUEST CARD
 // ============================================
-interface RequestCardProps {
+function RequestCard({
+  request,
+  column,
+  onClick,
+  onStatusChange,
+  onDragStart,
+  onDragEnd,
+  isMobile,
+}: {
   request: MaintenanceRequest;
+  column: KanbanColumnConfig;
   onClick: () => void;
-  onStatusChange: (id: number, status: string) => void;
-}
-
-function RequestCard({ request, onClick, onStatusChange }: RequestCardProps) {
+  onStatusChange: (id: number, status: string, extra?: any) => void;
+  onDragStart?: (r: MaintenanceRequest) => void;
+  onDragEnd?: () => void;
+  isMobile?: boolean;
+}) {
   const priority = getPriorityConfig(request.priority_level);
-  const [showActions, setShowActions] = useState(false);
+  const status = getStatusConfig(request.status);
+  const isTenant = !!request.tenant_id;
 
   return (
     <motion.div
-      variants={cardVariants}
       layout
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className="bg-white rounded-xl border border-gray-100 p-3 lg:p-4 cursor-pointer transition-all duration-200 group relative overflow-hidden active:bg-gray-50"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      draggable={!isMobile}
+      onDragStart={() => onDragStart?.(request)}
+      onDragEnd={onDragEnd}
+      className="bg-white rounded-xl border border-gray-100 p-3 cursor-pointer hover:shadow-md hover:border-gray-200 transition-all relative group"
     >
-      {/* Priority Indicator Line */}
-      <div
-        className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${
-          request.priority_level?.toLowerCase() === "urgent"
-            ? "from-red-500 to-red-600"
-            : request.priority_level?.toLowerCase() === "high"
-              ? "from-orange-500 to-orange-600"
-              : request.priority_level?.toLowerCase() === "medium"
-                ? "from-blue-500 to-blue-600"
-                : "from-gray-300 to-gray-400"
-        }`}
-      />
-
-      {/* Header */}
-      <div className="flex items-start justify-between mb-1.5 pl-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] lg:text-xs text-gray-400 font-medium mb-0.5">
-            #{request.request_id}
-          </p>
-          <h4 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">
-            {request.subject}
-          </h4>
-        </div>
-
-        {/* Actions Menu */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowActions(!showActions);
-          }}
-          className="p-1.5 hover:bg-gray-100 rounded-lg"
-        >
-          <MoreHorizontal className="w-4 h-4 text-gray-400" />
-        </button>
-      </div>
-
-      {/* Property Info */}
-      {request.property_name && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2 pl-2">
-          <Home className="w-3 h-3 flex-shrink-0" />
-          <span className="truncate">{request.property_name}</span>
-          {request.unit_name && (
-            <>
-              <span className="text-gray-300">•</span>
-              <span className="truncate">{request.unit_name}</span>
-            </>
-          )}
+      {!isMobile && (
+        <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-50 cursor-grab">
+          <GripVertical className="w-4 h-4 text-gray-400" />
         </div>
       )}
-
-      {/* Tags */}
-      <div className="flex flex-wrap gap-1.5 mb-2 pl-2">
-        {/* Priority Badge */}
-        <span
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${priority.bg} ${priority.text} border ${priority.border}`}
-        >
-          {request.priority_level?.toLowerCase() === "urgent" && (
-            <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-          )}
-          {priority.label}
-        </span>
-
-        {/* Category Badge */}
-        <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] font-medium">
-          {request.category}
-        </span>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-50 pl-2">
-        {/* Assignee */}
-        <div className="flex items-center gap-2">
-          {request.assigned_to ? (
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center">
-                <span className="text-[9px] lg:text-[10px] font-semibold text-white">
-                  {request.assigned_to.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <span className="text-xs text-gray-600 truncate max-w-[70px] lg:max-w-[80px]">
-                {request.assigned_to}
-              </span>
-            </div>
-          ) : (
-            <span className="text-xs text-gray-400 italic">Unassigned</span>
+      <div
+        className={`absolute top-0 left-0 w-1 h-full rounded-l-xl ${priority.dot}`}
+      />
+      <div className="pl-2" onClick={onClick}>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] text-gray-400 font-mono">
+            #{request.request_id}
+          </span>
+          {isTenant && (
+            <span className="text-[9px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">
+              Tenant
+            </span>
           )}
         </div>
-
-        {/* Schedule Date */}
-        {request.schedule_date && (
-          <div className="flex items-center gap-1 text-xs text-gray-500">
+        <h4 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 mb-2">
+          {request.subject}
+        </h4>
+        {request.property_name && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+            <Home className="w-3 h-3" />
+            <span className="truncate">{request.property_name}</span>
+            {request.unit_name && (
+              <>
+                <span className="text-gray-300">•</span>
+                <span className="truncate">{request.unit_name}</span>
+              </>
+            )}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${priority.bg} ${priority.text} border ${priority.border}`}
+          >
+            {request.priority_level?.toLowerCase() === "urgent" && (
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            )}
+            {priority.label}
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] font-medium">
+            {request.category}
+          </span>
+          {(request.status === "completed" ||
+            request.status === "rejected") && (
+            <span
+              className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${status.bgLight} ${status.text}`}
+            >
+              {status.shortLabel}
+            </span>
+          )}
+        </div>
+        {request.schedule_date && request.status !== "completed" && (
+          <div className="flex items-center gap-1 text-xs text-purple-600 mb-2">
             <Calendar className="w-3 h-3" />
             <span>
               {new Date(request.schedule_date).toLocaleDateString("en-US", {
@@ -960,92 +990,23 @@ function RequestCard({ request, onClick, onStatusChange }: RequestCardProps) {
           </div>
         )}
       </div>
-
-      {/* Quick Actions Dropdown */}
-      <AnimatePresence>
-        {showActions && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="absolute top-10 right-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-10 min-w-[120px]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {request.status === "pending" && (
-              <>
-                <QuickActionButton
-                  label="Approve"
-                  onClick={() => {
-                    onStatusChange(request.request_id, "approved");
-                    setShowActions(false);
-                  }}
-                  color="text-green-600"
-                />
-                <QuickActionButton
-                  label="Reject"
-                  onClick={() => {
-                    onStatusChange(request.request_id, "rejected");
-                    setShowActions(false);
-                  }}
-                  color="text-red-600"
-                />
-              </>
-            )}
-            {request.status === "approved" && (
-              <QuickActionButton
-                label="Schedule"
-                onClick={() => {
-                  onStatusChange(request.request_id, "scheduled");
-                  setShowActions(false);
-                }}
-                color="text-purple-600"
-              />
-            )}
-            {request.status === "scheduled" && (
-              <QuickActionButton
-                label="Start Work"
-                onClick={() => {
-                  onStatusChange(request.request_id, "in-progress");
-                  setShowActions(false);
-                }}
-                color="text-blue-600"
-              />
-            )}
-            {request.status === "in-progress" && (
-              <QuickActionButton
-                label="Complete"
-                onClick={() => {
-                  onStatusChange(request.request_id, "completed");
-                  setShowActions(false);
-                }}
-                color="text-emerald-600"
-              />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {column.nextActions.length > 0 && (
+        <div className="flex gap-2 mt-2 pt-2 border-t border-gray-100">
+          {column.nextActions.map((a) => (
+            <button
+              key={a.status}
+              onClick={(e) => {
+                e.stopPropagation();
+                onStatusChange(request.request_id, a.status);
+              }}
+              className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-white text-xs font-medium transition-all ${a.color}`}
+            >
+              <ChevronRight className="w-3 h-3" />
+              {a.label}
+            </button>
+          ))}
+        </div>
+      )}
     </motion.div>
-  );
-}
-
-// ============================================
-// QUICK ACTION BUTTON
-// ============================================
-function QuickActionButton({
-  label,
-  onClick,
-  color,
-}: {
-  label: string;
-  onClick: () => void;
-  color: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full px-3 py-2 text-left text-sm font-medium ${color} hover:bg-gray-50 transition-colors`}
-    >
-      {label}
-    </button>
   );
 }
