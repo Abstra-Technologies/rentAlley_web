@@ -1,21 +1,24 @@
 "use client";
 
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import axios from "axios";
 import { ArrowLeft, Send, AlertTriangle } from "lucide-react";
-import {useState} from "react";
 
-const fetcher = (url: string) => axios.get(url).then(res => res.data);
+const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
-export default function ReviewPayoutPage() {
+/* ===============================
+   Inner Content (uses searchParams)
+================================ */
+function ReviewPayoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
     const paymentIds = searchParams.get("payment_ids");
     const ids = paymentIds ? paymentIds.split(",") : [];
 
-    const { data, error, isLoading, mutate } = useSWR(
+    const { data, error, isLoading } = useSWR(
         ids.length
             ? `/api/systemadmin/payouts/review?payment_ids=${ids.join(",")}`
             : null,
@@ -23,7 +26,6 @@ export default function ReviewPayoutPage() {
     );
 
     const [isSubmitting, setIsSubmitting] = useState(false);
-
     const landlords = data?.landlords || [];
 
     const handleConfirmDisbursement = async () => {
@@ -116,7 +118,10 @@ export default function ReviewPayoutPage() {
                                 </thead>
                                 <tbody>
                                 {l.payments.map((p: any) => (
-                                    <tr key={p.payment_id} className="border-b last:border-b-0">
+                                    <tr
+                                        key={p.payment_id}
+                                        className="border-b last:border-b-0"
+                                    >
                                         <td className="py-2">{p.payment_id}</td>
                                         <td className="py-2 capitalize">{p.payment_type}</td>
                                         <td className="py-2 text-right font-semibold text-blue-700">
@@ -144,8 +149,8 @@ export default function ReviewPayoutPage() {
                 <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-6">
                     <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
                     <p className="text-sm text-yellow-800">
-                        Please review all payout details carefully. Once confirmed, payouts
-                        will be sent to the landlords and cannot be reversed.
+                        Please review all payout details carefully. Once confirmed,
+                        payouts will be sent to the landlords and cannot be reversed.
                     </p>
                 </div>
             )}
@@ -169,5 +174,24 @@ export default function ReviewPayoutPage() {
                 </button>
             </div>
         </div>
+    );
+}
+
+/* ===============================
+   Page with Suspense
+================================ */
+export default function ReviewPayoutPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="max-w-5xl mx-auto">
+                    <div className="bg-white p-6 rounded-xl shadow text-center">
+                        Loading payout details…
+                    </div>
+                </div>
+            }
+        >
+            <ReviewPayoutContent />
+        </Suspense>
     );
 }
