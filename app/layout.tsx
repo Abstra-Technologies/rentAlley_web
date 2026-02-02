@@ -24,12 +24,31 @@ const geistMono = Geist_Mono({
 export const metadata = {
     title: "Upkyp - Rental Property Management Platform",
     description: "Manage Less. Live More. Your Rental Management Partner",
-    manifest: '/manifest.json',
+    manifest: "/manifest.json",
     icons: {
-        icon: '/upkyp_white.png',
-        apple: '/upkyp_white.png'
+        icon: [
+            {
+                url: "/upkeep_blue.png",
+                media: "(prefers-color-scheme: light)",
+            },
+            {
+                url: "/upkyp_white.png",
+                media: "(prefers-color-scheme: dark)",
+            },
+        ],
+        apple: [
+            {
+                url: "/upkeep_blue.png",
+                media: "(prefers-color-scheme: light)",
+            },
+            {
+                url: "/upkyp_white.png",
+                media: "(prefers-color-scheme: dark)",
+            },
+        ],
     },
 };
+
 
 export default function RootLayout({
                                        children,

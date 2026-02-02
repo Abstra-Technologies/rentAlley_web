@@ -3,6 +3,15 @@ import { NextResponse } from "next/server";
 import type { RowDataPacket, FieldPacket } from "mysql2";
 import { decryptData } from "@/crypto/encrypt";
 
+/**
+ * @endpoint
+ * @used_by findrent landlord profile.
+ * @inputs landlord_id (query)
+ * @outputs status counts
+ * @notes
+ */
+
+
 const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
 
 export async function GET(
@@ -11,7 +20,7 @@ export async function GET(
 ) {
     const { landlord_id } = await context.params;
 
-    // 🛑 HARD GUARD (prevents mysql2 undefined error)
+    // 🛑 HARD GUARD
     if (!landlord_id || typeof landlord_id !== "string") {
         return NextResponse.json(
             { message: "Invalid or missing landlord_id" },
@@ -20,6 +29,9 @@ export async function GET(
     }
 
     try {
+        /* ================================
+           1. Landlord + User info
+        ================================ */
         const [rows]: [RowDataPacket[], FieldPacket[]] = await db.execute(
             `
       SELECT
@@ -31,9 +43,9 @@ export async function GET(
         u.profilePicture AS enc_profile
       FROM Landlord l
       JOIN User u ON l.user_id = u.user_id
-      WHERE l.landlord_id = ?;
+      WHERE l.landlord_id = ?
       `,
-            [landlord_id] // ✅ STRING SAFE
+            [landlord_id]
         );
 
         if (rows.length === 0) {
@@ -45,7 +57,9 @@ export async function GET(
 
         const landlord = rows[0] as any;
 
-        // 🔐 Decryption (safe + resilient)
+        /* ================================
+           2. Decrypt fields
+        ================================ */
         let firstName = "Unknown";
         let lastName = "";
         let email = "";
@@ -83,12 +97,32 @@ export async function GET(
             console.error("Decryption failed:", err);
         }
 
+        /* ================================
+           3. Total properties (NEW)
+        ================================ */
+        const [propertyCountRows]: [RowDataPacket[], FieldPacket[]] =
+            await db.execute(
+                `
+        SELECT COUNT(*) AS totalProperties
+        FROM Property
+        WHERE landlord_id = ?
+        `,
+                [landlord_id]
+            );
+
+        const totalProperties =
+            propertyCountRows[0]?.totalProperties ?? 0;
+
+        /* ================================
+           4. Response
+        ================================ */
         return NextResponse.json({
             landlord_id: landlord.landlord_id,
             name: `${firstName} ${lastName}`.trim(),
             email,
             phone,
             photoUrl,
+            totalProperties,
         });
     } catch (error) {
         console.error("Error fetching landlord:", error);
