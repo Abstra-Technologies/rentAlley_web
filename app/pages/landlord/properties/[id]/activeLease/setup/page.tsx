@@ -12,29 +12,34 @@ import {
     FileText,
     FileCheck,
     Upload,
-    ClipboardList,
     HelpCircle,
 } from "lucide-react";
+
 import GenerateLease from "./GenerateLease";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { leaseSetupSteps } from "@/lib/onboarding/leaseSetupMode";
 
-const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
+/* ===============================
+   Constants
+================================ */
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export default function SetupLeasePage() {
     const router = useRouter();
     const params = useParams();
-    const property_id = params.id as string;
     const searchParams = useSearchParams();
+
+    const property_id = params.id as string;
     const agreement_id = searchParams.get("agreement_id");
 
     const [leaseDetails, setLeaseDetails] = useState<any>(null);
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [step, setStep] = useState<1 | 2>(1);
-    const [selectedMode, setSelectedMode] = useState<"upload" | "generate" | null>(
-        null
-    );
+    const [selectedMode, setSelectedMode] = useState<
+        "upload" | "generate" | null
+    >(null);
 
     const STORAGE_KEY = `lease_setup_${agreement_id}`;
 
@@ -72,7 +77,7 @@ export default function SetupLeasePage() {
     useEffect(() => {
         if (!agreement_id) return;
 
-        const fetchLeaseDetails = async () => {
+        async function fetchLeaseDetails() {
             try {
                 const res = await axios.get(
                     `/api/landlord/activeLease/getByAgreementId`,
@@ -82,24 +87,23 @@ export default function SetupLeasePage() {
             } catch {
                 Swal.fire("Error", "Failed to load lease details.", "error");
             }
-        };
+        }
 
         fetchLeaseDetails();
     }, [agreement_id]);
 
     /* ===============================
-       File Validation (15MB)
+       File Validation (10MB)
     ================================ */
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
-
-        const selectedFile = e.target.files[0];
+        const selectedFile = e.target.files?.[0];
+        if (!selectedFile) return;
 
         if (selectedFile.size > MAX_FILE_SIZE) {
             Swal.fire({
                 icon: "warning",
                 title: "File too large",
-                text: "Please upload a lease document smaller than 15 MB.",
+                text: `Please upload a lease document smaller than ${MAX_FILE_SIZE_MB} MB.`,
                 confirmButtonColor: "#2563eb",
             });
 
@@ -125,7 +129,7 @@ export default function SetupLeasePage() {
         if (file.size > MAX_FILE_SIZE) {
             Swal.fire(
                 "File too large",
-                "Please upload a lease document smaller than 15 MB.",
+                `Please upload a lease document smaller than ${MAX_FILE_SIZE_MB} MB.`,
                 "warning"
             );
             return;
@@ -265,14 +269,13 @@ export default function SetupLeasePage() {
                         Upload Lease Document
                     </h2>
 
-                    {/* File Upload */}
                     <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 mb-4">
                         <Upload className="w-8 h-8 text-blue-500 mb-2" />
                         <span className="text-sm font-medium">
               {file ? file.name : "Click to upload or drag file"}
             </span>
                         <span className="text-xs text-gray-400 mt-1">
-              PDF, DOCX • Max 15 MB
+              PDF, DOCX • Max {MAX_FILE_SIZE_MB} MB
             </span>
                         <input
                             type="file"
