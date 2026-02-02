@@ -44,7 +44,7 @@ export function PaymentSummaryGrid({ landlord_id }: { landlord_id: string }) {
       valueColor: "text-emerald-700",
     },
     {
-      title: "Pending Payouts",
+      title: "Pending Disbursements",
       value: formatCurrency(summary.pendingPayouts),
       icon: Clock,
       bgColor: "bg-amber-50",

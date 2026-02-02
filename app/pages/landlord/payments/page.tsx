@@ -152,7 +152,8 @@ export default function PaymentsPage() {
               className="appearance-none w-full lg:w-auto pl-10 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-sm cursor-pointer"
             >
               <option value="all">All Types</option>
-              <option value="rent">Rent</option>
+                <option value="monthly_billing">Monthly Billing</option>
+                <option value="rent">Rent</option>
               <option value="utilities">Utilities</option>
               <option value="security_deposit">Security Deposit</option>
               <option value="advance_payment">Advance Payment</option>
@@ -164,25 +165,27 @@ export default function PaymentsPage() {
           {/* Date / Year */}
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="appearance-none w-full lg:w-auto pl-10 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-sm cursor-pointer"
-            >
-              <option value="7">Last 7 Days</option>
-              <option value="30">Last 30 Days</option>
-              <option value="month">This Month</option>
+              <select
+                  value={dateRange}
+                  onChange={(e) => setDateRange(e.target.value)}
+                  className="appearance-none w-full lg:w-auto pl-10 pr-10 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-sm cursor-pointer"
+              >
+                  <option value="all">All Transactions</option>
+                  <option value="7">Last 7 Days</option>
+                  <option value="30">Last 30 Days</option>
+                  <option value="month">This Month</option>
 
-              {years.length > 0 && (
-                <optgroup label="By Year">
-                  {years.map((year) => (
-                    <option key={year} value={`year:${year}`}>
-                      {year}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
+                  {years.length > 0 && (
+                      <optgroup label="By Year">
+                          {years.map((year) => (
+                              <option key={year} value={`year:${year}`}>
+                                  {year}
+                              </option>
+                          ))}
+                      </optgroup>
+                  )}
+              </select>
+
           </div>
         </div>
       </motion.div>
