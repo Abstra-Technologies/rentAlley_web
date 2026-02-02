@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
         /* ---------- DECRYPT LEASE URL ---------- */
         let leaseUrl: string | null = null;
         try {
+            // @ts-ignore
             leaseUrl = data.agreement_url
                 ? decryptData(JSON.parse(data.agreement_url), process.env.ENCRYPTION_SECRET!)
                 : null;

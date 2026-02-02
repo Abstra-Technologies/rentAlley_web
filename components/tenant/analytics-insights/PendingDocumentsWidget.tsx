@@ -41,6 +41,8 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                 );
                 const data = res.data;
                 setLease({ ...data, ...data.lease });
+                console.log('lease doc: ', data);
+
             } catch {
                 Swal.fire("Error", "Failed to load lease information.", "error");
             } finally {

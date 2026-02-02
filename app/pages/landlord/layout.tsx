@@ -54,10 +54,12 @@ export default function LandlordLayout({
     const { user, fetchSession, signOut } = useAuthStore();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [authReady, setAuthReady] = useState(false);
 
+    /* ===============================
+       AUTH
+    ================================ */
     useEffect(() => {
         if (!user) {
             fetchSession().finally(() => setAuthReady(true));
@@ -74,7 +76,6 @@ export default function LandlordLayout({
 
     useEffect(() => {
         setIsSidebarOpen(false);
-        setIsMobileProfileOpen(false);
     }, [pathname]);
 
     useEffect(() => {
@@ -84,15 +85,8 @@ export default function LandlordLayout({
         };
     }, [isSidebarOpen]);
 
-    const isInsideProperty = useMemo(
-        () =>
-            pathname.includes("/pages/landlord/properties/") &&
-            !pathname.includes("/pages/commons/profile"),
-        [pathname]
-    );
-
     /* ===============================
-       NAV GROUPS (CATEGORIZED)
+       NAV GROUPS
     ================================ */
     const navGroups = useMemo(
         () => [
@@ -101,65 +95,40 @@ export default function LandlordLayout({
                 items: [
                     { label: "Dashboard", href: "/pages/landlord/dashboard", icon: Home },
                     { label: "Payments", href: "/pages/landlord/payments", icon: Wallet },
-                    {
-                        label: "Properties",
-                        href: "/pages/landlord/property-listing",
-                        icon: Building,
-                    },
-                    {
-                        label: "My Tenants",
-                        href: "/pages/landlord/list_of_tenants",
-                        icon: Users,
-                    },
-                    {
-                        label: "Messages",
-                        href: "/pages/landlord/chat",
-                        icon: MessageSquareMore,
-                    },
+                    { label: "Properties", href: "/pages/landlord/property-listing", icon: Building },
+                    { label: "My Tenants", href: "/pages/landlord/list_of_tenants", icon: Users },
+                    { label: "Messages", href: "/pages/landlord/chat", icon: MessageSquareMore },
                 ],
             },
             {
                 title: "Operations",
                 items: [
-                    {
-                        label: "Work Orders",
-                        href: "/pages/landlord/maintenance-request",
-                        icon: Construction,
-                    },
-                    {
-                        label: "Calendar",
-                        href: "/pages/landlord/booking-appointment",
-                        icon: Calendar,
-                    },
-                    {
-                        label: "Announcements",
-                        href: "/pages/landlord/announcement",
-                        icon: Megaphone,
-                    },
+                    { label: "Work Orders", href: "/pages/landlord/maintenance-request", icon: Construction },
+                    { label: "Calendar", href: "/pages/landlord/booking-appointment", icon: Calendar },
+                    { label: "Announcements", href: "/pages/landlord/announcement", icon: Megaphone },
                 ],
             },
             {
                 title: "Finance & Strategy",
                 items: [
-                    {
-                        label: "Analytics",
-                        href: "/pages/landlord/analytics/performance",
-                        icon: ChartArea,
-                    },
-                    {
-                        label: "Tax Compliance",
-                        href: "/pages/landlord/taxManagement",
-                        icon: Banknote,
-                    },
+                    { label: "Analytics", href: "/pages/landlord/analytics/performance", icon: ChartArea },
+                    { label: "Tax Compliance", href: "/pages/landlord/taxManagement", icon: Banknote },
                 ],
             },
             {
                 title: "Support",
                 items: [
+                    { label: "Help & Support", href: "/pages/public/help", icon: Handshake },
+                ],
+            },
+            {
+                title: "Account",
+                items: [
                     {
-                        label: "Help & Support",
-                        href: "/pages/public/help",
-                        icon: Handshake,
+                        label: "Logout",
+                        href: "#logout",
+                        icon: LogOut,
+                        isLogout: true,
                     },
                 ],
             },
@@ -172,17 +141,9 @@ export default function LandlordLayout({
         router.push("/pages/auth/login");
     };
 
-    if (!authReady) {
-        return <LoadingScreen message="Preparing your workspace..." />;
-    }
-
-    if (!user || user.userType !== "landlord") {
+    if (!authReady) return <LoadingScreen message="Preparing your workspace..." />;
+    if (!user || user.userType !== "landlord")
         return <LoadingScreen message="Redirecting..." />;
-    }
-
-    if (isInsideProperty) {
-        return <main className="min-h-screen">{children}</main>;
-    }
 
     /* ===============================
        RENDER
@@ -190,7 +151,7 @@ export default function LandlordLayout({
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-emerald-50/30">
             {/* DESKTOP SIDEBAR */}
-            <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:w-72 bg-white shadow-xl z-40">
+            <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:w-72 bg-white shadow-xl z-40">
                 <div className="flex flex-col h-full">
                     {/* HEADER */}
                     <div className="px-6 py-5 bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
@@ -216,41 +177,19 @@ export default function LandlordLayout({
                                 height={44}
                                 className="rounded-xl object-cover border-2 border-gray-200"
                             />
-
                             <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm truncate">
                                     {user.firstName && user.lastName
                                         ? `${user.firstName} ${user.lastName}`
                                         : user.companyName || user.email}
                                 </p>
-
                                 <p className="text-xs text-gray-500">Landlord</p>
-
-                                {/* Subscription */}
-                                <div className="flex items-center gap-2 mt-1 flex-wrap">
-        <span
-            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full
-            ${
-                user.subscription?.plan_name === "pro"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : user.subscription?.plan_name === "enterprise"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-gray-200 text-gray-600"
-            }`}
-        >
-          {user.subscription?.plan_name
-              ? user?.subscription.plan_name.toUpperCase()
-              : "-"}
-        </span>
-                                </div>
-
                                 {user.landlord_id && (
-                                    <p className="text-[11px] text-gray-400 truncate mt-0.5">
+                                    <p className="text-[11px] text-gray-400 truncate mt-1">
                                         ID: {user.landlord_id}
                                     </p>
                                 )}
                             </div>
-
                             <Link href="/pages/commons/profile">
                                 <Settings className="w-5 h-5 text-gray-500 hover:text-blue-600" />
                             </Link>
@@ -264,9 +203,26 @@ export default function LandlordLayout({
                                 <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                                     {group.title}
                                 </p>
-                                {group.items.map(({ label, href, icon: Icon }) => {
+
+                                {group.items.map(({ label, href, icon: Icon, isLogout }) => {
                                     const active =
-                                        pathname === href || pathname.startsWith(href + "/");
+                                        !isLogout &&
+                                        (pathname === href || pathname.startsWith(href + "/"));
+
+                                    if (isLogout) {
+                                        return (
+                                            <button
+                                                key="logout"
+                                                onClick={() => setShowLogoutConfirm(true)}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                   text-sm font-medium text-red-600 hover:bg-red-50"
+                                            >
+                                                <Icon className="w-5 h-5" />
+                                                {label}
+                                            </button>
+                                        );
+                                    }
+
                                     return (
                                         <Link
                                             key={href}
@@ -285,17 +241,6 @@ export default function LandlordLayout({
                             </div>
                         ))}
                     </nav>
-
-                    {/* FOOTER */}
-                    <div className="p-4 border-t bg-gray-50">
-                        <button
-                            onClick={() => setShowLogoutConfirm(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-red-50 hover:text-red-600"
-                        >
-                            <LogOut className="w-5 h-5" />
-                            Logout
-                        </button>
-                    </div>
                 </div>
             </aside>
 
@@ -306,79 +251,68 @@ export default function LandlordLayout({
                 </Link>
                 <div className="flex gap-2">
                     <NotificationSection user={user} admin={null} />
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="p-2 rounded-lg hover:bg-white/10"
-                    >
+                    <button onClick={() => setIsSidebarOpen(true)}>
                         <Menu className="w-5 h-5 text-white" />
                     </button>
                 </div>
             </div>
 
             {/* MOBILE SIDEBAR */}
-            <div
-                className={`lg:hidden fixed inset-0 z-50 ${
-                    isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-            >
-                <div
-                    className="absolute inset-0 bg-black/60"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-
-                <aside
-                    className={`absolute right-0 top-0 h-full w-80 bg-white shadow-2xl transform ${
-                        isSidebarOpen ? "translate-x-0" : "translate-x-full"
-                    } transition-transform`}
-                >
-                    <div className="p-4 flex justify-between items-center bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
-                        <h2 className="font-bold text-lg">Menu</h2>
-                        <button onClick={() => setIsSidebarOpen(false)}>
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    <nav className="p-4 space-y-5 overflow-y-auto">
-                        {navGroups.map((group) => (
-                            <div key={group.title}>
-                                <p className="text-xs font-semibold text-gray-400 mb-2 uppercase">
-                                    {group.title}
-                                </p>
-                                {group.items.map(({ label, href, icon: Icon }) => (
-                                    <Link
-                                        key={href}
-                                        href={href}
-                                        onClick={() => setIsSidebarOpen(false)}
-                                        className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100"
-                                    >
-                                        <Icon className="w-5 h-5" />
-                                        {label}
-                                    </Link>
-                                ))}
-                            </div>
-                        ))}
-                    </nav>
-
-                    {user.landlord_id && (
-                        <div className="p-4 border-t">
-                            <SendTenantInviteModal landlord_id={user.landlord_id} />
+            {isSidebarOpen && (
+                <div className="lg:hidden fixed inset-0 z-50 bg-black/60">
+                    <aside className="absolute right-0 top-0 h-full w-80 bg-white shadow-2xl">
+                        <div className="p-4 flex justify-between bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
+                            <h2 className="font-bold text-lg">Menu</h2>
+                            <button onClick={() => setIsSidebarOpen(false)}>
+                                <X />
+                            </button>
                         </div>
-                    )}
 
-                    <div className="p-4 border-t">
-                        <button
-                            onClick={() => {
-                                setIsSidebarOpen(false);
-                                setShowLogoutConfirm(true);
-                            }}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-red-200 text-red-600 hover:bg-red-50"
-                        >
-                            <LogOut className="w-5 h-5" />
-                            Logout
-                        </button>
-                    </div>
-                </aside>
-            </div>
+                        <nav className="p-4 space-y-5">
+                            {navGroups.map((group) => (
+                                <div key={group.title}>
+                                    <p className="text-xs font-semibold text-gray-400 mb-2 uppercase">
+                                        {group.title}
+                                    </p>
+
+                                    {group.items.map(({ label, href, icon: Icon, isLogout }) =>
+                                        isLogout ? (
+                                            <button
+                                                key="logout"
+                                                onClick={() => {
+                                                    setIsSidebarOpen(false);
+                                                    setShowLogoutConfirm(true);
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3
+                                   text-red-600 hover:bg-red-50 rounded-xl"
+                                            >
+                                                <Icon className="w-5 h-5" />
+                                                {label}
+                                            </button>
+                                        ) : (
+                                            <Link
+                                                key={href}
+                                                href={href}
+                                                onClick={() => setIsSidebarOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100"
+                                            >
+                                                <Icon className="w-5 h-5" />
+                                                {label}
+                                            </Link>
+                                        )
+                                    )}
+                                </div>
+                            ))}
+                        </nav>
+
+                        {user.landlord_id && (
+                            <div className="p-4 border-t">
+                                <SendTenantInviteModal landlord_id={user.landlord_id} />
+                            </div>
+                        )}
+                    </aside>
+                </div>
+            )}
 
             {/* LOGOUT CONFIRM */}
             {showLogoutConfirm && (
@@ -393,6 +327,7 @@ export default function LandlordLayout({
                                 Are you sure you want to logout?
                             </p>
                         </div>
+
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowLogoutConfirm(false)}
