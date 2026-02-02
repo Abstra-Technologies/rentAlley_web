@@ -5,7 +5,7 @@ import { FaPhoneAlt, FaEnvelope } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 
 interface Landlord {
-  landlord_id: number;
+  landlord_id: string;
   name: string;
   email?: string;
   phone?: string;
@@ -13,10 +13,12 @@ interface Landlord {
   photoUrl?: string;
 }
 
-export default function LandlordCard({ landlord_id }: { landlord_id: number }) {
+export default function LandlordCard({ landlord_id }: { landlord_id: string }) {
   const [landlord, setLandlord] = useState<Landlord | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  console.log('landlord card: ', landlord_id);
 
   useEffect(() => {
     if (!landlord_id) return;

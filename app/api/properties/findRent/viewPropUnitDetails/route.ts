@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { RowDataPacket } from "mysql2";
 import { db } from "@/lib/db";
 import { decryptData } from "@/crypto/encrypt";
-import { RowDataPacket } from "mysql2";
 
-interface PropertyUnitResult extends RowDataPacket {
+const SECRET_KEY = process.env.ENCRYPTION_SECRET!;
+
+/* ================================
+   Types
+================================ */
+
+interface PropertyUnitRow extends RowDataPacket {
     // Unit
     unit_id: string;
     property_id: string;
@@ -17,7 +23,6 @@ interface PropertyUnitResult extends RowDataPacket {
     publish: number;
 
     // Property
-    landlord_id: string;
     property_name: string;
     property_type: string;
     property_amenities: string;
@@ -39,32 +44,39 @@ interface PropertyUnitResult extends RowDataPacket {
     longitude: number;
     rent_increase_percent: number;
 
-    // Landlord → User join
+    // Landlord
+    landlord_id: string;
     user_id: string;
 }
 
-interface UserResult extends RowDataPacket {
+interface UserRow extends RowDataPacket {
     firstName: string;
     lastName: string;
     phoneNumber: string;
     profilePicture: string;
 }
 
-const SECRET_KEY = process.env.ENCRYPTION_SECRET;
+/* ================================
+   GET
+================================ */
 
 export async function GET(req: NextRequest) {
     const rentId = req.nextUrl.searchParams.get("rentId");
 
     if (!rentId) {
-        return NextResponse.json({ message: "Unit ID is required" }, { status: 400 });
+        return NextResponse.json(
+            { message: "Unit ID (rentId) is required" },
+            { status: 400 }
+        );
     }
 
     try {
-        /* ========================================================
-           1. GET UNIT + PROPERTY + LANDLORD (via Landlord.user_id)
-        =========================================================*/
-        const query = `
-      SELECT 
+        /* ================================
+           1. Unit + Property + Landlord
+        ================================ */
+        const [rows] = await db.execute<PropertyUnitRow[]>(
+            `
+      SELECT
         u.*,
         p.property_name,
         p.property_type,
@@ -86,24 +98,28 @@ export async function GET(req: NextRequest) {
         p.latitude,
         p.longitude,
         p.rent_increase_percent,
+        l.landlord_id,          -- ✅ INCLUDED
         l.user_id
-      FROM rentalley_db.Unit u
-      JOIN rentalley_db.Property p ON u.property_id = p.property_id
-      LEFT JOIN rentalley_db.Landlord l ON p.landlord_id = l.landlord_id
+      FROM Unit u
+      JOIN Property p ON u.property_id = p.property_id
+      LEFT JOIN Landlord l ON p.landlord_id = l.landlord_id
       WHERE u.unit_id = ?
-    `;
+      `,
+            [rentId]
+        );
 
-        const [rows] = await db.execute<PropertyUnitResult[]>(query, [rentId]);
-
-        if (!rows || rows.length === 0) {
-            return NextResponse.json({ message: "Unit not found" }, { status: 404 });
+        if (rows.length === 0) {
+            return NextResponse.json(
+                { message: "Unit not found" },
+                { status: 404 }
+            );
         }
 
         const raw = rows[0];
 
-        /* ========================================================
-           2. Fetch Landlord User Info
-        =========================================================*/
+        /* ================================
+           2. Landlord User Info
+        ================================ */
         let landlordInfo = {
             full_name: "Unknown Landlord",
             phoneNumber: "",
@@ -111,8 +127,12 @@ export async function GET(req: NextRequest) {
         };
 
         if (raw.user_id) {
-            const [userRows] = await db.execute<UserResult[]>(
-                `SELECT firstName, lastName, phoneNumber, profilePicture FROM User WHERE user_id = ?`,
+            const [userRows] = await db.execute<UserRow[]>(
+                `
+        SELECT firstName, lastName, phoneNumber, profilePicture
+        FROM User
+        WHERE user_id = ?
+        `,
                 [raw.user_id]
             );
 
@@ -125,28 +145,30 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        /* ========================================================
-           3. Fetch and Decrypt Photos
-        =========================================================*/
-        const [photoRows] = await db.query(
+        /* ================================
+           3. Unit Photos (decrypt)
+        ================================ */
+        const [photoRows] = await db.execute<RowDataPacket[]>(
             `SELECT photo_url FROM UnitPhoto WHERE unit_id = ?`,
             [rentId]
         );
 
-        const photos = (photoRows as any[])
-            .map((p) => {
+        const photos = photoRows
+            .map((row) => {
                 try {
-                    return p.photo_url ? decryptData(JSON.parse(p.photo_url), SECRET_KEY) : null;
+                    return row.photo_url
+                        ? decryptData(JSON.parse(row.photo_url), SECRET_KEY)
+                        : null;
                 } catch {
                     return null;
                 }
             })
             .filter(Boolean);
 
-        /* ========================================================
-           4. Prepare Final Response
-        =========================================================*/
-        const response = {
+        /* ================================
+           4. Final Response
+        ================================ */
+        return NextResponse.json({
             // Unit
             unit_id: raw.unit_id,
             property_id: raw.property_id,
@@ -181,18 +203,20 @@ export async function GET(req: NextRequest) {
             province: raw.province,
             zip_code: raw.zip_code,
 
-            // Landlord
+            // ✅ Landlord (FIXED)
+            landlord_id: raw.landlord_id,
             landlord_name: landlordInfo.full_name,
             landlord_contact: landlordInfo.phoneNumber,
             landlord_photo: landlordInfo.profilePicture,
 
             // Photos
             photos,
-        };
-
-        return NextResponse.json(response);
-    } catch (err) {
-        console.error("❌ Error:", err);
-        return NextResponse.json({ message: "Server error" }, { status: 500 });
+        });
+    } catch (error) {
+        console.error("❌ viewPropUnitDetails error:", error);
+        return NextResponse.json(
+            { message: "Internal Server Error" },
+            { status: 500 }
+        );
     }
 }

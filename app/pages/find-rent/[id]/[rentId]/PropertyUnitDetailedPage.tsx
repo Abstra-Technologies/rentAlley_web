@@ -37,6 +37,7 @@ import { SiZcash } from "react-icons/si";
 import ReviewsList from "../../../../../components/tenant/reviewList";
 import { UnitDetails } from "@/types/units";
 import LandlordCard from "@/components/landlord/properties/LandlordCard";
+import useAuthStore from "@/zustand/authStore";
 
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
@@ -73,7 +74,7 @@ interface NearbyData {
 export default function PropertyUnitDetailedPage() {
   const router = useRouter();
   const { rentId, id } = useParams();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [unit, setUnit] = useState<UnitDetails | null>(null);
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -148,6 +149,9 @@ export default function PropertyUnitDetailedPage() {
         const data = await res.json();
         setUnit(data);
         setPhotos(data.photos || []);
+
+        console.log('property detaiuls data: ', data);
+        console.log('property detail lanldord id: ', data.landlord_id);
 
         if (data?.property_id) {
           fetchNearbyPlaces(data.property_id);
@@ -776,7 +780,7 @@ export default function PropertyUnitDetailedPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 Hosted by
               </h2>
-              <LandlordCard landlord_id={unit.landlord_id} />
+              <LandlordCard landlord_id={unit?.landlord_id} />
             </div>
           </div>
 
@@ -785,9 +789,9 @@ export default function PropertyUnitDetailedPage() {
             <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
               <InquiryBooking
                 tenant_id={user?.tenant_id}
-                unit_id={unit.unit_id}
-                rent_amount={unit.rent_amount}
-                landlord_id={unit.landlord_id}
+                unit_id={unit?.unit_id}
+                rent_amount={unit?.rent_amount}
+                landlord_id={unit?.landlord_id}
               />
             </div>
           </div>
