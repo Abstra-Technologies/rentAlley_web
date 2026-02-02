@@ -8,20 +8,15 @@ import {
     DocumentTextIcon,
     ClockIcon,
     ShieldCheckIcon,
+    CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import useAuthStore from "@/zustand/authStore";
 import { formatCurrency } from "@/utils/formatter/formatters";
 
-/* =====================================================
-   PROPS
-===================================================== */
 interface Props {
     agreement_id: string;
 }
 
-/* =====================================================
-   COMPONENT
-===================================================== */
 export default function TenantLeaseModal({ agreement_id }: Props) {
     const { user, fetchSession } = useAuthStore();
 
@@ -33,12 +28,10 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
     const [otpCode, setOtpCode] = useState("");
     const [verifying, setVerifying] = useState(false);
 
-    /* ================= AUTH ================= */
     useEffect(() => {
         if (!user) fetchSession();
     }, [user, fetchSession]);
 
-    /* ================= LOAD LEASE ================= */
     useEffect(() => {
         async function loadLease() {
             try {
@@ -46,7 +39,6 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                     "/api/tenant/activeRent/leaseAgreement/signatureStatus",
                     { params: { agreement_id } }
                 );
-
                 const data = res.data;
                 setLease({ ...data, ...data.lease });
             } catch {
@@ -60,28 +52,21 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
     }, [agreement_id]);
 
     if (loading) {
-        return <p className="text-sm text-gray-500">Loading lease information…</p>;
+        return <div className="h-32 bg-gray-100 animate-pulse rounded-xl" />;
     }
 
-    if (!lease) {
-        return <p className="text-sm text-gray-500">Lease not found.</p>;
-    }
-
-    /* =====================================================
-       🔑 CANONICAL STATE (SOURCE OF TRUTH)
-    ===================================================== */
+    if (!lease) return null;
 
     const signature = lease.tenant_signature ?? null;
-
     const hasSignatureRecord = Boolean(signature);
     const isSigned = signature?.status === "signed";
     const needsSignature = hasSignatureRecord && !isSigned;
 
     const showAuthenticateUI = needsSignature;
     const showLeaseInfo = !hasSignatureRecord || isSigned;
-    const showDocumentButton = Boolean(lease.agreement_url); // ✅ ALWAYS if doc exists
+    const showDocumentButton = Boolean(lease.agreement_url);
 
-    /* ================= OTP ACTIONS ================= */
+    /* ================= OTP ================= */
     const sendOtp = async () => {
         try {
             await axios.post("/api/tenant/activeRent/leaseAgreement/sendOtp", {
@@ -93,11 +78,7 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
             setOtpSent(true);
             Swal.fire("OTP Sent", "Check your email for the code.", "success");
         } catch (err: any) {
-            Swal.fire(
-                "Error",
-                err.response?.data?.error || "Failed to send OTP",
-                "error"
-            );
+            Swal.fire("Error", err.response?.data?.error || "Failed to send OTP", "error");
         }
     };
 
@@ -126,91 +107,95 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
         }
     };
 
-    /* =====================================================
-       ======================== UI =========================
-    ===================================================== */
-
     return (
         <>
-            <div className="space-y-4">
-                {/* HEADER */}
-                <div className="flex items-center gap-2">
-                    <DocumentTextIcon className="w-5 h-5 text-gray-600" />
-                    <span className="text-sm font-bold text-gray-900">
-                        Lease Information
-                    </span>
+            {/* ================= CARD ================= */}
+            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-5 shadow-sm space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-blue-100">
+                            <DocumentTextIcon className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-gray-900">
+                                Lease Agreement
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                Contract details
+                            </p>
+                        </div>
+                    </div>
+
+                    {(isSigned || needsSignature) && (
+                        <span
+                            className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                                isSigned
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-amber-100 text-amber-700"
+                            }`}
+                        >
+        {isSigned ? "Signed" : "Signature Required"}
+    </span>
+                    )}
+
                 </div>
 
-                {/* ===== SIGNATURE REQUIRED ===== */}
+                {/* Signature CTA */}
                 {showAuthenticateUI && (
-                    <>
-                        <button
-                            onClick={() => setOpenModal(true)}
-                            className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm font-semibold text-blue-600 w-full"
-                        >
-                            <DocumentTextIcon className="w-4 h-4" />
-                            Authenticate & Sign Lease
-                        </button>
-
-                        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                            <ClockIcon className="w-4 h-4 text-amber-600 mt-0.5" />
-                            <div>
-                                <p className="text-sm font-semibold text-amber-900">
-                                    Signature Pending
-                                </p>
-                                <p className="text-xs text-amber-700">
-                                    Awaiting tenant signature
-                                </p>
-                            </div>
-                        </div>
-                    </>
+                    <button
+                        onClick={() => setOpenModal(true)}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
+                        bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold
+                        hover:from-blue-700 hover:to-blue-800 transition"
+                    >
+                        <ShieldCheckIcon className="w-5 h-5" />
+                        Authenticate & Sign Lease
+                    </button>
                 )}
 
-                {/* ===== LEASE INFO ===== */}
+                {/* Lease Info */}
                 {showLeaseInfo && (
-                    <div className="space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <LeaseRow
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <LeaseInfoCard
                             label="Monthly Rent"
                             value={formatCurrency(lease.rent_amount || 0)}
                         />
-                        <LeaseRow
+                        <LeaseInfoCard
                             label="Security Deposit"
-                            value={formatCurrency(
-                                lease.security_deposit_amount || 0
-                            )}
+                            value={formatCurrency(lease.security_deposit_amount || 0)}
                         />
-                        <LeaseRow
+                        <LeaseInfoCard
                             label="Advance Payment"
-                            value={formatCurrency(
-                                lease.advance_payment_amount || 0
-                            )}
+                            value={formatCurrency(lease.advance_payment_amount || 0)}
                         />
                     </div>
                 )}
 
-                {/* ===== DOCUMENT ACCESS (ALWAYS IF EXISTS) ===== */}
-                {showDocumentButton && (
+                {/* View Document */}
+                {Boolean(lease.agreement_url) && (
                     <button
                         onClick={() => setOpenModal(true)}
-                        className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm font-semibold text-blue-600 w-full"
+                        className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
                     >
                         <DocumentTextIcon className="w-4 h-4" />
                         {isSigned ? "View Signed Lease" : "View Lease Document"}
                     </button>
                 )}
+
             </div>
 
             {/* ================= MODAL ================= */}
             {openModal && Boolean(lease.agreement_url) && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-2">
-                    <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-xl shadow-lg overflow-hidden flex flex-col">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-3">
+                    <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden">
                         <div className="flex items-center justify-between p-4 border-b">
-                            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <ShieldCheckIcon className="w-5 h-5 text-blue-600" />
+                            <h2 className="text-lg font-bold flex items-center gap-2">
+                                <CheckCircleIcon className="w-5 h-5 text-blue-600" />
                                 Lease Agreement
                             </h2>
                             <button onClick={() => setOpenModal(false)}>
-                                <XMarkIcon className="w-6 h-6 text-gray-600" />
+                                <XMarkIcon className="w-6 h-6 text-gray-500" />
                             </button>
                         </div>
 
@@ -225,30 +210,26 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                     {!otpSent ? (
                                         <button
                                             onClick={sendOtp}
-                                            className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold"
+                                            className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold"
                                         >
-                                            Authenticate & Sign Lease
+                                            Send OTP
                                         </button>
                                     ) : (
                                         <>
                                             <input
                                                 value={otpCode}
-                                                onChange={(e) =>
-                                                    setOtpCode(e.target.value)
-                                                }
+                                                onChange={(e) => setOtpCode(e.target.value)}
                                                 maxLength={6}
-                                                className="w-full border p-3 rounded-lg text-center text-xl tracking-[0.3em]"
+                                                className="w-full border p-3 rounded-xl text-center text-xl tracking-[0.3em]"
                                                 placeholder="••••••"
                                             />
 
                                             <button
                                                 onClick={verifyOtp}
                                                 disabled={verifying}
-                                                className="w-full py-3 bg-emerald-600 text-white rounded-lg"
+                                                className="w-full py-3 bg-emerald-600 text-white rounded-xl font-semibold"
                                             >
-                                                {verifying
-                                                    ? "Verifying…"
-                                                    : "Verify & Sign"}
+                                                {verifying ? "Verifying…" : "Verify & Sign"}
                                             </button>
                                         </>
                                     )}
@@ -262,20 +243,12 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
     );
 }
 
-/* =====================================================
-   SMALL UI
-===================================================== */
-function LeaseRow({
-                      label,
-                      value,
-                  }: {
-    label: string;
-    value: string;
-}) {
+/* ================= SMALL CARD ================= */
+function LeaseInfoCard({ label, value }: { label: string; value: string }) {
     return (
-        <div className="flex items-center justify-between text-sm text-gray-700">
-            <span className="text-gray-600">{label}</span>
-            <span className="font-semibold text-gray-900">{value}</span>
+        <div className="rounded-xl border border-gray-200 bg-white p-3">
+            <p className="text-xs text-gray-500">{label}</p>
+            <p className="text-sm font-bold text-gray-900">{value}</p>
         </div>
     );
 }

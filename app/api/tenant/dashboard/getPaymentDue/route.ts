@@ -6,79 +6,96 @@ export async function GET(req: NextRequest) {
     const agreement_id = searchParams.get("agreement_id");
 
     if (!agreement_id) {
-        console.warn("❌ agreement_id missing");
         return NextResponse.json(
-            { error: "Agreement ID is required" },
+            { error: "agreement_id is required" },
             { status: 400 }
         );
     }
 
     try {
-
-        const [leaseRows]: any = await db.execute(
-            `
-            SELECT agreement_id, unit_id
-            FROM LeaseAgreement
-            WHERE agreement_id = ?
-            LIMIT 1
-            `,
-            [agreement_id]
-        );
-
-
-        if (!leaseRows.length) {
-            console.warn("❌ No lease found for agreement");
-            return NextResponse.json(
-                { error: "Lease not found" },
-                { status: 404 }
-            );
-        }
-
-        const { unit_id } = leaseRows[0];
-
-
-        const [allBills]: any = await db.execute(
-            `
-            SELECT billing_id, lease_id, unit_id, status, due_date, total_amount_due
-            FROM Billing
-            WHERE lease_id = ?
-            ORDER BY due_date ASC
-            `,
-            [agreement_id]
-        );
-
-
+        /* ===============================
+           1️⃣ Get ALL billings (old → new)
+        =============================== */
         const [billingRows]: any = await db.execute(
             `
             SELECT
                 billing_id,
                 total_amount_due,
-                due_date,
-                status
+                due_date
             FROM Billing
             WHERE lease_id = ?
-              AND status IN ('unpaid', 'overdue')
-#               AND due_date <= CURRENT_DATE()
               AND total_amount_due > 0
             ORDER BY due_date ASC
-            LIMIT 1
             `,
             [agreement_id]
         );
-
 
         if (!billingRows.length) {
             return NextResponse.json({ billing: null });
         }
 
+        const today = new Date();
+        const results: any[] = [];
+
+        /* ===============================
+           2️⃣ Evaluate each billing
+        =============================== */
+        for (const billing of billingRows) {
+            // check confirmed payment
+            const [paymentRows]: any = await db.execute(
+                `
+                SELECT payment_id
+                FROM Payment
+                WHERE bill_id = ?
+                  AND payment_status = 'confirmed'
+                LIMIT 1
+                `,
+                [billing.billing_id]
+            );
+
+            const isPaid = paymentRows.length > 0;
+            const dueDate = new Date(billing.due_date);
+
+            let daysLate = 0;
+            let status: "paid" | "unpaid" | "overdue";
+
+            if (isPaid) {
+                status = "paid";
+            } else if (today > dueDate) {
+                const diff = today.getTime() - dueDate.getTime();
+                daysLate = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                status = "overdue";
+            } else {
+                status = "unpaid";
+            }
+
+            results.push({
+                billing_id: billing.billing_id,
+                total_due: Number(billing.total_amount_due),
+                due_date: billing.due_date,
+                status,
+                days_late: daysLate,
+            });
+        }
+
+        /* ===============================
+           3️⃣ PRIORITY RULE
+           - Overdue first
+           - Else latest unpaid
+        =============================== */
+        const overdueBills = results.filter(b => b.status === "overdue");
+
+        if (overdueBills.length > 0) {
+            return NextResponse.json({
+                billing: overdueBills, // 👈 ARRAY of overdue bills
+            });
+        }
+
+        // otherwise return latest bill (paid or unpaid)
         return NextResponse.json({
-            billing: {
-                billing_id: billingRows[0].billing_id,
-                total_due: Number(billingRows[0].total_amount_due),
-                due_date: billingRows[0].due_date,
-                status: billingRows[0].status,
-            },
+            billing: results[results.length - 1],
         });
+
     } catch (err) {
         console.error("❌ Error fetching payment due:", err);
         return NextResponse.json(
