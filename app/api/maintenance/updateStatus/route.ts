@@ -77,11 +77,14 @@ export async function PUT(req: NextRequest) {
 
     await conn.beginTransaction();
 
-    // 1️⃣ Fetch existing request
+    //Fetch existing request (handles both landlord and tenant requests)
     const [existingRows]: any = await conn.query(
-      `SELECT mr.*, p.landlord_id 
+      `SELECT mr.*, 
+                    COALESCE(p.landlord_id, p_via_unit.landlord_id) AS landlord_id
              FROM MaintenanceRequest mr
-             JOIN Property p ON mr.property_id = p.property_id
+             LEFT JOIN Unit u ON mr.unit_id = u.unit_id
+             LEFT JOIN Property p ON mr.property_id = p.property_id
+             LEFT JOIN Property p_via_unit ON u.property_id = p_via_unit.property_id
              WHERE mr.request_id = ?`,
       [request_id],
     );
@@ -100,7 +103,7 @@ export async function PUT(req: NextRequest) {
     // Detect if created by tenant or landlord
     const hasTenant = !!oldData.tenant_id;
 
-    // 2️⃣ Determine next state logic
+    // Determine next state logic
     let nextStatus = status;
 
     if (status.toLowerCase() === "approved" && !schedule_date) {
@@ -117,7 +120,7 @@ export async function PUT(req: NextRequest) {
     // Normalize status to lowercase for consistency
     nextStatus = nextStatus.toLowerCase();
 
-    // 3️⃣ Build update query dynamically
+    // Build update query dynamically
     const updateFields = ["status = ?", "updated_at = NOW()"];
     const updateParams: any[] = [nextStatus];
 
@@ -158,7 +161,7 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    // 5️⃣ If landlord created the maintenance request → skip tenant notifications
+    //  If landlord created the maintenance request → skip tenant notifications
     if (!hasTenant) {
       console.log(
         "🟦 Maintenance created by landlord — skipping tenant notifications.",
@@ -204,7 +207,7 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    // 6️⃣ If tenant exists → continue normal flow with notifications
+    // 6️ If tenant exists → continue normal flow with notifications
 
     // Get tenant info
     const [tenantInfo]: any = await conn.query(
@@ -257,7 +260,7 @@ export async function PUT(req: NextRequest) {
       [tenant_user_id, notifTitle, notifBody, notifUrl],
     );
 
-    // 7️⃣ Push Notification
+    // 7️ Push Notification
     const [subs]: any = await conn.query(
       `SELECT endpoint, p256dh, auth FROM user_push_subscriptions WHERE user_id = ?`,
       [tenant_user_id],
@@ -289,7 +292,7 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    // 8️⃣ Send Socket Message
+    // 8️ Send Socket Message
     try {
       const socket = io(
         process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000",
