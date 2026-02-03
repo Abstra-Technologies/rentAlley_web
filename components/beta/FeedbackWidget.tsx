@@ -12,6 +12,7 @@ const HIDDEN_ROUTES = [
   "/pages/admin/chat",
   "/pages/tenant/rentalPortal",
   "/pages/tenant/kypId",
+  "/pages/find-rent",
 ];
 
 export default function FeedbackWidget() {
