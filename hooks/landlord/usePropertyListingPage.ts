@@ -10,221 +10,235 @@ import usePropertyStore from "@/zustand/property/usePropertyStore";
 import useSubscription from "@/hooks/landlord/useSubscription";
 
 export default function usePropertyListingPage() {
-    const router = useRouter();
+  const router = useRouter();
 
-    const { fetchSession, user } = useAuthStore();
-    const { properties, fetchAllProperties, loading, error } =
-        usePropertyStore();
+  const { fetchSession, user } = useAuthStore();
+  const { properties, fetchAllProperties, loading, error } = usePropertyStore();
 
-    const { subscription, loadingSubscription } = useSubscription(
-        user?.landlord_id
-    );
+  const { subscription, loadingSubscription } = useSubscription(
+    user?.landlord_id,
+  );
 
-    /* ================= STATE ================= */
-    const [verificationStatus, setVerificationStatus] =
-        useState<string>("not verified");
-    const [isFetchingVerification, setIsFetchingVerification] =
-        useState<boolean>(true);
-    const [isNavigating, setIsNavigating] = useState<boolean>(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [page, setPage] = useState(1);
+  /* ================= STATE ================= */
+  const [verificationStatus, setVerificationStatus] =
+    useState<string>("not verified");
+  const [isFetchingVerification, setIsFetchingVerification] =
+    useState<boolean>(true);
+  const [isNavigating, setIsNavigating] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
 
-    const itemsPerPage = 9;
+  const itemsPerPage = 9;
 
-    /* ================= SESSION ================= */
-    useEffect(() => {
-        if (!user) fetchSession();
-    }, [user, fetchSession]);
+  /* ================= SESSION ================= */
+  useEffect(() => {
+    if (!user) fetchSession();
+  }, [user, fetchSession]);
 
-    /* ================= PROPERTIES ================= */
-    useEffect(() => {
-        if (user?.landlord_id) {
-            fetchAllProperties(user.landlord_id);
+  /* ================= PROPERTIES ================= */
+  useEffect(() => {
+    if (user?.landlord_id) {
+      fetchAllProperties(user.landlord_id);
+    }
+  }, [user?.landlord_id, fetchAllProperties]);
+
+  /* ================= VERIFICATION ================= */
+  useEffect(() => {
+    if (!user?.landlord_id) return;
+
+    setIsFetchingVerification(true);
+
+    axios
+      .get(`/api/landlord/${user?.landlord_id}/profileStatus`)
+      .then((res) => {
+        const status = res.data?.status;
+
+        // Map profileStatus → existing logic
+        if (status === "verified") {
+          setVerificationStatus("approved");
+        } else {
+          setVerificationStatus("not verified");
         }
-    }, [user?.landlord_id, fetchAllProperties]);
+      })
+      .catch(() => {
+        setVerificationStatus("not verified");
+      })
+      .finally(() => {
+        setIsFetchingVerification(false);
+      });
+  }, [user?.landlord_id]);
 
-    /* ================= VERIFICATION ================= */
-    useEffect(() => {
-        if (!user?.landlord_id) return;
+  /* ================= DERIVED (IMPORTANT) ================= */
 
-        setIsFetchingVerification(true);
+  // ✅ TOTAL count — never filtered
+  const totalPropertyCount = properties.length;
 
-        axios
-            .get(`/api/landlord/${user?.landlord_id}/profileStatus`)
-            .then((res) => {
-                const status = res.data?.status;
+  // ✅ SINGLE SOURCE OF TRUTH for limits
+  const maxProperties =
+    subscription?.limits?.maxProperties ??
+    subscription?.listingLimits?.maxProperties ??
+    null;
 
-                // Map profileStatus → existing logic
-                if (status === "verified") {
-                    setVerificationStatus("approved");
-                } else {
-                    setVerificationStatus("not verified");
-                }
-            })
-            .catch(() => {
-                setVerificationStatus("not verified");
-            })
-            .finally(() => {
-                setIsFetchingVerification(false);
-            });
-    }, [user?.landlord_id]);
+  const hasReachedLimit =
+    maxProperties !== null && totalPropertyCount >= maxProperties;
 
+  // ✅ UI-only filtered list
+  const filteredProperties = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return properties.filter(
+      (p: any) =>
+        p.property_name?.toLowerCase().includes(q) ||
+        p.address?.toLowerCase().includes(q) ||
+        p.city?.toLowerCase().includes(q),
+    );
+  }, [properties, searchQuery]);
 
-    /* ================= DERIVED (IMPORTANT) ================= */
+  /* ================= ACTIONS ================= */
 
-    // ✅ TOTAL count — never filtered
-    const totalPropertyCount = properties.length;
+  const handleView = useCallback(
+    async (property: any, event: React.MouseEvent) => {
+      event.stopPropagation();
 
-    // ✅ SINGLE SOURCE OF TRUTH for limits
-    const maxProperties =
-        subscription?.limits?.maxProperties ??
-        subscription?.listingLimits?.maxProperties ??
-        null;
+      try {
+        const res = await fetch("/api/landlord/subscription/limits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            landlord_id: user?.landlord_id,
+            property_id: property.property_id,
+          }),
+        });
 
-    const hasReachedLimit =
-        maxProperties !== null && totalPropertyCount >= maxProperties;
+        const data = await res.json();
 
-    // ✅ UI-only filtered list
-    const filteredProperties = useMemo(() => {
-        const q = searchQuery.toLowerCase();
-        return properties.filter((p: any) =>
-            p.property_name?.toLowerCase().includes(q) ||
-            p.address?.toLowerCase().includes(q) ||
-            p.city?.toLowerCase().includes(q)
+        if (!res.ok) {
+          await Swal.fire({
+            icon: "error",
+            title: "Access Denied",
+            text: data.error,
+          });
+          return;
+        }
+
+        router.push(`/pages/landlord/properties/${property.property_id}`);
+      } catch {
+        await Swal.fire(
+          "Error",
+          "Unable to validate property access.",
+          "error",
         );
-    }, [properties, searchQuery]);
+      }
+    },
+    [router, user?.landlord_id],
+  );
 
-    /* ================= ACTIONS ================= */
+  const handleEdit = useCallback(
+    (propertyId: string | number, event: React.MouseEvent) => {
+      event.stopPropagation();
+      router.push(
+        `/pages/landlord/properties/${propertyId}/editPropertyDetails`,
+      );
+    },
+    [router],
+  );
 
-    const handleView = useCallback(
-        async (property: any, event: React.MouseEvent) => {
-            event.stopPropagation();
+  const handleAddProperty = useCallback(() => {
+    if (verificationStatus !== "approved") {
+      Swal.fire("Verification Required", "", "warning");
+      return;
+    }
 
-            try {
-                const res = await fetch("/api/landlord/subscription/limits", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        landlord_id: user?.landlord_id,
-                        property_id: property.property_id,
-                    }),
-                });
+    if (!subscription || subscription.is_active !== 1) {
+      Swal.fire("Subscription Required", "", "info");
+      return;
+    }
 
-                const data = await res.json();
+    if (hasReachedLimit) {
+      Swal.fire(
+        "Limit Reached",
+        `You've reached your plan limit of ${maxProperties} properties.`,
+        "error",
+      );
+      return;
+    }
 
-                if (!res.ok) {
-                    await Swal.fire({
-                        icon: "error",
-                        title: "Access Denied",
-                        text: data.error,
-                    });
-                    return;
-                }
+    setIsNavigating(true);
+    router.push("/pages/landlord/property-listing/create-property");
+  }, [
+    verificationStatus,
+    subscription,
+    hasReachedLimit,
+    maxProperties,
+    router,
+  ]);
 
-                router.push(`/pages/landlord/properties/${property.property_id}`);
-            } catch {
-                await Swal.fire("Error", "Unable to validate property access.", "error");
-            }
-        },
-        [router, user?.landlord_id]
-    );
+  const handleDelete = useCallback(
+    async (propertyId: string | number, event: React.MouseEvent) => {
+      event.stopPropagation();
 
-    const handleAddProperty = useCallback(() => {
-        if (verificationStatus !== "approved") {
-            Swal.fire("Verification Required", "", "warning");
-            return;
-        }
+      const confirm = await Swal.fire({
+        title: "Are you sure?",
+        icon: "warning",
+        showCancelButton: true,
+      });
 
-        if (!subscription || subscription.is_active !== 1) {
-            Swal.fire("Subscription Required", "", "info");
-            return;
-        }
+      if (!confirm.isConfirmed) return;
 
-        if (hasReachedLimit) {
-            Swal.fire(
-                "Limit Reached",
-                `You’ve reached your plan limit of ${maxProperties} properties.`,
-                "error"
-            );
-            return;
-        }
+      const res = await fetch(
+        `/api/propertyListing/deletePropertyListing/${propertyId}`,
+        { method: "DELETE" },
+      );
 
-        setIsNavigating(true);
-        router.push("/pages/landlord/property-listing/create-property");
-    }, [
-        verificationStatus,
-        subscription,
-        hasReachedLimit,
-        maxProperties,
-        router,
-    ]);
+      if (res.ok && user?.landlord_id) {
+        fetchAllProperties(user.landlord_id);
+      }
+    },
+    [fetchAllProperties, user?.landlord_id],
+  );
 
-    const handleDelete = useCallback(
-        async (propertyId: string | number, event: React.MouseEvent) => {
-            event.stopPropagation();
+  /* ================= UI FLAGS ================= */
 
-            const confirm = await Swal.fire({
-                title: "Are you sure?",
-                icon: "warning",
-                showCancelButton: true,
-            });
+  const isAddDisabled =
+    isFetchingVerification ||
+    loadingSubscription ||
+    isNavigating ||
+    !subscription ||
+    subscription.is_active !== 1 ||
+    verificationStatus !== "approved" ||
+    hasReachedLimit;
 
-            if (!confirm.isConfirmed) return;
+  /* ================= RETURN ================= */
+  return {
+    // data
+    user,
+    subscription,
+    properties,
+    filteredProperties,
+    totalPropertyCount,
+    maxProperties,
 
-            const res = await fetch(
-                `/api/propertyListing/deletePropertyListing/${propertyId}`,
-                { method: "DELETE" }
-            );
+    verificationStatus,
+    isFetchingVerification,
 
-            if (res.ok && user?.landlord_id) {
-                fetchAllProperties(user.landlord_id);
-            }
-        },
-        [fetchAllProperties, user?.landlord_id]
-    );
+    // flags
+    loading,
+    error,
+    hasReachedLimit,
+    isAddDisabled,
 
-    /* ================= UI FLAGS ================= */
+    // ui
+    page,
+    setPage,
+    searchQuery,
+    setSearchQuery,
 
-    const isAddDisabled =
-        isFetchingVerification ||
-        loadingSubscription ||
-        isNavigating ||
-        !subscription ||
-        subscription.is_active !== 1 ||
-        verificationStatus !== "approved" ||
-        hasReachedLimit;
+    // handlers
+    handleView,
+    handleEdit,
+    handleAddProperty,
+    handleDelete,
 
-    /* ================= RETURN ================= */
-    return {
-        // data
-        user,
-        subscription,
-        properties,
-        filteredProperties,
-        totalPropertyCount,
-        maxProperties,
-
-        verificationStatus,
-        isFetchingVerification,
-
-        // flags
-        loading,
-        error,
-        hasReachedLimit,
-        isAddDisabled,
-
-        // ui
-        page,
-        setPage,
-        searchQuery,
-        setSearchQuery,
-
-        // handlers
-        handleView,
-        handleAddProperty,
-        handleDelete,
-
-        // pagination
-        itemsPerPage,
-    };
+    // pagination
+    itemsPerPage,
+  };
 }
