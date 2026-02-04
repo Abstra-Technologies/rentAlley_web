@@ -63,6 +63,7 @@ export default function PropertyListingPage() {
     loading,
     error,
     handleView,
+    handleEdit,
     handleDelete,
     handleAddProperty,
     itemsPerPage,
@@ -117,7 +118,7 @@ export default function PropertyListingPage() {
   const startIndex = (page - 1) * itemsPerPage;
   const currentPageItems = filteredProperties.slice(
     startIndex,
-    startIndex + itemsPerPage
+    startIndex + itemsPerPage,
   );
 
   return (
@@ -197,8 +198,7 @@ export default function PropertyListingPage() {
             </motion.div>
           )}
 
-            <LandlordProfileStatus landlord_id={user.landlord_id} />
-
+          <LandlordProfileStatus landlord_id={user.landlord_id} />
         </div>
 
         {/* Search */}
@@ -216,7 +216,6 @@ export default function PropertyListingPage() {
             className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-sm"
           />
         </div>
-
       </motion.div>
 
       {/* Content */}
@@ -235,6 +234,7 @@ export default function PropertyListingPage() {
                   index={startIndex + idx}
                   subscription={subscription}
                   handleView={handleView}
+                  handleEdit={handleEdit}
                   handleDelete={handleDelete}
                 />
               </motion.div>
