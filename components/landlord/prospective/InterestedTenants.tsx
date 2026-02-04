@@ -57,7 +57,6 @@ export default function InterestedTenants({
   const [error, setError] = useState("");
 
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
 
   /* =====================================================
        SESSION
@@ -92,7 +91,9 @@ export default function InterestedTenants({
     ===================================================== */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      // Close dropdown when clicking outside
+      const target = e.target as HTMLElement;
+      if (!target.closest(".action-menu-container")) {
         setOpenMenuId(null);
       }
     };
@@ -272,7 +273,7 @@ export default function InterestedTenants({
           filteredTenants.map((t) => (
             <div
               key={t.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 overflow-visible relative"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
             >
               {/* Top Section */}
               <div className="flex items-start gap-3 mb-3">
@@ -318,7 +319,6 @@ export default function InterestedTenants({
                     tenant={t}
                     openMenuId={openMenuId}
                     setOpenMenuId={setOpenMenuId}
-                    menuRef={menuRef}
                     updateStatus={updateStatus}
                     archive={archiveTenant}
                     router={router}
@@ -331,7 +331,7 @@ export default function InterestedTenants({
       </div>
 
       {/* DESKTOP TABLE VIEW */}
-      <div className="hidden md:block bg-white rounded-xl border shadow-sm overflow-visible">
+      <div className="hidden md:block bg-white rounded-xl border shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y">
             <thead className="bg-gray-50 text-xs uppercase text-gray-600">
@@ -388,7 +388,7 @@ export default function InterestedTenants({
                       {t.unit_name || "—"}
                     </td>
                     <td className="px-4 py-3">{statusBadge(t.status)}</td>
-                    <td className="px-4 py-3 relative">
+                    <td className="px-4 py-3">
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => handleView(t)}
@@ -402,7 +402,6 @@ export default function InterestedTenants({
                             tenant={t}
                             openMenuId={openMenuId}
                             setOpenMenuId={setOpenMenuId}
-                            menuRef={menuRef}
                             updateStatus={updateStatus}
                             archive={archiveTenant}
                             router={router}
@@ -428,16 +427,28 @@ function ActionMenu({
   tenant,
   openMenuId,
   setOpenMenuId,
-  menuRef,
   updateStatus,
   archive,
   router,
 }: any) {
   const isOpen = openMenuId === tenant.id;
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + window.scrollY + 8,
+        right: window.innerWidth - rect.right + window.scrollX,
+      });
+    }
+  }, [isOpen]);
 
   return (
-    <div className="relative inline-block" ref={menuRef}>
+    <div className="action-menu-container relative">
       <button
+        ref={buttonRef}
         onClick={(e) => {
           e.stopPropagation();
           setOpenMenuId(isOpen ? null : tenant.id);
@@ -450,14 +461,18 @@ function ActionMenu({
       {isOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-[100]"
+          className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] w-48"
+          style={{
+            top: `${menuPosition.top}px`,
+            right: `${menuPosition.right}px`,
+          }}
         >
           <button
             onClick={() => {
               router.push(`/chat/${tenant.user_id}`);
               setOpenMenuId(null);
             }}
-            className="w-full px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 text-gray-700 transition-colors"
+            className="w-full px-4 py-2 text-sm flex items-center gap-2 hover:bg-gray-50 text-gray-700 transition-colors rounded-t-lg"
           >
             <MessageCircle className="w-4 h-4" /> Message
           </button>
@@ -492,7 +507,7 @@ function ActionMenu({
               archive(tenant);
               setOpenMenuId(null);
             }}
-            className="w-full px-4 py-2 text-sm text-red-600 flex items-center gap-2 hover:bg-red-50 transition-colors"
+            className="w-full px-4 py-2 text-sm text-red-600 flex items-center gap-2 hover:bg-red-50 transition-colors rounded-b-lg"
           >
             <Archive className="w-4 h-4" /> Remove from list
           </button>
