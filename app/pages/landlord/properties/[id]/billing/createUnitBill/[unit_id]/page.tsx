@@ -187,7 +187,10 @@ export default function CreateUnitBill() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* ================= BILLING PERIOD ================= */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div
+          id="billing-period-section"
+          className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+        >
           <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
             <h2 className="font-semibold text-gray-800 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
@@ -240,7 +243,10 @@ export default function CreateUnitBill() {
         </div>
 
         {/* ================= BASE RENT ================= */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div
+          id="base-rent-section"
+          className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+        >
           <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
             <h2 className="font-semibold text-gray-800 flex items-center gap-2">
               <Home className="w-5 h-5 text-emerald-600" />
@@ -284,7 +290,10 @@ export default function CreateUnitBill() {
         {/* ================= UTILITY RATES ================= */}
         {(property.water_billing_type === "submetered" ||
           property.electricity_billing_type === "submetered") && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div
+            id="utility-rates-section"
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+          >
             <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
               <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                 <Zap className="w-5 h-5 text-amber-500" />
@@ -303,7 +312,10 @@ export default function CreateUnitBill() {
         {/* ================= METER READINGS ================= */}
         {(property.water_billing_type === "submetered" ||
           property.electricity_billing_type === "submetered") && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div
+            id="meter-readings-section"
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+          >
             <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
               <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-600" />
@@ -596,7 +608,10 @@ export default function CreateUnitBill() {
         )}
 
         {/* ================= ADJUSTMENTS ================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div
+          id="adjustments-section"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
+        >
           {/* Additional Charges */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-red-50 to-orange-50 border-b border-gray-100 flex items-center justify-between">
@@ -733,7 +748,10 @@ export default function CreateUnitBill() {
         </div>
 
         {/* ================= BILLING SUMMARY ================= */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div
+          id="billing-summary-section"
+          className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+        >
           <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-emerald-500">
             <h2 className="font-semibold text-white flex items-center gap-2 text-sm sm:text-base">
               <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
