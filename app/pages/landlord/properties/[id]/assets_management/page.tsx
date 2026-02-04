@@ -13,17 +13,16 @@ import {
   Eye,
   Trash2,
   Edit2,
-  Filter,
   Package,
 } from "lucide-react";
 import { formatDate } from "@/utils/formatter/formatters";
 import Pagination from "@/components/Commons/Pagination";
 import AddAssetModal from "@/components/landlord/properties/AddAssetModal";
+import { AssetCardSkeleton } from "@/components/Commons/SkeletonLoaders";
 
 import useSubscription from "@/hooks/landlord/useSubscription";
 import useAuthStore from "@/zustand/authStore";
-import {subscriptionConfig} from "@/constant/subscription/limits";
-
+import { subscriptionConfig } from "@/constant/subscription/limits";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -32,66 +31,55 @@ const AssetsManagementPage = () => {
   const router = useRouter();
   const property_id = id as string;
 
-    const { user } = useAuthStore();
-    const landlordId = user?.landlord_id;
+  const { user } = useAuthStore();
+  const landlordId = user?.landlord_id;
 
-    const { subscription, loadingSubscription } =
-        useSubscription(landlordId);
+  const { subscription, loadingSubscription } = useSubscription(landlordId);
 
-
-    const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const [activeFilter, setActiveFilter] = useState<"all" | "property" | "unit">(
-    "all"
+    "all",
   );
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
-    const {
-        data: assets,
-        isLoading,
-        error,
-    } = useSWR(
-        property_id
-            ? `/api/landlord/properties/assets?property_id=${property_id}`
-            : null,
-        fetcher
-    );
+  const {
+    data: assets,
+    isLoading,
+    error,
+  } = useSWR(
+    property_id
+      ? `/api/landlord/properties/assets?property_id=${property_id}`
+      : null,
+    fetcher,
+  );
 
-    const planName =
-        subscription?.plan_name as keyof typeof subscriptionConfig;
+  const planName = subscription?.plan_name as keyof typeof subscriptionConfig;
 
-    const assetConfig = planName
-        ? subscriptionConfig[planName]
-        : null;
+  const assetConfig = planName ? subscriptionConfig[planName] : null;
 
-    const canUseAssets =
-        assetConfig?.features?.assetManagement === true;
+  const canUseAssets = assetConfig?.features?.assetManagement === true;
 
-    const maxAssetsPerProperty =
-        assetConfig?.limits?.maxAssetsPerProperty;
+  const maxAssetsPerProperty = assetConfig?.limits?.maxAssetsPerProperty;
 
+  const totalAssets = assets?.length || 0;
 
-    const totalAssets = assets?.length || 0;
-
-    const reachedAssetLimit =
-        maxAssetsPerProperty !== null &&
-        totalAssets >= maxAssetsPerProperty;
-
+  const reachedAssetLimit =
+    maxAssetsPerProperty !== null && totalAssets >= maxAssetsPerProperty;
 
   const { data: propertyDetails } = useSWR(
     property_id
       ? `/api/propertyListing/getPropDetailsById?property_id=${property_id}`
       : null,
-    fetcher
+    fetcher,
   );
 
-  //  Fetch all units for this property
   const { data: units, isLoading: loadingUnits } = useSWR(
     property_id
       ? `/api/unitListing/getUnitListings?property_id=${property_id}`
       : null,
-    fetcher
+    fetcher,
   );
 
   const handlePageChange = (newPage: number) => {
@@ -133,7 +121,7 @@ const AssetsManagementPage = () => {
   const startIndex = (page - 1) * itemsPerPage;
   const paginatedAssets = filteredAssets.slice(
     startIndex,
-    startIndex + itemsPerPage
+    startIndex + itemsPerPage,
   );
 
   const getStatusConfig = (status: string) => {
@@ -147,46 +135,110 @@ const AssetsManagementPage = () => {
     }
   };
 
-  if (error)
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center p-6 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 font-medium">Failed to load assets.</p>
         </div>
       </div>
     );
+  }
 
-    if (!loadingSubscription && !canUseAssets) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 max-w-md w-full text-center">
-                    <div className="mx-auto mb-4 w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center">
-                        <Wrench className="w-7 h-7 text-white" />
-                    </div>
+  if (!loadingSubscription && !canUseAssets) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 max-w-md w-full text-center">
+          <div className="mx-auto mb-4 w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center">
+            <Wrench className="w-7 h-7 text-white" />
+          </div>
 
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">
-                        Upgrade Required
-                    </h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            Upgrade Required
+          </h2>
 
-                    <p className="text-gray-600 text-sm mb-6">
-                        Asset Management is not available on your current plan.
-                        Upgrade to track and maintain property assets.
-                    </p>
+          <p className="text-gray-600 text-sm mb-6">
+            Asset Management is not available on your current plan. Upgrade to
+            track and maintain property assets.
+          </p>
 
-                    <button
-                        onClick={() => router.push("/pages/landlord/subsciption_plan/pricing")}
-                        className="w-full px-5 py-2.5 rounded-xl font-semibold text-white
+          <button
+            onClick={() =>
+              router.push("/pages/landlord/subsciption_plan/pricing")
+            }
+            className="w-full px-5 py-2.5 rounded-xl font-semibold text-white
           bg-gradient-to-r from-blue-600 to-emerald-600
           hover:from-blue-700 hover:to-emerald-700 transition-all"
-                    >
-                        View Plans
-                    </button>
-                </div>
-            </div>
-        );
-    }
+          >
+            View Plans
+          </button>
+        </div>
+      </div>
+    );
+  }
 
+  // LOADING STATE
+  if (isLoading) {
     return (
+      <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
+        <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
+          {/* Header Skeleton */}
+          <div className="mb-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="flex-1 space-y-2">
+                <div className="h-6 bg-gray-200 rounded w-48 animate-pulse" />
+                <div className="h-4 bg-gray-100 rounded w-64 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Action Bar Skeleton */}
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center mb-4">
+              <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse" />
+              <div className="flex gap-2 sm:ml-auto">
+                <div className="h-10 w-16 bg-gray-200 rounded-lg animate-pulse" />
+                <div className="h-10 w-20 bg-gray-200 rounded-lg animate-pulse" />
+                <div className="h-10 w-16 bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Cards Skeleton */}
+          <div className="block md:hidden">
+            <AssetCardSkeleton count={5} />
+          </div>
+
+          {/* Desktop Table Skeleton */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {[...Array(7)].map((_, i) => (
+                    <th key={i} className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {[...Array(5)].map((_, rowIdx) => (
+                  <tr key={rowIdx}>
+                    {[...Array(7)].map((_, colIdx) => (
+                      <td key={colIdx} className="px-4 py-3">
+                        <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <>
       <div className="min-h-screen bg-gray-50 pb-24 md:pb-6">
         <div className="w-full px-4 md:px-6 pt-20 md:pt-6">
@@ -209,34 +261,33 @@ const AssetsManagementPage = () => {
 
             {/* Action Bar */}
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                <button
-                    onClick={() => {
-                        if (reachedAssetLimit) {
-                            Swal.fire({
-                                icon: "warning",
-                                title: "Asset Limit Reached",
-                                text: `Your plan allows up to ${maxAssetsPerProperty} assets per property.`,
-                                confirmButtonColor: "#3b82f6",
-                            });
-                            return;
-                        }
-                        setShowAddModal(true);
-                    }}
-                    disabled={reachedAssetLimit}
-                    className={`inline-flex items-center justify-center gap-2 px-4 py-2.5
+              <button
+                onClick={() => {
+                  if (reachedAssetLimit) {
+                    Swal.fire({
+                      icon: "warning",
+                      title: "Asset Limit Reached",
+                      text: `Your plan allows up to ${maxAssetsPerProperty} assets per property.`,
+                      confirmButtonColor: "#3b82f6",
+                    });
+                    return;
+                  }
+                  setShowAddModal(true);
+                }}
+                disabled={reachedAssetLimit}
+                className={`inline-flex items-center justify-center gap-2 px-4 py-2.5
     rounded-lg font-semibold text-sm transition-all shadow-sm
     ${
-                        reachedAssetLimit
-                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
-                    }`}
-                >
-                    <Plus className="w-4 h-4" />
-                    Add Asset
-                </button>
+      reachedAssetLimit
+        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+        : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
+    }`}
+              >
+                <Plus className="w-4 h-4" />
+                Add Asset
+              </button>
 
-
-                {/* Filters */}
+              {/* Filters */}
               <div className="flex gap-2 sm:ml-auto">
                 {["all", "property", "unit"].map((filter) => (
                   <button
@@ -251,8 +302,8 @@ const AssetsManagementPage = () => {
                     {filter === "all"
                       ? "All"
                       : filter === "property"
-                      ? "Property"
-                      : "Unit"}
+                        ? "Property"
+                        : "Unit"}
                   </button>
                 ))}
               </div>
@@ -261,16 +312,7 @@ const AssetsManagementPage = () => {
 
           {/* Mobile Cards View */}
           <div className="block md:hidden space-y-3 mb-6">
-            {isLoading ? (
-              <div className="animate-pulse space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-gray-100 rounded-lg h-32 w-full"
-                  ></div>
-                ))}
-              </div>
-            ) : paginatedAssets.length === 0 ? (
+            {paginatedAssets.length === 0 ? (
               <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Package className="w-8 h-8 text-blue-600" />
@@ -300,7 +342,7 @@ const AssetsManagementPage = () => {
                       </div>
                       <span
                         className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full border ${getStatusConfig(
-                          asset.status
+                          asset.status,
                         )}`}
                       >
                         {asset.status}
@@ -343,7 +385,7 @@ const AssetsManagementPage = () => {
                       <button
                         onClick={() =>
                           router.push(
-                            `/pages/landlord/properties/${property_id}/assets/${asset.asset_id}`
+                            `/pages/landlord/properties/${property_id}/assets/${asset.asset_id}`,
                           )
                         }
                         className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors"
@@ -354,7 +396,7 @@ const AssetsManagementPage = () => {
                       <button
                         onClick={() =>
                           router.push(
-                            `/pages/landlord/properties/${property_id}/assets_management/${asset.asset_id}/edit`
+                            `/pages/landlord/properties/${property_id}/assets_management/${asset.asset_id}/edit`,
                           )
                         }
                         className="flex items-center justify-center p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg border border-emerald-200 transition-colors"
@@ -405,18 +447,7 @@ const AssetsManagementPage = () => {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 bg-white">
-                  {isLoading ? (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="text-center py-12 text-gray-500"
-                      >
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : paginatedAssets.length === 0 ? (
+                  {paginatedAssets.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-4 py-12">
                         <div className="text-center">
@@ -474,7 +505,7 @@ const AssetsManagementPage = () => {
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full border ${getStatusConfig(
-                              asset.status
+                              asset.status,
                             )}`}
                           >
                             {asset.status}
@@ -485,7 +516,7 @@ const AssetsManagementPage = () => {
                             <button
                               onClick={() =>
                                 router.push(
-                                  `/pages/landlord/properties/${property_id}/assets/${asset.asset_id}`
+                                  `/pages/landlord/properties/${property_id}/assets/${asset.asset_id}`,
                                 )
                               }
                               className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -496,7 +527,7 @@ const AssetsManagementPage = () => {
                             <button
                               onClick={() =>
                                 router.push(
-                                  `/pages/landlord/properties/${property_id}/assets_management/${asset.asset_id}/edit`
+                                  `/pages/landlord/properties/${property_id}/assets_management/${asset.asset_id}/edit`,
                                 )
                               }
                               className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
