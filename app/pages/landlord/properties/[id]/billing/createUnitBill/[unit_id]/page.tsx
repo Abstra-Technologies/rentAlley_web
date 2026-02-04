@@ -1,83 +1,217 @@
 "use client";
 
+import React from "react";
 import { BackButton } from "@/components/navigation/backButton";
 import UtilityRatesCard from "@/components/landlord/unitBilling/UtilityRatesCard";
 import PDCCard from "@/components/landlord/unitBilling/PDCCard";
 import { useCreateSubmeteredUnitBill } from "@/hooks/landlord/billing/useCreateSubmeteredUnitBill";
-import {AlertCircle, Calendar} from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  Receipt,
+  Droplets,
+  Zap,
+  Plus,
+  X,
+  Building2,
+  Home,
+  CreditCard,
+  Percent,
+  FileText,
+} from "lucide-react";
 
-export default function CreateUnitBill() {
+// ============================================
+// SKELETON LOADING
+// ============================================
+function BillingSkeleton() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+      {/* Header Skeleton */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
 
-    const {
-        unit,
-        property,
-        propertyRates,
-        form,
-        setForm,
-        extraExpenses,
-        discounts,
-        bill,
-        pdc,
-        loadingPdc,
-        hasExistingBilling,
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Billing Period Skeleton */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="space-y-2">
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
 
-        handleChange,
-        handleAddExpense,
-        handleExpenseChange,
-        handleRemoveExpense,
-        handleAddDiscount,
-        handleDiscountChange,
-        handleRemoveDiscount,
-        handleSubmit,
-        handleMarkCleared,
-        updateBilling
-    } = useCreateSubmeteredUnitBill();
+        {/* Base Rent Skeleton */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="flex justify-between items-center py-3 border-b border-gray-100"
+              >
+                <div className="h-4 w-28 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
 
-
-    const round2 = (n: number) =>
-        Math.round((n + Number.EPSILON) * 100) / 100;
-
-    if (!unit || !property) {
-        return <div className="text-center mt-10 text-gray-500">Loading...</div>;
-    }
-
-    return (
-        <div className="min-h-screen bg-gray-100 py-6 px-4">
-            <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg border">
-
-                {/* ================= HEADER ================= */}
-                <div className="border-b p-5 space-y-2">
-                    <BackButton
-                        label="Back to Units"
-                        fallback={`/pages/landlord/property-listing/view-unit/${property.property_id}`}
+        {/* Utility Readings Skeleton */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div className="h-5 w-44 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="overflow-x-auto">
+            <div className="min-w-[520px]">
+              <div className="grid grid-cols-5 gap-4 py-3 border-b border-gray-200">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="h-4 bg-gray-200 rounded animate-pulse"
+                  />
+                ))}
+              </div>
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-5 gap-4 py-4 border-b border-gray-100"
+                >
+                  {[1, 2, 3, 4, 5].map((j) => (
+                    <div
+                      key={j}
+                      className="h-8 bg-gray-200 rounded animate-pulse"
                     />
-
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800">
-                            Billing Statement
-                        </h1>
-                        <p className="text-sm text-gray-500">
-                            {property.property_name} — Unit {unit.unit_name}
-                        </p>
-                    </div>
+                  ))}
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
-                {/* ================= BILLING PERIOD ================= */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b p-5 text-sm bg-gray-50">
+        {/* Summary Skeleton */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+          <div className="h-5 w-36 bg-gray-200 rounded animate-pulse mb-4" />
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex justify-between">
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+              </div>
+            ))}
+            <div className="border-t pt-4 mt-4 flex justify-between">
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
+              <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-                    <div>
-                        <p className="text-gray-500">Billing Period</p>
-                        <p className="font-semibold">
-                            {new Date(form.billingDate).toLocaleString("en-PH", {
-                                month: "long",
-                                year: "numeric",
-                            })}
-                        </p>
-                    </div>
+// ============================================
+// MAIN COMPONENT
+// ============================================
+export default function CreateUnitBill() {
+  const {
+    unit,
+    property,
+    propertyRates,
+    form,
+    setForm,
+    extraExpenses,
+    discounts,
+    bill,
+    pdc,
+    loadingPdc,
+    hasExistingBilling,
+    handleChange,
+    handleAddExpense,
+    handleExpenseChange,
+    handleRemoveExpense,
+    handleAddDiscount,
+    handleDiscountChange,
+    handleRemoveDiscount,
+    handleSubmit,
+    handleMarkCleared,
+    updateBilling,
+  } = useCreateSubmeteredUnitBill();
 
+  if (!unit || !property) {
+    return <BillingSkeleton />;
+  }
 
-                    <div>
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 pb-8">
+      {/* ================= HEADER ================= */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+          <BackButton
+            label="Back to Units"
+            fallback={`/pages/landlord/property-listing/view-unit/${property.property_id}`}
+          />
+
+          <div className="flex items-center gap-4 mt-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <Receipt className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                Billing Statement
+              </h1>
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Building2 className="w-4 h-4" />
+                <span>{property.property_name}</span>
+                <span className="text-gray-300">•</span>
+                <Home className="w-4 h-4" />
+                <span>Unit {unit.unit_name}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* ================= BILLING PERIOD ================= */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              Billing Period
+            </h2>
+          </div>
+
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Period
+              </label>
+              <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-emerald-50 rounded-xl border border-blue-100">
+                <p className="font-bold text-gray-900">
+                  {new Date(form.billingDate).toLocaleString("en-PH", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                 <Calendar className="w-3.5 h-3.5" />
                 Billing Date
               </label>
@@ -86,12 +220,12 @@ export default function CreateUnitBill() {
                 name="readingDate"
                 value={form.billingDate}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
               />
             </div>
 
             <div>
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                 <AlertCircle className="w-3.5 h-3.5" />
                 Due Date
               </label>
@@ -99,358 +233,661 @@ export default function CreateUnitBill() {
                 type="date"
                 value={form.dueDate}
                 readOnly
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-100 text-gray-700 cursor-not-allowed"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
               />
             </div>
           </div>
-
-                {/* ================= BASE RENT ================= */}
-                <div className="p-5 border-b space-y-4">
-                    <h2 className="font-semibold text-gray-700">
-                        Base Rent
-                    </h2>
-
-                    <div className="overflow-x-auto border rounded-lg">
-                        <table className="w-full text-sm">
-                            <tbody className="divide-y bg-white">
-                            <tr>
-                                <td className="px-4 py-3 text-gray-600">
-                                    Monthly Rent
-                                </td>
-                                <td className="px-4 py-3 text-right font-medium">
-                                    ₱{bill.rent.toFixed(2)}
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td className="px-4 py-3 text-gray-600">
-                                    Association Dues
-                                </td>
-                                <td className="px-4 py-3 text-right font-medium">
-                                    ₱{bill.dues.toFixed(2)}
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* ✅ PDC COMPONENT (INSERTED HERE) */}
-                    <PDCCard
-                        pdc={pdc}
-                        loadingPdc={loadingPdc}
-                        handleMarkCleared={handleMarkCleared}
-                    />
-                </div>
-
-                {/* ================= UTILITY RATES ================= */}
-                <div className="p-5 border-b">
-                    <UtilityRatesCard
-                        property={property}
-                        propertyRates={propertyRates}
-                    />
-                </div>
-
-                {/* ================= METER READINGS ================= */}
-                <div className="p-5">
-                    <h2 className="font-semibold text-gray-700 mb-3">
-                        Utility Meter Readings
-                    </h2>
-
-                    <div className="overflow-x-auto border rounded-lg">
-                        <table className="w-full text-sm min-w-[520px]">
-                            <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-4 py-2 text-left">Utility</th>
-                                <th className="px-4 py-2 text-right">Previous</th>
-                                <th className="px-4 py-2 text-right">Current</th>
-                                <th className="px-4 py-2 text-right">Usage</th>
-                                <th className="px-4 py-2 text-right">Cost</th>
-                            </tr>
-                            </thead>
-                            <tbody className="divide-y">
-
-                            {property.water_billing_type === "submetered" && (
-                                <tr>
-                                    <td className="px-4 py-3">💧 Water</td>
-                                    <td className="px-4 py-2">
-                                        <input
-                                            className="w-full text-right border rounded px-2 py-1"
-                                            value={form.waterPrevReading}
-                                            onChange={(e) =>
-                                                setForm(p => ({
-                                                    ...p,
-                                                    waterPrevReading: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-4 py-2">
-                                        <input
-                                            className="w-full text-right border rounded px-2 py-1"
-                                            value={form.waterCurrentReading}
-                                            onChange={(e) =>
-                                                setForm(p => ({
-                                                    ...p,
-                                                    waterCurrentReading: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-4 py-2 text-right">
-                                        {bill.waterUsage}
-                                    </td>
-                                    <td className="px-4 py-2 text-right">
-                                        ₱{bill.waterCost.toFixed(2)}
-                                    </td>
-                                </tr>
-                            )}
-
-                            {property.electricity_billing_type === "submetered" && (
-                                <tr>
-                                    <td className="px-4 py-3">⚡ Electricity</td>
-                                    <td className="px-4 py-2">
-                                        <input
-                                            className="w-full text-right border rounded px-2 py-1"
-                                            value={form.electricityPrevReading}
-                                            onChange={(e) =>
-                                                setForm(p => ({
-                                                    ...p,
-                                                    electricityPrevReading: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-4 py-2">
-                                        <input
-                                            className="w-full text-right border rounded px-2 py-1"
-                                            value={form.electricityCurrentReading}
-                                            onChange={(e) =>
-                                                setForm(p => ({
-                                                    ...p,
-                                                    electricityCurrentReading: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-4 py-2 text-right">
-                                        {bill.elecUsage}
-                                    </td>
-                                    <td className="px-4 py-2 text-right">
-                                        ₱{Number(bill.elecCost).toLocaleString("en-PH", {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                    })}
-                                    </td>
-                                </tr>
-                            )}
-
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* ================= ADJUSTMENTS ================= */}
-                <div className="p-5 border-t space-y-8">
-                    {/* Additional Charges */}
-                    <div>
-                        <div className="flex justify-between mb-2">
-                            <h3 className="font-semibold text-gray-700">
-                                Additional Charges
-                            </h3>
-                            <button
-                                onClick={handleAddExpense}
-                                className="text-sm text-blue-600 hover:underline"
-                            >
-                                + Add
-                            </button>
-                        </div>
-
-                        <table className="w-full text-sm border rounded-lg">
-                            <tbody className="divide-y">
-                            {extraExpenses.map((exp, idx) => (
-                                <tr key={idx}>
-                                    <td className="px-3 py-2">
-                                        <input
-                                            className="w-full border rounded px-2 py-1"
-                                            value={exp.type}
-                                            onChange={(e) =>
-                                                handleExpenseChange(idx, "type", e.target.value)
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        <input
-                                            type="number"
-                                            className="w-full border rounded px-2 py-1 text-right"
-                                            value={exp.amount}
-                                            onChange={(e) =>
-                                                handleExpenseChange(idx, "amount", e.target.value)
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-3 py-2 text-center">
-                                        <button
-                                            onClick={() => handleRemoveExpense(idx, exp)}
-                                            className="text-red-600"
-                                        >
-                                            ✕
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Discounts */}
-                    <div>
-                        <div className="flex justify-between mb-2">
-                            <h3 className="font-semibold text-gray-700">
-                                Discounts
-                            </h3>
-                            <button
-                                onClick={handleAddDiscount}
-                                className="text-sm text-green-600 hover:underline"
-                            >
-                                + Add
-                            </button>
-                        </div>
-
-                        <table className="w-full text-sm border rounded-lg">
-                            <tbody className="divide-y">
-                            {discounts.map((disc, idx) => (
-                                <tr key={idx}>
-                                    <td className="px-3 py-2">
-                                        <input
-                                            className="w-full border rounded px-2 py-1"
-                                            value={disc.type}
-                                            onChange={(e) =>
-                                                handleDiscountChange(idx, "type", e.target.value)
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        <input
-                                            type="number"
-                                            className="w-full border rounded px-2 py-1 text-right"
-                                            value={disc.amount}
-                                            onChange={(e) =>
-                                                handleDiscountChange(idx, "amount", e.target.value)
-                                            }
-                                        />
-                                    </td>
-                                    <td className="px-3 py-2 text-center">
-                                        <button
-                                            onClick={() => handleRemoveDiscount(idx, disc)}
-                                            className="text-red-600"
-                                        >
-                                            ✕
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* ================= TOTAL ================= */}
-                <div className="p-5 border-t bg-gray-50">
-                    <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
-                        Billing Summary
-                    </h3>
-
-                    <div className="space-y-2 text-sm">
-                        {/* Rent */}
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Rent</span>
-                            <span>₱{bill.rent.toFixed(2)}</span>
-                        </div>
-
-                        {/* Association Dues */}
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Association Dues</span>
-                            <span>₱{bill.dues.toFixed(2)}</span>
-                        </div>
-
-                        {/* Water */}
-                        {property.water_billing_type === "submetered" && (
-                            <div className="flex justify-between">
-                <span className="text-gray-600">
-                    Water ({bill.waterUsage} m³)
-                </span>
-                                <span>₱{bill.waterCost.toFixed(2)}</span>
-                            </div>
-                        )}
-
-                        {/* Electricity */}
-                        {property.electricity_billing_type === "submetered" && (
-                            <div className="flex justify-between">
-                <span className="text-gray-600">
-                    Electricity ({bill.elecUsage} kWh)
-                </span>
-                                <span>₱{bill.elecCost.toFixed(2)}</span>
-                            </div>
-                        )}
-
-                        {/* Additional Charges */}
-                        {bill.totalExtraCharges > 0 && (
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Additional Charges</span>
-                                <span>₱{bill.totalExtraCharges.toFixed(2)}</span>
-                            </div>
-                        )}
-
-                        {/* Discounts */}
-                        {bill.totalDiscounts > 0 && (
-                            <div className="flex justify-between text-emerald-600">
-                                <span>Discounts</span>
-                                <span>-₱{bill.totalDiscounts.toFixed(2)}</span>
-                            </div>
-                        )}
-
-                        {/* PDC Application */}
-                        {bill.pdcAmount > 0 && (
-                            <div className="flex justify-between text-blue-600">
-                <span>
-                    Post-Dated Check
-                    {bill.pdcCleared ? " (Applied)" : " (Pending)"}
-                </span>
-                                <span>
-                    -₱{bill.pdcCoveredAmount.toFixed(2)}
-                </span>
-                            </div>
-                        )}
-
-                        {/* Divider */}
-                        <div className="border-t pt-3 mt-3 flex justify-between items-center">
-            <span className="text-base font-semibold text-gray-800">
-                Total Amount Due
-            </span>
-                            <span className="text-2xl font-bold text-emerald-600">
-                ₱{bill.adjustedTotal.toFixed(2)}
-            </span>
-                        </div>
-                    </div>
-                </div>
-
-
-                {/* ================= ACTION ================= */}
-                <div className="p-5 flex justify-end">
-                    <button
-                        onClick={hasExistingBilling ? updateBilling : handleSubmit}
-                        className={`px-6 py-3 rounded-lg font-semibold shadow ${
-                            hasExistingBilling
-                                ? "bg-yellow-500 hover:bg-yellow-600 text-white"
-                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                        }`}
-                    >
-                        {hasExistingBilling ? "Update Billing" : "Submit Billing"}
-                    </button>
-
-                </div>
-
-            </div>
         </div>
-    );
+
+        {/* ================= BASE RENT ================= */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+              <Home className="w-5 h-5 text-emerald-600" />
+              Base Rent
+            </h2>
+          </div>
+
+          <div className="p-5">
+            <div className="divide-y divide-gray-100">
+              <div className="flex justify-between items-center py-3">
+                <span className="text-gray-600">Monthly Rent</span>
+                <span className="font-semibold text-gray-900">
+                  ₱
+                  {bill.rent.toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-3">
+                <span className="text-gray-600">Association Dues</span>
+                <span className="font-semibold text-gray-900">
+                  ₱
+                  {bill.dues.toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
+            </div>
+
+            {/* PDC Card */}
+            <div className="mt-4">
+              <PDCCard
+                pdc={pdc}
+                loadingPdc={loadingPdc}
+                handleMarkCleared={handleMarkCleared}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ================= UTILITY RATES ================= */}
+        {(property.water_billing_type === "submetered" ||
+          property.electricity_billing_type === "submetered") && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-500" />
+                Utility Rates
+              </h2>
+            </div>
+            <div className="p-5">
+              <UtilityRatesCard
+                property={property}
+                propertyRates={propertyRates}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ================= METER READINGS ================= */}
+        {(property.water_billing_type === "submetered" ||
+          property.electricity_billing_type === "submetered") && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" />
+                Utility Meter Readings
+              </h2>
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden sm:block p-5 overflow-x-auto">
+              <table className="w-full text-sm min-w-[520px]">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Utility
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Previous
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Current
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Usage
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Cost
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {property.water_billing_type === "submetered" && (
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Droplets className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            Water
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <input
+                          type="number"
+                          className="w-full text-right border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          value={form.waterPrevReading}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              waterPrevReading: e.target.value,
+                            }))
+                          }
+                          placeholder="0"
+                        />
+                      </td>
+                      <td className="px-4 py-4">
+                        <input
+                          type="number"
+                          className="w-full text-right border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          value={form.waterCurrentReading}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              waterCurrentReading: e.target.value,
+                            }))
+                          }
+                          placeholder="0"
+                        />
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="font-medium text-gray-900">
+                          {bill.waterUsage} m³
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="font-semibold text-blue-600">
+                          ₱
+                          {bill.waterCost.toLocaleString("en-PH", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                      </td>
+                    </tr>
+                  )}
+
+                  {property.electricity_billing_type === "submetered" && (
+                    <tr className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <Zap className="w-4 h-4 text-amber-600" />
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            Electricity
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <input
+                          type="number"
+                          className="w-full text-right border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          value={form.electricityPrevReading}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              electricityPrevReading: e.target.value,
+                            }))
+                          }
+                          placeholder="0"
+                        />
+                      </td>
+                      <td className="px-4 py-4">
+                        <input
+                          type="number"
+                          className="w-full text-right border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                          value={form.electricityCurrentReading}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              electricityCurrentReading: e.target.value,
+                            }))
+                          }
+                          placeholder="0"
+                        />
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="font-medium text-gray-900">
+                          {bill.elecUsage} kWh
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="font-semibold text-amber-600">
+                          ₱
+                          {Number(bill.elecCost).toLocaleString("en-PH", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="sm:hidden p-4 space-y-4">
+              {property.water_billing_type === "submetered" && (
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <Droplets className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Water</h3>
+                      <p className="text-xs text-gray-500">Meter Reading</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Previous
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        value={form.waterPrevReading}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            waterPrevReading: e.target.value,
+                          }))
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Current
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        value={form.waterCurrentReading}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            waterCurrentReading: e.target.value,
+                          }))
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-3 border-t border-blue-200">
+                    <div>
+                      <p className="text-xs text-gray-500">Usage</p>
+                      <p className="font-semibold text-gray-900">
+                        {bill.waterUsage} m³
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Cost</p>
+                      <p className="font-bold text-blue-600 text-lg">
+                        ₱
+                        {bill.waterCost.toLocaleString("en-PH", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {property.electricity_billing_type === "submetered" && (
+                <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl border border-amber-200 p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">
+                        Electricity
+                      </h3>
+                      <p className="text-xs text-gray-500">Meter Reading</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Previous
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        value={form.electricityPrevReading}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            electricityPrevReading: e.target.value,
+                          }))
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Current
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        value={form.electricityCurrentReading}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            electricityCurrentReading: e.target.value,
+                          }))
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-3 border-t border-amber-200">
+                    <div>
+                      <p className="text-xs text-gray-500">Usage</p>
+                      <p className="font-semibold text-gray-900">
+                        {bill.elecUsage} kWh
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Cost</p>
+                      <p className="font-bold text-amber-600 text-lg">
+                        ₱
+                        {Number(bill.elecCost).toLocaleString("en-PH", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ================= ADJUSTMENTS ================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Additional Charges */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-red-50 to-orange-50 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
+                Additional Charges
+              </h2>
+              <button
+                onClick={handleAddExpense}
+                className="px-2.5 sm:px-3 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              {extraExpenses.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">
+                  No additional charges added
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {extraExpenses.map((exp, idx) => (
+                    <div
+                      key={idx}
+                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100"
+                    >
+                      <input
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        value={exp.type}
+                        onChange={(e) =>
+                          handleExpenseChange(idx, "type", e.target.value)
+                        }
+                        placeholder="Description"
+                      />
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1 sm:flex-none">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                            ₱
+                          </span>
+                          <input
+                            type="number"
+                            className="w-full sm:w-28 border border-gray-200 rounded-lg pl-7 pr-3 py-2.5 text-sm text-right focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            value={exp.amount}
+                            onChange={(e) =>
+                              handleExpenseChange(idx, "amount", e.target.value)
+                            }
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleRemoveExpense(idx, exp)}
+                          className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Discounts */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                <Percent className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
+                Discounts
+              </h2>
+              <button
+                onClick={handleAddDiscount}
+                className="px-2.5 sm:px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 text-xs font-semibold rounded-lg hover:bg-emerald-50 transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              {discounts.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">
+                  No discounts added
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {discounts.map((disc, idx) => (
+                    <div
+                      key={idx}
+                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100"
+                    >
+                      <input
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        value={disc.type}
+                        onChange={(e) =>
+                          handleDiscountChange(idx, "type", e.target.value)
+                        }
+                        placeholder="Description"
+                      />
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1 sm:flex-none">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                            ₱
+                          </span>
+                          <input
+                            type="number"
+                            className="w-full sm:w-28 border border-gray-200 rounded-lg pl-7 pr-3 py-2.5 text-sm text-right focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                            value={disc.amount}
+                            onChange={(e) =>
+                              handleDiscountChange(
+                                idx,
+                                "amount",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleRemoveDiscount(idx, disc)}
+                          className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ================= BILLING SUMMARY ================= */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-4 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-emerald-500">
+            <h2 className="font-semibold text-white flex items-center gap-2 text-sm sm:text-base">
+              <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
+              Billing Summary
+            </h2>
+          </div>
+
+          <div className="p-4 sm:p-5">
+            <div className="space-y-2 sm:space-y-3">
+              {/* Rent */}
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-600 text-sm">Rent</span>
+                <span className="font-medium text-gray-900 text-sm sm:text-base">
+                  ₱
+                  {bill.rent.toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
+
+              {/* Association Dues */}
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-600 text-sm">Association Dues</span>
+                <span className="font-medium text-gray-900 text-sm sm:text-base">
+                  ₱
+                  {bill.dues.toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
+
+              {/* Water */}
+              {property.water_billing_type === "submetered" && (
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 flex items-center gap-2 text-sm">
+                    <Droplets className="w-4 h-4 text-blue-500" />
+                    <span className="hidden sm:inline">
+                      Water ({bill.waterUsage} m³)
+                    </span>
+                    <span className="sm:hidden">Water</span>
+                  </span>
+                  <span className="font-medium text-gray-900 text-sm sm:text-base">
+                    ₱
+                    {bill.waterCost.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
+
+              {/* Electricity */}
+              {property.electricity_billing_type === "submetered" && (
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 flex items-center gap-2 text-sm">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    <span className="hidden sm:inline">
+                      Electricity ({bill.elecUsage} kWh)
+                    </span>
+                    <span className="sm:hidden">Electricity</span>
+                  </span>
+                  <span className="font-medium text-gray-900 text-sm sm:text-base">
+                    ₱
+                    {Number(bill.elecCost).toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
+
+              {/* Additional Charges */}
+              {bill.totalExtraCharges > 0 && (
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 flex items-center gap-2 text-sm">
+                    <Plus className="w-4 h-4 text-red-500" />
+                    Additional Charges
+                  </span>
+                  <span className="font-medium text-red-600 text-sm sm:text-base">
+                    +₱
+                    {bill.totalExtraCharges.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
+
+              {/* Discounts */}
+              {bill.totalDiscounts > 0 && (
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 flex items-center gap-2 text-sm">
+                    <Percent className="w-4 h-4 text-emerald-500" />
+                    Discounts
+                  </span>
+                  <span className="font-medium text-emerald-600 text-sm sm:text-base">
+                    -₱
+                    {bill.totalDiscounts.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
+
+              {/* PDC Application */}
+              {bill.pdcAmount > 0 && (
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-600 flex items-center gap-2 text-sm">
+                    <CreditCard className="w-4 h-4 text-blue-500" />
+                    <span className="hidden sm:inline">
+                      Post-Dated Check{" "}
+                      {bill.pdcCleared ? "(Applied)" : "(Pending)"}
+                    </span>
+                    <span className="sm:hidden">PDC</span>
+                  </span>
+                  <span className="font-medium text-blue-600 text-sm sm:text-base">
+                    -₱
+                    {bill.pdcCoveredAmount.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="border-t-2 border-gray-100 pt-4 mt-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <span className="text-base sm:text-lg font-semibold text-gray-900">
+                    Total Amount Due
+                  </span>
+                  <span className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+                    ₱
+                    {bill.adjustedTotal.toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= ACTION BUTTON ================= */}
+        <div className="flex justify-center sm:justify-end">
+          <button
+            onClick={hasExistingBilling ? updateBilling : handleSubmit}
+            className={`w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
+              hasExistingBilling
+                ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/25"
+                : "bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white shadow-blue-500/25"
+            }`}
+          >
+            <Receipt className="w-5 h-5" />
+            {hasExistingBilling ? "Update Billing" : "Submit Billing"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
