@@ -1,227 +1,279 @@
 import {
-    User,
-    Mail,
-    Phone,
-    Home,
-    FileText,
-    Calendar,
-    Wallet,
-    DollarSign,
-    Clock,
-    Shield,
+  User,
+  Mail,
+  Phone,
+  Home,
+  FileText,
+  Calendar,
+  Wallet,
+  DollarSign,
+  Clock,
+  Shield,
+  ExternalLink,
 } from "lucide-react";
 
 interface LeaseDetails {
-    tenant_name?: string;
-    email?: string;
-    phoneNumber?: string;
-    property_name?: string;
-    unit_name?: string;
-    start_date?: string;
-    end_date?: string;
-    agreement_url?: string;
-    security_deposit_amount?: number;
-    advance_payment_amount?: number;
-    billing_due_day?: number;
-    grace_period_days?: number;
-    late_penalty_amount?: number;
-    rent_amount?: number;
+  tenant_name?: string;
+  email?: string;
+  phoneNumber?: string;
+  property_name?: string;
+  unit_name?: string;
+  start_date?: string;
+  end_date?: string;
+  agreement_url?: string;
+  security_deposit_amount?: number;
+  advance_payment_amount?: number;
+  billing_due_day?: number;
+  grace_period_days?: number;
+  late_penalty_amount?: number;
+  rent_amount?: number;
 }
 
 interface LeaseInfoProps {
-    lease: LeaseDetails;
+  lease: LeaseDetails;
 }
 
 export default function LeaseInfo({ lease }: LeaseInfoProps) {
-    return (
-        <div className="w-full">
-            {/* Grid: 1 col mobile, 2 col md, 3 col lg */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* TENANT INFORMATION */}
-                <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-md flex items-center justify-center">
-                            <User className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <h3 className="text-sm font-semibold text-gray-900">Tenant</h3>
-                    </div>
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined || amount === null) return "₱0.00";
+    return `₱${amount.toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
 
-                    <div className="space-y-2 text-sm">
-                        <div>
-                            <p className="text-xs text-gray-500">Name</p>
-                            <p className="font-medium text-gray-900 truncate">
-                                {lease.tenant_name || <span className="italic text-gray-400">N/A</span>}
-                            </p>
-                        </div>
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
-                        <div>
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
-                                <Mail className="w-3 h-3" /> Email
-                            </p>
-                            {lease.email ? (
-                                <a
-                                    href={`mailto:${lease.email}`}
-                                    className="text-sm text-blue-600 hover:underline break-words"
-                                >
-                                    {lease.email}
-                                </a>
-                            ) : (
-                                <span className="text-sm italic text-gray-400">N/A</span>
-                            )}
-                        </div>
-
-                        <div>
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
-                                <Phone className="w-3 h-3" /> Phone
-                            </p>
-                            {lease.phoneNumber ? (
-                                <a
-                                    href={`tel:${lease.phoneNumber}`}
-                                    className="text-sm text-blue-600 hover:underline"
-                                >
-                                    {lease.phoneNumber}
-                                </a>
-                            ) : (
-                                <span className="text-sm italic text-gray-400">N/A</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* LEASE OVERVIEW */}
-                <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-md flex items-center justify-center">
-                            <Home className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <h3 className="text-sm font-semibold text-gray-900">Lease Overview</h3>
-                    </div>
-
-                    <div className="space-y-2 text-sm">
-                        <div>
-                            <p className="text-xs text-gray-500">Property / Unit</p>
-                            <p className="font-medium text-gray-900 truncate">
-                                {lease.property_name || "N/A"}{" "}
-                                <span className="text-gray-500">—</span>{" "}
-                                {lease.unit_name || "N/A"}
-                            </p>
-                        </div>
-
-                        <div>
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" /> Period
-                            </p>
-                            <p className="text-sm text-gray-900">
-                                {lease.start_date
-                                    ? new Date(lease.start_date).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                    })
-                                    : "N/A"}{" "}
-                                →{" "}
-                                {lease.end_date
-                                    ? new Date(lease.end_date).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                    })
-                                    : "N/A"}
-                            </p>
-                        </div>
-
-                        <div>
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
-                                <FileText className="w-3 h-3" /> Agreement
-                            </p>
-                            {lease.agreement_url ? (
-                                <a
-                                    href={lease.agreement_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm text-blue-600 hover:underline font-medium"
-                                >
-                                    View Document
-                                </a>
-                            ) : (
-                                <span className="text-sm italic text-gray-400">N/A</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* FINANCIAL TERMS */}
-                <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-md flex items-center justify-center">
-                            <Wallet className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <h3 className="text-sm font-semibold text-gray-900">Financial Terms</h3>
-                    </div>
-
-                    <div className="space-y-2 text-sm">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <Shield className="w-4 h-4 text-gray-400" />
-                                <p className="text-xs text-gray-600">Security Deposit</p>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900">
-                ₱{(lease.security_deposit_amount ?? 0).toLocaleString()}
-              </span>
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <DollarSign className="w-4 h-4 text-gray-400" />
-                                <p className="text-xs text-gray-600">Advance Payment</p>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900">
-                ₱{(lease.advance_payment_amount ?? 0).toLocaleString()}
-              </span>
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-gray-400" />
-                                <p className="text-xs text-gray-600">Billing Due Day</p>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900">
-                {lease.billing_due_day ?? "Not set"}
-              </span>
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-gray-400" />
-                                <p className="text-xs text-gray-600">Grace Period</p>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900">
-                {lease.grace_period_days ?? 0} days
-              </span>
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <DollarSign className="w-4 h-4 text-red-500" />
-                                <p className="text-xs text-gray-600">Late Penalty</p>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900">
-                ₱{(lease.late_penalty_amount ?? 0).toLocaleString()} /day
-              </span>
-                        </div>
-
-                        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <div className="flex items-center gap-2">
-                                <DollarSign className="w-4 h-4 text-green-600" />
-                                <p className="text-sm font-medium text-gray-900">Monthly Rent</p>
-                            </div>
-                            <span className="text-lg font-bold text-green-600">
-                ₱{(lease.rent_amount ?? 0).toLocaleString()}
-              </span>
-                        </div>
-                    </div>
-                </div>
+  return (
+    <div className="w-full space-y-4">
+      {/* Grid: Stack on mobile, 3 columns on large screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* TENANT INFORMATION */}
+        <div className="bg-gradient-to-br from-white to-slate-50 border border-gray-100 rounded-xl p-4 sm:p-5 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+              <User className="w-5 h-5 text-white" />
             </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Tenant Information
+              </h3>
+              <p className="text-xs text-gray-500">Contact details</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
+                Full Name
+              </p>
+              <p className="text-base font-semibold text-gray-900">
+                {lease.tenant_name || (
+                  <span className="text-gray-400 font-normal">
+                    Not provided
+                  </span>
+                )}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <Mail className="w-3 h-3" /> Email
+              </p>
+              {lease.email ? (
+                <a
+                  href={`mailto:${lease.email}`}
+                  className="text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium break-all"
+                >
+                  {lease.email}
+                </a>
+              ) : (
+                <span className="text-sm text-gray-400">Not provided</span>
+              )}
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <Phone className="w-3 h-3" /> Phone
+              </p>
+              {lease.phoneNumber ? (
+                <a
+                  href={`tel:${lease.phoneNumber}`}
+                  className="text-sm text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                >
+                  {lease.phoneNumber}
+                </a>
+              ) : (
+                <span className="text-sm text-gray-400">Not provided</span>
+              )}
+            </div>
+          </div>
         </div>
-    );
+
+        {/* LEASE OVERVIEW */}
+        <div className="bg-gradient-to-br from-white to-slate-50 border border-gray-100 rounded-xl p-4 sm:p-5 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+              <Home className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Lease Overview
+              </h3>
+              <p className="text-xs text-gray-500">Property details</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
+                Property / Unit
+              </p>
+              <p className="text-base font-semibold text-gray-900">
+                {lease.property_name || "N/A"}
+              </p>
+              <p className="text-sm text-gray-600">
+                {lease.unit_name || "N/A"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <Calendar className="w-3 h-3" /> Lease Period
+              </p>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-medium text-gray-900">
+                  {formatDate(lease.start_date)}
+                </span>
+                <span className="text-gray-400">→</span>
+                <span className="font-medium text-gray-900">
+                  {formatDate(lease.end_date)}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <FileText className="w-3 h-3" /> Agreement Document
+              </p>
+              {lease.agreement_url ? (
+                <a
+                  href={lease.agreement_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium group"
+                >
+                  View Document
+                  <ExternalLink className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                </a>
+              ) : (
+                <span className="text-sm text-gray-400">Not uploaded</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* FINANCIAL TERMS */}
+        <div className="bg-gradient-to-br from-white to-slate-50 border border-gray-100 rounded-xl p-4 sm:p-5 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-sm">
+              <Wallet className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">
+                Financial Terms
+              </h3>
+              <p className="text-xs text-gray-500">Payment settings</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <FinancialRow
+              icon={<Shield className="w-4 h-4 text-gray-400" />}
+              label="Security Deposit"
+              value={formatCurrency(lease.security_deposit_amount)}
+            />
+
+            <FinancialRow
+              icon={<DollarSign className="w-4 h-4 text-gray-400" />}
+              label="Advance Payment"
+              value={formatCurrency(lease.advance_payment_amount)}
+            />
+
+            <FinancialRow
+              icon={<Clock className="w-4 h-4 text-gray-400" />}
+              label="Billing Due Day"
+              value={
+                lease.billing_due_day
+                  ? `Day ${lease.billing_due_day}`
+                  : "Not set"
+              }
+            />
+
+            <FinancialRow
+              icon={<Clock className="w-4 h-4 text-gray-400" />}
+              label="Grace Period"
+              value={`${lease.grace_period_days ?? 0} days`}
+            />
+
+            <FinancialRow
+              icon={<DollarSign className="w-4 h-4 text-red-400" />}
+              label="Late Penalty"
+              value={`${formatCurrency(lease.late_penalty_amount)} /day`}
+              valueClassName="text-red-600"
+            />
+
+            {/* Monthly Rent - Highlighted */}
+            <div className="pt-3 mt-3 border-t border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Monthly Rent
+                  </span>
+                </div>
+                <span className="text-xl font-bold text-emerald-600">
+                  {formatCurrency(lease.rent_amount)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────── Financial Row Component ───────── */
+function FinancialRow({
+  icon,
+  label,
+  value,
+  valueClassName = "",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <div className="flex items-center gap-2">
+        {icon}
+        <span className="text-sm text-gray-600">{label}</span>
+      </div>
+      <span className={`text-sm font-semibold text-gray-900 ${valueClassName}`}>
+        {value}
+      </span>
+    </div>
+  );
 }
