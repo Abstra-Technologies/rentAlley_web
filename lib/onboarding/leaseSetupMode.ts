@@ -1,21 +1,22 @@
+// Onboarding for Step 1: Mode Selection (choosing upload vs generate)
 export const leaseSetupSteps = [
   {
     popover: {
-      title: "Setup Lease Agreement 📝",
+      title: "Welcome to Lease Setup 📝",
       description:
-        "You're about to create a lease agreement. First, choose how you want to set it up: upload an existing document or generate a new one with UpKyp's guided system.",
+        "Let's set up a lease agreement for your tenant. You have two options to choose from — pick the one that fits your situation best.",
       side: "bottom",
-      align: "start",
+      align: "center",
     },
   },
   {
     element: "#mode-selection",
     popover: {
-      title: "Choose Your Setup Method",
+      title: "Choose Your Method",
       description:
-        "Two options available: Upload an existing signed lease document (PDF/DOCX), or generate a brand new lease using UpKyp's comprehensive lease generator.",
+        "Select how you'd like to proceed: upload an existing document you've already signed, or generate a brand new lease using UpKyp's guided wizard.",
       side: "bottom",
-      align: "start",
+      align: "center",
     },
   },
   {
@@ -23,8 +24,8 @@ export const leaseSetupSteps = [
     popover: {
       title: "Upload Existing Lease",
       description:
-        "Select this if you already have a lease agreement signed outside UpKyp. You'll upload the document and enter key details like dates and amounts.",
-      side: "bottom",
+        "Already have a signed lease agreement? Choose this option to upload your PDF or DOCX file and record the key details in UpKyp.",
+      side: "right",
       align: "start",
     },
   },
@@ -33,18 +34,40 @@ export const leaseSetupSteps = [
     popover: {
       title: "Generate New Lease",
       description:
-        "Select this to create a professional lease agreement from scratch. UpKyp will guide you through contract terms, policies, and digital signing.",
-      side: "bottom",
+        "Don't have a lease yet? UpKyp will guide you through creating a professional, legally-formatted lease agreement with all the important clauses.",
+      side: "left",
       align: "start",
+    },
+  },
+  {
+    popover: {
+      title: "Ready to Continue! ✨",
+      description:
+        "Select your preferred method and click 'Continue' to proceed. Each path has its own guided walkthrough to help you along the way.",
+      side: "bottom",
+      align: "center",
+    },
+  },
+];
+
+// Onboarding for Step 2: Upload Existing Lease form
+export const leaseUploadSteps = [
+  {
+    popover: {
+      title: "Upload Your Lease Document 📄",
+      description:
+        "Now let's record your existing lease agreement. Fill in the details below and upload your signed document.",
+      side: "bottom",
+      align: "center",
     },
   },
   {
     element: "#tenant-info-summary",
     popover: {
-      title: "Tenant & Lease Information",
+      title: "Tenant & Property Info",
       description:
-        "Review the tenant details and property information. This data will be included in your lease agreement automatically.",
-      side: "top",
+        "Review the tenant and property details here. This information will be linked to the lease record automatically.",
+      side: "bottom",
       align: "start",
     },
   },
@@ -53,7 +76,7 @@ export const leaseSetupSteps = [
     popover: {
       title: "Lease Duration",
       description:
-        "Set the start and end dates for this lease. These dates determine when the tenant can occupy the unit and when the lease expires.",
+        "Enter the start and end dates of your lease. The start date is required — end date can be left blank for month-to-month arrangements.",
       side: "top",
       align: "start",
     },
@@ -63,7 +86,7 @@ export const leaseSetupSteps = [
     popover: {
       title: "Financial Terms",
       description:
-        "Enter monthly rent, security deposit, and advance payment amounts. These must match what you agreed with the tenant.",
+        "Enter the monthly rent amount (required), plus any security deposit and advance payment collected from the tenant.",
       side: "top",
       align: "start",
     },
@@ -71,18 +94,20 @@ export const leaseSetupSteps = [
   {
     element: "#file-upload-area",
     popover: {
-      title: "Upload Lease Document",
+      title: "Upload Document",
       description:
-        "Drag and drop or click to upload your lease document. Supported formats: PDF and DOCX. The file will be stored securely in UpKyp.",
+        "Click or drag to upload your signed lease document. Supported formats: PDF and DOCX (max 10MB). This file will be stored securely.",
       side: "top",
-      align: "start",
+      align: "center",
     },
   },
   {
     popover: {
-      title: "Setup Method Selected! 🎯",
+      title: "Almost Done! 🎉",
       description:
-        "Continue to complete your lease setup. If generating a new lease, you'll go through a comprehensive wizard with contract terms and policies.",
+        "Once you've filled in the details and uploaded your document, click 'Submit Agreement' to complete the setup.",
+      side: "bottom",
+      align: "center",
     },
   },
 ];
