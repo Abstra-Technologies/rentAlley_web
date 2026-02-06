@@ -29,6 +29,7 @@ interface Request {
   status: string;
   photos?: string[];
   created_at?: string;
+  schedule_date?: string;
 }
 
 interface Props {
@@ -417,23 +418,31 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
                           {request.category}
                         </p>
                       </div>
-                      {request.created_at && (
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                            Created
-                          </p>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {new Date(request.created_at).toLocaleDateString(
-                              "en-US",
-                              {
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                          {request.schedule_date ? "Scheduled" : "Created"}
+                        </p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {request.schedule_date
+                            ? new Date(
+                                request.schedule_date,
+                              ).toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
-                              },
-                            )}
-                          </p>
-                        </div>
-                      )}
+                              })
+                            : request.created_at
+                              ? new Date(request.created_at).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  },
+                                )
+                              : "N/A"}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
