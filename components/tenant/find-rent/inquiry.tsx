@@ -27,6 +27,14 @@ interface InquiryBookingProps {
   initialView?: ViewType;
 }
 
+// ✅ Helper function to format date in local timezone
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function InquiryBooking({
   tenant_id,
   unit_id,
@@ -96,47 +104,51 @@ export default function InquiryBooking({
   ===================================================== */
   const isTileDisabled = ({ date, view: calView }: any) => {
     if (calView !== "month") return false;
-    const key = date.toISOString().split("T")[0];
+    // ✅ Use local date formatting for consistency
+    const key = formatLocalDate(date);
     return bookedDates[key]?.count >= 1 || date < new Date();
   };
 
-    const handleSchedule = async () => {
-        requireAuth(async () => {
-            if (!selectedDate || !selectedTime) {
-                Swal.fire("Missing info", "Please select both date and time", "error");
-                return;
-            }
+  const handleSchedule = async () => {
+    requireAuth(async () => {
+      if (!selectedDate || !selectedTime) {
+        Swal.fire("Missing info", "Please select both date and time", "error");
+        return;
+      }
 
-            try {
-                setLoading(true);
+      try {
+        setLoading(true);
 
-                const visit_date = selectedDate.toISOString().split("T")[0];
+        // ✅ FIXED: Use local date formatting to prevent timezone shift
+        const visit_date = formatLocalDate(selectedDate);
 
-                await axios.post("/api/tenant/property-finder/schedVisitOnly", {
-                    tenant_id,
-                    unit_id,
-                    visit_date,
-                    visit_time: `${selectedTime}:00`,
-                });
+        console.log("📅 Booking date:", visit_date); // Debug log
 
-                await Swal.fire({
-                    icon: "success",
-                    title: "Visit Scheduled!",
-                    text: "The landlord will be notified.",
-                    confirmButtonColor: "#3B82F6",
-                });
-
-                // ⏳ Delay before redirect
-                setTimeout(() => {
-                    router.push("/pages/find-rent");
-                }, 1200); // 1.2 seconds
-            } catch {
-                Swal.fire("Error", "Failed to schedule visit", "error");
-            } finally {
-                setLoading(false);
-            }
+        await axios.post("/api/tenant/property-finder/schedVisitOnly", {
+          tenant_id,
+          unit_id,
+          visit_date,
+          visit_time: `${selectedTime}:00`,
         });
-    };
+
+        await Swal.fire({
+          icon: "success",
+          title: "Visit Scheduled!",
+          text: "The landlord will be notified.",
+          confirmButtonColor: "#3B82F6",
+        });
+
+        // ⏳ Delay before redirect
+        setTimeout(() => {
+          router.push("/pages/find-rent");
+        }, 1200); // 1.2 seconds
+      } catch {
+        Swal.fire("Error", "Failed to schedule visit", "error");
+      } finally {
+        setLoading(false);
+      }
+    });
+  };
 
   const handleApply = () => {
     requireAuth(() => {
