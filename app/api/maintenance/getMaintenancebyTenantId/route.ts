@@ -4,6 +4,8 @@ import { db } from "@/lib/db"; // adjust to your actual DB import path
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// use in the tenant feeds maintenance widget.
+
 export async function GET(req: NextRequest) {
     try {
         const tenant_id = req.nextUrl.searchParams.get("tenant_id");
@@ -15,11 +17,15 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // ✅ Fetch all maintenance requests by tenant (across all units)
+        /**
+         * Fetch all maintenance requests by tenant
+         * and include agreement_id for deep linking
+         */
         const [rows] = await db.query(
             `
       SELECT 
         mr.request_id,
+        la.agreement_id,
         mr.subject,
         mr.description,
         mr.status,
@@ -36,9 +42,16 @@ export async function GET(req: NextRequest) {
           ELSE 'Low'
         END AS priority
       FROM MaintenanceRequest mr
-      JOIN Unit u ON mr.unit_id = u.unit_id
-      JOIN Property p ON u.property_id = p.property_id
-      LEFT JOIN MaintenancePhoto mp ON mp.request_id = mr.request_id
+      JOIN Unit u 
+        ON mr.unit_id = u.unit_id
+      JOIN Property p 
+        ON u.property_id = p.property_id
+      JOIN LeaseAgreement la 
+        ON la.unit_id = u.unit_id
+       AND la.tenant_id = mr.tenant_id
+       AND la.status IN ('active', 'completed')
+      LEFT JOIN MaintenancePhoto mp 
+        ON mp.request_id = mr.request_id
       WHERE mr.tenant_id = ?
       GROUP BY mr.request_id
       ORDER BY mr.created_at DESC;
@@ -53,7 +66,9 @@ export async function GET(req: NextRequest) {
             });
         }
 
-        return NextResponse.json({ maintenance_requests: rows });
+        return NextResponse.json({
+            maintenance_requests: rows,
+        });
     } catch (error: any) {
         console.error("Error fetching maintenance list:", error);
         return NextResponse.json(
