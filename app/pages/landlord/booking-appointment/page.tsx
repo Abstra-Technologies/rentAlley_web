@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc"; // ✅ Added UTC plugin
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
@@ -21,6 +22,9 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import useAuthStore from "@/zustand/authStore";
+
+// ✅ Enable UTC plugin
+dayjs.extend(utc);
 
 // Animation variants
 const fadeInUp = {
@@ -53,7 +57,7 @@ const BookingAppointment = () => {
   const fetchVisits = async () => {
     try {
       const res = await axios.get(
-        `/api/landlord/properties/getAllBookingVisits?landlord_id=${user?.landlord_id}`
+        `/api/landlord/properties/getAllBookingVisits?landlord_id=${user?.landlord_id}`,
       );
       setVisits(res.data || []);
     } catch (err) {
@@ -63,8 +67,9 @@ const BookingAppointment = () => {
     }
   };
 
+  // ✅ FIXED: Use UTC to prevent timezone shift
   const visitsByDate = visits.reduce<Record<string, any[]>>((acc, visit) => {
-    const key = dayjs(visit.visit_date).format("YYYY-MM-DD");
+    const key = dayjs.utc(visit.visit_date).format("YYYY-MM-DD");
     acc[key] = acc[key] || [];
     acc[key].push(visit);
     return acc;
@@ -92,7 +97,7 @@ const BookingAppointment = () => {
   const updateStatus = async (
     visit_id: number,
     status: string,
-    reason?: string
+    reason?: string,
   ) => {
     await axios.put("/api/landlord/properties/updateBookingStatus", {
       visit_id,
@@ -103,8 +108,8 @@ const BookingAppointment = () => {
       prev.map((v) =>
         v.visit_id === visit_id
           ? { ...v, status, disapproval_reason: reason }
-          : v
-      )
+          : v,
+      ),
     );
   };
 
@@ -138,9 +143,11 @@ const BookingAppointment = () => {
             <MapPin className="w-3 h-3" />
             {visit.property_name} • {visit.unit_name}
           </p>
+          {/* ✅ FIXED: Use UTC to display correct date */}
           <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            {dayjs(visit.visit_date).format("MMM D, YYYY")} • {visit.visit_time}
+            {dayjs.utc(visit.visit_date).format("MMM D, YYYY")} •{" "}
+            {visit.visit_time}
           </p>
           {visit.disapproval_reason && (
             <p className="text-xs text-orange-600 mt-2 bg-orange-50 px-2 py-1 rounded-lg">
@@ -262,8 +269,8 @@ const BookingAppointment = () => {
                           v.status === "approved"
                             ? "bg-emerald-500"
                             : v.status === "pending"
-                            ? "bg-amber-500"
-                            : "bg-gray-400"
+                              ? "bg-amber-500"
+                              : "bg-gray-400"
                         }`}
                       />
                     ))}
@@ -526,10 +533,11 @@ const BookingAppointment = () => {
                 <h3 className="font-bold text-gray-900">Upcoming Visits</h3>
               </div>
               <div className="p-4 space-y-3">
+                {/* ✅ FIXED: Use UTC for date comparison */}
                 {visits.filter(
                   (v) =>
                     v.status === "approved" &&
-                    dayjs(v.visit_date).isAfter(dayjs())
+                    dayjs.utc(v.visit_date).isAfter(dayjs()),
                 ).length === 0 ? (
                   <p className="text-sm text-gray-500 text-center py-4">
                     No upcoming visits
@@ -539,7 +547,7 @@ const BookingAppointment = () => {
                     .filter(
                       (v) =>
                         v.status === "approved" &&
-                        dayjs(v.visit_date).isAfter(dayjs())
+                        dayjs.utc(v.visit_date).isAfter(dayjs()),
                     )
                     .slice(0, 3)
                     .map((v) => (
@@ -597,7 +605,7 @@ const BookingAppointment = () => {
                     updateStatus(
                       selectedVisitId!,
                       "disapproved",
-                      disapprovalReason
+                      disapprovalReason,
                     );
                     setShowDisapprovalModal(false);
                     setDisapprovalReason("");
