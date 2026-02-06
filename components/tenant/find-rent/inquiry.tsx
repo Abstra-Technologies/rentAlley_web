@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import ChatInquiry from "../chatInquiry";
-import useAuth from "../../../hooks/useSession";
+import useAuthStore from "@/zustand/authStore";
 import {
   FaCalendarAlt,
   FaClock,
@@ -35,7 +35,7 @@ export default function InquiryBooking({
   initialView = "inquire",
 }: InquiryBookingProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
 
   const [view, setView] = useState<ViewType>(initialView);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -100,38 +100,43 @@ export default function InquiryBooking({
     return bookedDates[key]?.count >= 1 || date < new Date();
   };
 
-  const handleSchedule = async () => {
-    requireAuth(async () => {
-      if (!selectedDate || !selectedTime) {
-        Swal.fire("Missing info", "Please select both date and time", "error");
-        return;
-      }
+    const handleSchedule = async () => {
+        requireAuth(async () => {
+            if (!selectedDate || !selectedTime) {
+                Swal.fire("Missing info", "Please select both date and time", "error");
+                return;
+            }
 
-      try {
-        setLoading(true);
-        const visit_date = selectedDate.toISOString().split("T")[0];
+            try {
+                setLoading(true);
 
-        await axios.post("/api/tenant/property-finder/schedVisitOnly", {
-          tenant_id,
-          unit_id,
-          visit_date,
-          visit_time: `${selectedTime}:00`,
+                const visit_date = selectedDate.toISOString().split("T")[0];
+
+                await axios.post("/api/tenant/property-finder/schedVisitOnly", {
+                    tenant_id,
+                    unit_id,
+                    visit_date,
+                    visit_time: `${selectedTime}:00`,
+                });
+
+                await Swal.fire({
+                    icon: "success",
+                    title: "Visit Scheduled!",
+                    text: "The landlord will be notified.",
+                    confirmButtonColor: "#3B82F6",
+                });
+
+                // ⏳ Delay before redirect
+                setTimeout(() => {
+                    router.push("/pages/find-rent");
+                }, 1200); // 1.2 seconds
+            } catch {
+                Swal.fire("Error", "Failed to schedule visit", "error");
+            } finally {
+                setLoading(false);
+            }
         });
-
-        Swal.fire({
-          icon: "success",
-          title: "Visit Scheduled!",
-          text: "The landlord will be notified.",
-          confirmButtonColor: "#3B82F6",
-        });
-        router.push("/pages/find-rent");
-      } catch {
-        Swal.fire("Error", "Failed to schedule visit", "error");
-      } finally {
-        setLoading(false);
-      }
-    });
-  };
+    };
 
   const handleApply = () => {
     requireAuth(() => {
