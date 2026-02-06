@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import Link from "next/link";
@@ -91,27 +91,28 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
   const [filter, setFilter] = useState<string>("all");
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
+  const fetchMaintenanceRequests = async () => {
+    try {
+      setLoading(true);
+      const queryParams = new URLSearchParams({
+        user_id: user_id?.toString() || "",
+      });
+      if (agreement_id)
+        queryParams.append("agreement_id", agreement_id.toString());
+      const response = await axios.get(
+        `/api/maintenance/getTenantMaintance?${queryParams.toString()}`,
+      );
+
+      setMaintenanceRequests(response.data || []);
+    } catch (error) {
+      console.error("Error fetching maintenance requests:", error);
+      setMaintenanceRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchMaintenanceRequests = async () => {
-      try {
-        const queryParams = new URLSearchParams({
-          user_id: user_id?.toString() || "",
-        });
-        if (agreement_id)
-          queryParams.append("agreement_id", agreement_id.toString());
-        const response = await axios.get(
-          `/api/maintenance/getTenantMaintance?${queryParams.toString()}`,
-        );
-
-        setMaintenanceRequests(response.data || []);
-      } catch (error) {
-        console.error("Error fetching maintenance requests:", error);
-        setMaintenanceRequests([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (user_id) fetchMaintenanceRequests();
   }, [user_id, agreement_id]);
 
@@ -147,28 +148,33 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
     }
   };
 
-  const filteredRequests =
-    filter === "all"
-      ? maintenanceRequests
-      : maintenanceRequests.filter(
-          (req) => req.status.toLowerCase() === filter,
-        );
+  const filteredRequests = useMemo(() => {
+    if (filter === "all") {
+      return maintenanceRequests;
+    }
+    return maintenanceRequests.filter(
+      (req) => req.status.toLowerCase() === filter,
+    );
+  }, [maintenanceRequests, filter]);
 
-  const statusCounts = {
-    all: maintenanceRequests.length,
-    pending: maintenanceRequests.filter(
-      (req) => req.status.toLowerCase() === "pending",
-    ).length,
-    scheduled: maintenanceRequests.filter(
-      (req) => req.status.toLowerCase() === "scheduled",
-    ).length,
-    "in-progress": maintenanceRequests.filter(
-      (req) => req.status.toLowerCase() === "in-progress",
-    ).length,
-    completed: maintenanceRequests.filter(
-      (req) => req.status.toLowerCase() === "completed",
-    ).length,
-  };
+  const statusCounts = useMemo(
+    () => ({
+      all: maintenanceRequests.length,
+      pending: maintenanceRequests.filter(
+        (req) => req.status.toLowerCase() === "pending",
+      ).length,
+      scheduled: maintenanceRequests.filter(
+        (req) => req.status.toLowerCase() === "scheduled",
+      ).length,
+      "in-progress": maintenanceRequests.filter(
+        (req) => req.status.toLowerCase() === "in-progress",
+      ).length,
+      completed: maintenanceRequests.filter(
+        (req) => req.status.toLowerCase() === "completed",
+      ).length,
+    }),
+    [maintenanceRequests],
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -333,6 +339,7 @@ const MaintenanceRequestList = ({ agreement_id, user_id }: Props) => {
           </motion.div>
         ) : (
           <motion.div
+            key={`${filter}-${filteredRequests.length}`}
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
