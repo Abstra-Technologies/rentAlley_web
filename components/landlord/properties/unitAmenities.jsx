@@ -1,29 +1,39 @@
 "use client";
 
 import { AMENITIES_LIST_UNIT } from "../../../constant/unitAmenities";
+import { CheckCircle } from "lucide-react";
 
 const AmenitiesSelector = ({ selectedAmenities, onAmenityChange }) => {
   return (
-    <div>
-      <h3 className="text-lg font-semibold text-gray-700 mb-2">Select Amenities</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {AMENITIES_LIST_UNIT.map(({ name, icon }) => {
-          const isSelected = selectedAmenities.includes(name);
-          return (
-            <button
-              type="button"
-              key={name}
-              onClick={() => onAmenityChange(name)}
-              className={`flex flex-col items-center justify-center gap-2 p-3 border rounded-lg text-sm shadow-sm
-                ${isSelected ? "bg-blue-500 text-white" : "bg-white text-gray-700"}
-                hover:bg-blue-100 transition`}
-            >
-              <div className="text-2xl">{icon}</div>
-              <span className="text-center">{name}</span>
-            </button>
-          );
-        })}
-      </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+      {AMENITIES_LIST_UNIT.map(({ name, icon }) => {
+        const isSelected = selectedAmenities.includes(name);
+        return (
+          <button
+            type="button"
+            key={name}
+            onClick={() => onAmenityChange(name)}
+            className={`relative p-3 sm:p-4 rounded-xl transition-all ${
+              isSelected
+                ? "bg-gradient-to-br from-blue-500 to-emerald-500 text-white shadow-lg shadow-blue-500/30 scale-[1.02]"
+                : "bg-white border-2 border-gray-100 hover:border-blue-300 hover:shadow-md"
+            }`}
+          >
+            {/* CHECKMARK (top-right when selected) */}
+            {isSelected && (
+              <div className="absolute top-2 right-2">
+                <CheckCircle className="w-4 h-4" />
+              </div>
+            )}
+
+            {/* ICON */}
+            <span className="text-2xl sm:text-3xl block mb-1">{icon}</span>
+
+            {/* LABEL */}
+            <p className="text-xs sm:text-sm font-semibold">{name}</p>
+          </button>
+        );
+      })}
     </div>
   );
 };
