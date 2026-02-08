@@ -111,7 +111,7 @@ export default function LandlordLayout({
                 title: "Operations",
                 items: [
                     { label: "Work Orders", href: "/pages/landlord/maintenance-request", icon: Construction },
-                    { label: "Calendar", href: "/pages/landlord/booking-appointment", icon: Calendar },
+                    { label: "Calendar", href: "/pages/landlord/calendar", icon: Calendar },
                     { label: "Announcements", href: "/pages/landlord/announcement", icon: Megaphone },
                 ],
             },
