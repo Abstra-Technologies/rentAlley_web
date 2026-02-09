@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import InquiryBooking from "@/components/tenant/find-rent/inquiry";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import LoadingScreen from "@/components/loadingScreen";
 import { IoArrowBackOutline, IoExpand, IoClose } from "react-icons/io5";
@@ -24,7 +23,6 @@ import {
   FaCheck,
   FaComments,
   FaFileContract,
-  FaPhoneAlt,
 } from "react-icons/fa";
 import { BsImageAlt } from "react-icons/bs";
 import { MdVerified, MdPayment } from "react-icons/md";
@@ -35,26 +33,7 @@ import ReviewsList from "../../../../../components/tenant/reviewList";
 import { UnitDetails } from "@/types/units";
 import LandlordCard from "@/components/landlord/properties/LandlordCard";
 import useAuthStore from "@/zustand/authStore";
-
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-[350px] bg-gray-100 rounded-xl flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    ),
-  },
-);
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false },
-);
-const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false },
-);
+import MapDisplay from "@/components/find-rent/MapDisplay";
 
 interface NearbyPlace {
   name: string;
@@ -77,8 +56,6 @@ export default function PropertyUnitDetailedPage() {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [customIcon, setCustomIcon] = useState<any>(null);
-  const [isClient, setIsClient] = useState(false);
   const [nearbyData, setNearbyData] = useState<NearbyData>({
     summary: "",
     places: [],
@@ -93,54 +70,6 @@ export default function PropertyUnitDetailedPage() {
 
   // Ref for scrolling to booking section on desktop
   const bookingRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && isClient) {
-      import("leaflet").then((L) => {
-        const leaflet = L.default || L;
-        delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
-        leaflet.Icon.Default.mergeOptions({
-          iconRetinaUrl:
-            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-          iconUrl:
-            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-          shadowUrl:
-            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-        });
-
-        const icon = leaflet.divIcon({
-          html: `
-            <div style="position: relative;">
-              <svg width="40" height="52" viewBox="0 0 40 52">
-                <defs>
-                  <linearGradient id="markerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#3B82F6"/>
-                    <stop offset="100%" style="stop-color:#10B981"/>
-                  </linearGradient>
-                  <filter id="shadow">
-                    <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3"/>
-                  </filter>
-                </defs>
-                <path d="M20 0C8.954 0 0 8.954 0 20c0 15 20 32 20 32s20-17 20-32c0-11.046-8.954-20-20-20z" 
-                      fill="url(#markerGrad)" filter="url(#shadow)"/>
-                <circle cx="20" cy="20" r="8" fill="white"/>
-                <circle cx="20" cy="20" r="5" fill="url(#markerGrad)"/>
-              </svg>
-            </div>
-          `,
-          className: "custom-location-marker",
-          iconSize: [40, 52],
-          iconAnchor: [20, 52],
-          popupAnchor: [0, -52],
-        });
-        setCustomIcon(icon);
-      });
-    }
-  }, [isClient]);
 
   useEffect(() => {
     if (!rentId) return;
@@ -194,20 +123,36 @@ export default function PropertyUnitDetailedPage() {
   const parsePaymentMethods = (methodsString: any) => {
     if (!methodsString) return [];
     if (typeof methodsString === "string") {
-      const cleaned = methodsString.replace(/[\[\]"']/g, "").trim();
+      const cleaned = methodsString.replace(/[\[\]"'\\]/g, "").trim();
       if (cleaned === "") return [];
       return cleaned
         .split(/[\n,]+/)
         .map((item: string) => item.trim())
         .filter((item: string) => item.length > 0)
         .map((item: string) => {
+          // Normalize the text
+          const normalized = item
+            .toLowerCase()
+            .replace(/-/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+          // Map to proper display names
+          if (normalized === "gcash" || normalized === "g cash") return "GCash";
+          if (normalized === "maya") return "Maya";
+          if (normalized === "pdc" || normalized === "post dated check")
+            return "PDC";
+          if (normalized === "cash") return "Cash";
+          if (normalized.includes("bank")) return "Bank Transfer";
+
+          // Fallback: capitalize each word
           return item
-            .split("-")
-            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join("-")
-            .replace("G-cash", "GCash")
-            .replace("Maya", "Maya")
-            .replace("Pdc", "PDC");
+            .split(/[-\s]+/)
+            .map(
+              (word: string) =>
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+            )
+            .join(" ");
         });
     }
     return [];
@@ -283,9 +228,9 @@ export default function PropertyUnitDetailedPage() {
   const hasValidLocation = unit.latitude && unit.longitude;
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 min-h-screen pb-24 lg:pb-0">
+    <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 min-h-screen pt-16 sm:pt-20 pb-32 lg:pb-0">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <button
@@ -530,7 +475,8 @@ export default function PropertyUnitDetailedPage() {
             {/* Payment Methods */}
             {paymentMethods.length > 0 && (
               <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                  <MdPayment className="w-5 h-5 text-blue-600" />
                   Payment options
                 </h2>
 
@@ -548,16 +494,18 @@ export default function PropertyUnitDetailedPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {paymentMethods.map((method, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-2 p-3 bg-gradient-to-br from-gray-50 to-blue-50/50 rounded-xl border border-gray-200"
+                      className="flex items-center gap-3 p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-xl border-2 border-blue-100 hover:border-blue-300 transition-all hover:shadow-md"
                     >
-                      <div className="text-blue-600">
-                        {getPaymentIcon(method)}
+                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
+                        <div className="text-blue-600">
+                          {getPaymentIcon(method)}
+                        </div>
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-gray-700">
+                      <span className="text-sm sm:text-base font-semibold text-gray-900">
                         {method}
                       </span>
                     </div>
@@ -592,24 +540,12 @@ export default function PropertyUnitDetailedPage() {
                 </div>
               </div>
 
-              {hasValidLocation && isClient && customIcon && (
-                <div className="w-full h-[250px] sm:h-[350px] rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg relative z-0">
-                  <MapContainer
-                    center={[Number(unit.latitude), Number(unit.longitude)]}
-                    zoom={15}
-                    scrollWheelZoom={false}
-                    style={{ height: "100%", width: "100%", zIndex: 0 }}
-                    zoomControl={true}
-                  >
-                    <TileLayer
-                      attribution="&copy; OpenStreetMap"
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <Marker
-                      position={[Number(unit.latitude), Number(unit.longitude)]}
-                      icon={customIcon}
-                    />
-                  </MapContainer>
+              {hasValidLocation && (
+                <div className="w-full h-[250px] sm:h-[350px] rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
+                  <MapDisplay
+                    latitude={Number(unit.latitude)}
+                    longitude={Number(unit.longitude)}
+                  />
                 </div>
               )}
             </div>
@@ -782,7 +718,7 @@ export default function PropertyUnitDetailedPage() {
             </button>
 
             {/* Content */}
-            <div className="px-4 pb-8 pt-2">
+            <div className="px-4 pb-8 pt-2 overflow-y-auto max-h-[calc(85vh-4rem)]">
               <InquiryBooking
                 tenant_id={user?.tenant_id}
                 unit_id={unit?.unit_id}
