@@ -10,7 +10,7 @@ const sha256 = (value: string) =>
     crypto.createHash("sha256").update(value).digest("hex");
 
 /* -------------------------------------------------------
-   CACHED QUERY FUNCTION (FINAL)
+   CACHED QUERY FUNCTION (ENHANCED)
 ------------------------------------------------------- */
 const getPaymentsCached = unstable_cache(
     async (
@@ -23,25 +23,46 @@ const getPaymentsCached = unstable_cache(
     ) => {
         let query = `
       SELECT
+        /* ================= PAYMENT ================= */
         p.payment_id,
+        p.bill_id,
+        p.agreement_id,
         p.payment_type,
         p.amount_paid,
+        p.payment_method_id,
         p.payment_status,
-        p.payment_date,
+        p.payout_status,
         p.receipt_reference,
-        p.created_at,
+        p.payment_date,
+        p.proof_of_payment,
+
+        /* ================= BILLING ================= */
+        b.billing_id,
+        b.billing_period,
+        b.total_water_amount,
+        b.total_electricity_amount,
+        b.total_amount_due,
+        b.status AS billing_status,
+        b.due_date,
+        b.paid_at,
+        b.unit_id,
+
+        /* ================= DISPLAY ================= */
         u.unit_name,
         pr.property_name,
         usr.firstName,
         usr.lastName,
         usr.nameHashed,
         usr.nameTokens
+
       FROM Payment p
+        LEFT JOIN Billing b ON p.bill_id = b.billing_id
         JOIN LeaseAgreement la ON p.agreement_id = la.agreement_id
         JOIN Tenant t ON la.tenant_id = t.tenant_id
         JOIN User usr ON t.user_id = usr.user_id
         JOIN Unit u ON la.unit_id = u.unit_id
         JOIN Property pr ON u.property_id = pr.property_id
+
       WHERE pr.landlord_id = ?
         AND p.payment_status = 'confirmed'
     `;

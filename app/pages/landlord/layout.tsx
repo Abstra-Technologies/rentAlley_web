@@ -126,6 +126,8 @@ export default function LandlordLayout({
                 title: "Support",
                 items: [
                     { label: "Help & Support", href: "/pages/public/help", icon: Handshake },
+                    { label: "User Guide", href: "/pages/public/guide", icon: Handshake },
+
                 ],
             },
         ],
