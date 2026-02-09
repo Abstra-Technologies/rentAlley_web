@@ -1,6 +1,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import crypto from "crypto";
+
+/* =====================================================
+   HELPERS
+===================================================== */
+function getClientIp(req: NextRequest): string | null {
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    if (forwardedFor) {
+        return forwardedFor.split(",")[0].trim();
+    }
+
+    const realIp = req.headers.get("x-real-ip");
+    if (realIp) return realIp;
+
+    return null;
+}
+
+function hashIp(ip: string) {
+    return crypto.createHash("sha256").update(ip).digest("hex");
+}
 
 async function verifyToken(token: string) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -40,12 +60,15 @@ const excludePages = new Set([
 ]);
 
 /* =====================================================
-   PROXY (MIDDLEWARE)
+   PROXY / MIDDLEWARE
 ===================================================== */
 export async function proxy(req: NextRequest) {
     const { pathname, search } = req.nextUrl;
     const token = req.cookies.get("token")?.value;
 
+    /* -----------------------------------------------
+       ALLOW WEBHOOKS
+    ------------------------------------------------ */
     if (pathname.startsWith("/api/webhook")) {
         return NextResponse.next();
     }
@@ -56,14 +79,12 @@ export async function proxy(req: NextRequest) {
     if (!token) {
         const callbackUrl = pathname + search;
 
-        // Block system admin pages
         if (pathname.startsWith("/pages/system_admin")) {
             const adminLogin = new URL("/pages/admin_login", req.url);
             adminLogin.searchParams.set("callbackUrl", callbackUrl);
             return NextResponse.redirect(adminLogin);
         }
 
-        // Block protected app routes
         if (
             pathname.startsWith("/pages/tenant") ||
             pathname.startsWith("/pages/landlord") ||
@@ -83,16 +104,17 @@ export async function proxy(req: NextRequest) {
     const decoded: any = await verifyToken(token);
 
     if (!decoded) {
-        const loginUrl = new URL("/pages/auth/login", req.url);
-        loginUrl.searchParams.set("callbackUrl", pathname + search);
-        return NextResponse.redirect(loginUrl);
+        const res = NextResponse.redirect(
+            new URL("/pages/auth/login", req.url)
+        );
+        res.cookies.delete("token");
+        return res;
     }
 
-    const { userType, role, permissions = [] } = decoded;
+    const { userType, role, permissions = [], ip_hash } = decoded;
 
     /* -----------------------------------------------
        BLOCK AUTH PAGES WHEN LOGGED IN
-       (only if NO callbackUrl)
     ------------------------------------------------ */
     const isAuthPage = AUTH_PAGES.some(
         (page) => pathname === page || pathname.startsWith(`${page}/`)
@@ -139,19 +161,43 @@ export async function proxy(req: NextRequest) {
     }
 
     /* -----------------------------------------------
-       SYSTEM ADMIN ACCESS
+       SYSTEM ADMIN ACCESS (WITH IP ENFORCEMENT)
     ------------------------------------------------ */
     if (pathname.startsWith("/pages/system_admin")) {
+        // Role check
         if (!SYSTEM_ADMIN_ROLES.includes(role)) {
             return NextResponse.redirect(
                 new URL("/pages/error/accessDenied", req.url)
             );
         }
 
+        // 🔐 IP binding enforcement
+        const clientIp = getClientIp(req);
+
+        if (!clientIp || !ip_hash) {
+            const res = NextResponse.redirect(
+                new URL("/pages/admin_login?reason=ip_missing", req.url)
+            );
+            res.cookies.delete("token");
+            return res;
+        }
+
+        const currentIpHash = hashIp(clientIp);
+
+        if (currentIpHash !== ip_hash) {
+            const res = NextResponse.redirect(
+                new URL("/pages/admin_login?reason=ip_changed", req.url)
+            );
+            res.cookies.delete("token");
+            return res;
+        }
+
+        // Allow excluded admin pages
         if (excludePages.has(pathname)) {
             return NextResponse.next();
         }
 
+        // Permission-based routing
         const matchedEntry = Object.entries(permissionMapping).find(
             ([route]) => pathname === route || pathname.startsWith(`${route}/`)
         );

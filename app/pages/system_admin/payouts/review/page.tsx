@@ -8,9 +8,6 @@ import { ArrowLeft, Send, AlertTriangle } from "lucide-react";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
-/* ===============================
-   Inner Content (uses searchParams)
-================================ */
 function ReviewPayoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
