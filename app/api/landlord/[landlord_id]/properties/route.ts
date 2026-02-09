@@ -9,6 +9,8 @@ export async function GET(
     try {
         const { landlord_id } = await params;
 
+        console.log('landlord id', landlord_id);
+
 
         if (!landlord_id) {
             return NextResponse.json(

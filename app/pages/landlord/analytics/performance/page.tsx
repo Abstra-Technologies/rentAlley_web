@@ -165,7 +165,7 @@ export default function PropertyPerformancePage() {
     if (!user?.landlord_id) return;
 
     setLoading(true);
-    fetch(`/api/analytics/landlord/overview?landlord_id=${user.landlord_id}`)
+    fetch(`/api/analytics/landlord/overview?landlord_id=${user?.landlord_id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {

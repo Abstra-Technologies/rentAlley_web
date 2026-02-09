@@ -1,200 +1,206 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { TrendingUp } from "lucide-react";
+
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
+/* =========================
+   TYPES
+========================= */
 type TrendData = {
-  months: string[];
-  revenue: number[];
-  expenses: number[];
+    months: string[];
+    revenue: number[];
+    expenses: number[];
 };
 
-export default function RevenueExpenseTrendChart({
-  landlordId,
-}: {
-  landlordId: number | string;
-}) {
-  const [trend, setTrend] = useState<TrendData>({
-    months: [],
-    revenue: [],
-    expenses: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+type Property = {
+    property_id: string; // ✅ STRING
+    property_name: string;
+    city: string;
+    province: string;
+};
 
-  useEffect(() => {
-    if (!landlordId) {
-      setLoading(false);
-      return;
+/* =========================
+   COMPONENT
+========================= */
+export default function RevenueExpenseTrendChart({
+                                                     landlordId,
+                                                 }: {
+    landlordId: string;
+}) {
+    const [properties, setProperties] = useState<Property[]>([]);
+    const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
+
+    const [trend, setTrend] = useState<TrendData>({
+        months: [],
+        revenue: [],
+        expenses: [],
+    });
+
+    const [loadingProperties, setLoadingProperties] = useState(true);
+    const [loadingChart, setLoadingChart] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    /* =========================
+       FETCH PROPERTIES
+    ========================= */
+    useEffect(() => {
+        if (!landlordId) return;
+
+        setLoadingProperties(true);
+        setError(null);
+
+        fetch(`/api/landlord/${landlordId}/properties`)
+            .then((res) => res.json())
+            .then((res) => {
+                const list: Property[] = res?.data ?? [];
+                setProperties(list);
+
+                // set default ONLY ONCE
+                if (list.length > 0) {
+                    setSelectedProperty((prev) =>
+                        prev === null ? list[0].property_id : prev
+                    );
+                }
+            })
+            .catch(() => setError("Failed to load properties"))
+            .finally(() => setLoadingProperties(false));
+    }, [landlordId]);
+
+    /* =========================
+       FETCH ANALYTICS
+    ========================= */
+    useEffect(() => {
+        if (!landlordId || selectedProperty === null) return;
+
+        setLoadingChart(true);
+        setError(null);
+
+        fetch(
+            `/api/analytics/landlord/revenue-expense-trend` +
+            `?landlord_id=${landlordId}` +
+            `&property_id=${selectedProperty}`
+        )
+            .then((res) => res.json())
+            .then((data) => {
+                setTrend({
+                    months: Array.isArray(data?.months) ? data.months : [],
+                    revenue: Array.isArray(data?.revenue) ? data.revenue : [],
+                    expenses: Array.isArray(data?.expenses) ? data.expenses : [],
+                });
+            })
+            .catch(() => setError("Failed to load financial trends"))
+            .finally(() => setLoadingChart(false));
+    }, [landlordId, selectedProperty]);
+
+    /* =========================
+       CHART CONFIG
+    ========================= */
+    const options: ApexCharts.ApexOptions = useMemo(
+        () => ({
+            chart: {
+                type: "line",
+                toolbar: { show: true },
+                fontFamily: "inherit",
+                animations: { enabled: true },
+            },
+            stroke: { curve: "smooth", width: 3 },
+            xaxis: { categories: trend.months },
+            yaxis: {
+                labels: {
+                    formatter: (v) => `₱${Number(v).toLocaleString()}`,
+                },
+            },
+            colors: ["#10B981", "#EF4444"],
+            dataLabels: { enabled: false },
+            legend: { position: "top", horizontalAlign: "right" },
+            grid: { strokeDashArray: 4 },
+        }),
+        [trend.months]
+    );
+
+    const series = useMemo(
+        () => [
+            { name: "Revenue", data: trend.revenue },
+            { name: "Expenses", data: trend.expenses },
+        ],
+        [trend.revenue, trend.expenses]
+    );
+
+    /* =========================
+       RENDER STATES
+    ========================= */
+    if (loadingProperties) {
+        return (
+            <div className="flex items-center justify-center h-[320px]">
+                <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
     }
 
-    setLoading(true);
-    setError(false);
+    if (error) {
+        return (
+            <div className="text-center py-12">
+                <TrendingUp className="mx-auto mb-3 text-red-500" size={40} />
+                <p className="text-gray-600">{error}</p>
+            </div>
+        );
+    }
 
-    fetch(
-      `/api/analytics/landlord/revenue-expense-trend?landlord_id=${landlordId}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        // ✅ Validate the data structure before setting state
-        if (data && typeof data === "object") {
-          setTrend({
-            months: Array.isArray(data.months) ? data.months : [],
-            revenue: Array.isArray(data.revenue) ? data.revenue : [],
-            expenses: Array.isArray(data.expenses) ? data.expenses : [],
-          });
-        } else {
-          // If data is invalid, set empty state
-          setTrend({
-            months: [],
-            revenue: [],
-            expenses: [],
-          });
-        }
-        setError(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching trend data:", err);
-        setError(true);
-        // Set empty state on error
-        setTrend({
-          months: [],
-          revenue: [],
-          expenses: [],
-        });
-      })
-      .finally(() => setLoading(false));
-  }, [landlordId]);
+    if (properties.length === 0) {
+        return (
+            <div className="text-center py-12 text-gray-500">
+                No properties found for this landlord
+            </div>
+        );
+    }
 
-  const options: ApexCharts.ApexOptions = {
-    chart: {
-      type: "line",
-      toolbar: {
-        show: true,
-        tools: {
-          download: true,
-          selection: false,
-          zoom: false,
-          zoomin: false,
-          zoomout: false,
-          pan: false,
-          reset: false,
-        },
-      },
-      fontFamily: "inherit",
-      animations: {
-        enabled: true,
-        easing: "easeinout",
-        speed: 800,
-      },
-    },
-    stroke: {
-      curve: "smooth",
-      width: 3,
-    },
-    xaxis: {
-      categories: trend.months || [], // ✅ Fallback to empty array
-      labels: {
-        style: { colors: "#6B7280", fontSize: "12px", fontWeight: 500 },
-      },
-    },
-    yaxis: {
-      labels: {
-        style: { colors: "#6B7280" },
-        formatter: (value) => `₱${value.toLocaleString()}`,
-      },
-    },
-    colors: ["#10B981", "#EF4444"],
-    dataLabels: { enabled: false },
-    legend: {
-      position: "top",
-      horizontalAlign: "right",
-      labels: { colors: "#374151" },
-      fontSize: "13px",
-      fontWeight: 500,
-    },
-    grid: {
-      borderColor: "#F3F4F6",
-      strokeDashArray: 4,
-    },
-    tooltip: {
-      theme: "light",
-      y: {
-        formatter: (value) => `₱${value.toLocaleString()}`,
-      },
-    },
-    markers: {
-      size: 4,
-      colors: ["#10B981", "#EF4444"],
-      strokeColors: "#fff",
-      strokeWidth: 2,
-      hover: {
-        size: 6,
-      },
-    },
-  };
-
-  const series = [
-    { name: "Revenue", data: trend.revenue || [] }, // ✅ Fallback to empty array
-    { name: "Expenses", data: trend.expenses || [] }, // ✅ Fallback to empty array
-  ];
-
-  if (loading) {
+    /* =========================
+       MAIN UI
+    ========================= */
     return (
-      <div className="flex flex-col items-center justify-center h-[300px] sm:h-[400px]">
-        <div className="w-12 h-12 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-sm text-gray-600">Loading financial data...</p>
-      </div>
-    );
-  }
+        <div className="space-y-4">
+            {/* PROPERTY SELECT */}
+            <div className="flex justify-end">
+                <select
+                    value={selectedProperty ?? ""}
+                    onChange={(e) => setSelectedProperty(e.target.value)} // ✅ STRING
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg
+                     focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                    {properties.map((p) => (
+                        <option key={p.property_id} value={p.property_id}>
+                            {p.property_name} ({p.city})
+                        </option>
+                    ))}
+                </select>
+            </div>
 
-  // ✅ Error state
-  if (error) {
-    return (
-      <div className="flex flex-col justify-center items-center h-[300px] sm:h-[400px] text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <TrendingUp className="w-10 h-10 text-red-600" />
+            {/* CHART */}
+            {loadingChart ? (
+                <div className="flex items-center justify-center h-[300px]">
+                    <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+            ) : trend.months.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                    No financial data available for this property
+                </div>
+            ) : (
+                <>
+                    <Chart
+                        key={selectedProperty} // ✅ STRING KEY → REMOUNT WORKS
+                        options={options}
+                        series={series}
+                        type="line"
+                        height={400}
+                    />
+                    <p className="text-xs text-gray-500 text-center">
+                        Monthly revenue vs expenses per property
+                    </p>
+                </>
+            )}
         </div>
-        <h4 className="text-base font-semibold text-gray-900 mb-2">
-          Unable to Load Data
-        </h4>
-        <p className="text-sm text-gray-600 max-w-md">
-          There was an error loading the financial trend data. Please try
-          refreshing the page.
-        </p>
-      </div>
     );
-  }
-
-  // ✅ Safe check for empty data
-  if (
-    !trend.months ||
-    !Array.isArray(trend.months) ||
-    trend.months.length === 0
-  ) {
-    return (
-      <div className="flex flex-col justify-center items-center h-[300px] sm:h-[400px] text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <TrendingUp className="w-10 h-10 text-emerald-600" />
-        </div>
-        <h4 className="text-base font-semibold text-gray-900 mb-2">
-          No Financial Data Available
-        </h4>
-        <p className="text-sm text-gray-600 max-w-md">
-          Revenue and expense trends will appear once you start recording
-          payments and utility bills.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <Chart options={options} series={series} type="line" height={400} />
-      <p className="text-gray-600 text-xs sm:text-sm text-center mt-4">
-        Monthly comparison between property revenue and concessionaire expenses
-      </p>
-    </div>
-  );
 }
