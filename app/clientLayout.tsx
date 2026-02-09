@@ -16,7 +16,7 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
     const { fetchSession, user, admin } = useAuthStore();
-    const user_id = user?.user_id ?? admin?.id;
+    const user_id = user?.user_id ?? admin?.admin_id;
     const [sessionExpired, setSessionExpired] = useState(false);
     const [sessionChecked, setSessionChecked] = useState(false);
 
@@ -34,8 +34,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             const fcmToken = await initAndroidPush();
 
             if (fcmToken) {
-                console.log("📨 Saving token:", fcmToken);
-
                 await fetch("/api/push/save-token", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -70,36 +68,42 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     }, [user, admin, fetchSession, sessionChecked]);
 
     useEffect(() => {
-        if (sessionExpired) {
-            Swal.fire({
-                title: 'Session Expired',
-                text: 'Your session has expired. Redirecting to login...',
-                icon: 'warning',
-                showConfirmButton: false, // 🚫 no button
-                timer: 2500, // ⏳ auto close after 2.5s
-                timerProgressBar: true,
-                customClass: {
-                    container: 'swal2-container',
-                    popup: 'rounded-lg p-4 max-w-[90%] sm:max-w-md',
-                    title: 'text-lg sm:text-xl font-semibold text-gray-800',
-                    htmlContainer: 'text-sm sm:text-base text-gray-600',
-                },
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                },
-            });
+        if (!sessionExpired) return;
 
-            // ⏩ Redirect automatically after timer
-            const redirectTimer = setTimeout(() => {
-                setSessionExpired(false);
-                window.location.href = '/pages/auth/login';
-            }, 2500);
+        const isAdmin = !!admin && !user;
 
-            return () => clearTimeout(redirectTimer);
-        }
-    }, [sessionExpired]);
+        // 🔁 Preserve current page (path + query)
+        const callbackUrl =
+            typeof window !== "undefined"
+                ? window.location.pathname + window.location.search
+                : "/";
+
+        Swal.fire({
+            title: "Session Expired",
+            text: "Your session has expired. Redirecting to login...",
+            icon: "warning",
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+
+        const redirectTimer = setTimeout(() => {
+            setSessionExpired(false);
+
+            const loginUrl = isAdmin
+                ? `/pages/admin_login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                : `/pages/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+
+            window.location.href = loginUrl;
+        }, 2500);
+
+        return () => clearTimeout(redirectTimer);
+    }, [sessionExpired, admin, user]);
 
 
     useEffect(() => {
