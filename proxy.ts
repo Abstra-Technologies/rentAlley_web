@@ -8,9 +8,7 @@ import crypto from "crypto";
 ===================================================== */
 function getClientIp(req: NextRequest): string | null {
     const forwardedFor = req.headers.get("x-forwarded-for");
-    if (forwardedFor) {
-        return forwardedFor.split(",")[0].trim();
-    }
+    if (forwardedFor) return forwardedFor.split(",")[0].trim();
 
     const realIp = req.headers.get("x-real-ip");
     if (realIp) return realIp;
@@ -24,13 +22,19 @@ function hashIp(ip: string) {
 
 async function verifyToken(token: string) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-
     try {
         const { payload } = await jwtVerify(token, secret);
         return payload;
     } catch {
         return null;
     }
+}
+
+function safeRedirect(target: string, req: NextRequest) {
+    if (req.nextUrl.pathname === target) {
+        return NextResponse.next();
+    }
+    return NextResponse.redirect(new URL(target, req.url));
 }
 
 /* =====================================================
@@ -53,14 +57,14 @@ const permissionMapping: Record<string, string> = {
     "/pages/system_admin/beta_programs": "beta",
 };
 
-const excludePages = new Set([
+const excludeAdminPages = new Set([
     "/pages/system_admin/dashboard",
     "/pages/system_admin/profile",
     "/pages/system_admin/supportIssues",
 ]);
 
 /* =====================================================
-   PROXY / MIDDLEWARE
+   MIDDLEWARE / PROXY
 ===================================================== */
 export async function proxy(req: NextRequest) {
     const { pathname, search } = req.nextUrl;
@@ -74,25 +78,31 @@ export async function proxy(req: NextRequest) {
     }
 
     /* -----------------------------------------------
-       NO TOKEN
+       NO TOKEN → REDIRECT TO LOGIN (NO CALLBACK LOOP)
     ------------------------------------------------ */
     if (!token) {
-        const callbackUrl = pathname + search;
+        const isAuthPage = AUTH_PAGES.some(
+            (page) => pathname === page || pathname.startsWith(`${page}/`)
+        );
 
-        if (pathname.startsWith("/pages/system_admin")) {
-            const adminLogin = new URL("/pages/admin_login", req.url);
-            adminLogin.searchParams.set("callbackUrl", callbackUrl);
-            return NextResponse.redirect(adminLogin);
-        }
+        if (!isAuthPage) {
+            const callbackUrl = pathname + search;
 
-        if (
-            pathname.startsWith("/pages/tenant") ||
-            pathname.startsWith("/pages/landlord") ||
-            pathname.startsWith("/pages/commons")
-        ) {
-            const loginUrl = new URL("/pages/auth/login", req.url);
-            loginUrl.searchParams.set("callbackUrl", callbackUrl);
-            return NextResponse.redirect(loginUrl);
+            if (pathname.startsWith("/pages/system_admin")) {
+                const adminLogin = new URL("/pages/admin_login", req.url);
+                adminLogin.searchParams.set("callbackUrl", callbackUrl);
+                return NextResponse.redirect(adminLogin);
+            }
+
+            if (
+                pathname.startsWith("/pages/tenant") ||
+                pathname.startsWith("/pages/landlord") ||
+                pathname.startsWith("/pages/commons")
+            ) {
+                const loginUrl = new URL("/pages/auth/login", req.url);
+                loginUrl.searchParams.set("callbackUrl", callbackUrl);
+                return NextResponse.redirect(loginUrl);
+            }
         }
 
         return NextResponse.next();
@@ -115,63 +125,56 @@ export async function proxy(req: NextRequest) {
 
     /* -----------------------------------------------
        BLOCK AUTH PAGES WHEN LOGGED IN
+       (IGNORE callbackUrl IF TOKEN EXISTS)
     ------------------------------------------------ */
     const isAuthPage = AUTH_PAGES.some(
         (page) => pathname === page || pathname.startsWith(`${page}/`)
     );
 
-    const hasCallback = req.nextUrl.searchParams.has("callbackUrl");
-
-    if (isAuthPage && !hasCallback) {
+    if (isAuthPage) {
         if (SYSTEM_ADMIN_ROLES.includes(role)) {
-            return NextResponse.redirect(
-                new URL("/pages/system_admin/dashboard", req.url)
-            );
+            return safeRedirect("/pages/system_admin/dashboard", req);
         }
 
         if (userType === "landlord") {
-            return NextResponse.redirect(
-                new URL("/pages/landlord/dashboard", req.url)
-            );
+            return safeRedirect("/pages/landlord/dashboard", req);
         }
 
         if (userType === "tenant") {
-            return NextResponse.redirect(
-                new URL("/pages/tenant/feeds", req.url)
-            );
+            return safeRedirect("/pages/tenant/feeds", req);
         }
     }
 
     /* -----------------------------------------------
-       TENANT ACCESS
+       TENANT ROUTING
     ------------------------------------------------ */
     if (pathname.startsWith("/pages/tenant") && userType !== "tenant") {
-        return NextResponse.redirect(
-            new URL("/pages/error/accessDenied", req.url)
-        );
+        if (userType === "landlord") {
+            return safeRedirect("/pages/landlord/dashboard", req);
+        }
+        return safeRedirect("/pages/error/accessDenied", req);
     }
 
     /* -----------------------------------------------
-       LANDLORD ACCESS
+       LANDLORD ROUTING
     ------------------------------------------------ */
     if (pathname.startsWith("/pages/landlord") && userType !== "landlord") {
-        return NextResponse.redirect(
-            new URL("/pages/error/accessDenied", req.url)
-        );
+        if (userType === "tenant") {
+            return safeRedirect("/pages/tenant/feeds", req);
+        }
+        return safeRedirect("/pages/error/accessDenied", req);
     }
 
     /* -----------------------------------------------
-       SYSTEM ADMIN ACCESS (WITH IP ENFORCEMENT)
+       SYSTEM ADMIN ROUTING (STRICT)
     ------------------------------------------------ */
     if (pathname.startsWith("/pages/system_admin")) {
         // Role check
         if (!SYSTEM_ADMIN_ROLES.includes(role)) {
-            return NextResponse.redirect(
-                new URL("/pages/error/accessDenied", req.url)
-            );
+            return safeRedirect("/pages/error/accessDenied", req);
         }
 
-        // 🔐 IP binding enforcement
+        // IP binding enforcement
         const clientIp = getClientIp(req);
 
         if (!clientIp || !ip_hash) {
@@ -192,23 +195,20 @@ export async function proxy(req: NextRequest) {
             return res;
         }
 
-        // Allow excluded admin pages
-        if (excludePages.has(pathname)) {
+        // Allow common admin pages
+        if (excludeAdminPages.has(pathname)) {
             return NextResponse.next();
         }
 
-        // Permission-based routing
+        // Permission enforcement
         const matchedEntry = Object.entries(permissionMapping).find(
             ([route]) => pathname === route || pathname.startsWith(`${route}/`)
         );
 
         if (matchedEntry) {
             const [, requiredPermission] = matchedEntry;
-
             if (!permissions.includes(requiredPermission)) {
-                return NextResponse.redirect(
-                    new URL("/pages/error/accessDenied", req.url)
-                );
+                return safeRedirect("/pages/error/accessDenied", req);
             }
         }
     }

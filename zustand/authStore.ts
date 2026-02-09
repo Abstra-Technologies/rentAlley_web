@@ -25,7 +25,7 @@ interface User {
         payment_status: string;
         trial_end_date: string | null;
     } | null;
-    [key: string]: any; // for flexibility
+    [key: string]: any;
 }
 
 interface Admin {
@@ -81,7 +81,9 @@ const useAuthStore = create<AuthState>()(
                     user: state.user ? { ...state.user, ...updates } : null,
                 })),
 
-            logout: () => set({ user: null, admin: null, loading: false }),
+            logout: () => {
+                set({ user: null, admin: null, loading: false });
+            },
 
             fetchSession: async () => {
                 try {
@@ -94,11 +96,7 @@ const useAuthStore = create<AuthState>()(
 
                     if (!response.ok) {
                         set({ user: null, admin: null, loading: false });
-                        const errorData = await response.json().catch(() => ({}));
-                        throw {
-                            status: response.status,
-                            message: errorData.error || "Session validation failed",
-                        };
+                        return;
                     }
 
                     const data = await response.json();
@@ -110,13 +108,15 @@ const useAuthStore = create<AuthState>()(
                     } else {
                         set({ user: null, admin: null, loading: false });
                     }
-                } catch (error: any) {
-                    set({ user: null, admin: null, loading: false });
+                } catch (error) {
                     console.error("[AuthStore] fetchSession error:", error);
-                    throw error;
+                    set({ user: null, admin: null, loading: false });
                 }
             },
 
+            /* ============================
+               USER LOGOUT (NO BACK BUTTON)
+            ============================ */
             signOut: async () => {
                 try {
                     await fetch("/api/auth/logout", {
@@ -126,11 +126,18 @@ const useAuthStore = create<AuthState>()(
                 } catch (err) {
                     console.warn("[AuthStore] Logout request failed", err);
                 } finally {
+                    // 🔥 Clear zustand + persisted storage
                     set({ user: null, admin: null, loading: false });
-                    window.location.href = "/pages/auth/login";
+                    localStorage.removeItem("auth-storage");
+
+                    // 🔥 Replace history (no back navigation)
+                    window.location.replace("/pages/auth/login");
                 }
             },
 
+            /* ============================
+               ADMIN LOGOUT (NO BACK BUTTON)
+            ============================ */
             signOutAdmin: async () => {
                 try {
                     await fetch("/api/auth/logout", {
@@ -141,14 +148,15 @@ const useAuthStore = create<AuthState>()(
                     console.warn("[AuthStore] Admin logout request failed", err);
                 } finally {
                     set({ admin: null, user: null, loading: false });
-                    window.location.href = "/pages/admin_login";
+                    localStorage.removeItem("auth-storage");
+
+                    window.location.replace("/pages/admin_login");
                 }
             },
         }),
         {
             name: "auth-storage",
             partialize: (state) => ({
-                // Only persist safe, non-sensitive data
                 user: state.user
                     ? {
                         user_id: state.user.user_id,
