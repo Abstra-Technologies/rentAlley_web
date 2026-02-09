@@ -16,6 +16,30 @@ export async function GET(req: NextRequest) {
             );
         }
 
+        /* =========================================
+           🔐 PROPERTY OWNERSHIP VALIDATION
+        ========================================= */
+        const [ownership]: any = await db.query(
+            `
+      SELECT property_id
+      FROM Property
+      WHERE property_id = ?
+        AND landlord_id = ?
+      LIMIT 1
+      `,
+            [property_id, landlord_id]
+        );
+
+        if (!ownership.length) {
+            return NextResponse.json(
+                { message: "Unauthorized property access" },
+                { status: 403 }
+            );
+        }
+
+        /* =========================================
+           📄 FETCH ALL PAYMENTS FOR PROPERTY
+        ========================================= */
         const [rows]: any = await db.query(
             `
       SELECT
@@ -28,45 +52,53 @@ export async function GET(req: NextRequest) {
         p.receipt_reference,
         p.payout_status,
 
-        la.agreement_id,
         u.unit_id,
         u.unit_name,
 
+        la.agreement_id,
+
         usr.firstName,
         usr.lastName
-      FROM rentalley_db.Payment p
-      INNER JOIN rentalley_db.LeaseAgreement la
+
+      FROM Payment p
+
+      LEFT JOIN LeaseAgreement la
         ON la.agreement_id = p.agreement_id
-      INNER JOIN rentalley_db.Unit u
+
+      LEFT JOIN Unit u
         ON u.unit_id = la.unit_id
-      INNER JOIN rentalley_db.Property pr
+
+      LEFT JOIN Property pr
         ON pr.property_id = u.property_id
-      INNER JOIN rentalley_db.Landlord l
-        ON l.landlord_id = pr.landlord_id
-      LEFT JOIN rentalley_db.Tenant t
+
+      LEFT JOIN Tenant t
         ON t.tenant_id = la.tenant_id
-      LEFT JOIN rentalley_db.User usr
+
+      LEFT JOIN User usr
         ON usr.user_id = t.user_id
+
       WHERE pr.property_id = ?
-        AND l.landlord_id = ?
       ORDER BY p.payment_date DESC
       `,
-            [property_id, landlord_id]
+            [property_id]
         );
 
+        /* =========================================
+           🔓 DECRYPT TENANT NAMES
+        ========================================= */
         const payments = rows.map((row: any) => {
             let firstName = "";
             let lastName = "";
 
             try {
-                if (row.firstName) {
+                if (row.firstName?.startsWith("{")) {
                     firstName = decryptData(
                         JSON.parse(row.firstName),
                         process.env.ENCRYPTION_SECRET!
                     );
                 }
 
-                if (row.lastName) {
+                if (row.lastName?.startsWith("{")) {
                     lastName = decryptData(
                         JSON.parse(row.lastName),
                         process.env.ENCRYPTION_SECRET!
@@ -78,11 +110,14 @@ export async function GET(req: NextRequest) {
 
             return {
                 ...row,
-                tenant_name: firstName || lastName
-                    ? `${firstName} ${lastName}`.trim()
-                    : "—",
+                tenant_name:
+                    firstName || lastName
+                        ? `${firstName} ${lastName}`.trim()
+                        : "—",
             };
         });
+
+        console.log('payemnts: ', payments);
 
         return NextResponse.json({
             payments,

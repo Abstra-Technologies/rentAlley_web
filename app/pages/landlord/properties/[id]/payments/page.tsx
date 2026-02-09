@@ -1,13 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
 
+import { MaterialReactTable,  MRT_ColumnDef } from "material-react-table";
+
 import { formatCurrency, formatDate } from "@/utils/formatter/formatters";
 import useAuthStore from "@/zustand/authStore";
-import { ReceiptText, History } from "lucide-react";
+import { ReceiptText } from "lucide-react";
 
+import { Chip, Typography } from "@mui/material";
+import PropertyPaymentsStackedList from "@/components/landlord/properties/PropertyPaymentsStackedList";
+
+/* =========================
+   TYPES
+========================= */
 interface Payment {
     payment_id: number;
     tenant_name: string;
@@ -18,9 +26,11 @@ interface Payment {
     payment_status: string;
     payment_date: string;
     payout_status: string;
-    lease_status: "active" | "completed" | "expired";
 }
 
+/* =========================
+   PAGE
+========================= */
 export default function PropertyPaymentsPage() {
     const { id } = useParams();
     const property_id = id as string;
@@ -30,18 +40,25 @@ export default function PropertyPaymentsPage() {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [showPast, setShowPast] = useState(false);
 
+    /* =========================
+       AUTH
+    ========================= */
     useEffect(() => {
         if (!user) fetchSession();
     }, [user, fetchSession]);
 
+    /* =========================
+       FETCH PAYMENTS
+    ========================= */
     useEffect(() => {
         if (!property_id || !user?.landlord_id) return;
 
         const fetchPayments = async () => {
             try {
                 setLoading(true);
+                setError(null);
+
                 const res = await axios.get(
                     "/api/landlord/payments/getPerProperty",
                     {
@@ -63,162 +80,136 @@ export default function PropertyPaymentsPage() {
         fetchPayments();
     }, [property_id, user?.landlord_id]);
 
-    const activePayments = payments.filter(
-        (p) => p.lease_status === "active"
+    /* =========================
+       DESKTOP TABLE COLUMNS
+    ========================= */
+    const columns = useMemo<MRT_ColumnDef<Payment>[]>(
+        () => [
+            { accessorKey: "tenant_name", header: "Tenant" },
+            { accessorKey: "unit_name", header: "Unit" },
+            {
+                accessorKey: "payment_type",
+                header: "Type",
+                Cell: ({ cell }) =>
+                    cell.getValue<string>().replace("_", " "),
+            },
+            {
+                accessorKey: "amount_paid",
+                header: "Amount",
+                Cell: ({ cell }) =>
+                    formatCurrency(cell.getValue<number>()),
+            },
+            {
+                accessorKey: "payment_method_id",
+                header: "Method",
+                Cell: ({ cell }) => (
+                    <Typography
+                        variant="caption"
+                        sx={{ textTransform: "uppercase" }}
+                    >
+                        {cell.getValue<string>()}
+                    </Typography>
+                ),
+            },
+            {
+                accessorKey: "payment_status",
+                header: "Status",
+                Cell: ({ cell }) => {
+                    const status = cell.getValue<string>();
+                    return (
+                        <Chip
+                            size="small"
+                            label={status}
+                            color={
+                                status === "confirmed"
+                                    ? "success"
+                                    : status === "failed"
+                                        ? "error"
+                                        : "warning"
+                            }
+                        />
+                    );
+                },
+                filterVariant: "select",
+                filterSelectOptions: ["confirmed", "pending", "failed"],
+            },
+            {
+                accessorKey: "payment_date",
+                header: "Paid At",
+                Cell: ({ cell }) =>
+                    formatDate(cell.getValue<string>()),
+            },
+        ],
+        []
     );
 
-    const pastPayments = payments.filter(
-        (p) => p.lease_status !== "active"
-    );
-
+    /* =========================
+       UI
+    ========================= */
     return (
         <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-
             {/* HEADER */}
-            <div className="flex items-start gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center">
                     <ReceiptText className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                    <h1 className="text-xl md:text-2xl font-bold">
-                        Property Payments
-                    </h1>
+                    <h1 className="text-xl font-bold">Property Payments</h1>
                     <p className="text-sm text-gray-600">
-                        Current and past lease payment history
+                        Complete payment history
                     </p>
                 </div>
             </div>
 
-            {/* CURRENT PAYMENTS */}
-            <Section
-                title="Current Lease Payments"
-                emptyText="No payments for active leases."
-                payments={activePayments}
-                loading={loading}
-                error={error}
-            />
-
-            {/* PAST PAYMENTS */}
-            <div className="mt-6">
-                <button
-                    onClick={() => setShowPast(!showPast)}
-                    className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                    <History className="w-4 h-4" />
-                    {showPast ? "Hide" : "Show"} Past Lease Payments
-                </button>
-
-                {showPast && (
-                    <div className="mt-4">
-                        <Section
-                            title="Past Lease Payments"
-                            emptyText="No past lease payments."
-                            payments={pastPayments}
-                            loading={loading}
-                            error={error}
-                        />
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-/* ================================
-   REUSABLE TABLE SECTION
-================================ */
-
-function Section({
-                     title,
-                     payments,
-                     loading,
-                     error,
-                     emptyText,
-                 }: {
-    title: string;
-    payments: Payment[];
-    loading: boolean;
-    error: string | null;
-    emptyText: string;
-}) {
-    return (
-        <div className="bg-white rounded-xl shadow border border-gray-100 overflow-hidden mt-4">
-            <div className="px-4 py-3 border-b bg-gray-50">
-                <h2 className="font-semibold text-gray-800">{title}</h2>
-            </div>
-
-            {loading && (
-                <div className="p-6 text-center text-gray-500">
-                    Loading payments…
-                </div>
-            )}
-
+            {/* ERROR */}
             {error && (
-                <div className="p-6 text-center text-red-500">
+                <div className="mb-4 p-3 rounded-lg bg-red-100 text-red-700 text-sm">
                     {error}
                 </div>
             )}
 
-            {!loading && payments.length === 0 && (
-                <div className="p-6 text-center text-gray-500">
-                    {emptyText}
-                </div>
-            )}
+            {/* =========================
+         MOBILE — STACKED LIST
+      ========================= */}
+            <div className="block md:hidden">
+                <PropertyPaymentsStackedList
+                    payments={payments}
+                    loading={loading}
+                />
+            </div>
 
-            {!loading && payments.length > 0 && (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                        <thead className="bg-gray-50 border-b text-gray-600">
-                        <tr>
-                            <th className="px-4 py-3">Tenant</th>
-                            <th className="px-4 py-3">Unit</th>
-                            <th className="px-4 py-3">Type</th>
-                            <th className="px-4 py-3">Amount</th>
-                            <th className="px-4 py-3">Method</th>
-                            <th className="px-4 py-3">Status</th>
-                            <th className="px-4 py-3">Paid At</th>
-                        </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                        {payments.map((p) => (
-                            <tr key={p.payment_id}>
-                                <td className="px-4 py-3 font-medium">
-                                    {p.tenant_name}
-                                </td>
-                                <td className="px-4 py-3">
-                                    {p.unit_name}
-                                </td>
-                                <td className="px-4 py-3 capitalize">
-                                    {p.payment_type.replace("_", " ")}
-                                </td>
-                                <td className="px-4 py-3 font-semibold">
-                                    {formatCurrency(p.amount_paid)}
-                                </td>
-                                <td className="px-4 py-3 uppercase text-xs">
-                                    {p.payment_method_id}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                            p.payment_status === "confirmed"
-                                                ? "bg-green-100 text-green-700"
-                                                : p.payment_status === "failed"
-                                                    ? "bg-red-100 text-red-700"
-                                                    : "bg-yellow-100 text-yellow-700"
-                                        }`}
-                                    >
-                                        {p.payment_status}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-gray-500">
-                                    {formatDate(p.payment_date)}
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+            {/* =========================
+         DESKTOP — MATERIAL TABLE
+      ========================= */}
+            <div className="hidden md:block">
+                <MaterialReactTable
+                    columns={columns}
+                    data={payments}
+                    state={{ isLoading: loading }}
+                    enableGlobalFilter
+                    enableColumnFilters
+                    enableSorting
+                    enablePagination
+                    enableRowVirtualization
+                    rowVirtualizerProps={{ overscan: 10 }}
+                    initialState={{
+                        pagination: { pageSize: 10, pageIndex: 0 },
+                        density: "comfortable",
+                    }}
+                    muiTablePaperProps={{
+                        elevation: 0,
+                        sx: {
+                            borderRadius: 3,
+                            border: "1px solid #e5e7eb",
+                        },
+                    }}
+                    muiSearchTextFieldProps={{
+                        placeholder: "Search tenant, unit, or type…",
+                        variant: "outlined",
+                        size: "small",
+                    }}
+                />
+            </div>
         </div>
     );
 }
