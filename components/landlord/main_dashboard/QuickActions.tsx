@@ -80,7 +80,7 @@ export default function QuickActions({
     },
     {
       id: "income",
-      label: "Income",
+      label: "Payouts",
       icon: Wallet,
       onClick: onIncome,
       gradient: "from-cyan-500 to-cyan-600",

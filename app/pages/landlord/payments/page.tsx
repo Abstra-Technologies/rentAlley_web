@@ -6,6 +6,8 @@ import useAuthStore from "@/zustand/authStore";
 import PaymentList from "@/components/landlord/tenantPayments";
 import { CreditCard, Search, Filter, Calendar } from "lucide-react";
 import { PaymentSummaryGrid } from "@/components/landlord/analytics/PaymentSummaryGrid";
+import Link from "next/link";
+import { Wallet } from "lucide-react";
 
 // Skeleton Component
 const PaymentsSkeleton = () => (
@@ -60,7 +62,7 @@ const PaymentsSkeleton = () => (
 );
 
 export default function PaymentsPage() {
-  const { user, admin, loading, fetchSession } = useAuthStore();
+  const { user, loading, fetchSession } = useAuthStore();
   const landlord_id = user?.landlord_id;
 
   /* -----------------------
@@ -72,8 +74,8 @@ export default function PaymentsPage() {
   const [years, setYears] = useState<number[]>([]);
 
   useEffect(() => {
-    if (!user && !admin) fetchSession();
-  }, [user, admin, fetchSession]);
+    if (!user) fetchSession();
+  }, [user, fetchSession]);
 
   /* -----------------------
        FETCH AVAILABLE YEARS
@@ -115,7 +117,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Payments & Disbursements
+                Payment Transactions
               </h1>
               <p className="text-gray-600 text-sm">
                 Track rent collections and payouts
@@ -125,11 +127,30 @@ export default function PaymentsPage() {
         </div>
 
         {/* ================= SUMMARY ================= */}
-        <div className="mb-5">
-          <PaymentSummaryGrid landlord_id={landlord_id} />
-        </div>
+          {/* ================= SUMMARY ================= */}
+          <div className="mb-6 space-y-4">
+              <PaymentSummaryGrid landlord_id={landlord_id} />
 
-        {/* ================= FILTERS ================= */}
+              {/* View Payouts Button */}
+              <div className="flex justify-end">
+                  <Link href="/pages/landlord/payouts">
+                      <button
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl
+                   bg-gradient-to-r from-emerald-500 to-blue-600
+                   text-white text-sm font-semibold
+                   shadow-md shadow-emerald-500/20
+                   hover:from-emerald-600 hover:to-blue-700
+                   hover:shadow-lg transition-all duration-200 active:scale-95"
+                      >
+                          <Wallet className="w-4 h-4" />
+                          View Payouts / Disbursements
+                      </button>
+                  </Link>
+              </div>
+          </div>
+
+
+          {/* ================= FILTERS ================= */}
         <div className="flex flex-col lg:flex-row gap-3">
           {/* Search */}
           <div className="flex-1 relative">
