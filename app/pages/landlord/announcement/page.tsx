@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import useAuthStore from "@/zustand/authStore";
 import Swal from "sweetalert2";
 import useSubscription from "@/hooks/landlord/useSubscription";
+import DOMPurify from "dompurify";
 import { subscriptionConfig } from "@/constant/subscription/limits";
 import {
   Megaphone,
@@ -91,7 +92,7 @@ export default function AnnouncementsList() {
     async function fetchAnnouncements() {
       try {
         const response = await fetch(
-          `/api/landlord/announcement/getAllAnnouncements?landlord_id=${user?.landlord_id}`
+          `/api/landlord/announcement/getAllAnnouncements?landlord_id=${user?.landlord_id}`,
         );
 
         if (!response.ok) {
@@ -330,9 +331,12 @@ export default function AnnouncementsList() {
                       </div>
 
                       {/* Description */}
-                      <div className="text-gray-600 text-xs sm:text-sm line-clamp-2 sm:line-clamp-1 leading-relaxed">
-                        {announcement.description}
-                      </div>
+                      <div
+                        className="text-gray-600 text-xs sm:text-sm line-clamp-2 sm:line-clamp-1 leading-relaxed"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(announcement.description),
+                        }}
+                      />
 
                       {/* Date */}
                       <div className="flex items-center justify-start sm:justify-end text-xs text-gray-500 gap-1.5 mt-2 sm:mt-0">
