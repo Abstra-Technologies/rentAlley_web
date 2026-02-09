@@ -92,6 +92,7 @@ export default function PaymentDueWidget({ agreement_id }: PaymentDueWidgetProps
             {billings.map((billing) => {
                 const c = colorMap[billing.status];
                 const showPayButton = billing.status !== "paid";
+                const showDaysLate = billing.status === "overdue";
 
                 return (
                     <div
@@ -118,15 +119,16 @@ export default function PaymentDueWidget({ agreement_id }: PaymentDueWidgetProps
                                 </p>
 
                                 <p className={`text-xs mt-0.5 ${c.subText}`}>
-                                    Billing ID:{" "}
-                                    <span className="font-mono font-semibold">
-                                        {billing.billing_id}
-                                    </span>
+                                    {billing.status === "paid"
+                                        ? "Settled successfully"
+                                        : billing.status === "overdue"
+                                            ? "Past due date"
+                                            : "Within grace period"}
                                 </p>
                             </div>
                         </div>
 
-                        {/* Amount + Days Late (UNCHANGED) */}
+                        {/* Amount + Days Late */}
                         <div className="mt-4 grid grid-cols-2 gap-3">
                             <div className="bg-white border rounded-xl p-3">
                                 <p className="text-[11px] text-gray-500 uppercase tracking-wide">
@@ -144,7 +146,7 @@ export default function PaymentDueWidget({ agreement_id }: PaymentDueWidgetProps
                                 <div className="flex items-center gap-1">
                                     <ClockIcon className="w-4 h-4 text-gray-500" />
                                     <p className={`text-xl font-extrabold ${c.iconText}`}>
-                                        {billing.days_late}
+                                        {showDaysLate ? billing.days_late : "—"}
                                     </p>
                                 </div>
                             </div>
@@ -159,15 +161,15 @@ export default function PaymentDueWidget({ agreement_id }: PaymentDueWidgetProps
                                     )
                                 }
                                 className={`
-                                    mt-4 w-full flex items-center justify-center gap-2
-                                    text-white font-semibold text-sm
-                                    py-3 rounded-xl transition
-                                    ${
+                  mt-4 w-full flex items-center justify-center gap-2
+                  text-white font-semibold text-sm
+                  py-3 rounded-xl transition
+                  ${
                                     billing.status === "overdue"
                                         ? "bg-red-600 hover:bg-red-700"
                                         : "bg-orange-600 hover:bg-orange-700"
                                 }
-                                `}
+                `}
                             >
                                 <CreditCardIcon className="w-5 h-5" />
                                 Pay Now

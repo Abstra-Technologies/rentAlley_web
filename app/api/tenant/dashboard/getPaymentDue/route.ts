@@ -14,19 +14,27 @@ export async function GET(req: NextRequest) {
 
     try {
         /* ===============================
-           1️⃣ Get ALL billings (old → new)
+           1️⃣ Get billings + grace period
+           (schema-correct joins)
         =============================== */
         const [billingRows]: any = await db.execute(
             `
-            SELECT
-                billing_id,
-                total_amount_due,
-                due_date
-            FROM Billing
-            WHERE lease_id = ?
-              AND total_amount_due > 0
-            ORDER BY due_date ASC
-            `,
+      SELECT
+        b.billing_id,
+        b.total_amount_due,
+        b.due_date,
+        COALESCE(pc.gracePeriodDays, 0) AS grace_period_days
+      FROM Billing b
+      JOIN LeaseAgreement la
+        ON la.agreement_id = b.lease_id
+      JOIN Unit u
+        ON u.unit_id = la.unit_id
+      JOIN PropertyConfiguration pc
+        ON pc.property_id = u.property_id
+      WHERE b.lease_id = ?
+        AND b.total_amount_due > 0
+      ORDER BY b.due_date ASC
+      `,
             [agreement_id]
         );
 
@@ -35,35 +43,45 @@ export async function GET(req: NextRequest) {
         }
 
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // timezone-safe
+
         const results: any[] = [];
 
         /* ===============================
-           2️⃣ Evaluate each billing
+           2️⃣ Evaluate billing status
         =============================== */
         for (const billing of billingRows) {
-            // check confirmed payment
+            /* ✅ SCHEMA-CORRECT payment check */
             const [paymentRows]: any = await db.execute(
                 `
-                SELECT payment_id
-                FROM Payment
-                WHERE bill_id = ?
-                  AND payment_status = 'confirmed'
-                LIMIT 1
-                `,
-                [billing.billing_id]
+        SELECT payment_id
+        FROM Payment
+        WHERE agreement_id = ?
+          AND payment_type = 'billing'
+          AND payment_status = 'confirmed'
+        LIMIT 1
+        `,
+                [agreement_id]
             );
 
             const isPaid = paymentRows.length > 0;
-            const dueDate = new Date(billing.due_date);
 
-            let daysLate = 0;
+            const dueDate = new Date(billing.due_date);
+            dueDate.setHours(0, 0, 0, 0);
+
+            const graceDays = Number(billing.grace_period_days || 0);
+
+            const overdueDate = new Date(dueDate);
+            overdueDate.setDate(overdueDate.getDate() + graceDays);
+
             let status: "paid" | "unpaid" | "overdue";
+            let daysLate = 0;
 
             if (isPaid) {
                 status = "paid";
-            } else if (today > dueDate) {
-                const diff = today.getTime() - dueDate.getTime();
-                daysLate = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            } else if (today > overdueDate) {
+                const diffMs = today.getTime() - overdueDate.getTime();
+                daysLate = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                 status = "overdue";
             } else {
                 status = "unpaid";
@@ -73,6 +91,8 @@ export async function GET(req: NextRequest) {
                 billing_id: billing.billing_id,
                 total_due: Number(billing.total_amount_due),
                 due_date: billing.due_date,
+                grace_period_days: graceDays,
+                overdue_date: overdueDate.toISOString().split("T")[0],
                 status,
                 days_late: daysLate,
             });
@@ -80,18 +100,15 @@ export async function GET(req: NextRequest) {
 
         /* ===============================
            3️⃣ PRIORITY RULE
-           - Overdue first
-           - Else latest unpaid
+           - ALL overdue bills first
+           - Else latest billing
         =============================== */
         const overdueBills = results.filter(b => b.status === "overdue");
 
         if (overdueBills.length > 0) {
-            return NextResponse.json({
-                billing: overdueBills, // 👈 ARRAY of overdue bills
-            });
+            return NextResponse.json({ billing: overdueBills });
         }
 
-        // otherwise return latest bill (paid or unpaid)
         return NextResponse.json({
             billing: results[results.length - 1],
         });

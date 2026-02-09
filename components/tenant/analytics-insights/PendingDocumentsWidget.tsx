@@ -6,7 +6,6 @@ import Swal from "sweetalert2";
 import {
     XMarkIcon,
     DocumentTextIcon,
-    ClockIcon,
     ShieldCheckIcon,
     CheckCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -41,8 +40,6 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                 );
                 const data = res.data;
                 setLease({ ...data, ...data.lease });
-                console.log('lease doc: ', data);
-
             } catch {
                 Swal.fire("Error", "Failed to load lease information.", "error");
             } finally {
@@ -66,7 +63,27 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
 
     const showAuthenticateUI = needsSignature;
     const showLeaseInfo = !hasSignatureRecord || isSigned;
-    const showDocumentButton = Boolean(lease.agreement_url);
+
+    const hasSecurityDeposit = Number(lease.security_deposit_amount) > 0;
+    const hasAdvancePayment = Number(lease.advance_payment_amount) > 0;
+
+    const infoCards = [
+        {
+            label: "Monthly Rent",
+            value: formatCurrency(lease.rent_amount || 0),
+            show: true,
+        },
+        {
+            label: "Security Deposit",
+            value: formatCurrency(lease.security_deposit_amount || 0),
+            show: hasSecurityDeposit,
+        },
+        {
+            label: "Advance Payment",
+            value: formatCurrency(lease.advance_payment_amount || 0),
+            show: hasAdvancePayment,
+        },
+    ].filter((i) => i.show);
 
     /* ================= OTP ================= */
     const sendOtp = async () => {
@@ -80,7 +97,11 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
             setOtpSent(true);
             Swal.fire("OTP Sent", "Check your email for the code.", "success");
         } catch (err: any) {
-            Swal.fire("Error", err.response?.data?.error || "Failed to send OTP", "error");
+            Swal.fire(
+                "Error",
+                err.response?.data?.error || "Failed to send OTP",
+                "error"
+            );
         }
     };
 
@@ -123,9 +144,7 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                             <p className="text-sm font-bold text-gray-900">
                                 Lease Agreement
                             </p>
-                            <p className="text-xs text-gray-500">
-                                Contract details
-                            </p>
+                            <p className="text-xs text-gray-500">Contract details</p>
                         </div>
                     </div>
 
@@ -137,10 +156,9 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                     : "bg-amber-100 text-amber-700"
                             }`}
                         >
-        {isSigned ? "Signed" : "Signature Required"}
-    </span>
+              {isSigned ? "Signed" : "Signature Required"}
+            </span>
                     )}
-
                 </div>
 
                 {/* Signature CTA */}
@@ -148,8 +166,8 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                     <button
                         onClick={() => setOpenModal(true)}
                         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
-                        bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold
-                        hover:from-blue-700 hover:to-blue-800 transition"
+            bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold
+            hover:from-blue-700 hover:to-blue-800 transition"
                     >
                         <ShieldCheckIcon className="w-5 h-5" />
                         Authenticate & Sign Lease
@@ -158,19 +176,22 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
 
                 {/* Lease Info */}
                 {showLeaseInfo && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <LeaseInfoCard
-                            label="Monthly Rent"
-                            value={formatCurrency(lease.rent_amount || 0)}
-                        />
-                        <LeaseInfoCard
-                            label="Security Deposit"
-                            value={formatCurrency(lease.security_deposit_amount || 0)}
-                        />
-                        <LeaseInfoCard
-                            label="Advance Payment"
-                            value={formatCurrency(lease.advance_payment_amount || 0)}
-                        />
+                    <div
+                        className={`grid gap-3 ${
+                            infoCards.length === 1
+                                ? "grid-cols-1"
+                                : infoCards.length === 2
+                                    ? "grid-cols-2"
+                                    : "grid-cols-1 sm:grid-cols-3"
+                        }`}
+                    >
+                        {infoCards.map((item) => (
+                            <LeaseInfoCard
+                                key={item.label}
+                                label={item.label}
+                                value={item.value}
+                            />
+                        ))}
                     </div>
                 )}
 
@@ -184,7 +205,6 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                         {isSigned ? "View Signed Lease" : "View Lease Document"}
                     </button>
                 )}
-
             </div>
 
             {/* ================= MODAL ================= */}
