@@ -37,14 +37,21 @@ export async function GET(
         /* ---------- BILLING ---------- */
         const [rows]: any = await db.query(
             `
-            SELECT b.*, u.unit_name, u.unit_id, u.rent_amount,
-                   p.property_name, p.city, p.province, p.property_id
-            FROM Billing b
-            JOIN Unit u ON b.unit_id = u.unit_id
-            JOIN Property p ON u.property_id = p.property_id
-            WHERE b.billing_id = ?
-            LIMIT 1
-            `,
+      SELECT 
+        b.*,
+        u.unit_name,
+        u.unit_id,
+        u.rent_amount,
+        p.property_name,
+        p.city,
+        p.province,
+        p.property_id
+      FROM Billing b
+      JOIN Unit u ON b.unit_id = u.unit_id
+      JOIN Property p ON u.property_id = p.property_id
+      WHERE b.billing_id = ?
+      LIMIT 1
+      `,
             [billing_id]
         );
 
@@ -56,17 +63,53 @@ export async function GET(
         const billingDate = new Date(bill.billing_period);
         const { start, end } = monthRange(billingDate);
 
+        /* ---------- PROPERTY CONFIG ---------- */
+        const [[cfg]]: any = await db.query(
+            `
+      SELECT 
+        billingDueDay,
+        lateFeeType,
+        lateFeeAmount,
+        gracePeriodDays
+      FROM PropertyConfiguration
+      WHERE property_id = ?
+      LIMIT 1
+      `,
+            [bill.property_id]
+        );
+
+        const dueDay = Number(cfg?.billingDueDay || 1);
+        const dueDate = new Date(
+            billingDate.getFullYear(),
+            billingDate.getMonth(),
+            dueDay
+        );
+
+        /* ---------- DAYS LATE ---------- */
+        const today = new Date();
+        const msPerDay = 1000 * 60 * 60 * 24;
+
+        const daysLate = Math.max(
+            Math.floor((today.getTime() - dueDate.getTime()) / msPerDay),
+            0
+        );
+
+        const effectiveLateDays = Math.max(
+            daysLate - toNum(cfg?.gracePeriodDays),
+            0
+        );
+
         /* ---------- TENANT ---------- */
         const [tenantRows]: any = await db.query(
             `
-            SELECT u.firstName, u.lastName, u.email, u.phoneNumber
-            FROM LeaseAgreement la
-            JOIN Tenant t ON la.tenant_id = t.tenant_id
-            JOIN User u ON t.user_id = u.user_id
-            WHERE la.unit_id = ?
-            ORDER BY la.start_date DESC
-            LIMIT 1
-            `,
+      SELECT u.firstName, u.lastName, u.email, u.phoneNumber
+      FROM LeaseAgreement la
+      JOIN Tenant t ON la.tenant_id = t.tenant_id
+      JOIN User u ON t.user_id = u.user_id
+      WHERE la.unit_id = ?
+      ORDER BY la.start_date DESC
+      LIMIT 1
+      `,
             [bill.unit_id]
         );
 
@@ -80,51 +123,35 @@ export async function GET(
             }
             : null;
 
-        /* ---------- PROPERTY CONFIG ---------- */
-        const [[cfg]]: any = await db.query(
-            `SELECT billingDueDay FROM PropertyConfiguration WHERE property_id = ? LIMIT 1`,
-            [bill.property_id]
-        );
-
-        const dueDay = Number(cfg?.billingDueDay || 1);
-        const dueDate = new Date(
-            billingDate.getFullYear(),
-            billingDate.getMonth(),
-            dueDay
-        );
-
         /* ---------- METERS ---------- */
         const [[water]]: any = await db.query(
             `
-            SELECT previous_reading, current_reading, consumption
-            FROM WaterMeterReading
-            WHERE unit_id = ?
-              AND period_start = ?
-              AND period_end = ?
-            LIMIT 1
-            `,
+      SELECT previous_reading, current_reading, consumption
+      FROM WaterMeterReading
+      WHERE unit_id = ? AND period_start = ? AND period_end = ?
+      LIMIT 1
+      `,
             [bill.unit_id, start, end]
         );
 
         const [[elec]]: any = await db.query(
             `
-            SELECT previous_reading, current_reading, consumption
-            FROM ElectricMeterReading
-            WHERE unit_id = ?
-              AND period_start = ?
-              AND period_end = ?
-            LIMIT 1
-            `,
+      SELECT previous_reading, current_reading, consumption
+      FROM ElectricMeterReading
+      WHERE unit_id = ? AND period_start = ? AND period_end = ?
+      LIMIT 1
+      `,
             [bill.unit_id, start, end]
         );
 
-        /* ---------- ADDITIONAL CHARGES ---------- */
+        /* ---------- ADDITIONAL CHARGES (EXCEPT LATE FEE) ---------- */
         const [charges]: any = await db.query(
             `
-            SELECT charge_category, charge_type, amount
-            FROM BillingAdditionalCharge
-            WHERE billing_id = ?
-            `,
+      SELECT charge_category, charge_type, amount
+      FROM BillingAdditionalCharge
+      WHERE billing_id = ?
+        AND charge_type NOT IN ('Late Fee', 'Late Fee Applied')
+      `,
             [billing_id]
         );
 
@@ -139,6 +166,21 @@ export async function GET(
             }
         }
 
+        /* ---------- DYNAMIC LATE FEE ---------- */
+        let lateFeeAmount = 0;
+        let lateFeeLabel = "";
+
+        if (effectiveLateDays > 0 && toNum(cfg?.lateFeeAmount) > 0) {
+            if (cfg.lateFeeType === "fixed") {
+                lateFeeAmount = effectiveLateDays * toNum(cfg.lateFeeAmount);
+                lateFeeLabel = `Late Fee (${effectiveLateDays} days × ₱${php(cfg.lateFeeAmount)})`;
+            } else if (cfg.lateFeeType === "percentage") {
+                const daily = toNum(bill.rent_amount) * (toNum(cfg.lateFeeAmount) / 100);
+                lateFeeAmount = effectiveLateDays * daily;
+                lateFeeLabel = `Late Fee (${effectiveLateDays} days × ${cfg.lateFeeAmount}% of rent)`;
+            }
+        }
+
         /* ---------- TOTALS ---------- */
         const utilitiesTotal =
             toNum(bill.total_water_amount) +
@@ -147,7 +189,8 @@ export async function GET(
         const subtotal =
             toNum(bill.rent_amount) +
             utilitiesTotal +
-            additions;
+            additions +
+            lateFeeAmount;
 
         const totalDue = subtotal - discounts;
 
@@ -157,225 +200,87 @@ export async function GET(
 <html>
 <head>
 <meta charset="utf-8"/>
-
 <style>
-@page {
-  size: A4;
-  margin: 0;
-}
-
-body {
-  font-family: "Helvetica Neue", Arial, sans-serif;
-  background: #ffffff;
-  color: #111827;
-  margin: 0;
-}
-
-/* ===== PAGE WRAPPER ===== */
-.page {
-  min-height: 297mm;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ===== HEADER ===== */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px 48px;
-  background: linear-gradient(90deg, #696EFF, #F8ACFF);
-  color: #ffffff;
-}
-
-.brand {
-  font-size: 28px;
-  font-weight: 800;
-}
-
-.subtitle {
-  font-size: 13px;
-  color: rgba(255,255,255,0.85);
-}
-
-.badge {
-  font-size: 13px;
-  padding: 8px 18px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.22);
-  color: #ffffff;
-  font-weight: 600;
-}
-
-/* ===== CONTENT ===== */
-.content {
-  flex: 1;
-  padding: 36px 48px;
-}
-
-.statement-title {
-  text-align: center;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  margin-bottom: 28px;
-}
-
-.section {
-  margin-top: 24px;
-}
-
-.section-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  color: #374151;
-}
-
-.card {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 18px;
-}
-
-.property-name {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.property-address {
-  font-size: 14px;
-  color: #374151;
-  margin-top: 4px;
-}
-
-.label {
-  font-weight: 600;
-  color: #374151;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-th, td {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 10px 6px;
-}
-
-th {
-  color: #6b7280;
-  font-weight: 600;
-}
-
-.right {
-  text-align: right;
-}
-
-.total {
-  font-size: 20px;
-  font-weight: 800;
-}
-
-/* ===== FOOTER ===== */
-.footer {
-  padding: 16px 48px;
-  background: linear-gradient(90deg, #696EFF, #F8ACFF);
-  color: rgba(255,255,255,0.9);
-  font-size: 11px;
-  text-align: center;
-}
+@page { size: A4; margin: 0; }
+body { font-family: Arial, sans-serif; margin: 0; color: #111827; }
+.page { min-height: 297mm; display: flex; flex-direction: column; }
+.header { padding: 24px 48px; background: linear-gradient(90deg,#696EFF,#F8ACFF); color: #fff; }
+.brand { font-size: 28px; font-weight: 800; }
+.content { flex: 1; padding: 36px 48px; }
+.section { margin-top: 24px; }
+.section-title { font-weight: 700; margin-bottom: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+td, th { padding: 8px; border-bottom: 1px solid #e5e7eb; }
+.right { text-align: right; }
+.total { font-size: 18px; font-weight: 800; }
+.footer { padding: 16px 48px; background: linear-gradient(90deg,#696EFF,#F8ACFF); color: #fff; text-align: center; font-size: 11px; }
 </style>
 </head>
-
 <body>
 <div class="page">
 
-  <!-- HEADER -->
-  <div class="header">
-    <div>
-      <div class="brand">Upkyp</div>
-      <div class="subtitle">Billing Statement</div>
-    </div>
-    <div class="badge">Billing ID: ${billing_id}</div>
+<div class="header">
+  <div class="brand">Upkyp</div>
+  <div>Billing ID: ${billing_id}</div>
+</div>
+
+<div class="content">
+  <h2 style="text-align:center">STATEMENT OF ACCOUNT</h2>
+
+  <div class="section">
+    <strong>${bill.property_name}</strong><br/>
+    ${bill.city}, ${bill.province}
   </div>
 
-  <!-- CONTENT -->
-  <div class="content">
-
-    <div class="statement-title">STATEMENT OF ACCOUNT</div>
-
-    <div class="section card">
-      <div class="property-name">${bill.property_name}</div>
-      <div class="property-address">${bill.city}, ${bill.province}</div>
-    </div>
-
-    <div class="section card">
-      <div class="section-title">Tenant Information</div>
-      ${
+  <div class="section">
+    <strong>Tenant</strong><br/>
+    ${
             decryptedTenant
-                ? `
-          <div><span class="label">Name:</span> ${decryptedTenant.firstName} ${decryptedTenant.lastName}</div>
-          <div><span class="label">Email:</span> ${decryptedTenant.email}</div>
-          <div><span class="label">Phone:</span> ${decryptedTenant.phoneNumber}</div>
-          <div><span class="label">Unit Occupied:</span> ${bill.unit_name}</div>
-        `
+                ? `${decryptedTenant.firstName} ${decryptedTenant.lastName}<br/>${decryptedTenant.email}`
                 : "—"
         }
-    </div>
+  </div>
 
-    <div class="section card">
-      <table>
-        <tr>
-          <th>Billing Period</th>
-          <th>Due Date</th>
-          <th class="right">Total Due</th>
-        </tr>
-        <tr>
-          <td>${formatDate(billingDate)}</td>
-          <td>${dueDate.toLocaleDateString("en-CA")}</td>
-          <td class="right total">₱${php(totalDue)}</td>
-        </tr>
-      </table>
-    </div>
+  <div class="section">
+    <table>
+      <tr>
+        <th>Billing Period</th>
+        <th>Due Date</th>
+        <th class="right">Total Due</th>
+      </tr>
+      <tr>
+        <td>${formatDate(billingDate)}</td>
+        <td>${dueDate.toLocaleDateString("en-CA")}</td>
+        <td class="right total">₱${php(totalDue)}</td>
+      </tr>
+    </table>
+  </div>
 
-    <div class="section card">
-      <div class="section-title">Charges Breakdown</div>
-      <table>
-        <tr>
-          <td>Rent</td>
-          <td class="right">₱${php(bill.rent_amount)}</td>
-        </tr>
-        <tr>
-          <td>Utilities</td>
-          <td class="right">₱${php(utilitiesTotal)}</td>
-        </tr>
-        ${
-            charges.length
-                ? charges.map(
-                    (c: any) => `
-          <tr>
-            <td>${c.charge_type}</td>
-            <td class="right">
-              ${c.charge_category === "discount" ? "-" : ""}₱${php(c.amount)}
-            </td>
-          </tr>
-        `
-                ).join("")
+  <div class="section">
+    <div class="section-title">Charges Breakdown</div>
+    <table>
+      <tr><td>Rent</td><td class="right">₱${php(bill.rent_amount)}</td></tr>
+      <tr><td>Utilities</td><td class="right">₱${php(utilitiesTotal)}</td></tr>
+      ${
+            effectiveLateDays > 0
+                ? `<tr><td>${lateFeeLabel}</td><td class="right">₱${php(lateFeeAmount)}</td></tr>`
                 : ""
         }
-      </table>
-    </div>
-
+      ${
+            charges
+                .map(
+                    (c: any) =>
+                        `<tr><td>${c.charge_type}</td><td class="right">₱${php(c.amount)}</td></tr>`
+                )
+                .join("")
+        }
+    </table>
   </div>
+</div>
 
-  <!-- FOOTER -->
-  <div class="footer">
-    Upkyp · Property Rental Management Platform — ${bill.property_name}
-  </div>
+<div class="footer">
+  Upkyp · Property Rental Management Platform
+</div>
 
 </div>
 </body>
