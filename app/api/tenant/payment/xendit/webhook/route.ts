@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import mysql from "mysql2/promise";
+import { sendUserNotification } from "@/lib/notifications/sendUserNotification";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,24 @@ async function getDbConnection() {
         password: DB_PASSWORD,
         database: DB_NAME,
     });
+}
+
+/* -------------------------------------------------------------------------- */
+/* HELPERS                                                                    */
+/* -------------------------------------------------------------------------- */
+function extractGatewayFee(payload: any): number {
+    if (Array.isArray(payload.fees)) {
+        return payload.fees.reduce(
+            (sum: number, f: any) => sum + Number(f.value || 0),
+            0
+        );
+    }
+
+    if (payload.payment_method?.fee?.value) {
+        return Number(payload.payment_method.fee.value);
+    }
+
+    return 0;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -56,31 +75,42 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Ignored" });
     }
 
+    const grossAmount = Number(amount);
+    const gatewayFee = extractGatewayFee(payload);
+    const netAmount = grossAmount - gatewayFee;
+    const paidAt = new Date(paid_at);
+
     let conn: mysql.Connection | undefined;
 
     try {
         conn = await getDbConnection();
         await conn.beginTransaction();
 
-        const paidAt = new Date(paid_at);
-
         /* ======================================================================
-           BILLING PAYMENTS (UNCHANGED)
-           ====================================================================== */
+           BILLING PAYMENTS
+        ====================================================================== */
         if (external_id.startsWith("billing-")) {
             const billing_id = external_id.replace("billing-", "");
 
-            const [billingRows]: any = await conn.execute(
+            const [rows]: any = await conn.execute(
                 `
-        SELECT billing_id, lease_id, status
-        FROM Billing
-        WHERE billing_id = ?
-        LIMIT 1
-        `,
+                SELECT 
+                    b.billing_id,
+                    b.lease_id,
+                    u.user_id AS landlord_user_id
+                FROM Billing b
+                JOIN LeaseAgreement la ON b.lease_id = la.agreement_id
+                JOIN Unit un ON la.unit_id = un.unit_id
+                JOIN Property p ON un.property_id = p.property_id
+                JOIN Landlord l ON p.landlord_id = l.landlord_id
+                JOIN User u ON l.user_id = u.user_id
+                WHERE b.billing_id = ?
+                LIMIT 1
+                `,
                 [billing_id]
             );
 
-            const billing = billingRows[0];
+            const billing = rows[0];
             if (!billing) {
                 await conn.rollback();
                 return NextResponse.json(
@@ -89,42 +119,59 @@ export async function POST(req: Request) {
                 );
             }
 
-            if (billing.status !== "paid") {
-                await conn.execute(
-                    `
-          UPDATE Billing
-          SET status = 'paid', paid_at = ?
-          WHERE billing_id = ?
-          `,
-                    [paidAt, billing_id]
-                );
+            await conn.execute(
+                `
+                UPDATE Billing
+                SET status = 'paid', paid_at = ?
+                WHERE billing_id = ?
+                `,
+                [paidAt, billing_id]
+            );
 
-                await conn.execute(
-                    `
-          INSERT INTO Payment (
-            bill_id,
-            agreement_id,
-            payment_type,
-            amount_paid,
-            payment_method_id,
-            payment_status,
-            receipt_reference,
-            payment_date,
-            created_at,
-            updated_at
-          )
-          VALUES (?, ?, 'monthly_billing', ?, ?, 'confirmed', ?, ?, NOW(), NOW())
-          `,
-                    [
-                        billing.billing_id,
-                        billing.lease_id,
-                        amount,
-                        payment_method || "UNKNOWN",
-                        invoice_id,
-                        paidAt,
-                    ]
-                );
-            }
+            await conn.execute(
+                `
+                INSERT INTO Payment (
+                    bill_id,
+                    agreement_id,
+                    payment_type,
+                    amount_paid,
+                    gross_amount,
+                    gateway_fee,
+                    net_amount,
+                    payment_method_id,
+                    payment_status,
+                    receipt_reference,
+                    gateway_transaction_ref,
+                    raw_gateway_payload,
+                    payment_date,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, 'monthly_billing', ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, NOW(), NOW())
+                `,
+                [
+                    billing.billing_id,
+                    billing.lease_id,
+                    grossAmount,
+                    grossAmount,
+                    gatewayFee,
+                    netAmount,
+                    payment_method || "UNKNOWN",
+                    invoice_id,
+                    invoice_id,
+                    JSON.stringify(payload),
+                    paidAt,
+                ]
+            );
+
+            /* 🔔 Landlord notification */
+            await sendUserNotification({
+                userId: billing.landlord_user_id,
+                title: "Payment Received",
+                body: `A tenant has paid ₱${grossAmount.toFixed(2)} for billing.`,
+                url: "/pages/landlord/billing",
+                conn,
+            });
 
             await conn.commit();
             return NextResponse.json({ message: "Billing payment processed" });
@@ -132,16 +179,8 @@ export async function POST(req: Request) {
 
         /* ======================================================================
            INITIAL PAYMENTS (ADVANCE / DEPOSIT)
-           ====================================================================== */
-
-        /**
-         * external_id format:
-         * init-{advance|deposit}-{agreement_id}-{timestamp}
-         */
-        const match = external_id.match(
-            /^init-(advance|deposit)-([^-]+)/
-        );
-
+        ====================================================================== */
+        const match = external_id.match(/^init-(advance|deposit)-([^-]+)/);
         if (!match) {
             await conn.rollback();
             return NextResponse.json(
@@ -150,26 +189,25 @@ export async function POST(req: Request) {
             );
         }
 
-        const paymentType = match[1]; // advance | deposit
+        const paymentType = match[1];
         const agreement_id = match[2];
 
-        console.log("📌 Parsed initial payment:", {
-            paymentType,
-            agreement_id,
-        });
-
-        /* -------------------- FETCH LEASE -------------------- */
-        const [leaseRows]: any = await conn.execute(
+        const [rows]: any = await conn.execute(
             `
-      SELECT tenant_id
-      FROM LeaseAgreement
-      WHERE agreement_id = ?
-      LIMIT 1
-      `,
+            SELECT 
+                u.user_id AS landlord_user_id
+            FROM LeaseAgreement la
+            JOIN Unit un ON la.unit_id = un.unit_id
+            JOIN Property p ON un.property_id = p.property_id
+            JOIN Landlord l ON p.landlord_id = l.landlord_id
+            JOIN User u ON l.user_id = u.user_id
+            WHERE la.agreement_id = ?
+            LIMIT 1
+            `,
             [agreement_id]
         );
 
-        if (!leaseRows.length) {
+        if (!rows.length) {
             await conn.rollback();
             return NextResponse.json(
                 { message: "Lease agreement not found" },
@@ -177,99 +215,68 @@ export async function POST(req: Request) {
             );
         }
 
-        const tenant_id = leaseRows[0].tenant_id;
+        const landlordUserId = rows[0].landlord_user_id;
 
-        /* -------------------- ADVANCE PAYMENT -------------------- */
-        if (paymentType === "advance") {
-            await conn.execute(
-                `
-        INSERT INTO AdvancePayment
-          (lease_id, tenant_id, amount, status, received_at)
-        VALUES (?, ?, ?, 'paid', ?)
-        ON DUPLICATE KEY UPDATE
-          status = 'paid',
-          received_at = VALUES(received_at),
-          updated_at = NOW()
-        `,
-                [agreement_id, tenant_id, amount, paidAt]
-            );
+        const finalPaymentType =
+            paymentType === "advance"
+                ? "advance_payment"
+                : "security_payment";
 
-            await conn.execute(
-                `
-        INSERT INTO Payment (
-          agreement_id,
-          payment_type,
-          amount_paid,
-          payment_method_id,
-          payment_status,
-          receipt_reference,
-          payment_date,
-          created_at,
-          updated_at
-        )
-        VALUES (?, 'advance_payment', ?, ?, 'confirmed', ?, ?, NOW(), NOW())
-        `,
-                [
-                    agreement_id,
-                    amount,
-                    payment_method || "UNKNOWN",
-                    invoice_id,
-                    paidAt,
-                ]
-            );
-        }
+        await conn.execute(
+            `
+            INSERT INTO Payment (
+                agreement_id,
+                payment_type,
+                amount_paid,
+                gross_amount,
+                gateway_fee,
+                net_amount,
+                payment_method_id,
+                payment_status,
+                receipt_reference,
+                gateway_transaction_ref,
+                raw_gateway_payload,
+                payment_date,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?, ?, ?, NOW(), NOW())
+            `,
+            [
+                agreement_id,
+                finalPaymentType,
+                grossAmount,
+                grossAmount,
+                gatewayFee,
+                netAmount,
+                payment_method || "UNKNOWN",
+                invoice_id,
+                invoice_id,
+                JSON.stringify(payload),
+                paidAt,
+            ]
+        );
 
-        /* -------------------- SECURITY DEPOSIT -------------------- */
-        if (paymentType === "deposit") {
-            await conn.execute(
-                `
-        INSERT INTO SecurityDeposit
-          (lease_id, tenant_id, amount, status, received_at)
-        VALUES (?, ?, ?, 'paid', ?)
-        ON DUPLICATE KEY UPDATE
-          status = 'paid',
-          received_at = VALUES(received_at),
-          updated_at = NOW()
-        `,
-                [agreement_id, tenant_id, amount, paidAt]
-            );
-
-            await conn.execute(
-                `
-        INSERT INTO Payment (
-          agreement_id,
-          payment_type,
-          amount_paid,
-          payment_method_id,
-          payment_status,
-          receipt_reference,
-          payment_date,
-          created_at,
-          updated_at
-        )
-        VALUES (?, 'security_deposit', ?, ?, 'confirmed', ?, ?, NOW(), NOW())
-        `,
-                [
-                    agreement_id,
-                    amount,
-                    payment_method || "UNKNOWN",
-                    invoice_id,
-                    paidAt,
-                ]
-            );
-        }
+        /* 🔔 Landlord notification */
+        await sendUserNotification({
+            userId: landlordUserId,
+            title: "Initial Payment Received",
+            body: `A tenant has paid ₱${grossAmount.toFixed(2)} (${finalPaymentType.replace("_", " ")}).`,
+            url: "/pages/landlord/payments",
+            conn,
+        });
 
         await conn.commit();
         return NextResponse.json({ message: "Initial payment processed" });
 
     } catch (err: any) {
-        if (conn) await conn.rollback().catch(() => {});
+        if (conn) await conn.rollback();
         console.error("❌ Webhook processing error:", err);
         return NextResponse.json(
             { message: "Webhook failed", error: err.message },
             { status: 500 }
         );
     } finally {
-        if (conn) await conn.end().catch(() => {});
+        if (conn) await conn.end();
     }
 }
