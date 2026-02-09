@@ -7,9 +7,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
     try {
         const agreement_id = req.nextUrl.searchParams.get("agreement_id");
-        const type = req.nextUrl.searchParams.get("type"); // advance | deposit
-
-        console.log("🔎 Initial payment check:", { agreement_id, type });
+        const type = req.nextUrl.searchParams.get("type");
 
         if (!agreement_id) {
             return NextResponse.json(

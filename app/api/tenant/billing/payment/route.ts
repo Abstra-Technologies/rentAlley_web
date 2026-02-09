@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import mysql from "mysql2/promise";
+import crypto from "crypto";
 import { createXenditCustomer } from "@/lib/payments/xenditCustomer";
 
+// Applied Rate limit processing.
+
+/* -------------------------------------------------------------------------- */
+/* Runtime Config                                                              */
+/* -------------------------------------------------------------------------- */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -34,6 +40,65 @@ function formatBillingPeriod(date: string | Date) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Gateway Logger                                                              */
+/* -------------------------------------------------------------------------- */
+async function logGatewayEvent(event: {
+    type: "request" | "response" | "rate_limit" | "error";
+    endpoint: string;
+    payload?: any;
+    response?: any;
+    statusCode?: number;
+}) {
+    console.log(
+        `[XENDIT][${event.type.toUpperCase()}]`,
+        JSON.stringify(event, null, 2)
+    );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Rate-Limit + Retry + Idempotency Fetch                                      */
+/* -------------------------------------------------------------------------- */
+async function fetchWithRetry(
+    url: string,
+    options: RequestInit,
+    {
+        maxRetries = 3,
+        baseDelayMs = 500,
+    } = {}
+) {
+    let attempt = 0;
+
+    while (true) {
+        const response = await fetch(url, options);
+
+        if (response.ok) {
+            return response;
+        }
+
+        if (response.status === 429 && attempt < maxRetries) {
+            attempt++;
+
+            const retryAfter = response.headers.get("retry-after");
+            const delayMs = retryAfter
+                ? Number(retryAfter) * 1000
+                : baseDelayMs * Math.pow(2, attempt);
+
+            await logGatewayEvent({
+                type: "rate_limit",
+                endpoint: url,
+                statusCode: 429,
+                response: { retryAfter, attempt },
+            });
+
+            await new Promise((res) => setTimeout(res, delayMs));
+            continue;
+        }
+
+        return response;
+    }
+}
+
+/* -------------------------------------------------------------------------- */
 /* POST: Create Xendit Invoice                                                 */
 /* -------------------------------------------------------------------------- */
 export async function POST(req: NextRequest) {
@@ -60,7 +125,7 @@ export async function POST(req: NextRequest) {
     /* Validation                                                               */
     /* ------------------------------------------------------------------------ */
     if (!amount || !billing_id || !tenant_id) {
-        return httpError(400, "Missing amount, billing_id, or tenant_id.");
+        return httpError(400, "Missing required fields.");
     }
 
     if (!redirectUrl?.success || !redirectUrl?.failure) {
@@ -80,17 +145,17 @@ export async function POST(req: NextRequest) {
         /* ---------------------------------------------------------------------- */
         const [billingRows]: any = await conn.execute(
             `
-        SELECT
-          b.billing_id,
-          b.lease_id AS agreement_id,
-          b.billing_period,
-          u.unit_name,
-          p.property_name
-        FROM Billing b
-        JOIN Unit u ON b.unit_id = u.unit_id
-        JOIN Property p ON u.property_id = p.property_id
-        WHERE b.billing_id = ?
-        LIMIT 1
+      SELECT
+        b.billing_id,
+        b.lease_id AS agreement_id,
+        b.billing_period,
+        u.unit_name,
+        p.property_name
+      FROM Billing b
+      JOIN Unit u ON b.unit_id = u.unit_id
+      JOIN Property p ON u.property_id = p.property_id
+      WHERE b.billing_id = ?
+      LIMIT 1
       `,
             [billing_id]
         );
@@ -127,15 +192,22 @@ export async function POST(req: NextRequest) {
         }
 
         /* ---------------------------------------------------------------------- */
-        /* Build Redirect URLs (SERVER-SIDE)                                       */
+        /* Idempotency Key                                                         */
+        /* ---------------------------------------------------------------------- */
+        const idempotencyKey = crypto
+            .createHash("sha256")
+            .update(`billing-${billing.billing_id}`)
+            .digest("hex");
+
+        /* ---------------------------------------------------------------------- */
+        /* Redirect URLs                                                           */
         /* ---------------------------------------------------------------------- */
         const successRedirectUrl =
             `${redirectUrl.success}` +
             `?billing_id=${billing.billing_id}` +
             `&agreement_id=${billing.agreement_id}` +
             `&tenant_id=${tenant_id}` +
-            `&amount=${Number(amount)}` +
-            `&requestReferenceNumber=billing-${billing.billing_id}`;
+            `&amount=${Number(amount)}`;
 
         const failureRedirectUrl =
             `${redirectUrl.failure}` +
@@ -143,37 +215,29 @@ export async function POST(req: NextRequest) {
             `&agreement_id=${billing.agreement_id}`;
 
         /* ---------------------------------------------------------------------- */
-        /* Xendit Invoice Payload                                                  */
+        /* Invoice Payload                                                         */
         /* ---------------------------------------------------------------------- */
         const invoicePayload = {
             external_id: `billing-${billing.billing_id}`,
             amount: Number(amount),
             currency: "PHP",
-
             description: `Billing for ${billing.property_name} - ${billing.unit_name}
 Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
-
             customer: {
                 customer_id: xenditCustomerId,
             },
-
             metadata: {
-                source: "upkyp_billing",
                 billing_id: billing.billing_id,
                 agreement_id: billing.agreement_id,
                 tenant_id,
-                billing_period: billing.billing_period,
             },
-
             items: [
                 {
-                    name: `MonthlyBilling – ${billing.unit_name}`,
+                    name: `Monthly Billing – ${billing.unit_name}`,
                     quantity: 1,
                     price: Number(amount),
-                    category: "rent",
                 },
             ],
-
             success_redirect_url: successRedirectUrl,
             failure_redirect_url: failureRedirectUrl,
         };
@@ -181,21 +245,52 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
         /* ---------------------------------------------------------------------- */
         /* Create Invoice via Xendit                                               */
         /* ---------------------------------------------------------------------- */
-        const invoiceResp = await fetch("https://api.xendit.co/v2/invoices", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization:
-                    "Basic " + Buffer.from(`${secretKey}:`).toString("base64"),
-            },
-            body: JSON.stringify(invoicePayload),
+        await logGatewayEvent({
+            type: "request",
+            endpoint: "/v2/invoices",
+            payload: invoicePayload,
         });
+
+        const invoiceResp = await fetchWithRetry(
+            "https://api.xendit.co/v2/invoices",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization:
+                        "Basic " + Buffer.from(`${secretKey}:`).toString("base64"),
+                    "Idempotency-Key": idempotencyKey,
+                },
+                body: JSON.stringify(invoicePayload),
+            }
+        );
 
         const invoiceData = await invoiceResp.json();
 
-        if (!invoiceResp.ok || invoiceData.error) {
+        if (!invoiceResp.ok) {
+            await logGatewayEvent({
+                type: "error",
+                endpoint: "/v2/invoices",
+                statusCode: invoiceResp.status,
+                response: invoiceData,
+            });
+
+            if (invoiceResp.status === 429) {
+                return httpError(
+                    503,
+                    "Payment service is temporarily busy. Please try again shortly."
+                );
+            }
+
             return httpError(500, "Failed to create Xendit invoice.", invoiceData);
         }
+
+        await logGatewayEvent({
+            type: "response",
+            endpoint: "/v2/invoices",
+            response: invoiceData,
+            statusCode: 200,
+        });
 
         /* ---------------------------------------------------------------------- */
         /* Response                                                               */
@@ -211,11 +306,14 @@ Billing Period: ${formatBillingPeriod(billing.billing_period)}`,
             { status: 200 }
         );
     } catch (err: any) {
-        console.error("Xendit invoice creation error:", err);
+        await logGatewayEvent({
+            type: "error",
+            endpoint: "create-invoice",
+            response: err?.message,
+        });
+
         return httpError(500, "Failed to initiate Xendit payment.", err?.message);
     } finally {
-        if (conn) {
-            await conn.end().catch(() => {});
-        }
+        if (conn) await conn.end().catch(() => {});
     }
 }

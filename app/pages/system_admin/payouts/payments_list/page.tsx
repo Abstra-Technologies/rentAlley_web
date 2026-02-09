@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { useState } from "react";
 import axios from "axios";
-import { Banknote, Search, Filter, Send } from "lucide-react";
+import { Banknote, Search, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
@@ -57,7 +57,7 @@ export default function PaymentsListPage() {
     };
 
     /* ----------------------------
-       MARK AS IN PAYOUT (OLD)
+       MARK AS IN PAYOUT
     ----------------------------- */
     const handleProcessPayout = async () => {
         if (selectedIds.length === 0) {
@@ -76,7 +76,7 @@ export default function PaymentsListPage() {
     };
 
     /* ----------------------------
-       DISBURSE PAYMENT (NEW)
+       DISBURSE PAYMENT
     ----------------------------- */
     const handleDisburseNow = () => {
         if (selectedIds.length === 0) {
@@ -84,13 +84,11 @@ export default function PaymentsListPage() {
             return;
         }
 
-        // Redirect to review page with selected payment IDs
-        const query = selectedIds.join(",");
-
         router.push(
-            `/pages/system_admin/payouts/review?payment_ids=${query}`
+            `/pages/system_admin/payouts/review?payment_ids=${selectedIds.join(",")}`
         );
     };
+
     /* ============================
        UI
     ============================= */
@@ -152,7 +150,7 @@ export default function PaymentsListPage() {
 
             {/* TABLE */}
             {!isLoading && !error && (
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
+                <div className="bg-white rounded-xl shadow-lg overflow-x-auto border">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 border-b">
                         <tr>
@@ -176,7 +174,9 @@ export default function PaymentsListPage() {
                             </th>
                             <th className="px-6 py-3">Payment ID</th>
                             <th className="px-6 py-3">Landlord</th>
-                            <th className="px-6 py-3">Amount</th>
+                            <th className="px-6 py-3">Gross</th>
+                            <th className="px-6 py-3">Gateway Fee</th>
+                            <th className="px-6 py-3">Net Amount</th>
                             <th className="px-6 py-3">Reference</th>
                             <th className="px-6 py-3">Payout Status</th>
                             <th className="px-6 py-3">Date</th>
@@ -186,7 +186,7 @@ export default function PaymentsListPage() {
                         <tbody>
                         {filtered.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-6 text-gray-500">
+                                <td colSpan={9} className="text-center py-6 text-gray-500">
                                     No payments found.
                                 </td>
                             </tr>
@@ -211,12 +211,26 @@ export default function PaymentsListPage() {
                                         </td>
                                         <td className="px-6 py-3">{p.payment_id}</td>
                                         <td className="px-6 py-3">{p.landlord_name}</td>
-                                        <td className="px-6 py-3 font-semibold text-blue-700">
+
+                                        {/* GROSS */}
+                                        <td className="px-6 py-3 font-semibold">
                                             ₱{Number(p.amount).toLocaleString()}
                                         </td>
+
+                                        {/* GATEWAY FEE */}
+                                        <td className="px-6 py-3 text-red-600">
+                                            ₱{Number(p.gateway_fee ?? 0).toLocaleString()}
+                                        </td>
+
+                                        {/* NET AMOUNT */}
+                                        <td className="px-6 py-3 font-semibold text-emerald-700">
+                                            ₱{Number(p.net_amount ?? p.amount).toLocaleString()}
+                                        </td>
+
                                         <td className="px-6 py-3">
                                             {p.receipt_reference || "—"}
                                         </td>
+
                                         <td className="px-6 py-3">
                         <span
                             className={`px-3 py-1 rounded-full border text-xs font-semibold ${
@@ -226,6 +240,7 @@ export default function PaymentsListPage() {
                           {p.payout_status}
                         </span>
                                         </td>
+
                                         <td className="px-6 py-3">{p.date}</td>
                                     </tr>
                                 );

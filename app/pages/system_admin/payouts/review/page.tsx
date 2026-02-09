@@ -87,59 +87,71 @@ function ReviewPayoutContent() {
 
             {/* LANDLORD GROUPS */}
             {!isLoading &&
-                landlords.map((l: any) => (
-                    <div
-                        key={l.landlord_id}
-                        className="bg-white rounded-xl shadow border mb-6"
-                    >
-                        <div className="p-4 border-b bg-gray-50">
-                            <h2 className="font-semibold text-gray-800">
-                                {l.landlord_name}
-                            </h2>
-                            <p className="text-sm text-gray-500">
-                                Payout Method: {l.payout_method.toUpperCase()}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                Account: {l.account_name} • {l.account_number}
-                            </p>
-                        </div>
+                landlords.map((l: any) => {
+                    const totalNet = l.payments.reduce(
+                        (sum: number, p: any) => sum + Number(p.net_amount ?? 0),
+                        0
+                    );
 
-                        <div className="p-4">
-                            <table className="w-full text-sm">
-                                <thead className="bg-gray-50 border-b">
-                                <tr>
-                                    <th className="py-2 text-left">Payment ID</th>
-                                    <th className="py-2 text-left">Type</th>
-                                    <th className="py-2 text-right">Amount</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {l.payments.map((p: any) => (
-                                    <tr
-                                        key={p.payment_id}
-                                        className="border-b last:border-b-0"
-                                    >
-                                        <td className="py-2">{p.payment_id}</td>
-                                        <td className="py-2 capitalize">{p.payment_type}</td>
-                                        <td className="py-2 text-right font-semibold text-blue-700">
-                                            ₱{Number(p.amount_paid).toLocaleString()}
-                                        </td>
+                    return (
+                        <div
+                            key={l.landlord_id}
+                            className="bg-white rounded-xl shadow border mb-6"
+                        >
+                            {/* LANDLORD HEADER */}
+                            <div className="p-4 border-b bg-gray-50">
+                                <h2 className="font-semibold text-gray-800">
+                                    {l.landlord_name}
+                                </h2>
+                                <p className="text-sm text-gray-500">
+                                    Payout Method: {l.payout_method.toUpperCase()}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                    Account: {l.account_name} • {l.account_number}
+                                </p>
+                            </div>
+
+                            {/* PAYMENTS */}
+                            <div className="p-4">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-50 border-b">
+                                    <tr>
+                                        <th className="py-2 text-left">Payment ID</th>
+                                        <th className="py-2 text-left">Type</th>
+                                        <th className="py-2 text-right">Net Amount</th>
                                     </tr>
-                                ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                    {l.payments.map((p: any) => (
+                                        <tr
+                                            key={p.payment_id}
+                                            className="border-b last:border-b-0"
+                                        >
+                                            <td className="py-2">{p.payment_id}</td>
+                                            <td className="py-2 capitalize">
+                                                {p.payment_type}
+                                            </td>
+                                            <td className="py-2 text-right font-semibold text-emerald-700">
+                                                ₱{Number(p.net_amount ?? 0).toLocaleString()}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
 
-                            <div className="flex justify-end mt-4">
-                <span className="text-sm font-semibold text-gray-700">
-                  Total:{" "}
-                    <span className="text-lg text-emerald-600">
-                    ₱{Number(l.total_amount).toLocaleString()}
+                                {/* TOTAL NET */}
+                                <div className="flex justify-end mt-4">
+                  <span className="text-sm font-semibold text-gray-700">
+                    Total Net Payout:{" "}
+                      <span className="text-lg text-emerald-600">
+                      ₱{totalNet.toLocaleString()}
+                    </span>
                   </span>
-                </span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
 
             {/* WARNING */}
             {!isLoading && landlords.length > 0 && (

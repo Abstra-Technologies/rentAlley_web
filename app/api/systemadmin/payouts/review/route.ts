@@ -38,34 +38,35 @@ export async function GET(req: NextRequest) {
            FETCH PAYMENTS FOR REVIEW
         ================================ */
         const sql = `
-            SELECT
-                p.payment_id,
-                p.payment_type,
-                p.amount_paid,
+      SELECT
+        p.payment_id,
+        p.payment_type,
+        p.net_amount,
 
-                -- Landlord
-                l.landlord_id,
-                u_landlord.firstName AS landlord_firstName,
-                u_landlord.lastName AS landlord_lastName,
+        -- Landlord
+        l.landlord_id,
+        u_landlord.firstName AS landlord_firstName,
+        u_landlord.lastName AS landlord_lastName,
 
-                -- Payout account
-                pa.payout_method,
-                pa.account_name,
-                pa.account_number,
-                pa.bank_name
+        -- Payout account
+        pa.payout_method,
+        pa.account_name,
+        pa.account_number,
+        pa.bank_name
 
-            FROM Payment p
-            INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
-            INNER JOIN Unit u ON la.unit_id = u.unit_id
-            INNER JOIN Property pr ON pr.property_id = u.property_id
-            INNER JOIN Landlord l ON l.landlord_id = pr.landlord_id
-            INNER JOIN User u_landlord ON l.user_id = u_landlord.user_id
-            INNER JOIN LandlordPayoutAccount pa ON pa.landlord_id = l.landlord_id
+      FROM Payment p
+      INNER JOIN LeaseAgreement la ON la.agreement_id = p.agreement_id
+      INNER JOIN Unit u ON la.unit_id = u.unit_id
+      INNER JOIN Property pr ON pr.property_id = u.property_id
+      INNER JOIN Landlord l ON l.landlord_id = pr.landlord_id
+      INNER JOIN User u_landlord ON l.user_id = u_landlord.user_id
+      INNER JOIN LandlordPayoutAccount pa ON pa.landlord_id = l.landlord_id
 
-            WHERE p.payment_id IN (?)
-              AND p.payment_status = 'confirmed'
-              AND p.payout_status = 'unpaid'
-        `;
+      WHERE p.payment_id IN (?)
+        AND p.payment_status = 'confirmed'
+        AND p.payout_status = 'unpaid'
+        AND p.net_amount IS NOT NULL
+    `;
 
         const [rows]: any = await db.query(sql, [paymentIds]);
 
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest) {
         }
 
         /* ===============================
-           GROUP BY LANDLORD
+           GROUP BY LANDLORD (NET AMOUNT)
         ================================ */
         const grouped: Record<string, any> = {};
 
@@ -94,7 +95,7 @@ export async function GET(req: NextRequest) {
                     account_number: row.account_number,
                     bank_name: row.bank_name ?? "",
 
-                    total_amount: 0,
+                    total_amount: 0, // NET TOTAL
                     payments: [],
                 };
             }
@@ -102,10 +103,10 @@ export async function GET(req: NextRequest) {
             grouped[landlordId].payments.push({
                 payment_id: row.payment_id,
                 payment_type: row.payment_type,
-                amount_paid: row.amount_paid,
+                net_amount: Number(row.net_amount),
             });
 
-            grouped[landlordId].total_amount += Number(row.amount_paid);
+            grouped[landlordId].total_amount += Number(row.net_amount);
         }
 
         return NextResponse.json(
