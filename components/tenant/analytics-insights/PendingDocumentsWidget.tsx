@@ -8,6 +8,8 @@ import {
     DocumentTextIcon,
     ShieldCheckIcon,
     CheckCircleIcon,
+    CreditCardIcon,
+    ClockIcon,
 } from "@heroicons/react/24/outline";
 import useAuthStore from "@/zustand/authStore";
 import { formatCurrency } from "@/utils/formatter/formatters";
@@ -71,19 +73,27 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
         {
             label: "Monthly Rent",
             value: formatCurrency(lease.rent_amount || 0),
+            icon: CreditCardIcon,
+            primary: true,
             show: true,
         },
         {
             label: "Security Deposit",
             value: formatCurrency(lease.security_deposit_amount || 0),
+            icon: ShieldCheckIcon,
+            primary: false,
             show: hasSecurityDeposit,
         },
         {
             label: "Advance Payment",
             value: formatCurrency(lease.advance_payment_amount || 0),
+            icon: ClockIcon,
+            primary: false,
             show: hasAdvancePayment,
         },
     ].filter((i) => i.show);
+
+    const onlyRent = infoCards.length === 1;
 
     /* ================= OTP ================= */
     const sendOtp = async () => {
@@ -177,11 +187,11 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                 {/* Lease Info */}
                 {showLeaseInfo && (
                     <div
-                        className={`grid gap-3 ${
-                            infoCards.length === 1
+                        className={`grid gap-4 ${
+                            onlyRent
                                 ? "grid-cols-1"
                                 : infoCards.length === 2
-                                    ? "grid-cols-2"
+                                    ? "grid-cols-1 sm:grid-cols-2"
                                     : "grid-cols-1 sm:grid-cols-3"
                         }`}
                     >
@@ -190,6 +200,8 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
                                 key={item.label}
                                 label={item.label}
                                 value={item.value}
+                                icon={item.icon}
+                                primary={onlyRent && item.primary}
                             />
                         ))}
                     </div>
@@ -265,12 +277,48 @@ export default function TenantLeaseModal({ agreement_id }: Props) {
     );
 }
 
-/* ================= SMALL CARD ================= */
-function LeaseInfoCard({ label, value }: { label: string; value: string }) {
+/* ================= INFO CARD ================= */
+function LeaseInfoCard({
+                           label,
+                           value,
+                           icon: Icon,
+                           primary,
+                       }: {
+    label: string;
+    value: string;
+    icon: any;
+    primary?: boolean;
+}) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-3">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className="text-sm font-bold text-gray-900">{value}</p>
+        <div
+            className={`rounded-xl border p-4 flex items-center gap-4 ${
+                primary
+                    ? "border-blue-300 bg-blue-50"
+                    : "border-gray-200 bg-white"
+            }`}
+        >
+            <div
+                className={`p-3 rounded-xl ${
+                    primary ? "bg-blue-100" : "bg-gray-100"
+                }`}
+            >
+                <Icon
+                    className={`w-6 h-6 ${
+                        primary ? "text-blue-600" : "text-gray-600"
+                    }`}
+                />
+            </div>
+
+            <div>
+                <p className="text-xs text-gray-500">{label}</p>
+                <p
+                    className={`font-extrabold ${
+                        primary ? "text-2xl text-blue-700" : "text-sm text-gray-900"
+                    }`}
+                >
+                    {value}
+                </p>
+            </div>
         </div>
     );
 }

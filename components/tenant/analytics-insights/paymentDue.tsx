@@ -15,6 +15,8 @@ interface BillingSummary {
     total_due: number;
     days_late: number;
     status: "paid" | "unpaid" | "overdue";
+    billing_period?: string;
+    due_date?: string;
 }
 
 interface PaymentDueWidgetProps {
@@ -60,6 +62,19 @@ export default function PaymentDueWidget({ agreement_id }: PaymentDueWidgetProps
 
     if (loading || billings.length === 0) return null;
 
+    const formatBillingMonth = (billing: BillingSummary) => {
+        const raw =
+            billing.billing_period ||
+            billing.due_date;
+
+        if (!raw) return null;
+
+        return new Date(raw).toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+        });
+    };
+
     const colorMap = {
         paid: {
             bg: "bg-emerald-50",
@@ -93,6 +108,10 @@ export default function PaymentDueWidget({ agreement_id }: PaymentDueWidgetProps
                 const c = colorMap[billing.status];
                 const showPayButton = billing.status !== "paid";
                 const showDaysLate = billing.status === "overdue";
+                const billingMonth =
+                    billing.status === "overdue"
+                        ? formatBillingMonth(billing)
+                        : null;
 
                 return (
                     <div
@@ -125,6 +144,13 @@ export default function PaymentDueWidget({ agreement_id }: PaymentDueWidgetProps
                                             ? "Past due date"
                                             : "Within grace period"}
                                 </p>
+
+                                {/* 🔴 OVERDUE MONTH */}
+                                {billingMonth && (
+                                    <p className="mt-1 text-xs font-semibold text-red-700">
+                                        Billing Period: {billingMonth}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
