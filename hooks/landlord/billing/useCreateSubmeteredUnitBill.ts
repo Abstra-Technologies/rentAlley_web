@@ -12,6 +12,7 @@ import { createUnitBillSteps } from "@/lib/onboarding/createUnitBill";
 export function useCreateSubmeteredUnitBill() {
     const { unit_id } = useParams();
     const router = useRouter();
+    const [originalSnapshot, setOriginalSnapshot] = useState<any>(null);
 
 
 
@@ -78,8 +79,7 @@ export function useCreateSubmeteredUnitBill() {
             );
 
             const data = res.data;
-
-            console.log('data billing: ', data);
+            console.log("data billing:", data);
 
             if (!data.unit || !data.property) {
                 throw new Error("Missing unit or property data.");
@@ -94,65 +94,63 @@ export function useCreateSubmeteredUnitBill() {
             );
 
             const billingData = rateRes.data.billingData;
-
-            console.log('UTILITY RTATES API: ', billingData);
+            console.log("UTILITY RATES API:", billingData);
 
             setPropertyRates({
                 waterRate: billingData?.water?.rate ?? 0,
                 waterTotal: billingData?.water?.total ?? 0,
                 waterConsumption: billingData?.water?.consumption ?? 0,
-
                 electricityRate: billingData?.electricity?.rate ?? 0,
                 electricityTotal: billingData?.electricity?.total ?? 0,
-                electricityConsumption: billingData?.electricity?.consumption ?? 0,
+                electricityConsumption:
+                    billingData?.electricity?.consumption ?? 0,
             });
 
-            console.log('PROPERTY RATES SET: ', propertyRates);
-
-
-
+            /* -------- EXISTING BILLING -------- */
             const eb = data.existingBilling;
 
             /* -------- FORM HYDRATION -------- */
-            setForm((prev) => ({
-                ...prev,
-
-                // ✅ KEEP billing_period UNCHANGED
+            const hydratedForm = {
                 billingDate: eb?.billing_period,
-
-                readingDate: eb?.reading_date
-                    ? eb.reading_date
-                    : today,
-
+                readingDate: eb?.reading_date ? eb.reading_date : today,
                 dueDate: eb?.due_date ?? "",
-
                 waterPrevReading: eb?.water_prev ?? "",
                 waterCurrentReading: eb?.water_curr ?? "",
                 electricityPrevReading: eb?.elec_prev ?? "",
                 electricityCurrentReading: eb?.elec_curr ?? "",
+            };
+
+            setForm((prev) => ({
+                ...prev,
+                ...hydratedForm,
             }));
 
-            console.log('billing period: ', eb.billing_period);
-
-
             /* -------- CHARGES -------- */
-            setExtraExpenses(
+            const hydratedExpenses =
                 eb?.additional_charges?.map((c: any) => ({
                     charge_id: c.id,
                     type: c.charge_type,
                     amount: c.amount,
                     fromDB: true,
-                })) || []
-            );
+                })) || [];
 
-            setDiscounts(
+            const hydratedDiscounts =
                 eb?.discounts?.map((d: any) => ({
                     charge_id: d.id,
                     type: d.charge_type,
                     amount: d.amount,
                     fromDB: true,
-                })) || []
-            );
+                })) || [];
+
+            setExtraExpenses(hydratedExpenses);
+            setDiscounts(hydratedDiscounts);
+
+            /* -------- SNAPSHOT (LAST SAVED DB STATE) -------- */
+            setOriginalSnapshot({
+                form: hydratedForm,
+                extraExpenses: hydratedExpenses,
+                discounts: hydratedDiscounts,
+            });
 
             /* -------- META -------- */
             const meta = {
@@ -168,6 +166,7 @@ export function useCreateSubmeteredUnitBill() {
             } else {
                 setPdc(null);
             }
+
         } catch (err) {
             console.error(err);
             Swal.fire("Error", "Failed to load billing data.", "error");
@@ -404,7 +403,7 @@ export function useCreateSubmeteredUnitBill() {
                 },
             });
 
-            await axios.put(
+            const res = await axios.put(
                 "/api/landlord/billing/submetered/createUnitMonthlyBilling",
                 {
                     ...buildPayload(),
@@ -412,24 +411,42 @@ export function useCreateSubmeteredUnitBill() {
                 }
             );
 
+            Swal.close(); // ✅ close loader explicitly
+
             Swal.fire({
                 icon: "success",
                 title: "Billing Updated",
                 text: "The billing statement has been updated successfully.",
-                confirmButtonColor: "#10b981", // emerald
+                confirmButtonColor: "#10b981",
             });
 
-            fetchUnitData(); // 🔄 refresh values
+            // ✅ ONLY refresh on success
+            fetchUnitData();
+
         } catch (error: any) {
+            Swal.close();
             console.error("❌ Update billing failed:", error);
 
-            Swal.fire({
+            const status = error.response?.status;
+            const message =
+                error.response?.data?.error ||
+                "This billing cannot be updated.";
+
+            // 🔄 ROLLBACK UI TO ORIGINAL STATE
+            if (originalSnapshot) {
+                setForm(originalSnapshot.form);
+                setExtraExpenses(originalSnapshot.extraExpenses);
+                setDiscounts(originalSnapshot.discounts);
+            }
+
+            await Swal.fire({
                 icon: "error",
-                title: "Update Failed",
-                text:
-                    error.response?.data?.error ||
-                    "Something went wrong while updating the billing.",
-                confirmButtonColor: "#ef4444", // red
+                title:
+                    status === 409
+                        ? "Update Not Allowed"
+                        : "Update Failed",
+                text: message,
+                confirmButtonColor: "#ef4444",
             });
         }
     };
@@ -445,6 +462,9 @@ export function useCreateSubmeteredUnitBill() {
             Swal.fire("Error", "Failed to create billing", "error");
         }
     };
+
+
+
 
 
     /* ------------------ RETURN ------------------ */
