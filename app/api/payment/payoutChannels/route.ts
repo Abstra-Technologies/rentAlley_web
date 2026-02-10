@@ -10,6 +10,7 @@ export async function GET() {
         bank_name AS name,
         channel_type
       FROM payout_channels
+      WHERE is_available = 1
       ORDER BY bank_name ASC
       `
         );
