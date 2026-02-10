@@ -166,12 +166,15 @@ export async function DELETE(req: NextRequest) {
             if (tenant?.tenant_id) {
                 const tenantId = tenant.tenant_id;
 
+                /* =====================================================
+                   MOVE-IN PHOTOS (ENCRYPTED)
+                ===================================================== */
                 const [moveInPhotos]: any[] = await conn.query(`
                     SELECT mp.file_url
                     FROM MoveInPhotos mp
-                    JOIN MoveInItems mi ON mp.item_id = mi.item_id
-                    JOIN MoveInChecklist mc ON mi.checklist_id = mc.checklist_id
-                    JOIN LeaseAgreement la ON mc.agreement_id = la.agreement_id
+                             JOIN MoveInItems mi ON mp.item_id = mi.item_id
+                             JOIN MoveInChecklist mc ON mi.checklist_id = mc.checklist_id
+                             JOIN LeaseAgreement la ON mc.agreement_id = la.agreement_id
                     WHERE la.tenant_id = ?
                 `, [tenantId]);
 
@@ -180,8 +183,31 @@ export async function DELETE(req: NextRequest) {
                     if (url) s3Urls.push(url);
                 });
 
-                await conn.query(`DELETE FROM LeaseAgreement WHERE tenant_id = ?`, [tenantId]);
-                await conn.query(`DELETE FROM Tenant WHERE tenant_id = ?`, [tenantId]);
+                /* =====================================================
+                   LEASE eKYP (ELECTRONIC ID)
+                   - No S3 files here (QR payload is JSON)
+                   - Explicit delete for safety
+                ===================================================== */
+                await conn.query(
+                    `DELETE FROM LeaseEKyp WHERE tenant_id = ?`,
+                    [tenantId]
+                );
+
+                /* =====================================================
+                   LEASE AGREEMENTS (CASCADE BILLING, PAYMENTS, ETC)
+                ===================================================== */
+                await conn.query(
+                    `DELETE FROM LeaseAgreement WHERE tenant_id = ?`,
+                    [tenantId]
+                );
+
+                /* =====================================================
+                   TENANT CORE
+                ===================================================== */
+                await conn.query(
+                    `DELETE FROM Tenant WHERE tenant_id = ?`,
+                    [tenantId]
+                );
             }
         }
 

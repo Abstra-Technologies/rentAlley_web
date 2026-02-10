@@ -119,7 +119,7 @@ export default function LandlordLayout({
                 title: "Finance & Strategy",
                 items: [
                     { label: "Analytics", href: "/pages/landlord/analytics/performance", icon: ChartArea },
-                    { label: "Tax Compliance", href: "/pages/landlord/taxManagement", icon: Banknote },
+                    // { label: "Tax Compliance", href: "/pages/landlord/taxManagement", icon: Banknote },
                 ],
             },
             {

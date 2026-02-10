@@ -175,7 +175,6 @@ export default function TenantList() {
 
     return (
         <div className="flex">
-            <SideNavAdmin />
 
             <div className="flex-1 p-6 max-w-6xl mx-auto">
                 <h1 className="text-2xl font-semibold text-blue-600 mb-6">Tenants List</h1>
