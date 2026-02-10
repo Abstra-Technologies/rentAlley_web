@@ -125,6 +125,7 @@ function InputField({
 
 export default function StepOneCreateProperty() {
   const { property, setProperty, photos, setPhotos } = usePropertyStore();
+    const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
 
   const [coords, setCoords] = useState({
     lat: property?.latitude ?? null,
@@ -175,13 +176,41 @@ export default function StepOneCreateProperty() {
     setPhotos([...photos, ...newPhotos]);
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: { "image/*": [] },
-    multiple: true,
-    onDrop,
-  });
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        accept: { "image/*": [] },
+        multiple: true,
+        maxSize: MAX_PHOTO_SIZE,
+        onDrop: (acceptedFiles, fileRejections) => {
+            // ❌ Handle rejected files (too large / invalid)
+            if (fileRejections.length > 0) {
+                const oversized = fileRejections.find((rej) =>
+                    rej.errors.some((e) => e.code === "file-too-large")
+                );
 
-  const removePhoto = (index: number) => {
+                if (oversized) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "File too large",
+                        text: "Each photo must be 10MB or less.",
+                        confirmButtonColor: "#ef4444",
+                    });
+                }
+            }
+
+            // ✅ Accept valid files
+            if (acceptedFiles.length > 0) {
+                const newPhotos = acceptedFiles.map((file) => ({
+                    file,
+                    preview: URL.createObjectURL(file),
+                }));
+
+                setPhotos([...photos, ...newPhotos]);
+            }
+        },
+    });
+
+
+    const removePhoto = (index: number) => {
     const photo = photos[index];
     if (photo?.preview) {
       URL.revokeObjectURL(photo.preview);
