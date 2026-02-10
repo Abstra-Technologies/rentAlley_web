@@ -9,6 +9,9 @@ interface User {
     email: string | null;
     profilePicture: string | null;
     phoneNumber: string | null;
+    occupation: string | null;
+    citizenship: string | null;
+    address: string | null;
     birthDate: string | null;
     points: number;
     userType: string | null;

@@ -169,8 +169,8 @@ export default function ProfilePage() {
         user.profilePicture || "https://via.placeholder.com/150",
       );
       setFormData({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
         phoneNumber: user.phoneNumber || "",
         occupation: user.occupation || "",
         citizenship: user.citizenship || "",
