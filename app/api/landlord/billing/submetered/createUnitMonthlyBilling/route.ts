@@ -232,6 +232,10 @@ async function createBilling(req: NextRequest) {
    UPDATE BILLING (PUT)
 ===================================================== */
 
+/* =====================================================
+   UPDATE BILLING (PUT)
+===================================================== */
+
 async function updateBilling(req: NextRequest) {
     const conn = await db.getConnection();
 
@@ -247,13 +251,17 @@ async function updateBilling(req: NextRequest) {
             unit_id,
             readingDate,
             dueDate,
+
             waterPrevReading,
             waterCurrentReading,
+
             electricityPrevReading,
             electricityCurrentReading,
+
             totalWaterAmount = 0,
             totalElectricityAmount = 0,
             total_amount_due = 0,
+
             additionalCharges = [],
         } = body;
 
@@ -267,12 +275,63 @@ async function updateBilling(req: NextRequest) {
             );
         }
 
-        const { start: periodStart, end: periodEnd } = monthRange(readingDate);
+        const { start: periodStart, end: periodEnd } =
+            monthRange(readingDate);
 
         log("Computed period:", { periodStart, periodEnd });
 
+        /* ================= TRANSACTION ================= */
         await conn.beginTransaction();
         log("Transaction started");
+
+        /* ---------- BILLING STATUS GUARD ---------- */
+        const [[billing]]: any = await conn.query(
+            `
+                SELECT status
+                FROM Billing
+                WHERE billing_id = ?
+                    FOR UPDATE
+            `,
+            [billing_id]
+        );
+
+        if (!billing) {
+            await conn.rollback();
+            log("❌ Billing not found");
+
+            return NextResponse.json(
+                { error: "Billing not found" },
+                { status: 404 }
+            );
+        }
+
+        log("Billing status:", billing.status);
+
+        if (billing.status === "paid") {
+            await conn.rollback();
+            log("❌ Update blocked — BILLING PAID");
+
+            return NextResponse.json(
+                {
+                    error:
+                        "This billing has already been paid and cannot be updated.",
+                },
+                { status: 409 }
+            );
+        }
+
+        if (billing.status === "finalized") {
+            await conn.rollback();
+            log("❌ Update blocked — BILLING FINALIZED");
+
+            return NextResponse.json(
+                {
+                    error:
+                        "This billing is finalized and cannot be modified.",
+                },
+                { status: 409 }
+            );
+        }
 
         /* ---------- UPDATE BILLING ---------- */
         const [res]: any = await conn.query(
@@ -298,8 +357,9 @@ async function updateBilling(req: NextRequest) {
         log("Billing update affectedRows:", res.affectedRows);
 
         if (res.affectedRows === 0) {
-            log("❌ Billing not found");
             await conn.rollback();
+            log("❌ Billing update failed");
+
             return NextResponse.json(
                 { error: "Billing not found" },
                 { status: 404 }
@@ -312,15 +372,15 @@ async function updateBilling(req: NextRequest) {
 
             const [waterRes]: any = await conn.query(
                 `
-                UPDATE WaterMeterReading
-                SET
-                  previous_reading = ?,
-                  current_reading  = ?,
-                  reading_date     = ?,
-                  updated_at       = NOW()
-                WHERE unit_id = ?
-                  AND period_start = ?
-                  AND period_end   = ?
+                    UPDATE WaterMeterReading
+                    SET
+                        previous_reading = ?,
+                        current_reading  = ?,
+                        reading_date     = ?,
+                        updated_at       = NOW()
+                    WHERE unit_id = ?
+                      AND period_start = ?
+                      AND period_end   = ?
                 `,
                 [
                     Number(waterPrevReading),
@@ -332,17 +392,15 @@ async function updateBilling(req: NextRequest) {
                 ]
             );
 
-            log("Water update affectedRows:", waterRes.affectedRows);
-
             if (waterRes.affectedRows === 0) {
-                log("⚠️ No WATER record found → inserting");
+                log("⚠️ No WATER record → inserting");
 
                 await conn.query(
                     `
-                    INSERT INTO WaterMeterReading
-                      (unit_id, period_start, period_end, reading_date,
-                       previous_reading, current_reading)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO WaterMeterReading
+                        (unit_id, period_start, period_end, reading_date,
+                         previous_reading, current_reading)
+                        VALUES (?, ?, ?, ?, ?, ?)
                     `,
                     [
                         unit_id,
@@ -353,8 +411,6 @@ async function updateBilling(req: NextRequest) {
                         Number(waterCurrentReading),
                     ]
                 );
-
-                log("✅ Water meter inserted");
             }
         }
 
@@ -364,15 +420,15 @@ async function updateBilling(req: NextRequest) {
 
             const [elecRes]: any = await conn.query(
                 `
-                UPDATE ElectricMeterReading
-                SET
-                  previous_reading = ?,
-                  current_reading  = ?,
-                  reading_date     = ?,
-                  updated_at       = NOW()
-                WHERE unit_id = ?
-                  AND period_start = ?
-                  AND period_end   = ?
+                    UPDATE ElectricMeterReading
+                    SET
+                        previous_reading = ?,
+                        current_reading  = ?,
+                        reading_date     = ?,
+                        updated_at       = NOW()
+                    WHERE unit_id = ?
+                      AND period_start = ?
+                      AND period_end   = ?
                 `,
                 [
                     Number(electricityPrevReading),
@@ -384,17 +440,15 @@ async function updateBilling(req: NextRequest) {
                 ]
             );
 
-            log("Electric update affectedRows:", elecRes.affectedRows);
-
             if (elecRes.affectedRows === 0) {
-                log("⚠️ No ELECTRIC record found → inserting");
+                log("⚠️ No ELECTRIC record → inserting");
 
                 await conn.query(
                     `
-                    INSERT INTO ElectricMeterReading
-                      (unit_id, period_start, period_end, reading_date,
-                       previous_reading, current_reading)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO ElectricMeterReading
+                        (unit_id, period_start, period_end, reading_date,
+                         previous_reading, current_reading)
+                        VALUES (?, ?, ?, ?, ?, ?)
                     `,
                     [
                         unit_id,
@@ -405,12 +459,10 @@ async function updateBilling(req: NextRequest) {
                         Number(electricityCurrentReading),
                     ]
                 );
-
-                log("✅ Electric meter inserted");
             }
         }
 
-        /* ---------- RESET CHARGES ---------- */
+        /* ---------- RESET ADDITIONAL CHARGES ---------- */
         log("Resetting additional charges");
 
         await conn.query(
@@ -421,9 +473,9 @@ async function updateBilling(req: NextRequest) {
         for (const c of additionalCharges) {
             await conn.query(
                 `
-                INSERT INTO BillingAdditionalCharge
-                  (billing_id, charge_category, charge_type, amount)
-                VALUES (?, ?, ?, ?)
+                    INSERT INTO BillingAdditionalCharge
+                        (billing_id, charge_category, charge_type, amount)
+                    VALUES (?, ?, ?, ?)
                 `,
                 [
                     billing_id,

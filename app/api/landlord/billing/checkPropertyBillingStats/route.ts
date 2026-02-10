@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
 
         const row = rows[0];
 
+        console.log('billing data rowsa: ', rows);
+
         return NextResponse.json({
             billingData: {
                 period_start: row.period_start,
