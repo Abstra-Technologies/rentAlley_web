@@ -88,70 +88,71 @@ const PARTNERS = [
 export default function PaymentPartnersMarquee() {
     return (
         <div className="w-full overflow-hidden">
-            {/* Slim Glass Wrapper */}
+            {/* Glass Wrapper */}
             <div className="relative backdrop-blur-lg bg-white/5 border border-white/15">
                 {/* Headline */}
-                <p className="py-2 text-center text-xs sm:text-sm font-medium text-white/80 tracking-wide">
+                <p className="py-2 text-center text-[11px] sm:text-sm font-medium text-white/80 tracking-wide">
                     Pay your rent more conveniently through our partner channels
                 </p>
 
                 {/* Marquee */}
-                <div className="marquee flex items-center py-3">
-                    {/* First loop */}
-                    <div className="marquee__group">
-                        {PARTNERS.map((partner, index) => (
-                            <div
-                                key={`a-${index}`}
-                                className="flex items-center justify-center px-8 sm:px-10"
-                            >
-                                <Image
-                                    src={partner.logo}
-                                    alt={partner.name}
-                                    width={150}
-                                    height={60}
-                                    className="
-                    h-8
-                    sm:h-9
-                    md:h-10
-                    w-auto
-                    object-contain
-                    opacity-85
-                    hover:opacity-100
-                    transition-opacity
-                    duration-300
-                  "
-                                    priority
-                                />
-                            </div>
-                        ))}
-                    </div>
+                <div className="relative overflow-hidden">
+                    <div className="marquee flex items-center">
+                        {/* Loop A */}
+                        <div className="marquee__group">
+                            {PARTNERS.map((partner, index) => (
+                                <div
+                                    key={`a-${index}`}
+                                    className="flex items-center justify-center px-4 sm:px-8"
+                                >
+                                    <Image
+                                        src={partner.logo}
+                                        alt={partner.name}
+                                        width={120}
+                                        height={50}
+                                        className="
+                                            h-6
+                                            sm:h-8
+                                            md:h-9
+                                            w-auto
+                                            object-contain
+                                            opacity-80
+                                            hover:opacity-100
+                                            transition-opacity
+                                            duration-300
+                                        "
+                                    />
+                                </div>
+                            ))}
+                        </div>
 
-                    {/* Second loop */}
-                    <div className="marquee__group">
-                        {PARTNERS.map((partner, index) => (
-                            <div
-                                key={`b-${index}`}
-                                className="flex items-center justify-center px-8 sm:px-10"
-                            >
-                                <Image
-                                    src={partner.logo}
-                                    alt={partner.name}
-                                    width={150}
-                                    height={60}
-                                    className="
-                    h-8
-                    sm:h-9
-                    md:h-10
-                    w-auto
-                    object-contain
-                    opacity-85
-                    hover:opacity-100
-                    transition-opacity
-                    duration-300
-                  "
-                                />
-                            </div>
-                        ))}
+                        {/* Loop B */}
+                        <div className="marquee__group">
+                            {PARTNERS.map((partner, index) => (
+                                <div
+                                    key={`b-${index}`}
+                                    className="flex items-center justify-center px-4 sm:px-8"
+                                >
+                                    <Image
+                                        src={partner.logo}
+                                        alt={partner.name}
+                                        width={120}
+                                        height={50}
+                                        className="
+                                            h-6
+                                            sm:h-8
+                                            md:h-9
+                                            w-auto
+                                            object-contain
+                                            opacity-80
+                                            hover:opacity-100
+                                            transition-opacity
+                                            duration-300
+                                        "
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
